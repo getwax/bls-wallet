@@ -2,8 +2,10 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "./lib/BLS.sol";
+// Modified for solidity 0.8.0
+import "./lib/BLS.sol"; //from hubble repo
 import "./lib/IERC20.sol";
+
 import "hardhat/console.sol";
 
 
@@ -46,10 +48,17 @@ contract BLSWallet //is IERC20 //(to consider?)
         blsKeys[msg.sender] = [0,0,0,0];
         balances[msg.sender] = 0;
         baseToken.transfer(msg.sender, amount);
-    }
+    } 
 
     //   //TODO: verifyMultiple
-    // function transferBatch() {}
+    function transferBatch(
+        uint256[2] memory signature,
+        uint256[4][] memory pubkeys,
+        uint256[2][] memory messages
+    ) public view returns (bool checkResult, bool callSuccess) {
+        //WIP
+        return BLS.verifyMultiple(signature, pubkeys, messages);
+    }
 
     function balanceOf(address account) public view returns (uint256) {
         return balances[account];

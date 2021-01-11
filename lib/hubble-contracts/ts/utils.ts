@@ -4,7 +4,7 @@ import { randomBytes, hexlify, hexZeroPad, parseEther } from "ethers/lib/utils";
 import { Wei } from "./interfaces";
 import { ContractTransaction } from "ethers";
 import { assert, expect } from "chai";
-import { Rollup } from "../types/ethers-contracts/Rollup";
+// import { Rollup } from "../types/ethers-contracts/Rollup";
 
 export const FIELD_ORDER = BigNumber.from(
     "0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47"
@@ -82,6 +82,6 @@ export async function expectRevert(
     );
 }
 
-export async function getBatchID(rollup: Rollup): Promise<number> {
-    return Number(await rollup.nextBatchID()) - 1;
-}
+// export async function getBatchID(rollup: Rollup): Promise<number> {
+//     return Number(await rollup.nextBatchID()) - 1;
+// }
