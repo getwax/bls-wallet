@@ -12,8 +12,6 @@ import {
     FrontendMassMigrationFactory,
     FrontendTransferFactory,
     MassMigrationFactory,
-    NameRegistryFactory,
-    ParamManagerFactory,
     ProofOfBurnFactory,
     RollupFactory,
     SpokeRegistryFactory,
@@ -32,12 +30,10 @@ function parseGenesis(
     signer: Signer
 ): allContracts {
     const factories = {
-        paramManager: ParamManagerFactory,
         frontendGeneric: FrontendGenericFactory,
         frontendTransfer: FrontendTransferFactory,
         frontendMassMigration: FrontendMassMigrationFactory,
         frontendCreate2Transfer: FrontendCreate2TransferFactory,
-        nameRegistry: NameRegistryFactory,
         blsAccountRegistry: BlsAccountRegistryFactory,
         tokenRegistry: TokenRegistryFactory,
         transfer: TransferFactory,

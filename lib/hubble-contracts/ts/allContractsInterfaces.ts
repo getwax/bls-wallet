@@ -1,5 +1,3 @@
-import { ParamManager } from "../types/ethers-contracts/ParamManager";
-import { NameRegistry } from "../types/ethers-contracts/NameRegistry";
 import { TokenRegistry } from "../types/ethers-contracts/TokenRegistry";
 import { Pob } from "../types/ethers-contracts/Pob";
 import { Transfer } from "../types/ethers-contracts/Transfer";
@@ -19,12 +17,10 @@ import { Create2Transfer } from "../types/ethers-contracts/Create2Transfer";
 import { BurnAuction } from "../types/ethers-contracts/BurnAuction";
 
 export interface allContracts {
-    paramManager: ParamManager;
     frontendGeneric: FrontendGeneric;
     frontendTransfer: FrontendTransfer;
     frontendMassMigration: FrontendMassMigration;
     frontendCreate2Transfer: FrontendCreate2Transfer;
-    nameRegistry: NameRegistry;
     blsAccountRegistry: BlsAccountRegistry;
     tokenRegistry: TokenRegistry;
     transfer: Transfer;

@@ -25,7 +25,7 @@ const zeroBLSPubKey = [0, 0, 0, 0].map((n) => { return BigNumber.from(n) });
 const initialSupply = ethers.utils.parseUnits("1000000")
 
 describe('BLSWallet', async function () {
-  const ACCOUNTS_LENGTH = 5;
+  const ACCOUNTS_LENGTH = 3;
   let signers: Signer[];
   let addresses: string[];
   let keyPairs: keyPair[];
