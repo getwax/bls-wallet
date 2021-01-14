@@ -5,8 +5,9 @@ import "../BLSWallet.sol";
 
 contract MockBLSWallet is BLSWallet {
     constructor(
+        address aggregator,
         IERC20 token
-    ) BLSWallet(token) {
+    ) BLSWallet(aggregator, token) {
         
     }
 

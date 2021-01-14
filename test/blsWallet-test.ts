@@ -20,7 +20,7 @@ const g2PointOnIncorrectSubgroup = [
     "0x0fe4020ece1b2849af46d308e9f201ac58230a45e124997f52c65d28fe3cf8f1"
 ];
 
-const zeroBLSPubKey = [0, 0, 0, 0].map((n) => { return BigNumber.from(n) });
+const zeroBLSPubKey = [0, 0, 0, 0].map(n => BigNumber.from(n));
 
 const initialSupply = ethers.utils.parseUnits("1000000")
 
@@ -36,26 +36,34 @@ describe('BLSWallet', async function () {
 
   beforeEach(async function () {
     signers = (await ethers.getSigners()).slice(0, ACCOUNTS_LENGTH);
-    addresses = await Promise.all(signers.map((acc) => { return acc.getAddress() }));
+    addresses = await Promise.all(signers.map(acc => acc.getAddress()));
     keyPairs = [];
 
-    // setup erc20 token, account balances, and bls key pairs
+    // setup erc20 token
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     baseToken = await MockERC20.deploy("AnyToken","TOK", initialSupply);
     await baseToken.deployed();
 
     // deploy bls wallet with token address
     const BLSWallet = await ethers.getContractFactory("MockBLSWallet");
-    blsWallet = await BLSWallet.deploy(baseToken.address);
+    blsWallet = await BLSWallet.deploy(addresses[0], baseToken.address); 
     await blsWallet.deployed();
     
+    // prepare library for bls keypair generation
     await mcl.init();
     // split supply amongst addresses, and approve transfer from wallet
     for (let i = 0; i<signers.length; i++) {
-      keyPairs.push(mcl.newKeyPair());
-      await baseToken.connect(signers[0]).transfer(addresses[i], userStartAmount); // first account holds token supply
+      keyPairs.push(mcl.newKeyPair()); // store bls key pair for accounts
+      await baseToken.connect(signers[0]).transfer(addresses[i], userStartAmount); // first account as aggregator, and holds token supply
       await baseToken.connect(signers[i]).approve(blsWallet.address, userStartAmount);
     }
+
+  });
+
+  it("verify single signature", async function() {
+    const INDEX = 1;
+    await blsWallet.connect(signers[INDEX]).deposit(mcl.g2ToHex(keyPairs[INDEX].pubkey), userStartAmount);
+    const account1Balance = await blsWallet.balanceOf(addresses[INDEX]);
 
   });
 
@@ -69,22 +77,55 @@ describe('BLSWallet', async function () {
     const messages = [];
     const pubkeys = [];
     const signatures = [];
+    const recipients = [];
+    const amounts = [];
+    console.log("From test")
     for (let i = 0; i < n; i++) {
-        const message = randHex(12);
+        const recipient = addresses[n-1];
+        const amount = userStartAmount.toString();
+        let message = utils.keccak256(
+          blsWallet.interface.encodeFunctionData(
+            "transfer", [recipient, amount]
+          )
+        );
+        console.log("msg", message);
         const { signature, messagePoint } = mcl.sign(
             message,
             keyPairs[i].secret,
             DOMAIN
         );
         messages.push(mcl.g1ToHex(messagePoint));
+        console.log("msgPoint", messages[i]);
         pubkeys.push(mcl.g2ToHex(keyPairs[i].pubkey));
         signatures.push(signature);
+        recipients.push(recipient);
+        amounts.push(amount);
     }
 
     const aggSignature = mcl.g1ToHex(mcl.aggregateRaw(signatures));
-    const res = await blsWallet.transferBatch(aggSignature, addresses, messages);
-    assert.isTrue(res[0]);
-    assert.isTrue(res[1]);
+    let tx = await blsWallet.transferBatch(
+      aggSignature,
+      addresses,
+      messages,
+      recipients,
+      amounts
+    );
+    await tx.wait();
+    let events = await blsWallet.queryFilter(
+      await blsWallet.filters.Data()
+    );
+    expect(events.length).to.equal(n*2);
+    console.log("From events...");
+    for (let i = 0; i < events.length; i++) {
+      console.log(
+        events[i].args["info"], "[\n  ",
+        events[i].args["value"][0].toHexString(), ",\n  ",
+        events[i].args["value"][1].toHexString(), "\n]"
+      );
+    }
+
+    expect(await blsWallet.balanceOf(addresses[0])).to.equal(0);
+    expect(await blsWallet.balanceOf(addresses[n-1])).to.equal(userStartAmount.mul(n));
   });
 
   it('should deposit balance from token to bls wallet', async function () {
@@ -93,9 +134,12 @@ describe('BLSWallet', async function () {
   });
 
   it('should set bls public key on deposit', async function () {
-    await blsWallet.connect(signers[1]).deposit(mcl.g2ToHex(keyPairs[1].pubkey), userStartAmount);
-    let hexArray = mcl.g2ToHex(keyPairs[1].pubkey);
-    expect(await blsWallet.blsPubKeyOf(addresses[1])).to.eql(hexArray.map((n) => { return BigNumber.from(n) }));
+    const INDEX = 1;
+    await blsWallet.connect(signers[INDEX]).deposit(mcl.g2ToHex(keyPairs[INDEX].pubkey), userStartAmount);
+    let hexArray = mcl.g2ToHex(keyPairs[INDEX].pubkey);
+    // console.log(hexArray);
+    // console.log(hexArray.map(n => BigNumber.from(n)));
+    expect(await blsWallet.blsPubKeyOf(addresses[INDEX])).to.deep.equal(hexArray.map(n => BigNumber.from(n)));
   });
 
   it('should withdraw full balance from token to bls wallet', async function () {
