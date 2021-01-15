@@ -88,15 +88,16 @@ contract BLSWallet //is IERC20 //(to consider?)
         address recipient,
         uint256 amount
     ) private onlyAggregatorOrSigner(signer) {
-        // console.log("BEFORE", balances[signer], balances[recipient]);
+        console.log("BEFORE", balances[signer], balances[recipient]);
         balances[signer] -= amount;
         balances[recipient] += amount;
-        // console.log(" AFTER", balances[signer], balances[recipient]);
+        console.log(" AFTER", balances[signer], balances[recipient]);
     }
 
     event Data(string info, uint256[2] value);
+    bytes32 domain = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
 
-    //TODO: verify messages (WIP)
+    //TODO (WIP): protect from replay (nonce)
     function transferBatch(
         uint256[2] memory signature,
         address[] memory fromAccounts,
@@ -108,22 +109,28 @@ contract BLSWallet //is IERC20 //(to consider?)
         require(messages.length == txCount, "BLSWallet: account/message length mismatch.");
         uint256[BLS_LEN][] memory pubKeys = new uint256[BLS_LEN][](txCount);
         for (uint256 i = 0; i<txCount; i++) {
-            //TODO: check messages param (message points) is from
-            // desired message (hash of encoded functionSig+params)
-            //INFO
-            emit Data("point params", messages[i]);
+            // Store blsKeys for verification
+            pubKeys[i] = blsKeys[fromAccounts[i]];
+
             bytes memory encodedFunction = abi.encodeWithSignature(
                 "transfer(address,uint256)", recipients[i], amounts[i]
             );
             bytes32 encFuncHash = keccak256(encodedFunction);
-            emit Data(
-                "contract call:",
-                [uint256(encFuncHash), uint256(0)]
+
+            bytes memory msgBytes = abi.encodePacked(encFuncHash);
+            uint256[2] memory msgPoint = BLS.hashToPoint(
+                domain,
+                msgBytes
             );
-            // (bool success, bytes memory data) = address(this).call(encodedFunction);
-            //\INFO
-            pubKeys[i] = blsKeys[fromAccounts[i]];
-            transferFromSigner(fromAccounts[i], recipients[i], amounts[i]);
+            emit Data("SC point", msgPoint);
+
+            // if message points match, perform action
+            if (
+                (msgPoint[0] == messages[i][0]) &&
+                (msgPoint[1] == messages[i][1])
+            ) {
+                transferFromSigner(fromAccounts[i], recipients[i], amounts[i]);
+            }
         }
         (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, pubKeys, messages);
         require(callSuccess && checkResult, "BLSWallet: All sigs not verified");
