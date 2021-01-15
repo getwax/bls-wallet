@@ -104,7 +104,6 @@ describe('BLSWallet', async function () {
     const signatures = [];
     const recipients = [];
     const amounts = [];
-    console.log("From test")
     for (let i = 0; i < n; i++) {
         const recipient = addresses[n-1];
         const amount = userStartAmount.toString();
@@ -113,14 +112,12 @@ describe('BLSWallet', async function () {
             "transfer", [recipient, amount]
           )
         );
-        console.log("msg", message);
         const { signature, messagePoint } = mcl.sign(
             message,
             keyPairs[i].secret,
             DOMAIN
         );
         messages.push(mcl.g1ToHex(messagePoint));
-        console.log("msgPoint", messages[i]);
         pubkeys.push(mcl.g2ToHex(keyPairs[i].pubkey));
         signatures.push(signature);
         recipients.push(recipient);
@@ -136,21 +133,11 @@ describe('BLSWallet', async function () {
       amounts
     );
     await tx.wait();
-    let events = await blsWallet.queryFilter(await blsWallet.filters.Data());
 
-    console.log("From events...");
-    for (let i = 0; i < events.length; i++) {
-      console.log(
-        events[i].args["info"], "[\n  ",
-        events[i].args["value"][0].toHexString(), ",\n  ",
-        events[i].args["value"][1].toHexString(), "\n]"
-      );
-      i%2 ? console.log() : "";
-    }
     expect(await blsWallet.balanceOf(addresses[0])).to.equal(0);
     expect(await blsWallet.balanceOf(addresses[n-1])).to.equal(userStartAmount.mul(n));
   });
-
+  
   // TODO: test multiple txs from same address
 
 });
