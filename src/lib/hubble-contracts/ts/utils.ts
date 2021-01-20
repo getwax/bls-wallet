@@ -3,7 +3,7 @@ import { BigNumber } from "ethers";
 import { randomBytes, hexlify, hexZeroPad, parseEther } from "ethers/lib/utils";
 import { Wei } from "./interfaces";
 import { ContractTransaction } from "ethers";
-import { assert, expect } from "chai";
+// import { assert, expect } from "chai";
 // import { Rollup } from "../types/ethers-contracts/Rollup";
 
 export const FIELD_ORDER = BigNumber.from(
@@ -68,19 +68,19 @@ export async function mineBlocks(
     }
 }
 
-export async function expectRevert(
-    tx: Promise<ContractTransaction>,
-    revertReason: string
-) {
-    await tx.then(
-        () => {
-            assert.fail(`Expect tx to fail with reason: ${revertReason}`);
-        },
-        error => {
-            expect(error.message).to.have.string(revertReason);
-        }
-    );
-}
+// export async function expectRevert(
+//     tx: Promise<ContractTransaction>,
+//     revertReason: string
+// ) {
+//     await tx.then(
+//         () => {
+//             assert.fail(`Expect tx to fail with reason: ${revertReason}`);
+//         },
+//         error => {
+//             expect(error.message).to.have.string(revertReason);
+//         }
+//     );
+// }
 
 // export async function getBatchID(rollup: Rollup): Promise<number> {
 //     return Number(await rollup.nextBatchID()) - 1;
