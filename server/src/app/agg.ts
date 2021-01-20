@@ -19,7 +19,7 @@ con.connect(function(err) {
   con.query("USE bls_aggregator", function (err, result) {
     if (err) throw err;
   });
-  con.query("DROP TABLE IF EXISTS bls_aggregator", function(err, result) {
+  con.query("DROP TABLE IF EXISTS txs", function(err, result) {
     if (err) throw err;
   });
   con.query("CREATE TABLE IF NOT EXISTS txs( \
@@ -35,7 +35,7 @@ con.connect(function(err) {
     amount BINARY(32) \
     );", function(err, result) {
       if (err) throw err;
-  })
+  });
 });
 
 const server = express();
