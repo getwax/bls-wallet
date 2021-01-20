@@ -6,10 +6,11 @@
   "scripts": {
     "build-ts": "tsc",
     "postinstall": "npm run build-ts",
-    "agg": "node dist/agg.js",
-    "watch-node": "nodemon dist/agg.js",
+    "clean": "rm -r dist/",
+    "agg": "node dist/app/agg.js",
+    "watch-node": "nodemon dist/app/agg.js",
     "watch-ts": "tsc -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node dist/test/test.js"
   },
   "author": "James Zaki",
   "license": "MIT",

@@ -9,7 +9,6 @@ var con = mysql.createConnection({
   host: "localhost",
   user: "username",
   password: "password",
-  // database: "bls_aggregator"
 });
 
 con.connect(function(err) {
@@ -24,18 +23,18 @@ con.connect(function(err) {
     if (err) throw err;
   });
   con.query("CREATE TABLE IF NOT EXISTS txs( \
-      tx_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
-      bls_pub_0 INT, \
-      bls_pub_1 INT, \
-      bls_pub_2 INT, \
-      bls_pub_3 INT, \
-      message_0 BINARY(32), \
-      message_1 BINARY(32), \
-      signature INT UNSIGNED, \
-      recipient BINARY(20), \
-      amount BINARY(32) \
-      );", function(err, result) {
-        if (err) throw err;
+    tx_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
+    bls_pub_0 INT, \
+    bls_pub_1 INT, \
+    bls_pub_2 INT, \
+    bls_pub_3 INT, \
+    message_0 BINARY(32), \
+    message_1 BINARY(32), \
+    signature INT UNSIGNED, \
+    recipient BINARY(20), \
+    amount BINARY(32) \
+    );", function(err, result) {
+      if (err) throw err;
   })
 });
 
