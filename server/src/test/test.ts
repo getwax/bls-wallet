@@ -1,10 +1,6 @@
 import https from 'http';
 
-import * as mcl from "../lib/hubble-contracts/ts/mcl";
-import { keyPair } from "../lib/hubble-contracts/ts/mcl";
-import { randHex, randFs, to32Hex } from "../lib/hubble-contracts/ts/utils";
-import { randomBytes, hexlify, arrayify } from "ethers/lib/utils";
-import { expandMsg, hashToField } from "../lib/hubble-contracts/ts/hashToField";
+import wallet from '../app/wallet';
 
 const options = {
   hostname: 'localhost',

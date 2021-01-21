@@ -7,14 +7,13 @@
     "build-ts": "tsc",
     "postinstall": "npm run build-ts",
     "clean": "rm -r dist/",
-    "agg": "node dist/app/agg.js",
-    "watch-node": "nodemon dist/app/agg.js",
+    "agg": "node dist/app/app.js",
+    "watch-node": "nodemon dist/app/app.js",
     "watch-ts": "tsc -w",
     "test": "node dist/test/test.js"
   },
   "author": "James Zaki",
   "license": "MIT",
-  "private": true,
   "dependencies": {},
   "devDependencies": {
     "@types/express": "^4.17.11",
