@@ -8,7 +8,8 @@ namespace agg {
 
   export function addTx(req:Request, res:Response) {
     res.send(`Adding ${req}`);
-    //TODO: store signed tx and bls sig. (incremental aggregation?)
+    // Store signed tx and bls sig  //TODO: incremental aggregation?
+    console.log(req);
 
     //TODO: send tx(s) after batch count, or N ms since last send.
   }

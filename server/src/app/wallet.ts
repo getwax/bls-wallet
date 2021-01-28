@@ -2,7 +2,6 @@ import { BigNumber, Signer, Contract } from "ethers";
 import { contractOptions } from "web3/eth/contract";
 
 const ethers = require("hardhat").ethers;
-// const  = env.ethers;
 const utils = ethers.utils;
 
 import * as mcl from "../lib/hubble-contracts/ts/mcl";
