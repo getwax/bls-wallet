@@ -8,11 +8,11 @@ import * as mcl from "../lib/hubble-contracts/ts/mcl";
 import { keyPair } from "../lib/hubble-contracts/ts/mcl";
 import { arrayify } from "ethers/lib/utils";
 
-import BLSWrapper from '../server/src/test/blsWrapper'
+import BLSWrapper from './blsWrapper'
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
-const zeroBLSPubKey = [0, 0, 0, 0].map(n => BigNumber.from(n));
+const zeroBLSPubKey = [0, 0, 0, 0].map(BigNumber.from);
 
 const initialSupply = ethers.utils.parseUnits("1000000")
 
@@ -62,14 +62,6 @@ async function depositToWallet(signers:Signer[]) {
   }
 }
 
-interface TestTxs {
-  messages: any[];
-  pubkeys: any[];
-  signatures: any[];
-  recipients: any[];
-  amounts: any[];
-}
-
 /**
  * Signs bls token transfers from each address to the last.
  * The last account should hold all tokens (minus a tiny portion from rounding).
@@ -92,7 +84,8 @@ describe('BatchServer', async function () {
   });
 
   it('should add transactions', async function () {
-
+    blsWrapper.getRoot();
+    // blsWrapper.postTx(0);
   });
 });
 

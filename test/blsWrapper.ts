@@ -1,10 +1,15 @@
+//web2
+import * as http from 'http';
+
+//web3
+import { BigNumber, Signer, Contract } from "ethers";
 
 //bls
-import * as mcl from "../lib/hubble-contracts/ts/mcl";
-import { keyPair } from "../lib/hubble-contracts/ts/mcl";
+import * as mcl from "../server/src/lib/hubble-contracts/ts/mcl";
+import { keyPair } from "../server/src/lib/hubble-contracts/ts/mcl";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 import { defaultAbiCoder } from "ethers/lib/utils";
-import { BlsSigner, aggregate } from '../lib/hubble-contracts/ts/blsSigner';
+import { BlsSigner, aggregate } from '../server/src/lib/hubble-contracts/ts/blsSigner';
 
 /**
  * A class to handle general tx assembly, bls signing, and aggregation optimisations.
@@ -82,6 +87,39 @@ class BLSWrapper {
     this.signatures.push(signature);
     this.senderIndex.push(signerIndex);
     this.paramSets.push(params);
+  }
+
+  public postTx(i: number) {
+    const options = {
+      hostname: 'localhost',
+      port: 3000,
+      path: '/addTx',
+      method: 'POST'
+    }
+
+  }
+
+  public getRoot() {
+    const options = {
+      hostname: 'localhost',
+      port: 3000,
+      path: '/',
+      method: 'GET'
+    }
+  
+    const req = http.request(options, res => {
+      console.log(`statusCode: ${res.statusCode}`);
+      res.on('data', d => {
+        process.stdout.write(d + '\n');
+      })
+    })
+      
+    req.on('error', error => {
+      console.error(error);
+    })
+  
+    req.end();
+
   }
 
   /**

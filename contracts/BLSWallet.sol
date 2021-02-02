@@ -105,7 +105,6 @@ contract BLSWallet //is IERC20 //(to consider?)
         for (uint256 i = 0; i<txCount; i++) {
             // Store blsKeys for verification
             pubKeys[i] = blsKeys[fromAccounts[i]];
-            console.log(pubKeys[i][0]);
 
             // function to be called
             bytes memory encodedFunction = abi.encodeWithSignature(

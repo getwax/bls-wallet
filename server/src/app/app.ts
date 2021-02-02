@@ -19,6 +19,7 @@ const app = express();
 
 app.get('/', (req, res) => {
   res.send('Post txs to /addTx. Request txs from /latestTxs');
+  console.log("get /");
 });
 
 import txRouter from './routes';
