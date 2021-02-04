@@ -1,3 +1,4 @@
+.envrc
 node_modules
 
 #Hardhat files
