@@ -18,7 +18,7 @@ con.connect(function(err) {
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send('Post txs to /addTx. Request txs from /latestTxs');
+  res.send('Post txs to /tx/add.');
   console.log("get /");
 });
 

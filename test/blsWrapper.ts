@@ -1,4 +1,7 @@
 //web2
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+//const axios = require('axios').default;
+
 import * as http from 'http';
 
 //web3
@@ -10,6 +13,7 @@ import { keyPair } from "../server/src/lib/hubble-contracts/ts/mcl";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 import { defaultAbiCoder } from "ethers/lib/utils";
 import { BlsSigner, aggregate } from '../server/src/lib/hubble-contracts/ts/blsSigner';
+import { RequestOptions } from 'https';
 
 /**
  * A class to handle general tx assembly, bls signing, and aggregation optimisations.
@@ -89,37 +93,33 @@ class BLSWrapper {
     this.paramSets.push(params);
   }
 
-  public postTx(i: number) {
-    const options = {
-      hostname: 'localhost',
-      port: 3000,
-      path: '/addTx',
-      method: 'POST'
-    }
-
+  public async postTx(i: number) {
+    axios
+      .post('http://localhost:3000/tx/add', {
+        pubKey: this.pubKeyForIndex(i),
+        sender: this.addresses[this.senderIndex[i]],
+        messagPoints: this.messages[i],
+        signature: this.signatures[i],
+        recipient: this.paramSets[i][0],
+        amount: this.paramSets[i][1]
+      })
+      .then(res => {
+        // console.log(`statusCode: ${res.status}`)
+        // console.log(`RESPONSE - data: ${res.data}`);
+      })
+      .catch(error => {
+        console.error(error)
+      });
   }
 
-  public getRoot() {
-    const options = {
-      hostname: 'localhost',
-      port: 3000,
-      path: '/',
-      method: 'GET'
+  public async getRoot() {
+    try {
+      let res: AxiosResponse = await axios.get('http://localhost:3000/');
+      return res.data;
     }
-  
-    const req = http.request(options, res => {
-      console.log(`statusCode: ${res.statusCode}`);
-      res.on('data', d => {
-        process.stdout.write(d + '\n');
-      })
-    })
-      
-    req.on('error', error => {
-      console.error(error);
-    })
-  
-    req.end();
-
+    catch(err) {
+      console.log(err);
+    };
   }
 
   /**

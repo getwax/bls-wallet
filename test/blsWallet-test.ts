@@ -81,11 +81,16 @@ describe('BatchServer', async function () {
   beforeEach(async function () {
     await init();
     await depositToWallet(signers);
+    await createTestTxs();
+  });
+
+  it('should query server root', async function () {
+    expect(await blsWrapper.getRoot()).to.equal('Post txs to /tx/add.');
   });
 
   it('should add transactions', async function () {
-    blsWrapper.getRoot();
-    // blsWrapper.postTx(0);
+    await blsWrapper.postTx(0);
+    //expect
   });
 });
 

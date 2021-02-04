@@ -35,8 +35,8 @@ namespace db {
     });
   }
 
-  export function addTx() {
-
+  export function addTx(txData: any) {
+    // TODO: Store signed tx and bls sig  //TODO: incremental aggregation?
   }
 
 }
