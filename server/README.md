@@ -11,6 +11,7 @@ Uses yarn, node express, typescript, mysql.
 - yarn install
 - `.envrc` from .ENVRC_EXAMPLE (`direnv` is useful to auto-load)
 - Install/run mysql for your OS (Ubuntu: `apt install mysql-server`, `sudo systemctl start mysql`)
-- 
 
-
+### tx aggregation server
+- transpile typescript - `yarn run watch-ts`
+- run server - `yarn run watch-node`

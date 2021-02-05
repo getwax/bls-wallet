@@ -1,3 +1,4 @@
+require('dotenv').config();
 import "@nomiclabs/hardhat-waffle";
 import { task } from "hardhat/config";
 import { HardhatUserConfig } from "hardhat/config";
@@ -12,9 +13,6 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
   }
 });
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
-
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -25,6 +23,21 @@ const config: HardhatUserConfig = {
         version: "0.7.0"
       }
     ]
+  },
+  networks: {
+    hardhat: {
+
+    },
+    optimism: {
+      url: `http://localhost:8545`,
+      accounts: [
+        `0x${process.env.PRIVATE_KEY_1}`,
+        `0x${process.env.PRIVATE_KEY_2}`,
+        `0x${process.env.PRIVATE_KEY_3}`,
+        `0x${process.env.PRIVATE_KEY_4}`,
+        `0x${process.env.PRIVATE_KEY_5}`
+      ]
+    }
   }
 };
 
