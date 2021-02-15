@@ -11,3 +11,19 @@ Simplification of Optimism's L2 solution:
 
 Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubble-contracts/blob/master/contracts/libs/BLS.sol) lib:
 ![BLS Batches](images/blsSigAggregation.svg)
+
+# Dev/test
+
+- Run the aggregation server (see `./server`).
+- build and test contracts - `npx hardhat test`
+
+## Optimism's L2
+- clone https://github.com/ethereum-optimism/optimism-integration
+- follow instructions (using latest version of docker)
+- run script - `./up.sh`
+    - L1 - http://localhost:9545
+    - L2 - http://localhost:8545
+
+## Deploy scripts
+Specify network - `npx hardhat run scripts/<#_script.ts> --network optimism`
+
