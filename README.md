@@ -17,10 +17,13 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 - Run the aggregation server (see `./server`).
 - build and test contracts - `npx hardhat test`
 
-### Optimism's L2
+## Optimism's L2
 - clone https://github.com/ethereum-optimism/optimism-integration
 - follow instructions (using latest version of docker)
 - run script - `./up.sh`
     - L1 - http://localhost:9545
     - L2 - http://localhost:8545
-- then in bls-wallet repo, can specify network - `npx hardhat <script> --network optimism`
+
+## Deploy scripts
+Specify network - `npx hardhat run scripts/<#_script.ts> --network optimism`
+
