@@ -1,6 +1,6 @@
 import { expect, assert } from "chai";
 
-const ethers = require("hardhat").ethers;
+import { l2ethers as ethers } from "hardhat"
 import { BigNumber, Signer, Contract } from "ethers";
 const utils = ethers.utils;
 
@@ -77,7 +77,7 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-describe('BatchServer', async function () {
+describe('Optimistic BatchServer', async function () {
   beforeEach(async function () {
     await init();
     await depositToWallet(signers);
@@ -94,7 +94,7 @@ describe('BatchServer', async function () {
   });
 });
 
-describe('BLSWallet', async function () {
+describe('Optimistic BLSWallet', async function () {
   
   beforeEach(init);
 
