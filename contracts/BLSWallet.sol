@@ -1,12 +1,10 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
-pragma abicoder v2;
+pragma solidity ^0.7.0;
+// pragma abicoder v2;
 
-// Modified for solidity 0.8.0
+// Modified for solidity 0.7.0
 import "./lib/BLS.sol"; //from hubble repo
 import "./lib/IERC20.sol";
-
-import "hardhat/console.sol";
 
 
 contract BLSWallet //is IERC20 //(to consider?)
