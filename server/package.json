@@ -20,6 +20,7 @@
     "@types/mysql": "^2.15.17",
     "connect-livereload": "^0.6.1",
     "express": "^4.17.1",
+    "knex": "^0.21.17",
     "livereload": "^0.9.1",
     "mysql": "^2.18.1",
     "nodemon": "^2.0.7",
