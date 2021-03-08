@@ -98,14 +98,14 @@ class BLSWrapper {
       .post('http://localhost:3000/tx/add', {
         pubKey: this.pubKeyForIndex(i),
         sender: this.addresses[this.senderIndex[i]],
-        messagPoints: this.messages[i],
+        messagePoints: this.messages[i],
         signature: this.signatures[i],
         recipient: this.paramSets[i][0],
         amount: this.paramSets[i][1]
       })
       .then(res => {
-        // console.log(`statusCode: ${res.status}`)
-        // console.log(`RESPONSE - data: ${res.data}`);
+        console.log(`statusCode: ${res.status}`)
+        console.log(`RESPONSE - data: ${res.data}`);
       })
       .catch(error => {
         console.error(error)

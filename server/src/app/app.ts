@@ -5,15 +5,7 @@ import path from 'path';
 import mysql from 'mysql';
 import db from './agg.db';
 
-let con = mysql.createConnection({
-  host: "localhost",
-  user: "username",
-  password: "password"
-});
-con.connect(function(err) {
-  if (err) throw err;
-  db.init(con);
-});
+db.init();
 
 const app = express();
 

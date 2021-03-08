@@ -84,7 +84,7 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-describe('BatchServer', async function () {
+describe.only('BatchServer', async function () {
   beforeEach(async function () {
     await init();
     await depositToWallet(signers);
