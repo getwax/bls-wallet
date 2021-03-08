@@ -89,6 +89,7 @@ describe.only('BatchServer', async function () {
     await init();
     await depositToWallet(signers);
     await createTestTxs();
+    await blsWrapper.resetDb();
   });
 
   it('should query server root', async function () {
@@ -97,7 +98,9 @@ describe.only('BatchServer', async function () {
 
   it('should add transactions', async function () {
     await blsWrapper.postTx(0);
-    //expect
+    expect(await blsWrapper.getCount()).to.equal(1);
+    await blsWrapper.postTx(1);
+    expect(await blsWrapper.getCount()).to.equal(2);
   });
 });
 

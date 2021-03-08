@@ -11,7 +11,7 @@ const PG_PORT = 5432;
 namespace db {
   let knex:Knex;
 
-  export function init() {
+  export async function init() {
     knex = Knex({
       client: 'pg',
       connection: {
@@ -23,13 +23,19 @@ namespace db {
       }
     });
     
-    initTxTable();
+    if (!(await knex.schema.hasTable('txs'))) {
+      createTable();
+    }
   }
 
-  async function initTxTable() {
+  export async function resetTable() {
     if (await knex.schema.hasTable('txs')) {
       await knex.schema.dropTable('txs');
     }
+    await createTable();
+  }
+
+  async function createTable() {
     let table = knex.schema.createTable('txs', function(t) {
       t.increments('tx_id').primary();
       t.specificType('bls_pub_key', 'varchar(66)[]');
@@ -41,7 +47,7 @@ namespace db {
     });
     console.log("\n", table.toString());
     try {
-      let res = await table;
+      await table;
     }
     catch(err) {
       console.error(err);
@@ -62,10 +68,16 @@ namespace db {
     .catch( err => console.error(err) );
   }
 
-  export function txCount() {
-    knex('txs').select()
-    .then( res => console.log(res) )
-    .catch( err => console.error(err) );
+  export async function txCount(): Promise<number> {
+    let c = -1;
+    try {
+      let res = await knex('txs').count();
+      c = res[0].count as number;
+    }
+    catch(err) {
+      console.error(err);
+    }
+    return c;
   }  
 
 }

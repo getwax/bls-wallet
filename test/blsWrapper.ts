@@ -94,22 +94,41 @@ class BLSWrapper {
   }
 
   public async postTx(i: number) {
-    axios
-      .post('http://localhost:3000/tx/add', {
+    try {
+      let res = await axios.post('http://localhost:3000/tx/add', {
         pubKey: this.pubKeyForIndex(i),
         sender: this.addresses[this.senderIndex[i]],
         messagePoints: this.messages[i],
         signature: this.signatures[i],
         recipient: this.paramSets[i][0],
         amount: this.paramSets[i][1]
-      })
-      .then(res => {
-        console.log(`statusCode: ${res.status}`)
-        console.log(`RESPONSE - data: ${res.data}`);
-      })
-      .catch(error => {
-        console.error(error)
       });
+      return true;
+    }
+    catch(error) {
+      console.error(error)
+    };
+    return false;
+  }
+
+  public async getCount() {
+    try {
+      let res: AxiosResponse = await axios.get('http://localhost:3000/tx/count');
+      return res.data;
+    }
+    catch(err) {
+      console.log(err);
+    };
+  }
+  
+
+  public async resetDb() {
+    try {
+      await axios.get('http://localhost:3000/tx/reset');
+    }
+    catch(err) {
+      console.log(err);
+    };
   }
 
   public async getRoot() {
