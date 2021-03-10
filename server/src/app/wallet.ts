@@ -1,16 +1,29 @@
-import { BigNumber, Signer, Contract } from "ethers";
-import { contractOptions } from "web3/eth/contract";
+// import { contractOptions } from "web3/eth/contract";
+// import "@nomiclabs/hardhat-ethers";
 
-const ethers = require("hardhat").ethers;
-const utils = ethers.utils;
+// import * as ethers from "hardhat";
+// const ethers = require("hardhat").ethers;
+// import pkg from 'hardhat';
+// const { network, ethers: hhEthers, l2ethers } = pkg; // from "hardhat";
+
+// let ethers:typeof hhEthers | typeof l2ethers;
+// ethers = hhEthers;
+// if (network.name == "optimism") {
+//   ethers = l2ethers;
+// }
+
+import ethers from "ethers";
+import { BigNumber, Signer, Contract } from "ethers";
 
 import * as mcl from "../lib/hubble-contracts/ts/mcl";
 import { keyPair } from "../lib/hubble-contracts/ts/mcl";
 import { randHex, randFs, to32Hex } from "../lib/hubble-contracts/ts/utils";
-import { randomBytes, hexlify, arrayify } from "ethers/lib/utils";
 import { expandMsg, hashToField } from "../lib/hubble-contracts/ts/hashToField";
 
-const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
+const { utils } = ethers;
+const { randomBytes, hexlify, keccak256, arrayify } = utils;
+
+const DOMAIN_HEX = keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
 const g2PointOnIncorrectSubgroup = [
@@ -20,11 +33,23 @@ const g2PointOnIncorrectSubgroup = [
   "0x0fe4020ece1b2849af46d308e9f201ac58230a45e124997f52c65d28fe3cf8f1"
 ];
 
-class Wallet {
+let blsWallet: Contract;
 
+namespace wallet { 
 
+  export async function init(address: string) {
+    console.log(`wallet.init(${address})`);
+    
+    // const BLSWallet = await ethers.getContractFactory("BLSWallet");
+
+    // blsWallet = BLSWallet.attach(address);
+    // console.log(blsWallet);
+  }
+
+  export function sendTx() {
+
+  }
 
 }
 
-const wallet = new Wallet();
 export default wallet;

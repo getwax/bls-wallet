@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import agg from "./tx.controller";
+import agg from "./tx.controller.js";
 
 const txRouter = Router();
 

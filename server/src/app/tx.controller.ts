@@ -1,8 +1,8 @@
 import { aggregate } from "../lib/hubble-contracts/ts/blsSigner";
 import {Request, Response} from 'express';
 
-import db from './agg.db';
-import wallet from './wallet';
+import db from './agg.db.js';
+import wallet from './wallet.js';
 
 namespace agg {
 
@@ -32,8 +32,25 @@ namespace agg {
     res.end();
   }
 
-  export function sendTxs(req:Request, res:Response) {
-    res.send(`Result: ${req.query.wallet_address}`);
+  export async function sendTxs(req:Request, res:Response) {
+
+    let body = '';
+    req.on('data', function (data) {
+      body += data;
+    });
+    req.on('end', async function () {
+      try {
+        let address = JSON.parse(body);
+        await wallet.init(address);
+        // res.writeHead(200, "Sent txs.", {"Content-Type": "text/plain"});
+      } catch(err){
+        console.log("ERR");
+        res.writeHead(500, "Failed to send txs", {"Content-Type": "text/plain"});
+      }
+      res.end();
+   });
+
+    // res.send(`Result: ${req.query.wallet_address}`);
     //if less than 3, send as singles, else
     //TODO: aggregate bls sigs, return: sig, senders, txs, params
   }
