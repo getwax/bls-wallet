@@ -6,7 +6,11 @@ import db from './agg.db.js';
 import wallet from './wallet.js';
 
 db.init();
-wallet.init('0x1234');
+
+const erc20_address = "0x6F714e7b5a7F0913038664d932e8acd6fDf1Ad55";
+const blsWallet_address = "0xbCb5DDb58A2466e528047703233aCd0D29d36937";
+
+wallet.init(blsWallet_address);
 
 const app = express();
 

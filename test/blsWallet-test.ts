@@ -84,25 +84,25 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-describe.only('BatchServer', async function () {
-  beforeEach(async function () {
-    await init();
-    await depositToWallet(signers);
-    await createTestTxs();
-    await blsWrapper.resetDb();
-  });
+// describe.only('BatchServer', async function () {
+//   beforeEach(async function () {
+//     await init();
+//     await depositToWallet(signers);
+//     await createTestTxs();
+//     await blsWrapper.resetDb();
+//   });
 
-  it('should query server root', async function () {
-    expect(await blsWrapper.getRoot()).to.equal('Post txs to /tx/add.');
-  });
+//   it('should query server root', async function () {
+//     expect(await blsWrapper.getRoot()).to.equal('Post txs to /tx/add.');
+//   });
 
-  it('should add transactions', async function () {
-    await blsWrapper.postTx(0);
-    expect(await blsWrapper.getCount()).to.equal(1);
-    await blsWrapper.postTx(1);
-    expect(await blsWrapper.getCount()).to.equal(2);
-  });
-});
+//   it('should add transactions', async function () {
+//     await blsWrapper.postTx(0);
+//     expect(await blsWrapper.getCount()).to.equal(1);
+//     await blsWrapper.postTx(1);
+//     expect(await blsWrapper.getCount()).to.equal(2);
+//   });
+// });
 
 describe('BLSWallet', async function () {
   
