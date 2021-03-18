@@ -1,17 +1,17 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import ethers, { Wallet } from "ethers";
+import { ethers, Wallet } from "ethers";
 import { BigNumber, Signer, Contract, ContractInterface } from "ethers";
 
 import * as mcl from "../lib/hubble-contracts/ts/mcl";
 import { keyPair } from "../lib/hubble-contracts/ts/mcl";
 import { randHex, randFs, to32Hex } from "../lib/hubble-contracts/ts/utils";
 import { expandMsg, hashToField } from "../lib/hubble-contracts/ts/hashToField";
-import { readFile, readFileSync } from "node:fs";
+import { readFile, readFileSync } from "fs";
 import agg from "./tx.controller";
 
-const { utils } = ethers;
+const utils = ethers.utils;
 const { randomBytes, hexlify, keccak256, arrayify } = utils;
 
 const DOMAIN_HEX = keccak256("0xfeedbee5");
@@ -71,15 +71,15 @@ namespace wallet {
     let amounts = txs.map( tx => tx.amount );
     let signatures = txs.map( tx => tx.signature );
 
-    // const aggSignature = mcl.g1ToHex(mcl.aggregateRaw(signatures));
-    // let tx = await blsWallet.transferBatch(
-    //   aggSignature,
-    //   txs.map( tx => tx.sender ),
-    //   txs.map( tx => tx.message),
-    //   txs.map( tx => tx.recipient ),
-    //   txs.map( tx => tx.amount )
-    // );
-    // await tx.wait();
+    const aggSignature = mcl.g1ToHex(mcl.aggregateRaw(signatures));
+    let tx = await blsWallet.transferBatch(
+      aggSignature,
+      txs.map( tx => tx.sender ),
+      txs.map( tx => tx.message),
+      txs.map( tx => tx.recipient ),
+      txs.map( tx => tx.amount )
+    );
+    await tx.wait();
 
     console.log(await Promise.all(senders.map(add => erc20.balanceOf(add))));
 

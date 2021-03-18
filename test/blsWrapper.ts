@@ -57,13 +57,10 @@ class BLSWrapper {
 
   public async initKeyPairs() {
     // prepare library for bls keypair generation
-    console.log("Initialising keyParis");
     await mcl.init();
-    console.log(this.addresses);
     for (let i=0; i<this.addresses.length; i++) {
       this.keyPairs.push(mcl.newKeyPair());
     }
-    console.log(this.keyPairs);
   }
 
   public pubKeyForIndex(i: number): mcl.solG2 {

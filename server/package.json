@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Signature aggregation service for L2 Ethereum BLS Wallet",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "build-ts": "tsc",
     "postinstall": "npm run build-ts",

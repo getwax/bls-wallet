@@ -94,7 +94,7 @@ before(async function () {
     );
 });
 
-describe.only('BatchServer', async function () {
+describe('BatchServer', async function () {
   beforeEach(async function () {
     await blsWrapper.resetDb();
   });
