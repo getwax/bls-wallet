@@ -7,7 +7,6 @@ import { network, ethers as hhEthers, l2ethers } from "hardhat";
 let ethers:typeof hhEthers | typeof l2ethers;
 ethers = hhEthers;
 if (network.name == "optimism") {
-  console.log("* Optimism ethers");
   ethers = l2ethers;
 }
 

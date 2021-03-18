@@ -80,6 +80,19 @@ namespace db {
     return c;
   }  
 
+  export async function getTxs(): Promise<any[]> {
+    let txs: any[] = [];
+    try { 
+      let res = await knex('txs').select();
+      txs = res;
+    }
+    catch(err) {
+      console.error(err);
+    }
+    console.log(txs);
+    return txs;
+  }
+
 }
 
 

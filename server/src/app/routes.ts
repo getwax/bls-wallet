@@ -1,12 +1,17 @@
 import { Router } from 'express';
 import agg from "./tx.controller.js";
+import admin from "./admin.controller.js";
+import { ADDRGETNETWORKPARAMS } from 'node:dns';
 
-const txRouter = Router();
 
-txRouter.get('/reset', agg.reset);
+export const txRouter = Router();
+
 txRouter.post('/add', agg.addTx);
 txRouter.get('/count', agg.countPending);
-
 txRouter.get('/send-batch', agg.sendTxs);
 
-export default txRouter;
+
+export const adminRouter = Router();
+
+adminRouter.get('/resetTxs', admin.resetTxs);
+adminRouter.post('/setAddresses', admin.setContractAddresses);

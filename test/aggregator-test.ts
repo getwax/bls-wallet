@@ -55,6 +55,7 @@ async function init() {
   
   // split supply amongst addresses, and approve transfer from wallet
   for (let i = 0; i<signers.length; i++) {
+    console.log(`Preparing account ${i}/${signers.length}`);
     await baseToken.connect(signers[0]).transfer(addresses[i], userStartAmount); // first account as aggregator, and holds token supply
     await baseToken.connect(signers[i]).approve(blsWallet.address, userStartAmount);
   }
@@ -83,68 +84,29 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-describe('BLSWallet', async function () {
-  
-  beforeEach(init);
-
-  it('should deposit balance from token to bls wallet', async function () {
-    await blsWallet.connect(signers[1]).deposit(blsWrapper.pubKeyForIndex(1), userStartAmount);
-    expect(await blsWallet.balanceOf(addresses[1])).to.equal(userStartAmount);
-  });
-
-  it('should set bls public key on deposit', async function () {
-    const INDEX = 1;
-    await blsWallet.connect(signers[INDEX]).deposit(blsWrapper.pubKeyForIndex(INDEX), userStartAmount);
-    let hexArray = blsWrapper.pubKeyForIndex(INDEX);
-    expect(await blsWallet.blsPubKeyOf(addresses[INDEX])).to.deep.equal(hexArray.map(n => BigNumber.from(n)));
-  });
-
-  it('should withdraw full balance from token to bls wallet', async function () {
-    await blsWallet.connect(signers[1]).withdraw();
-    expect(await blsWallet.balanceOf(addresses[1])).to.equal(0);
-  });
-
-  it('should reset bls public key on withdraw', async function () {
-    await blsWallet.connect(signers[1]).withdraw();
-    expect(await blsWallet.blsPubKeyOf(addresses[1])).to.eql(zeroBLSPubKey);
-  });
-
-    //TODO
-  // it("should process single", async function() {
-  //   const INDEX = 1;
-  //   await blsWallet.connect(signers[INDEX]).deposit(mcl.g2ToHex(keyPairs[INDEX].pubkey), userStartAmount);
-  //   const account1Balance = await blsWallet.balanceOf(addresses[INDEX]);
-
-  // });
-
-  it("should process multiple transfers", async function() {
+before(async function () {  
+    await init();
     await depositToWallet(signers);
-    const testTxs: BLSWrapper = createTestTxs();
-    
-    
-    let recipients = [];
-    let amounts = [];
-    const n = addresses.length;
-    for (let i=0; i<n; i++) {
-      const params = testTxs.paramSets[i];
-      recipients.push(params[0]);
-      amounts.push(params[1]);
-    }
-
-    const aggSignature = mcl.g1ToHex(mcl.aggregateRaw(testTxs.signatures));
-    let tx = await blsWallet.transferBatch(
-      aggSignature,
-      addresses,
-      testTxs.messages,
-      recipients,
-      amounts
+    await createTestTxs();
+    await blsWrapper.postAddresses(
+        baseToken.address,
+        blsWallet.address
     );
-    await tx.wait();
+});
 
-    expect(await blsWallet.balanceOf(addresses[0])).to.equal(0);
-    expect(await blsWallet.balanceOf(addresses[n-1])).to.equal(userStartAmount.mul(n));
+describe.only('BatchServer', async function () {
+  beforeEach(async function () {
+    await blsWrapper.resetDb();
   });
 
-  // TODO: test multiple txs from same address
+  it('should query server root', async function () {
+    expect(await blsWrapper.getRoot()).to.equal('Post txs to /tx/add.');
+  });
 
+  it('should add transactions', async function () {
+    await blsWrapper.postTx(0);
+    expect(await blsWrapper.getCount()).to.equal(1);
+    await blsWrapper.postTx(1);
+    expect(await blsWrapper.getCount()).to.equal(2);
+  });
 });

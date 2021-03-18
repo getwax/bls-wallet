@@ -33,32 +33,31 @@ namespace agg {
   }
 
   export async function sendTxs(req:Request, res:Response) {
+    let txs = await db.getTxs();
+    await wallet.sendTxs(txs);
+    res.end();
 
-    let body = '';
-    req.on('data', function (data) {
-      body += data;
-    });
-    req.on('end', async function () {
-      try {
-        let address = JSON.parse(body);
-        await wallet.init(address);
-        // res.writeHead(200, "Sent txs.", {"Content-Type": "text/plain"});
-      } catch(err){
-        console.log("ERR");
-        res.writeHead(500, "Failed to send txs", {"Content-Type": "text/plain"});
-      }
-      res.end();
-   });
+  //   let body = '';
+  //   req.on('data', function (data) {
+  //     body += data;
+  //   });
+  //   req.on('end', async function () {
+  //     try {
+  //       let address = JSON.parse(body);
+  //       await wallet.init(address);
+  //       // res.writeHead(200, "Sent txs.", {"Content-Type": "text/plain"});
+  //     } catch(err){
+  //       console.log("ERR");
+  //       res.writeHead(500, "Failed to send txs", {"Content-Type": "text/plain"});
+  //     }
+  //     res.end();
+  //  });
 
     // res.send(`Result: ${req.query.wallet_address}`);
     //if less than 3, send as singles, else
     //TODO: aggregate bls sigs, return: sig, senders, txs, params
   }
 
-  export async function reset(req:Request, res:Response) {
-    await db.resetTable();
-    res.end();
-  }
 }
 
 export default agg;

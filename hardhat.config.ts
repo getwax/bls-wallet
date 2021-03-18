@@ -43,6 +43,9 @@ const config: HardhatUserConfig = {
         `0x${process.env.PRIVATE_KEY_005}`
       ]
     }
+  },
+  mocha: {
+    timeout: 120000
   }
 };
 

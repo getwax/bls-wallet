@@ -46,9 +46,6 @@ class BLSWrapper {
     this.functionName = functionName;
     this.addresses = addresses;
     this.keyPairs = [];
-    for (let i=0; i<addresses.length; i++) {
-      this.keyPairs.push(mcl.newKeyPair());
-    }
 
     // Initialise transaction arrays
     this.messages = [];
@@ -56,6 +53,17 @@ class BLSWrapper {
     this.signatures = [];
     this.senderIndex = [];
     this.paramSets = [];
+  }
+
+  public async initKeyPairs() {
+    // prepare library for bls keypair generation
+    console.log("Initialising keyParis");
+    await mcl.init();
+    console.log(this.addresses);
+    for (let i=0; i<this.addresses.length; i++) {
+      this.keyPairs.push(mcl.newKeyPair());
+    }
+    console.log(this.keyPairs);
   }
 
   public pubKeyForIndex(i: number): mcl.solG2 {
@@ -121,10 +129,33 @@ class BLSWrapper {
     };
   }
   
+  public async triggerBatchTransfer() {
+    try {
+      let res: AxiosResponse = await axios.get('http://localhost:3000/tx/send-batch');
+      return res.data;
+    }
+    catch(err) {
+      console.log(err);
+    };
+  }
+
+  public async postAddresses(token, blsWallet) {
+    try {
+      let res = await axios.post('http://localhost:3000/admin/setAddresses', {
+        tokenAddress: token,
+        blsWalletAddress: blsWallet
+      });
+      return true;
+    }
+    catch(error) {
+      console.error(error)
+    };
+    return false;
+  }
 
   public async resetDb() {
     try {
-      await axios.get('http://localhost:3000/tx/reset');
+      await axios.get('http://localhost:3000/admin/resetTxs');
     }
     catch(err) {
       console.log(err);

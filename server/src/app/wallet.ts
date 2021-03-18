@@ -49,22 +49,39 @@ namespace wallet {
   }
 
   export async function setContractAddresses(erc20Address: string, blsWalletAddress: string) {
-    const erc20 = new Contract(
+    erc20 = new Contract(
       erc20Address,
       erc20ABI,
       aggregatorSigner
     );
-    console.log(await erc20.symbol());
-    // console.log(await erc20.balanceOf(aggregatorSigner.address));
 
-    const blsWallet = new Contract(
+    blsWallet = new Contract(
       blsWalletAddress,
       blsWalletABI,
       aggregatorSigner
     );
+    console.log(`Set Addresses: ${erc20}, ${blsWalletAddress}`);
   }
 
-  export function sendTx() {
+  export async function sendTxs(txs: any[]) {
+    let senders = txs.map( tx => tx.sender );
+    console.log(await Promise.all(senders.map(add => erc20.balanceOf(add))));
+
+    let recipients = txs.map( tx => tx.recipient );
+    let amounts = txs.map( tx => tx.amount );
+    let signatures = txs.map( tx => tx.signature );
+
+    // const aggSignature = mcl.g1ToHex(mcl.aggregateRaw(signatures));
+    // let tx = await blsWallet.transferBatch(
+    //   aggSignature,
+    //   txs.map( tx => tx.sender ),
+    //   txs.map( tx => tx.message),
+    //   txs.map( tx => tx.recipient ),
+    //   txs.map( tx => tx.amount )
+    // );
+    // await tx.wait();
+
+    console.log(await Promise.all(senders.map(add => erc20.balanceOf(add))));
 
   }
 

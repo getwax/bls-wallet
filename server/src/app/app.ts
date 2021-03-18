@@ -19,9 +19,13 @@ app.get('/', (req, res) => {
   console.log("get /");
 });
 
-import txRouter from './routes.js';
+import { txRouter } from './routes.js';
 const routes = express.Router();
 routes.use('/tx', txRouter);
+
+import { adminRouter } from './routes.js';
+routes.use('/admin', adminRouter);
+
 app.use(routes);
 
 const PORT = process.env.PORT || 3000;

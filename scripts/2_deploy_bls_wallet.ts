@@ -2,7 +2,14 @@ require('dotenv').config();
 import { Console } from "console";
 import { BigNumber, Signer, Contract } from "ethers";
 
-const ethers = require("hardhat").ethers;
+import { network, ethers as hhEthers, l2ethers } from "hardhat";
+
+let ethers:typeof hhEthers | typeof l2ethers;
+ethers = hhEthers;
+if (network.name == "optimism") {
+  ethers = l2ethers;
+}
+
 const utils = ethers.utils;
 
 let blsWallet: Contract;
