@@ -10,13 +10,10 @@ import { BigNumber, Signer, Contract } from "ethers";
 import * as mclwasm from "mcl-wasm";
 
 //bls
-import * as mcl from "../server/src/lib/hubble-contracts/ts/mcl";
+import * as mcl from "../server/src/lib/hubble-bls/src/mcl";
 
-import { keyPair } from "../server/src/lib/hubble-contracts/ts/mcl";
+import { keyPair } from "../server/src/lib/hubble-bls/src/mcl";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
-import { defaultAbiCoder } from "ethers/lib/utils";
-import { BlsSigner, aggregate } from '../server/src/lib/hubble-contracts/ts/blsSigner';
-import { RequestOptions } from 'https';
 
 /**
  * A class to handle general tx assembly, bls signing, and aggregation optimisations.

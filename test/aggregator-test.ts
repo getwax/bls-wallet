@@ -11,8 +11,6 @@ if (network.name == "optimism") {
 import { BigNumber, Signer, Contract } from "ethers";
 const utils = ethers.utils;
 
-import * as mcl from "../lib/hubble-contracts/ts/mcl";
-import { keyPair } from "../lib/hubble-contracts/ts/mcl";
 import { arrayify } from "ethers/lib/utils";
 
 import BLSWrapper from './blsWrapper'

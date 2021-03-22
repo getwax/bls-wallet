@@ -1,4 +1,3 @@
-import { aggregate } from "../lib/hubble-contracts/ts/blsSigner";
 import {Request, Response} from 'express';
 
 import db from './agg.db.js';

@@ -4,18 +4,8 @@ dotenv.config();
 import { ethers, Wallet } from "ethers";
 import { BigNumber, Signer, Contract, ContractInterface } from "ethers";
 
-import * as mcl from "../lib/hubble-contracts/ts/mcl";
-import { keyPair } from "../lib/hubble-contracts/ts/mcl";
-import { randHex, randFs, to32Hex } from "../lib/hubble-contracts/ts/utils";
-import { expandMsg, hashToField } from "../lib/hubble-contracts/ts/hashToField";
-import { readFile, readFileSync } from "fs";
-import agg from "./tx.controller";
-
-// const utils = ethers.utils;
-// const { randomBytes, hexlify, keccak256, arrayify } = utils;
-
-// const DOMAIN_HEX = keccak256("0xfeedbee5");
-// const DOMAIN = arrayify(DOMAIN_HEX);
+import * as mcl from "../lib/hubble-bls/src/mcl";
+import { readFileSync } from "fs";
 
 
 const g2PointOnIncorrectSubgroup = [
@@ -69,7 +59,7 @@ namespace wallet {
       "0x6F714e7b5a7F0913038664d932e8acd6fDf1Ad55",
       "0xbCb5DDb58A2466e528047703233aCd0D29d36937"
     )
-    let signatures = txs.map( tx => mcl.mcl.deserializeHexStrToG1(tx.signature) );
+    let signatures = txs.map( tx => mcl.getMclInstance().deserializeHexStrToG1(tx.signature) );
     let agg_d = mcl.aggregateRaw(signatures);
     const aggSignature = mcl.g1ToHex(agg_d);
     let tx = await blsWallet.transferBatch(

@@ -1,5 +1,6 @@
 import { BigNumber } from "ethers";
 import { sha256, arrayify, zeroPad } from "ethers/lib/utils";
+import { BadDomain } from "./exceptions";
 
 export const FIELD_ORDER = BigNumber.from(
     "0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47"
@@ -27,9 +28,8 @@ export function expandMsg(
     msg: Uint8Array,
     outLen: number
 ): Uint8Array {
-    if (domain.length > 32) {
-        throw new Error("bad domain size");
-    }
+    if (domain.length > 32)
+        throw new BadDomain(`Expect 32 bytes but got ${domain.length}`);
 
     const out: Uint8Array = new Uint8Array(outLen);
 

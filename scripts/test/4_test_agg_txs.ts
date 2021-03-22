@@ -18,7 +18,6 @@ if (network.name == "optimism") {
 const utils = ethers.utils;
 
 import { arrayify } from "ethers/lib/utils";
-import { init } from "../../lib/hubble-contracts/ts/mcl";
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 

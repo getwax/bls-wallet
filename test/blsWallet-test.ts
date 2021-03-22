@@ -84,7 +84,7 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-describe('BLSWallet', async function () {
+describe.only('BLSWallet', async function () {
   
   beforeEach(init);
 
@@ -118,7 +118,7 @@ describe('BLSWallet', async function () {
 
   // });
 
-  it.only("should process multiple transfers", async function() {
+  it("should process multiple transfers", async function() {
     await depositToWallet(signers);
     const testTxs: BLSWrapper = createTestTxs();
     
