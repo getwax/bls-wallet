@@ -1,17 +1,22 @@
-import { BigNumber, Signer, Contract } from "ethers";
-import { contractOptions } from "web3/eth/contract";
+import * as dotenv from "dotenv";
+dotenv.config();
 
-const ethers = require("hardhat").ethers;
-const utils = ethers.utils;
+import { ethers, Wallet } from "ethers";
+import { BigNumber, Signer, Contract, ContractInterface } from "ethers";
 
 import * as mcl from "../lib/hubble-contracts/ts/mcl";
 import { keyPair } from "../lib/hubble-contracts/ts/mcl";
 import { randHex, randFs, to32Hex } from "../lib/hubble-contracts/ts/utils";
-import { randomBytes, hexlify, arrayify } from "ethers/lib/utils";
 import { expandMsg, hashToField } from "../lib/hubble-contracts/ts/hashToField";
+import { readFile, readFileSync } from "fs";
+import agg from "./tx.controller";
 
-const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
-const DOMAIN = arrayify(DOMAIN_HEX);
+// const utils = ethers.utils;
+// const { randomBytes, hexlify, keccak256, arrayify } = utils;
+
+// const DOMAIN_HEX = keccak256("0xfeedbee5");
+// const DOMAIN = arrayify(DOMAIN_HEX);
+
 
 const g2PointOnIncorrectSubgroup = [
   "0x1ef4bf0d452e71f1fb23948695fa0a87a10f3d9dce9d32fadb94711f22566fb5",
@@ -20,11 +25,64 @@ const g2PointOnIncorrectSubgroup = [
   "0x0fe4020ece1b2849af46d308e9f201ac58230a45e124997f52c65d28fe3cf8f1"
 ];
 
-class Wallet {
+let erc20ABI: any;
+let blsWalletABI:any;
 
+let aggregatorSigner: Wallet;
 
+let blsWallet: Contract;
+let erc20: Contract;
+
+namespace wallet { 
+
+  export async function init(address: string) {
+    const provider = new ethers.providers.JsonRpcProvider();
+    aggregatorSigner = new ethers.Wallet(`${process.env.PRIVATE_KEY_AGG}`, provider);
+
+    erc20ABI = JSON.parse(
+      readFileSync("./contractABIs/MockERC20.json", "utf8")
+    ).abi;
+    blsWalletABI = JSON.parse(
+      readFileSync("./contractABIs/BLSWallet.json", "utf8")
+    ).abi;
+
+    mcl.init();
+  }
+
+  export async function setContractAddresses(erc20Address: string, blsWalletAddress: string) {
+    erc20 = new Contract(
+      erc20Address,
+      erc20ABI,
+      aggregatorSigner
+    );
+
+    blsWallet = new Contract(
+      blsWalletAddress,
+      blsWalletABI,
+      aggregatorSigner
+    );
+    console.log(`Set Addresses: ${erc20Address}, ${blsWalletAddress}`);
+  }
+
+  export async function sendTxs(txs: any[]) {
+    await setContractAddresses(
+      "0x6F714e7b5a7F0913038664d932e8acd6fDf1Ad55",
+      "0xbCb5DDb58A2466e528047703233aCd0D29d36937"
+    )
+    let signatures = txs.map( tx => mcl.mcl.deserializeHexStrToG1(tx.signature) );
+    let agg_d = mcl.aggregateRaw(signatures);
+    const aggSignature = mcl.g1ToHex(agg_d);
+    let tx = await blsWallet.transferBatch(
+      aggSignature,
+      txs.map( tx => tx.sender ),
+      txs.map( tx => tx.message),
+      txs.map( tx => tx.recipient),
+      txs.map( tx => tx.amount)
+    );
+    await tx.wait();
+
+  }
 
 }
 
-const wallet = new Wallet();
 export default wallet;

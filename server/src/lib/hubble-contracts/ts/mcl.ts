@@ -1,4 +1,4 @@
-const mcl = require("mcl-wasm");
+export const mcl = require("mcl-wasm");
 import { BigNumber, ethers } from "ethers";
 import { FIELD_ORDER, randHex } from "./utils";
 import { hashToField } from "./hashToField";

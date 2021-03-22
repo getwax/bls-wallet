@@ -1,8 +1,8 @@
 import { aggregate } from "../lib/hubble-contracts/ts/blsSigner";
 import {Request, Response} from 'express';
 
-import db from './agg.db';
-import wallet from './wallet';
+import db from './agg.db.js';
+import wallet from './wallet.js';
 
 namespace agg {
 
@@ -14,27 +14,50 @@ namespace agg {
     req.on('end', function () {
       try {
         db.addTx(JSON.parse(body));
-        res.writeHead(200, {"Content-Type": "text/plain"});
-        res.write("Added tx.\n"); //TODO: receipt
-        res.end();
-        return;
-      }catch (err){
-        console.log("ERR");
-        res.writeHead(500, {"Content-Type": "text/plain"});
-        res.write("Failed to add tx\n");
-        res.end();
-        return;
+        res.writeHead(200, "Added tx.", {"Content-Type": "text/plain"});
+      } catch(err){
+        console.log(`ERR adding: ${body}`);
+        res.writeHead(500, "Failed to add tx", {"Content-Type": "text/plain"});
       }
-    });
+      res.end();
+   });
 
     //TODO: send tx(s) after batch count, or N ms since last send.
   }
 
-  export function sendTxs(req:Request, res:Response) {
-    res.send(`Result: ${req.query.wallet_address}`);
+  export async function countPending(req:Request, res: Response) {
+    let c: number = await db.txCount();
+    console.log(`Returning count ${c}\n`);
+    res.send(c);
+    res.end();
+  }
+
+  export async function sendTxs(req:Request, res:Response) {
+    let txs = await db.getTxs();
+    await wallet.sendTxs(txs);
+    res.end();
+
+  //   let body = '';
+  //   req.on('data', function (data) {
+  //     body += data;
+  //   });
+  //   req.on('end', async function () {
+  //     try {
+  //       let address = JSON.parse(body);
+  //       await wallet.init(address);
+  //       // res.writeHead(200, "Sent txs.", {"Content-Type": "text/plain"});
+  //     } catch(err){
+  //       console.log("ERR");
+  //       res.writeHead(500, "Failed to send txs", {"Content-Type": "text/plain"});
+  //     }
+  //     res.end();
+  //  });
+
+    // res.send(`Result: ${req.query.wallet_address}`);
     //if less than 3, send as singles, else
     //TODO: aggregate bls sigs, return: sig, senders, txs, params
   }
+
 }
 
 export default agg;

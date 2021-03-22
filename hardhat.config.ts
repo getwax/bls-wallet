@@ -32,18 +32,20 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-
     },
     optimism: {
       url: `http://localhost:8545`,
       accounts: [
-        `0x${process.env.PRIVATE_KEY_1}`,
-        `0x${process.env.PRIVATE_KEY_2}`,
-        `0x${process.env.PRIVATE_KEY_3}`,
-        `0x${process.env.PRIVATE_KEY_4}`,
-        `0x${process.env.PRIVATE_KEY_5}`
+        `0x${process.env.PRIVATE_KEY_AGG}`,
+        `0x${process.env.PRIVATE_KEY_002}`,
+        `0x${process.env.PRIVATE_KEY_003}`,
+        `0x${process.env.PRIVATE_KEY_004}`,
+        `0x${process.env.PRIVATE_KEY_005}`
       ]
     }
+  },
+  mocha: {
+    timeout: 120000
   }
 };
 

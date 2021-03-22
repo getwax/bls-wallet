@@ -1,44 +1,98 @@
 import mysql from 'mysql';
+import Knex, { QueryBuilder } from 'knex';
+import { exit } from 'node:process';
+
+const PG_HOST = "localhost";
+const PG_USER = "bls";
+const PG_PASSWORD = "blstest";
+const PG_DB_NAME = "bls_aggregator";
+const PG_PORT = 5432;
 
 namespace db {
-  let con:mysql.Connection;
+  let knex:Knex;
 
-  export function init(connection:mysql.Connection) {
-    con = connection;
-    con.query("CREATE DATABASE IF NOT EXISTS bls_aggregator", function (err, result) {
-      if (err) throw err;
+  export async function init() {
+    knex = Knex({
+      client: 'pg',
+      connection: {
+        host : PG_HOST,
+        user : PG_USER,
+        password : PG_PASSWORD,
+        database : PG_DB_NAME,
+        port: PG_PORT || 3306
+      }
     });
-    con.query("USE bls_aggregator", function (err, result) {
-      if (err) throw err;
-    });
-    initTxTable();
+    
+    if (!(await knex.schema.hasTable('txs'))) {
+      createTable();
+    }
   }
 
-  function initTxTable() {
-    con.query("DROP TABLE IF EXISTS txs", function(err, result) {
-      if (err) throw err;
+  export async function resetTable() {
+    if (await knex.schema.hasTable('txs')) {
+      await knex.schema.dropTable('txs');
+    }
+    await createTable();
+  }
+
+  async function createTable() {
+    let table = knex.schema.createTable('txs', function(t) {
+      t.increments('tx_id').primary();
+      t.specificType('bls_pub_key', 'varchar(66)[]');
+      t.string('sender', 42);
+      t.specificType('message', 'varchar(66)[]');
+      // t.specificType('signature', 'bigint[]');
+      t.string('signature', 64);
+      t.string('recipient', 42);
+      t.string('amount', 66);
     });
-    con.query("CREATE TABLE IF NOT EXISTS txs( \
-      tx_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, \
-      bls_pub_0 INT, \
-      bls_pub_1 INT, \
-      bls_pub_2 INT, \
-      bls_pub_3 INT, \
-      sender BINARY(20), \
-      message_0 BINARY(32), \
-      message_1 BINARY(32), \
-      signature INT UNSIGNED, \
-      recipient BINARY(20), \
-      amount BINARY(32) \
-      );", function(err, result) {
-        if (err) throw err;
-    });
+    console.log("\n", table.toString());
+    try {
+      await table;
+    }
+    catch(err) {
+      console.error(err);
+    }
   }
 
   export function addTx(txData: any) {
-    // TODO: Store signed tx and bls sig  //TODO: incremental aggregation?
+    let insert = knex('txs').insert({
+      'bls_pub_key': txData.pubKey,
+      'sender': txData.sender,
+      'message': txData.messagePoints,
+      'signature': txData.signature,
+      'recipient': txData.recipient,
+      'amount': txData.amount
+    });
+    insert.then()
+    .catch( err => console.error(err) );
+  }
+
+  export async function txCount(): Promise<number> {
+    let c = -1;
+    try {
+      let res = await knex('txs').count();
+      c = res[0].count as number;
+    }
+    catch(err) {
+      console.error(err);
+    }
+    return c;
+  }  
+
+  export async function getTxs(): Promise<any[]> {
+    let txs: any[] = [];
+    try { 
+      let res = await knex('txs').select();
+      txs = res;
+    }
+    catch(err) {
+      console.error(err);
+    }
+    return txs;
   }
 
 }
+
 
 export default db;

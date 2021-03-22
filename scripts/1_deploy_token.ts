@@ -1,6 +1,15 @@
 import { BigNumber, Signer, Contract } from "ethers";
+import { readFile, readFileSync } from "fs";
 
-const ethers = require("hardhat").ethers;
+
+import { network, ethers as hhEthers, l2ethers } from "hardhat";
+
+let ethers:typeof hhEthers | typeof l2ethers;
+ethers = hhEthers;
+if (network.name == "optimism") {
+  ethers = l2ethers;
+}
+
 const utils = ethers.utils;
 
 const initialSupply = ethers.utils.parseUnits("1000000")

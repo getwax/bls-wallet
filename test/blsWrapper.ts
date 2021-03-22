@@ -7,8 +7,11 @@ import * as http from 'http';
 //web3
 import { BigNumber, Signer, Contract } from "ethers";
 
+import * as mclwasm from "mcl-wasm";
+
 //bls
 import * as mcl from "../server/src/lib/hubble-contracts/ts/mcl";
+
 import { keyPair } from "../server/src/lib/hubble-contracts/ts/mcl";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 import { defaultAbiCoder } from "ethers/lib/utils";
@@ -46,9 +49,6 @@ class BLSWrapper {
     this.functionName = functionName;
     this.addresses = addresses;
     this.keyPairs = [];
-    for (let i=0; i<addresses.length; i++) {
-      this.keyPairs.push(mcl.newKeyPair());
-    }
 
     // Initialise transaction arrays
     this.messages = [];
@@ -56,6 +56,14 @@ class BLSWrapper {
     this.signatures = [];
     this.senderIndex = [];
     this.paramSets = [];
+  }
+
+  public async initKeyPairs() {
+    // prepare library for bls keypair generation
+    await mcl.init();
+    for (let i=0; i<this.addresses.length; i++) {
+      this.keyPairs.push(mcl.newKeyPair());
+    }
   }
 
   public pubKeyForIndex(i: number): mcl.solG2 {
@@ -93,23 +101,70 @@ class BLSWrapper {
     this.paramSets.push(params);
   }
 
+  public async postLastTx() {
+    this.postTx(this.messages.length-1);
+  }
+
   public async postTx(i: number) {
-    axios
-      .post('http://localhost:3000/tx/add', {
+    try {
+      let res = await axios.post('http://localhost:3000/tx/add', {
         pubKey: this.pubKeyForIndex(i),
         sender: this.addresses[this.senderIndex[i]],
-        messagPoints: this.messages[i],
-        signature: this.signatures[i],
+        messagePoints: this.messages[i],
+        signature: this.signatures[i].serializeToHexStr(),
         recipient: this.paramSets[i][0],
         amount: this.paramSets[i][1]
-      })
-      .then(res => {
-        // console.log(`statusCode: ${res.status}`)
-        // console.log(`RESPONSE - data: ${res.data}`);
-      })
-      .catch(error => {
-        console.error(error)
       });
+      return true;
+    }
+    catch(error) {
+      console.error(error)
+    };
+    return false;
+  }
+
+  public async getCount() {
+    try {
+      let res: AxiosResponse = await axios.get('http://localhost:3000/tx/count');
+      return res.data;
+    }
+    catch(err) {
+      console.log(err);
+    };
+  }
+  
+  public async triggerBatchTransfer() {
+    try {
+      let res: AxiosResponse = await axios.get('http://localhost:3000/tx/send-batch');
+      return res.data;
+    }
+    catch(err) {
+      console.log("ERROR processing batch.");
+      // console.log(err);
+    };
+  }
+
+  public async postAddresses(token, blsWallet) {
+    try {
+      let res = await axios.post('http://localhost:3000/admin/setAddresses', {
+        tokenAddress: token,
+        blsWalletAddress: blsWallet
+      });
+      return true;
+    }
+    catch(error) {
+      console.error(error)
+    };
+    return false;
+  }
+
+  public async resetDb() {
+    try {
+      await axios.get('http://localhost:3000/admin/resetTxs');
+    }
+    catch(err) {
+      console.log(err);
+    };
   }
 
   public async getRoot() {
