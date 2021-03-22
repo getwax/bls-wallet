@@ -11,11 +11,11 @@ import { expandMsg, hashToField } from "../lib/hubble-contracts/ts/hashToField";
 import { readFile, readFileSync } from "fs";
 import agg from "./tx.controller";
 
-const utils = ethers.utils;
-const { randomBytes, hexlify, keccak256, arrayify } = utils;
+// const utils = ethers.utils;
+// const { randomBytes, hexlify, keccak256, arrayify } = utils;
 
-const DOMAIN_HEX = keccak256("0xfeedbee5");
-const DOMAIN = arrayify(DOMAIN_HEX);
+// const DOMAIN_HEX = keccak256("0xfeedbee5");
+// const DOMAIN = arrayify(DOMAIN_HEX);
 
 
 const g2PointOnIncorrectSubgroup = [
@@ -46,6 +46,7 @@ namespace wallet {
       readFileSync("./contractABIs/BLSWallet.json", "utf8")
     ).abi;
 
+    mcl.init();
   }
 
   export async function setContractAddresses(erc20Address: string, blsWalletAddress: string) {
@@ -60,28 +61,25 @@ namespace wallet {
       blsWalletABI,
       aggregatorSigner
     );
-    console.log(`Set Addresses: ${erc20}, ${blsWalletAddress}`);
+    console.log(`Set Addresses: ${erc20Address}, ${blsWalletAddress}`);
   }
 
   export async function sendTxs(txs: any[]) {
-    let senders = txs.map( tx => tx.sender );
-    console.log(await Promise.all(senders.map(add => erc20.balanceOf(add))));
-
-    let recipients = txs.map( tx => tx.recipient );
-    let amounts = txs.map( tx => tx.amount );
-    let signatures = txs.map( tx => tx.signature );
-
-    const aggSignature = mcl.g1ToHex(mcl.aggregateRaw(signatures));
+    await setContractAddresses(
+      "0x6F714e7b5a7F0913038664d932e8acd6fDf1Ad55",
+      "0xbCb5DDb58A2466e528047703233aCd0D29d36937"
+    )
+    let signatures = txs.map( tx => mcl.mcl.deserializeHexStrToG1(tx.signature) );
+    let agg_d = mcl.aggregateRaw(signatures);
+    const aggSignature = mcl.g1ToHex(agg_d);
     let tx = await blsWallet.transferBatch(
       aggSignature,
       txs.map( tx => tx.sender ),
       txs.map( tx => tx.message),
-      txs.map( tx => tx.recipient ),
-      txs.map( tx => tx.amount )
+      txs.map( tx => tx.recipient),
+      txs.map( tx => tx.amount)
     );
     await tx.wait();
-
-    console.log(await Promise.all(senders.map(add => erc20.balanceOf(add))));
 
   }
 

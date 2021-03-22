@@ -55,7 +55,7 @@ async function init() {
   
   // split supply amongst addresses, and approve transfer from wallet
   for (let i = 0; i<signers.length; i++) {
-    console.log(`Preparing account ${i}/${signers.length}`);
+    console.log(`Preparing account ${i+1}/${signers.length}`);
     await baseToken.connect(signers[0]).transfer(addresses[i], userStartAmount); // first account as aggregator, and holds token supply
     await baseToken.connect(signers[i]).approve(blsWallet.address, userStartAmount);
   }

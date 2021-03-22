@@ -47,14 +47,18 @@ async function init() {
   const MockERC20 = await ethers.getContractFactory("MockERC20");
   baseToken = await MockERC20.deploy("AnyToken","TOK", initialSupply);
   await baseToken.deployed();
+  console.log(`baseToken: ${baseToken.address}, main acc: ${addresses[0]}`);
 
   // deploy bls wallet with token address
   const BLSWallet = await ethers.getContractFactory("MockBLSWallet");
   blsWallet = await BLSWallet.deploy(addresses[0], baseToken.address); 
   await blsWallet.deployed();
+  console.log(`blsWallet: `);
+  console.log(`${blsWallet.address}`);
   
   // split supply amongst addresses, and approve transfer from wallet
   for (let i = 0; i<signers.length; i++) {
+    console.log(`Transfer and approve: ${i+1}/${signers.length}`);
     await baseToken.connect(signers[0]).transfer(addresses[i], userStartAmount); // first account as aggregator, and holds token supply
     await baseToken.connect(signers[i]).approve(blsWallet.address, userStartAmount);
   }
@@ -83,7 +87,7 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-describe.only('BLSWallet', async function () {
+describe('BLSWallet', async function () {
   
   beforeEach(init);
 
@@ -117,7 +121,7 @@ describe.only('BLSWallet', async function () {
 
   // });
 
-  it("should process multiple transfers", async function() {
+  it.only("should process multiple transfers", async function() {
     await depositToWallet(signers);
     const testTxs: BLSWrapper = createTestTxs();
     

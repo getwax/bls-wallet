@@ -41,7 +41,8 @@ namespace db {
       t.specificType('bls_pub_key', 'varchar(66)[]');
       t.string('sender', 42);
       t.specificType('message', 'varchar(66)[]');
-      t.specificType('signature', 'bigint[]');
+      // t.specificType('signature', 'bigint[]');
+      t.string('signature', 64);
       t.string('recipient', 42);
       t.string('amount', 66);
     });
@@ -59,11 +60,10 @@ namespace db {
       'bls_pub_key': txData.pubKey,
       'sender': txData.sender,
       'message': txData.messagePoints,
-      'signature': Object.values(txData.signature.a_),
+      'signature': txData.signature,
       'recipient': txData.recipient,
       'amount': txData.amount
     });
-    console.log("\nAdded tx");//, insert.toString());
     insert.then()
     .catch( err => console.error(err) );
   }
@@ -89,7 +89,6 @@ namespace db {
     catch(err) {
       console.error(err);
     }
-    console.log(txs);
     return txs;
   }
 

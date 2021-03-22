@@ -32,6 +32,8 @@ let addresses: string[];
 let erc20: Contract;
 let blsWallet: Contract;
 
+let initialSupply; 
+
 async function setup() {
   const provider = new ethers.providers.JsonRpcProvider();
   aggregatorSigner = new ethers.Wallet(`${process.env.PRIVATE_KEY_AGG}`, provider);
@@ -52,20 +54,28 @@ async function setup() {
 }
 
 async function printBalances() {
-  const balances = await Promise.all(addresses.map(add => erc20.balanceOf(add)));
+  const balances = await Promise.all(addresses.map(add => blsWallet.balanceOf(add)));
   console.log(balances);
 }
 
 async function sendTx(fromIndex, toIndex, amount) {
   console.log(`Sending from ${fromIndex} to ${toIndex}, ${amount}`);
   blsWrapper.addTx([addresses[toIndex], amount], fromIndex);
-  await blsWrapper.postTx(fromIndex);
+  await blsWrapper.postLastTx();
 }
 
 async function main() {
   await setup();
+
+  //approve and deposit tokens from erc20 to blsWallet
+  initialSupply = await erc20.balanceOf(addresses[0]);
+  if (initialSupply > 0) {
+    await erc20.approve(blsWallet.address, initialSupply);
+    await blsWallet.deposit(blsWrapper.pubKeyForIndex(0), initialSupply);
+  }
+
   await printBalances();
-  const initialBalance = (await erc20.balanceOf(addresses[0]))
+  const initialBalance = (await blsWallet.balanceOf(addresses[0]))
     .div(ACCOUNTS_LENGTH).toString();
   for (let i=0; i< ACCOUNTS_LENGTH; i++) {
     await sendTx(0, i, initialBalance);
@@ -73,7 +83,7 @@ async function main() {
   
   console.log(await blsWrapper.getCount());
 
-  //TODO: batch transfer
+  console.log(await blsWrapper.triggerBatchTransfer());
   await printBalances();
 
 }

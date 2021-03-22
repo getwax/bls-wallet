@@ -7,8 +7,11 @@ import * as http from 'http';
 //web3
 import { BigNumber, Signer, Contract } from "ethers";
 
+import * as mclwasm from "mcl-wasm";
+
 //bls
 import * as mcl from "../server/src/lib/hubble-contracts/ts/mcl";
+
 import { keyPair } from "../server/src/lib/hubble-contracts/ts/mcl";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 import { defaultAbiCoder } from "ethers/lib/utils";
@@ -98,13 +101,17 @@ class BLSWrapper {
     this.paramSets.push(params);
   }
 
+  public async postLastTx() {
+    this.postTx(this.messages.length-1);
+  }
+
   public async postTx(i: number) {
     try {
       let res = await axios.post('http://localhost:3000/tx/add', {
         pubKey: this.pubKeyForIndex(i),
         sender: this.addresses[this.senderIndex[i]],
         messagePoints: this.messages[i],
-        signature: this.signatures[i],
+        signature: this.signatures[i].serializeToHexStr(),
         recipient: this.paramSets[i][0],
         amount: this.paramSets[i][1]
       });
@@ -132,7 +139,8 @@ class BLSWrapper {
       return res.data;
     }
     catch(err) {
-      console.log(err);
+      console.log("ERROR processing batch.");
+      // console.log(err);
     };
   }
 

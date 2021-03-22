@@ -16,7 +16,7 @@ namespace agg {
         db.addTx(JSON.parse(body));
         res.writeHead(200, "Added tx.", {"Content-Type": "text/plain"});
       } catch(err){
-        console.log("ERR");
+        console.log(`ERR adding: ${body}`);
         res.writeHead(500, "Failed to add tx", {"Content-Type": "text/plain"});
       }
       res.end();
