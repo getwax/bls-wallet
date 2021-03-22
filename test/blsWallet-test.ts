@@ -11,8 +11,6 @@ if (network.name == "optimism") {
 import { BigNumber, Signer, Contract } from "ethers";
 const utils = ethers.utils;
 
-import * as mcl from "../lib/hubble-contracts/ts/mcl";
-import { keyPair } from "../lib/hubble-contracts/ts/mcl";
 import { arrayify } from "ethers/lib/utils";
 
 import BLSWrapper from './blsWrapper'
@@ -53,8 +51,7 @@ async function init() {
   const BLSWallet = await ethers.getContractFactory("MockBLSWallet");
   blsWallet = await BLSWallet.deploy(addresses[0], baseToken.address); 
   await blsWallet.deployed();
-  console.log(`blsWallet: `);
-  console.log(`${blsWallet.address}`);
+  console.log(`blsWallet: ${blsWallet.address}`);
   
   // split supply amongst addresses, and approve transfer from wallet
   for (let i = 0; i<signers.length; i++) {
@@ -135,6 +132,7 @@ describe('BLSWallet', async function () {
       amounts.push(params[1]);
     }
 
+    let mcl = blsWrapper.getMCL();
     const aggSignature = mcl.g1ToHex(mcl.aggregateRaw(testTxs.signatures));
     let tx = await blsWallet.transferBatch(
       aggSignature,

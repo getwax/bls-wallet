@@ -66,6 +66,10 @@ class BLSWrapper {
     }
   }
 
+  public getMCL(): any {
+    return mcl;
+  }
+
   public pubKeyForIndex(i: number): mcl.solG2 {
     return mcl.g2ToHex(this.keyPairs[i].pubkey);
   }
