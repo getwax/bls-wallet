@@ -9,7 +9,7 @@ import "./lib/IERC20.sol";
 
 import "hardhat/console.sol";
 
-interface IBLSWalletDemux {
+interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
 }
 
@@ -25,10 +25,10 @@ contract BLSWalletProxy
         admin = msg.sender;
     }
 
-    function registerDemux(
-        address demux
+    function registerGateway(
+        address verificationGateway
     ) internal {
-        IBLSWalletDemux(demux).walletCrossCheck(publicKeyHash);
+        IVerificationGateway(verificationGateway).walletCrossCheck(publicKeyHash);
     }
 
     function action(
@@ -54,13 +54,13 @@ contract BLSWalletProxy
 }
 
 /**
-@dev Optimisations to reduce calldata of BLSDemux multiCall
+@dev Optimisations to reduce calldata of VerificationGateway multiCall
 with shared params.
 */
 // contract BLSExpander {
-//     BLSWalletDemux blsWalletDemux;
-//     constructor(address demux) {
-//         blsWalletDemux = demux;
+//     VerificationGateway verificationGateway;
+//     constructor(address gateway) {
+//         verificationGateway = gateway;
 //     }
 
 //     function blsMultiCallSameContract(
@@ -71,7 +71,7 @@ with shared params.
 //     ) {
 //         //TODO:
 //         //length check
-//         // for each demux.callMulti(...)
+//         // for each gateway.callMulti(...)
 //     }
 
 //     function blsMultiCallSameCaller(
@@ -82,7 +82,7 @@ with shared params.
 //     ) {
 //         //TODO:
 //         //length check
-//         // for each demux.callMulti(...)
+//         // for each gateway.callMulti(...)
 //     }
 
 //     function blsMultiCallSameContractFunction(
@@ -93,12 +93,12 @@ with shared params.
 //     ) {
 //         //TODO:
 //         //length check
-//         // for each demux.callMulti(...)
+//         // for each gateway.callMulti(...)
 //     }
 
 // }
 
-contract BLSWalletDemux
+contract VerificationGateway
 {
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint256 constant BLS_LEN = 4;
@@ -174,7 +174,7 @@ contract BLSWalletDemux
                 ))
             )
         );
-        require(callSuccess && checkResult, "BLSDemux: sig not verified");
+        require(callSuccess && checkResult, "VerificationGateway: sig not verified");
         bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
 
         walletFromHash[publicKeyHash].action(
@@ -192,8 +192,8 @@ contract BLSWalletDemux
     //     bytes32[] calldata  publicKeyHashes
     // ) public {
     //     uint256 txCount = contractAddresses.length;
-    //     require(encodedFunctions.length == txCount, "BLSDemux: encodedFunction/contracts length mismatch.");
-    //     require(publicKeyHashes.length == txCount, "BLSDemux: publicKeyHash/contracts length mismatch.");
+    //     require(encodedFunctions.length == txCount, "VerificationGateway: encodedFunction/contracts length mismatch.");
+    //     require(publicKeyHashes.length == txCount, "VerificationGateway: publicKeyHash/contracts length mismatch.");
         
     //     uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
     //     uint256[2][] memory messages = new uint256[2][](txCount);
@@ -208,7 +208,7 @@ contract BLSWalletDemux
     //         );
     //     }
     //     (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, publicKeys, messages);
-    //     require(callSuccess && checkResult, "BLSDemux: All sigs not verified");
+    //     require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
 
     //     for (uint256 i = 0; i<txCount; i++) {
     //         walletFromHash[publicKeyHashes[i]].action(
