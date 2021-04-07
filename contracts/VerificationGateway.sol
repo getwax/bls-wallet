@@ -57,46 +57,113 @@ contract BLSWalletProxy
 @dev Optimisations to reduce calldata of VerificationGateway multiCall
 with shared params.
 */
-// contract BLSExpander {
-//     VerificationGateway verificationGateway;
-//     constructor(address gateway) {
-//         verificationGateway = gateway;
-//     }
+contract BLSExpander {
+    VerificationGateway verificationGateway;
+    constructor(address gateway) {
+        verificationGateway = VerificationGateway(gateway);
+    }
 
-//     function blsMultiCallSameContract(
-//         uint256[2] memory signature,
-//         address calldata contractAddress,
-//         bytes[] calldata encodedFunctions,
-//         bytes32[] calldata  publicKeyHashes
-//     ) {
-//         //TODO:
-//         //length check
-//         // for each gateway.callMulti(...)
-//     }
+    // eg approve and transfers of a token contract
+    function blsCallMultiSameContract(
+        uint256[2] memory signature,
+        address contractAddress,
+        bytes4[] calldata methodIDs,
+        bytes[] calldata encodedParamSets,
+        bytes32[] calldata  publicKeyHashes
+    ) public {
+        uint256 length = methodIDs.length;
+        address[] memory contractAddresses = new address[](length);
+        for (uint256 i=0; i<length; i++) {
+            contractAddresses[i] = contractAddress;
+        }
 
-//     function blsMultiCallSameCaller(
-//         uint256[2] memory signature,
-//         address[] calldata contractAddresses,
-//         bytes[] calldata encodedFunctions,
-//         bytes32 calldata  publicKeyHash
-//     ) {
-//         //TODO:
-//         //length check
-//         // for each gateway.callMulti(...)
-//     }
+        verificationGateway.blsCallMany(
+            signature,
+            contractAddresses,
+            methodIDs,
+            encodedParamSets,
+            publicKeyHashes
+        );
+    }
 
-//     function blsMultiCallSameContractFunction(
-//         uint256[2] memory signature,
-//         address calldata contractAddress,
-//         bytes calldata encodedFunction,
-//         bytes32[] calldata  publicKeyHashes
-//     ) {
-//         //TODO:
-//         //length check
-//         // for each gateway.callMulti(...)
-//     }
+    // eg a set of txs from one account
+    function blsCallMultiSameCaller(
+        uint256[2] memory signature,
+        address[] calldata contractAddresses,
+        bytes4[] calldata methodIDs,
+        bytes[] calldata encodedParamSets,
+        bytes32 publicKeyHash
+    ) public {
+        uint256 length = contractAddresses.length;
+        bytes32[] memory publicKeyHashes = new bytes32[](length);
+        for (uint256 i=0; i<length; i++) {
+            publicKeyHashes[i] = publicKeyHash;
+        }
 
-// }
+        verificationGateway.blsCallMany(
+            signature,
+            contractAddresses,
+            methodIDs,
+            encodedParamSets,
+            publicKeyHashes
+        );
+    }
+
+    // eg airdrop
+    function blsCallMultiSameCallerContractFunction(
+        uint256[2] memory signature,
+        address contractAddress,
+        bytes4 methodID,
+        bytes[] calldata encodedParamSets,
+        bytes32  publicKeyHash
+    ) public {
+        uint256 length = encodedParamSets.length;
+        address[] memory contractAddresses = new address[](length);
+        bytes4[] memory methodIDs = new bytes4[](length);
+        bytes32[] memory publicKeyHashes = new bytes32[](length);
+        for (uint256 i=0; i<length; i++) {
+            contractAddresses[i] = contractAddress;
+            methodIDs[i] = methodID;
+            publicKeyHashes[i] = publicKeyHash;
+        }
+
+        verificationGateway.blsCallMany(
+            signature,
+            contractAddresses,
+            methodIDs,
+            encodedParamSets,
+            publicKeyHashes
+        );
+    }
+
+    // eg identical txs from multiple accounts
+    function blsCallMultiSameContractFunctionParams(
+        uint256[2] memory signature,
+        address contractAddress,
+        bytes4 methodID,
+        bytes calldata encodedParams,
+        bytes32[] calldata  publicKeyHashes
+    ) public {
+        uint256 length = publicKeyHashes.length;
+        address[] memory contractAddresses = new address[](length);
+        bytes4[] memory methodIDs = new bytes4[](length);
+        bytes[] memory encodedParamSets = new bytes[](length);
+        for (uint256 i=0; i<length; i++) {
+            contractAddresses[i] = contractAddress;
+            methodIDs[i] = methodID;
+            encodedParamSets[i] = encodedParams;
+        }
+
+        verificationGateway.blsCallMany(
+            signature,
+            contractAddresses,
+            methodIDs,
+            encodedParamSets,
+            publicKeyHashes
+        );
+    }
+
+}
 
 contract VerificationGateway
 {
