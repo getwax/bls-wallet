@@ -184,39 +184,41 @@ contract VerificationGateway
         );
     }
 
-    // function blsMultiCall(
-    //     uint256[2] memory signature,
-    //     address[] calldata contractAddresses,
-    //     bytes4[] calldata methodIDs,
-    //     bytes[] calldata encodedParamSets,
-    //     bytes32[] calldata  publicKeyHashes
-    // ) public {
-    //     uint256 txCount = contractAddresses.length;
-    //     require(encodedFunctions.length == txCount, "VerificationGateway: encodedFunction/contracts length mismatch.");
-    //     require(publicKeyHashes.length == txCount, "VerificationGateway: publicKeyHash/contracts length mismatch.");
+    function blsCallMany(
+        uint256[2] memory signature,
+        address[] calldata contractAddresses,
+        bytes4[] calldata methodIDs,
+        bytes[] calldata encodedParamSets,
+        bytes32[] calldata  publicKeyHashes
+    ) public {
+        uint256 txCount = contractAddresses.length;
+        require(methodIDs.length == txCount, "VerificationGateway: methodIDs/contracts length mismatch.");
+        require(encodedParamSets.length == txCount, "VerificationGateway: encodedParamSets/contracts length mismatch.");
+        require(publicKeyHashes.length == txCount, "VerificationGateway: publicKeyHash/contracts length mismatch.");
         
-    //     uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
-    //     uint256[2][] memory messages = new uint256[2][](txCount);
-    //     for (uint256 i = 0; i<txCount; i++) {
-    //         publicKeys[i] = blsKeysFromHash[publicKeyHashes[i]];
-    //         messages[i] = messagePoint(
-    //             contractAddresses[i],
-    //             keccak256(abi.encodePacked(
-    //                 methodID,
-    //                 encodedParamSets[i]
-    //             ))
-    //         );
-    //     }
-    //     (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, publicKeys, messages);
-    //     require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+        uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
+        uint256[2][] memory messages = new uint256[2][](txCount);
+        for (uint256 i = 0; i<txCount; i++) {
+            publicKeys[i] = blsKeysFromHash[publicKeyHashes[i]];
+            messages[i] = messagePoint(
+                contractAddresses[i],
+                keccak256(abi.encodePacked(
+                    methodIDs[i],
+                    encodedParamSets[i]
+                ))
+            );
+        }
+        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, publicKeys, messages);
+        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
 
-    //     for (uint256 i = 0; i<txCount; i++) {
-    //         walletFromHash[publicKeyHashes[i]].action(
-    //             contractAddresses[i],
-    //             encodedFunctions[i]
-    //         );
-    //     }
-    // }
+        for (uint256 i = 0; i<txCount; i++) {
+            walletFromHash[publicKeyHashes[i]].action(
+                contractAddresses[i],
+                methodIDs[i],
+                encodedParamSets[i]
+            );
+        }
+    }
 
     function messagePoint(
         address contractAddress,

@@ -11,9 +11,9 @@ if (network.name == "optimism") {
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
 const utils = ethers.utils;
 
-import * as mcl from "../server/src/lib/hubble-bls/src/mcl";
+// import * as mcl from "../server/src/lib/hubble-bls/src/mcl";
 
-import { BlsSignerFactory, BlsSignerInterface } from "../server/src/lib/hubble-bls/src/signer";
+import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../server/src/lib/hubble-bls/src/signer";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
@@ -167,35 +167,8 @@ describe.only('VerificationGateway', async function () {
       .to.equal(blsKeyHash(blsSigner));
   });
 
-//   it('should set bls public key on deposit', async function () {
-//     const INDEX = 1;
-//     await verificationGateway.connect(signers[INDEX]).deposit(blsWrapper.pubKeyForIndex(INDEX), userStartAmount);
-//     let hexArray = blsWrapper.pubKeyForIndex(INDEX);
-//     expect(await blsWallet.blsPubKeyOf(addresses[INDEX])).to.deep.equal(hexArray.map(n => BigNumber.from(n)));
-//   });
-
-//   it('should withdraw full balance from token to bls wallet', async function () {
-//     await blsWallet.connect(signers[1]).withdraw();
-//     expect(await blsWallet.balanceOf(addresses[1])).to.equal(0);
-//   });
-
-//   it('should reset bls public key on withdraw', async function () {
-//     await blsWallet.connect(signers[1]).withdraw();
-//     expect(await blsWallet.blsPubKeyOf(addresses[1])).to.eql(zeroBLSPubKey);
-//   });
-
-//     //TODO
-//   // it("should process single", async function() {
-//   //   const INDEX = 1;
-//   //   await blsWallet.connect(signers[INDEX]).deposit(mcl.g2ToHex(keyPairs[INDEX].pubkey), userStartAmount);
-//   //   const account1Balance = await blsWallet.balanceOf(addresses[INDEX]);
-
-//   // });
-
-  it("should process individual transfers", async function() {
-    // const testTxs: BLSWrapper = createTestTxs();
+  it("should process individual calls", async function() {
     let blsWalletAddresses = await Promise.all(blsSigners.map( s => createBLSWallet(s)));
-
 
     // setup erc20 token
     const MockERC20 = await ethers.getContractFactory("MockERC20");
@@ -211,12 +184,13 @@ describe.only('VerificationGateway', async function () {
       );
     }
 
+    // check each wallet has start amount
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let walletBalance = await testToken.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(userStartAmount);
     }
 
-    //bls transfer all wallet balances to first wallet
+    // bls transfer each wallet's balance to first wallet
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       await transferFrom(
         blsSigners[i],
@@ -225,6 +199,7 @@ describe.only('VerificationGateway', async function () {
       );
     }
 
+    // check first wallet full and others empty
     let totalAmount = userStartAmount.mul(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let walletBalance = await testToken.balanceOf(blsWalletAddresses[i]);
@@ -232,7 +207,55 @@ describe.only('VerificationGateway', async function () {
     }
   });
 
-  // it("should process multiple transfers", async function() {
+  it.only("should process multiple transfers", async function() {
+    let blsWalletAddresses = await Promise.all(blsSigners.map( s => createBLSWallet(s)));
+
+    // setup erc20 token
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    testToken = await MockERC20.deploy("AnyToken","TOK", initialSupply);
+    await testToken.deployed();
+
+    // split supply amongst bls wallet addresses
+    for (let i = 0; i<blsWalletAddresses.length; i++) {
+      // first account as aggregator, and holds token supply
+      await testToken.connect(signers[0]).transfer(
+        blsWalletAddresses[i],
+        userStartAmount
+      );
+    }
+
+    // encode transfer of start amount to first wallet
+    let encodedFunction = testToken.interface.encodeFunctionData(
+      "transfer",
+      [blsWalletAddresses[0], userStartAmount.toString()]
+    );
+    let dataToSign = dataPayload(
+      testToken.address,
+      encodedFunction
+    );
+
+    // each bls wallet to sign same transfer data
+    let signatures = blsSigners.map(b => b.sign(dataToSign));
+    let aggSignature = aggregate(signatures);
+
+    let length = signatures.length;
+
+    // can be called by any ecdsa wallet
+    await verificationGateway.blsCallMany(
+      aggSignature,
+      Array(length).fill(testToken.address), // call to same contract
+      Array(length).fill(encodedFunction.substring(0,10)), // same function
+      Array(length).fill('0x'+encodedFunction.substr(10)), // same params
+      blsSigners.map(blsKeyHash) // corresponding bls signers
+    );
+
+    let totalAmount = userStartAmount.mul(blsWalletAddresses.length);
+    for (let i = 0; i<blsWalletAddresses.length; i++) {
+      let walletBalance = await testToken.balanceOf(blsWalletAddresses[i]);
+      expect(walletBalance).to.equal(i==0?totalAmount:0);
+    }
+
+
   //   let recipients = [];
   //   let amounts = [];
   //   const n = addresses.length;
@@ -255,7 +278,7 @@ describe.only('VerificationGateway', async function () {
 
   //   expect(await blsWallet.balanceOf(addresses[0])).to.equal(0);
   //   expect(await blsWallet.balanceOf(addresses[n-1])).to.equal(userStartAmount.mul(n));
-  // });
+  });
 
   // TODO: test multiple txs from same address
 
