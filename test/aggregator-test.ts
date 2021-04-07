@@ -86,10 +86,10 @@ before(async function () {
     await init();
     await depositToWallet(signers);
     await createTestTxs();
-    await blsWrapper.postAddresses(
-        baseToken.address,
-        blsWallet.address
-    );
+    // await blsWrapper.postAddresses(
+    //     baseToken.address,
+    //     blsWallet.address
+    // );
 });
 
 describe('BatchServer', async function () {

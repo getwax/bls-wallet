@@ -84,7 +84,7 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-describe.only('BLSWallet', async function () {
+describe('BLSWallet', async function () {
   
   beforeEach(init);
 
