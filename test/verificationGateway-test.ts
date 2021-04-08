@@ -34,6 +34,8 @@ let verificationGateway: Contract;
 let BLSExpander: ContractFactory;
 let blsExpander: Contract;
 
+let BLSWalletProxy: ContractFactory;
+
 let testToken: Contract;
 const initialSupply = ethers.utils.parseUnits("1000000")
 const ACCOUNTS_LENGTH = 5;
@@ -55,9 +57,11 @@ async function init() {
   blsExpander = await BLSExpander.deploy(verificationGateway.address); 
   await blsExpander.deployed();
 
+  BLSWalletProxy = await ethers.getContractFactory("BLSWalletProxy");
+
 }
 
-describe('VerificationGateway', async function () {
+describe.only('VerificationGateway', async function () {
   
   beforeEach(init);
 
@@ -65,7 +69,6 @@ describe('VerificationGateway', async function () {
     let blsSigner = blsSigners[0];  
     let walletAddress = await createBLSWallet(blsSigner);
 
-    const BLSWalletProxy = await ethers.getContractFactory("BLSWalletProxy");
     let blsWalletProxy = BLSWalletProxy.attach(walletAddress);
     expect(await blsWalletProxy.publicKeyHash())
       .to.equal(blsKeyHash(blsSigner));
@@ -97,6 +100,7 @@ describe('VerificationGateway', async function () {
     // bls transfer each wallet's balance to first wallet
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       await transferFrom(
+        await BLSWalletProxy.attach(blsWalletAddresses[i]).nonce(),
         blsSigners[i],
         blsWalletAddresses[0],
         userStartAmount
@@ -133,31 +137,36 @@ describe('VerificationGateway', async function () {
       "transfer",
       [blsWalletAddresses[0], userStartAmount.toString()]
     );
-    let dataToSign = dataPayload(
-      testToken.address,
-      encodedFunction
-    );
+
+    let signatures: any[] = new Array(blsWalletAddresses.length);
+    for (let i = 0; i<blsWalletAddresses.length; i++) {
+      let dataToSign = dataPayload(
+        await BLSWalletProxy.attach(blsWalletAddresses[i]).nonce(),
+        testToken.address,
+        encodedFunction
+      );
+      signatures[i] = blsSigners[i].sign(dataToSign);
+    }
 
     // each bls wallet to sign same transfer data
-    let signatures = blsSigners.map(b => b.sign(dataToSign));
+    // let signatures = blsSigners.map(b => b.sign(dataToSign));
     let aggSignature = aggregate(signatures);
 
-    let length = signatures.length;
-
+    // can be called by any ecdsa wallet
     await blsExpander.blsCallMultiSameContractFunctionParams(
+      blsSigners.map(blsKeyHash),
       aggSignature,
       testToken.address,
       encodedFunction.substring(0,10),
-      '0x'+encodedFunction.substr(10),
-      blsSigners.map(blsKeyHash)
+      '0x'+encodedFunction.substr(10)
     );
-    // can be called by any ecdsa wallet
+    // let length = signatures.length;
     // await verificationGateway.blsCallMany(
+    //   blsSigners.map(blsKeyHash), // corresponding bls signers
     //   aggSignature,
     //   Array(length).fill(testToken.address), // call to same contract
     //   Array(length).fill(encodedFunction.substring(0,10)), // same function
-    //   Array(length).fill('0x'+encodedFunction.substr(10)), // same params
-    //   blsSigners.map(blsKeyHash) // corresponding bls signers
+    //   Array(length).fill('0x'+encodedFunction.substr(10)) // same params
     // );
 
     let totalAmount = userStartAmount.mul(blsWalletAddresses.length);
@@ -183,23 +192,33 @@ function blsKeyHash(blsSigner: BlsSignerInterface) {
   ));
 }
 
-function dataPayload(contractAddress: any, encodedFunction: string) {
+function dataPayload(
+  nonce: any,
+  contractAddress: any,
+  encodedFunction: string
+) {
   let encodedFunctionHash = utils.solidityKeccak256(
     ["bytes"],
     [encodedFunction]
   );
   return utils.solidityPack(
-    ["address","bytes32"],
-    [contractAddress.toString(), encodedFunctionHash]
+    ["uint256","address","bytes32"],
+    [
+      nonce,
+      contractAddress.toString(),
+      encodedFunctionHash
+    ]
   ); 
 }
 
 async function gatewayCall(
+  blsSigner,
+  nonce,
   contractAddress,
-  encodedFunction,
-  blsSigner
+  encodedFunction
 ) {
   let dataToSign = dataPayload(
+    nonce,
     contractAddress,
     encodedFunction
   );
@@ -207,11 +226,11 @@ async function gatewayCall(
 
   // can be called by any ecdsa wallet
   await verificationGateway.blsCall(
+    blsKeyHash(blsSigner),
     signature,
     contractAddress,
     encodedFunction.substring(0,10),
-    '0x'+encodedFunction.substr(10),
-    blsKeyHash(blsSigner)
+    '0x'+encodedFunction.substr(10)
   );
 }
 
@@ -224,7 +243,8 @@ async function createBLSWallet(blsSigner: BlsSignerInterface): Promise<any> {
     [blsPubKeyHash]
   );
 
-  let dataToSign = dataPayload(
+  let dataToSign = await dataPayload(
+    0,
     verificationGateway.address,
     encodedFunction
   );
@@ -233,17 +253,18 @@ async function createBLSWallet(blsSigner: BlsSignerInterface): Promise<any> {
 
   // can be called by any ecdsa wallet
   await verificationGateway.blsCallCreate(
+    blsSigner.pubkey,
     signature,
     verificationGateway.address,
     encodedFunction.substring(0,10),
-    '0x'+encodedFunction.substr(10),
-    blsSigner.pubkey
+    '0x'+encodedFunction.substr(10)
   );
 
   return await verificationGateway.walletFromHash(blsPubKeyHash);
 }
 
 async function transferFrom(
+  nonce: any,
   sender: BlsSignerInterface,
   recipient: string,
   amount: BigNumber
@@ -252,5 +273,5 @@ async function transferFrom(
     "transfer",
     [recipient, amount.toString()]
   );
-  gatewayCall(testToken.address, encodedFunction, sender);
+  gatewayCall(sender, nonce, testToken.address, encodedFunction);
 }
