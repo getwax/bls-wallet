@@ -3,10 +3,10 @@ import { Application, Router } from "./deps.ts";
 import txController from "./txController.ts";
 import admin from "./adminController.ts";
 
-export const txRouter = new Router();
+export const txRouter = new Router({prefix: "/tx/"});
 
-txRouter.post("/tx/add", txController.addTx);
-txRouter.get("/tx/count", txController.countPending);
+txRouter.post("add", txController.addTx);
+txRouter.get("count", txController.countPending);
 // txRouter.get('/send-batch', agg.sendTxs);
 
 

@@ -27,4 +27,5 @@ app.use(async ({ response }, nextFn) => {
 console.log(`Listening on port...`);
 
 await app.listen({ port: 3000 });
-// await client.end();
+
+await client.disconnect();

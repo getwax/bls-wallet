@@ -7,12 +7,12 @@ import type { TransactionData } from './txService.ts'
 
 class TxController {
 
-async addTx(context: RouterContext) {
-  const txData: TransactionData = await (await context.request.body()).value;
-  await txService.addTx(txData);
+  async addTx(context: RouterContext) {
+    const txData: TransactionData = await (await context.request.body()).value;
+    await txService.addTx(txData);
 
-//   //TODO: send tx(s) after batch count, or N ms since last send.
-}
+    //TODO: send tx(s) after batch count, or N ms since last send.
+  }
 
   async countPending(context: RouterContext) {
     const c: number = await txService.txCount();
@@ -21,11 +21,11 @@ async addTx(context: RouterContext) {
     context.response.body = c;
   }
 
-// export async function sendTxs(req:Request, res:Response) {
-//   let txs = await db.getTxs();
-//   await wallet.sendTxs(txs);
-//   res.end();
-// }
+  // export async function sendTxs(req:Request, res:Response) {
+  //   let txs = await db.getTxs();
+  //   await wallet.sendTxs(txs);
+  //   res.end();
+  // }
 }
 
 export default new TxController();
