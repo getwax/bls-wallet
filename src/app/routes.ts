@@ -7,10 +7,9 @@ export const txRouter = new Router({prefix: "/tx/"});
 
 txRouter.post("add", txController.addTx);
 txRouter.get("count", txController.countPending);
-// txRouter.get('/send-batch', agg.sendTxs);
+txRouter.get("send-batch", txController.sendTxs);
 
+export const adminRouter = new Router({prefix: "/admin/"});
 
-// export const adminRouter = new Router();
-
-// adminRouter.get('/resetTxs', admin.resetTxs);
-// adminRouter.post('/setAddresses', admin.setContractAddresses);
+adminRouter.get('/resetTxs', admin.resetTxs);
+adminRouter.post('/setAddresses', admin.setContractAddresses);

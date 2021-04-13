@@ -1,3 +1,6 @@
+import { config as dotEnvConfig } from 'https://deno.land/x/dotenv/mod.ts';
+export { dotEnvConfig };
+
 // Oak framework dependencies
 export {
   Application,
@@ -22,5 +25,3 @@ export {
 export type {
     TableOptions
 } from "https://deno.land/x/postquery/mod.ts"
-
-

@@ -9,4 +9,4 @@ Uses Deno, Oak, Postgresql.
 ## Running
 Can be run locally or hosted.
 
-`deno run --allow-net --unstable src/app/app.ts`
+`deno run --allow-net --allow-env --allow-read  --unstable src/app/app.ts`

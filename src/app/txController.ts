@@ -3,7 +3,7 @@ import { RouterContext } from "./deps.ts";
 import txService from './txService.ts';
 import type { TransactionData } from './txService.ts'
 
-// import wallet from './wallet.ts';
+import walletService from './walletService.ts';
 
 class TxController {
 
@@ -21,11 +21,10 @@ class TxController {
     context.response.body = c;
   }
 
-  // export async function sendTxs(req:Request, res:Response) {
-  //   let txs = await db.getTxs();
-  //   await wallet.sendTxs(txs);
-  //   res.end();
-  // }
+  async sendTxs(context: RouterContext) {
+    const txs: TransactionData[] = await txService.getTxs();
+    await walletService.sendTxs(txs);
+  }
 }
 
 export default new TxController();
