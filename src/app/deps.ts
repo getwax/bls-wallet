@@ -17,6 +17,7 @@ export type {
 export { Client } from "https://deno.land/x/postgres/mod.ts"
 export {
     QueryClient,
+    QueryTable,
     DataType,
     Constraint,
     CreateTableMode,

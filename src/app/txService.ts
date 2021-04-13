@@ -1,24 +1,59 @@
-import { client, txTable, TransactionData } from "./database.ts";
+import { client } from "./database.ts";
+import {
+  DataType,
+  TableOptions,
+  QueryTable,
+  Constraint,
+  CreateTableMode
+} from "./deps.ts";
 
-export type { TransactionData } from "./database.ts";
+export type TransactionData = {
+  txId?: number,
+  pubKey: string[]
+  sender: string,
+  message: string[],
+  signature: string,
+  recipient: string,
+  amount: string
+};
 
 class TxService {
 
+  static txOptions: TableOptions = {
+    txId: { type: DataType.Serial, constrait: Constraint.PrimaryKey },
+    pubKey: { type: DataType.VarChar, length: 66, array: true },
+    sender: { type: DataType.VarChar, length: 42 },
+    message: { type: DataType.VarChar, length: 66, array: true },
+    signature: { type: DataType.VarChar, length: 64 },
+    recipient: { type: DataType.VarChar, length: 42 },
+    amount: { type: DataType.VarChar, length: 66 },
+  };
+
+  txTable: QueryTable;
+
+  constructor() {
+    this.txTable = client.table<TransactionData>("txs");
+  }
+
+  async init() {
+    await this.txTable.create(TxService.txOptions, CreateTableMode.IfNotExists);
+  }
+
   async addTx(txData: TransactionData) {
-      await txTable.insert(txData);
+    await this.txTable.insert(txData);
   }
 
   async txCount(): Promise<number> {
-    const result = await client.query(`SELECT COUNT(*) FROM ${txTable.name}`);
+    const result = await client.query(`SELECT COUNT(*) FROM ${this.txTable.name}`);
     return result[0].count as number;
   }
 
   async getTxs(): Promise<any[]> {
-    return await client.query(`SELECT * FROM ${txTable.name}`);
+    return await client.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
   async resetTable() {
-    await txTable.delete();
+    await this.txTable.create(TxService.txOptions, CreateTableMode.DropIfExists);
   }
 }
 

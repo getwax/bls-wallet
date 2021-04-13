@@ -12,6 +12,8 @@ class TxController {
     await txService.addTx(txData);
 
     //TODO: send tx(s) after batch count, or N ms since last send.
+
+    context.response.body = "Transaction added";
   }
 
   async countPending(context: RouterContext) {
@@ -23,7 +25,10 @@ class TxController {
 
   async sendTxs(context: RouterContext) {
     const txs: TransactionData[] = await txService.getTxs();
+    console.log(`Sending ${txs.length} txs`);
     await walletService.sendTxs(txs);
+
+    context.response.body = "Sent txs";
   }
 }
 

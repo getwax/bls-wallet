@@ -11,11 +11,13 @@ class TxController {
     walletService.setContractAddresses(addresses);
 
     //TODO: send tx(s) after batch count, or N ms since last send.
+
+    context.response.body = "Contract addresses set";
   }
 
   async resetTxs(context: RouterContext) {
-    console.log("resetting transactions");
     await txService.resetTable();
+    context.response.body = "Transactions reset";
   }
 
 }
