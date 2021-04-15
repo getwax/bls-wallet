@@ -1,3 +1,7 @@
+import { config as dotEnvConfig } from 'https://deno.land/x/dotenv/mod.ts';
+export { dotEnvConfig };
+
+
 // Oak framework dependencies
 export {
   Application,
@@ -10,10 +14,15 @@ export type {
   RouterContext
 } from "https://deno.land/x/oak/mod.ts";
 
+
 // Database dependencies
-export { Client } from "https://deno.land/x/postgres/mod.ts"
+
+/** @dev postquery uses deno.land/x/postgres
+ * deno 1.9.0 introduced an error to in this.
+ */
 export {
     QueryClient,
+    QueryTable,
     DataType,
     Constraint,
     CreateTableMode,
@@ -22,5 +31,3 @@ export {
 export type {
     TableOptions
 } from "https://deno.land/x/postquery/mod.ts"
-
-

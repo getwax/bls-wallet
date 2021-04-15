@@ -1,14 +1,18 @@
 import { Application } from "./deps.ts";
 
-import { txRouter /*, adminRouter*/ } from "./routes.ts";
-import { client } from "./database.ts";
+import { txRouter, adminRouter } from "./routes.ts";
+import * as db from "./database.ts";
+
+await db.initTables();
 
 const app = new Application();
 
 app.use(txRouter.routes());
 app.use(txRouter.allowedMethods());
-// app.use(adminRouter.routes());
-// app.use(adminRouter.allowedMethods());
+
+app.use(adminRouter.routes());
+app.use(adminRouter.allowedMethods());
+
 app.use(({ response }) => {
   response.status = 404;
   response.body = { msg: "Not Found" };
@@ -22,9 +26,9 @@ app.use(async ({ response }, nextFn) => {
   }
 });
 
-// await client.connect();
+const port = 3000;
+console.log(`Listening on port ${port}...`);
 
-console.log(`Listening on port...`);
+await app.listen({ port: port });
 
-await app.listen({ port: 3000 });
-// await client.end();
+await db.client.disconnect();
