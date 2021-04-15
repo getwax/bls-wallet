@@ -17,26 +17,29 @@ export type TransactionData = {
   amount: string
 };
 
-class TxService {
+const TX_TABLE_NAME = "txs";
 
-  static txOptions: TableOptions = {
-    txId: { type: DataType.Serial, constrait: Constraint.PrimaryKey },
-    pubKey: { type: DataType.VarChar, length: 66, array: true },
-    sender: { type: DataType.VarChar, length: 42 },
-    message: { type: DataType.VarChar, length: 66, array: true },
-    signature: { type: DataType.VarChar, length: 64 },
-    recipient: { type: DataType.VarChar, length: 42 },
-    amount: { type: DataType.VarChar, length: 66 },
-  };
+const txOptions: TableOptions = {
+  txId: { type: DataType.Serial, constrait: Constraint.PrimaryKey },
+  pubKey: { type: DataType.VarChar, length: 66, array: true },
+  sender: { type: DataType.VarChar, length: 42 },
+  message: { type: DataType.VarChar, length: 66, array: true },
+  signature: { type: DataType.VarChar, length: 64 },
+  recipient: { type: DataType.VarChar, length: 42 },
+  amount: { type: DataType.VarChar, length: 66 },
+};
+
+
+class TxService {
 
   txTable: QueryTable;
 
   constructor() {
-    this.txTable = client.table<TransactionData>("txs");
+    this.txTable = client.table<TransactionData>(TX_TABLE_NAME);
   }
 
   async init() {
-    await this.txTable.create(TxService.txOptions, CreateTableMode.IfNotExists);
+    await this.txTable.create(txOptions, CreateTableMode.IfNotExists);
   }
 
   async addTx(txData: TransactionData) {
@@ -53,7 +56,7 @@ class TxService {
   }
 
   async resetTable() {
-    await this.txTable.create(TxService.txOptions, CreateTableMode.DropIfExists);
+    await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
   }
 }
 

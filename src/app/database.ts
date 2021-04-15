@@ -4,8 +4,7 @@ const PG_HOST = "localhost";
 const PG_PORT = 5432;
 const PG_USER = "bls";
 const PG_PASSWORD = "blstest";
-export const PG_DB_NAME = "bls_aggregator";
-export const TX_TABLE_NAME = "txs";
+const PG_DB_NAME = "bls_aggregator";
 
 const client = new QueryClient({
   hostname : PG_HOST,
