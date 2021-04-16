@@ -20,3 +20,7 @@ Uses Deno, Oak, Postgresql.
 Can be run locally or hosted.
 
 `deno run --allow-net --allow-env --allow-read  --unstable src/app/app.ts`
+
+# Development
+
+VSCode extension 3.2.0 is required since the latest (3.3.0) is tied to  deno 1.9.0
