@@ -7,21 +7,20 @@ const PG_PASSWORD = "blstest";
 const PG_DB_NAME = "bls_aggregator";
 
 const client = new QueryClient({
-  hostname : PG_HOST,
+  hostname: PG_HOST,
   port: PG_PORT,
-  user : PG_USER,
-  password : PG_PASSWORD,
-  database : PG_DB_NAME,
+  user: PG_USER,
+  password: PG_PASSWORD,
+  database: PG_DB_NAME,
   tls: {
-    enforce: false
-  }
-})
+    enforce: false,
+  },
+});
 
 import txService from "./txService.ts";
 
 export async function initTables() {
   await txService.init();
 }
-
 
 export { client };

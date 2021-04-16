@@ -1,6 +1,6 @@
 import { Application } from "./deps.ts";
 
-import { txRouter, adminRouter } from "./routes.ts";
+import { adminRouter, txRouter } from "./routes.ts";
 import * as db from "./database.ts";
 
 await db.initTables();

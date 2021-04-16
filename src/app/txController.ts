@@ -1,12 +1,11 @@
 import { RouterContext } from "./deps.ts";
 
-import txService from './txService.ts';
-import type { TransactionData } from './txService.ts'
+import txService from "./txService.ts";
+import type { TransactionData } from "./txService.ts";
 
-import walletService from './walletService.ts';
+import walletService from "./walletService.ts";
 
 class TxController {
-
   async addTx(context: RouterContext) {
     const txData: TransactionData = await (await context.request.body()).value;
     await txService.addTx(txData);

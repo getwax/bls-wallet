@@ -1,20 +1,20 @@
 import { client } from "./database.ts";
 import {
-  DataType,
-  TableOptions,
-  QueryTable,
   Constraint,
-  CreateTableMode
+  CreateTableMode,
+  DataType,
+  QueryTable,
+  TableOptions,
 } from "./deps.ts";
 
 export type TransactionData = {
-  txId?: number,
-  pubKey: string[]
-  sender: string,
-  message: string[],
-  signature: string,
-  recipient: string,
-  amount: string
+  txId?: number;
+  pubKey: string[];
+  sender: string;
+  message: string[];
+  signature: string;
+  recipient: string;
+  amount: string;
 };
 
 const TX_TABLE_NAME = "txs";
@@ -29,9 +29,7 @@ const txOptions: TableOptions = {
   amount: { type: DataType.VarChar, length: 66 },
 };
 
-
 class TxService {
-
   txTable: QueryTable;
 
   constructor() {
@@ -47,7 +45,9 @@ class TxService {
   }
 
   async txCount(): Promise<number> {
-    const result = await client.query(`SELECT COUNT(*) FROM ${this.txTable.name}`);
+    const result = await client.query(
+      `SELECT COUNT(*) FROM ${this.txTable.name}`,
+    );
     return result[0].count as number;
   }
 
