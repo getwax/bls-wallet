@@ -1,4 +1,4 @@
-import mclImport from "https://cdn.skypack.dev/mcl-wasm@v0.7.6?dts";
+import mclImport from "https://cdn.skypack.dev/mcl-wasm@v0.7.6";
 
 // deno-lint-ignore no-explicit-any
 export const mcl = mclImport as any;
