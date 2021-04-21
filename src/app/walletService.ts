@@ -1,26 +1,8 @@
 import { dotEnvConfig } from "./deps.ts";
 
-// import { ethers } from "./deps.ts";
-
-import {
-  BigNumber,
-  Contract,
-  ethers,
-  Wallet,
-  // } from "../lib/ethers-5.0.esm.min.js"; // https://cdn.ethers.io/lib/ethers-5.0.esm.min.js
-} from "https://unpkg.com/ethers/dist/ethers.esm.js";
-// } from "https://cdn.skypack.dev/ethers"; // error: "hash.js" no dep found
-// } from "https://cdn.skypack.dev/ethers?min"; // error: reference in own type annotation
-
-// import dew from "https://dev.jspm.io/ethers";
-// const ContractClass = (dew as any).Contract;
-// export type Contract = typeof ContractClass;
-
-// import tsGenerator from 'https://cdn.skypack.dev/@typechain/ts-generator';
-
 import type { TransactionData } from "./txService.ts";
 
-// import * as mcl from "https://raw.githubusercontent.com/thehubbleproject/hubble-contracts/master/ts/mcl.ts";
+import { BigNumber, Contract, ethers, Wallet } from "./deps.ts";
 
 /// Workaround to call any function on a Contract object (via generic ContractFunction from ethers)
 // deno-lint-ignore no-explicit-any
@@ -42,7 +24,7 @@ class WalletService {
   blsWallet?: IContract;
 
   constructor() {
-    const provider = new ethers.providers.JsonRpcProvider();
+    const provider = new ethers.providers.JsonRpcProvider(null, null);
     dotEnvConfig({ export: true });
     this.aggregatorSigner = new Wallet(
       `${Deno.env.get("PRIVATE_KEY_AGG")}`,
@@ -70,7 +52,7 @@ class WalletService {
       addresses.blsWalletAddress,
       this.blsWalletABI,
       this.aggregatorSigner,
-    );
+    ) as unknown as IContract;
   }
 
   async sendTxs(txs: TransactionData[]) {
@@ -81,7 +63,7 @@ class WalletService {
     const aggBalance: BigNumber = await this.erc20!.balanceOf(
       "0xF28eA4691841aD169DaCeA9E1aE13BE34F55F149",
     );
-    console.log(ethers.utils.formatUnits(aggBalance));
+    console.log(ethers.utils.formatUnits(aggBalance.toString(), 18));
 
     //TODO:
     console.log(`Send Txs (TODO) ${txs}`);

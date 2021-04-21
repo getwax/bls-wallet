@@ -8,12 +8,8 @@ Gateway.
 
 # Installation
 
-Latest deno v1.9.0 produces an error in deno.land/x/postgres, use preceding
-version for now.
-`curl -fsSL https://deno.land/x/install/install.sh > install.sh`
-`sh install.sh v1.8.3`
-
-Uses Deno, Oak, Postgresql.
+Install [Deno](deno.land) (or `deno upgrade`) v1.9.1.
+Uses ethers, Oak, Postgresql... see src/app/deps.ts
 
 ## Running
 
@@ -23,4 +19,10 @@ Can be run locally or hosted.
 
 # Development
 
-VSCode extension 3.2.0 is required since the latest (3.3.0) is tied to  deno 1.9.0
+VSCode + Deno extension
+
+Until they are updated, some modules need manual fixes in local cache:
+
+1. In `~/.cache/deno/deps/https/cdn.skypack.dev/`, replace occurances of type `NodeJS.Timer` with `number`, will be found in Provider class.
+
+2. In `~/.cache/deno/deps`, remove the template type `<Deno.NetAddr>` from `Deno.Conn` since it is no longer generic. (needed until [https://github.com/denodrivers/postgres/issues/280])

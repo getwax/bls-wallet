@@ -2,6 +2,6 @@
   "deno.enable": true,
   "deno.lint": true,
   "deno.unstable": true,
-  "deno.autoFmtOnSave": true,
-  "deno.suggest.imports.hosts": true
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "denoland.vscode-deno",
 }

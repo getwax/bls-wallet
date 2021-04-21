@@ -31,4 +31,4 @@ console.log(`Listening on port ${port}...`);
 
 await app.listen({ port: port });
 
-await db.client.disconnect();
+// await db.client.disconnect();
