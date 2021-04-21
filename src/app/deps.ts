@@ -40,6 +40,6 @@ export {
   DataType,
   QueryClient,
   QueryTable,
-} from "https://deno.land/x/postquery@0.0.3/mod.ts";
+} from "https://deno.land/x/postquery@v0.0.3/mod.ts";
 
-export type { TableOptions } from "https://deno.land/x/postquery@0.0.3/mod.ts";
+export type { TableOptions } from "https://deno.land/x/postquery@v0.0.3/mod.ts";

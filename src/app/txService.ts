@@ -20,7 +20,7 @@ export type TransactionData = {
 const TX_TABLE_NAME = "txs";
 
 const txOptions: TableOptions = {
-  txId: { type: DataType.Serial, constrait: Constraint.PrimaryKey },
+  txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
   pubKey: { type: DataType.VarChar, length: 66, array: true },
   sender: { type: DataType.VarChar, length: 42 },
   message: { type: DataType.VarChar, length: 66, array: true },
