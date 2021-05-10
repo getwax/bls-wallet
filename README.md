@@ -56,12 +56,14 @@ Can be run locally or hosted.
 
 `deno run --allow-net --allow-env --allow-read  --unstable src/app/app.ts`
 
+## Testing
+
+- launch optimism
+- deploy contract script
+- run tests
+
+NB each test must use unique address(es). (+ init code)
+
 ## Development
 
 VSCode + Deno extension
-
-Until they are updated, some modules need manual fixes in local cache:
-
-1. In `~/.cache/deno/deps/https/cdn.skypack.dev/`, replace occurances of type `NodeJS.Timer` with `number`, will be found in Provider class.
-
-2. In `~/.cache/deno/deps`, remove the template type `<Deno.NetAddr>` from `Deno.Conn` since it is no longer generic. (needed until [https://github.com/denodrivers/postgres/issues/280])
