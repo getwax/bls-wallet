@@ -1,12 +1,6 @@
 import { expect, assert } from "chai";
 
-import { network, ethers as hhEthers, l2ethers } from "hardhat";
-
-let ethers:typeof hhEthers | typeof l2ethers;
-ethers = hhEthers;
-if (network.name == "optimism") {
-  ethers = l2ethers;
-}
+import { ethers, network } from "hardhat";
 
 import { BigNumber, Signer, Contract } from "ethers";
 const utils = ethers.utils;
@@ -82,23 +76,19 @@ function createTestTxs(): BLSWrapper {
   return blsWrapper;
 }
 
-before(async function () {  
-    await init();
-    await depositToWallet(signers);
-    await createTestTxs();
-    // await blsWrapper.postAddresses(
-    //     baseToken.address,
-    //     blsWallet.address
-    // );
-});
+// before(async function () {  
+//     await init();
+//     await depositToWallet(signers);
+//     await createTestTxs();
+//     // await blsWrapper.postAddresses(
+//     //     baseToken.address,
+//     //     blsWallet.address
+//     // );
+// });
 
 describe('BatchServer', async function () {
   beforeEach(async function () {
     await blsWrapper.resetDb();
-  });
-
-  it('should query server root', async function () {
-    expect(await blsWrapper.getRoot()).to.equal('Post txs to /tx/add.');
   });
 
   it('should add transactions', async function () {

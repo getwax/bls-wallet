@@ -1,8 +1,9 @@
 require('dotenv').config();
-import { HardhatUserConfig } from "hardhat/types";
+import { HardhatUserConfig, NetworkUserConfig } from "hardhat/types";
 
-import '@eth-optimism/plugins/hardhat/compiler'
-import '@eth-optimism/plugins/hardhat/ethers'
+import '@eth-optimism/hardhat-ovm';
+// import '@eth-optimism/plugins/hardhat/compiler'
+// import '@eth-optimism/plugins/hardhat/ethers'
 
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
@@ -41,8 +42,10 @@ const config: HardhatUserConfig = {
         `0x${process.env.PRIVATE_KEY_003}`,
         `0x${process.env.PRIVATE_KEY_004}`,
         `0x${process.env.PRIVATE_KEY_005}`
-      ]
-    }
+      ],
+      gasPrice: 0,
+      ovm: true
+    } as any as NetworkUserConfig
   },
   mocha: {
     timeout: 120000

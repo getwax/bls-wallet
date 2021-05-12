@@ -65,25 +65,26 @@ async function sendTx(fromIndex, toIndex, amount) {
 
 async function main() {
   await setup();
+  console.log(`${await erc20.balanceOf(addresses[0])} tokens with ${addresses[0]}`);
 
-  //approve and deposit tokens from erc20 to blsWallet
-  initialSupply = await erc20.balanceOf(addresses[0]);
-  if (initialSupply > 0) {
-    await erc20.approve(blsWallet.address, initialSupply);
-    await blsWallet.deposit(blsWrapper.pubKeyForIndex(0), initialSupply);
-  }
+//   //approve and deposit tokens from erc20 to blsWallet
+//   initialSupply = await erc20.balanceOf(addresses[0]);
+//   if (initialSupply > 0) {
+//     await erc20.approve(blsWallet.address, initialSupply);
+//     await blsWallet.deposit(blsWrapper.pubKeyForIndex(0), initialSupply);
+//   }
 
-  await printBalances();
-  const initialBalance = (await blsWallet.balanceOf(addresses[0]))
-    .div(ACCOUNTS_LENGTH).toString();
-  for (let i=0; i< ACCOUNTS_LENGTH; i++) {
-    await sendTx(0, i, initialBalance);
-  }
+//   await printBalances();
+//   const initialBalance = (await blsWallet.balanceOf(addresses[0]))
+//     .div(ACCOUNTS_LENGTH).toString();
+//   for (let i=0; i< ACCOUNTS_LENGTH; i++) {
+//     await sendTx(0, i, initialBalance);
+//   }
   
-  console.log(await blsWrapper.getCount());
+//   console.log(await blsWrapper.getCount());
 
-  console.log(await blsWrapper.triggerBatchTransfer());
-  await printBalances();
+//   console.log(await blsWrapper.triggerBatchTransfer());
+//   await printBalances();
 
 }
 

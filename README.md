@@ -86,9 +86,9 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 - build and test contracts - `npx hardhat test`
 
 ## Optimism's L2
-- clone https://github.com/ethereum-optimism/optimism-integration
+- clone https://github.com/ethereum-optimism/optimism
 - follow instructions (using latest version of docker)
-- run script - `make up`
+- run script - `docker-compose up`
     - L1 - http://localhost:9545
     - L2 - http://localhost:8545
 

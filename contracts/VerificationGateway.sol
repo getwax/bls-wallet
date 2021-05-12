@@ -7,7 +7,7 @@ pragma experimental ABIEncoderV2;
 import "./lib/BLS.sol"; //from hubble repo
 import "./lib/IERC20.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
@@ -193,7 +193,7 @@ contract VerificationGateway
     //     address contract
     // );
 
-    function walletCrossCheck(bytes32 hash) public {
+    function walletCrossCheck(bytes32 hash) public view {
         require(msg.sender == address(walletFromHash[hash]));
     }
 

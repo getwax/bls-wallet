@@ -1,12 +1,6 @@
 import { expect, assert } from "chai";
 
-import { network, ethers as hhEthers, l2ethers } from "hardhat";
-
-let ethers:typeof hhEthers | typeof l2ethers;
-ethers = hhEthers;
-if (network.name == "optimism") {
-  ethers = l2ethers;
-}
+import { ethers, network } from "hardhat";
 
 import { BigNumber, Signer, Contract } from "ethers";
 const utils = ethers.utils;

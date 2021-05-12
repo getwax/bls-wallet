@@ -3,5 +3,9 @@
 node_modules
 
 #Hardhat files
-cache
 artifacts
+cache
+
+#Optimism files
+artifacts-ovm
+cache-ovm
