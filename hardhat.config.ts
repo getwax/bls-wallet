@@ -45,7 +45,7 @@ const config: HardhatUserConfig = {
       ],
       gasPrice: 0,
       ovm: true
-    } as any as NetworkUserConfig
+    }
   },
   mocha: {
     timeout: 120000

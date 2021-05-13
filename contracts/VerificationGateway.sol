@@ -7,57 +7,8 @@ pragma experimental ABIEncoderV2;
 import "./lib/BLS.sol"; //from hubble repo
 import "./lib/IERC20.sol";
 
+import "./BLSWallet.sol";
 // import "hardhat/console.sol";
-
-interface IVerificationGateway {
-    function walletCrossCheck(bytes32 publicKeyHash) external;
-}
-
-/** @dev TODO (WIP): protect from replay (nonce, chainId).
- */
-contract BLSWalletProxy
-{
-    address admin;
-    bytes32 public publicKeyHash;
-    uint256 public nonce;
-
-    constructor(bytes32 blsKeyHash) {
-        publicKeyHash = blsKeyHash;
-        admin = msg.sender;
-        nonce = 0;
-    }
-
-    function registerGateway(
-        address verificationGateway
-    ) internal {
-        IVerificationGateway(verificationGateway).walletCrossCheck(publicKeyHash);
-    }
-
-    /**
-    @dev The methodID called is `require`d to succeed.
-     */
-    function action(
-        address contractAddress,
-        bytes4 methodID,
-        bytes memory encodedParams
-    ) public onlyAdmin returns (bool success) {
-        bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
-
-        (success, ) = address(contractAddress).call(encodedFunction);
-        require(success, "BLSWalletProxy: action failed to call encodedFunction");
-        nonce++;
-    }
-
-
-    //TODO: reset admin (via bls key)
-
-    //TODO: social recovery
-
-    modifier onlyAdmin() {
-        require(msg.sender == admin);
-        _;
-    }
-}
 
 /**
 @dev Optimisations to reduce calldata of VerificationGateway multiCall
@@ -178,7 +129,7 @@ contract VerificationGateway
     // uint256[BLS_LEN] ZERO_BLS_SIG = [uint256(0), uint256(0), uint256(0), uint256(0)];
 
     mapping (bytes32 => uint256[BLS_LEN]) blsKeysFromHash;
-    mapping (bytes32 => BLSWalletProxy) public walletFromHash;
+    mapping (bytes32 => BLSWallet) public walletFromHash;
 
     event WalletCreated(
         address indexed wallet,
@@ -200,7 +151,7 @@ contract VerificationGateway
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
         if (address(walletFromHash[publicKeyHash]) == address(0)) {
             blsKeysFromHash[publicKeyHash] = publicKey;
-            walletFromHash[publicKeyHash] = new BLSWalletProxy(publicKeyHash);
+            walletFromHash[publicKeyHash] = new BLSWallet(publicKeyHash);
             emit WalletCreated(
                 address(walletFromHash[publicKeyHash]),
                 publicKeyHash,
@@ -225,7 +176,7 @@ contract VerificationGateway
         bytes calldata encodedParams
     ) public {
 
-        BLSWalletProxy wallet = walletFromHash[publicKeyHash];
+        BLSWallet wallet = walletFromHash[publicKeyHash];
 
         (bool checkResult, bool callSuccess) = BLS.verifySingle(
             signature,

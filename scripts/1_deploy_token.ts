@@ -2,13 +2,7 @@ import { BigNumber, Signer, Contract } from "ethers";
 import { readFile, readFileSync } from "fs";
 
 
-import { network, ethers as hhEthers, l2ethers } from "hardhat";
-
-let ethers:typeof hhEthers | typeof l2ethers;
-ethers = hhEthers;
-if (network.name == "optimism") {
-  ethers = l2ethers;
-}
+import { network, ethers } from "hardhat";
 
 const utils = ethers.utils;
 

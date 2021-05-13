@@ -2,31 +2,30 @@ require('dotenv').config();
 import { Console } from "console";
 import { BigNumber, Signer, Contract } from "ethers";
 
-import { network, ethers as hhEthers, l2ethers } from "hardhat";
-
-let ethers:typeof hhEthers | typeof l2ethers;
-ethers = hhEthers;
-if (network.name == "optimism") {
-  ethers = l2ethers;
-}
+import { network, ethers } from "hardhat";
 
 const utils = ethers.utils;
 
-let blsWallet: Contract;
+let verificationGateway: Contract;
+let blsExpander: Contract;
 
 async function main() {
 
   console.log(`agg: ${process.env.AGGREGATOR_ADDRESS}\n cont: ${process.env.ERC20_CONTRACT_ADDRESS}`)
 
   // deploy bls wallet with token address
-  const BLSWallet = await ethers.getContractFactory("BLSWallet");
-  blsWallet = await BLSWallet.deploy(
-    process.env.AGGREGATOR_ADDRESS,
-    process.env.ERC20_CONTRACT_ADDRESS
+  const VerificationGateway = await ethers.getContractFactory("VerificationGateway");
+  verificationGateway = await VerificationGateway.deploy();
+  await verificationGateway.deployed();
+  console.log(`verificationGateway: ${verificationGateway.address}`);
+
+  // deploy bls wallet with token address
+  const BLSExpander = await ethers.getContractFactory("BLSExpander");
+  blsExpander = await BLSExpander.deploy(
+    verificationGateway.address
   );
-  await blsWallet.deployed();
-  
-  console.log(`blsWallet: ${blsWallet.address}`);
+  await blsExpander.deployed();
+  console.log(`blsExpander: ${blsExpander.address}`);
   
 }
 
