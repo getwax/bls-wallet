@@ -7,7 +7,7 @@ const utils = ethers.utils;
 
 // import * as mcl from "../server/src/lib/hubble-bls/src/mcl";
 
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../server/src/lib/hubble-bls/src/signer";
+import { BlsSignerFactory, BlsSignerInterface, aggregate } from "./lib/hubble-bls/src/signer";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
