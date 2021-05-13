@@ -186,13 +186,6 @@ contract VerificationGateway
         uint256[BLS_LEN] publicKey
     );
 
-    //TODO?
-    // event ActionPerformed(
-    //     address indexed wallet,
-    //     bytes32 indexed publicKeyHash,
-    //     address contract
-    // );
-
     function walletCrossCheck(bytes32 hash) public view {
         require(msg.sender == address(walletFromHash[hash]));
     }
@@ -255,6 +248,10 @@ contract VerificationGateway
         );
     }
 
+    /**
+    @dev Assumes multiple txs from the same wallet appear in order
+    of ascending nonce. Wallet txs do not have to be consecutive. 
+     */
     function blsCallMany(
         bytes32[] calldata  publicKeyHashes,
         uint256[2] memory signature,
@@ -266,34 +263,32 @@ contract VerificationGateway
         require(methodIDs.length == txCount, "VerificationGateway: methodIDs/contracts length mismatch.");
         require(encodedParamSets.length == txCount, "VerificationGateway: encodedParamSets/contracts length mismatch.");
         require(publicKeyHashes.length == txCount, "VerificationGateway: publicKeyHash/contracts length mismatch.");
-        
         uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
         uint256[2][] memory messages = new uint256[2][](txCount);
         for (uint256 i = 0; i<txCount; i++) {
+            // construct params for signature verification
             bytes32 publicKeyHash = publicKeyHashes[i];
             publicKeys[i] = blsKeysFromHash[publicKeyHash];
-            uint256 nonce = walletFromHash[publicKeyHash].nonce();
             messages[i] = messagePoint(
-                nonce,
+                walletFromHash[publicKeyHash].nonce(),
                 contractAddresses[i],
                 keccak256(abi.encodePacked(
                     methodIDs[i],
                     encodedParamSets[i]
                 ))
             );
-        }
-        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, publicKeys, messages);
-        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
 
-        for (uint256 i = 0; i<txCount; i++) {
-            bytes32 publicKeyHash = publicKeyHashes[i];
-            BLSWalletProxy wallet = walletFromHash[publicKeyHash];
-            wallet.action(
+            // execute transaction (increments nonce), will revert all if not satisfied
+            walletFromHash[publicKeyHashes[i]].action(
                 contractAddresses[i],
                 methodIDs[i],
                 encodedParamSets[i]
             );
+
         }
+        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, publicKeys, messages);
+        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+
     }
 
     function messagePoint(

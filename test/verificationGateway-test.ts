@@ -181,9 +181,62 @@ describe.only('VerificationGateway', async function () {
     }
   });
 
+  it("should airdrop", async function() {
+    let blsWalletAddresses = new Array<string>(blsSigners.length);
+    console.log("Creating wallets...");
+    for (let i = 0; i<blsSigners.length; i++) {
+      blsWalletAddresses[i] = await createBLSWallet(blsSigners[i]);
+    }
 
+    // setup erc20 token
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    testToken = await MockERC20.deploy("AnyToken","TOK", initialSupply);
+    await testToken.deployed();
 
-  // TODO: test multiple txs from same wallet
+    // send all to first address
+    console.log("Send tokens to first bls wallet");
+    let totalAmount = userStartAmount.mul(blsWalletAddresses.length);
+    await(await testToken.connect(signers[0]).transfer(
+      blsWalletAddresses[0],
+      totalAmount
+    )).wait();
+
+    let signatures: any[] = new Array(blsWalletAddresses.length);
+    let encodedParams: string[] = new Array(blsWalletAddresses.length);
+    let nonce = await BLSWalletProxy.attach(blsWalletAddresses[0]).nonce();
+    for (let i = 0; i<blsWalletAddresses.length; i++) {
+      // encode transfer of start amount to each wallet
+      let encodedFunction = testToken.interface.encodeFunctionData(
+        "transfer",
+        [blsWalletAddresses[i], userStartAmount.toString()]
+      );
+      encodedParams[i] = '0x'+encodedFunction.substr(10);
+
+      let dataToSign = dataPayload(
+        nonce++,
+        testToken.address,
+        encodedFunction
+      );
+      signatures[i] = blsSigners[0].sign(dataToSign);
+    }
+
+    let aggSignature = aggregate(signatures);
+
+    console.log("Airdrop");
+    await(await blsExpander.blsCallMultiSameCallerContractFunction(
+      blsKeyHash(blsSigners[0]),
+      aggSignature,
+      testToken.address,
+      testToken.interface.getSighash("transfer"),
+      encodedParams
+    )).wait();
+
+    for (let i = 0; i<blsWalletAddresses.length; i++) {
+      let walletBalance = await testToken.balanceOf(blsWalletAddresses[i]);
+      expect(walletBalance).to.equal(userStartAmount);
+    }
+
+  });
 
 });
 
