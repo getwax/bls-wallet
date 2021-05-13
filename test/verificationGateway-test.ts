@@ -7,7 +7,7 @@ const utils = ethers.utils;
 
 // import * as mcl from "../server/src/lib/hubble-bls/src/mcl";
 
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../server/src/lib/hubble-bls/src/signer";
+import { BlsSignerFactory, BlsSignerInterface, aggregate } from "./lib/hubble-bls/src/signer";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
@@ -28,7 +28,7 @@ let verificationGateway: Contract;
 let BLSExpander: ContractFactory;
 let blsExpander: Contract;
 
-let BLSWalletProxy: ContractFactory;
+let BLSWallet: ContractFactory;
 
 let testToken: Contract;
 const initialSupply = ethers.utils.parseUnits("1000000")
@@ -51,11 +51,11 @@ async function init() {
   blsExpander = await BLSExpander.deploy(verificationGateway.address); 
   await blsExpander.deployed();
   
-  BLSWalletProxy = await ethers.getContractFactory("BLSWalletProxy");
+  BLSWallet = await ethers.getContractFactory("BLSWallet");
 
 }
 
-describe.only('VerificationGateway', async function () {
+describe('VerificationGateway', async function () {
   
   beforeEach(init);
 
@@ -63,8 +63,8 @@ describe.only('VerificationGateway', async function () {
     let blsSigner = blsSigners[0];  
     let walletAddress = await createBLSWallet(blsSigner);
 
-    let blsWalletProxy = BLSWalletProxy.attach(walletAddress);
-    expect(await blsWalletProxy.publicKeyHash())
+    let blsWallet = BLSWallet.attach(walletAddress);
+    expect(await blsWallet.publicKeyHash())
       .to.equal(blsKeyHash(blsSigner));
   });
 
@@ -100,7 +100,7 @@ describe.only('VerificationGateway', async function () {
     // bls transfer each wallet's balance to first wallet
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       await transferFrom(
-        await BLSWalletProxy.attach(blsWalletAddresses[i]).nonce(),
+        await BLSWallet.attach(blsWalletAddresses[i]).nonce(),
         blsSigners[i],
         blsWalletAddresses[0],
         userStartAmount
@@ -146,7 +146,7 @@ describe.only('VerificationGateway', async function () {
     let signatures: any[] = new Array(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let dataToSign = dataPayload(
-        await BLSWalletProxy.attach(blsWalletAddresses[i]).nonce(),
+        await BLSWallet.attach(blsWalletAddresses[i]).nonce(),
         testToken.address,
         encodedFunction
       );
@@ -203,7 +203,7 @@ describe.only('VerificationGateway', async function () {
 
     let signatures: any[] = new Array(blsWalletAddresses.length);
     let encodedParams: string[] = new Array(blsWalletAddresses.length);
-    let nonce = await BLSWalletProxy.attach(blsWalletAddresses[0]).nonce();
+    let nonce = await BLSWallet.attach(blsWalletAddresses[0]).nonce();
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       // encode transfer of start amount to each wallet
       let encodedFunction = testToken.interface.encodeFunctionData(
