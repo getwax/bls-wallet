@@ -88,7 +88,7 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 ## Optimism's L2
 - clone https://github.com/ethereum-optimism/optimism
 - follow instructions (using latest version of docker)
-- run script - `docker-compose up`
+- in `opt/`, run script - `docker-compose up`
     - L1 - http://localhost:9545
     - L2 - http://localhost:8545
 

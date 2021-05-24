@@ -11,8 +11,6 @@ let blsExpander: Contract;
 
 async function main() {
 
-  console.log(`agg: ${process.env.AGGREGATOR_ADDRESS}\n cont: ${process.env.ERC20_CONTRACT_ADDRESS}`)
-
   // deploy bls wallet with token address
   const VerificationGateway = await ethers.getContractFactory("VerificationGateway");
   verificationGateway = await VerificationGateway.deploy();
