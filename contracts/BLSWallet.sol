@@ -3,19 +3,21 @@ pragma solidity ^0.7.0;
 // pragma abicoder v2;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin/contracts/proxy/Initializable.sol";
+
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
 }
 
 /** @dev TODO (WIP): protect from replay (nonce, chainId).
  */
-contract BLSWallet
+contract BLSWallet is Initializable
 {
     address admin;
     bytes32 public publicKeyHash;
     uint256 public nonce;
 
-    constructor(bytes32 blsKeyHash) {
+    function initialize(bytes32 blsKeyHash) public initializer {
         publicKeyHash = blsKeyHash;
         admin = msg.sender;
         nonce = 0;

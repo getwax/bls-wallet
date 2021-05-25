@@ -49,8 +49,9 @@ async function init() {
   await verificationGateway.deployed();
 
   BLSExpander = await ethers.getContractFactory("BLSExpander");
-  blsExpander = await BLSExpander.deploy(verificationGateway.address); 
+  blsExpander = await BLSExpander.deploy(); 
   await blsExpander.deployed();
+  await blsExpander.initialize(verificationGateway.address);
   
   BLSWallet = await ethers.getContractFactory("BLSWallet");
 

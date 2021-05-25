@@ -10,13 +10,15 @@ import "./lib/IERC20.sol";
 import "./BLSWallet.sol";
 // import "hardhat/console.sol";
 
+import "@openzeppelin/contracts/proxy/Initializable.sol";
+
 /**
 @dev Optimisations to reduce calldata of VerificationGateway multiCall
 with shared params.
 */
-contract BLSExpander {
+contract BLSExpander is Initializable {
     VerificationGateway verificationGateway;
-    constructor(address gateway) {
+    function initialize(address gateway) public initializer {
         verificationGateway = VerificationGateway(gateway);
     }
 
@@ -151,7 +153,8 @@ contract VerificationGateway
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
         if (address(walletFromHash[publicKeyHash]) == address(0)) {
             blsKeysFromHash[publicKeyHash] = publicKey;
-            walletFromHash[publicKeyHash] = new BLSWallet(publicKeyHash);
+            walletFromHash[publicKeyHash] = new BLSWallet();
+            walletFromHash[publicKeyHash].initialize(publicKeyHash);
             emit WalletCreated(
                 address(walletFromHash[publicKeyHash]),
                 publicKeyHash,
