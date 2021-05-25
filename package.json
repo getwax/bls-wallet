@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@eth-optimism/hardhat-ovm": "^0.2.0",
-    "@openzeppelin/contracts": "^3.3.0"
+    "@openzeppelin/contracts": "3.4.1"
   },
   "devDependencies": {
     "@eth-optimism/plugins": "^0.0.20",

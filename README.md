@@ -89,8 +89,8 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 - clone https://github.com/ethereum-optimism/optimism
 - follow instructions (using latest version of docker)
 - in `opt/`, run script - `docker-compose up`
-    - L1 - http://localhost:9545
-    - L2 - http://localhost:8545
+    - L1 - http://localhost:9545 (chainId 31337)
+    - L2 - http://localhost:8545 (chainId 420)
 
 ## Deploy scripts
 Specify network - `npx hardhat run scripts/<#_script.ts> --network optimism`

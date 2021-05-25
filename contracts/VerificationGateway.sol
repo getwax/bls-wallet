@@ -247,9 +247,14 @@ contract VerificationGateway
         address contractAddress,
         bytes32 encodedFunctionHash
     ) internal view returns (uint256[2] memory) {
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
         return BLS.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(
+                chainId, //block.chainid,
                 nonce,
                 contractAddress,
                 encodedFunctionHash

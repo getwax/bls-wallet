@@ -15,6 +15,7 @@ const DOMAIN = arrayify(DOMAIN_HEX);
 
 const zeroBLSPubKey = [0, 0, 0, 0].map(BigNumber.from);
 
+let chainId: number;
 
 let signers: Signer[];
 let addresses: string[];
@@ -56,7 +57,10 @@ async function init() {
 }
 
 describe('VerificationGateway', async function () {
-  
+  this.beforeAll(async function () {
+    chainId = (await ethers.provider.getNetwork()).chainId;
+    console.log("ChainId from provider", chainId);
+  });
   beforeEach(init);
 
   it('should register new wallet', async function () {
@@ -260,8 +264,9 @@ function dataPayload(
     [encodedFunction]
   );
   return utils.solidityPack(
-    ["uint256","address","bytes32"],
+    ["uint256","uint256","address","bytes32"],
     [
+      chainId,
       nonce,
       contractAddress.toString(),
       encodedFunctionHash
