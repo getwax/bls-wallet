@@ -19,12 +19,12 @@ async function main() {
 
   // deploy bls wallet with token address
   const BLSExpander = await ethers.getContractFactory("BLSExpander");
-  blsExpander = await BLSExpander.deploy(
+  blsExpander = await BLSExpander.deploy();
+  await blsExpander.deployed();
+  blsExpander.initialize(
     verificationGateway.address
   );
-  await blsExpander.deployed();
   console.log(`blsExpander: ${blsExpander.address}`);
-  
 }
 
 // We recommend this pattern to be able to use async/await everywhere
