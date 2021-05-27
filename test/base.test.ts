@@ -1,4 +1,4 @@
-import { assert, assertEquals, expect } from "./deps.ts";
+import { assert, assertEquals, expect } from "../../deps/index.ts";
 
 Deno.test({
   name: "wallets with initial balances.",

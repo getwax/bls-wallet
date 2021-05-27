@@ -1,4 +1,4 @@
-import { Application } from "./deps.ts";
+import { Application } from "../../deps/index.ts";
 
 import { adminRouter, txRouter } from "./routes.ts";
 import * as db from "./database.ts";

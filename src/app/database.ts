@@ -1,4 +1,4 @@
-import { QueryClient } from "./deps.ts";
+import { QueryClient } from "../../deps/index.ts";
 
 const PG_HOST = "localhost";
 const PG_PORT = 5432;

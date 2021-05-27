@@ -12,13 +12,27 @@ export {
 export type { RouterContext } from "https://deno.land/x/oak@v7.3.0/mod.ts";
 
 // Ethers dependencies
-export {
-  BigNumber,
-  Contract,
-  ethers,
-  Wallet,
-  // } from "https://cdn.ethers.io/lib/ethers-5.0.esm.min.js";
-} from "https://unpkg.com/ethers@5.1.3/dist/ethers.esm.js?module";
+import ethers from "./ethers/index.ts";
+
+export { default as ethers } from "./ethers/index.ts";
+
+export const BigNumber = ethers.BigNumber;
+export type BigNumber = ethers.BigNumber;
+
+export const Contract = ethers.Contract;
+export type Contract = ethers.Contract;
+
+export const Wallet = ethers.Wallet;
+export type Wallet = ethers.Wallet;
+
+// // // Ethers dependencies
+// export {
+//   // BigNumber,
+//   // Contract,
+//   default as ethers,
+//   // Wallet,
+// } from "./ethers/index.ts";
+// } from "https://unpkg.com/ethers@5.1.3/dist/ethers.esm.js?module";
 // } from "https://unpkg.com/ethers?module";
 // } from "https://cdn.skypack.dev/ethers"; // error: "hash.js" no dep found
 // } from "https://cdn.skypack.dev/ethers?min"; // error: reference in own type annotation

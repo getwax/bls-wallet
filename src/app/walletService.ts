@@ -1,8 +1,8 @@
-import { dotEnvConfig } from "./deps.ts";
+import { dotEnvConfig } from "../../deps/index.ts";
 
 import type { TransactionData } from "./txService.ts";
 
-import { BigNumber, Contract, ethers, Wallet } from "./deps.ts";
+import { BigNumber, Contract, ethers, Wallet } from "../../deps/index.ts";
 
 /// Workaround to call any function on a Contract object (via generic ContractFunction from ethers)
 // deno-lint-ignore no-explicit-any
