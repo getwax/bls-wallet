@@ -11,6 +11,10 @@ let blsExpander: Contract;
 
 async function main() {
 
+  let signer = (await ethers.getSigners())[0];
+  let deployerAddress = await signer.getAddress();
+  console.log(`Deployer account address: ${deployerAddress}`);
+
   // deploy bls wallet with token address
   const VerificationGateway = await ethers.getContractFactory("VerificationGateway");
   verificationGateway = await VerificationGateway.deploy();
