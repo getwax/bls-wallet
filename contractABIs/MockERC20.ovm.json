@@ -1,6 +1,6 @@
 {
   "_format": "hh-sol-artifact-1",
-  "contractName": "MockERC20.ovm",
+  "contractName": "MockERC20",
   "sourceName": "contracts/mock/MockERC20.sol",
   "abi": [
     {
