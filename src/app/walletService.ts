@@ -1,16 +1,12 @@
-import { dotEnvConfig } from "./deps.ts";
+import { dotEnvConfig } from "../../deps/index.ts";
 
 import type { TransactionData } from "./txService.ts";
 
-import { BigNumber, Contract, ethers, Wallet } from "./deps.ts";
+import { BigNumber, Contract, ethers, Wallet } from "../../deps/index.ts";
 
 /// Workaround to call any function on a Contract object (via generic ContractFunction from ethers)
 // deno-lint-ignore no-explicit-any
 declare type ContractFunction = (...params: Array<any>) => Promise<any>;
-interface IContract {
-  // deno-lint-ignore no-explicit-any
-  readonly [name: string]: ContractFunction | any;
-}
 
 class WalletService {
   // deno-lint-ignore no-explicit-any
@@ -20,11 +16,11 @@ class WalletService {
 
   aggregatorSigner: Wallet;
 
-  erc20?: IContract;
-  blsWallet?: IContract;
+  erc20?: Contract;
+  blsWallet?: Contract;
 
   constructor() {
-    const provider = new ethers.providers.JsonRpcProvider(null, null);
+    const provider = new ethers.providers.JsonRpcProvider();
     dotEnvConfig({ export: true });
     this.aggregatorSigner = new Wallet(
       `${Deno.env.get("PRIVATE_KEY_AGG")}`,
@@ -46,13 +42,13 @@ class WalletService {
       addresses.tokenAddress,
       this.erc20ABI,
       this.aggregatorSigner,
-    ) as unknown as IContract;
+    );
 
     this.blsWallet = new Contract(
       addresses.blsWalletAddress,
       this.blsWalletABI,
       this.aggregatorSigner,
-    ) as unknown as IContract;
+    );
   }
 
   async sendTxs(txs: TransactionData[]) {

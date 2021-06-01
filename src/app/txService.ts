@@ -5,7 +5,7 @@ import {
   DataType,
   QueryTable,
   TableOptions,
-} from "./deps.ts";
+} from "../../deps/index.ts";
 
 export type TransactionData = {
   txId?: number;
