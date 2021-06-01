@@ -1,8 +1,7 @@
-import { dotEnvConfig } from "../../deps/index.ts";
-
-import type { TransactionData } from "./txService.ts";
-
 import { BigNumber, Contract, ethers, Wallet } from "../../deps/index.ts";
+
+import * as env from "./env.ts";
+import type { TransactionData } from "./txService.ts";
 
 /// Workaround to call any function on a Contract object (via generic ContractFunction from ethers)
 // deno-lint-ignore no-explicit-any
@@ -21,11 +20,7 @@ class WalletService {
 
   constructor() {
     const provider = new ethers.providers.JsonRpcProvider();
-    dotEnvConfig({ export: true });
-    this.aggregatorSigner = new Wallet(
-      `${Deno.env.get("PRIVATE_KEY_AGG")}`,
-      provider,
-    );
+    this.aggregatorSigner = new Wallet(env.PRIVATE_KEY_AGG, provider);
 
     Deno.readTextFile("contractABIs/MockERC20.json").then((data) => {
       this.erc20ABI = JSON.parse(data).abi;
@@ -53,11 +48,11 @@ class WalletService {
 
   async sendTxs(txs: TransactionData[]) {
     await this.setContractAddresses({
-      tokenAddress: "0x6F714e7b5a7F0913038664d932e8acd6fDf1Ad55",
+      tokenAddress: env.TOKEN_ADDRESS,
       blsWalletAddress: "0xbCb5DDb58A2466e528047703233aCd0D29d36937",
     });
     const aggBalance: BigNumber = await this.erc20!.balanceOf(
-      "0xF28eA4691841aD169DaCeA9E1aE13BE34F55F149",
+      env.DEPLOYER_ADDRESS,
     );
     console.log(ethers.utils.formatUnits(aggBalance.toString(), 18));
 
