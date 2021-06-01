@@ -27,6 +27,20 @@ const DOMAIN = arrayify(DOMAIN_HEX);
 const provider = new ethers.providers.JsonRpcProvider();
 const aggregatorSigner = new ethers.Wallet(env.PRIVATE_KEY_AGG, provider);
 
+// TODO: Environment variable
+const testNet = true;
+
+if (testNet) {
+  const originalPopulateTransaction = aggregatorSigner.populateTransaction.bind(
+    aggregatorSigner,
+  );
+
+  aggregatorSigner.populateTransaction = (transaction) => {
+    transaction.gasPrice = ethers.BigNumber.from(0);
+    return originalPopulateTransaction(transaction);
+  };
+}
+
 const chainId: number = (await provider.getNetwork()).chainId;
 
 let addresses: string[];
