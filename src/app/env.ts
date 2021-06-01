@@ -13,5 +13,13 @@ function requireEnv(envName: string): string {
 }
 
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
+
 export const DEPLOYER_ADDRESS = requireEnv("DEPLOYER_ADDRESS");
+
+export const VERIFICATION_GATEWAY_ADDRESS = requireEnv(
+  "VERIFICATION_GATEWAY_ADDRESS",
+);
+
+export const BLS_EXPANDER_ADDRESS = requireEnv("BLS_EXPANDER_ADDRESS");
+
 export const TOKEN_ADDRESS = requireEnv("TOKEN_ADDRESS");

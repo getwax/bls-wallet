@@ -1,17 +1,19 @@
-import { ethers } from "../deps/index.ts";
+import { ethers, hubbleBls } from "../deps/index.ts";
 
-import {
-  BlsSignerFactory,
-  BlsSignerInterface,
-} from "./lib/hubble-bls/src/signer";
+import contractABIs from "../contractABIs/index.ts";
+import * as env from "../src/app/env.ts";
+
+const { BlsSignerFactory } = hubbleBls.signer;
+type BlsSignerFactory = hubbleBls.signer.BlsSignerFactory;
+type BlsSignerInterface = hubbleBls.signer.BlsSignerInterface;
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
 
 // TODO: Get the correct types from ethers
-type Contract = ExplicitAny;
-type ContractFactory = ExplicitAny;
-type Signer = ExplicitAny;
+type Contract = ethers.Contract;
+type ContractFactory = ethers.ContractFactory;
+type Signer = ethers.Signer;
 
 // const ethers: ExplicitAny = ethersImport;
 
@@ -22,48 +24,41 @@ const { arrayify, keccak256 } = utils;
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
-let chainId: number;
+const provider = new ethers.providers.JsonRpcProvider();
+const aggregatorSigner = new ethers.Wallet(env.PRIVATE_KEY_AGG, provider);
 
-let signers: Signer[];
+const chainId: number = (await provider.getNetwork()).chainId;
+
 let addresses: string[];
 
 let blsSignerFactory: BlsSignerFactory;
 let blsSigners: BlsSignerInterface[];
 
-let VerificationGateway: ContractFactory;
 let verificationGateway: Contract;
 
-let BLSExpander: ContractFactory;
-let blsExpander: Contract;
-
-let BLSWallet: ContractFactory;
-
-const ACCOUNTS_LENGTH = 5;
+const ACCOUNTS_LENGTH = 1;
 
 { // init
-  signers = (await ethers.getSigners()).slice(0, ACCOUNTS_LENGTH);
-  addresses = await Promise.all(signers.map((acc) => acc.getAddress()));
+  addresses = [`0x${env.PRIVATE_KEY_AGG}`].slice(0, ACCOUNTS_LENGTH);
 
   blsSignerFactory = await BlsSignerFactory.new();
   blsSigners = addresses.map((add) => blsSignerFactory.getSigner(DOMAIN, add));
 
-  // deploy Verification Gateway
-  VerificationGateway = await ethers.getContractFactory("VerificationGateway");
-  verificationGateway = await VerificationGateway.deploy();
-  await verificationGateway.deployed();
-
-  BLSExpander = await ethers.getContractFactory("BLSExpander");
-  blsExpander = await BLSExpander.deploy();
-  await blsExpander.deployed();
-  await blsExpander.initialize(verificationGateway.address);
-
-  BLSWallet = await ethers.getContractFactory("BLSWallet");
+  verificationGateway = new ethers.Contract(
+    env.VERIFICATION_GATEWAY_ADDRESS,
+    contractABIs["VerificationGateway.json"].abi,
+    aggregatorSigner,
+  );
 }
 
 const blsSigner = blsSigners[0];
 const walletAddress = await createBLSWallet(blsSigner);
 
-const blsWallet = BLSWallet.attach(walletAddress);
+const blsWallet = new ethers.Contract(
+  walletAddress,
+  contractABIs["BLSWallet.json"].abi,
+  aggregatorSigner,
+);
 
 console.log(await blsWallet.publicKeyHash());
 console.log("should be");
@@ -103,7 +98,7 @@ async function createBLSWallet(
 ): Promise<ExplicitAny> {
   const blsPubKeyHash = blsKeyHash(blsSigner);
 
-  const encodedFunction = VerificationGateway.interface.encodeFunctionData(
+  const encodedFunction = verificationGateway.interface.encodeFunctionData(
     "walletCrossCheck",
     [blsPubKeyHash],
   );
