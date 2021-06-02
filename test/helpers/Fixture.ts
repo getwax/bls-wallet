@@ -76,13 +76,17 @@ export default class Fixture {
     );
   }
 
-  async BlsWallet(signer: hubbleBls.signer.BlsSigner) {
-    const address = await createBLSWallet(
+  // TODO: Naming: Make it more clear that this is actually creating something
+  // on chain and not just repackaging data in-process.
+  async BlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
+    return await createBLSWallet(
       this.chainId,
       this.verificationGateway,
       signer,
     );
+  }
 
+  BlsWalletFromAddress(address: string) {
     return new ethers.Contract(
       address,
       contractABIs["BLSWallet.ovm.json"].abi,
