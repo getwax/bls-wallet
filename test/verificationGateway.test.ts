@@ -21,7 +21,7 @@ async function Fixture(testName: string) {
 
   const provider = new ethers.providers.JsonRpcProvider();
 
-  const signerKey = rng.address("signerKey");
+  const signerKey = rng.address("aggregatorSigner");
 
   const aggregatorSigner = new ethers.Wallet(signerKey, provider);
 
@@ -45,11 +45,32 @@ async function Fixture(testName: string) {
     aggregatorSigner,
   );
 
+  const BlsSigner = async (...extraSeeds: string[]) => {
+    const factory = await BlsSignerFactory.new();
+    return factory.getSigner(DOMAIN, rng.address("blsSigner", ...extraSeeds));
+  };
+
+  const BlsWallet = async (signer: hubbleBls.signer.BlsSigner) => {
+    const address = await createBLSWallet(
+      chainId,
+      verificationGateway,
+      signer,
+    );
+
+    return new ethers.Contract(
+      address,
+      contractABIs["BLSWallet.ovm.json"].abi,
+      aggregatorSigner,
+    );
+  };
+
   return {
     rng,
     chainId,
     verificationGateway,
     aggregatorSigner,
+    BlsSigner,
+    BlsWallet,
   };
 }
 
@@ -57,25 +78,10 @@ Deno.test({
   name: "should register new wallet",
   sanitizeOps: false,
   fn: async () => {
-    const { rng, chainId, verificationGateway, aggregatorSigner } =
-      await Fixture("should register new wallet");
+    const fx = await Fixture("should register new wallet");
 
-    const blsSigner = (await BlsSignerFactory.new()).getSigner(
-      DOMAIN,
-      rng.address("blsSignerSecret"),
-    );
-
-    const walletAddress = await createBLSWallet(
-      chainId,
-      verificationGateway,
-      blsSigner,
-    );
-
-    const blsWallet = new ethers.Contract(
-      walletAddress,
-      contractABIs["BLSWallet.ovm.json"].abi,
-      aggregatorSigner,
-    );
+    const blsSigner = await fx.BlsSigner();
+    const blsWallet = await fx.BlsWallet(blsSigner);
 
     expect(
       await blsWallet.publicKeyHash(),

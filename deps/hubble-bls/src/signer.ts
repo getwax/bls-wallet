@@ -86,7 +86,7 @@ export class BlsSignerFactory {
   }
 }
 
-class BlsSigner extends BlsVerifier implements BlsSignerInterface {
+export class BlsSigner extends BlsVerifier implements BlsSignerInterface {
   private _pubkey: PublicKey;
   constructor(public domain: Domain, private secret: SecretKey) {
     super(domain);
