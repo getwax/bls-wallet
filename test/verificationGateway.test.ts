@@ -13,3 +13,17 @@ Fixture.test("should register new wallet", async (fx) => {
     blsKeyHash(blsSigner),
   );
 });
+
+Fixture.test(
+  "should regenerate same wallet when registering the same address",
+  async (fx) => {
+    const firstWallet = await fx.BlsWallet(await fx.BlsSigner());
+    const secondWallet = await fx.BlsWallet(await fx.BlsSigner());
+
+    expect(
+      await firstWallet.publicKeyHash(),
+    ).toBe(
+      await secondWallet.publicKeyHash(),
+    );
+  },
+);
