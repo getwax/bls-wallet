@@ -2,8 +2,10 @@ import { expect } from "./deps.ts";
 
 import { ethers, hubbleBls } from "../deps/index.ts";
 
-import * as env from "../src/app/env.ts";
 import contractABIs from "../contractABIs/index.ts";
+
+import * as env from "./env.ts";
+import rootRng from "./helpers/rootRng.ts";
 import createBLSWallet from "./helpers/createBLSWallet.ts";
 import blsKeyHash from "./helpers/blsKeyHash.ts";
 
@@ -14,9 +16,14 @@ const utils = ethers.utils;
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = utils.arrayify(DOMAIN_HEX);
 
-async function Fixture() {
+async function Fixture(testName: string) {
+  const rng = rootRng.child(testName);
+
   const provider = new ethers.providers.JsonRpcProvider();
-  const aggregatorSigner = new ethers.Wallet(env.PRIVATE_KEY_AGG, provider);
+
+  const signerKey = rng.address("signerKey");
+
+  const aggregatorSigner = new ethers.Wallet(signerKey, provider);
 
   if (env.USE_TEST_NET) {
     const originalPopulateTransaction = aggregatorSigner.populateTransaction
@@ -39,6 +46,7 @@ async function Fixture() {
   );
 
   return {
+    rng,
     chainId,
     verificationGateway,
     aggregatorSigner,
@@ -49,11 +57,12 @@ Deno.test({
   name: "should register new wallet",
   sanitizeOps: false,
   fn: async () => {
-    const { chainId, verificationGateway, aggregatorSigner } = await Fixture();
+    const { rng, chainId, verificationGateway, aggregatorSigner } =
+      await Fixture("should register new wallet");
 
     const blsSigner = (await BlsSignerFactory.new()).getSigner(
       DOMAIN,
-      env.PRIVATE_KEY_AGG,
+      rng.address("blsSignerSecret"),
     );
 
     const walletAddress = await createBLSWallet(

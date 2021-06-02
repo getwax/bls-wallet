@@ -1,26 +1,4 @@
-import { dotEnvConfig } from "../../deps/index.ts";
-
-dotEnvConfig({ export: true });
-
-function requireEnv(envName: string): string {
-  const value = Deno.env.get(envName);
-
-  if (value === undefined) {
-    throw new Error(`Missing required environment variable ${envName}`);
-  }
-
-  return value;
-}
-
-function requireBoolEnv(envName: string): boolean {
-  const strValue = requireEnv(envName);
-
-  if (!["true", "false"].includes(strValue)) {
-    throw new Error(`Failed to parse ${envName} as boolean: ${strValue}`);
-  }
-
-  return strValue === "true";
-}
+import { requireBoolEnv, requireEnv } from "../helpers/envTools.ts";
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
 
