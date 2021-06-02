@@ -30,20 +30,22 @@ const seed = (() => {
   return randSeed;
 })();
 
-function Rng(baseSeeds: string[]) {
-  const hashBase = (extraSeeds: string[]) =>
-    hash(
-      [...baseSeeds, ...extraSeeds].map(hash).join(":"),
+export default class Rng {
+  private constructor(private baseSeeds: string[]) {}
+
+  static root = new Rng([seed]);
+
+  child(...extraSeeds: string[]) {
+    return new Rng([...this.baseSeeds, ...extraSeeds]);
+  }
+
+  private hashBase(extraSeeds: string[]) {
+    return hash(
+      [...this.baseSeeds, ...extraSeeds].map(hash).join(":"),
     );
+  }
 
-  return {
-    child: (...extraSeeds: string[]) => {
-      return Rng([...baseSeeds, ...extraSeeds]);
-    },
-    address: (...extraSeeds: string[]) => {
-      return hashBase(extraSeeds);
-    },
-  };
+  address(...extraSeeds: string[]) {
+    return this.hashBase(extraSeeds);
+  }
 }
-
-export default Rng([seed]);
