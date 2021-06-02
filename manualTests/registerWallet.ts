@@ -2,8 +2,8 @@ import { ethers, hubbleBls } from "../deps/index.ts";
 
 import * as env from "../src/app/env.ts";
 import contractABIs from "../contractABIs/index.ts";
-import createBLSWallet from "./helpers/createBLSWallet.ts";
-import blsKeyHash from "./helpers/blsKeyHash.ts";
+import createBLSWallet from "../test/helpers/createBLSWallet.ts";
+import blsKeyHash from "../test/helpers/blsKeyHash.ts";
 
 const { BlsSignerFactory } = hubbleBls.signer;
 
