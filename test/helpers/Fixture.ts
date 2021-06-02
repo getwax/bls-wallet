@@ -11,6 +11,17 @@ const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
 
 export default class Fixture {
+  static test(
+    name: string,
+    fn: (fx: Fixture) => Promise<void>,
+  ) {
+    Deno.test({
+      name,
+      sanitizeOps: false,
+      fn: async () => fn(await Fixture.create(name)),
+    });
+  }
+
   static async create(testName: string): Promise<Fixture> {
     const rng = Rng.root.child(testName);
 
