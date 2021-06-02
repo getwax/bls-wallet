@@ -12,6 +12,18 @@ function requireEnv(envName: string): string {
   return value;
 }
 
+function requireBoolEnv(envName: string): boolean {
+  const strValue = requireEnv(envName);
+
+  if (!["true", "false"].includes(strValue)) {
+    throw new Error(`Failed to parse ${envName} as boolean: ${strValue}`);
+  }
+
+  return strValue === "true";
+}
+
+export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
+
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
 
 export const DEPLOYER_ADDRESS = requireEnv("DEPLOYER_ADDRESS");

@@ -15,10 +15,7 @@ const DOMAIN = utils.arrayify(DOMAIN_HEX);
 const provider = new ethers.providers.JsonRpcProvider();
 const aggregatorSigner = new ethers.Wallet(env.PRIVATE_KEY_AGG, provider);
 
-// TODO: Environment variable
-const testNet = true;
-
-if (testNet) {
+if (env.USE_TEST_NET) {
   const originalPopulateTransaction = aggregatorSigner.populateTransaction.bind(
     aggregatorSigner,
   );
