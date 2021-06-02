@@ -10,6 +10,8 @@ const utils = ethers.utils;
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "./lib/hubble-bls/src/signer";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
+import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
@@ -64,13 +66,17 @@ describe('VerificationGateway', async function () {
   });
   beforeEach(init);
 
-  it('should register new wallet', async function () {
+  it.only('should register new wallet', async function () {
     let blsSigner = blsSigners[0];  
     let walletAddress = await createBLSWallet(blsSigner);
 
     let blsWallet = BLSWallet.attach(walletAddress);
     expect(await blsWallet.publicKeyHash())
       .to.equal(blsKeyHash(blsSigner));
+
+    // Check revert when adding same wallet twice
+    await expectRevert.unspecified(createBLSWallet(blsSigner));
+
   });
 
   it("should process individual calls", async function() {

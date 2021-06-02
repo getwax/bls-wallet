@@ -151,17 +151,20 @@ contract VerificationGateway
         bytes calldata encodedParams
     ) public {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
-        if (address(walletFromHash[publicKeyHash]) == address(0)) {
-            blsKeysFromHash[publicKeyHash] = publicKey;
-            walletFromHash[publicKeyHash] = new BLSWallet();
-            walletFromHash[publicKeyHash].initialize(publicKeyHash);
-            emit WalletCreated(
-                address(walletFromHash[publicKeyHash]),
-                publicKeyHash,
-                publicKey
-            );
-        }
+        require(
+            address(walletFromHash[publicKeyHash]) == address(0),
+            "VerificationGateway: Wallet already exists."
+        );
+        blsKeysFromHash[publicKeyHash] = publicKey;
+        walletFromHash[publicKeyHash] = new BLSWallet();
+        walletFromHash[publicKeyHash].initialize(publicKeyHash);
+        emit WalletCreated(
+            address(walletFromHash[publicKeyHash]),
+            publicKeyHash,
+            publicKey
+        );
 
+        /// @dev Signature verification of given public key.
         blsCall(
             publicKeyHash,
             signature,
@@ -193,7 +196,7 @@ contract VerificationGateway
                 ))
             )
         );
-        require(callSuccess && checkResult, "VerificationGateway: sig not verified");
+        require(callSuccess && checkResult, "VerificationGateway: sig not verified with nonce+data");
 
         wallet.action(
             contractAddress,
