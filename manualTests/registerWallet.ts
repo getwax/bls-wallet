@@ -39,7 +39,7 @@ const verificationGateway = new ethers.Contract(
 
 const blsSigner = (await BlsSignerFactory.new()).getSigner(
   DOMAIN,
-  `0x${env.PRIVATE_KEY_AGG}`,
+  env.PRIVATE_KEY_AGG,
 );
 
 const walletAddress = await createBLSWallet(
