@@ -143,14 +143,30 @@ contract VerificationGateway
         require(msg.sender == address(walletFromHash[hash]));
     }
 
+    /**
+    @dev Local variables to avoid stack limit in functions. 
+     */
+    uint256 txCount;
+    bytes32 publicKeyHash;
+    BLSWallet wallet;
+    function clearLocals() private {
+        txCount = 0;
+        publicKeyHash = 0;
+        wallet = BLSWallet(0);
+    }
+    modifier usesLocals() {
+        _;
+        clearLocals();
+    }
+
     function blsCallCreate(
         uint256[4] calldata publicKey,
         uint256[2] calldata signature,
         address contractAddress,
         bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
-    ) public {
-        bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
+    ) public usesLocals {
+        publicKeyHash = keccak256(abi.encodePacked(publicKey));
         require(
             address(walletFromHash[publicKeyHash]) == address(0),
             "VerificationGateway: Wallet already exists."
@@ -175,14 +191,14 @@ contract VerificationGateway
     }
 
     function blsCall(
-        bytes32 publicKeyHash,
+        bytes32 callingPublicKeyHash,
         uint256[2] calldata signature,
         address contractAddress,
         bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
-    ) public {
-
-        BLSWallet wallet = walletFromHash[publicKeyHash];
+    ) public usesLocals {
+        publicKeyHash = callingPublicKeyHash;
+        wallet = walletFromHash[publicKeyHash];
 
         (bool checkResult, bool callSuccess) = BLS.verifySingle(
             signature,
@@ -215,8 +231,8 @@ contract VerificationGateway
         address[] calldata contractAddresses,
         bytes4[] calldata methodIDs,
         bytes[] calldata encodedParamSets
-    ) public {
-        uint256 txCount = contractAddresses.length;
+    ) public usesLocals {
+        txCount = contractAddresses.length;
         require(methodIDs.length == txCount, "VerificationGateway: methodIDs/contracts length mismatch.");
         require(encodedParamSets.length == txCount, "VerificationGateway: encodedParamSets/contracts length mismatch.");
         require(publicKeyHashes.length == txCount, "VerificationGateway: publicKeyHash/contracts length mismatch.");
@@ -224,10 +240,11 @@ contract VerificationGateway
         uint256[2][] memory messages = new uint256[2][](txCount);
         for (uint256 i = 0; i<txCount; i++) {
             // construct params for signature verification
-            bytes32 publicKeyHash = publicKeyHashes[i];
+            publicKeyHash = publicKeyHashes[i];
             publicKeys[i] = blsKeysFromHash[publicKeyHash];
+            wallet = walletFromHash[publicKeyHash];
             messages[i] = messagePoint(
-                walletFromHash[publicKeyHash].nonce(),
+                wallet.nonce(),
                 contractAddresses[i],
                 keccak256(abi.encodePacked(
                     methodIDs[i],
@@ -235,7 +252,7 @@ contract VerificationGateway
                 ))
             );
 
-            // execute transaction (increments nonce), will revert all if not satisfied
+            // execute transaction (increments nonce), will revert if all signatures not satisfied
             walletFromHash[publicKeyHashes[i]].action(
                 contractAddresses[i],
                 methodIDs[i],
@@ -245,7 +262,6 @@ contract VerificationGateway
         }
         (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, publicKeys, messages);
         require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
-
     }
 
     function messagePoint(

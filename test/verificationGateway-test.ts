@@ -66,7 +66,7 @@ describe('VerificationGateway', async function () {
   });
   beforeEach(init);
 
-  it.only('should register new wallet', async function () {
+  it('should register new wallet', async function () {
     let blsSigner = blsSigners[0];  
     let walletAddress = await createBLSWallet(blsSigner);
 
