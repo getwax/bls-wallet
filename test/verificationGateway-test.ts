@@ -170,6 +170,7 @@ describe('VerificationGateway', async function () {
 
     // can be called by any ecdsa wallet
     await(await blsExpander.blsCallMultiSameContractFunctionParams(
+      Array(signatures.length).fill(0),
       blsSigners.map(blsKeyHash),
       aggSignature,
       testToken.address,
@@ -178,6 +179,7 @@ describe('VerificationGateway', async function () {
     )).wait();
     // let length = signatures.length;
     // await verificationGateway.blsCallMany(
+    //   Array(length).fill(0),
     //   blsSigners.map(blsKeyHash), // corresponding bls signers
     //   aggSignature,
     //   Array(length).fill(testToken.address), // call to same contract
@@ -235,6 +237,7 @@ describe('VerificationGateway', async function () {
 
     console.log("Airdrop");
     await(await blsExpander.blsCallMultiSameCallerContractFunction(
+      Array(signatures.length).fill(0),
       blsKeyHash(blsSigners[0]),
       aggSignature,
       testToken.address,
@@ -296,6 +299,7 @@ async function gatewayCall(
 
   // can be called by any ecdsa wallet
   await(await verificationGateway.blsCall(
+    0,
     blsKeyHash(blsSigner),
     signature,
     contractAddress,
@@ -323,6 +327,7 @@ async function createBLSWallet(blsSigner: BlsSignerInterface): Promise<any> {
 
   // can be called by any ecdsa wallet
   await (await verificationGateway.blsCallCreate(
+    0,
     blsSigner.pubkey,
     signature,
     verificationGateway.address,

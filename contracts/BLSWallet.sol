@@ -4,6 +4,7 @@ pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/proxy/Initializable.sol";
+import "./lib/IERC20.sol";
 
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
@@ -29,6 +30,15 @@ contract BLSWallet is Initializable
         IVerificationGateway(verificationGateway).walletCrossCheck(publicKeyHash);
     }
 
+
+    function payTokenAmount(
+        IERC20 token,
+        address recipient,
+        uint256 amount
+    ) public onlyAdmin {
+        token.transfer(recipient, amount);
+    }
+
     /**
     @dev The methodID called is `require`d to succeed.
      */
@@ -43,7 +53,6 @@ contract BLSWallet is Initializable
         require(success, "BLSWallet: action failed to call encodedFunction");
         nonce++;
     }
-
 
     //TODO: reset admin (via bls key)
 
