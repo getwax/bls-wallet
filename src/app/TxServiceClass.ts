@@ -29,7 +29,7 @@ const txOptions: TableOptions = {
   amount: { type: DataType.VarChar, length: 66 },
 };
 
-class TxService {
+export default class TxService {
   txTable: QueryTable;
 
   constructor() {
@@ -59,5 +59,3 @@ class TxService {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
   }
 }
-
-export default new TxService();

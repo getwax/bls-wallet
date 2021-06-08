@@ -17,7 +17,7 @@ const client = new QueryClient({
   },
 });
 
-import txService from "./txService.ts";
+import txService from "./txServiceInstance.ts";
 
 export async function initTables() {
   await txService.init();

@@ -1,6 +1,6 @@
 import { RouterContext } from "../../deps/index.ts";
 
-import txService from "./txService.ts";
+import txService from "./txServiceInstance.ts";
 
 import walletService from "./walletService.ts";
 

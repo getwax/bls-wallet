@@ -1,7 +1,7 @@
 import { BigNumber, Contract, ethers, Wallet } from "../../deps/index.ts";
 
 import * as env from "./env.ts";
-import type { TransactionData } from "./txService.ts";
+import type { TransactionData } from "./TxServiceClass.ts";
 
 class WalletService {
   // deno-lint-ignore no-explicit-any
