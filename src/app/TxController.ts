@@ -13,8 +13,7 @@ export default class TxController {
   useWith(app: Application) {
     const router = new Router({ prefix: "/tx/" })
       .post("add", this.addTx.bind(this))
-      .get("count", this.countPending.bind(this))
-      .get("send-batch", this.sendTxs.bind(this));
+      .get("count", this.countPending.bind(this));
 
     app.use(router.routes());
     app.use(router.allowedMethods());
@@ -34,13 +33,5 @@ export default class TxController {
     console.log(`Returning count ${c}\n`);
     context.response.headers.set("Content-Type", "application/json");
     context.response.body = c;
-  }
-
-  async sendTxs(context: RouterContext) {
-    const txs: TransactionData[] = await this.txService.getTxs();
-    console.log(`Sending ${txs.length} txs`);
-    await this.walletService.sendTxs(txs);
-
-    context.response.body = "Sent txs";
   }
 }

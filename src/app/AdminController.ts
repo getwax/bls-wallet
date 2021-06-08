@@ -1,18 +1,15 @@
 import { Application, Router, RouterContext } from "../../deps/index.ts";
 
-import TxService from "./TxService.ts";
-import WalletService from "./WalletService.ts";
+import AdminService from "./AdminService.ts";
 
 export default class AdminController {
-  constructor(
-    private walletService: WalletService,
-    private txService: TxService,
-  ) {}
+  constructor(private adminService: AdminService) {}
 
   useWith(app: Application) {
     const router = new Router({ prefix: "/admin/" })
       .get("resetTxs", this.resetTxs.bind(this))
-      .post("setAddresses", this.setContractAddresses.bind(this));
+      .post("setAddresses", this.setContractAddresses.bind(this))
+      .get("sendBatch", this.sendBatch.bind(this));
 
     app.use(router.routes());
     app.use(router.allowedMethods());
@@ -21,7 +18,7 @@ export default class AdminController {
   async setContractAddresses(context: RouterContext) {
     const addresses: { tokenAddress: string; blsWalletAddress: string } =
       await (await context.request.body()).value;
-    this.walletService.setContractAddresses(addresses);
+    this.adminService.setContractAddresses(addresses);
 
     //TODO: send tx(s) after batch count, or N ms since last send.
 
@@ -29,7 +26,12 @@ export default class AdminController {
   }
 
   async resetTxs(context: RouterContext) {
-    await this.txService.resetTable();
+    await this.adminService.resetTxs();
     context.response.body = "Transactions reset";
+  }
+
+  async sendBatch(context: RouterContext) {
+    await this.adminService.sendBatch();
+    context.response.body = "Sent batch of transactions";
   }
 }
