@@ -1,129 +1,56 @@
-import { ethers } from "../deps/index.ts";
+import { ethers, hubbleBls } from "../deps/index.ts";
 
-import {
-  BlsSignerFactory,
-  BlsSignerInterface,
-} from "./lib/hubble-bls/src/signer";
+import * as env from "../src/app/env.ts";
+import contractABIs from "../contractABIs/index.ts";
+import createBLSWallet from "../test/helpers/createBLSWallet.ts";
+import blsKeyHash from "../test/helpers/blsKeyHash.ts";
 
-// deno-lint-ignore no-explicit-any
-type ExplicitAny = any;
+const { BlsSignerFactory } = hubbleBls.signer;
 
-// TODO: Get the correct types from ethers
-type Contract = ExplicitAny;
-type ContractFactory = ExplicitAny;
-type Signer = ExplicitAny;
-
-// const ethers: ExplicitAny = ethersImport;
-
-const utils = (ethers as ExplicitAny).utils;
-
-const { arrayify, keccak256 } = utils;
+const utils = ethers.utils;
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
-const DOMAIN = arrayify(DOMAIN_HEX);
+const DOMAIN = utils.arrayify(DOMAIN_HEX);
 
-let chainId: number;
+const provider = new ethers.providers.JsonRpcProvider();
+const aggregatorSigner = new ethers.Wallet(env.PRIVATE_KEY_AGG, provider);
 
-let signers: Signer[];
-let addresses: string[];
+if (env.USE_TEST_NET) {
+  const originalPopulateTransaction = aggregatorSigner.populateTransaction.bind(
+    aggregatorSigner,
+  );
 
-let blsSignerFactory: BlsSignerFactory;
-let blsSigners: BlsSignerInterface[];
-
-let VerificationGateway: ContractFactory;
-let verificationGateway: Contract;
-
-let BLSExpander: ContractFactory;
-let blsExpander: Contract;
-
-let BLSWallet: ContractFactory;
-
-const ACCOUNTS_LENGTH = 5;
-
-{ // init
-  signers = (await ethers.getSigners()).slice(0, ACCOUNTS_LENGTH);
-  addresses = await Promise.all(signers.map((acc) => acc.getAddress()));
-
-  blsSignerFactory = await BlsSignerFactory.new();
-  blsSigners = addresses.map((add) => blsSignerFactory.getSigner(DOMAIN, add));
-
-  // deploy Verification Gateway
-  VerificationGateway = await ethers.getContractFactory("VerificationGateway");
-  verificationGateway = await VerificationGateway.deploy();
-  await verificationGateway.deployed();
-
-  BLSExpander = await ethers.getContractFactory("BLSExpander");
-  blsExpander = await BLSExpander.deploy();
-  await blsExpander.deployed();
-  await blsExpander.initialize(verificationGateway.address);
-
-  BLSWallet = await ethers.getContractFactory("BLSWallet");
+  aggregatorSigner.populateTransaction = (transaction) => {
+    transaction.gasPrice = 0;
+    return originalPopulateTransaction(transaction);
+  };
 }
 
-const blsSigner = blsSigners[0];
-const walletAddress = await createBLSWallet(blsSigner);
+const chainId = (await provider.getNetwork()).chainId;
 
-const blsWallet = BLSWallet.attach(walletAddress);
+const verificationGateway = new ethers.Contract(
+  env.VERIFICATION_GATEWAY_ADDRESS,
+  contractABIs["VerificationGateway.ovm.json"].abi,
+  aggregatorSigner,
+);
+
+const blsSigner = (await BlsSignerFactory.new()).getSigner(
+  DOMAIN,
+  env.PRIVATE_KEY_AGG,
+);
+
+const walletAddress = await createBLSWallet(
+  chainId,
+  verificationGateway,
+  blsSigner,
+);
+
+const blsWallet = new ethers.Contract(
+  walletAddress,
+  contractABIs["BLSWallet.ovm.json"].abi,
+  aggregatorSigner,
+);
 
 console.log(await blsWallet.publicKeyHash());
 console.log("should be");
 console.log(blsKeyHash(blsSigner));
-
-// Helper functions
-
-function blsKeyHash(blsSigner: BlsSignerInterface) {
-  return keccak256(utils.solidityPack(
-    ["uint256[4]"],
-    [blsSigner.pubkey],
-  ));
-}
-
-function dataPayload(
-  nonce: ExplicitAny,
-  contractAddress: ExplicitAny,
-  encodedFunction: string,
-) {
-  const encodedFunctionHash = utils.solidityKeccak256(
-    ["bytes"],
-    [encodedFunction],
-  );
-  return utils.solidityPack(
-    ["uint256", "uint256", "address", "bytes32"],
-    [
-      chainId,
-      nonce,
-      contractAddress.toString(),
-      encodedFunctionHash,
-    ],
-  );
-}
-
-async function createBLSWallet(
-  blsSigner: BlsSignerInterface,
-): Promise<ExplicitAny> {
-  const blsPubKeyHash = blsKeyHash(blsSigner);
-
-  const encodedFunction = VerificationGateway.interface.encodeFunctionData(
-    "walletCrossCheck",
-    [blsPubKeyHash],
-  );
-
-  const dataToSign = await dataPayload(
-    0,
-    verificationGateway.address,
-    encodedFunction,
-  );
-
-  const signature = blsSigner.sign(dataToSign);
-
-  // can be called by any ecdsa wallet
-  await (await verificationGateway.blsCallCreate(
-    blsSigner.pubkey,
-    signature,
-    verificationGateway.address,
-    encodedFunction.substring(0, 10),
-    "0x" + encodedFunction.substr(10),
-  )).wait();
-
-  return await verificationGateway.walletFromHash(blsPubKeyHash);
-}

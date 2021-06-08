@@ -3,10 +3,6 @@ import { BigNumber, Contract, ethers, Wallet } from "../../deps/index.ts";
 import * as env from "./env.ts";
 import type { TransactionData } from "./txService.ts";
 
-/// Workaround to call any function on a Contract object (via generic ContractFunction from ethers)
-// deno-lint-ignore no-explicit-any
-declare type ContractFunction = (...params: Array<any>) => Promise<any>;
-
 class WalletService {
   // deno-lint-ignore no-explicit-any
   erc20ABI: any;
