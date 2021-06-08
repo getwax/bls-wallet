@@ -1,7 +1,7 @@
 import { RouterContext } from "../../deps/index.ts";
 
-import TxService from "./TxServiceClass.ts";
-import type { TransactionData } from "./TxServiceClass.ts";
+import TxService from "./TxService.ts";
+import type { TransactionData } from "./TxService.ts";
 
 import walletService from "./walletService.ts";
 
