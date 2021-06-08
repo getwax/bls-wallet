@@ -7,12 +7,6 @@ export default class AdminService {
     private txService: TxService,
   ) {}
 
-  setContractAddresses(
-    addresses: { tokenAddress: string; blsWalletAddress: string },
-  ) {
-    this.walletService.setContractAddresses(addresses);
-  }
-
   async resetTxs() {
     await this.txService.resetTable();
   }
