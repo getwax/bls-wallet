@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "./lib/IERC20.sol";
+// import "hardhat/console.sol";
 
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
@@ -36,6 +37,7 @@ contract BLSWallet is Initializable
         address recipient,
         uint256 amount
     ) public onlyAdmin {
+        uint256 b = token.balanceOf(address(this));
         token.transfer(recipient, amount);
     }
 

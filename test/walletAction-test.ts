@@ -6,6 +6,7 @@ import Fixture from "./helpers/Fixture";
 import TokenHelper from "./helpers/TokenHelper";
 
 import { aggregate } from "./lib/hubble-bls/src/signer";
+import { BigNumber } from "ethers";
 
 describe('WalletActions', async function () {
   let fx: Fixture;
@@ -41,6 +42,7 @@ describe('WalletActions', async function () {
     // bls transfer each wallet's balance to first wallet
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       await th.transferFrom(
+        BigNumber.from(0),
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
         fx.blsSigners[i],
         blsWalletAddresses[0],
@@ -108,7 +110,6 @@ describe('WalletActions', async function () {
 
   it("should airdrop", async function() {
     let blsWalletAddresses = await fx.createBLSWallets();
-    th = new TokenHelper(fx);
     let testToken = await TokenHelper.setupTestToken();
 
     // send all to first address

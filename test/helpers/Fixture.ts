@@ -15,7 +15,7 @@ const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
 const zeroBLSPubKey = [0, 0, 0, 0].map(BigNumber.from);
-
+const zeroAddress = "0x0000000000000000000000000000000000000000";
 
 export default class Fixture {
   
@@ -39,7 +39,7 @@ export default class Fixture {
     public BLSWallet: ContractFactory,
   ) {}
 
-  static async create() {
+  static async create(initialized: boolean=true) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
     console.log("ChainId from provider", chainId);
 
@@ -51,8 +51,11 @@ export default class Fixture {
   
     // deploy Verification Gateway
     let VerificationGateway = await ethers.getContractFactory("VerificationGateway");
-    let verificationGateway = await VerificationGateway.deploy(); 
+    let verificationGateway = await VerificationGateway.deploy();
     await verificationGateway.deployed();
+    if (initialized) {
+      await verificationGateway.initialize(zeroAddress);
+    }
   
     let BLSExpander = await ethers.getContractFactory("BLSExpander");
     let blsExpander = await BLSExpander.deploy(); 
@@ -103,6 +106,7 @@ export default class Fixture {
   }
 
   async gatewayCall(
+    reward,
     blsSigner,
     nonce,
     contractAddress,
@@ -117,7 +121,7 @@ export default class Fixture {
 
     // can be called by any ecdsa wallet
     await(await this.verificationGateway.blsCall(
-      0,
+      reward,
       Fixture.blsKeyHash(blsSigner),
       signature,
       contractAddress,
@@ -126,15 +130,14 @@ export default class Fixture {
     )).wait();
   }
 
-  async createBLSWallet(blsSigner: BlsSignerInterface): Promise<any> {
 
+  async createBLSWallet(blsSigner: BlsSignerInterface): Promise<any> {
     const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
 
     let encodedFunction = this.VerificationGateway.interface.encodeFunctionData(
       "walletCrossCheck",
       [blsPubKeyHash]
     );
-
     let dataToSign = await this.dataPayload(
       0,
       this.verificationGateway.address,

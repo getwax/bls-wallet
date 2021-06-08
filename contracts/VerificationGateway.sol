@@ -95,6 +95,14 @@ contract VerificationGateway is Initializable
         );
         require(callSuccess && checkResult, "VerificationGateway: sig not verified with nonce+data");
 
+        if (tokenRewardAmount > 0) {
+            walletFromHash[publicKeyHash].payTokenAmount(
+                paymentToken,
+                msg.sender,
+                tokenRewardAmount
+            );
+        }
+
         walletFromHash[publicKeyHash].action(
             contractAddress,
             methodID,
