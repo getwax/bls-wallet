@@ -4,8 +4,8 @@ import Fixture from "./helpers/Fixture.ts";
 import blsKeyHash from "./helpers/blsKeyHash.ts";
 
 Fixture.test("should register new wallet", async (fx) => {
-  const blsSigner = await fx.BlsSigner();
-  const blsWallet = await fx.BlsWallet(blsSigner);
+  const blsSigner = await fx.createBlsSigner();
+  const blsWallet = await fx.createBlsWallet(blsSigner);
 
   expect(
     await blsWallet.publicKeyHash(),
@@ -17,8 +17,8 @@ Fixture.test("should register new wallet", async (fx) => {
 Fixture.test(
   "should regenerate same wallet when registering the same address",
   async (fx) => {
-    const firstWallet = await fx.BlsWallet(await fx.BlsSigner());
-    const secondWallet = await fx.BlsWallet(await fx.BlsSigner());
+    const firstWallet = await fx.createBlsWallet(await fx.createBlsSigner());
+    const secondWallet = await fx.createBlsWallet(await fx.createBlsSigner());
 
     expect(
       await firstWallet.publicKeyHash(),
