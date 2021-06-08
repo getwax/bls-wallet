@@ -93,4 +93,8 @@ export default class Fixture {
       this.aggregatorSigner,
     );
   }
+
+  async BlsWallet(signer: hubbleBls.signer.BlsSigner) {
+    return this.BlsWalletFromAddress(await this.BlsWalletAddress(signer));
+  }
 }
