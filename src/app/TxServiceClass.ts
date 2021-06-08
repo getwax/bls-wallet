@@ -3,14 +3,11 @@ import {
   CreateTableMode,
   DataType,
   QueryClient,
+  QueryTable,
   TableOptions,
 } from "../../deps/index.ts";
 
-const PG_HOST = "localhost";
-const PG_PORT = 5432;
-const PG_USER = "bls";
-const PG_PASSWORD = "blstest";
-const PG_DB_NAME = "bls_aggregator";
+import * as env from "./env.ts";
 
 export type TransactionData = {
   txId?: number;
@@ -21,8 +18,6 @@ export type TransactionData = {
   recipient: string;
   amount: string;
 };
-
-const TX_TABLE_NAME = "txs";
 
 const txOptions: TableOptions = {
   txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
@@ -35,20 +30,23 @@ const txOptions: TableOptions = {
 };
 
 export default class TxService {
-  client = new QueryClient({
-    hostname: PG_HOST,
-    port: PG_PORT,
-    user: PG_USER,
-    password: PG_PASSWORD,
-    database: PG_DB_NAME,
-    tls: {
-      enforce: false,
-    },
-  });
+  client: QueryClient;
+  txTable: QueryTable<TransactionData>;
 
-  txTable = this.client.table<TransactionData>(TX_TABLE_NAME);
+  constructor(txTableName: string) {
+    this.client = new QueryClient({
+      hostname: env.PG.HOST,
+      port: env.PG.PORT,
+      user: env.PG.USER,
+      password: env.PG.PASSWORD,
+      database: env.PG.DB_NAME,
+      tls: {
+        enforce: false,
+      },
+    });
 
-  constructor() {}
+    this.txTable = this.client.table<TransactionData>(txTableName);
+  }
 
   async init() {
     await this.txTable.create(txOptions, CreateTableMode.IfNotExists);
