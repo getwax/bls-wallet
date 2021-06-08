@@ -33,7 +33,7 @@ export default class TxService {
   client: QueryClient;
   txTable: QueryTable<TransactionData>;
 
-  constructor(txTableName: string) {
+  private constructor(txTableName: string) {
     this.client = new QueryClient({
       hostname: env.PG.HOST,
       port: env.PG.PORT,
@@ -48,8 +48,11 @@ export default class TxService {
     this.txTable = this.client.table<TransactionData>(txTableName);
   }
 
-  async init() {
-    await this.txTable.create(txOptions, CreateTableMode.IfNotExists);
+  static async create(txTableName: string): Promise<TxService> {
+    const txService = new TxService(txTableName);
+    await txService.txTable.create(txOptions, CreateTableMode.IfNotExists);
+
+    return txService;
   }
 
   async addTx(txData: TransactionData) {

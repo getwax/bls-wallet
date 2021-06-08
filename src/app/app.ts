@@ -5,8 +5,7 @@ import TxService from "./TxService.ts";
 import TxController from "./TxController.ts";
 import AdminController from "./AdminController.ts";
 
-const txService = new TxService(env.TX_TABLE_NAME);
-await txService.init();
+const txService = await TxService.create(env.TX_TABLE_NAME);
 
 const txController = new TxController(txService);
 const adminController = new AdminController(txService);
