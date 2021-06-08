@@ -1,11 +1,16 @@
-import { client } from "./database.ts";
 import {
   Constraint,
   CreateTableMode,
   DataType,
-  QueryTable,
+  QueryClient,
   TableOptions,
 } from "../../deps/index.ts";
+
+const PG_HOST = "localhost";
+const PG_PORT = 5432;
+const PG_USER = "bls";
+const PG_PASSWORD = "blstest";
+const PG_DB_NAME = "bls_aggregator";
 
 export type TransactionData = {
   txId?: number;
@@ -30,11 +35,20 @@ const txOptions: TableOptions = {
 };
 
 export default class TxService {
-  txTable: QueryTable;
+  client = new QueryClient({
+    hostname: PG_HOST,
+    port: PG_PORT,
+    user: PG_USER,
+    password: PG_PASSWORD,
+    database: PG_DB_NAME,
+    tls: {
+      enforce: false,
+    },
+  });
 
-  constructor() {
-    this.txTable = client.table<TransactionData>(TX_TABLE_NAME);
-  }
+  txTable = this.client.table<TransactionData>(TX_TABLE_NAME);
+
+  constructor() {}
 
   async init() {
     await this.txTable.create(txOptions, CreateTableMode.IfNotExists);
@@ -45,14 +59,14 @@ export default class TxService {
   }
 
   async txCount(): Promise<number> {
-    const result = await client.query(
+    const result = await this.client.query(
       `SELECT COUNT(*) FROM ${this.txTable.name}`,
     );
     return result[0].count as number;
   }
 
   async getTxs(): Promise<any[]> {
-    return await client.query(`SELECT * FROM ${this.txTable.name}`);
+    return await this.client.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
   async resetTable() {
