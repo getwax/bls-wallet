@@ -1,8 +1,10 @@
-import { Application, Router } from "../../deps/index.ts";
+import { Application } from "../../deps/index.ts";
+import AdminController from "./AdminController.ts";
+import TxController from "./TxController.ts";
 
-export default function createKoaApp({ adminRouter, txRouter }: {
-  adminRouter: Router;
-  txRouter: Router;
+export default function createKoaApp({ adminController, txController }: {
+  adminController: AdminController;
+  txController: TxController;
 }) {
   const app = new Application();
 
@@ -15,11 +17,8 @@ export default function createKoaApp({ adminRouter, txRouter }: {
     }
   });
 
-  app.use(txRouter.routes());
-  app.use(txRouter.allowedMethods());
-
-  app.use(adminRouter.routes());
-  app.use(adminRouter.allowedMethods());
+  txController.useWith(app);
+  adminController.useWith(app);
 
   app.use(({ response }) => {
     response.status = 404;
