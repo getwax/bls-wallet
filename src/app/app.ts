@@ -1,5 +1,4 @@
 import Routers from "./Routers.ts";
-import * as db from "./database.ts";
 import createKoaApp from "./createKoaApp.ts";
 import txService from "./txServiceInstance.ts";
 import TxController from "./TxController.ts";
@@ -8,7 +7,7 @@ import AdminController from "./AdminController.ts";
 const txController = new TxController(txService);
 const adminController = new AdminController(txService);
 
-await db.initTables(txService);
+await txService.init();
 
 const app = createKoaApp(Routers({ adminController, txController }));
 
