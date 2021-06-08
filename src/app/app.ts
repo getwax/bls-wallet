@@ -14,9 +14,7 @@ const adminController = new AdminController(walletService, txService);
 
 const app = createKoaApp(Routers({ adminController, txController }));
 
-const port = 3000;
-console.log(`Listening on port ${port}...`);
-
-await app.listen({ port: port });
+await app.listen({ port: env.PORT });
+console.log(`Listening on port ${env.PORT}...`);
 
 // await db.client.disconnect();

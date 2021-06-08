@@ -1,4 +1,10 @@
-import { requireBoolEnv, requireEnv } from "../helpers/envTools.ts";
+import {
+  requireBoolEnv,
+  requireEnv,
+  requireIntEnv,
+} from "../helpers/envTools.ts";
+
+export const PORT = requireIntEnv("PORT");
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
 
