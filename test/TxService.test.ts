@@ -16,7 +16,7 @@ function test(name: string, fn: (txService: TxService) => Promise<void>) {
       try {
         await fn(txService);
       } finally {
-        await txService.drop();
+        await txService.resetTable();
         await txService.stop();
       }
     },

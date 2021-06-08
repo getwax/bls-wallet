@@ -30,7 +30,7 @@ export default class TxController {
   }
 
   async countPending(context: RouterContext) {
-    const c: number = await this.txService.txCount();
+    const c = await this.txService.txCount();
     console.log(`Returning count ${c}\n`);
     context.response.headers.set("Content-Type", "application/json");
     context.response.body = c;

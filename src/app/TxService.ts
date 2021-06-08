@@ -70,7 +70,7 @@ export default class TxService {
     return await this.client.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
-  async drop() {
+  async resetTable() {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
   }
 
