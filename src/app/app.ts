@@ -1,34 +1,32 @@
 import { Application } from "../../deps/index.ts";
 
-import { adminRouter, txRouter } from "./routes.ts";
-import * as db from "./database.ts";
+import * as env from "./env.ts";
+import WalletService from "./WalletService.ts";
+import TxService from "./TxService.ts";
+import TxController from "./TxController.ts";
+import AdminController from "./AdminController.ts";
+import AdminService from "./AdminService.ts";
+import errorHandler from "./errorHandler.ts";
+import notFoundHandler from "./notFoundHandler.ts";
 
-await db.initTables();
+const walletService = new WalletService();
+const txService = await TxService.create(env.TX_TABLE_NAME);
+const adminService = new AdminService(walletService, txService);
+
+const txController = new TxController(walletService, txService);
+const adminController = new AdminController(adminService);
 
 const app = new Application();
 
-app.use(txRouter.routes());
-app.use(txRouter.allowedMethods());
+app.use(errorHandler);
 
-app.use(adminRouter.routes());
-app.use(adminRouter.allowedMethods());
+txController.useWith(app);
+adminController.useWith(app);
 
-app.use(({ response }) => {
-  response.status = 404;
-  response.body = { msg: "Not Found" };
-});
-app.use(async ({ response }, nextFn) => {
-  try {
-    await nextFn();
-  } catch (err) {
-    response.status = 500;
-    response.body = { msg: err.message };
-  }
+app.use(notFoundHandler);
+
+app.addEventListener("listen", () => {
+  console.log(`Listening on port ${env.PORT}...`);
 });
 
-const port = 3000;
-console.log(`Listening on port ${port}...`);
-
-await app.listen({ port: port });
-
-// await db.client.disconnect();
+await app.listen({ port: env.PORT });

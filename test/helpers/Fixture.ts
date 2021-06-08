@@ -68,7 +68,7 @@ export default class Fixture {
     public aggregatorSigner: ethers.Wallet,
   ) {}
 
-  async BlsSigner(...extraSeeds: string[]) {
+  async createBlsSigner(...extraSeeds: string[]) {
     const factory = await BlsSignerFactory.new();
     return factory.getSigner(
       DOMAIN,
@@ -76,9 +76,7 @@ export default class Fixture {
     );
   }
 
-  // TODO: Naming: Make it more clear that this is actually creating something
-  // on chain and not just repackaging data in-process.
-  async BlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
+  async createBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
     return await createBLSWallet(
       this.chainId,
       this.verificationGateway,
@@ -86,7 +84,7 @@ export default class Fixture {
     );
   }
 
-  BlsWalletFromAddress(address: string) {
+  connectBlsWallet(address: string) {
     return new ethers.Contract(
       address,
       contractABIs["BLSWallet.ovm.json"].abi,
@@ -94,7 +92,7 @@ export default class Fixture {
     );
   }
 
-  async BlsWallet(signer: hubbleBls.signer.BlsSigner) {
-    return this.BlsWalletFromAddress(await this.BlsWalletAddress(signer));
+  async createBlsWallet(signer: hubbleBls.signer.BlsSigner) {
+    return this.connectBlsWallet(await this.createBlsWalletAddress(signer));
   }
 }

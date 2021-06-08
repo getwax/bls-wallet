@@ -25,3 +25,14 @@ export function requireBoolEnv(envName: string): boolean {
 
   return strValue === "true";
 }
+
+export function requireIntEnv(envName: string): number {
+  const strValue = requireEnv(envName);
+  const value = Number(strValue);
+
+  if (value !== Math.round(value)) {
+    throw new Error(`Failed to parse ${envName} as int: ${strValue}`);
+  }
+
+  return value;
+}
