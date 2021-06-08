@@ -1,13 +1,15 @@
+import * as env from "./env.ts";
 import Routers from "./Routers.ts";
 import createKoaApp from "./createKoaApp.ts";
-import txService from "./txServiceInstance.ts";
+import TxService from "./TxService.ts";
 import TxController from "./TxController.ts";
 import AdminController from "./AdminController.ts";
 
+const txService = new TxService(env.TX_TABLE_NAME);
+await txService.init();
+
 const txController = new TxController(txService);
 const adminController = new AdminController(txService);
-
-await txService.init();
 
 const app = createKoaApp(Routers({ adminController, txController }));
 

@@ -21,3 +21,5 @@ export const PG = {
   PASSWORD: requireEnv("PG_PASSWORD"),
   DB_NAME: requireEnv("PG_DB_NAME"),
 };
+
+export const TX_TABLE_NAME = requireEnv("TX_TABLE_NAME");
