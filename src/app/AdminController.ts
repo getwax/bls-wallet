@@ -1,10 +1,14 @@
 import { RouterContext } from "../../deps/index.ts";
 
-import txService from "./txServiceInstance.ts";
+import TxService from "./TxServiceClass.ts";
 
 import walletService from "./walletService.ts";
 
 export default class AdminController {
+  constructor(
+    private txService: TxService,
+  ) {}
+
   async setContractAddresses(context: RouterContext) {
     const addresses: { tokenAddress: string; blsWalletAddress: string } =
       await (await context.request.body()).value;
@@ -16,7 +20,7 @@ export default class AdminController {
   }
 
   async resetTxs(context: RouterContext) {
-    await txService.resetTable();
+    await this.txService.resetTable();
     context.response.body = "Transactions reset";
   }
 }

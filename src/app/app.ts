@@ -6,7 +6,7 @@ import TxController from "./TxController.ts";
 import AdminController from "./AdminController.ts";
 
 const txController = new TxController(txService);
-const adminController = new AdminController();
+const adminController = new AdminController(txService);
 
 await db.initTables(txService);
 
