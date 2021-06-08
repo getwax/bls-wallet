@@ -21,14 +21,6 @@ export default class WalletService {
     );
   }
 
-  createWalletContract(address: string) {
-    return new Contract(
-      address,
-      contractABIs["BLSWallet.ovm.json"].abi,
-      this.aggregatorSigner,
-    );
-  }
-
   async sendTxs(txs: TransactionData[]) {
     await 0;
     console.log(`TODO: Send Txs: ${txs}`);
