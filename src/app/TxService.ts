@@ -66,7 +66,7 @@ export default class TxService {
     return result[0].count as bigint;
   }
 
-  async getTxs(): Promise<any[]> {
+  async getTxs(): Promise<TransactionData[]> {
     return await this.client.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
