@@ -1,22 +1,15 @@
 import { expect, assert } from "chai";
 
-import { ethers, network } from "hardhat";
-
-import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
-const utils = ethers.utils;
-
-// import * as mcl from "../server/src/lib/hubble-bls/src/mcl";
-
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "./lib/hubble-bls/src/signer";
-import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
-
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+
 import Fixture from "./helpers/Fixture";
+import TokenHelper from "./helpers/TokenHelper";
 
-let th: TokenHelper;
+import { aggregate } from "./lib/hubble-bls/src/signer";
 
-describe('VerificationGateway', async function () {
+describe('WalletActions', async function () {
   let fx: Fixture;
+  let th: TokenHelper;
   beforeEach(async function() {
     fx = await Fixture.create();
   });
@@ -114,7 +107,6 @@ describe('VerificationGateway', async function () {
   });
 
   it("should airdrop", async function() {
-
     let blsWalletAddresses = await fx.createBLSWallets();
     th = new TokenHelper(fx);
     let testToken = await TokenHelper.setupTestToken();
@@ -167,73 +159,3 @@ describe('VerificationGateway', async function () {
 
 });
 
-
-// Helpers
-
-class TokenHelper {
-
-  static readonly initialSupply = ethers.utils.parseUnits("1000000")
-  static readonly userStartAmount = TokenHelper.initialSupply.div(Fixture.ACCOUNTS_LENGTH);
-
-  testToken: Contract;
-  constructor(public fx: Fixture) {}
-
-  static async setupTestToken(): Promise<Contract> {
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    let mockERC20 = await MockERC20.deploy(
-      "AnyToken",
-      "TOK",
-      TokenHelper.initialSupply
-    );
-    await mockERC20.deployed();
-    return mockERC20;
-  }
-
-  static async distributeTokens(
-    fromSigner: Signer,
-    token: Contract,
-    addresses: string[]
-  ) {
-    console.log("Distribute tokens to wallets...");
-    // split supply amongst bls wallet addresses
-    for (let i = 0; i<addresses.length; i++) {
-      // first account as aggregator, and holds token supply
-      await (await token.connect(fromSigner).transfer(
-        addresses[i],
-        TokenHelper.userStartAmount
-      )).wait();
-    }
-  }
-
-  async walletTokenSetup(): Promise<string[]> {
-    let blsWalletAddresses = await this.fx.createBLSWallets();
-
-    this.testToken = await TokenHelper.setupTestToken();
-    await TokenHelper.distributeTokens(
-      this.fx.signers[0],
-      this.testToken,
-      blsWalletAddresses
-    );
-
-    return blsWalletAddresses;
-  }
-
-  async transferFrom(
-    nonce: any,
-    sender: BlsSignerInterface,
-    recipient: string,
-    amount: BigNumber
-  ) {
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    let encodedFunction = MockERC20.interface.encodeFunctionData(
-      "transfer",
-      [recipient, amount.toString()]
-    );
-    await this.fx.gatewayCall(
-      sender,
-      nonce,
-      this.testToken.address,
-      encodedFunction
-    );
-  }
-}
