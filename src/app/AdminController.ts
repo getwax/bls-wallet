@@ -10,7 +10,7 @@ export default class AdminController {
   ) {}
 
   useWith(app: Application) {
-    const router = new Router({ prefix: "/adminController/" })
+    const router = new Router({ prefix: "/admin/" })
       .get("resetTxs", this.resetTxs.bind(this))
       .post("setAddresses", this.setContractAddresses.bind(this));
 
