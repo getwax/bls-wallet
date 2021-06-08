@@ -40,19 +40,6 @@ test("Starts with zero transactions", async (txService) => {
 });
 
 test("Has one transaction after adding transaction", async (txService) => {
-  await txService.addTx({
-    pubKey: ["pub", "key"],
-    sender: "sender",
-    message: ["message"],
-    signature: "signature",
-    recipient: "recipient",
-    amount: "amount",
-  });
-
-  assertEquals(await txService.txCount(), 1n);
-});
-
-test("Has one transaction after adding transaction", async (txService) => {
   await txService.addTx(sampleTransactions[0]);
 
   assertEquals(await txService.txCount(), 1n);
