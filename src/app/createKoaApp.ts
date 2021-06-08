@@ -6,6 +6,15 @@ export default function createKoaApp({ adminRouter, txRouter }: {
 }) {
   const app = new Application();
 
+  app.use(async ({ response }, nextFn) => {
+    try {
+      await nextFn();
+    } catch (err) {
+      response.status = 500;
+      response.body = { msg: err.stack };
+    }
+  });
+
   app.use(txRouter.routes());
   app.use(txRouter.allowedMethods());
 
@@ -15,14 +24,6 @@ export default function createKoaApp({ adminRouter, txRouter }: {
   app.use(({ response }) => {
     response.status = 404;
     response.body = { msg: "Not Found" };
-  });
-  app.use(async ({ response }, nextFn) => {
-    try {
-      await nextFn();
-    } catch (err) {
-      response.status = 500;
-      response.body = { msg: err.message };
-    }
   });
 
   return app;
