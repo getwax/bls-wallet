@@ -4,7 +4,7 @@ import txService from "./txServiceInstance.ts";
 
 import walletService from "./walletService.ts";
 
-class TxController {
+class AdminController {
   async setContractAddresses(context: RouterContext) {
     const addresses: { tokenAddress: string; blsWalletAddress: string } =
       await (await context.request.body()).value;
@@ -21,4 +21,4 @@ class TxController {
   }
 }
 
-export default new TxController();
+export default new AdminController();
