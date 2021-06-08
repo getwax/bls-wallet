@@ -3,7 +3,7 @@ import { BigNumber, Contract, ethers, Wallet } from "../../deps/index.ts";
 import * as env from "./env.ts";
 import type { TransactionData } from "./TxService.ts";
 
-class WalletService {
+export default class WalletService {
   // deno-lint-ignore no-explicit-any
   erc20ABI: any;
   // deno-lint-ignore no-explicit-any
@@ -56,5 +56,3 @@ class WalletService {
     console.log(`Send Txs (TODO) ${txs}`);
   }
 }
-
-export default new WalletService();

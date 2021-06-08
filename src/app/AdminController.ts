@@ -1,18 +1,18 @@
 import { RouterContext } from "../../deps/index.ts";
 
 import TxService from "./TxService.ts";
-
-import walletService from "./walletService.ts";
+import WalletService from "./WalletService.ts";
 
 export default class AdminController {
   constructor(
+    private walletService: WalletService,
     private txService: TxService,
   ) {}
 
   async setContractAddresses(context: RouterContext) {
     const addresses: { tokenAddress: string; blsWalletAddress: string } =
       await (await context.request.body()).value;
-    walletService.setContractAddresses(addresses);
+    this.walletService.setContractAddresses(addresses);
 
     //TODO: send tx(s) after batch count, or N ms since last send.
 

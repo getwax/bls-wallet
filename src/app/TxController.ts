@@ -2,11 +2,13 @@ import { RouterContext } from "../../deps/index.ts";
 
 import TxService from "./TxService.ts";
 import type { TransactionData } from "./TxService.ts";
-
-import walletService from "./walletService.ts";
+import WalletService from "./WalletService.ts";
 
 export default class TxController {
-  constructor(private txService: TxService) {}
+  constructor(
+    private walletService: WalletService,
+    private txService: TxService,
+  ) {}
 
   async addTx(context: RouterContext) {
     const txData: TransactionData = await (await context.request.body()).value;
@@ -27,7 +29,7 @@ export default class TxController {
   async sendTxs(context: RouterContext) {
     const txs: TransactionData[] = await this.txService.getTxs();
     console.log(`Sending ${txs.length} txs`);
-    await walletService.sendTxs(txs);
+    await this.walletService.sendTxs(txs);
 
     context.response.body = "Sent txs";
   }
