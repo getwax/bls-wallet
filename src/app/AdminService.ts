@@ -16,4 +16,8 @@ export default class AdminService {
     console.log(`Sending ${txs.length} txs`);
     await this.walletService.sendTxs(txs);
   }
+
+  async getAggregatorBalance() {
+    return await this.walletService.getAggregatorBalance();
+  }
 }

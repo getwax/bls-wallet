@@ -30,12 +30,13 @@ export default class WalletService {
   }
 
   async sendTxs(txs: TransactionData[]) {
-    const aggBalance: BigNumber = await this.erc20!.balanceOf(
+    await 0;
+    console.log(`TODO: Send Txs: ${txs}`);
+  }
+
+  async getAggregatorBalance(): Promise<BigNumber> {
+    return await this.erc20.balanceOf(
       env.DEPLOYER_ADDRESS,
     );
-    console.log(ethers.utils.formatUnits(aggBalance.toString(), 18));
-
-    //TODO:
-    console.log(`Send Txs (TODO) ${txs}`);
   }
 }
