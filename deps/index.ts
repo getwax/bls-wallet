@@ -9,7 +9,10 @@ export {
   Router,
 } from "https://deno.land/x/oak@v7.3.0/mod.ts";
 
-export type { RouterContext } from "https://deno.land/x/oak@v7.3.0/mod.ts";
+export type {
+  Middleware,
+  RouterContext,
+} from "https://deno.land/x/oak@v7.3.0/mod.ts";
 
 // Ethers dependencies
 import ethers from "./ethers/index.ts";
