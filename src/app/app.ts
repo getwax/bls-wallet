@@ -1,10 +1,12 @@
-import { adminRouter, txRouter } from "./routes.ts";
+import Routers from "./Routers.ts";
 import * as db from "./database.ts";
 import createKoaApp from "./createKoaApp.ts";
+import txService from "./txServiceInstance.ts";
+import TxController from "./TxController.ts";
 
-await db.initTables();
+await db.initTables(txService);
 
-const app = createKoaApp({ adminRouter, txRouter });
+const app = createKoaApp(Routers(new TxController(txService)));
 
 const port = 3000;
 console.log(`Listening on port ${port}...`);
