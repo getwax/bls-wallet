@@ -139,6 +139,34 @@ contract VerificationGateway
         uint256[BLS_LEN] publicKey
     );
 
+    function checkSig(
+        uint256 signedNonce,
+        bytes32 publicKeyHash,
+        uint256[2] calldata signature,
+        address contractAddress,
+        bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
+        bytes calldata encodedParams
+    ) external view
+    returns (
+        bool result,
+        uint256 nextNonce
+    ) {
+        (bool checkResult, bool callSuccess) = BLS.verifySingle(
+            signature,
+            blsKeysFromHash[publicKeyHash],
+            messagePoint(
+                signedNonce,
+                contractAddress,
+                keccak256(abi.encodePacked(
+                    methodID,
+                    encodedParams
+                ))
+            )
+        );
+        result = callSuccess && checkResult;
+        nextNonce = walletFromHash[publicKeyHash].nonce();
+    }
+
     function walletCrossCheck(bytes32 hash) public view {
         require(msg.sender == address(walletFromHash[hash]));
     }

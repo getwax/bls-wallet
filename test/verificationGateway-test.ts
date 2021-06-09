@@ -66,7 +66,39 @@ describe('VerificationGateway', async function () {
   });
   beforeEach(init);
 
-  it.only('should register new wallet', async function () {
+  it.only('should check signature', async function () {
+    let blsSigner = blsSigners[0];
+    await createBLSWallet(blsSigner);
+    // let blsWallet = BLSWallet.attach(walletAddress);
+
+    const blsPubKeyHash = blsKeyHash(blsSigner);
+
+    let encodedFunction = VerificationGateway.interface.encodeFunctionData(
+      "walletCrossCheck",
+      [blsPubKeyHash]
+    );
+  
+    let dataToSign = await dataPayload(
+      0,
+      verificationGateway.address,
+      encodedFunction
+    );
+  
+    let signature = blsSigner.sign(dataToSign);
+  
+    let {result, nextNonce} = await verificationGateway.callStatic.checkSig(
+      0,
+      blsPubKeyHash,
+      signature,
+      verificationGateway.address,
+      encodedFunction.substring(0,10),
+      '0x'+encodedFunction.substr(10)
+    );
+    expect(result).to.equal(true);
+    expect(nextNonce).to.equal(BigNumber.from(1));
+  });
+
+  it('should register new wallet', async function () {
     let blsSigner = blsSigners[0];  
     let walletAddress = await createBLSWallet(blsSigner);
 
