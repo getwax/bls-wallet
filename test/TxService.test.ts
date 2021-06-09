@@ -27,11 +27,10 @@ const sampleTransactions: TransactionData[] = [
   {
     txId: 1,
     pubKey: ["pub", "key"],
-    sender: "sender",
-    message: ["message"],
     signature: "signature",
-    recipient: "recipient",
-    amount: "amount",
+    contractAddress: "recipient",
+    methodId: "methodId",
+    encodedParams: "encodedParams",
   },
 ];
 

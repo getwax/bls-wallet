@@ -12,21 +12,19 @@ import * as env from "./env.ts";
 export type TransactionData = {
   txId?: number;
   pubKey: string[];
-  sender: string;
-  message: string[];
   signature: string;
-  recipient: string;
-  amount: string;
+  contractAddress: string;
+  methodId: string;
+  encodedParams: string;
 };
 
 const txOptions: TableOptions = {
   txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
   pubKey: { type: DataType.VarChar, length: 66, array: true },
-  sender: { type: DataType.VarChar, length: 42 },
-  message: { type: DataType.VarChar, length: 66, array: true },
   signature: { type: DataType.VarChar, length: 64 },
-  recipient: { type: DataType.VarChar, length: 42 },
-  amount: { type: DataType.VarChar, length: 66 },
+  contractAddress: { type: DataType.VarChar, length: 42 },
+  methodId: { type: DataType.VarChar, length: 10 },
+  encodedParams: { type: DataType.VarChar },
 };
 
 export default class TxService {
