@@ -16,27 +16,29 @@ contract BLSExpander is Initializable {
     }
 
     // eg approve and transfers of a token contract
-    // function blsCallMultiSameContract(
-    //     bytes32[] calldata  publicKeyHashes,
-    //     uint256[2] memory signature,
-    //     address contractAddress,
-    //     bytes4[] calldata methodIDs,
-    //     bytes[] calldata encodedParamSets
-    // ) public {
-    //     uint256 length = publicKeyHashes.length;
-    //     address[] memory contractAddresses = new address[](length);
-    //     for (uint256 i=0; i<length; i++) {
-    //         contractAddresses[i] = contractAddress;
-    //     }
+    function blsCallMultiSameContract(
+        uint256[] calldata tokenRewardAmounts,
+        bytes32[] calldata  publicKeyHashes,
+        uint256[2] memory signature,
+        address contractAddress,
+        bytes4[] calldata methodIDs,
+        bytes[] calldata encodedParamSets
+    ) public {
+        uint256 length = publicKeyHashes.length;
+        address[] memory contractAddresses = new address[](length);
+        for (uint256 i=0; i<length; i++) {
+            contractAddresses[i] = contractAddress;
+        }
 
-    //     verificationGateway.blsCallMany(
-    //         publicKeyHashes,
-    //         signature,
-    //         contractAddresses,
-    //         methodIDs,
-    //         encodedParamSets
-    //     );
-    // }
+        verificationGateway.blsCallMany(
+            tokenRewardAmounts,
+            publicKeyHashes,
+            signature,
+            contractAddresses,
+            methodIDs,
+            encodedParamSets
+        );
+    }
 
     // // eg a set of txs from one account
     // function blsCallMultiSameCaller(

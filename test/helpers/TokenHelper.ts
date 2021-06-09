@@ -13,7 +13,8 @@ export default class TokenHelper {
   testToken: Contract;
   constructor(public fx: Fixture) { }
 
-  static async setupTestToken(): Promise<Contract> {
+  /// @dev Contract deployed by first ethers signer, has initial supply
+  static async deployTestToken(): Promise<Contract> {
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     let mockERC20 = await MockERC20.deploy(
       "AnyToken",
@@ -43,7 +44,7 @@ export default class TokenHelper {
   async walletTokenSetup(): Promise<string[]> {
     let blsWalletAddresses = await this.fx.createBLSWallets();
 
-    this.testToken = await TokenHelper.setupTestToken();
+    this.testToken = await TokenHelper.deployTestToken();
     await TokenHelper.distributeTokens(
       this.fx.signers[0],
       this.testToken,

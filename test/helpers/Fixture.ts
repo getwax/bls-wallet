@@ -39,6 +39,7 @@ export default class Fixture {
     public BLSWallet: ContractFactory,
   ) {}
 
+  /// @dev Contracts deployed by first ethers signer 
   static async create(initialized: boolean=true) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
     console.log("ChainId from provider", chainId);
@@ -158,6 +159,7 @@ export default class Fixture {
 
     return await this.verificationGateway.walletFromHash(blsPubKeyHash);
   }
+
 
   /**
    * Creates new BLS contract wallets from blsSigners

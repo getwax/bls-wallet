@@ -110,7 +110,7 @@ describe('WalletActions', async function () {
 
   it("should airdrop", async function() {
     let blsWalletAddresses = await fx.createBLSWallets();
-    let testToken = await TokenHelper.setupTestToken();
+    let testToken = await TokenHelper.deployTestToken();
 
     // send all to first address
     console.log("Send tokens to first bls wallet");
