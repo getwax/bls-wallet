@@ -10,7 +10,7 @@ import TokenHelper from "./helpers/TokenHelper";
 import { aggregate } from "./lib/hubble-bls/src/signer";
 
 
-describe.only('TokenPayments', async function () {
+describe('TokenPayments', async function () {
   let fx: Fixture;
   let th: TokenHelper;
   let blsWalletAddresses: string[];
@@ -35,9 +35,9 @@ describe.only('TokenPayments', async function () {
     let balanceBefore = await th.testToken.balanceOf(blsWalletAddresses[0]);
 
     await fx.gatewayCall(
-      reward,
       blsSigner,
       1, //next nonce after creation
+      reward,
       fx.verificationGateway.address,
       encodedFunction
     );
@@ -47,7 +47,7 @@ describe.only('TokenPayments', async function () {
     expect(aggBalance).to.equal(reward);
   });
 
-  it.only("should reward tx submitter (callMany)", async function() {
+  it("should reward tx submitter (callMany)", async function() {
     const reward = ethers.utils.parseUnits("10");
 
     let balancesBefore = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
@@ -65,6 +65,7 @@ describe.only('TokenPayments', async function () {
 
       let dataToSign = fx.dataPayload(
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
+        reward,
         fx.verificationGateway.address,
         encodedFunction
       );
@@ -75,9 +76,9 @@ describe.only('TokenPayments', async function () {
 
     let sigHash = fx.VerificationGateway.interface.getSighash("walletCrossCheck");
     await(await fx.blsExpander.blsCallMultiSameContract(
-      Array(signatures.length).fill(reward),
       keyHashes,
       aggSignature,
+      Array(signatures.length).fill(reward),
       fx.verificationGateway.address,
       Array(signatures.length).fill(sigHash),
       encodedParams

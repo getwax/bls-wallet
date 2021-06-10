@@ -39,9 +39,9 @@ contract VerificationGateway is Initializable
     }
 
     function blsCallCreate(
-        uint256 tokenRewardAmount,
         uint256[4] calldata publicKey,
         uint256[2] calldata signature,
+        uint256 tokenRewardAmount,
         address contractAddress,
         bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
@@ -62,9 +62,9 @@ contract VerificationGateway is Initializable
 
         /// @dev Signature verification of given public key.
         blsCall(
-            tokenRewardAmount,
             publicKeyHash,
             signature,
+            tokenRewardAmount,
             contractAddress,
             methodID,
             encodedParams
@@ -72,9 +72,9 @@ contract VerificationGateway is Initializable
     }
 
     function blsCall(
-        uint256 tokenRewardAmount,
         bytes32 callingPublicKeyHash,
         uint256[2] calldata signature,
+        uint256 tokenRewardAmount,
         address contractAddress,
         bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
@@ -86,6 +86,7 @@ contract VerificationGateway is Initializable
             blsKeysFromHash[publicKeyHash],
             messagePoint(
                 walletFromHash[publicKeyHash].nonce(),
+                tokenRewardAmount,
                 contractAddress,
                 keccak256(abi.encodePacked(
                     methodID,
@@ -135,9 +136,9 @@ contract VerificationGateway is Initializable
     of ascending nonce. Wallet txs do not have to be consecutive. 
      */
     function blsCallMany(
-        uint256[] calldata tokenRewardAmounts,
         bytes32[] calldata  publicKeyHashes,
         uint256[2] memory signature,
+        uint256[] calldata tokenRewardAmounts,
         address[] calldata contractAddresses,
         bytes4[] calldata methodIDs,
         bytes[] calldata encodedParamSets
@@ -157,6 +158,7 @@ contract VerificationGateway is Initializable
             wallet_tmp = walletFromHash[publicKeyHash_tmp];
             messages_tmp[i] = messagePoint(
                 wallet_tmp.nonce(),
+                tokenRewardAmounts[i],
                 contractAddresses[i],
                 keccak256(abi.encodePacked(
                     methodIDs[i],
@@ -190,6 +192,7 @@ contract VerificationGateway is Initializable
 
     function messagePoint(
         uint256 nonce,
+        uint256 tokenRewardAmount,
         address contractAddress,
         bytes32 encodedFunctionHash
     ) internal view returns (uint256[2] memory) {
@@ -202,6 +205,7 @@ contract VerificationGateway is Initializable
             abi.encodePacked(
                 chainId, //block.chainid,
                 nonce,
+                tokenRewardAmount,
                 contractAddress,
                 encodedFunctionHash
             )

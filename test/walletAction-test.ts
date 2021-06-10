@@ -42,8 +42,8 @@ describe('WalletActions', async function () {
     // bls transfer each wallet's balance to first wallet
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       await th.transferFrom(
-        BigNumber.from(0),
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
+        BigNumber.from(0),
         fx.blsSigners[i],
         blsWalletAddresses[0],
         TokenHelper.userStartAmount
@@ -72,6 +72,7 @@ describe('WalletActions', async function () {
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let dataToSign = fx.dataPayload(
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
+        BigNumber.from(0),
         th.testToken.address,
         encodedFunction
       );
@@ -84,9 +85,9 @@ describe('WalletActions', async function () {
 
     // can be called by any ecdsa wallet
     await(await fx.blsExpander.blsCallMultiSameContractFunctionParams(
-      Array(signatures.length).fill(0),
       fx.blsSigners.map(Fixture.blsKeyHash),
       aggSignature,
+      Array(signatures.length).fill(0),
       th.testToken.address,
       encodedFunction.substring(0,10),
       '0x'+encodedFunction.substr(10)
@@ -123,6 +124,7 @@ describe('WalletActions', async function () {
     let signatures: any[] = new Array(blsWalletAddresses.length);
     let encodedParams: string[] = new Array(blsWalletAddresses.length);
     let nonce = await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce();
+    let reward = BigNumber.from(0);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       // encode transfer of start amount to each wallet
       let encodedFunction = testToken.interface.encodeFunctionData(
@@ -133,6 +135,7 @@ describe('WalletActions', async function () {
 
       let dataToSign = fx.dataPayload(
         nonce++,
+        reward,
         testToken.address,
         encodedFunction
       );
@@ -143,9 +146,9 @@ describe('WalletActions', async function () {
 
     console.log("Airdrop");
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-      Array(signatures.length).fill(0),
       Fixture.blsKeyHash(fx.blsSigners[0]),
       aggSignature,
+      Array(signatures.length).fill(0),
       testToken.address,
       testToken.interface.getSighash("transfer"),
       encodedParams

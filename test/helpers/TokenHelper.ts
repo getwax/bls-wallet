@@ -55,8 +55,8 @@ export default class TokenHelper {
   }
 
   async transferFrom(
-    reward: BigNumber,
     nonce: any,
+    reward: BigNumber,
     sender: BlsSignerInterface,
     recipient: string,
     amount: BigNumber
@@ -67,9 +67,9 @@ export default class TokenHelper {
       [recipient, amount.toString()]
     );
     await this.fx.gatewayCall(
-      reward,
       sender,
       nonce,
+      reward,
       this.testToken.address,
       encodedFunction
     );

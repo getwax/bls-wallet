@@ -88,6 +88,7 @@ export default class Fixture {
 
   dataPayload(
     nonce: any,
+    reward: BigNumber,
     contractAddress: any,
     encodedFunction: string
   ) {
@@ -96,10 +97,11 @@ export default class Fixture {
       [encodedFunction]
     );
     return utils.solidityPack(
-      ["uint256","uint256","address","bytes32"],
+      ["uint256","uint256","uint256","address","bytes32"],
       [
         this.chainId,
         nonce,
+        reward,
         contractAddress.toString(),
         encodedFunctionHash
       ]
@@ -107,14 +109,15 @@ export default class Fixture {
   }
 
   async gatewayCall(
-    reward,
     blsSigner,
     nonce,
+    reward,
     contractAddress,
     encodedFunction
   ) {
     let dataToSign = this.dataPayload(
       nonce,
+      reward,
       contractAddress,
       encodedFunction
     );
@@ -122,17 +125,19 @@ export default class Fixture {
 
     // can be called by any ecdsa wallet
     await(await this.verificationGateway.blsCall(
-      reward,
       Fixture.blsKeyHash(blsSigner),
       signature,
+      reward,
       contractAddress,
       encodedFunction.substring(0,10),
       '0x'+encodedFunction.substr(10)
     )).wait();
   }
 
-
-  async createBLSWallet(blsSigner: BlsSignerInterface): Promise<any> {
+  async createBLSWallet(
+    blsSigner: BlsSignerInterface,
+    reward: BigNumber = BigNumber.from(0)
+  ): Promise<any> {
     const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
 
     let encodedFunction = this.VerificationGateway.interface.encodeFunctionData(
@@ -141,6 +146,7 @@ export default class Fixture {
     );
     let dataToSign = await this.dataPayload(
       0,
+      reward,
       this.verificationGateway.address,
       encodedFunction
     );
@@ -149,9 +155,9 @@ export default class Fixture {
 
     // can be called by any ecdsa wallet
     await (await this.verificationGateway.blsCallCreate(
-      0,
       blsSigner.pubkey,
       signature,
+      reward,
       this.verificationGateway.address,
       encodedFunction.substring(0,10),
       '0x'+encodedFunction.substr(10)
@@ -160,16 +166,18 @@ export default class Fixture {
     return await this.verificationGateway.walletFromHash(blsPubKeyHash);
   }
 
-
   /**
    * Creates new BLS contract wallets from blsSigners
    * @returns array of wallet addresses 
    */
-  async createBLSWallets(): Promise<string[]> {
+  async createBLSWallets(reward: BigNumber = BigNumber.from(0)): Promise<string[]> {
     let blsWalletAddresses = new Array<string>(this.blsSigners.length);
     console.log("Creating wallets...");
     for (let i = 0; i<this.blsSigners.length; i++) {
-      blsWalletAddresses[i] = await this.createBLSWallet(this.blsSigners[i]);
+      blsWalletAddresses[i] = await this.createBLSWallet(
+        this.blsSigners[i],
+        reward
+      );
     }
     return blsWalletAddresses;
   }

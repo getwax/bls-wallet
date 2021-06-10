@@ -17,9 +17,9 @@ contract BLSExpander is Initializable {
 
     // eg approve and transfers of a token contract
     function blsCallMultiSameContract(
-        uint256[] calldata tokenRewardAmounts,
         bytes32[] calldata  publicKeyHashes,
         uint256[2] memory signature,
+        uint256[] calldata tokenRewardAmounts,
         address contractAddress,
         bytes4[] calldata methodIDs,
         bytes[] calldata encodedParamSets
@@ -31,9 +31,9 @@ contract BLSExpander is Initializable {
         }
 
         verificationGateway.blsCallMany(
-            tokenRewardAmounts,
             publicKeyHashes,
             signature,
+            tokenRewardAmounts,
             contractAddresses,
             methodIDs,
             encodedParamSets
@@ -65,9 +65,9 @@ contract BLSExpander is Initializable {
 
     // // eg airdrop
     function blsCallMultiSameCallerContractFunction(
-        uint256[] calldata tokenRewardAmounts,
         bytes32 publicKeyHash,
         uint256[2] memory signature,
+        uint256[] calldata tokenRewardAmounts,
         address contractAddress,
         bytes4 methodID,
         bytes[] calldata encodedParamSets
@@ -83,9 +83,9 @@ contract BLSExpander is Initializable {
         }
 
         verificationGateway.blsCallMany(
-            tokenRewardAmounts,
             publicKeyHashes,
             signature,
+            tokenRewardAmounts,
             contractAddresses,
             methodIDs,
             encodedParamSets
@@ -94,9 +94,9 @@ contract BLSExpander is Initializable {
 
     // // eg identical txs from multiple accounts
     function blsCallMultiSameContractFunctionParams(
-        uint256[] calldata tokenRewardAmounts,
         bytes32[] calldata  publicKeyHashes,
         uint256[2] memory signature,
+        uint256[] calldata tokenRewardAmounts,
         address contractAddress,
         bytes4 methodID,
         bytes calldata encodedParams
@@ -112,9 +112,9 @@ contract BLSExpander is Initializable {
         }
 
         verificationGateway.blsCallMany(
-            tokenRewardAmounts,
             publicKeyHashes,
             signature,
+            tokenRewardAmounts,
             contractAddresses,
             methodIDs,
             encodedParamSets
