@@ -41,4 +41,5 @@ export type { TableOptions } from "https://deno.land/x/postquery@v0.0.4/mod.ts";
 
 import * as hubbleBlsImport from "./hubble-bls/mod.ts";
 await hubbleBlsImport.mcl.init();
-export const hubbleBls = hubbleBlsImport;
+
+export * as hubbleBls from "./hubble-bls/mod.ts";
