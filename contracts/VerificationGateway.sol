@@ -12,119 +12,8 @@ import "./BLSWallet.sol";
 
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 
-/**
-@dev Optimisations to reduce calldata of VerificationGateway multiCall
-with shared params.
-*/
-contract BLSExpander is Initializable {
-    VerificationGateway verificationGateway;
-    function initialize(address gateway) public initializer {
-        verificationGateway = VerificationGateway(gateway);
-    }
 
-    // eg approve and transfers of a token contract
-    function blsCallMultiSameContract(
-        bytes32[] calldata  publicKeyHashes,
-        uint256[2] memory signature,
-        address contractAddress,
-        bytes4[] calldata methodIDs,
-        bytes[] calldata encodedParamSets
-    ) public {
-        uint256 length = publicKeyHashes.length;
-        address[] memory contractAddresses = new address[](length);
-        for (uint256 i=0; i<length; i++) {
-            contractAddresses[i] = contractAddress;
-        }
-
-        verificationGateway.blsCallMany(
-            publicKeyHashes,
-            signature,
-            contractAddresses,
-            methodIDs,
-            encodedParamSets
-        );
-    }
-
-    // eg a set of txs from one account
-    function blsCallMultiSameCaller(
-        bytes32 publicKeyHash,
-        uint256[2] memory signature,
-        address[] calldata contractAddresses,
-        bytes4[] calldata methodIDs,
-        bytes[] calldata encodedParamSets
-    ) public {
-        uint256 length = contractAddresses.length;
-        bytes32[] memory publicKeyHashes = new bytes32[](length);
-        for (uint256 i=0; i<length; i++) {
-            publicKeyHashes[i] = publicKeyHash;
-        }
-
-        verificationGateway.blsCallMany(
-            publicKeyHashes,
-            signature,
-            contractAddresses,
-            methodIDs,
-            encodedParamSets
-        );
-    }
-
-    // eg airdrop
-    function blsCallMultiSameCallerContractFunction(
-        bytes32  publicKeyHash,
-        uint256[2] memory signature,
-        address contractAddress,
-        bytes4 methodID,
-        bytes[] calldata encodedParamSets
-    ) public {
-        uint256 length = encodedParamSets.length;
-        bytes32[] memory publicKeyHashes = new bytes32[](length);
-        address[] memory contractAddresses = new address[](length);
-        bytes4[] memory methodIDs = new bytes4[](length);
-        for (uint256 i=0; i<length; i++) {
-            contractAddresses[i] = contractAddress;
-            methodIDs[i] = methodID;
-            publicKeyHashes[i] = publicKeyHash;
-        }
-
-        verificationGateway.blsCallMany(
-            publicKeyHashes,
-            signature,
-            contractAddresses,
-            methodIDs,
-            encodedParamSets
-        );
-    }
-
-    // eg identical txs from multiple accounts
-    function blsCallMultiSameContractFunctionParams(
-        bytes32[] calldata  publicKeyHashes,
-        uint256[2] memory signature,
-        address contractAddress,
-        bytes4 methodID,
-        bytes calldata encodedParams
-    ) public {
-        uint256 length = publicKeyHashes.length;
-        address[] memory contractAddresses = new address[](length);
-        bytes4[] memory methodIDs = new bytes4[](length);
-        bytes[] memory encodedParamSets = new bytes[](length);
-        for (uint256 i=0; i<length; i++) {
-            contractAddresses[i] = contractAddress;
-            methodIDs[i] = methodID;
-            encodedParamSets[i] = encodedParams;
-        }
-
-        verificationGateway.blsCallMany(
-            publicKeyHashes,
-            signature,
-            contractAddresses,
-            methodIDs,
-            encodedParamSets
-        );
-    }
-
-}
-
-contract VerificationGateway
+contract VerificationGateway is Initializable
 {
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint256 constant BLS_LEN = 4;
@@ -132,6 +21,12 @@ contract VerificationGateway
 
     mapping (bytes32 => uint256[BLS_LEN]) blsKeysFromHash;
     mapping (bytes32 => BLSWallet) public walletFromHash;
+
+    IERC20 paymentToken;
+
+    function initialize(IERC20 token) public initializer {
+        paymentToken = token;
+    }
 
     event WalletCreated(
         address indexed wallet,
@@ -141,6 +36,7 @@ contract VerificationGateway
 
     function checkSig(
         uint256 signedNonce,
+        uint256 tokenRewardAmount,
         bytes32 publicKeyHash,
         uint256[2] calldata signature,
         address contractAddress,
@@ -156,6 +52,7 @@ contract VerificationGateway
             blsKeysFromHash[publicKeyHash],
             messagePoint(
                 signedNonce,
+                tokenRewardAmount,
                 contractAddress,
                 keccak256(abi.encodePacked(
                     methodID,
@@ -174,6 +71,7 @@ contract VerificationGateway
     function blsCallCreate(
         uint256[4] calldata publicKey,
         uint256[2] calldata signature,
+        uint256 tokenRewardAmount,
         address contractAddress,
         bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
@@ -196,6 +94,7 @@ contract VerificationGateway
         blsCall(
             publicKeyHash,
             signature,
+            tokenRewardAmount,
             contractAddress,
             methodID,
             encodedParams
@@ -203,20 +102,21 @@ contract VerificationGateway
     }
 
     function blsCall(
-        bytes32 publicKeyHash,
+        bytes32 callingPublicKeyHash,
         uint256[2] calldata signature,
+        uint256 tokenRewardAmount,
         address contractAddress,
         bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
     ) public {
-
-        BLSWallet wallet = walletFromHash[publicKeyHash];
+        bytes32 publicKeyHash = callingPublicKeyHash;
 
         (bool checkResult, bool callSuccess) = BLS.verifySingle(
             signature,
             blsKeysFromHash[publicKeyHash],
             messagePoint(
-                wallet.nonce(),
+                walletFromHash[publicKeyHash].nonce(),
+                tokenRewardAmount,
                 contractAddress,
                 keccak256(abi.encodePacked(
                     methodID,
@@ -226,11 +126,27 @@ contract VerificationGateway
         );
         require(callSuccess && checkResult, "VerificationGateway: sig not verified with nonce+data");
 
-        wallet.action(
+        if (tokenRewardAmount > 0) {
+            walletFromHash[publicKeyHash].payTokenAmount(
+                paymentToken,
+                msg.sender,
+                tokenRewardAmount
+            );
+        }
+
+        walletFromHash[publicKeyHash].action(
             contractAddress,
             methodID,
             encodedParams
         );
+    }
+
+    struct TxData {
+        bytes32 publicKeyHash;
+        uint256 tokenRewardAmount;
+        address contractAddress;
+        bytes4 methodID;
+        bytes encodedParams;
     }
 
     /**
@@ -238,46 +154,56 @@ contract VerificationGateway
     of ascending nonce. Wallet txs do not have to be consecutive. 
      */
     function blsCallMany(
-        bytes32[] calldata  publicKeyHashes,
-        uint256[2] memory signature,
-        address[] calldata contractAddresses,
-        bytes4[] calldata methodIDs,
-        bytes[] calldata encodedParamSets
-    ) public {
-        uint256 txCount = contractAddresses.length;
-        require(methodIDs.length == txCount, "VerificationGateway: methodIDs/contracts length mismatch.");
-        require(encodedParamSets.length == txCount, "VerificationGateway: encodedParamSets/contracts length mismatch.");
-        require(publicKeyHashes.length == txCount, "VerificationGateway: publicKeyHash/contracts length mismatch.");
+        address rewardAddress,
+        uint256[2] calldata signature,
+        TxData[] calldata txs
+    ) external {
+        uint256 txCount = txs.length;
         uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
         uint256[2][] memory messages = new uint256[2][](txCount);
+        BLSWallet wallet;
+
         for (uint256 i = 0; i<txCount; i++) {
-            // construct params for signature verification
-            bytes32 publicKeyHash = publicKeyHashes[i];
-            publicKeys[i] = blsKeysFromHash[publicKeyHash];
+            // // construct params for signature verification
+            publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
+            wallet = walletFromHash[txs[i].publicKeyHash];
             messages[i] = messagePoint(
-                walletFromHash[publicKeyHash].nonce(),
-                contractAddresses[i],
+                wallet.nonce(),
+                txs[i].tokenRewardAmount,
+                txs[i].contractAddress,
                 keccak256(abi.encodePacked(
-                    methodIDs[i],
-                    encodedParamSets[i]
+                    txs[i].methodID,
+                    txs[i].encodedParams
                 ))
             );
 
-            // execute transaction (increments nonce), will revert all if not satisfied
-            walletFromHash[publicKeyHashes[i]].action(
-                contractAddresses[i],
-                methodIDs[i],
-                encodedParamSets[i]
+            if (txs[i].tokenRewardAmount > 0) {
+                wallet.payTokenAmount(
+                    paymentToken,
+                    rewardAddress,
+                    txs[i].tokenRewardAmount
+                );
+            }
+
+            // execute transaction (increments nonce), will revert if all signatures not satisfied
+            wallet.action(
+                txs[i].contractAddress,
+                txs[i].methodID,
+                txs[i].encodedParams
             );
-
         }
-        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(signature, publicKeys, messages);
-        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
 
+        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+            signature,
+            publicKeys,
+            messages
+        );
+        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
     }
 
     function messagePoint(
         uint256 nonce,
+        uint256 tokenRewardAmount,
         address contractAddress,
         bytes32 encodedFunctionHash
     ) internal view returns (uint256[2] memory) {
@@ -290,6 +216,7 @@ contract VerificationGateway
             abi.encodePacked(
                 chainId, //block.chainid,
                 nonce,
+                tokenRewardAmount,
                 contractAddress,
                 encodedFunctionHash
             )
