@@ -23,8 +23,7 @@ export default class WalletService {
   verificationGateway: Contract;
 
   constructor() {
-    const provider = new ethers.providers.JsonRpcProvider();
-    this.aggregatorSigner = new Wallet(env.PRIVATE_KEY_AGG, provider);
+    this.aggregatorSigner = WalletService.getAggregatorSigner();
 
     this.erc20 = new Contract(
       env.TOKEN_ADDRESS,
@@ -43,18 +42,40 @@ export default class WalletService {
     const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
     const aggSignature = hubbleBls.signer.aggregate(txSignatures);
 
-    await this.verificationGateway.blsCallMany(
-      txs.map((tx) => getKeyHash(tx.pubKey)),
-      aggSignature,
-      txs.map((tx) => tx.contractAddress),
-      txs.map((tx) => tx.methodId),
-      txs.map((tx) => tx.encodedParams),
-    );
+    const txResponse: ethers.providers.TransactionResponse = await this
+      .verificationGateway.blsCallMany(
+        txs.map((tx) => getKeyHash(tx.pubKey)),
+        aggSignature,
+        txs.map((tx) => tx.contractAddress),
+        txs.map((tx) => tx.methodId),
+        txs.map((tx) => tx.encodedParams),
+      );
+
+    return await txResponse.wait();
   }
 
   async getAggregatorBalance(): Promise<BigNumber> {
     return await this.erc20.balanceOf(
       env.DEPLOYER_ADDRESS,
     );
+  }
+
+  private static getAggregatorSigner() {
+    const provider = new ethers.providers.JsonRpcProvider();
+    const aggregatorSigner = new Wallet(env.PRIVATE_KEY_AGG, provider);
+
+    if (env.USE_TEST_NET) {
+      const originalPopulateTransaction = aggregatorSigner.populateTransaction
+        .bind(
+          aggregatorSigner,
+        );
+
+      aggregatorSigner.populateTransaction = (transaction) => {
+        transaction.gasPrice = 0;
+        return originalPopulateTransaction(transaction);
+      };
+    }
+
+    return aggregatorSigner;
   }
 }
