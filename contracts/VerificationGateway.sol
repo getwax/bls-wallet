@@ -154,8 +154,8 @@ contract VerificationGateway is Initializable
                     txs[i].tokenRewardAmount
                 );
             }
-            
-        //     // execute transaction (increments nonce), will revert if all signatures not satisfied
+
+            // execute transaction (increments nonce), will revert if all signatures not satisfied
             wallet.action(
                 txs[i].contractAddress,
                 txs[i].methodID,
