@@ -26,7 +26,7 @@ function test(name: string, fn: (txService: TxService) => Promise<void>) {
 const sampleTransactions: TransactionData[] = [
   {
     txId: 1,
-    pubKey: ["pub", "key"],
+    pubKey: "pubKey",
     signature: "signature",
     contractAddress: "recipient",
     methodId: "methodId",
