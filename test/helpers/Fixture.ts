@@ -17,6 +17,14 @@ const DOMAIN = arrayify(DOMAIN_HEX);
 const zeroBLSPubKey = [0, 0, 0, 0].map(BigNumber.from);
 const zeroAddress = "0x0000000000000000000000000000000000000000";
 
+export type TxData = {
+  publicKeyHash: any;
+  tokenRewardAmount: BigNumber;
+  contractAddress: string;
+  methodID: string;
+  encodedParams: string;
+}
+
 export default class Fixture {
   
   static readonly ACCOUNTS_LENGTH = 5;

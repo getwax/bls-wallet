@@ -15,55 +15,56 @@ contract BLSExpander is Initializable {
         verificationGateway = VerificationGateway(gateway);
     }
 
-    // eg approve and transfers of a token contract
-    function blsCallMultiSameContract(
-        bytes32[] calldata  publicKeyHashes,
-        uint256[2] memory signature,
-        uint256[] calldata tokenRewardAmounts,
-        address contractAddress,
-        bytes4[] calldata methodIDs,
-        bytes[] calldata encodedParamSets
-    ) public {
-        uint256 length = publicKeyHashes.length;
-        address[] memory contractAddresses = new address[](length);
-        for (uint256 i=0; i<length; i++) {
-            contractAddresses[i] = contractAddress;
-        }
-
-        verificationGateway.blsCallMany(
-            publicKeyHashes,
-            signature,
-            tokenRewardAmounts,
-            contractAddresses,
-            methodIDs,
-            encodedParamSets
-        );
-    }
-
-    // // eg a set of txs from one account
-    // function blsCallMultiSameCaller(
-    //     bytes32 publicKeyHash,
+    // // eg approve and transfers of a token contract
+    // function blsCallMultiSameContract(
+    //     address rewardAddress;
+    //     bytes32[] calldata  publicKeyHashes,
     //     uint256[2] memory signature,
-    //     address[] calldata contractAddresses,
+    //     uint256[] calldata tokenRewardAmounts,
+    //     address contractAddress,
     //     bytes4[] calldata methodIDs,
     //     bytes[] calldata encodedParamSets
     // ) public {
-    //     uint256 length = contractAddresses.length;
-    //     bytes32[] memory publicKeyHashes = new bytes32[](length);
+    //     uint256 length = publicKeyHashes.length;
+    //     address[] memory contractAddresses = new address[](length);
     //     for (uint256 i=0; i<length; i++) {
-    //         publicKeyHashes[i] = publicKeyHash;
+    //         contractAddresses[i] = contractAddress;
     //     }
 
     //     verificationGateway.blsCallMany(
     //         publicKeyHashes,
     //         signature,
+    //         tokenRewardAmounts,
     //         contractAddresses,
     //         methodIDs,
     //         encodedParamSets
     //     );
     // }
 
-    // // eg airdrop
+    // // // eg a set of txs from one account
+    // // function blsCallMultiSameCaller(
+    // //     bytes32 publicKeyHash,
+    // //     uint256[2] memory signature,
+    // //     address[] calldata contractAddresses,
+    // //     bytes4[] calldata methodIDs,
+    // //     bytes[] calldata encodedParamSets
+    // // ) public {
+    // //     uint256 length = contractAddresses.length;
+    // //     bytes32[] memory publicKeyHashes = new bytes32[](length);
+    // //     for (uint256 i=0; i<length; i++) {
+    // //         publicKeyHashes[i] = publicKeyHash;
+    // //     }
+
+    // //     verificationGateway.blsCallMany(
+    // //         publicKeyHashes,
+    // //         signature,
+    // //         contractAddresses,
+    // //         methodIDs,
+    // //         encodedParamSets
+    // //     );
+    // // }
+
+    // // // eg airdrop
     function blsCallMultiSameCallerContractFunction(
         bytes32 publicKeyHash,
         uint256[2] memory signature,
@@ -71,28 +72,25 @@ contract BLSExpander is Initializable {
         address contractAddress,
         bytes4 methodID,
         bytes[] calldata encodedParamSets
-    ) public {
+    ) external {
         uint256 length = encodedParamSets.length;
-        bytes32[] memory publicKeyHashes = new bytes32[](length);
-        address[] memory contractAddresses = new address[](length);
-        bytes4[] memory methodIDs = new bytes4[](length);
+        VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
         for (uint256 i=0; i<length; i++) {
-            contractAddresses[i] = contractAddress;
-            methodIDs[i] = methodID;
-            publicKeyHashes[i] = publicKeyHash;
+            txs[i].publicKeyHash = publicKeyHash;
+            txs[i].tokenRewardAmount = tokenRewardAmounts[i];
+            txs[i].contractAddress = contractAddress;
+            txs[i].methodID = methodID;
+            txs[i].encodedParams = encodedParamSets[i];
         }
 
         verificationGateway.blsCallMany(
-            publicKeyHashes,
+            msg.sender,
             signature,
-            tokenRewardAmounts,
-            contractAddresses,
-            methodIDs,
-            encodedParamSets
+            txs
         );
     }
 
-    // // eg identical txs from multiple accounts
+    // // // eg identical txs from multiple accounts
     function blsCallMultiSameContractFunctionParams(
         bytes32[] calldata  publicKeyHashes,
         uint256[2] memory signature,
@@ -102,22 +100,19 @@ contract BLSExpander is Initializable {
         bytes calldata encodedParams
     ) public {
         uint256 length = publicKeyHashes.length;
-        address[] memory contractAddresses = new address[](length);
-        bytes4[] memory methodIDs = new bytes4[](length);
-        bytes[] memory encodedParamSets = new bytes[](length);
+        VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
         for (uint256 i=0; i<length; i++) {
-            contractAddresses[i] = contractAddress;
-            methodIDs[i] = methodID;
-            encodedParamSets[i] = encodedParams;
+            txs[i].publicKeyHash = publicKeyHashes[i];
+            txs[i].tokenRewardAmount = tokenRewardAmounts[i];
+            txs[i].contractAddress = contractAddress;
+            txs[i].methodID = methodID;
+            txs[i].encodedParams = encodedParams;
         }
 
         verificationGateway.blsCallMany(
-            publicKeyHashes,
+            msg.sender,
             signature,
-            tokenRewardAmounts,
-            contractAddresses,
-            methodIDs,
-            encodedParamSets
+            txs
         );
     }
 

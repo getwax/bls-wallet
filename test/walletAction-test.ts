@@ -3,6 +3,7 @@ import { expect, assert } from "chai";
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "./helpers/Fixture";
+import { TxData } from "./helpers/Fixture";
 import TokenHelper from "./helpers/TokenHelper";
 
 import { aggregate } from "./lib/hubble-bls/src/signer";

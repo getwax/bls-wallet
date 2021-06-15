@@ -111,87 +111,6 @@ contract VerificationGateway is Initializable
         );
     }
 
-    /**
-    @dev Local variables to avoid stack limit in function with many local variables.
-     */
-    uint256 i;
-    uint256 txCount_tmp;
-    bytes32 publicKeyHash_tmp;
-    BLSWallet wallet_tmp;
-    uint256[BLS_LEN][] publicKeys_tmp;
-    uint256[2][] messages_tmp;
-    function clearLocals() private {
-        txCount_tmp = 0;
-        publicKeyHash_tmp = 0;
-        wallet_tmp = BLSWallet(0);
-        delete publicKeys_tmp;
-        delete messages_tmp;
-    }
-    modifier usesLocals() {
-        _;
-        clearLocals();
-    }
-
-    /**
-    @dev Assumes multiple txs from the same wallet appear in order
-    of ascending nonce. Wallet txs do not have to be consecutive. 
-     */
-    function blsCallMany(
-        // address rewardAddress,
-        bytes32[] calldata  publicKeyHashes,
-        uint256[2] memory signature,
-        uint256[] calldata tokenRewardAmounts,
-        address[] calldata contractAddresses,
-        bytes4[] calldata methodIDs,
-        bytes[] calldata encodedParamSets
-    ) external usesLocals {
-        txCount_tmp = contractAddresses.length;
-        require(tokenRewardAmounts.length == txCount_tmp, "VerificationGateway: tokenRewardAmounts/contracts length mismatch.");
-        require(methodIDs.length == txCount_tmp, "VerificationGateway: methodIDs/contracts length mismatch.");
-        require(encodedParamSets.length == txCount_tmp, "VerificationGateway: encodedParamSets/contracts length mismatch.");
-        require(publicKeyHashes.length == txCount_tmp, "VerificationGateway: publicKeyHash/contracts length mismatch.");
-        publicKeys_tmp = new uint256[BLS_LEN][](txCount_tmp);
-        messages_tmp = new uint256[2][](txCount_tmp);
-
-        for (i = 0; i<txCount_tmp; i++) {
-            // // construct params for signature verification
-            publicKeyHash_tmp = publicKeyHashes[i];
-            publicKeys_tmp[i] = blsKeysFromHash[publicKeyHash_tmp];
-            wallet_tmp = walletFromHash[publicKeyHash_tmp];
-            messages_tmp[i] = messagePoint(
-                wallet_tmp.nonce(),
-                tokenRewardAmounts[i],
-                contractAddresses[i],
-                keccak256(abi.encodePacked(
-                    methodIDs[i],
-                    encodedParamSets[i]
-                ))
-            );
-
-            if (tokenRewardAmounts[i] > 0) {
-                wallet_tmp.payTokenAmount(
-                    paymentToken,
-                    msg.sender,
-                    tokenRewardAmounts[i]
-                );
-            }
-            
-            // execute transaction (increments nonce), will revert if all signatures not satisfied
-            wallet_tmp.action(
-                contractAddresses[i],
-                methodIDs[i],
-                encodedParamSets[i]
-            );
-
-        }
-        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
-            signature,
-            publicKeys_tmp,
-            messages_tmp
-        );
-        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
-    }
-
     struct TxData {
         bytes32 publicKeyHash;
         uint256 tokenRewardAmount;
@@ -200,7 +119,11 @@ contract VerificationGateway is Initializable
         bytes encodedParams;
     }
 
-    function blsCallManyStruct(
+    /**
+    @dev Assumes multiple txs from the same wallet appear in order
+    of ascending nonce. Wallet txs do not have to be consecutive. 
+     */
+    function blsCallMany(
         address rewardAddress,
         uint256[2] calldata signature,
         TxData[] calldata txs
@@ -210,7 +133,7 @@ contract VerificationGateway is Initializable
         uint256[2][] memory messages = new uint256[2][](txCount);
         BLSWallet wallet;
 
-        for (i = 0; i<txCount; i++) {
+        for (uint256 i = 0; i<txCount; i++) {
             // // construct params for signature verification
             publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
             wallet = walletFromHash[txs[i].publicKeyHash];

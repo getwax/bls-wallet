@@ -5,6 +5,7 @@ import { expect, assert } from "chai";
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "./helpers/Fixture";
+import { TxData } from "./helpers/Fixture";
 import TokenHelper from "./helpers/TokenHelper";
 
 import { aggregate } from "./lib/hubble-bls/src/signer";
@@ -12,7 +13,7 @@ import { BigNumber } from "ethers";
 import { solG1 } from "./lib/hubble-bls/src/mcl";
 
 
-describe.only('TokenPayments', async function () {
+describe('TokenPayments', async function () {
   let fx: Fixture;
   let th: TokenHelper;
   let blsWalletAddresses: string[];
@@ -49,15 +50,7 @@ describe.only('TokenPayments', async function () {
     expect(aggBalance).to.equal(reward);
   });
 
-  type TxData = {
-    publicKeyHash: any;
-    tokenRewardAmount: BigNumber;
-    contractAddress: string;
-    methodID: string;
-    encodedParams: string;
-  }
-
-  it.only("should reward tx submitter (callMany)", async function() {
+  it("should reward tx submitter (callMany)", async function() {
     const reward = ethers.utils.parseUnits("10");
 
     let txs: TxData[] = new Array(blsWalletAddresses.length);
@@ -101,7 +94,7 @@ describe.only('TokenPayments', async function () {
     // )).wait();
 
     let firstSigner = await fx.signers[0].getAddress();
-    await(await fx.verificationGateway.blsCallManyStruct(
+    await(await fx.verificationGateway.blsCallMany(
       firstSigner,
       aggSignature,
       txs
