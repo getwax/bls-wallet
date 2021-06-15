@@ -114,6 +114,7 @@ contract VerificationGateway is Initializable
     /**
     @dev Local variables to avoid stack limit in function with many local variables.
      */
+    uint256 i;
     uint256 txCount_tmp;
     bytes32 publicKeyHash_tmp;
     BLSWallet wallet_tmp;
@@ -136,13 +137,14 @@ contract VerificationGateway is Initializable
     of ascending nonce. Wallet txs do not have to be consecutive. 
      */
     function blsCallMany(
+        // address rewardAddress,
         bytes32[] calldata  publicKeyHashes,
         uint256[2] memory signature,
         uint256[] calldata tokenRewardAmounts,
         address[] calldata contractAddresses,
         bytes4[] calldata methodIDs,
         bytes[] calldata encodedParamSets
-    ) public usesLocals {
+    ) external usesLocals {
         txCount_tmp = contractAddresses.length;
         require(tokenRewardAmounts.length == txCount_tmp, "VerificationGateway: tokenRewardAmounts/contracts length mismatch.");
         require(methodIDs.length == txCount_tmp, "VerificationGateway: methodIDs/contracts length mismatch.");
@@ -151,7 +153,7 @@ contract VerificationGateway is Initializable
         publicKeys_tmp = new uint256[BLS_LEN][](txCount_tmp);
         messages_tmp = new uint256[2][](txCount_tmp);
 
-        for (uint256 i = 0; i<txCount_tmp; i++) {
+        for (i = 0; i<txCount_tmp; i++) {
             // // construct params for signature verification
             publicKeyHash_tmp = publicKeyHashes[i];
             publicKeys_tmp[i] = blsKeysFromHash[publicKeyHash_tmp];
@@ -186,6 +188,62 @@ contract VerificationGateway is Initializable
             signature,
             publicKeys_tmp,
             messages_tmp
+        );
+        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+    }
+
+    struct TxData {
+        bytes32 publicKeyHash;
+        uint256 tokenRewardAmount;
+        address contractAddress;
+        bytes4 methodID;
+        bytes encodedParams;
+    }
+
+    function blsCallManyStruct(
+        address rewardAddress,
+        uint256[2] calldata signature,
+        TxData[] calldata txs
+    ) external {
+        uint256 txCount = txs.length;
+        uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
+        uint256[2][] memory messages = new uint256[2][](txCount);
+        BLSWallet wallet;
+
+        for (i = 0; i<txCount; i++) {
+            // // construct params for signature verification
+            publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
+            wallet = walletFromHash[txs[i].publicKeyHash];
+            messages[i] = messagePoint(
+                wallet.nonce(),
+                txs[i].tokenRewardAmount,
+                txs[i].contractAddress,
+                keccak256(abi.encodePacked(
+                    txs[i].methodID,
+                    txs[i].encodedParams
+                ))
+            );
+
+            if (txs[i].tokenRewardAmount > 0) {
+                wallet.payTokenAmount(
+                    paymentToken,
+                    rewardAddress,
+                    txs[i].tokenRewardAmount
+                );
+            }
+            
+        //     // execute transaction (increments nonce), will revert if all signatures not satisfied
+            wallet.action(
+                txs[i].contractAddress,
+                txs[i].methodID,
+                txs[i].encodedParams
+            );
+        }
+
+        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+            signature,
+            publicKeys,
+            messages
         );
         require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
     }

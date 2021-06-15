@@ -8,9 +8,11 @@ import Fixture from "./helpers/Fixture";
 import TokenHelper from "./helpers/TokenHelper";
 
 import { aggregate } from "./lib/hubble-bls/src/signer";
+import { BigNumber } from "ethers";
+import { solG1 } from "./lib/hubble-bls/src/mcl";
 
 
-describe('TokenPayments', async function () {
+describe.only('TokenPayments', async function () {
   let fx: Fixture;
   let th: TokenHelper;
   let blsWalletAddresses: string[];
@@ -47,47 +49,68 @@ describe('TokenPayments', async function () {
     expect(aggBalance).to.equal(reward);
   });
 
-  it("should reward tx submitter (callMany)", async function() {
+  type TxData = {
+    publicKeyHash: any;
+    tokenRewardAmount: BigNumber;
+    contractAddress: string;
+    methodID: string;
+    encodedParams: string;
+  }
+
+  it.only("should reward tx submitter (callMany)", async function() {
     const reward = ethers.utils.parseUnits("10");
 
-    let balancesBefore = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
-
-    let keyHashes: any[] = new Array(blsWalletAddresses.length);
+    let txs: TxData[] = new Array(blsWalletAddresses.length);
     let signatures: any[] = new Array(blsWalletAddresses.length);
-    let encodedParams: string[] = new Array(blsWalletAddresses.length);
+
+    let sigHash = fx.VerificationGateway.interface.getSighash("walletCrossCheck");
+
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      keyHashes[i] = Fixture.blsKeyHash(fx.blsSigners[i]);
+      let publicKeyHash = Fixture.blsKeyHash(fx.blsSigners[i]);
       let encodedFunction = fx.VerificationGateway.interface.encodeFunctionData(
         "walletCrossCheck",
-        [keyHashes[i]]
+        [publicKeyHash]
       );
-      encodedParams[i] = '0x'+encodedFunction.substr(10);
-
       let dataToSign = fx.dataPayload(
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
         reward,
         fx.verificationGateway.address,
         encodedFunction
       );
+
+      txs[i] = {
+        publicKeyHash: publicKeyHash,
+        tokenRewardAmount: reward,
+        contractAddress: fx.verificationGateway.address,
+        methodID: sigHash,
+        encodedParams: '0x'+encodedFunction.substr(10)
+      }
       signatures[i] = fx.blsSigners[i].sign(dataToSign);
     }
 
     let aggSignature = aggregate(signatures);
 
-    let sigHash = fx.VerificationGateway.interface.getSighash("walletCrossCheck");
-    await(await fx.blsExpander.blsCallMultiSameContract(
-      keyHashes,
+    // let sigHash = fx.VerificationGateway.interface.getSighash("walletCrossCheck");
+    // await(await fx.blsExpander.blsCallMultiSameContract(
+    //   keyHashes,
+    //   aggSignature,
+    //   Array(signatures.length).fill(reward),
+    //   fx.verificationGateway.address,
+    //   Array(signatures.length).fill(sigHash),
+    //   encodedParams
+    // )).wait();
+
+    let firstSigner = await fx.signers[0].getAddress();
+    await(await fx.verificationGateway.blsCallManyStruct(
+      firstSigner,
       aggSignature,
-      Array(signatures.length).fill(reward),
-      fx.verificationGateway.address,
-      Array(signatures.length).fill(sigHash),
-      encodedParams
+      txs
     )).wait();
 
     let balancesAfter = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
     let expectedAfter = TokenHelper.userStartAmount.sub(reward);
     balancesAfter.map( b => expect(b).to.equal(expectedAfter) );
-    let aggBalance = await th.testToken.balanceOf(await fx.signers[0].getAddress());
+    let aggBalance = await th.testToken.balanceOf(firstSigner);
     expect(aggBalance).to.equal(reward.mul(blsWalletAddresses.length));
   });
 

@@ -37,7 +37,6 @@ contract BLSWallet is Initializable
         address recipient,
         uint256 amount
     ) public onlyAdmin {
-        uint256 b = token.balanceOf(address(this));
         token.transfer(recipient, amount);
     }
 
