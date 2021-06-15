@@ -26,7 +26,7 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 
   const encodedFunction = walletService.erc20.interface.encodeFunctionData(
     "transfer",
-    [blsWallet.address, "1"],
+    [blsWallet.address, "0"],
   );
 
   const tx: TransactionData = {
