@@ -115,26 +115,27 @@ export default class Fixture {
     );
   }
 
-  async createTransferTxData(
-    blsSigner: hubbleBls.signer.BlsSigner,
-    amount: number,
-    recipientAddress: string,
+  async createTxData({
+    blsSigner,
+    contract,
+    method,
+    args,
     nonceOffset = 0,
-  ): Promise<TransactionData> {
+  }: {
+    blsSigner: hubbleBls.signer.BlsSigner;
+    contract: ethers.Contract;
+    method: string;
+    args: string[];
+    nonceOffset?: number;
+  }): Promise<TransactionData> {
     const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
-
-    const encodedFunction = this.walletService.erc20.interface
-      .encodeFunctionData(
-        "transfer",
-        [recipientAddress, amount.toString()],
-      );
-
+    const encodedFunction = contract.interface.encodeFunctionData(method, args);
     const nonce = Number(await blsWallet.nonce()) + nonceOffset;
 
     const message = dataPayload(
       this.chainId,
       nonce,
-      this.walletService.erc20.address,
+      contract.address,
       encodedFunction,
     );
 
@@ -143,7 +144,7 @@ export default class Fixture {
     return {
       pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
       signature: hubbleBls.mcl.dumpG1(signature),
-      contractAddress: this.walletService.erc20.address,
+      contractAddress: contract.address,
       methodId: encodedFunction.slice(0, 10),
       encodedParams: `0x${encodedFunction.slice(10)}`,
     };
