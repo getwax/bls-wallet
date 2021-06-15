@@ -29,11 +29,11 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
     [blsWallet.address, "0"],
   );
 
-  const tx: TransactionData = {
+  const tx1: TransactionData = {
     pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
     signature: hubbleBls.mcl.dumpG1(blsSigner.sign(dataPayload(
       fx.chainId,
-      0,
+      1,
       walletService.erc20.address,
       encodedFunction,
     ))),
@@ -42,5 +42,18 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
     encodedParams: `0x${encodedFunction.slice(10)}`,
   };
 
-  await walletService.sendTxs([tx]);
+  const tx2: TransactionData = {
+    pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
+    signature: hubbleBls.mcl.dumpG1(blsSigner.sign(dataPayload(
+      fx.chainId,
+      2,
+      walletService.erc20.address,
+      encodedFunction,
+    ))),
+    contractAddress: walletService.erc20.address,
+    methodId: encodedFunction.slice(0, 10),
+    encodedParams: `0x${encodedFunction.slice(10)}`,
+  };
+
+  await walletService.sendTxs([tx1, tx2]);
 });

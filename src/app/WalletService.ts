@@ -54,6 +54,21 @@ export default class WalletService {
     return await txResponse.wait();
   }
 
+  async sendTx(tx: TransactionData) {
+    const txSignature = hubbleBls.mcl.loadG1(tx.signature);
+
+    const txResponse: ethers.providers.TransactionResponse = await this
+      .verificationGateway.blsCall(
+        getKeyHash(tx.pubKey),
+        txSignature,
+        tx.contractAddress,
+        tx.methodId,
+        tx.encodedParams,
+      );
+
+    return await txResponse.wait();
+  }
+
   async getAggregatorBalance(): Promise<BigNumber> {
     return await this.erc20.balanceOf(
       env.DEPLOYER_ADDRESS,
