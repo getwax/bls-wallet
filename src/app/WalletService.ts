@@ -10,10 +10,10 @@ import * as env from "./env.ts";
 import contractABIs from "../../contractABIs/index.ts";
 import type { TransactionData } from "./TxService.ts";
 
-function getKeyHash(pubkey: string[]) {
+function getKeyHash(pubkey: string) {
   return ethers.utils.keccak256(ethers.utils.solidityPack(
     ["uint256[4]"],
-    pubkey,
+    [hubbleBls.mcl.loadG2(pubkey)],
   ));
 }
 
@@ -75,6 +75,8 @@ export default class WalletService {
         return originalPopulateTransaction(transaction);
       };
     }
+
+    aggregatorSigner.getTransactionCount;
 
     return aggregatorSigner;
   }

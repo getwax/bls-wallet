@@ -1,36 +1,10 @@
 import { assert } from "./deps.ts";
 
 import WalletService from "../src/app/WalletService.ts";
-
-// deno-lint-ignore no-explicit-any
-type ExplicitAny = any;
-
-function testWrapper(testFn: () => void | Promise<void>) {
-  return async () => {
-    try {
-      await testFn();
-    } catch (error) {
-      if (!(error.error instanceof Error)) {
-        throw error;
-      }
-
-      let innerError = error.error;
-
-      while (innerError.error instanceof Error) {
-        innerError = innerError.error;
-      }
-
-      const wrappedError = new Error(
-        `\n  innermost error: ${innerError.message}` +
-          `\n\n  error: ${error.message}`,
-      );
-
-      (wrappedError as ExplicitAny).error = error;
-
-      throw wrappedError;
-    }
-  };
-}
+import Fixture from "./helpers/Fixture.ts";
+import dataPayload from "./helpers/dataPayload.ts";
+import { TransactionData } from "../src/app/TxService.ts";
+import { hubbleBls } from "../deps/index.ts";
 
 Deno.test({
   name: "WalletService gets aggregator balance",
@@ -44,12 +18,29 @@ Deno.test({
   },
 });
 
-Deno.test({
-  name: "WalletService sends empty aggregate transaction",
-  sanitizeOps: false,
-  fn: testWrapper(async () => {
-    const walletService = new WalletService();
+Fixture.test("WalletService sends aggregate transaction", async (fx) => {
+  const walletService = new WalletService();
 
-    await walletService.sendTxs([]);
-  }),
+  const blsSigner = await fx.createBlsSigner();
+  const blsWallet = await fx.createBlsWallet(blsSigner);
+
+  const encodedFunction = walletService.erc20.interface.encodeFunctionData(
+    "transfer",
+    [blsWallet.address, "1"],
+  );
+
+  const tx: TransactionData = {
+    pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
+    signature: hubbleBls.mcl.dumpG1(blsSigner.sign(dataPayload(
+      fx.chainId,
+      0,
+      walletService.erc20.address,
+      encodedFunction,
+    ))),
+    contractAddress: walletService.erc20.address,
+    methodId: encodedFunction.slice(0, 10),
+    encodedParams: `0x${encodedFunction.slice(10)}`,
+  };
+
+  await walletService.sendTxs([tx]);
 });

@@ -10,6 +10,38 @@ const { BlsSignerFactory } = hubbleBls.signer;
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
 
+// deno-lint-ignore no-explicit-any
+type ExplicitAny = any;
+
+function getInnerError(error: Error): Error | undefined {
+  const innerError = (error as ExplicitAny).error;
+
+  return innerError instanceof Error ? innerError : undefined;
+}
+
+function wrapInnermostError(error: Error): Error {
+  let currError = error;
+  let nextError = getInnerError(currError);
+
+  while (nextError) {
+    currError = nextError;
+    nextError = getInnerError(currError);
+  }
+
+  if (currError === error) {
+    return error;
+  }
+
+  const wrappedError = new Error(
+    `\n  innermost error: ${currError.message}` +
+      `\n\n  error: ${error.message}`,
+  );
+
+  (wrappedError as ExplicitAny).error = error;
+
+  return wrappedError;
+}
+
 export default class Fixture {
   static test(
     name: string,
@@ -18,7 +50,13 @@ export default class Fixture {
     Deno.test({
       name,
       sanitizeOps: false,
-      fn: async () => fn(await Fixture.create(name)),
+      fn: async () => {
+        try {
+          await fn(await Fixture.create(name));
+        } catch (error) {
+          throw wrapInnermostError(error);
+        }
+      },
     });
   }
 
