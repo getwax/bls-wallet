@@ -1,9 +1,11 @@
 import { ethers, hubbleBls } from "../../deps/index.ts";
 
-import * as env from "../env.ts";
 import Rng from "./Rng.ts";
 import contractABIs from "../../contractABIs/index.ts";
 import createBLSWallet from "./createBLSWallet.ts";
+import WalletService from "../../src/app/WalletService.ts";
+import { TransactionData } from "../../src/app/TxService.ts";
+import dataPayload from "./dataPayload.ts";
 
 const { BlsSignerFactory } = hubbleBls.signer;
 
@@ -63,38 +65,16 @@ export default class Fixture {
   static async create(testName: string): Promise<Fixture> {
     const rng = Rng.root.child(testName);
 
-    const provider = new ethers.providers.JsonRpcProvider();
+    const walletService = new WalletService(rng.address("aggregatorSigner"));
 
-    const signerKey = rng.address("aggregatorSigner");
-
-    const aggregatorSigner = new ethers.Wallet(signerKey, provider);
-
-    if (env.USE_TEST_NET) {
-      const originalPopulateTransaction = aggregatorSigner.populateTransaction
-        .bind(
-          aggregatorSigner,
-        );
-
-      aggregatorSigner.populateTransaction = (transaction) => {
-        transaction.gasPrice = 0;
-        return originalPopulateTransaction(transaction);
-      };
-    }
-
-    const chainId = (await provider.getNetwork()).chainId;
-
-    const verificationGateway = new ethers.Contract(
-      env.VERIFICATION_GATEWAY_ADDRESS,
-      contractABIs["VerificationGateway.ovm.json"].abi,
-      aggregatorSigner,
-    );
+    const chainId =
+      (await walletService.aggregatorSigner.provider.getNetwork()).chainId;
 
     return new Fixture(
       testName,
       rng,
       chainId,
-      verificationGateway,
-      aggregatorSigner,
+      walletService,
     );
   }
 
@@ -102,8 +82,7 @@ export default class Fixture {
     public testName: string,
     public rng: Rng,
     public chainId: number,
-    public verificationGateway: ethers.Contract,
-    public aggregatorSigner: ethers.Wallet,
+    public walletService: WalletService,
   ) {}
 
   async createBlsSigner(...extraSeeds: string[]) {
@@ -114,10 +93,10 @@ export default class Fixture {
     );
   }
 
-  async createBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
+  async getOrCreateBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
     return await createBLSWallet(
       this.chainId,
-      this.verificationGateway,
+      this.walletService.verificationGateway,
       signer,
     );
   }
@@ -126,11 +105,43 @@ export default class Fixture {
     return new ethers.Contract(
       address,
       contractABIs["BLSWallet.ovm.json"].abi,
-      this.aggregatorSigner,
+      this.walletService.aggregatorSigner,
     );
   }
 
-  async createBlsWallet(signer: hubbleBls.signer.BlsSigner) {
-    return this.connectBlsWallet(await this.createBlsWalletAddress(signer));
+  async getOrCreateBlsWallet(signer: hubbleBls.signer.BlsSigner) {
+    return this.connectBlsWallet(
+      await this.getOrCreateBlsWalletAddress(signer),
+    );
+  }
+
+  async createTransferTxData(
+    blsSigner: hubbleBls.signer.BlsSigner,
+    amount: number,
+    recipientAddress: string,
+    nonceOffset = 0,
+  ): Promise<TransactionData> {
+    const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
+
+    const encodedFunction = this.walletService.erc20.interface
+      .encodeFunctionData(
+        "transfer",
+        [recipientAddress, amount.toString()],
+      );
+
+    const nonce = Number(await blsWallet.nonce()) + nonceOffset;
+
+    return {
+      pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
+      signature: hubbleBls.mcl.dumpG1(blsSigner.sign(dataPayload(
+        this.chainId,
+        nonce,
+        this.walletService.erc20.address,
+        encodedFunction,
+      ))),
+      contractAddress: this.walletService.erc20.address,
+      methodId: encodedFunction.slice(0, 10),
+      encodedParams: `0x${encodedFunction.slice(10)}`,
+    };
   }
 }

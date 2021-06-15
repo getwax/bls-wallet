@@ -22,8 +22,10 @@ export default class WalletService {
   erc20: Contract;
   verificationGateway: Contract;
 
-  constructor() {
-    this.aggregatorSigner = WalletService.getAggregatorSigner();
+  constructor(public aggPrivateKey: string) {
+    this.aggregatorSigner = WalletService.getAggregatorSigner(
+      this.aggPrivateKey,
+    );
 
     this.erc20 = new Contract(
       env.TOKEN_ADDRESS,
@@ -75,9 +77,9 @@ export default class WalletService {
     );
   }
 
-  private static getAggregatorSigner() {
+  private static getAggregatorSigner(privateKey: string) {
     const provider = new ethers.providers.JsonRpcProvider();
-    const aggregatorSigner = new Wallet(env.PRIVATE_KEY_AGG, provider);
+    const aggregatorSigner = new Wallet(privateKey, provider);
 
     if (env.USE_TEST_NET) {
       const originalPopulateTransaction = aggregatorSigner.populateTransaction
@@ -90,8 +92,6 @@ export default class WalletService {
         return originalPopulateTransaction(transaction);
       };
     }
-
-    aggregatorSigner.getTransactionCount;
 
     return aggregatorSigner;
   }
