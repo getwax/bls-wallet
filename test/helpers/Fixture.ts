@@ -131,14 +131,18 @@ export default class Fixture {
 
     const nonce = Number(await blsWallet.nonce()) + nonceOffset;
 
+    const message = dataPayload(
+      this.chainId,
+      nonce,
+      this.walletService.erc20.address,
+      encodedFunction,
+    );
+
+    const signature = blsSigner.sign(message);
+
     return {
       pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
-      signature: hubbleBls.mcl.dumpG1(blsSigner.sign(dataPayload(
-        this.chainId,
-        nonce,
-        this.walletService.erc20.address,
-        encodedFunction,
-      ))),
+      signature: hubbleBls.mcl.dumpG1(signature),
       contractAddress: this.walletService.erc20.address,
       methodId: encodedFunction.slice(0, 10),
       encodedParams: `0x${encodedFunction.slice(10)}`,
