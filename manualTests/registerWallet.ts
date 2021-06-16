@@ -30,7 +30,7 @@ const chainId = (await provider.getNetwork()).chainId;
 
 const verificationGateway = new ethers.Contract(
   env.VERIFICATION_GATEWAY_ADDRESS,
-  contractABIs["VerificationGateway.ovm.json"].abi,
+  contractABIs["VerificationGateway.json"].abi,
   aggregatorSigner,
 );
 
@@ -47,7 +47,7 @@ const walletAddress = await createBLSWallet(
 
 const blsWallet = new ethers.Contract(
   walletAddress,
-  contractABIs["BLSWallet.ovm.json"].abi,
+  contractABIs["BLSWallet.json"].abi,
   aggregatorSigner,
 );
 

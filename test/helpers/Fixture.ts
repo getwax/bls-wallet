@@ -104,7 +104,7 @@ export default class Fixture {
   connectBlsWallet(address: string) {
     return new ethers.Contract(
       address,
-      contractABIs["BLSWallet.ovm.json"].abi,
+      contractABIs["BLSWallet.json"].abi,
       this.walletService.aggregatorSigner,
     );
   }

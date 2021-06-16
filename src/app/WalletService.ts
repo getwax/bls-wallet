@@ -29,13 +29,13 @@ export default class WalletService {
 
     this.erc20 = new Contract(
       env.TOKEN_ADDRESS,
-      contractABIs["MockERC20.ovm.json"].abi,
+      contractABIs["MockERC20.json"].abi,
       this.aggregatorSigner,
     );
 
     this.verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      contractABIs["VerificationGateway.ovm.json"].abi,
+      contractABIs["VerificationGateway.json"].abi,
       this.aggregatorSigner,
     );
   }
