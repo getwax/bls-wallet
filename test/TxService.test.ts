@@ -26,12 +26,11 @@ function test(name: string, fn: (txService: TxService) => Promise<void>) {
 const sampleTransactions: TransactionData[] = [
   {
     txId: 1,
-    pubKey: ["pub", "key"],
-    sender: "sender",
-    message: ["message"],
+    pubKey: "pubKey",
     signature: "signature",
-    recipient: "recipient",
-    amount: "amount",
+    contractAddress: "recipient",
+    methodId: "methodId",
+    encodedParams: "encodedParams",
   },
 ];
 

@@ -7,12 +7,12 @@ export {
   Request,
   Response,
   Router,
-} from "https://deno.land/x/oak@v7.3.0/mod.ts";
+} from "https://deno.land/x/oak@v7.5.0/mod.ts";
 
 export type {
   Middleware,
   RouterContext,
-} from "https://deno.land/x/oak@v7.3.0/mod.ts";
+} from "https://deno.land/x/oak@v7.5.0/mod.ts";
 
 // Ethers dependencies
 import ethers from "./ethers/index.ts";
@@ -35,8 +35,11 @@ export {
   DataType,
   QueryClient,
   QueryTable,
-} from "https://deno.land/x/postquery@v0.0.3/mod.ts";
+} from "https://deno.land/x/postquery@v0.0.4/mod.ts";
 
-export type { TableOptions } from "https://deno.land/x/postquery@v0.0.3/mod.ts";
+export type { TableOptions } from "https://deno.land/x/postquery@v0.0.4/mod.ts";
+
+import * as hubbleBlsImport from "./hubble-bls/mod.ts";
+await hubbleBlsImport.mcl.init();
 
 export * as hubbleBls from "./hubble-bls/mod.ts";

@@ -1,3 +1,5 @@
+export * from "../deps/index.ts";
+
 export {
   assert,
   assertEquals,

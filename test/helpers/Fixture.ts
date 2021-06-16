@@ -1,14 +1,48 @@
 import { ethers, hubbleBls } from "../../deps/index.ts";
 
-import * as env from "../env.ts";
 import Rng from "./Rng.ts";
 import contractABIs from "../../contractABIs/index.ts";
 import createBLSWallet from "./createBLSWallet.ts";
+import WalletService from "../../src/app/WalletService.ts";
+import { TransactionData } from "../../src/app/TxService.ts";
+import dataPayload from "./dataPayload.ts";
 
 const { BlsSignerFactory } = hubbleBls.signer;
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
+
+// deno-lint-ignore no-explicit-any
+type ExplicitAny = any;
+
+function getInnerError(error: Error): Error | undefined {
+  const innerError = (error as ExplicitAny).error;
+
+  return innerError instanceof Error ? innerError : undefined;
+}
+
+function wrapInnermostError(error: Error): Error {
+  let currError = error;
+  let nextError = getInnerError(currError);
+
+  while (nextError) {
+    currError = nextError;
+    nextError = getInnerError(currError);
+  }
+
+  if (currError === error) {
+    return error;
+  }
+
+  const wrappedError = new Error(
+    `\n  innermost error: ${currError.message}` +
+      `\n\n  error: ${error.message}`,
+  );
+
+  (wrappedError as ExplicitAny).error = error;
+
+  return wrappedError;
+}
 
 export default class Fixture {
   static test(
@@ -18,45 +52,29 @@ export default class Fixture {
     Deno.test({
       name,
       sanitizeOps: false,
-      fn: async () => fn(await Fixture.create(name)),
+      fn: async () => {
+        try {
+          await fn(await Fixture.create(name));
+        } catch (error) {
+          throw wrapInnermostError(error);
+        }
+      },
     });
   }
 
   static async create(testName: string): Promise<Fixture> {
     const rng = Rng.root.child(testName);
 
-    const provider = new ethers.providers.JsonRpcProvider();
+    const walletService = new WalletService(rng.address("aggregatorSigner"));
 
-    const signerKey = rng.address("aggregatorSigner");
-
-    const aggregatorSigner = new ethers.Wallet(signerKey, provider);
-
-    if (env.USE_TEST_NET) {
-      const originalPopulateTransaction = aggregatorSigner.populateTransaction
-        .bind(
-          aggregatorSigner,
-        );
-
-      aggregatorSigner.populateTransaction = (transaction) => {
-        transaction.gasPrice = 0;
-        return originalPopulateTransaction(transaction);
-      };
-    }
-
-    const chainId = (await provider.getNetwork()).chainId;
-
-    const verificationGateway = new ethers.Contract(
-      env.VERIFICATION_GATEWAY_ADDRESS,
-      contractABIs["VerificationGateway.ovm.json"].abi,
-      aggregatorSigner,
-    );
+    const chainId =
+      (await walletService.aggregatorSigner.provider.getNetwork()).chainId;
 
     return new Fixture(
       testName,
       rng,
       chainId,
-      verificationGateway,
-      aggregatorSigner,
+      walletService,
     );
   }
 
@@ -64,8 +82,7 @@ export default class Fixture {
     public testName: string,
     public rng: Rng,
     public chainId: number,
-    public verificationGateway: ethers.Contract,
-    public aggregatorSigner: ethers.Wallet,
+    public walletService: WalletService,
   ) {}
 
   async createBlsSigner(...extraSeeds: string[]) {
@@ -76,10 +93,10 @@ export default class Fixture {
     );
   }
 
-  async createBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
+  async getOrCreateBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
     return await createBLSWallet(
       this.chainId,
-      this.verificationGateway,
+      this.walletService.verificationGateway,
       signer,
     );
   }
@@ -88,11 +105,48 @@ export default class Fixture {
     return new ethers.Contract(
       address,
       contractABIs["BLSWallet.ovm.json"].abi,
-      this.aggregatorSigner,
+      this.walletService.aggregatorSigner,
     );
   }
 
-  async createBlsWallet(signer: hubbleBls.signer.BlsSigner) {
-    return this.connectBlsWallet(await this.createBlsWalletAddress(signer));
+  async getOrCreateBlsWallet(signer: hubbleBls.signer.BlsSigner) {
+    return this.connectBlsWallet(
+      await this.getOrCreateBlsWalletAddress(signer),
+    );
+  }
+
+  async createTxData({
+    blsSigner,
+    contract,
+    method,
+    args,
+    nonceOffset = 0,
+  }: {
+    blsSigner: hubbleBls.signer.BlsSigner;
+    contract: ethers.Contract;
+    method: string;
+    args: string[];
+    nonceOffset?: number;
+  }): Promise<TransactionData> {
+    const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
+    const encodedFunction = contract.interface.encodeFunctionData(method, args);
+    const nonce = Number(await blsWallet.nonce()) + nonceOffset;
+
+    const message = dataPayload(
+      this.chainId,
+      nonce,
+      contract.address,
+      encodedFunction,
+    );
+
+    const signature = blsSigner.sign(message);
+
+    return {
+      pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
+      signature: hubbleBls.mcl.dumpG1(signature),
+      contractAddress: contract.address,
+      methodId: encodedFunction.slice(0, 10),
+      encodedParams: `0x${encodedFunction.slice(10)}`,
+    };
   }
 }

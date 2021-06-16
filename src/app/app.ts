@@ -9,7 +9,7 @@ import AdminService from "./AdminService.ts";
 import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
 
-const walletService = new WalletService();
+const walletService = new WalletService(env.PRIVATE_KEY_AGG);
 const txService = await TxService.create(env.TX_TABLE_NAME);
 const adminService = new AdminService(walletService, txService);
 
