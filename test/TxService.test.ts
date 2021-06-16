@@ -38,6 +38,7 @@ Fixture.test("rejects invalid transaction", async (fx) => {
     nonceOffset: 0,
   });
 
+  // Make the signature invalid
   tx.signature = [
     "0x",
     tx.signature[2] === "0" ? "1" : "0",
@@ -49,5 +50,6 @@ Fixture.test("rejects invalid transaction", async (fx) => {
   const failures = await txService.add(tx);
   assertEquals(failures.length, 1);
 
+  // Transaction table remains empty
   assertEquals(await txService.txTable.count(), 0n);
 });
