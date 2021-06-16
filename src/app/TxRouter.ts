@@ -4,7 +4,7 @@ import TxService from "./TxService.ts";
 import type { TransactionData } from "./TxTable.ts";
 
 export default function TxRouter(txService: TxService) {
-  const router = new Router();
+  const router = new Router({ prefix: "/" });
 
   router.post("transaction", async (ctx) => {
     const txData: TransactionData = await (await ctx.request.body()).value;
