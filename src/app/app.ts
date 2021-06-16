@@ -11,8 +11,9 @@ import notFoundHandler from "./notFoundHandler.ts";
 import TxStore from "./TxStore.ts";
 
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
-const txService = new TxService(await TxStore.create(env.TX_TABLE_NAME));
-const adminService = new AdminService(walletService, txService);
+const txStore = await TxStore.create(env.TX_TABLE_NAME);
+const txService = new TxService(txStore);
+const adminService = new AdminService(walletService, txStore);
 
 const txController = new TxController(txService);
 const adminController = new AdminController(adminService);

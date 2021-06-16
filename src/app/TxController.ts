@@ -8,8 +8,7 @@ export default class TxController {
 
   useWith(app: Application) {
     const router = new Router({ prefix: "/tx/" })
-      .post("add", this.addTx.bind(this))
-      .get("count", this.countPending.bind(this));
+      .post("add", this.addTx.bind(this));
 
     app.use(router.routes());
     app.use(router.allowedMethods());
@@ -22,12 +21,5 @@ export default class TxController {
     //TODO: send tx(s) after batch count, or N ms since last send.
 
     context.response.body = "Transaction added";
-  }
-
-  async countPending(context: RouterContext) {
-    const c = await this.txService.txCount();
-    console.log(`Returning count ${c}\n`);
-    context.response.headers.set("Content-Type", "application/json");
-    context.response.body = c;
   }
 }

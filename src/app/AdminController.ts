@@ -12,6 +12,7 @@ export default class AdminController {
 
   useWith(app: Application) {
     const router = new Router({ prefix: "/admin/" })
+      .get("countTxs", this.countTxs.bind(this))
       .get("resetTxs", this.resetTxs.bind(this))
       .get("sendBatch", this.sendBatch.bind(this))
       .get("aggregatorBalance", this.getAggregatorBalance.bind(this));
@@ -35,5 +36,12 @@ export default class AdminController {
       (await this.adminService.getAggregatorBalance()).toString(),
       18,
     );
+  }
+
+  async countTxs(context: RouterContext) {
+    const c = await this.adminService.txCount();
+    console.log(`Returning count ${c}\n`);
+    context.response.headers.set("Content-Type", "application/json");
+    context.response.body = c;
   }
 }

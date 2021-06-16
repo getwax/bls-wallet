@@ -1,11 +1,10 @@
 import { assertEquals } from "./deps.ts";
 
-import TxService from "../src/app/TxService.ts";
 import TxStore, { TransactionData } from "../src/app/TxStore.ts";
 
 let counter = 0;
 
-function test(name: string, fn: (txService: TxService) => Promise<void>) {
+function test(name: string, fn: (txStore: TxStore) => Promise<void>) {
   Deno.test({
     name,
     sanitizeResources: false,
@@ -13,12 +12,11 @@ function test(name: string, fn: (txService: TxService) => Promise<void>) {
       const tableName = `txs_test_${counter++}_${Date.now()}`;
 
       const txStore = await TxStore.create(tableName);
-      const txService = new TxService(txStore);
 
       try {
-        await fn(txService);
+        await fn(txStore);
       } finally {
-        await txService.resetTable();
+        await txStore.resetTable();
         await txStore.stop();
       }
     },
