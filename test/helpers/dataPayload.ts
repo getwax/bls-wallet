@@ -5,6 +5,7 @@ const { utils } = ethers;
 export default function dataPayload(
   chainId: number,
   nonce: number,
+  reward: number,
   contractAddress: string,
   encodedFunction: string,
 ) {
@@ -13,10 +14,11 @@ export default function dataPayload(
     [encodedFunction],
   );
   return utils.solidityPack(
-    ["uint256", "uint256", "address", "bytes32"],
+    ["uint256", "uint256", "uint256", "address", "bytes32"],
     [
       chainId,
       nonce,
+      reward,
       contractAddress.toString(),
       encodedFunctionHash,
     ],

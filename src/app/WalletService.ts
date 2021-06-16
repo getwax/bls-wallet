@@ -46,11 +46,15 @@ export default class WalletService {
 
     const txResponse: ethers.providers.TransactionResponse = await this
       .verificationGateway.blsCallMany(
-        txs.map((tx) => getKeyHash(tx.pubKey)),
+        this.aggregatorSigner.address,
         aggSignature,
-        txs.map((tx) => tx.contractAddress),
-        txs.map((tx) => tx.methodId),
-        txs.map((tx) => tx.encodedParams),
+        txs.map((tx) => ({
+          publicKeyHash: getKeyHash(tx.pubKey),
+          tokenRewardAmount: ethers.BigNumber.from(0),
+          contractAddress: tx.contractAddress,
+          methodID: tx.methodId,
+          encodedParams: tx.encodedParams,
+        })),
       );
 
     return await txResponse.wait();
@@ -63,6 +67,7 @@ export default class WalletService {
       .verificationGateway.blsCall(
         getKeyHash(tx.pubKey),
         txSignature,
+        ethers.BigNumber.from(0),
         tx.contractAddress,
         tx.methodId,
         tx.encodedParams,

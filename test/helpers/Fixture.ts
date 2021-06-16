@@ -135,6 +135,7 @@ export default class Fixture {
     const message = dataPayload(
       this.chainId,
       nonce,
+      0,
       contract.address,
       encodedFunction,
     );
