@@ -40,6 +40,35 @@ export default class WalletService {
     );
   }
 
+  async checkTx(tx: TransactionData): Promise<string[]> {
+    const [signedCorrectly, nextNonce]: [boolean, ethers.BigNumber] = await this
+      .verificationGateway
+      .checkSig(
+        tx.nonce,
+        ethers.BigNumber.from(0),
+        getKeyHash(tx.pubKey),
+        hubbleBls.mcl.loadG1(tx.signature),
+        tx.contractAddress,
+        tx.methodId,
+        tx.encodedParams,
+      );
+
+    const reasons: string[] = [];
+
+    if (signedCorrectly === false) {
+      reasons.push("signature invalid");
+    }
+
+    if (ethers.BigNumber.from(tx.nonce).lt(nextNonce)) {
+      reasons.push([
+        `nonce ${tx.nonce} has already been processed (the next nonce for this`,
+        `wallet will be ${nextNonce.toString()})`,
+      ].join(" "));
+    }
+
+    return reasons;
+  }
+
   async sendTxs(txs: TransactionData[]) {
     const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
     const aggSignature = hubbleBls.signer.aggregate(txSignatures);

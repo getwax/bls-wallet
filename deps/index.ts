@@ -7,6 +7,7 @@ export {
   Request,
   Response,
   Router,
+  Status as HTTPStatus,
 } from "https://deno.land/x/oak@v7.5.0/mod.ts";
 
 export type {

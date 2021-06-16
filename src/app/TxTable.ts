@@ -21,9 +21,9 @@ export type TransactionData = {
 
 const txOptions: TableOptions = {
   txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
-  pubKey: { type: DataType.VarChar, length: 66 },
+  pubKey: { type: DataType.VarChar, length: 258 },
   nonce: { type: DataType.Integer },
-  signature: { type: DataType.VarChar, length: 64 },
+  signature: { type: DataType.VarChar, length: 130 },
   contractAddress: { type: DataType.VarChar, length: 42 },
   methodId: { type: DataType.VarChar, length: 10 },
   encodedParams: { type: DataType.VarChar },
