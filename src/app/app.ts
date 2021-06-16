@@ -8,12 +8,12 @@ import AdminController from "./AdminController.ts";
 import AdminService from "./AdminService.ts";
 import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
-import TxStore from "./TxStore.ts";
+import TxTable from "./TxTable.ts";
 
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
-const txStore = await TxStore.create(env.TX_TABLE_NAME);
-const txService = new TxService(txStore);
-const adminService = new AdminService(walletService, txStore);
+const txTable = await TxTable.create(env.TX_TABLE_NAME);
+const txService = new TxService(txTable);
+const adminService = new AdminService(walletService, txTable);
 
 const txController = new TxController(txService);
 const adminController = new AdminController(adminService);

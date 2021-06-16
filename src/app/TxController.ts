@@ -1,7 +1,7 @@
 import { Application, Router, RouterContext } from "../../deps/index.ts";
 
 import TxService from "./TxService.ts";
-import type { TransactionData } from "./TxStore.ts";
+import type { TransactionData } from "./TxTable.ts";
 
 export default class TxController {
   constructor(private txService: TxService) {}

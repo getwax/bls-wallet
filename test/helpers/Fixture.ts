@@ -4,7 +4,7 @@ import Rng from "./Rng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import createBLSWallet from "./createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
-import { TransactionData } from "../../src/app/TxStore.ts";
+import { TransactionData } from "../../src/app/TxTable.ts";
 import dataPayload from "./dataPayload.ts";
 
 const { BlsSignerFactory } = hubbleBls.signer;

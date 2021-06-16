@@ -1,23 +1,23 @@
 import { assertEquals } from "./deps.ts";
 
-import TxStore, { TransactionData } from "../src/app/TxStore.ts";
+import TxTable, { TransactionData } from "../src/app/TxTable.ts";
 
 let counter = 0;
 
-function test(name: string, fn: (txStore: TxStore) => Promise<void>) {
+function test(name: string, fn: (txTable: TxTable) => Promise<void>) {
   Deno.test({
     name,
     sanitizeResources: false,
     fn: async () => {
       const tableName = `txs_test_${counter++}_${Date.now()}`;
 
-      const txStore = await TxStore.create(tableName);
+      const txTable = await TxTable.create(tableName);
 
       try {
-        await fn(txStore);
+        await fn(txTable);
       } finally {
-        await txStore.resetTable();
-        await txStore.stop();
+        await txTable.resetTable();
+        await txTable.stop();
       }
     },
   });

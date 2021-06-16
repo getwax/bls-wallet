@@ -1,7 +1,7 @@
-import TxStore, { TransactionData } from "./TxStore.ts";
+import TxTable, { TransactionData } from "./TxTable.ts";
 
 export default class TxService {
-  constructor(public store: TxStore) {}
+  constructor(public store: TxTable) {}
 
   async addTx(txData: TransactionData) {
     // TODO: Check valid

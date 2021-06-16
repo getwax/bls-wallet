@@ -1,18 +1,18 @@
-import TxStore from "./TxStore.ts";
+import TxTable from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
 
 export default class AdminService {
   constructor(
     private walletService: WalletService,
-    private txStore: TxStore,
+    private txTable: TxTable,
   ) {}
 
   async resetTxs() {
-    await this.txStore.resetTable();
+    await this.txTable.resetTable();
   }
 
   async sendBatch() {
-    const txs = await this.txStore.getTxs();
+    const txs = await this.txTable.getTxs();
     console.log(`Sending ${txs.length} txs`);
     await this.walletService.sendTxs(txs);
   }
@@ -22,6 +22,6 @@ export default class AdminService {
   }
 
   async txCount() {
-    return await this.txStore.txCount();
+    return await this.txTable.txCount();
   }
 }

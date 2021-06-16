@@ -27,7 +27,7 @@ const txOptions: TableOptions = {
   encodedParams: { type: DataType.VarChar },
 };
 
-export default class TxStore {
+export default class TxTable {
   client: QueryClient;
   txTable: QueryTable<TransactionData>;
 
@@ -46,11 +46,11 @@ export default class TxStore {
     this.txTable = this.client.table<TransactionData>(txTableName);
   }
 
-  static async create(txTableName: string): Promise<TxStore> {
-    const txStore = new TxStore(txTableName);
-    await txStore.txTable.create(txOptions, CreateTableMode.IfNotExists);
+  static async create(txTableName: string): Promise<TxTable> {
+    const txTable = new TxTable(txTableName);
+    await txTable.txTable.create(txOptions, CreateTableMode.IfNotExists);
 
-    return txStore;
+    return txTable;
   }
 
   async addTx(txData: TransactionData) {
