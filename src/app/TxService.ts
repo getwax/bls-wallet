@@ -1,3 +1,4 @@
+import AddTransactionFailure from "./AddTransactionFailure.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
 
@@ -7,7 +8,7 @@ export default class TxService {
     public walletService: WalletService,
   ) {}
 
-  async add(txData: TransactionData): Promise<string[]> {
+  async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
     const failures = await this.walletService.checkTx(txData);
 
     if (failures.length === 0) {

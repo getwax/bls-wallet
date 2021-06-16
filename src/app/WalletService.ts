@@ -9,6 +9,7 @@ import {
 import * as env from "./env.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxTable.ts";
+import AddTransactionFailure from "./AddTransactionFailure.ts";
 
 function getKeyHash(pubkey: string) {
   return ethers.utils.keccak256(ethers.utils.solidityPack(
@@ -40,7 +41,7 @@ export default class WalletService {
     );
   }
 
-  async checkTx(tx: TransactionData): Promise<string[]> {
+  async checkTx(tx: TransactionData): Promise<AddTransactionFailure[]> {
     const [signedCorrectly, nextNonce]: [boolean, ethers.BigNumber] = await this
       .verificationGateway
       .checkSig(
@@ -53,17 +54,23 @@ export default class WalletService {
         tx.encodedParams,
       );
 
-    const reasons: string[] = [];
+    const reasons: AddTransactionFailure[] = [];
 
     if (signedCorrectly === false) {
-      reasons.push("signature invalid");
+      reasons.push({
+        type: "invalid-signature",
+        description: "invalid signature",
+      });
     }
 
     if (ethers.BigNumber.from(tx.nonce).lt(nextNonce)) {
-      reasons.push([
-        `nonce ${tx.nonce} has already been processed (the next nonce for this`,
-        `wallet will be ${nextNonce.toString()})`,
-      ].join(" "));
+      reasons.push({
+        type: "duplicate-nonce",
+        description: [
+          `nonce ${tx.nonce} has already been processed (the next nonce for`,
+          `this wallet will be ${nextNonce.toString()})`,
+        ].join(" "),
+      });
     }
 
     return reasons;
