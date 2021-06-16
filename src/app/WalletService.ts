@@ -7,7 +7,7 @@ import {
 } from "../../deps/index.ts";
 
 import * as env from "./env.ts";
-import contractABIs from "../../contractABIs/index.ts";
+import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxService.ts";
 
 function getKeyHash(pubkey: string) {
@@ -29,13 +29,13 @@ export default class WalletService {
 
     this.erc20 = new Contract(
       env.TOKEN_ADDRESS,
-      contractABIs["MockERC20.json"].abi,
+      ovmContractABIs["MockERC20.json"].abi,
       this.aggregatorSigner,
     );
 
     this.verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      contractABIs["VerificationGateway.json"].abi,
+      ovmContractABIs["VerificationGateway.json"].abi,
       this.aggregatorSigner,
     );
   }
