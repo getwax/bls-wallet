@@ -14,7 +14,7 @@ const walletService = new WalletService(env.PRIVATE_KEY_AGG);
 const txService = new TxService(await TxStore.create(env.TX_TABLE_NAME));
 const adminService = new AdminService(walletService, txService);
 
-const txController = new TxController(walletService, txService);
+const txController = new TxController(txService);
 const adminController = new AdminController(adminService);
 
 const app = new Application();

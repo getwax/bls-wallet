@@ -1,14 +1,10 @@
 import { Application, Router, RouterContext } from "../../deps/index.ts";
 
 import TxService from "./TxService.ts";
-import type { TransactionData } from "./TxService.ts";
-import WalletService from "./WalletService.ts";
+import type { TransactionData } from "./TxStore.ts";
 
 export default class TxController {
-  constructor(
-    private walletService: WalletService,
-    private txService: TxService,
-  ) {}
+  constructor(private txService: TxService) {}
 
   useWith(app: Application) {
     const router = new Router({ prefix: "/tx/" })
