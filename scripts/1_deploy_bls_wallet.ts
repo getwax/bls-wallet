@@ -1,8 +1,7 @@
 require('dotenv').config();
-import { Console } from "console";
-import { BigNumber, Signer, Contract } from "ethers";
 
-import { network, ethers } from "hardhat";
+import { Contract } from "ethers";
+import { ethers } from "hardhat";
 
 const utils = ethers.utils;
 
@@ -15,10 +14,23 @@ async function main() {
   let deployerAddress = await signer.getAddress();
   console.log(`Deployer account address: ${deployerAddress}`);
 
+  // setup erc20 token
+  const PayToken = await ethers.getContractFactory("MockERC20");
+  let payToken = await PayToken.deploy(
+    "PayToken",
+    "PAY",
+    ethers.utils.parseUnits("1000000")
+  );
+  await payToken.deployed();
+  console.log(`PayToken: ${payToken.address}`);
+  
   // deploy bls wallet with token address
   const VerificationGateway = await ethers.getContractFactory("VerificationGateway");
   verificationGateway = await VerificationGateway.deploy();
   await verificationGateway.deployed();
+  verificationGateway.initialize(
+    payToken.address
+  );
   console.log(`verificationGateway: ${verificationGateway.address}`);
 
   // deploy bls wallet with token address
