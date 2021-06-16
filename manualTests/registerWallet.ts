@@ -1,7 +1,7 @@
 import { ethers, hubbleBls } from "../deps/index.ts";
 
 import * as env from "../src/app/env.ts";
-import contractABIs from "../contractABIs/index.ts";
+import ovmContractABIs from "../ovmContractABIs/index.ts";
 import createBLSWallet from "../test/helpers/createBLSWallet.ts";
 import blsKeyHash from "../test/helpers/blsKeyHash.ts";
 
@@ -30,7 +30,7 @@ const chainId = (await provider.getNetwork()).chainId;
 
 const verificationGateway = new ethers.Contract(
   env.VERIFICATION_GATEWAY_ADDRESS,
-  contractABIs["VerificationGateway.ovm.json"].abi,
+  ovmContractABIs["VerificationGateway.json"].abi,
   aggregatorSigner,
 );
 
@@ -47,7 +47,7 @@ const walletAddress = await createBLSWallet(
 
 const blsWallet = new ethers.Contract(
   walletAddress,
-  contractABIs["BLSWallet.ovm.json"].abi,
+  ovmContractABIs["BLSWallet.json"].abi,
   aggregatorSigner,
 );
 

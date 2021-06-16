@@ -1,7 +1,7 @@
 import { ethers, hubbleBls } from "../../deps/index.ts";
 
 import Rng from "./Rng.ts";
-import contractABIs from "../../contractABIs/index.ts";
+import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import createBLSWallet from "./createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
 import { TransactionData } from "../../src/app/TxService.ts";
@@ -104,7 +104,7 @@ export default class Fixture {
   connectBlsWallet(address: string) {
     return new ethers.Contract(
       address,
-      contractABIs["BLSWallet.ovm.json"].abi,
+      ovmContractABIs["BLSWallet.json"].abi,
       this.walletService.aggregatorSigner,
     );
   }
@@ -135,6 +135,7 @@ export default class Fixture {
     const message = dataPayload(
       this.chainId,
       nonce,
+      0,
       contract.address,
       encodedFunction,
     );

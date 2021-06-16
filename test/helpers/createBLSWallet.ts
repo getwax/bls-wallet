@@ -28,6 +28,7 @@ export default async function createBLSWallet(
   const dataToSign = await dataPayload(
     chainId,
     0,
+    0,
     verificationGateway.address,
     encodedFunction,
   );
@@ -38,6 +39,7 @@ export default async function createBLSWallet(
   await (await verificationGateway.blsCallCreate(
     blsSigner.pubkey,
     signature,
+    ethers.BigNumber.from(0),
     verificationGateway.address,
     encodedFunction.substring(0, 10),
     "0x" + encodedFunction.substr(10),

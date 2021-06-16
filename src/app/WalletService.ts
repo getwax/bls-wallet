@@ -7,7 +7,7 @@ import {
 } from "../../deps/index.ts";
 
 import * as env from "./env.ts";
-import contractABIs from "../../contractABIs/index.ts";
+import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxService.ts";
 
 function getKeyHash(pubkey: string) {
@@ -29,13 +29,13 @@ export default class WalletService {
 
     this.erc20 = new Contract(
       env.TOKEN_ADDRESS,
-      contractABIs["MockERC20.ovm.json"].abi,
+      ovmContractABIs["MockERC20.json"].abi,
       this.aggregatorSigner,
     );
 
     this.verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      contractABIs["VerificationGateway.ovm.json"].abi,
+      ovmContractABIs["VerificationGateway.json"].abi,
       this.aggregatorSigner,
     );
   }
@@ -46,11 +46,15 @@ export default class WalletService {
 
     const txResponse: ethers.providers.TransactionResponse = await this
       .verificationGateway.blsCallMany(
-        txs.map((tx) => getKeyHash(tx.pubKey)),
+        this.aggregatorSigner.address,
         aggSignature,
-        txs.map((tx) => tx.contractAddress),
-        txs.map((tx) => tx.methodId),
-        txs.map((tx) => tx.encodedParams),
+        txs.map((tx) => ({
+          publicKeyHash: getKeyHash(tx.pubKey),
+          tokenRewardAmount: ethers.BigNumber.from(0),
+          contractAddress: tx.contractAddress,
+          methodID: tx.methodId,
+          encodedParams: tx.encodedParams,
+        })),
       );
 
     return await txResponse.wait();
@@ -63,6 +67,7 @@ export default class WalletService {
       .verificationGateway.blsCall(
         getKeyHash(tx.pubKey),
         txSignature,
+        ethers.BigNumber.from(0),
         tx.contractAddress,
         tx.methodId,
         tx.encodedParams,
