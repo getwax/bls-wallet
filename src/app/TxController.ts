@@ -8,15 +8,15 @@ export default class TxController {
 
   useWith(app: Application) {
     const router = new Router({ prefix: "/tx/" })
-      .post("add", this.addTx.bind(this));
+      .post("add", this.add.bind(this));
 
     app.use(router.routes());
     app.use(router.allowedMethods());
   }
 
-  async addTx(context: RouterContext) {
+  async add(context: RouterContext) {
     const txData: TransactionData = await (await context.request.body()).value;
-    await this.txService.addTx(txData);
+    await this.txService.add(txData);
 
     //TODO: send tx(s) after batch count, or N ms since last send.
 

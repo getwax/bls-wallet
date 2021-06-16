@@ -53,7 +53,7 @@ export default class TxTable {
     return txTable;
   }
 
-  async addTx(txData: TransactionData) {
+  async add(txData: TransactionData) {
     await this.txTable.insert(txData);
   }
 
@@ -64,7 +64,7 @@ export default class TxTable {
     return result[0].count as bigint;
   }
 
-  async getTxs(): Promise<TransactionData[]> {
+  async all(): Promise<TransactionData[]> {
     return await this.client.query(`SELECT * FROM ${this.txTable.name}`);
   }
 

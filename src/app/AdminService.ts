@@ -12,7 +12,7 @@ export default class AdminService {
   }
 
   async sendBatch() {
-    const txs = await this.txTable.getTxs();
+    const txs = await this.txTable.all();
     console.log(`Sending ${txs.length} txs`);
     await this.walletService.sendTxs(txs);
   }

@@ -39,13 +39,13 @@ test("Starts with zero transactions", async (txTable) => {
 });
 
 test("Has one transaction after adding transaction", async (txTable) => {
-  await txTable.addTx(sampleTransactions[0]);
+  await txTable.add(sampleTransactions[0]);
 
   assertEquals(await txTable.count(), 1n);
 });
 
 test("Can retrieve transaction", async (txTable) => {
-  await txTable.addTx(sampleTransactions[0]);
+  await txTable.add(sampleTransactions[0]);
 
-  assertEquals(await txTable.getTxs(), [sampleTransactions[0]]);
+  assertEquals(await txTable.all(), [sampleTransactions[0]]);
 });
