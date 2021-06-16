@@ -12,6 +12,7 @@ import * as env from "./env.ts";
 export type TransactionData = {
   txId?: number;
   pubKey: string;
+  nonce: number;
   signature: string;
   contractAddress: string;
   methodId: string;
@@ -21,6 +22,7 @@ export type TransactionData = {
 const txOptions: TableOptions = {
   txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
   pubKey: { type: DataType.VarChar, length: 66 },
+  nonce: { type: DataType.Integer },
   signature: { type: DataType.VarChar, length: 64 },
   contractAddress: { type: DataType.VarChar, length: 42 },
   methodId: { type: DataType.VarChar, length: 10 },

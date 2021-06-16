@@ -144,6 +144,7 @@ export default class Fixture {
 
     return {
       pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
+      nonce,
       signature: hubbleBls.mcl.dumpG1(signature),
       contractAddress: contract.address,
       methodId: encodedFunction.slice(0, 10),
