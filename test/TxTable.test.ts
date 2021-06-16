@@ -16,7 +16,7 @@ function test(name: string, fn: (txTable: TxTable) => Promise<void>) {
       try {
         await fn(txTable);
       } finally {
-        await txTable.resetTable();
+        await txTable.drop();
         await txTable.stop();
       }
     },
@@ -34,18 +34,18 @@ const sampleTransactions: TransactionData[] = [
   },
 ];
 
-test("Starts with zero transactions", async (txService) => {
-  assertEquals(await txService.txCount(), 0n);
+test("Starts with zero transactions", async (txTable) => {
+  assertEquals(await txTable.count(), 0n);
 });
 
-test("Has one transaction after adding transaction", async (txService) => {
-  await txService.addTx(sampleTransactions[0]);
+test("Has one transaction after adding transaction", async (txTable) => {
+  await txTable.addTx(sampleTransactions[0]);
 
-  assertEquals(await txService.txCount(), 1n);
+  assertEquals(await txTable.count(), 1n);
 });
 
-test("Can retrieve transaction", async (txService) => {
-  await txService.addTx(sampleTransactions[0]);
+test("Can retrieve transaction", async (txTable) => {
+  await txTable.addTx(sampleTransactions[0]);
 
-  assertEquals(await txService.getTxs(), [sampleTransactions[0]]);
+  assertEquals(await txTable.getTxs(), [sampleTransactions[0]]);
 });

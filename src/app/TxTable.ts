@@ -57,7 +57,7 @@ export default class TxTable {
     await this.txTable.insert(txData);
   }
 
-  async txCount(): Promise<bigint> {
+  async count(): Promise<bigint> {
     const result = await this.client.query(
       `SELECT COUNT(*) FROM ${this.txTable.name}`,
     );
@@ -68,8 +68,12 @@ export default class TxTable {
     return await this.client.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
-  async resetTable() {
+  async drop() {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
+  }
+
+  async clear() {
+    return await this.client.query(`DELETE from ${this.txTable.name}`);
   }
 
   async stop() {

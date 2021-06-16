@@ -8,7 +8,7 @@ export default class AdminService {
   ) {}
 
   async resetTxs() {
-    await this.txTable.resetTable();
+    await this.txTable.clear();
   }
 
   async sendBatch() {
@@ -22,6 +22,6 @@ export default class AdminService {
   }
 
   async txCount() {
-    return await this.txTable.txCount();
+    return await this.txTable.count();
   }
 }
