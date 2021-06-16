@@ -27,7 +27,7 @@ export type TxData = {
 
 export default class Fixture {
   
-  static readonly ACCOUNTS_LENGTH = 5;
+  static readonly ACCOUNTS_LENGTH = 4;
 
   private constructor(
     public chainId: number,
@@ -43,6 +43,8 @@ export default class Fixture {
 
     public BLSExpander: ContractFactory,
     public blsExpander: Contract,
+
+    public encodedCreate: string,
 
     public BLSWallet: ContractFactory,
   ) {}
@@ -70,7 +72,12 @@ export default class Fixture {
     let blsExpander = await BLSExpander.deploy(); 
     await blsExpander.deployed();
     await blsExpander.initialize(verificationGateway.address);
-    
+  
+    let encodedCreate = utils.defaultAbiCoder.encode(
+      ["string"],
+      ["Create BLS Wallet."]
+    );
+
     let BLSWallet = await ethers.getContractFactory("BLSWallet");
   
     return new Fixture(
@@ -83,6 +90,7 @@ export default class Fixture {
       verificationGateway,
       BLSExpander,
       blsExpander,
+      encodedCreate,
       BLSWallet
     );
   }

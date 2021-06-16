@@ -62,7 +62,32 @@ describe('WalletActions', async function () {
     expect(result).to.equal(true);
     expect(nextNonce).to.equal(BigNumber.from(1));
   });
-    
+
+  it("should create many wallets", async function() {
+    let signatures: any[] = new Array(fx.blsSigners.length);
+
+    let dataToSign = fx.dataPayload(
+      0,
+      BigNumber.from(0),
+      fx.verificationGateway.address,
+      fx.encodedCreate
+    );
+    for (let i = 0; i<fx.blsSigners.length; i++) {
+      signatures[i] = fx.blsSigners[i].sign(dataToSign);
+    }
+    let aggSignature = aggregate(signatures);
+    await (await fx.verificationGateway.blsCreateMany(
+      Array(signatures.length).fill(0),
+      fx.blsSigners.map( s => s.pubkey ),
+      aggSignature
+    )).wait();
+    let publicKeyHash = Fixture.blsKeyHash(fx.blsSigners[0]);
+    let blsWalletAddress = await fx.verificationGateway.walletFromHash(publicKeyHash);
+    let blsWallet = fx.BLSWallet.attach(blsWalletAddress);
+    expect(await blsWallet.gateway())
+      .to.equal(fx.verificationGateway.address);
+  });
+
   it("should process individual calls", async function() {
     th = new TokenHelper(fx);
     let blsWalletAddresses = await th.walletTokenSetup();

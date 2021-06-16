@@ -15,39 +15,32 @@ interface IVerificationGateway {
  */
 contract BLSWallet is Initializable
 {
-    address admin;
+    address public gateway;
     bytes32 public publicKeyHash;
     uint256 public nonce;
 
     function initialize(bytes32 blsKeyHash) public initializer {
         publicKeyHash = blsKeyHash;
-        admin = msg.sender;
+        gateway = msg.sender;
         nonce = 0;
     }
-
-    function registerGateway(
-        address verificationGateway
-    ) internal {
-        IVerificationGateway(verificationGateway).walletCrossCheck(publicKeyHash);
-    }
-
 
     function payTokenAmount(
         IERC20 token,
         address recipient,
         uint256 amount
-    ) public onlyAdmin {
+    ) public onlyGateway {
         token.transfer(recipient, amount);
     }
 
     /**
-    @dev The methodID called is `require`d to succeed.
+    @dev The methodID called is `require`d to succeed. This may change in the future.
      */
     function action(
         address contractAddress,
         bytes4 methodID,
         bytes memory encodedParams
-    ) public onlyAdmin returns (bool success) {
+    ) public onlyGateway returns (bool success) {
         bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
 
         (success, ) = address(contractAddress).call(encodedFunction);
@@ -59,8 +52,8 @@ contract BLSWallet is Initializable
 
     //TODO: social recovery
 
-    modifier onlyAdmin() {
-        require(msg.sender == admin);
+    modifier onlyGateway() {
+        require(msg.sender == gateway);
         _;
     }
 }

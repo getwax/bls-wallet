@@ -68,6 +68,51 @@ contract VerificationGateway is Initializable
         require(msg.sender == address(walletFromHash[hash]));
     }
 
+    function blsCreateMany(
+        uint256[] calldata tokenRewardAmounts,
+        uint256[4][] calldata publicKeys,
+        uint256[2] calldata signature
+    ) external returns (bytes32[] memory hashes) {
+        uint256 txCount = publicKeys.length;
+        uint256[2][] memory messages = new uint256[2][](txCount);
+        hashes = new bytes32[](txCount);
+        bytes32 hashCreate = keccak256(abi.encode("Create BLS Wallet."));
+        for(uint256 i=0; i<txCount; i++) {
+            messages[i] = messagePoint(
+                0,
+                tokenRewardAmounts[i],
+                address(this),
+                hashCreate
+            );
+        }
+
+        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+            signature,
+            publicKeys,
+            messages
+        );
+        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+
+        // create wallet
+        bytes32 publicKeyHash;
+        for(uint256 i=0; i<txCount; i++) {
+            publicKeyHash = keccak256(abi.encode(publicKeys[i]));
+            require(
+                address(walletFromHash[publicKeyHash]) == address(0),
+                "VerificationGateway: Wallet already exists."
+            );
+            blsKeysFromHash[publicKeyHash] = publicKeys[i];
+            walletFromHash[publicKeyHash] = new BLSWallet();
+            walletFromHash[publicKeyHash].initialize(publicKeyHash);
+            emit WalletCreated(
+                address(walletFromHash[publicKeyHash]),
+                publicKeyHash,
+                publicKeys[i]
+            );
+            hashes[i] = publicKeyHash;
+        }
+    }
+
     function blsCallCreate(
         uint256[4] calldata publicKey,
         uint256[2] calldata signature,
