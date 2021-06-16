@@ -24,7 +24,7 @@ Fixture.test("adds valid transaction", async (fx) => {
   assertEquals(await txService.txTable.count(), 1n);
 });
 
-Fixture.test("rejects invalid transaction", async (fx) => {
+Fixture.test("rejects transaction with invalid signature", async (fx) => {
   const txService = await fx.createTxService();
 
   const blsSigner = await fx.createBlsSigner();
@@ -48,7 +48,7 @@ Fixture.test("rejects invalid transaction", async (fx) => {
   assertEquals(await txService.txTable.count(), 0n);
 
   const failures = await txService.add(tx);
-  assertEquals(failures.length, 1);
+  assertEquals(failures.map((f) => f.type), ["invalid-signature"]);
 
   // Transaction table remains empty
   assertEquals(await txService.txTable.count(), 0n);
