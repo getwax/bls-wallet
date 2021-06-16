@@ -1,6 +1,7 @@
 import { assertEquals } from "./deps.ts";
 
-import TxService, { TransactionData } from "../src/app/TxService.ts";
+import TxService from "../src/app/TxService.ts";
+import TxStore, { TransactionData } from "../src/app/TxStore.ts";
 
 let counter = 0;
 
@@ -11,13 +12,14 @@ function test(name: string, fn: (txService: TxService) => Promise<void>) {
     fn: async () => {
       const tableName = `txs_test_${counter++}_${Date.now()}`;
 
-      const txService = await TxService.create(tableName);
+      const txStore = await TxStore.create(tableName);
+      const txService = new TxService(txStore);
 
       try {
         await fn(txService);
       } finally {
         await txService.resetTable();
-        await txService.stop();
+        await txStore.stop();
       }
     },
   });

@@ -8,9 +8,10 @@ import AdminController from "./AdminController.ts";
 import AdminService from "./AdminService.ts";
 import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
+import TxStore from "./TxStore.ts";
 
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
-const txService = await TxService.create(env.TX_TABLE_NAME);
+const txService = new TxService(await TxStore.create(env.TX_TABLE_NAME));
 const adminService = new AdminService(walletService, txService);
 
 const txController = new TxController(walletService, txService);

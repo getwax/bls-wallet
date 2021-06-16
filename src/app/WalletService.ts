@@ -8,7 +8,7 @@ import {
 
 import * as env from "./env.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
-import type { TransactionData } from "./TxService.ts";
+import type { TransactionData } from "./TxStore.ts";
 
 function getKeyHash(pubkey: string) {
   return ethers.utils.keccak256(ethers.utils.solidityPack(
