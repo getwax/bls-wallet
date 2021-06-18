@@ -4,13 +4,13 @@ import { expect, assert } from "chai";
 
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
-import Fixture from "./helpers/Fixture";
-import { TxData } from "./helpers/Fixture";
-import TokenHelper from "./helpers/TokenHelper";
+import Fixture from "../shared/helpers/Fixture";
+import { TxData } from "../shared/helpers/Fixture";
+import TokenHelper from "../shared/helpers/TokenHelper";
 
-import { aggregate } from "./lib/hubble-bls/src/signer";
+import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber } from "ethers";
-import { solG1 } from "./lib/hubble-bls/src/mcl";
+// import { solG1 } from "../shared/lib/hubble-bls/src/mcl";
 
 
 describe('TokenPayments', async function () {
