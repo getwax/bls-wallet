@@ -1,78 +1,21 @@
-import {
-  Constraint,
-  CreateTableMode,
-  DataType,
-  QueryClient,
-  QueryTable,
-  TableOptions,
-} from "../../deps/index.ts";
-
-import * as env from "./env.ts";
-
-export type TransactionData = {
-  txId?: number;
-  pubKey: string;
-  signature: string;
-  contractAddress: string;
-  methodId: string;
-  encodedParams: string;
-};
-
-const txOptions: TableOptions = {
-  txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
-  pubKey: { type: DataType.VarChar, length: 66 },
-  signature: { type: DataType.VarChar, length: 64 },
-  contractAddress: { type: DataType.VarChar, length: 42 },
-  methodId: { type: DataType.VarChar, length: 10 },
-  encodedParams: { type: DataType.VarChar },
-};
+import AddTransactionFailure from "./AddTransactionFailure.ts";
+import TxTable, { TransactionData } from "./TxTable.ts";
+import WalletService from "./WalletService.ts";
 
 export default class TxService {
-  client: QueryClient;
-  txTable: QueryTable<TransactionData>;
+  constructor(
+    public txTable: TxTable,
+    public walletService: WalletService,
+  ) {}
 
-  private constructor(txTableName: string) {
-    this.client = new QueryClient({
-      hostname: env.PG.HOST,
-      port: env.PG.PORT,
-      user: env.PG.USER,
-      password: env.PG.PASSWORD,
-      database: env.PG.DB_NAME,
-      tls: {
-        enforce: false,
-      },
-    });
+  async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
+    const failures = await this.walletService.checkTx(txData);
 
-    this.txTable = this.client.table<TransactionData>(txTableName);
-  }
+    if (failures.length === 0) {
+      await this.txTable.add(txData);
+      // TODO: send tx(s) after batch count, or N ms since last send.
+    }
 
-  static async create(txTableName: string): Promise<TxService> {
-    const txService = new TxService(txTableName);
-    await txService.txTable.create(txOptions, CreateTableMode.IfNotExists);
-
-    return txService;
-  }
-
-  async addTx(txData: TransactionData) {
-    await this.txTable.insert(txData);
-  }
-
-  async txCount(): Promise<bigint> {
-    const result = await this.client.query(
-      `SELECT COUNT(*) FROM ${this.txTable.name}`,
-    );
-    return result[0].count as bigint;
-  }
-
-  async getTxs(): Promise<TransactionData[]> {
-    return await this.client.query(`SELECT * FROM ${this.txTable.name}`);
-  }
-
-  async resetTable() {
-    await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
-  }
-
-  async stop() {
-    await this.client.disconnect();
+    return failures;
   }
 }

@@ -4,8 +4,9 @@ import Rng from "./Rng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import createBLSWallet from "./createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
-import { TransactionData } from "../../src/app/TxService.ts";
+import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
 import dataPayload from "./dataPayload.ts";
+import TxService from "../../src/app/TxService.ts";
 
 const { BlsSignerFactory } = hubbleBls.signer;
 
@@ -53,10 +54,14 @@ export default class Fixture {
       name,
       sanitizeOps: false,
       fn: async () => {
+        const fx = await Fixture.create(name);
+
         try {
-          await fn(await Fixture.create(name));
+          await fn(fx);
         } catch (error) {
           throw wrapInnermostError(error);
+        } finally {
+          await fx.cleanup();
         }
       },
     });
@@ -77,6 +82,8 @@ export default class Fixture {
       walletService,
     );
   }
+
+  cleanupJobs: (() => void | Promise<void>)[] = [];
 
   private constructor(
     public testName: string,
@@ -144,10 +151,30 @@ export default class Fixture {
 
     return {
       pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
+      nonce,
       signature: hubbleBls.mcl.dumpG1(signature),
       contractAddress: contract.address,
       methodId: encodedFunction.slice(0, 10),
       encodedParams: `0x${encodedFunction.slice(10)}`,
     };
+  }
+
+  async createTxService() {
+    const suffix = this.rng.address("table-name-suffix").slice(2, 12);
+    const tableName = `txs_test_${suffix}`;
+    const txTable = await TxTable.create(tableName);
+
+    this.cleanupJobs.push(async () => {
+      await txTable.drop();
+      await txTable.stop();
+    });
+
+    return new TxService(txTable, this.walletService);
+  }
+
+  async cleanup() {
+    for (const job of this.cleanupJobs) {
+      await job();
+    }
   }
 }
