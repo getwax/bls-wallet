@@ -5,6 +5,7 @@ import WalletService from "./WalletService.ts";
 export default class TxService {
   constructor(
     public txTable: TxTable,
+    public pendingTxTable: TxTable,
     public walletService: WalletService,
   ) {}
 

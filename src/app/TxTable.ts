@@ -7,8 +7,6 @@ import {
   TableOptions,
 } from "../../deps/index.ts";
 
-import * as env from "./env.ts";
-
 export type TransactionData = {
   txId?: number;
   pubKey: string;
@@ -30,26 +28,17 @@ const txOptions: TableOptions = {
 };
 
 export default class TxTable {
-  client: QueryClient;
   txTable: QueryTable<TransactionData>;
 
-  private constructor(txTableName: string) {
-    this.client = new QueryClient({
-      hostname: env.PG.HOST,
-      port: env.PG.PORT,
-      user: env.PG.USER,
-      password: env.PG.PASSWORD,
-      database: env.PG.DB_NAME,
-      tls: {
-        enforce: false,
-      },
-    });
-
-    this.txTable = this.client.table<TransactionData>(txTableName);
+  private constructor(public queryClient: QueryClient, txTableName: string) {
+    this.txTable = this.queryClient.table<TransactionData>(txTableName);
   }
 
-  static async create(txTableName: string): Promise<TxTable> {
-    const txTable = new TxTable(txTableName);
+  static async create(
+    queryClient: QueryClient,
+    txTableName: string,
+  ): Promise<TxTable> {
+    const txTable = new TxTable(queryClient, txTableName);
     await txTable.txTable.create(txOptions, CreateTableMode.IfNotExists);
 
     return txTable;
@@ -60,14 +49,14 @@ export default class TxTable {
   }
 
   async count(): Promise<bigint> {
-    const result = await this.client.query(
+    const result = await this.queryClient.query(
       `SELECT COUNT(*) FROM ${this.txTable.name}`,
     );
     return result[0].count as bigint;
   }
 
   async all(): Promise<TransactionData[]> {
-    return await this.client.query(`SELECT * FROM ${this.txTable.name}`);
+    return await this.queryClient.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
   async drop() {
@@ -75,10 +64,6 @@ export default class TxTable {
   }
 
   async clear() {
-    return await this.client.query(`DELETE from ${this.txTable.name}`);
-  }
-
-  async stop() {
-    await this.client.disconnect();
+    return await this.queryClient.query(`DELETE from ${this.txTable.name}`);
   }
 }

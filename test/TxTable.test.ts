@@ -1,6 +1,7 @@
 import { assertEquals } from "./deps.ts";
 
 import TxTable, { TransactionData } from "../src/app/TxTable.ts";
+import createQueryClient from "../src/app/createQueryClient.ts";
 
 let counter = 0;
 
@@ -11,13 +12,14 @@ function test(name: string, fn: (txTable: TxTable) => Promise<void>) {
     fn: async () => {
       const tableName = `txs_test_${counter++}_${Date.now()}`;
 
-      const txTable = await TxTable.create(tableName);
+      const queryClient = createQueryClient();
+      const txTable = await TxTable.create(queryClient, tableName);
 
       try {
         await fn(txTable);
       } finally {
         await txTable.drop();
-        await txTable.stop();
+        await queryClient.disconnect();
       }
     },
   });

@@ -9,10 +9,18 @@ import AdminService from "./AdminService.ts";
 import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
 import TxTable from "./TxTable.ts";
+import createQueryClient from "./createQueryClient.ts";
+
+const queryClient = createQueryClient();
+const txTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
+
+const pendingTxTable = await TxTable.create(
+  queryClient,
+  env.PENDING_TX_TABLE_NAME,
+);
 
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
-const txTable = await TxTable.create(env.TX_TABLE_NAME);
-const txService = new TxService(txTable, walletService);
+const txService = new TxService(pendingTxTable, txTable, walletService);
 const adminService = new AdminService(walletService, txTable);
 
 const routers = [

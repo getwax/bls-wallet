@@ -7,6 +7,7 @@ import WalletService from "../../src/app/WalletService.ts";
 import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
 import dataPayload from "./dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
+import createQueryClient from "../../src/app/createQueryClient.ts";
 
 const { BlsSignerFactory } = hubbleBls.signer;
 
@@ -161,15 +162,20 @@ export default class Fixture {
 
   async createTxService() {
     const suffix = this.rng.address("table-name-suffix").slice(2, 12);
+    const queryClient = createQueryClient();
+
     const tableName = `txs_test_${suffix}`;
-    const txTable = await TxTable.create(tableName);
+    const txTable = await TxTable.create(queryClient, tableName);
+
+    const pendingTableName = `pending_txs_test_${suffix}`;
+    const pendingTxTable = await TxTable.create(queryClient, pendingTableName);
 
     this.cleanupJobs.push(async () => {
       await txTable.drop();
-      await txTable.stop();
+      await queryClient.disconnect();
     });
 
-    return new TxService(txTable, this.walletService);
+    return new TxService(txTable, pendingTxTable, this.walletService);
   }
 
   async cleanup() {
