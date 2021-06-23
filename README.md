@@ -8,8 +8,7 @@ Gateway.
 
 ## Installation
 
-Install [Deno](deno.land) (or `deno upgrade`) v1.9.1.
-Uses ethers, Oak, Postgresql... see src/app/deps.ts
+Install [Deno](deno.land). Uses ethers, Oak, Postgresql... see src/app/deps.ts.
 
 ```sh
 cp .env.example .env
@@ -49,6 +48,25 @@ Create a table called `bls_aggregator`:
 ```sh
 sudo -u postgres createdb bls_aggregator
 ```
+
+On Ubuntu (and probably elsewhere), postgres is configured to offer SSL
+connections but with an invalid certificate. However, the deno driver for
+postgres doesn't support this.
+
+There are two options here:
+
+1. Set up SSL with a valid certificate
+   ([guide](https://www.postgresql.org/docs/current/ssl-tcp.html)).
+2. Turn off SSL in postgres (only for development or if you can ensure the
+   connection isn't vulnerable to attack).
+   1. View the config location with
+      `sudo -u postgres psql -c 'SHOW config_file'`.
+   2. Turn off ssl in that config.
+      ```diff
+      -ssl = on
+      +ssl = off
+      ```
+   3. Restart postgres `sudo systemctl restart postgresql`.
 
 ## Running
 

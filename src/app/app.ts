@@ -12,7 +12,7 @@ import TxTable from "./TxTable.ts";
 
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
 const txTable = await TxTable.create(env.TX_TABLE_NAME);
-const txService = new TxService(txTable);
+const txService = new TxService(txTable, walletService);
 const adminService = new AdminService(walletService, txTable);
 
 const routers = [
