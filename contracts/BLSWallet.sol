@@ -30,7 +30,7 @@ contract BLSWallet is Initializable
         address recipient,
         uint256 amount
     ) public onlyGateway {
-        token.transfer(recipient, amount);
+        require(token.transfer(recipient, amount));
     }
 
     /**

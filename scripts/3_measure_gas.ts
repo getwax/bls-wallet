@@ -10,43 +10,59 @@ import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 let fx: Fixture;
 let th: TokenHelper;
 
+async function optimisedTransferEstimate() {
+  
+}
+
 async function main() {
-    fx = await Fixture.create();
-    th = new TokenHelper(fx);
+  let walletCounts = [2,5,6,7];
+  console.log("Creating wallets for: ", walletCounts);
+  for (let i=0; i<walletCounts.length; i++) {
+    let walletCount = walletCounts[i];
+    let gasResults = {
+      walletCount: walletCount,
+      estimate: -1,
+      limit: -1,
+      used: -1
+    }
+  
+    fx = await Fixture.create(walletCount);
 
-    let blsWalletAddresses = await th.walletTokenSetup();
-
-    // encode transfer of start amount to first wallet
-    let encodedFunction = th.testToken.interface.encodeFunctionData(
-      "transfer",
-      [blsWalletAddresses[0], TokenHelper.userStartAmount.toString()]
+    let dataToSign = fx.dataPayload(
+      0,
+      BigNumber.from(0),
+      fx.verificationGateway.address,
+      fx.encodedCreate
     );
 
-    let signatures: any[] = new Array(blsWalletAddresses.length);
-    for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let dataToSign = fx.dataPayload(
-        await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
-        BigNumber.from(0),
-        th.testToken.address,
-        encodedFunction
-      );
+    let signatures: any[] = new Array(fx.blsSigners.length);
+    for (let i = 0; i<fx.blsSigners.length; i++) {
       signatures[i] = fx.blsSigners[i].sign(dataToSign);
     }
-
-    // each bls wallet to sign same transfer data
-    // let signatures = blsSigners.map(b => b.sign(dataToSign));
     let aggSignature = aggregate(signatures);
-
-    // can be called by any ecdsa wallet
-    let gasEstimate = await fx.blsExpander.estimateGas.blsCallMultiSameContractFunctionParams(
-        fx.blsSigners.map(Fixture.blsKeyHash),
-        aggSignature,
+    let pubKeys = fx.blsSigners.map( s => s.pubkey );
+    try {
+      let gasEstimate = await fx.verificationGateway.estimateGas.blsCreateMany(
         Array(signatures.length).fill(0),
-        th.testToken.address,
-        encodedFunction.substring(0,10),
-        '0x'+encodedFunction.substr(10)
-    );
-    console.log(gasEstimate.toNumber());
+        pubKeys,
+        aggSignature
+      );
+      gasResults.estimate = gasEstimate.toNumber();
+
+      let response = await fx.verificationGateway.blsCreateMany(
+        Array(signatures.length).fill(0),
+        fx.blsSigners.map( s => s.pubkey ),
+        aggSignature
+      );
+      gasResults.limit = (response.gasLimit as BigNumber).toNumber();
+      let receipt = await response.wait();
+      gasResults.used = (receipt.gasUsed as BigNumber).toNumber();
+    }
+    catch(e) {
+      console.log("err");
+    }
+    console.log(gasResults);
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere

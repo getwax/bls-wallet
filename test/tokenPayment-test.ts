@@ -19,7 +19,7 @@ describe('TokenPayments', async function () {
   let blsWalletAddresses: string[];
 
   beforeEach(async function() {
-    fx = await Fixture.create(false);
+    fx = await Fixture.create(7, false);
     th = new TokenHelper(fx);
     blsWalletAddresses = await th.walletTokenSetup();
     await fx.verificationGateway.initialize(th.testToken.address);
@@ -35,8 +35,7 @@ describe('TokenPayments', async function () {
       "walletCrossCheck",
       [blsPubKeyHash]
     );
-    let balanceBefore = await th.testToken.balanceOf(blsWalletAddresses[0]);
-
+    let aggBalanceBefore = await th.testToken.balanceOf(await fx.signers[0].getAddress());
     await fx.gatewayCall(
       blsSigner,
       1, //next nonce after creation
@@ -45,9 +44,10 @@ describe('TokenPayments', async function () {
       encodedFunction
     );
     let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[0]);
-    expect(walletBalance).to.equal(TokenHelper.userStartAmount.sub(reward));
+
+    expect(walletBalance).to.equal(th.userStartAmount.sub(reward));
     let aggBalance = await th.testToken.balanceOf(await fx.signers[0].getAddress());
-    expect(aggBalance).to.equal(reward);
+    expect(aggBalance).to.equal(aggBalanceBefore.add(reward));
   });
 
   it("should reward tx submitter (callMany)", async function() {
@@ -94,6 +94,7 @@ describe('TokenPayments', async function () {
     // )).wait();
 
     let firstSigner = await fx.signers[0].getAddress();
+    let aggBalanceBefore = await th.testToken.balanceOf(firstSigner);
     await(await fx.verificationGateway.blsCallMany(
       firstSigner,
       aggSignature,
@@ -101,10 +102,10 @@ describe('TokenPayments', async function () {
     )).wait();
 
     let balancesAfter = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
-    let expectedAfter = TokenHelper.userStartAmount.sub(reward);
+    let expectedAfter = th.userStartAmount.sub(reward);
     balancesAfter.map( b => expect(b).to.equal(expectedAfter) );
     let aggBalance = await th.testToken.balanceOf(firstSigner);
-    expect(aggBalance).to.equal(reward.mul(blsWalletAddresses.length));
+    expect(aggBalance).to.equal(aggBalanceBefore.add(reward.mul(blsWalletAddresses.length)));
   });
 
 });

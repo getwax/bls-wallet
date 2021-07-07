@@ -179,7 +179,7 @@ contract VerificationGateway is Initializable
             );
         }
 
-        walletFromHash[publicKeyHash].action(
+        bool result = walletFromHash[publicKeyHash].action(
             contractAddress,
             methodID,
             encodedParams
@@ -207,7 +207,6 @@ contract VerificationGateway is Initializable
         uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
         uint256[2][] memory messages = new uint256[2][](txCount);
         BLSWallet wallet;
-
         for (uint256 i = 0; i<txCount; i++) {
             // // construct params for signature verification
             publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];

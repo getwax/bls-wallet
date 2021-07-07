@@ -7,7 +7,7 @@ import { TxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
-import { BigNumber } from "ethers";
+import { BigNumber, providers } from "ethers";
 
 describe('WalletActions', async function () {
   let fx: Fixture;
@@ -25,7 +25,8 @@ describe('WalletActions', async function () {
       .to.equal(Fixture.blsKeyHash(blsSigner));
 
     // Check revert when adding same wallet twice
-    await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
+    // console.log(providers.getNetwork());
+    // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
 
   });
 
@@ -95,7 +96,7 @@ describe('WalletActions', async function () {
     // check each wallet has start amount
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
-      expect(walletBalance).to.equal(TokenHelper.userStartAmount);
+      expect(walletBalance).to.equal(th.userStartAmount);
     }
 
     console.log("Send between wallets...");
@@ -106,12 +107,12 @@ describe('WalletActions', async function () {
         BigNumber.from(0),
         fx.blsSigners[i],
         blsWalletAddresses[0],
-        TokenHelper.userStartAmount
+        th.userStartAmount
       );
     }
 
     // check first wallet full and others empty
-    let totalAmount = TokenHelper.userStartAmount.mul(blsWalletAddresses.length);
+    let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(i==0?totalAmount:0);
@@ -125,7 +126,7 @@ describe('WalletActions', async function () {
     // encode transfer of start amount to first wallet
     let encodedFunction = th.testToken.interface.encodeFunctionData(
       "transfer",
-      [blsWalletAddresses[0], TokenHelper.userStartAmount.toString()]
+      [blsWalletAddresses[0], th.userStartAmount.toString()]
     );
 
     let signatures: any[] = new Array(blsWalletAddresses.length);
@@ -162,7 +163,7 @@ describe('WalletActions', async function () {
     //   Array(length).fill('0x'+encodedFunction.substr(10)) // same params
     // );
 
-    let totalAmount = TokenHelper.userStartAmount.mul(blsWalletAddresses.length);
+    let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(i==0?totalAmount:0);
@@ -175,7 +176,7 @@ describe('WalletActions', async function () {
 
     // send all to first address
     console.log("Send tokens to first bls wallet");
-    let totalAmount = TokenHelper.userStartAmount.mul(blsWalletAddresses.length);
+    let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
     await(await testToken.connect(fx.signers[0]).transfer(
       blsWalletAddresses[0],
       totalAmount
@@ -189,7 +190,7 @@ describe('WalletActions', async function () {
       // encode transfer of start amount to each wallet
       let encodedFunction = testToken.interface.encodeFunctionData(
         "transfer",
-        [blsWalletAddresses[i], TokenHelper.userStartAmount.toString()]
+        [blsWalletAddresses[i], th.userStartAmount.toString()]
       );
       encodedParams[i] = '0x'+encodedFunction.substr(10);
 
@@ -216,7 +217,7 @@ describe('WalletActions', async function () {
 
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       let walletBalance = await testToken.balanceOf(blsWalletAddresses[i]);
-      expect(walletBalance).to.equal(TokenHelper.userStartAmount);
+      expect(walletBalance).to.equal(th.userStartAmount);
     }
 
   });
