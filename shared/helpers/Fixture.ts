@@ -198,7 +198,6 @@ export default class Fixture {
   async createBLSWallets(reward: BigNumber = BigNumber.from(0)): Promise<string[]> {
     const length = this.blsSigners.length;
     let blsWalletAddresses = new Array<string>(length);
-    console.log(`Creating ${length} wallets...`);
     for (let i = 0; i<length; i++) {
       blsWalletAddresses[i] = await this.createBLSWallet(
         this.blsSigners[i],

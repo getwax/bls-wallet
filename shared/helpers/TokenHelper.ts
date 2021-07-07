@@ -33,7 +33,6 @@ export default class TokenHelper {
     addresses: string[]
   ) {
     const length = addresses.length;
-    console.log(`Distribute tokens to ${length} wallets...`);
     
     // split supply amongst bls wallet addresses
     for (let i = 0; i < length; i++) {
