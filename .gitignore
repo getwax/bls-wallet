@@ -9,3 +9,6 @@ cache
 #Optimism files
 artifacts-ovm
 cache-ovm
+
+#editor files
+.vscode

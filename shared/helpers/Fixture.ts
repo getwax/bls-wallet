@@ -10,6 +10,7 @@ import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-b
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+import { exit } from "process";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
@@ -27,7 +28,8 @@ export type TxData = {
 
 export default class Fixture {
   
-  static readonly ACCOUNTS_LENGTH = 4;
+  static readonly ECDSA_ACCOUNTS_LENGTH = 5;
+  static readonly DEFAULT_BLS_ACCOUNTS_LENGTH = 5;
 
   private constructor(
     public chainId: number,
@@ -50,16 +52,23 @@ export default class Fixture {
   ) {}
 
   /// @dev Contracts deployed by first ethers signer 
-  static async create(initialized: boolean=true) {
+  static async create(
+    blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
+    initialized: boolean=true
+  ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
-    console.log("ChainId from provider", chainId);
 
-    let signers = (await ethers.getSigners()).slice(0, Fixture.ACCOUNTS_LENGTH);
+    let allSigners = await ethers.getSigners();
+    let signers = (allSigners).slice(0, Fixture.ECDSA_ACCOUNTS_LENGTH);
     let addresses = await Promise.all(signers.map(acc => acc.getAddress())) as string[];
   
     let blsSignerFactory = await BlsSignerFactory.new();
-    let blsSigners = addresses.map( add => blsSignerFactory.getSigner(DOMAIN, add) );
-  
+    let blsSigners = new Array(blsWalletCount);
+    for (let i=0; i<blsSigners.length; i++) {
+      let randomNumber = Math.abs(Math.random() * 0xffffffff << 0);
+      blsSigners[i] = blsSignerFactory.getSigner(DOMAIN, "0x"+randomNumber.toString(16));
+    }
+
     // deploy Verification Gateway
     let VerificationGateway = await ethers.getContractFactory("VerificationGateway");
     let verificationGateway = await VerificationGateway.deploy();
@@ -187,9 +196,9 @@ export default class Fixture {
    * @returns array of wallet addresses 
    */
   async createBLSWallets(reward: BigNumber = BigNumber.from(0)): Promise<string[]> {
-    let blsWalletAddresses = new Array<string>(this.blsSigners.length);
-    console.log("Creating wallets...");
-    for (let i = 0; i<this.blsSigners.length; i++) {
+    const length = this.blsSigners.length;
+    let blsWalletAddresses = new Array<string>(length);
+    for (let i = 0; i<length; i++) {
       blsWalletAddresses[i] = await this.createBLSWallet(
         this.blsSigners[i],
         reward

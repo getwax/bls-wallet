@@ -1,14 +1,10 @@
-import { BigNumber, Signer, Contract } from "ethers";
-import { readFile, readFileSync } from "fs";
+import { Contract } from "ethers";
 
-
-import { network, ethers } from "hardhat";
-
-const utils = ethers.utils;
+import { ethers } from "hardhat";
 
 const initialSupply = ethers.utils.parseUnits("1000000")
 
-let baseToken: Contract, blsWallet: Contract;
+let baseToken: Contract;
 
 async function main() {
   

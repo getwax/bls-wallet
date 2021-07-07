@@ -8,10 +8,12 @@ import Fixture from "./Fixture";
 export default class TokenHelper {
 
   static readonly initialSupply = ethers.utils.parseUnits("1000000")
-  static readonly userStartAmount = TokenHelper.initialSupply.div(Fixture.ACCOUNTS_LENGTH);
+  readonly userStartAmount;
 
   testToken: Contract;
-  constructor(public fx: Fixture) { }
+  constructor(public fx: Fixture) { 
+    this.userStartAmount = TokenHelper.initialSupply.div(fx.blsSigners.length);
+  }
 
   /// @dev Contract deployed by first ethers signer, has initial supply
   static async deployTestToken(): Promise<Contract> {
@@ -25,18 +27,19 @@ export default class TokenHelper {
     return mockERC20;
   }
 
-  static async distributeTokens(
+  async distributeTokens(
     fromSigner: Signer,
     token: Contract,
     addresses: string[]
   ) {
-    console.log("Distribute tokens to wallets...");
+    const length = addresses.length;
+    
     // split supply amongst bls wallet addresses
-    for (let i = 0; i < addresses.length; i++) {
+    for (let i = 0; i < length; i++) {
       // first account as aggregator, and holds token supply
       await (await token.connect(fromSigner).transfer(
         addresses[i],
-        TokenHelper.userStartAmount
+        this.userStartAmount
       )).wait();
     }
   }
@@ -45,7 +48,7 @@ export default class TokenHelper {
     let blsWalletAddresses = await this.fx.createBLSWallets();
 
     this.testToken = await TokenHelper.deployTestToken();
-    await TokenHelper.distributeTokens(
+    await this.distributeTokens(
       this.fx.signers[0],
       this.testToken,
       blsWalletAddresses
