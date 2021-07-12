@@ -6,10 +6,16 @@ import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
 
 export default class TxService {
+  static defaultConfig = {
+    pendingBatchSize: env.PENDING_BATCH_SIZE,
+    maxPendingTxs: env.MAX_PENDING_TXS,
+  };
+
   constructor(
     public txTable: TxTable,
     public pendingTxTable: TxTable,
     public walletService: WalletService,
+    public config = TxService.defaultConfig,
   ) {}
 
   async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
@@ -73,7 +79,10 @@ export default class TxService {
       const pendingTxsToRemove: TransactionData[] = [];
       const txsToAdd: TransactionData[] = [];
 
-      const pendingTxs = await this.pendingTxTable.selectByPubKey(pubKey, 100);
+      const pendingTxs = await this.pendingTxTable.selectByPubKey(
+        pubKey,
+        this.config.pendingBatchSize,
+      );
 
       if (pendingTxs.length === 0) {
         break;
@@ -112,7 +121,7 @@ export default class TxService {
   async ensurePendingTxSpace() {
     const size = await this.pendingTxTable.count();
 
-    if (size >= env.MAX_PENDING_TXS) {
+    if (size >= this.config.maxPendingTxs) {
       const first = await this.pendingTxTable.First();
 
       if (first === null) {
