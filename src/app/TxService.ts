@@ -82,13 +82,13 @@ export default class TxService {
       let foundGap = false;
 
       for (const tx of pendingTxs) {
-        if (lowestAcceptableNonce.gt(tx.txId!)) {
-          console.warn("Nonce from past was in pending tx table");
+        if (lowestAcceptableNonce.gt(tx.nonce)) {
+          console.warn(`Nonce from past was in pendingTxs`);
           pendingTxsToRemove.push(tx);
           continue;
         }
 
-        if (lowestAcceptableNonce.eq(tx.txId!)) {
+        if (lowestAcceptableNonce.eq(tx.nonce)) {
           pendingTxsToRemove.push(tx);
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
