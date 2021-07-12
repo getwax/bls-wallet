@@ -6,8 +6,11 @@ import {
   QueryClient,
   QueryTable,
   TableOptions,
+  unsketchify,
 } from "../../deps/index.ts";
+
 import assertExists from "../helpers/assertExists.ts";
+import * as env from "./env.ts";
 
 export type TransactionData = {
   txId?: number;
@@ -34,6 +37,17 @@ export default class TxTable {
 
   private constructor(public queryClient: QueryClient, txTableName: string) {
     this.txTable = this.queryClient.table<TransactionData>(txTableName);
+
+    if (env.LOG_QUERIES) {
+      const originalQuery = this.txTable.client.query.bind(
+        this.txTable.client,
+      );
+
+      this.txTable.client.query = async (...args) => {
+        console.log("query:", ...args);
+        return await originalQuery(...args);
+      };
+    }
   }
 
   static async create(
@@ -52,9 +66,23 @@ export default class TxTable {
 
   async remove(...txs: TransactionData[]) {
     for (const tx of txs) {
-      await this.txTable
+      const whereClause = this.txTable
         .where({ txId: assertExists(tx.txId) })
-        .delete();
+        .make();
+
+      await this.txTable.client.query(
+        `DELETE FROM ${unsketchify(this.txTable.name)} ${whereClause.sql}`,
+        whereClause.params,
+      );
+
+      // The delete above should be just:
+      // ```ts
+      // await this.txTable
+      //   .where({ txId: assertExists(tx.txId) })
+      //   .delete();
+      // ```
+      // however it is affected by this bug in PostQuery:
+      // https://github.com/DjDeveloperr/PostQuery/pull/7
     }
   }
 

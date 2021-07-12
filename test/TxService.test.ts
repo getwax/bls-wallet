@@ -145,3 +145,58 @@ Fixture.test("adds tx with future nonce to pendingTxs", async (fx) => {
   assertEquals(await txService.txTable.count(), 0n);
   assertEquals(await txService.pendingTxTable.count(), 1n);
 });
+
+Fixture.test(
+  "filling the nonce gap brings the eligible pending tx into main txs",
+  async (
+    fx,
+  ) => {
+    const txService = await fx.createTxService();
+
+    const blsSigner = await fx.createBlsSigner();
+    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+    // Add tx in the future
+    const tx2 = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+      nonceOffset: 1,
+    });
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [],
+      pending: [],
+    });
+
+    const failures2 = await txService.add(tx2);
+    assertEquals(failures2, []);
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [],
+      pending: [{ ...tx2, txId: 1 }],
+    });
+
+    // Add current tx, which makes previous tx ready
+    const tx1 = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+    });
+
+    const failures1 = await txService.add(tx1);
+    assertEquals(failures1, []);
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [
+        { ...tx1, txId: 1 },
+
+        // Note that tx2 had id 1 when it was pending, and it gets a new id here
+        { ...tx2, txId: 2 },
+      ],
+      pending: [],
+    });
+  },
+);

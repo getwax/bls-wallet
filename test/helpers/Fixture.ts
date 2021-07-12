@@ -178,6 +178,15 @@ export default class Fixture {
     return new TxService(txTable, pendingTxTable, this.walletService);
   }
 
+  async allTxs(
+    txService: TxService,
+  ): Promise<{ main: TransactionData[]; pending: TransactionData[] }> {
+    return {
+      main: await txService.txTable.all(),
+      pending: await txService.pendingTxTable.all(),
+    };
+  }
+
   async cleanup() {
     for (const job of this.cleanupJobs) {
       await job();

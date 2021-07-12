@@ -37,6 +37,7 @@ export {
   OrderByType,
   QueryClient,
   QueryTable,
+  unsketchify,
 } from "https://deno.land/x/postquery@v0.1.0/mod.ts";
 
 export type { TableOptions } from "https://deno.land/x/postquery@v0.1.0/mod.ts";
