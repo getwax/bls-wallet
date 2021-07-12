@@ -66,16 +66,14 @@ export default class TxTable {
   }
 
   async First(): Promise<TransactionData | null> {
-    const { sql } = this.txTable
+    const rows = await this.txTable
       .where()
       .order({
         column: "txId",
         type: OrderByType.Ascending,
       })
       .limit(1)
-      .make();
-
-    const rows = (await this.queryClient.query(sql)) as TransactionData[];
+      .select();
 
     return rows[0] ?? null;
   }
@@ -84,16 +82,14 @@ export default class TxTable {
     pubKey: string,
     limit: number,
   ): Promise<TransactionData[]> {
-    const { sql } = this.txTable
+    return await this.txTable
       .where({ pubKey })
       .order({
         column: "nonce",
         type: OrderByType.Ascending,
       })
       .limit(limit)
-      .make();
-
-    return (await this.queryClient.query(sql)) as TransactionData[];
+      .select();
   }
 
   async all(): Promise<TransactionData[]> {
@@ -105,22 +101,20 @@ export default class TxTable {
   }
 
   async nextNonceOf(pubKey: string): Promise<number | null> {
-    const { sql } = this.txTable
+    const results = await this.txTable
       .where({ pubKey })
       .order({
         column: "nonce",
         type: OrderByType.Descending,
       })
       .limit(1)
-      .make();
-
-    const results = await this.queryClient.query(sql);
+      .select();
 
     if (results.length === 0) {
       return null;
     }
 
-    return (results[0].nonce as number) + 1;
+    return results[0].nonce + 1;
   }
 
   async clear() {
