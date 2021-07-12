@@ -160,7 +160,7 @@ export default class Fixture {
     };
   }
 
-  async createTxService() {
+  async createTxService(config = TxService.defaultConfig) {
     const suffix = this.rng.address("table-name-suffix").slice(2, 12);
     const queryClient = createQueryClient();
 
@@ -175,7 +175,7 @@ export default class Fixture {
       await queryClient.disconnect();
     });
 
-    return new TxService(txTable, pendingTxTable, this.walletService);
+    return new TxService(txTable, pendingTxTable, this.walletService, config);
   }
 
   async allTxs(

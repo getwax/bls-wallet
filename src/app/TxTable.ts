@@ -37,17 +37,6 @@ export default class TxTable {
 
   private constructor(public queryClient: QueryClient, txTableName: string) {
     this.txTable = this.queryClient.table<TransactionData>(txTableName);
-
-    if (env.LOG_QUERIES) {
-      const originalQuery = this.txTable.client.query.bind(
-        this.txTable.client,
-      );
-
-      this.txTable.client.query = async (...args) => {
-        console.log("query:", ...args);
-        return await originalQuery(...args);
-      };
-    }
   }
 
   static async create(
@@ -152,7 +141,7 @@ export default class TxTable {
   async clearBeforeId(txId: number) {
     await this.queryClient.query(`
       DELETE from ${this.txTable.name}
-      WHERE txId < ${txId}
+      WHERE "txId" < ${txId}
     `);
   }
 }

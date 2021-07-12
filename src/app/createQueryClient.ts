@@ -3,7 +3,7 @@ import { QueryClient } from "../../deps/index.ts";
 import * as env from "./env.ts";
 
 export default function createQueryClient(): QueryClient {
-  return new QueryClient({
+  const client = new QueryClient({
     hostname: env.PG.HOST,
     port: env.PG.PORT,
     user: env.PG.USER,
@@ -13,4 +13,15 @@ export default function createQueryClient(): QueryClient {
       enforce: false,
     },
   });
+
+  if (env.LOG_QUERIES) {
+    const originalQuery = client.query.bind(client);
+
+    client.query = async (...args) => {
+      console.log("query:", ...args);
+      return await originalQuery(...args);
+    };
+  }
+
+  return client;
 }

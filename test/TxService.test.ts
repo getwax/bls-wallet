@@ -1,6 +1,7 @@
 import { assertEquals } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
+import Range from "./helpers/Range.ts";
 
 Fixture.test("adds valid transaction", async (fx) => {
   const txService = await fx.createTxService();
@@ -148,9 +149,7 @@ Fixture.test("adds tx with future nonce to pendingTxs", async (fx) => {
 
 Fixture.test(
   "filling the nonce gap brings the eligible pending tx into main txs",
-  async (
-    fx,
-  ) => {
+  async (fx) => {
     const txService = await fx.createTxService();
 
     const blsSigner = await fx.createBlsSigner();
@@ -197,6 +196,47 @@ Fixture.test(
         { ...tx2, txId: 2 },
       ],
       pending: [],
+    });
+  },
+);
+
+// TODO: Can't game ordering with future tx
+
+Fixture.test(
+  "when pending txs reach maxPendingTxs, the oldest ones are dropped",
+  async (fx) => {
+    const txService = await fx.createTxService({
+      maxPendingTxs: 3,
+      pendingBatchSize: 100,
+    });
+
+    const blsSigner = await fx.createBlsSigner();
+    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+    const futureTxs = await Promise.all(
+      Range(5).map((i) =>
+        fx.createTxData({
+          blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "3"],
+          nonceOffset: i + 1,
+        })
+      ),
+    );
+
+    for (const tx of futureTxs) {
+      await txService.add(tx);
+    }
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [],
+      pending: [
+        // futureTxs[0] and futureTxs[1] should have been dropped
+        { ...futureTxs[2], txId: 3 },
+        { ...futureTxs[3], txId: 4 },
+        { ...futureTxs[4], txId: 5 },
+      ],
     });
   },
 );

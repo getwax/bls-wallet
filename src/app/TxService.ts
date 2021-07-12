@@ -132,8 +132,11 @@ export default class TxService {
         return;
       }
 
-      const newFirstId = first.txId! + (Number(size) - env.MAX_PENDING_TXS + 1);
+      const newFirstId = (
+        first.txId! + (Number(size) - this.config.maxPendingTxs + 1)
+      );
 
+      console.log({ newFirstId });
       this.pendingTxTable.clearBeforeId(newFirstId);
     }
   }
