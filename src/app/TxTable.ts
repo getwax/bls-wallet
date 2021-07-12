@@ -45,8 +45,8 @@ export default class TxTable {
     return txTable;
   }
 
-  async add(txData: TransactionData) {
-    await this.txTable.insert(txData);
+  async add(...txs: TransactionData[]) {
+    await this.txTable.insert(...txs);
   }
 
   async count(): Promise<bigint> {
