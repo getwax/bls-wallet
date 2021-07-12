@@ -7,6 +7,7 @@ import {
   QueryTable,
   TableOptions,
 } from "../../deps/index.ts";
+import assertExists from "../helpers/assertExists.ts";
 
 export type TransactionData = {
   txId?: number;
@@ -49,11 +50,50 @@ export default class TxTable {
     await this.txTable.insert(...txs);
   }
 
+  async remove(...txs: TransactionData[]) {
+    for (const tx of txs) {
+      await this.txTable
+        .where({ txId: assertExists(tx.txId) })
+        .delete();
+    }
+  }
+
   async count(): Promise<bigint> {
     const result = await this.queryClient.query(
       `SELECT COUNT(*) FROM ${this.txTable.name}`,
     );
     return result[0].count as bigint;
+  }
+
+  async First(): Promise<TransactionData | null> {
+    const { sql } = this.txTable
+      .where()
+      .order({
+        column: "txId",
+        type: OrderByType.Ascending,
+      })
+      .limit(1)
+      .make();
+
+    const rows = (await this.queryClient.query(sql)) as TransactionData[];
+
+    return rows[0] ?? null;
+  }
+
+  async selectByPubKey(
+    pubKey: string,
+    limit: number,
+  ): Promise<TransactionData[]> {
+    const { sql } = this.txTable
+      .where({ pubKey })
+      .order({
+        column: "nonce",
+        type: OrderByType.Ascending,
+      })
+      .limit(limit)
+      .make();
+
+    return (await this.queryClient.query(sql)) as TransactionData[];
   }
 
   async all(): Promise<TransactionData[]> {
@@ -85,5 +125,12 @@ export default class TxTable {
 
   async clear() {
     return await this.queryClient.query(`DELETE from ${this.txTable.name}`);
+  }
+
+  async clearBeforeId(txId: number) {
+    await this.queryClient.query(`
+      DELETE from ${this.txTable.name}
+      WHERE txId < ${txId}
+    `);
   }
 }

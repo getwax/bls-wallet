@@ -30,3 +30,4 @@ export const PG = {
 
 export const TX_TABLE_NAME = requireEnv("TX_TABLE_NAME");
 export const PENDING_TX_TABLE_NAME = requireEnv("PENDING_TX_TABLE_NAME");
+export const MAX_PENDING_TXS = requireIntEnv("MAX_PENDING_TXS");
