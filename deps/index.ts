@@ -34,6 +34,7 @@ export {
   Constraint,
   CreateTableMode,
   DataType,
+  OrderByType,
   QueryClient,
   QueryTable,
 } from "https://deno.land/x/postquery@v0.1.0/mod.ts";

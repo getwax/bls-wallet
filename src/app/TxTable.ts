@@ -2,6 +2,7 @@ import {
   Constraint,
   CreateTableMode,
   DataType,
+  OrderByType,
   QueryClient,
   QueryTable,
   TableOptions,
@@ -61,6 +62,25 @@ export default class TxTable {
 
   async drop() {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
+  }
+
+  async nextNonceOf(pubKey: string): Promise<number | null> {
+    const { sql } = this.txTable
+      .where({ pubKey })
+      .order({
+        column: "nonce",
+        type: OrderByType.Descending,
+      })
+      .limit(1)
+      .make();
+
+    const results = await this.queryClient.query(sql);
+
+    if (results.length === 0) {
+      return null;
+    }
+
+    return (results[0].nonce as number) + 1;
   }
 
   async clear() {
