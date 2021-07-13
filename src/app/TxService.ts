@@ -58,6 +58,13 @@ export default class TxService {
     return [];
   }
 
+  /**
+   * Find the lowest acceptable nonce based on chain and the main tx table.
+   *
+   * Here 'acceptable' means able to be accepted into the main tx table. This
+   * means that it comes after the transactions on chain, but also that it comes
+   * after the transactions already in the main tx table.
+   */
   async LowestAcceptableNonce(
     nextChainNonce: ethers.BigNumber,
     pubKey: string,
