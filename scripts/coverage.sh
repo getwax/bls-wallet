@@ -5,7 +5,8 @@ set -euo pipefail
 if which genhtml; then
   echo "genhtml found at $(which genhtml)"
 else
-  echo "genhtml not found, install via e.g. \`apt install lcov\`"
+  >&2 echo "genhtml not found, install via e.g. \`apt install lcov\`"
+  exit 1
 fi
 
 rm -rf cov_profile
