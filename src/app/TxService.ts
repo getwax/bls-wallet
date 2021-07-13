@@ -90,7 +90,7 @@ export default class TxService {
       const futureTxsToRemove: TransactionData[] = [];
       const txsToAdd: TransactionData[] = [];
 
-      const futureTxs = await this.futureTxTable.selectByPubKey(
+      const futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
         pubKey,
         this.config.futureBatchSize,
       );

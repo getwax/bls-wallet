@@ -79,7 +79,7 @@ export default class TxTable {
     return rows[0] ?? null;
   }
 
-  async selectByPubKey(
+  async pubKeyTxsInNonceOrder(
     pubKey: string,
     limit: number,
   ): Promise<TransactionData[]> {
