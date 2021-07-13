@@ -137,7 +137,6 @@ export default class TxService {
         first.txId! + (Number(size) - this.config.maxPendingTxs + 1)
       );
 
-      console.log({ newFirstId });
       this.pendingTxTable.clearBeforeId(newFirstId);
     }
   }
