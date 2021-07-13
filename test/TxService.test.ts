@@ -254,3 +254,44 @@ Fixture.test(
     });
   },
 );
+
+Fixture.test(
+  "reusing a nonce from main txs (unsubmitted) fails with duplicate-nonce",
+  async (fx) => {
+    const txService = await fx.createTxService();
+
+    const blsSigner = fx.createBlsSigner();
+    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+    const tx = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+    });
+
+    const failures = await txService.add(tx);
+    assertEquals(failures, []);
+
+    const txDuplicateNonce = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "5"],
+      // because the previous tx isn't on chain, the default nonce offset of
+      // zero should conflict
+    });
+
+    const failuresDuplicateNonce = await txService.add(txDuplicateNonce);
+
+    assertEquals(
+      failuresDuplicateNonce.map((f) => f.type),
+      ["duplicate-nonce"],
+    );
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [{ ...tx, txId: 1 }],
+      pending: [],
+    });
+  },
+);
