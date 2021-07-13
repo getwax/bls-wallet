@@ -1,4 +1,4 @@
-import { ethers, hubbleBls } from "../../deps/index.ts";
+import { blsSignerFactory, ethers, hubbleBls } from "../../deps/index.ts";
 
 import Rng from "./Rng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
@@ -7,8 +7,7 @@ import WalletService from "../../src/app/WalletService.ts";
 import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
 import dataPayload from "./dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
-
-const { BlsSignerFactory } = hubbleBls.signer;
+import createQueryClient from "../../src/app/createQueryClient.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -92,9 +91,8 @@ export default class Fixture {
     public walletService: WalletService,
   ) {}
 
-  async createBlsSigner(...extraSeeds: string[]) {
-    const factory = await BlsSignerFactory.new();
-    return factory.getSigner(
+  createBlsSigner(...extraSeeds: string[]) {
+    return blsSignerFactory.getSigner(
       DOMAIN,
       this.rng.address("blsSigner", ...extraSeeds),
     );
@@ -159,17 +157,31 @@ export default class Fixture {
     };
   }
 
-  async createTxService() {
+  async createTxService(config = TxService.defaultConfig) {
     const suffix = this.rng.address("table-name-suffix").slice(2, 12);
+    const queryClient = createQueryClient();
+
     const tableName = `txs_test_${suffix}`;
-    const txTable = await TxTable.create(tableName);
+    const txTable = await TxTable.create(queryClient, tableName);
+
+    const futureTableName = `future_txs_test_${suffix}`;
+    const futureTxTable = await TxTable.create(queryClient, futureTableName);
 
     this.cleanupJobs.push(async () => {
       await txTable.drop();
-      await txTable.stop();
+      await queryClient.disconnect();
     });
 
-    return new TxService(txTable, this.walletService);
+    return new TxService(txTable, futureTxTable, this.walletService, config);
+  }
+
+  async allTxs(
+    txService: TxService,
+  ): Promise<{ ready: TransactionData[]; future: TransactionData[] }> {
+    return {
+      ready: await txService.readyTxTable.all(),
+      future: await txService.futureTxTable.all(),
+    };
   }
 
   async cleanup() {

@@ -9,7 +9,7 @@ Fixture.test("WalletService gets aggregator balance", async (fx) => {
 });
 
 Fixture.test("WalletService sends aggregate transaction", async (fx) => {
-  const blsSigner = await fx.createBlsSigner();
+  const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
   const tx1 = await fx.createTxData({

@@ -18,6 +18,11 @@ function getKeyHash(pubkey: string) {
   ));
 }
 
+export type TxCheckResult = {
+  failures: AddTransactionFailure[];
+  nextNonce: ethers.BigNumber;
+};
+
 export default class WalletService {
   aggregatorSigner: Wallet;
   erc20: Contract;
@@ -41,7 +46,7 @@ export default class WalletService {
     );
   }
 
-  async checkTx(tx: TransactionData): Promise<AddTransactionFailure[]> {
+  async checkTx(tx: TransactionData): Promise<TxCheckResult> {
     const [signedCorrectly, nextNonce]: [boolean, ethers.BigNumber] = await this
       .verificationGateway
       .checkSig(
@@ -54,17 +59,17 @@ export default class WalletService {
         tx.encodedParams,
       );
 
-    const reasons: AddTransactionFailure[] = [];
+    const failures: AddTransactionFailure[] = [];
 
     if (signedCorrectly === false) {
-      reasons.push({
+      failures.push({
         type: "invalid-signature",
         description: "invalid signature",
       });
     }
 
     if (ethers.BigNumber.from(tx.nonce).lt(nextNonce)) {
-      reasons.push({
+      failures.push({
         type: "duplicate-nonce",
         description: [
           `nonce ${tx.nonce} has already been processed (the next nonce for`,
@@ -73,7 +78,7 @@ export default class WalletService {
       });
     }
 
-    return reasons;
+    return { failures, nextNonce };
   }
 
   async sendTxs(txs: TransactionData[]) {
