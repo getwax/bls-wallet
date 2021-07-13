@@ -6,11 +6,9 @@ import {
   QueryClient,
   QueryTable,
   TableOptions,
-  unsketchify,
 } from "../../deps/index.ts";
 
 import assertExists from "../helpers/assertExists.ts";
-import * as env from "./env.ts";
 
 export type TransactionData = {
   txId?: number;

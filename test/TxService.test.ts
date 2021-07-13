@@ -17,12 +17,12 @@ Fixture.test("adds valid transaction", async (fx) => {
     nonceOffset: 0,
   });
 
-  assertEquals(await txService.txTable.count(), 0n);
+  assertEquals(await txService.readyTxTable.count(), 0n);
 
   const failures = await txService.add(tx);
   assertEquals(failures, []);
 
-  assertEquals(await txService.txTable.count(), 1n);
+  assertEquals(await txService.readyTxTable.count(), 1n);
 });
 
 Fixture.test("rejects transaction with invalid signature", async (fx) => {
@@ -46,13 +46,13 @@ Fixture.test("rejects transaction with invalid signature", async (fx) => {
     tx.signature.slice(3),
   ].join("");
 
-  assertEquals(await txService.txTable.count(), 0n);
+  assertEquals(await txService.readyTxTable.count(), 0n);
 
   const failures = await txService.add(tx);
   assertEquals(failures.map((f) => f.type), ["invalid-signature"]);
 
   // Transaction table remains empty
-  assertEquals(await txService.txTable.count(), 0n);
+  assertEquals(await txService.readyTxTable.count(), 0n);
 });
 
 Fixture.test("rejects transaction with nonce from the past", async (fx) => {
@@ -73,13 +73,13 @@ Fixture.test("rejects transaction with nonce from the past", async (fx) => {
   // (a transaction with nonce 0 occurs when creating the wallet)
   assertEquals(tx.nonce, 0);
 
-  assertEquals(await txService.txTable.count(), 0n);
+  assertEquals(await txService.readyTxTable.count(), 0n);
 
   const failures = await txService.add(tx);
   assertEquals(failures.map((f) => f.type), ["duplicate-nonce"]);
 
   // Transaction table remains empty
-  assertEquals(await txService.txTable.count(), 0n);
+  assertEquals(await txService.readyTxTable.count(), 0n);
 });
 
 Fixture.test(
@@ -109,7 +109,7 @@ Fixture.test(
       tx.signature.slice(3),
     ].join("");
 
-    assertEquals(await txService.txTable.count(), 0n);
+    assertEquals(await txService.readyTxTable.count(), 0n);
 
     const failures = await txService.add(tx);
 
@@ -119,7 +119,7 @@ Fixture.test(
     );
 
     // Transaction table remains empty
-    assertEquals(await txService.txTable.count(), 0n);
+    assertEquals(await txService.readyTxTable.count(), 0n);
   },
 );
 
@@ -137,18 +137,18 @@ Fixture.test("adds tx with future nonce to futureTxs", async (fx) => {
     nonceOffset: 1,
   });
 
-  assertEquals(await txService.txTable.count(), 0n);
+  assertEquals(await txService.readyTxTable.count(), 0n);
   assertEquals(await txService.futureTxTable.count(), 0n);
 
   const failures = await txService.add(tx);
   assertEquals(failures, []);
 
-  assertEquals(await txService.txTable.count(), 0n);
+  assertEquals(await txService.readyTxTable.count(), 0n);
   assertEquals(await txService.futureTxTable.count(), 1n);
 });
 
 Fixture.test(
-  "filling the nonce gap adds the eligible future tx to the end of main txs",
+  "filling the nonce gap adds the eligible future tx to the end of ready txs",
   async (fx) => {
     const txService = await fx.createTxService();
 
@@ -156,7 +156,7 @@ Fixture.test(
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [],
+      ready: [],
       future: [],
     });
 
@@ -188,7 +188,7 @@ Fixture.test(
     assertEquals(otherFailures, []);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [{ ...otherTx, txId: 1 }],
+      ready: [{ ...otherTx, txId: 1 }],
       future: [{ ...txB, txId: 1 }],
     });
 
@@ -204,7 +204,7 @@ Fixture.test(
     assertEquals(failuresA, []);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [
+      ready: [
         { ...otherTx, txId: 1 },
         { ...txA, txId: 2 },
 
@@ -244,7 +244,7 @@ Fixture.test(
     }
 
     assertEquals(await fx.allTxs(txService), {
-      main: [],
+      ready: [],
       future: [
         // futureTxs[0] and futureTxs[1] should have been dropped
         { ...futureTxs[2], txId: 3 },
@@ -256,7 +256,7 @@ Fixture.test(
 );
 
 Fixture.test(
-  "reusing a nonce from main txs (unsubmitted) fails with duplicate-nonce",
+  "reusing a nonce from ready txs (unsubmitted) fails with duplicate-nonce",
   async (fx) => {
     const txService = await fx.createTxService();
 
@@ -290,7 +290,7 @@ Fixture.test(
     );
 
     assertEquals(await fx.allTxs(txService), {
-      main: [{ ...tx, txId: 1 }],
+      ready: [{ ...tx, txId: 1 }],
       future: [],
     });
   },
@@ -305,7 +305,7 @@ Fixture.test(
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [],
+      ready: [],
       future: [],
     });
 
@@ -333,7 +333,7 @@ Fixture.test(
     assertEquals(failures2, []);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [],
+      ready: [],
       future: [
         { ...tx3, txId: 1 },
         { ...tx2, txId: 2 },
@@ -352,7 +352,7 @@ Fixture.test(
     assertEquals(failures1, []);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [
+      ready: [
         { ...tx1, txId: 1 },
         { ...tx2, txId: 2 },
         { ...tx3, txId: 3 },
@@ -371,7 +371,7 @@ Fixture.test(
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [],
+      ready: [],
       future: [],
     });
 
@@ -399,7 +399,7 @@ Fixture.test(
     assertEquals(failures2, []);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [],
+      ready: [],
       future: [
         { ...tx4, txId: 1 },
         { ...tx2, txId: 2 },
@@ -418,7 +418,7 @@ Fixture.test(
     assertEquals(failures1, []);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [
+      ready: [
         { ...tx1, txId: 1 },
         { ...tx2, txId: 2 },
       ],

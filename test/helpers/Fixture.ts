@@ -177,9 +177,9 @@ export default class Fixture {
 
   async allTxs(
     txService: TxService,
-  ): Promise<{ main: TransactionData[]; future: TransactionData[] }> {
+  ): Promise<{ ready: TransactionData[]; future: TransactionData[] }> {
     return {
-      main: await txService.txTable.all(),
+      ready: await txService.readyTxTable.all(),
       future: await txService.futureTxTable.all(),
     };
   }

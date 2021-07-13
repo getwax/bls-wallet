@@ -12,7 +12,7 @@ export default class TxService {
   };
 
   constructor(
-    public txTable: TxTable,
+    public readyTxTable: TxTable,
     public futureTxTable: TxTable,
     public walletService: WalletService,
     public config = TxService.defaultConfig,
@@ -48,7 +48,7 @@ export default class TxService {
     }
 
     if (lowestAcceptableNonce.eq(txData.nonce)) {
-      await this.txTable.add(txData);
+      await this.readyTxTable.add(txData);
       await this.tryMoveFutureTxs(txData.pubKey, lowestAcceptableNonce.add(1));
     } else {
       await this.ensureFutureTxSpace();
@@ -59,17 +59,17 @@ export default class TxService {
   }
 
   /**
-   * Find the lowest acceptable nonce based on chain and the main tx table.
+   * Find the lowest acceptable nonce based on chain and the ready tx table.
    *
-   * Here 'acceptable' means able to be accepted into the main tx table. This
+   * Here 'acceptable' means able to be accepted into the ready tx table. This
    * means that it comes after the transactions on chain, but also that it comes
-   * after the transactions already in the main tx table.
+   * after the transactions already in the ready tx table.
    */
   async LowestAcceptableNonce(
     nextChainNonce: ethers.BigNumber,
     pubKey: string,
   ): Promise<ethers.BigNumber> {
-    const nextLocalNonce = await this.txTable.nextNonceOf(pubKey);
+    const nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
 
     const lowestAcceptableNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
       ? nextChainNonce
@@ -117,7 +117,7 @@ export default class TxService {
         break;
       }
 
-      await this.txTable.add(...txsToAdd);
+      await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
 
       if (foundGap) {

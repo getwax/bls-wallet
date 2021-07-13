@@ -31,7 +31,9 @@ export const PG = {
 export const TX_TABLE_NAME = requireEnv("TX_TABLE_NAME");
 export const FUTURE_TX_TABLE_NAME = requireEnv("FUTURE_TX_TABLE_NAME");
 
-/** Query size used when moving txs from future table into main table. */
+/**
+ * Query size used when moving txs from the future table into the ready table.
+ */
 export const FUTURE_BATCH_SIZE = requireIntEnv("FUTURE_BATCH_SIZE");
 
 export const MAX_FUTURE_TXS = requireIntEnv("MAX_FUTURE_TXS");
