@@ -295,3 +295,69 @@ Fixture.test(
     });
   },
 );
+
+Fixture.test(
+  "filling the nonce gap adds multiple eligible pending txs",
+  async (fx) => {
+    const txService = await fx.createTxService();
+
+    const blsSigner = fx.createBlsSigner("other");
+    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [],
+      pending: [],
+    });
+
+    // Add multiple txs in the future (and out of order)
+    const tx3 = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+      nonceOffset: 2,
+    });
+
+    const failures3 = await txService.add(tx3);
+    assertEquals(failures3, []);
+
+    const tx2 = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+      nonceOffset: 1,
+    });
+
+    const failures2 = await txService.add(tx2);
+    assertEquals(failures2, []);
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [],
+      pending: [
+        { ...tx3, txId: 1 },
+        { ...tx2, txId: 2 },
+      ],
+    });
+
+    // Add tx1, which makes earlier txs ready
+    const tx1 = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+    });
+
+    const failures1 = await txService.add(tx1);
+    assertEquals(failures1, []);
+
+    assertEquals(await fx.allTxs(txService), {
+      main: [
+        { ...tx1, txId: 1 },
+        { ...tx2, txId: 2 },
+        { ...tx3, txId: 3 },
+      ],
+      pending: [],
+    });
+  },
+);
