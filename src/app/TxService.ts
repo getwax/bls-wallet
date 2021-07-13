@@ -7,13 +7,13 @@ import WalletService from "./WalletService.ts";
 
 export default class TxService {
   static defaultConfig = {
-    pendingBatchSize: env.PENDING_BATCH_SIZE,
-    maxPendingTxs: env.MAX_PENDING_TXS,
+    futureBatchSize: env.FUTURE_BATCH_SIZE,
+    maxFutureTxs: env.MAX_FUTURE_TXS,
   };
 
   constructor(
     public txTable: TxTable,
-    public pendingTxTable: TxTable,
+    public futureTxTable: TxTable,
     public walletService: WalletService,
     public config = TxService.defaultConfig,
   ) {}
@@ -32,7 +32,7 @@ export default class TxService {
 
     if (lowestAcceptableNonce.gt(txData.nonce)) {
       console.warn(
-        "Not implemented: replace pending transaction",
+        "Not implemented: replace future transaction",
       );
 
       return [
@@ -49,10 +49,10 @@ export default class TxService {
 
     if (lowestAcceptableNonce.eq(txData.nonce)) {
       await this.txTable.add(txData);
-      await this.tryMovePendingTxs(txData.pubKey, lowestAcceptableNonce.add(1));
+      await this.tryMoveFutureTxs(txData.pubKey, lowestAcceptableNonce.add(1));
     } else {
-      await this.ensurePendingTxSpace();
-      await this.pendingTxTable.add(txData);
+      await this.ensureFutureTxSpace();
+      await this.futureTxTable.add(txData);
     }
 
     return [];
@@ -78,34 +78,34 @@ export default class TxService {
     return lowestAcceptableNonce;
   }
 
-  async tryMovePendingTxs(
+  async tryMoveFutureTxs(
     pubKey: string,
     lowestAcceptableNonce: ethers.BigNumber,
   ) {
     while (true) {
-      const pendingTxsToRemove: TransactionData[] = [];
+      const futureTxsToRemove: TransactionData[] = [];
       const txsToAdd: TransactionData[] = [];
 
-      const pendingTxs = await this.pendingTxTable.selectByPubKey(
+      const futureTxs = await this.futureTxTable.selectByPubKey(
         pubKey,
-        this.config.pendingBatchSize,
+        this.config.futureBatchSize,
       );
 
-      if (pendingTxs.length === 0) {
+      if (futureTxs.length === 0) {
         break;
       }
 
       let foundGap = false;
 
-      for (const tx of pendingTxs) {
+      for (const tx of futureTxs) {
         if (lowestAcceptableNonce.gt(tx.nonce)) {
-          console.warn(`Nonce from past was in pendingTxs`);
-          pendingTxsToRemove.push(tx);
+          console.warn(`Nonce from past was in futureTxs`);
+          futureTxsToRemove.push(tx);
           continue;
         }
 
         if (lowestAcceptableNonce.eq(tx.nonce)) {
-          pendingTxsToRemove.push(tx);
+          futureTxsToRemove.push(tx);
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
           txsToAdd.push(txWithoutId);
@@ -118,7 +118,7 @@ export default class TxService {
       }
 
       await this.txTable.add(...txsToAdd);
-      await this.pendingTxTable.remove(...pendingTxsToRemove);
+      await this.futureTxTable.remove(...futureTxsToRemove);
 
       if (foundGap) {
         break;
@@ -126,25 +126,25 @@ export default class TxService {
     }
   }
 
-  async ensurePendingTxSpace() {
-    const size = await this.pendingTxTable.count();
+  async ensureFutureTxSpace() {
+    const size = await this.futureTxTable.count();
 
-    if (size >= this.config.maxPendingTxs) {
-      const first = await this.pendingTxTable.First();
+    if (size >= this.config.maxFutureTxs) {
+      const first = await this.futureTxTable.First();
 
       if (first === null) {
         console.warn(
-          "Pending txs unexpectedly empty when it seemed to need pruning",
+          "Future txs unexpectedly empty when it seemed to need pruning",
         );
 
         return;
       }
 
       const newFirstId = (
-        first.txId! + (Number(size) - this.config.maxPendingTxs + 1)
+        first.txId! + (Number(size) - this.config.maxFutureTxs + 1)
       );
 
-      this.pendingTxTable.clearBeforeId(newFirstId);
+      this.futureTxTable.clearBeforeId(newFirstId);
     }
   }
 }

@@ -4,12 +4,12 @@ import WalletService from "./WalletService.ts";
 export default class AdminService {
   constructor(
     private walletService: WalletService,
-    private pendingTxTable: TxTable,
+    private futureTxTable: TxTable,
     private txTable: TxTable,
   ) {}
 
   async resetTxs() {
-    await this.pendingTxTable.clear();
+    await this.futureTxTable.clear();
     await this.txTable.clear();
   }
 

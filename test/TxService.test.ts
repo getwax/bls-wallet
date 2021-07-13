@@ -123,7 +123,7 @@ Fixture.test(
   },
 );
 
-Fixture.test("adds tx with future nonce to pendingTxs", async (fx) => {
+Fixture.test("adds tx with future nonce to futureTxs", async (fx) => {
   const txService = await fx.createTxService();
 
   const blsSigner = fx.createBlsSigner();
@@ -138,17 +138,17 @@ Fixture.test("adds tx with future nonce to pendingTxs", async (fx) => {
   });
 
   assertEquals(await txService.txTable.count(), 0n);
-  assertEquals(await txService.pendingTxTable.count(), 0n);
+  assertEquals(await txService.futureTxTable.count(), 0n);
 
   const failures = await txService.add(tx);
   assertEquals(failures, []);
 
   assertEquals(await txService.txTable.count(), 0n);
-  assertEquals(await txService.pendingTxTable.count(), 1n);
+  assertEquals(await txService.futureTxTable.count(), 1n);
 });
 
 Fixture.test(
-  "filling the nonce gap adds the eligible pending tx to the end of main txs",
+  "filling the nonce gap adds the eligible future tx to the end of main txs",
   async (fx) => {
     const txService = await fx.createTxService();
 
@@ -157,7 +157,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [],
-      pending: [],
+      future: [],
     });
 
     // Add tx in the future
@@ -189,7 +189,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [{ ...otherTx, txId: 1 }],
-      pending: [{ ...txB, txId: 1 }],
+      future: [{ ...txB, txId: 1 }],
     });
 
     // Add txA, which makes txB ready
@@ -208,20 +208,20 @@ Fixture.test(
         { ...otherTx, txId: 1 },
         { ...txA, txId: 2 },
 
-        // Note that txB had id 1 when it was pending, and it gets a new id here
+        // Note that txB had id 1 when it was future, and it gets a new id here
         { ...txB, txId: 3 },
       ],
-      pending: [],
+      future: [],
     });
   },
 );
 
 Fixture.test(
-  "when pending txs reach maxPendingTxs, the oldest ones are dropped",
+  "when future txs reach maxFutureTxs, the oldest ones are dropped",
   async (fx) => {
     const txService = await fx.createTxService({
-      maxPendingTxs: 3,
-      pendingBatchSize: 100,
+      maxFutureTxs: 3,
+      futureBatchSize: 100,
     });
 
     const blsSigner = fx.createBlsSigner();
@@ -245,7 +245,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [],
-      pending: [
+      future: [
         // futureTxs[0] and futureTxs[1] should have been dropped
         { ...futureTxs[2], txId: 3 },
         { ...futureTxs[3], txId: 4 },
@@ -291,13 +291,13 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [{ ...tx, txId: 1 }],
-      pending: [],
+      future: [],
     });
   },
 );
 
 Fixture.test(
-  "filling the nonce gap adds multiple eligible pending txs",
+  "filling the nonce gap adds multiple eligible future txs",
   async (fx) => {
     const txService = await fx.createTxService();
 
@@ -306,7 +306,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [],
-      pending: [],
+      future: [],
     });
 
     // Add multiple txs in the future (and out of order)
@@ -334,7 +334,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [],
-      pending: [
+      future: [
         { ...tx3, txId: 1 },
         { ...tx2, txId: 2 },
       ],
@@ -357,13 +357,13 @@ Fixture.test(
         { ...tx2, txId: 2 },
         { ...tx3, txId: 3 },
       ],
-      pending: [],
+      future: [],
     });
   },
 );
 
 Fixture.test(
-  "filling the nonce gap adds eligible pending tx but stops at the next gap",
+  "filling the nonce gap adds eligible future tx but stops at the next gap",
   async (fx) => {
     const txService = await fx.createTxService();
 
@@ -372,7 +372,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [],
-      pending: [],
+      future: [],
     });
 
     // Add multiple txs in the future (and out of order)
@@ -400,7 +400,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       main: [],
-      pending: [
+      future: [
         { ...tx4, txId: 1 },
         { ...tx2, txId: 2 },
       ],
@@ -422,7 +422,7 @@ Fixture.test(
         { ...tx1, txId: 1 },
         { ...tx2, txId: 2 },
       ],
-      pending: [
+      future: [
         { ...tx4, txId: 1 },
       ],
     });

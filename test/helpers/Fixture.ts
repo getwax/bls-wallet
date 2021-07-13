@@ -164,23 +164,23 @@ export default class Fixture {
     const tableName = `txs_test_${suffix}`;
     const txTable = await TxTable.create(queryClient, tableName);
 
-    const pendingTableName = `pending_txs_test_${suffix}`;
-    const pendingTxTable = await TxTable.create(queryClient, pendingTableName);
+    const futureTableName = `future_txs_test_${suffix}`;
+    const futureTxTable = await TxTable.create(queryClient, futureTableName);
 
     this.cleanupJobs.push(async () => {
       await txTable.drop();
       await queryClient.disconnect();
     });
 
-    return new TxService(txTable, pendingTxTable, this.walletService, config);
+    return new TxService(txTable, futureTxTable, this.walletService, config);
   }
 
   async allTxs(
     txService: TxService,
-  ): Promise<{ main: TransactionData[]; pending: TransactionData[] }> {
+  ): Promise<{ main: TransactionData[]; future: TransactionData[] }> {
     return {
       main: await txService.txTable.all(),
-      pending: await txService.pendingTxTable.all(),
+      future: await txService.futureTxTable.all(),
     };
   }
 

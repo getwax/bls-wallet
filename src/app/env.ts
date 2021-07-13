@@ -29,11 +29,11 @@ export const PG = {
 };
 
 export const TX_TABLE_NAME = requireEnv("TX_TABLE_NAME");
-export const PENDING_TX_TABLE_NAME = requireEnv("PENDING_TX_TABLE_NAME");
+export const FUTURE_TX_TABLE_NAME = requireEnv("FUTURE_TX_TABLE_NAME");
 
-/** Query size used when moving txs from pending table into main table. */
-export const PENDING_BATCH_SIZE = requireIntEnv("PENDING_BATCH_SIZE");
+/** Query size used when moving txs from future table into main table. */
+export const FUTURE_BATCH_SIZE = requireIntEnv("FUTURE_BATCH_SIZE");
 
-export const MAX_PENDING_TXS = requireIntEnv("MAX_PENDING_TXS");
+export const MAX_FUTURE_TXS = requireIntEnv("MAX_FUTURE_TXS");
 
 export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");
