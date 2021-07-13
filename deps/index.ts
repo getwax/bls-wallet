@@ -38,9 +38,9 @@ export {
   QueryClient,
   QueryTable,
   unsketchify,
-} from "https://deno.land/x/postquery@v0.1.0/mod.ts";
+} from "https://deno.land/x/postquery@v0.1.1/mod.ts";
 
-export type { TableOptions } from "https://deno.land/x/postquery@v0.1.0/mod.ts";
+export type { TableOptions } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
 
 import * as hubbleBlsImport from "./hubble-bls/mod.ts";
 await hubbleBlsImport.mcl.init();

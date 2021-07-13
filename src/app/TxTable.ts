@@ -55,23 +55,9 @@ export default class TxTable {
 
   async remove(...txs: TransactionData[]) {
     for (const tx of txs) {
-      const whereClause = this.txTable
+      await this.txTable
         .where({ txId: assertExists(tx.txId) })
-        .make();
-
-      await this.txTable.client.query(
-        `DELETE FROM ${unsketchify(this.txTable.name)} ${whereClause.sql}`,
-        whereClause.params,
-      );
-
-      // The delete above should be just:
-      // ```ts
-      // await this.txTable
-      //   .where({ txId: assertExists(tx.txId) })
-      //   .delete();
-      // ```
-      // however it is affected by this bug in PostQuery:
-      // https://github.com/DjDeveloperr/PostQuery/pull/7
+        .delete();
     }
   }
 
