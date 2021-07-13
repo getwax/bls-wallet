@@ -102,6 +102,7 @@ export default class TxService {
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
           txsToAdd.push(txWithoutId);
+          lowestAcceptableNonce = lowestAcceptableNonce.add(1);
           continue;
         }
 
