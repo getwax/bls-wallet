@@ -78,6 +78,10 @@ export default class TxService {
     return lowestAcceptableNonce;
   }
 
+  /**
+   * Move any future txs for the given public key that have become ready into
+   * ready txs.
+   */
   async tryMoveFutureTxs(
     pubKey: string,
     lowestAcceptableNonce: ethers.BigNumber,
@@ -126,6 +130,11 @@ export default class TxService {
     }
   }
 
+  /**
+   * Ensures that at least one new transaction can be inserted into the future
+   * tx table without exceeding maxFutureTxs. This is achieved by dropping txs
+   * that have been stored the longest.
+   */
   async ensureFutureTxSpace() {
     const size = await this.futureTxTable.count();
 
