@@ -86,48 +86,37 @@ export default class TxService {
     pubKey: string,
     lowestAcceptableNonce: ethers.BigNumber,
   ) {
-    while (true) {
+    let futureTxs;
+    let foundGap = false;
+
+    do {
       const futureTxsToRemove: TransactionData[] = [];
       const txsToAdd: TransactionData[] = [];
 
-      const futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
+      futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
         pubKey,
         this.config.futureBatchSize,
       );
-
-      if (futureTxs.length === 0) {
-        break;
-      }
-
-      let foundGap = false;
 
       for (const tx of futureTxs) {
         if (lowestAcceptableNonce.gt(tx.nonce)) {
           console.warn(`Nonce from past was in futureTxs`);
           futureTxsToRemove.push(tx);
-          continue;
-        }
-
-        if (lowestAcceptableNonce.eq(tx.nonce)) {
+        } else if (lowestAcceptableNonce.eq(tx.nonce)) {
           futureTxsToRemove.push(tx);
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
           txsToAdd.push(txWithoutId);
           lowestAcceptableNonce = lowestAcceptableNonce.add(1);
-          continue;
+        } else {
+          foundGap = true;
+          break;
         }
-
-        foundGap = true;
-        break;
       }
 
       await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
-
-      if (foundGap) {
-        break;
-      }
-    }
+    } while (futureTxs.length !== 0 && !foundGap);
   }
 
   /**
