@@ -1,11 +1,9 @@
-import { ethers, hubbleBls } from "../deps/index.ts";
+import { blsSignerFactory, ethers } from "../deps/index.ts";
 
 import * as env from "../src/app/env.ts";
 import ovmContractABIs from "../ovmContractABIs/index.ts";
 import createBLSWallet from "../test/helpers/createBLSWallet.ts";
 import blsKeyHash from "../test/helpers/blsKeyHash.ts";
-
-const { BlsSignerFactory } = hubbleBls.signer;
 
 const utils = ethers.utils;
 
@@ -34,7 +32,7 @@ const verificationGateway = new ethers.Contract(
   aggregatorSigner,
 );
 
-const blsSigner = (await BlsSignerFactory.new()).getSigner(
+const blsSigner = blsSignerFactory.getSigner(
   DOMAIN,
   env.PRIVATE_KEY_AGG,
 );

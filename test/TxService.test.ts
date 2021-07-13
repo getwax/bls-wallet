@@ -6,7 +6,7 @@ import Range from "./helpers/Range.ts";
 Fixture.test("adds valid transaction", async (fx) => {
   const txService = await fx.createTxService();
 
-  const blsSigner = await fx.createBlsSigner();
+  const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
   const tx = await fx.createTxData({
@@ -28,7 +28,7 @@ Fixture.test("adds valid transaction", async (fx) => {
 Fixture.test("rejects transaction with invalid signature", async (fx) => {
   const txService = await fx.createTxService();
 
-  const blsSigner = await fx.createBlsSigner();
+  const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
   const tx = await fx.createTxData({
@@ -58,7 +58,7 @@ Fixture.test("rejects transaction with invalid signature", async (fx) => {
 Fixture.test("rejects transaction with nonce from the past", async (fx) => {
   const txService = await fx.createTxService();
 
-  const blsSigner = await fx.createBlsSigner();
+  const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
   const tx = await fx.createTxData({
@@ -87,7 +87,7 @@ Fixture.test(
   async (fx) => {
     const txService = await fx.createTxService();
 
-    const blsSigner = await fx.createBlsSigner();
+    const blsSigner = fx.createBlsSigner();
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
     const tx = await fx.createTxData({
@@ -126,7 +126,7 @@ Fixture.test(
 Fixture.test("adds tx with future nonce to pendingTxs", async (fx) => {
   const txService = await fx.createTxService();
 
-  const blsSigner = await fx.createBlsSigner();
+  const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
   const tx = await fx.createTxData({
@@ -148,15 +148,20 @@ Fixture.test("adds tx with future nonce to pendingTxs", async (fx) => {
 });
 
 Fixture.test(
-  "filling the nonce gap brings the eligible pending tx into main txs",
+  "filling the nonce gap adds the eligible pending tx to the end of main txs",
   async (fx) => {
     const txService = await fx.createTxService();
 
-    const blsSigner = await fx.createBlsSigner();
+    const blsSigner = fx.createBlsSigner("other");
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
+    assertEquals(await fx.allTxs(txService), {
+      main: [],
+      pending: [],
+    });
+
     // Add tx in the future
-    const tx2 = await fx.createTxData({
+    const txB = await fx.createTxData({
       blsSigner,
       contract: fx.walletService.erc20,
       method: "mint",
@@ -164,43 +169,52 @@ Fixture.test(
       nonceOffset: 1,
     });
 
-    assertEquals(await fx.allTxs(txService), {
-      main: [],
-      pending: [],
+    const failuresB = await txService.add(txB);
+    assertEquals(failuresB, []);
+
+    const otherBlsSigner = fx.createBlsSigner("ba");
+    const otherBlsWallet = await fx.getOrCreateBlsWallet(otherBlsSigner);
+
+    // This tx is ready, so it should get to go first even though the tx above
+    // was added first.
+    const otherTx = await fx.createTxData({
+      blsSigner: otherBlsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [otherBlsWallet.address, "3"],
     });
 
-    const failures2 = await txService.add(tx2);
-    assertEquals(failures2, []);
+    const otherFailures = await txService.add(otherTx);
+    assertEquals(otherFailures, []);
 
     assertEquals(await fx.allTxs(txService), {
-      main: [],
-      pending: [{ ...tx2, txId: 1 }],
+      main: [{ ...otherTx, txId: 1 }],
+      pending: [{ ...txB, txId: 1 }],
     });
 
-    // Add current tx, which makes previous tx ready
-    const tx1 = await fx.createTxData({
+    // Add txA, which makes txB ready
+    const txA = await fx.createTxData({
       blsSigner,
       contract: fx.walletService.erc20,
       method: "mint",
       args: [blsWallet.address, "3"],
     });
 
-    const failures1 = await txService.add(tx1);
-    assertEquals(failures1, []);
+    const failuresA = await txService.add(txA);
+    assertEquals(failuresA, []);
 
     assertEquals(await fx.allTxs(txService), {
       main: [
-        { ...tx1, txId: 1 },
+        { ...otherTx, txId: 1 },
+        { ...txA, txId: 2 },
 
-        // Note that tx2 had id 1 when it was pending, and it gets a new id here
-        { ...tx2, txId: 2 },
+        // Note that txB had id 1 when it was pending, and it gets a new id here
+        { ...txB, txId: 3 },
       ],
       pending: [],
     });
   },
 );
-
-// TODO: Can't game ordering with future tx
 
 Fixture.test(
   "when pending txs reach maxPendingTxs, the oldest ones are dropped",
@@ -210,7 +224,7 @@ Fixture.test(
       pendingBatchSize: 100,
     });
 
-    const blsSigner = await fx.createBlsSigner();
+    const blsSigner = fx.createBlsSigner();
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
     const futureTxs = await Promise.all(

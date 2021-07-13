@@ -1,4 +1,4 @@
-import { ethers, hubbleBls } from "../../deps/index.ts";
+import { blsSignerFactory, ethers, hubbleBls } from "../../deps/index.ts";
 
 import Rng from "./Rng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
@@ -8,8 +8,6 @@ import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
 import dataPayload from "./dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
-
-const { BlsSignerFactory } = hubbleBls.signer;
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -93,9 +91,8 @@ export default class Fixture {
     public walletService: WalletService,
   ) {}
 
-  async createBlsSigner(...extraSeeds: string[]) {
-    const factory = await BlsSignerFactory.new();
-    return factory.getSigner(
+  createBlsSigner(...extraSeeds: string[]) {
+    return blsSignerFactory.getSigner(
       DOMAIN,
       this.rng.address("blsSigner", ...extraSeeds),
     );
