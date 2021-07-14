@@ -12,7 +12,7 @@ import TxTable from "./TxTable.ts";
 import createQueryClient from "./createQueryClient.ts";
 
 const queryClient = createQueryClient();
-const txTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
+const readyTxTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
 
 const futureTxTable = await TxTable.create(
   queryClient,
@@ -20,8 +20,13 @@ const futureTxTable = await TxTable.create(
 );
 
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
-const txService = new TxService(futureTxTable, txTable, walletService);
-const adminService = new AdminService(walletService, txTable);
+const txService = new TxService(futureTxTable, readyTxTable, walletService);
+
+const adminService = new AdminService(
+  walletService,
+  readyTxTable,
+  futureTxTable,
+);
 
 const routers = [
   TxRouter(txService),

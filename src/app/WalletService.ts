@@ -26,6 +26,7 @@ export type TxCheckResult = {
 export default class WalletService {
   aggregatorSigner: Wallet;
   erc20: Contract;
+  rewardErc20: Contract;
   verificationGateway: Contract;
 
   constructor(public aggPrivateKey: string) {
@@ -35,6 +36,12 @@ export default class WalletService {
 
     this.erc20 = new Contract(
       env.TOKEN_ADDRESS,
+      ovmContractABIs["MockERC20.json"].abi,
+      this.aggregatorSigner,
+    );
+
+    this.rewardErc20 = new Contract(
+      env.REWARD_TOKEN_ADDRESS,
       ovmContractABIs["MockERC20.json"].abi,
       this.aggregatorSigner,
     );
@@ -91,7 +98,7 @@ export default class WalletService {
         aggSignature,
         txs.map((tx) => ({
           publicKeyHash: getKeyHash(tx.pubKey),
-          tokenRewardAmount: ethers.BigNumber.from(0),
+          tokenRewardAmount: tx.tokenRewardAmount,
           contractAddress: tx.contractAddress,
           methodID: tx.methodId,
           encodedParams: tx.encodedParams,
@@ -108,7 +115,7 @@ export default class WalletService {
       .verificationGateway.blsCall(
         getKeyHash(tx.pubKey),
         txSignature,
-        ethers.BigNumber.from(0),
+        ethers.BigNumber.from(tx.tokenRewardAmount),
         tx.contractAddress,
         tx.methodId,
         tx.encodedParams,

@@ -4,8 +4,8 @@ import WalletService from "./WalletService.ts";
 export default class AdminService {
   constructor(
     private walletService: WalletService,
-    private futureTxTable: TxTable,
     private readyTxTable: TxTable,
+    private futureTxTable: TxTable,
   ) {}
 
   async resetTxs() {

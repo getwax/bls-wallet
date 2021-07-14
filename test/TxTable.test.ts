@@ -31,6 +31,7 @@ const sampleTransactions: TransactionData[] = [
     pubKey: "pubKey",
     nonce: 123,
     signature: "signature",
+    tokenRewardAmount: "0x00",
     contractAddress: "recipient",
     methodId: "methodId",
     encodedParams: "encodedParams",

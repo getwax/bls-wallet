@@ -125,12 +125,14 @@ export default class Fixture {
     contract,
     method,
     args,
+    tokenRewardAmount = ethers.BigNumber.from(0),
     nonceOffset = 0,
   }: {
     blsSigner: hubbleBls.signer.BlsSigner;
     contract: ethers.Contract;
     method: string;
     args: string[];
+    tokenRewardAmount?: ethers.BigNumber;
     nonceOffset?: number;
   }): Promise<TransactionData> {
     const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
@@ -140,7 +142,7 @@ export default class Fixture {
     const message = dataPayload(
       this.chainId,
       nonce,
-      0,
+      tokenRewardAmount.toNumber(),
       contract.address,
       encodedFunction,
     );
@@ -151,6 +153,7 @@ export default class Fixture {
       pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
       nonce,
       signature: hubbleBls.mcl.dumpG1(signature),
+      tokenRewardAmount: tokenRewardAmount.toString(),
       contractAddress: contract.address,
       methodId: encodedFunction.slice(0, 10),
       encodedParams: `0x${encodedFunction.slice(10)}`,
