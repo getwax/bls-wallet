@@ -91,7 +91,7 @@ export default class WalletService {
         aggSignature,
         txs.map((tx) => ({
           publicKeyHash: getKeyHash(tx.pubKey),
-          tokenRewardAmount: ethers.BigNumber.from(0),
+          tokenRewardAmount: tx.tokenRewardAmount,
           contractAddress: tx.contractAddress,
           methodID: tx.methodId,
           encodedParams: tx.encodedParams,
@@ -108,7 +108,7 @@ export default class WalletService {
       .verificationGateway.blsCall(
         getKeyHash(tx.pubKey),
         txSignature,
-        ethers.BigNumber.from(0),
+        ethers.BigNumber.from(tx.tokenRewardAmount),
         tx.contractAddress,
         tx.methodId,
         tx.encodedParams,

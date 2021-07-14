@@ -15,6 +15,7 @@ export type TransactionData = {
   pubKey: string;
   nonce: number;
   signature: string;
+  tokenRewardAmount: string;
   contractAddress: string;
   methodId: string;
   encodedParams: string;
@@ -25,6 +26,7 @@ const txOptions: TableOptions = {
   pubKey: { type: DataType.VarChar, length: 258 },
   nonce: { type: DataType.Integer },
   signature: { type: DataType.VarChar, length: 130 },
+  tokenRewardAmount: { type: DataType.VarChar, length: 66 },
   contractAddress: { type: DataType.VarChar, length: 42 },
   methodId: { type: DataType.VarChar, length: 10 },
   encodedParams: { type: DataType.VarChar },
