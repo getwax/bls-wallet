@@ -7,7 +7,7 @@ import WalletService from "./WalletService.ts";
 
 export default class TxService {
   static defaultConfig = {
-    futureBatchSize: env.FUTURE_BATCH_SIZE,
+    txQueryLimit: env.TX_QUERY_LIMIT,
     maxFutureTxs: env.MAX_FUTURE_TXS,
   };
 
@@ -81,11 +81,12 @@ export default class TxService {
 
       const futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
         pubKey,
-        this.config.futureBatchSize,
+        this.config.txQueryLimit,
       );
 
       for (const tx of futureTxs) {
         if (lowestAcceptableNonce.gt(tx.nonce)) {
+          // TODO: Pick tx with highest reward instead
           console.warn(`Nonce from past was in futureTxs`);
           futureTxsToRemove.push(tx);
         } else if (lowestAcceptableNonce.eq(tx.nonce)) {
@@ -101,7 +102,7 @@ export default class TxService {
 
       await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
-    } while (futureTxsToRemove.length === this.config.futureBatchSize);
+    } while (futureTxsToRemove.length === this.config.txQueryLimit);
   }
 
   /**
@@ -131,12 +132,16 @@ export default class TxService {
     }
   }
 
+  /**
+   * Replace a ready transaction with one of the same nonce.
+   *
+   * Note: This also means re-inserting any followup ready transactions of the
+   * same key so that they will be processed in the correct sequence.
+   */
   async replaceReadyTx(
     lowestAcceptableNonce: ethers.BigNumber,
     txData: TransactionData,
   ): Promise<AddTransactionFailure[]> {
-    await 0;
-
     const existingTx = await this.readyTxTable.find(
       txData.pubKey,
       txData.nonce,
@@ -156,40 +161,69 @@ export default class TxService {
       // mempool. Complicated.
     }
 
-    const existingReward = ethers.BigNumber.from(existingTx.tokenRewardAmount);
-    const newReward = ethers.BigNumber.from(txData.tokenRewardAmount);
-
-    if (newReward.lte(existingReward)) {
+    if (!this.isRewardBetter(txData, existingTx)) {
       return [{
         type: "insufficient-reward",
         description: [
-          `${newReward.toString()} is an insufficient reward because there is`,
-          "already a tx with this nonce with a reward of",
-          existingReward.toString(),
+          `${ethers.BigNumber.from(txData.tokenRewardAmount)} is an`,
+          "insufficient reward because there is already a tx with this nonce",
+          "with a reward of",
+          ethers.BigNumber.from(existingTx.tokenRewardAmount),
         ].join(" "),
       }];
     }
 
-    if (lowestAcceptableNonce.sub(1).eq(txData.nonce)) {
-      await this.readyTxTable.remove(existingTx);
-      await this.readyTxTable.add(txData);
+    const promises: Promise<unknown>[] = [];
 
+    promises.push(
+      this.readyTxTable.remove(existingTx),
+      this.readyTxTable.add(txData),
+    );
+
+    if (lowestAcceptableNonce.sub(1).eq(txData.nonce)) {
+      await Promise.all(promises);
       return [];
     }
 
-    // TODO:
-    // - Replace tx as above
-    // - Query for followup txs that are also ready and re-insert them
+    let followupTxs;
+    let lastNonceReplaced = txData.nonce;
 
-    console.warn("Not implemented: replace ready transaction with followups");
+    while (true) {
+      followupTxs = await this.readyTxTable.findAfter(
+        txData.pubKey,
+        lastNonceReplaced,
+        this.config.txQueryLimit,
+      );
 
-    return [{
-      type: "duplicate-nonce",
-      description: [
-        `nonce ${txData.nonce} is already queued for aggregation (the`,
-        `lowest acceptable nonce for this wallet is`,
-        `${lowestAcceptableNonce.toString()})`,
-      ].join(" "),
-    }];
+      if (followupTxs.length === 0) {
+        break;
+      }
+
+      for (const tx of followupTxs) {
+        const newTx = { ...tx };
+        delete newTx.txId;
+
+        promises.push(
+          this.readyTxTable.remove(tx),
+          this.readyTxTable.add(newTx),
+        );
+      }
+
+      lastNonceReplaced = followupTxs[followupTxs.length - 1].nonce;
+
+      if (followupTxs.length < this.config.txQueryLimit) {
+        break;
+      }
+    }
+
+    await Promise.all(promises);
+    return [];
+  }
+
+  isRewardBetter(left: TransactionData, right: TransactionData) {
+    const leftReward = ethers.BigNumber.from(left.tokenRewardAmount);
+    const rightReward = ethers.BigNumber.from(right.tokenRewardAmount);
+
+    return leftReward.gt(rightReward);
   }
 }

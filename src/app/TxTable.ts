@@ -6,6 +6,7 @@ import {
   QueryClient,
   QueryTable,
   TableOptions,
+  unsketchify,
 } from "../../deps/index.ts";
 
 import assertExists from "../helpers/assertExists.ts";
@@ -108,6 +109,21 @@ export default class TxTable {
     return rows[0] ?? null;
   }
 
+  /** Find transactions for this public key after the provided nonce */
+  async findAfter(
+    pubKey: string,
+    nonce: number,
+    limit: number,
+  ): Promise<TransactionData[]> {
+    return await this.queryClient.query(`
+      SELECT * from ${unsketchify(this.txTable.name)}
+      WHERE
+        "pubKey" = "${pubKey}" AND
+        "nonce" > ${nonce}
+      LIMIT ${limit}
+    `);
+  }
+
   async drop() {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
   }
@@ -130,12 +146,14 @@ export default class TxTable {
   }
 
   async clear() {
-    return await this.queryClient.query(`DELETE from ${this.txTable.name}`);
+    return await this.queryClient.query(`
+      DELETE from ${unsketchify(this.txTable.name)}
+    `);
   }
 
   async clearBeforeId(txId: number) {
     await this.queryClient.query(`
-      DELETE from ${this.txTable.name}
+      DELETE from ${unsketchify(this.txTable.name)}
       WHERE "txId" < ${txId}
     `);
   }

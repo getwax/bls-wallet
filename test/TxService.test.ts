@@ -221,7 +221,7 @@ Fixture.test(
   async (fx) => {
     const txService = await fx.createTxService({
       maxFutureTxs: 3,
-      futureBatchSize: 100,
+      txQueryLimit: 100,
     });
 
     const blsSigner = fx.createBlsSigner();

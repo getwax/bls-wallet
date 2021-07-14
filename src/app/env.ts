@@ -33,9 +33,10 @@ export const TX_TABLE_NAME = requireEnv("TX_TABLE_NAME");
 export const FUTURE_TX_TABLE_NAME = requireEnv("FUTURE_TX_TABLE_NAME");
 
 /**
- * Query size used when moving txs from the future table into the ready table.
+ * Query limit used when processing potentially large numbers of txs.
+ * (Using batching if needed.)
  */
-export const FUTURE_BATCH_SIZE = requireIntEnv("FUTURE_BATCH_SIZE");
+export const TX_QUERY_LIMIT = requireIntEnv("TX_QUERY_LIMIT");
 
 export const MAX_FUTURE_TXS = requireIntEnv("MAX_FUTURE_TXS");
 
