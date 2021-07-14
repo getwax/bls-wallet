@@ -99,6 +99,15 @@ export default class TxTable {
     return await this.queryClient.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
+  async find(pubKey: string, nonce: number): Promise<TransactionData | null> {
+    const rows = await this.txTable
+      .where({ pubKey, nonce })
+      .limit(1)
+      .select();
+
+    return rows[0] ?? null;
+  }
+
   async drop() {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
   }

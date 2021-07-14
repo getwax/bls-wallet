@@ -137,19 +137,59 @@ export default class TxService {
   ): Promise<AddTransactionFailure[]> {
     await 0;
 
-    console.warn(
-      "Not implemented: replace ready transaction",
+    const existingTx = await this.readyTxTable.find(
+      txData.pubKey,
+      txData.nonce,
     );
 
-    return [
-      {
+    if (existingTx === null) {
+      return [{
         type: "duplicate-nonce",
         description: [
-          `nonce ${txData.nonce} is already queued for aggregation (the`,
-          `lowest acceptable nonce for this wallet is`,
-          `${lowestAcceptableNonce.toString()})`,
+          `nonce ${txData.nonce} was a replacement candidate but it appears to`,
+          "have been submitted during processing",
         ].join(" "),
-      },
-    ];
+      }];
+
+      // Possible enhancement: Track submitted txs and consider also submitting
+      // replacements. This would interfere with aggregate txs already in the
+      // mempool. Complicated.
+    }
+
+    const existingReward = ethers.BigNumber.from(existingTx.tokenRewardAmount);
+    const newReward = ethers.BigNumber.from(txData.tokenRewardAmount);
+
+    if (newReward.lte(existingReward)) {
+      return [{
+        type: "insufficient-reward",
+        description: [
+          `${newReward.toString()} is an insufficient reward because there is`,
+          "already a tx with this nonce with a reward of",
+          existingReward.toString(),
+        ].join(" "),
+      }];
+    }
+
+    if (lowestAcceptableNonce.sub(1).eq(txData.nonce)) {
+      await this.readyTxTable.remove(existingTx);
+      await this.readyTxTable.add(txData);
+
+      return [];
+    }
+
+    // TODO:
+    // - Replace tx as above
+    // - Query for followup txs that are also ready and re-insert them
+
+    console.warn("Not implemented: replace ready transaction with followups");
+
+    return [{
+      type: "duplicate-nonce",
+      description: [
+        `nonce ${txData.nonce} is already queued for aggregation (the`,
+        `lowest acceptable nonce for this wallet is`,
+        `${lowestAcceptableNonce.toString()})`,
+      ].join(" "),
+    }];
   }
 }
