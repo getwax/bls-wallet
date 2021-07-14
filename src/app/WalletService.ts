@@ -26,6 +26,7 @@ export type TxCheckResult = {
 export default class WalletService {
   aggregatorSigner: Wallet;
   erc20: Contract;
+  rewardErc20: Contract;
   verificationGateway: Contract;
 
   constructor(public aggPrivateKey: string) {
@@ -35,6 +36,12 @@ export default class WalletService {
 
     this.erc20 = new Contract(
       env.TOKEN_ADDRESS,
+      ovmContractABIs["MockERC20.json"].abi,
+      this.aggregatorSigner,
+    );
+
+    this.rewardErc20 = new Contract(
+      env.REWARD_TOKEN_ADDRESS,
       ovmContractABIs["MockERC20.json"].abi,
       this.aggregatorSigner,
     );
