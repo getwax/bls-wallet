@@ -86,14 +86,13 @@ export default class TxService {
     pubKey: string,
     lowestAcceptableNonce: ethers.BigNumber,
   ) {
-    let futureTxs;
-    let foundGap = false;
+    let futureTxsToRemove: TransactionData[];
 
     do {
-      const futureTxsToRemove: TransactionData[] = [];
+      futureTxsToRemove = [];
       const txsToAdd: TransactionData[] = [];
 
-      futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
+      const futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
         pubKey,
         this.config.futureBatchSize,
       );
@@ -109,14 +108,13 @@ export default class TxService {
           txsToAdd.push(txWithoutId);
           lowestAcceptableNonce = lowestAcceptableNonce.add(1);
         } else {
-          foundGap = true;
           break;
         }
       }
 
       await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
-    } while (futureTxs.length !== 0 && !foundGap);
+    } while (futureTxsToRemove.length === this.config.futureBatchSize);
   }
 
   /**
