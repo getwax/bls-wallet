@@ -31,20 +31,7 @@ export default class TxService {
     );
 
     if (lowestAcceptableNonce.gt(txData.nonce)) {
-      console.warn(
-        "Not implemented: replace future transaction",
-      );
-
-      return [
-        {
-          type: "duplicate-nonce",
-          description: [
-            `nonce ${txData.nonce} is already queued for aggregation (the`,
-            `lowest acceptable nonce for this wallet is`,
-            `${lowestAcceptableNonce.toString()})`,
-          ].join(" "),
-        },
-      ];
+      return this.replaceReadyTx(lowestAcceptableNonce, txData);
     }
 
     if (lowestAcceptableNonce.eq(txData.nonce)) {
@@ -142,5 +129,27 @@ export default class TxService {
 
       this.futureTxTable.clearBeforeId(newFirstId);
     }
+  }
+
+  async replaceReadyTx(
+    lowestAcceptableNonce: ethers.BigNumber,
+    txData: TransactionData,
+  ): Promise<AddTransactionFailure[]> {
+    await 0;
+
+    console.warn(
+      "Not implemented: replace ready transaction",
+    );
+
+    return [
+      {
+        type: "duplicate-nonce",
+        description: [
+          `nonce ${txData.nonce} is already queued for aggregation (the`,
+          `lowest acceptable nonce for this wallet is`,
+          `${lowestAcceptableNonce.toString()})`,
+        ].join(" "),
+      },
+    ];
   }
 }
