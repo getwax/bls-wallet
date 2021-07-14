@@ -8,6 +8,27 @@ Fixture.test("WalletService gets aggregator balance", async (fx) => {
   );
 });
 
+Fixture.test("WalletService sends single transaction", async (fx) => {
+  const blsSigner = fx.createBlsSigner();
+  const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+  const tx = await fx.createTxData({
+    blsSigner,
+    contract: fx.walletService.erc20,
+    method: "mint",
+    args: [blsWallet.address, "7"],
+    nonceOffset: 0,
+  });
+
+  await fx.walletService.sendTx(tx);
+
+  const balance: BigNumber = await fx.walletService.erc20.balanceOf(
+    blsWallet.address,
+  );
+
+  assertEquals(balance.toNumber(), 7);
+});
+
 Fixture.test("WalletService sends aggregate transaction", async (fx) => {
   const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
