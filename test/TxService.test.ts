@@ -256,7 +256,7 @@ Fixture.test(
 );
 
 Fixture.test(
-  "reusing a nonce from ready txs (unsubmitted) fails with duplicate-nonce",
+  "reusing a nonce from ready txs (unsubmitted) fails with insufficient-reward",
   async (fx) => {
     const txService = await fx.createTxService();
 
@@ -286,7 +286,7 @@ Fixture.test(
 
     assertEquals(
       failuresDuplicateNonce.map((f) => f.type),
-      ["duplicate-nonce"],
+      ["insufficient-reward"],
     );
 
     assertEquals(await fx.allTxs(txService), {
