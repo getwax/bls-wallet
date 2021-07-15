@@ -255,71 +255,77 @@ Fixture.test(
   },
 );
 
-Fixture.test(
-  "filling the nonce gap adds multiple eligible future txs",
-  async (fx) => {
-    const txService = await fx.createTxService();
+function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
+  Fixture.test(
+    [
+      "filling the nonce gap adds multiple eligible future txs",
+      `(futureTxCount: ${futureTxCount})`,
+    ].join(" "),
+    async (fx) => {
+      const txService = await fx.createTxService({
+        // Small query limit forces multiple batches when processing the
+        // future txs, checking that batching works correctly
+        txQueryLimit: 2,
+        maxFutureTxs: 1000,
+      });
 
-    const blsSigner = fx.createBlsSigner("other");
-    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+      const blsSigner = fx.createBlsSigner("other");
+      const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
-    assertEquals(await fx.allTxs(txService), {
-      ready: [],
-      future: [],
-    });
+      assertEquals(await fx.allTxs(txService), {
+        ready: [],
+        future: [],
+      });
 
-    // Add multiple txs in the future (and out of order)
-    const tx3 = await fx.createTxData({
-      blsSigner,
-      contract: fx.walletService.erc20,
-      method: "mint",
-      args: [blsWallet.address, "3"],
-      nonceOffset: 2,
-    });
+      // Add multiple txs in the future (and out of order)
 
-    const failures3 = await txService.add(tx3);
-    assertEquals(failures3, []);
+      const futureTxs = [];
 
-    const tx2 = await fx.createTxData({
-      blsSigner,
-      contract: fx.walletService.erc20,
-      method: "mint",
-      args: [blsWallet.address, "3"],
-      nonceOffset: 1,
-    });
+      for (const i of Range(futureTxCount)) {
+        const futureTx = await fx.createTxData({
+          blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "3"],
+          nonceOffset: futureTxCount - i,
+        });
 
-    const failures2 = await txService.add(tx2);
-    assertEquals(failures2, []);
+        const failures = await txService.add(futureTx);
+        assertEquals(failures, []);
 
-    assertEquals(await fx.allTxs(txService), {
-      ready: [],
-      future: [
-        { ...tx3, txId: 1 },
-        { ...tx2, txId: 2 },
-      ],
-    });
+        futureTxs.push(futureTx);
+      }
 
-    // Add tx1, which makes earlier txs ready
-    const tx1 = await fx.createTxData({
-      blsSigner,
-      contract: fx.walletService.erc20,
-      method: "mint",
-      args: [blsWallet.address, "3"],
-    });
+      assertEquals(await fx.allTxs(txService), {
+        ready: [],
+        future: futureTxs.map((futureTx, i) => ({ ...futureTx, txId: i + 1 })),
+      });
 
-    const failures1 = await txService.add(tx1);
-    assertEquals(failures1, []);
+      // Add tx, which makes futureTxs ready
+      const tx = await fx.createTxData({
+        blsSigner,
+        contract: fx.walletService.erc20,
+        method: "mint",
+        args: [blsWallet.address, "3"],
+      });
 
-    assertEquals(await fx.allTxs(txService), {
-      ready: [
-        { ...tx1, txId: 1 },
-        { ...tx2, txId: 2 },
-        { ...tx3, txId: 3 },
-      ],
-      future: [],
-    });
-  },
-);
+      const failures = await txService.add(tx);
+      assertEquals(failures, []);
+
+      assertEquals(await fx.allTxs(txService), {
+        ready: [
+          { ...tx, txId: 1 },
+          ...futureTxs.slice().reverse()
+            .map((futureTx, i) => ({ ...futureTx, txId: i + 2 })),
+        ],
+        future: [],
+      });
+    },
+  );
+}
+
+fillGapToEnableMultipleFutureTxsTest(3);
+fillGapToEnableMultipleFutureTxsTest(4);
 
 Fixture.test(
   "filling the nonce gap adds eligible future tx but stops at the next gap",
