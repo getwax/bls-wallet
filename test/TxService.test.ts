@@ -489,17 +489,7 @@ Fixture.test(
   async (fx) => {
     const txService = await fx.createTxService();
 
-    const blsSigner = fx.createBlsSigner();
-    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
-
-    await fx.walletService.sendTx(
-      await fx.createTxData({
-        blsSigner,
-        contract: fx.walletService.rewardErc20,
-        method: "mint",
-        args: [blsWallet.address, "2"],
-      }),
-    );
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
     const tx = await fx.createTxData({
       blsSigner,
