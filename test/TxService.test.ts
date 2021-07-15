@@ -256,47 +256,6 @@ Fixture.test(
 );
 
 Fixture.test(
-  "reusing a nonce from ready txs (unsubmitted) fails with insufficient-reward",
-  async (fx) => {
-    const txService = await fx.createTxService();
-
-    const blsSigner = fx.createBlsSigner();
-    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
-
-    const tx = await fx.createTxData({
-      blsSigner,
-      contract: fx.walletService.erc20,
-      method: "mint",
-      args: [blsWallet.address, "3"],
-    });
-
-    const failures = await txService.add(tx);
-    assertEquals(failures, []);
-
-    const txDuplicateNonce = await fx.createTxData({
-      blsSigner,
-      contract: fx.walletService.erc20,
-      method: "mint",
-      args: [blsWallet.address, "5"],
-      // because the previous tx isn't on chain, the default nonce offset of
-      // zero should conflict
-    });
-
-    const failuresDuplicateNonce = await txService.add(txDuplicateNonce);
-
-    assertEquals(
-      failuresDuplicateNonce.map((f) => f.type),
-      ["insufficient-reward"],
-    );
-
-    assertEquals(await fx.allTxs(txService), {
-      ready: [{ ...tx, txId: 1 }],
-      future: [],
-    });
-  },
-);
-
-Fixture.test(
   "filling the nonce gap adds multiple eligible future txs",
   async (fx) => {
     const txService = await fx.createTxService();
@@ -425,6 +384,47 @@ Fixture.test(
       future: [
         { ...tx4, txId: 1 },
       ],
+    });
+  },
+);
+
+Fixture.test(
+  "reusing a nonce from ready txs (unsubmitted) fails with insufficient-reward",
+  async (fx) => {
+    const txService = await fx.createTxService();
+
+    const blsSigner = fx.createBlsSigner();
+    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+    const tx = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+    });
+
+    const failures = await txService.add(tx);
+    assertEquals(failures, []);
+
+    const txDuplicateNonce = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "5"],
+      // because the previous tx isn't on chain, the default nonce offset of
+      // zero should conflict
+    });
+
+    const failuresDuplicateNonce = await txService.add(txDuplicateNonce);
+
+    assertEquals(
+      failuresDuplicateNonce.map((f) => f.type),
+      ["insufficient-reward"],
+    );
+
+    assertEquals(await fx.allTxs(txService), {
+      ready: [{ ...tx, txId: 1 }],
+      future: [],
     });
   },
 );
