@@ -1,4 +1,4 @@
-import { assertEquals } from "./deps.ts";
+import { assertEquals, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "./helpers/Range.ts";
@@ -326,6 +326,82 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
 
 fillGapToEnableMultipleFutureTxsTest(3);
 fillGapToEnableMultipleFutureTxsTest(4);
+
+function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
+  Fixture.test(
+    [
+      "filling the nonce gap picks from multiple eligible future txs",
+      `(futureTxCount: ${futureTxCount})`,
+    ].join(" "),
+    async (fx) => {
+      const txService = await fx.createTxService({
+        // Small query limit forces multiple batches when processing the
+        // future txs, checking that batching works correctly
+        txQueryLimit: 2,
+        maxFutureTxs: 1000,
+      });
+
+      const blsSigner = fx.createBlsSigner("other");
+      const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+      assertEquals(await fx.allTxs(txService), {
+        ready: [],
+        future: [],
+      });
+
+      // Add multiple txs in the future with the same nonce
+
+      const futureTxs = [];
+
+      for (const i of Range(futureTxCount)) {
+        const futureTx = await fx.createTxData({
+          blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "3"],
+          nonceOffset: 1,
+          tokenRewardAmount: ethers.BigNumber.from(i === 1 ? 1 : 0),
+        });
+
+        const failures = await txService.add(futureTx);
+        assertEquals(failures, []);
+
+        futureTxs.push(futureTx);
+      }
+
+      assertEquals(await fx.allTxs(txService), {
+        ready: [],
+        future: futureTxs.map((futureTx, i) => ({ ...futureTx, txId: i + 1 })),
+      });
+
+      // Add tx, which makes futureTxs ready
+      const tx = await fx.createTxData({
+        blsSigner,
+        contract: fx.walletService.erc20,
+        method: "mint",
+        args: [blsWallet.address, "3"],
+      });
+
+      const failures = await txService.add(tx);
+      assertEquals(failures, []);
+
+      assertEquals(await fx.allTxs(txService), {
+        ready: [
+          { ...tx, txId: 1 },
+
+          // Only this future tx, which was given a token reward is included
+          { ...futureTxs[1], txId: 2 },
+        ],
+
+        // Other future txs have been discarded
+        future: [],
+      });
+    },
+  );
+}
+
+fillGapToPickFromMultipleFutureTxsTest(3);
+fillGapToPickFromMultipleFutureTxsTest(4);
 
 Fixture.test(
   "filling the nonce gap adds eligible future tx but stops at the next gap",
