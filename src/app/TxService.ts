@@ -36,7 +36,11 @@ export default class TxService {
 
     if (highestReadyNonce.eq(txData.nonce)) {
       await this.readyTxTable.add(txData);
-      await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce.add(1));
+
+      await this.tryMoveFutureTxs(
+        txData.pubKey,
+        highestReadyNonce.toNumber() + 1,
+      );
     } else {
       await this.ensureFutureTxSpace();
       await this.futureTxTable.add(txData);
@@ -69,7 +73,7 @@ export default class TxService {
    */
   async tryMoveFutureTxs(
     pubKey: string,
-    highestReadyNonce: ethers.BigNumber,
+    highestReadyNonce: number,
   ) {
     let futureTxsToRemove: TransactionData[];
 
@@ -82,20 +86,34 @@ export default class TxService {
         this.config.txQueryLimit,
       );
 
-      for (const tx of futureTxs) {
-        if (highestReadyNonce.gt(tx.nonce)) {
-          // TODO: Pick tx with highest reward instead
-          console.warn(`Nonce from past was in futureTxs`);
-          futureTxsToRemove.push(tx);
-        } else if (highestReadyNonce.eq(tx.nonce)) {
-          futureTxsToRemove.push(tx);
-          const txWithoutId = { ...tx };
-          delete txWithoutId.txId;
-          txsToAdd.push(txWithoutId);
-          highestReadyNonce = highestReadyNonce.add(1);
-        } else {
-          break;
+      let i = 0;
+
+      for (; futureTxs[i]?.nonce < highestReadyNonce; i++) {
+        futureTxsToRemove.push(futureTxs[i]);
+
+        await this.replaceReadyTx(
+          ethers.BigNumber.from(highestReadyNonce),
+          futureTxs[i],
+        );
+      }
+
+      for (; futureTxs[i]?.nonce === highestReadyNonce; i++) {
+        futureTxsToRemove.push(futureTxs[i]);
+        let futureTx = futureTxs[i];
+        const nonce = futureTx.nonce;
+
+        for (; futureTxs[i + 1]?.nonce === nonce; i++) {
+          futureTxsToRemove.push(futureTxs[i + 1]);
+
+          if (this.isRewardBetter(futureTxs[i + 1], futureTx)) {
+            futureTx = futureTxs[i + 1];
+          }
         }
+
+        const futureTxWithoutId = { ...futureTx };
+        delete futureTxWithoutId.txId;
+        txsToAdd.push(futureTxWithoutId);
+        highestReadyNonce++;
       }
 
       await this.readyTxTable.add(...txsToAdd);
