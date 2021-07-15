@@ -58,7 +58,7 @@ export default class WalletService {
       .verificationGateway
       .checkSig(
         tx.nonce,
-        ethers.BigNumber.from(0),
+        ethers.BigNumber.from(tx.tokenRewardAmount),
         getKeyHash(tx.pubKey),
         hubbleBls.mcl.loadG1(tx.signature),
         tx.contractAddress,
