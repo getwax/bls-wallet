@@ -115,13 +115,16 @@ export default class TxTable {
     nonce: number,
     limit: number,
   ): Promise<TransactionData[]> {
-    return await this.queryClient.query(`
-      SELECT * from ${unsketchify(this.txTable.name)}
-      WHERE
-        "pubKey" = "${pubKey}" AND
-        "nonce" > ${nonce}
-      LIMIT ${limit}
-    `);
+    return await this.queryClient.query(
+      `
+        SELECT * from ${unsketchify(this.txTable.name)}
+        WHERE
+          "pubKey" = $1 AND
+          "nonce" > ${nonce}
+        LIMIT ${limit}
+      `,
+      [pubKey],
+    );
   }
 
   async drop() {
