@@ -25,18 +25,18 @@ export default class TxService {
       return failures;
     }
 
-    const lowestAcceptableNonce = await this.LowestAcceptableNonce(
+    const highestReadyNonce = await this.HighestReadyNonce(
       nextNonce,
       txData.pubKey,
     );
 
-    if (lowestAcceptableNonce.gt(txData.nonce)) {
-      return this.replaceReadyTx(lowestAcceptableNonce, txData);
+    if (highestReadyNonce.gt(txData.nonce)) {
+      return this.replaceReadyTx(highestReadyNonce, txData);
     }
 
-    if (lowestAcceptableNonce.eq(txData.nonce)) {
+    if (highestReadyNonce.eq(txData.nonce)) {
       await this.readyTxTable.add(txData);
-      await this.tryMoveFutureTxs(txData.pubKey, lowestAcceptableNonce.add(1));
+      await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce.add(1));
     } else {
       await this.ensureFutureTxSpace();
       await this.futureTxTable.add(txData);
@@ -46,23 +46,21 @@ export default class TxService {
   }
 
   /**
-   * Find the lowest acceptable nonce based on chain and the ready tx table.
-   *
-   * Here 'acceptable' means able to be accepted into the ready tx table. This
-   * means that it comes after the transactions on chain, but also that it comes
-   * after the transactions already in the ready tx table.
+   * Find the highest nonce that can be added to ready txs. This needs to be
+   * higher than both the latest nonce on chain and any tx nonces (for this key)
+   * that are locally ready.
    */
-  async LowestAcceptableNonce(
+  async HighestReadyNonce(
     nextChainNonce: ethers.BigNumber,
     pubKey: string,
   ): Promise<ethers.BigNumber> {
     const nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
 
-    const lowestAcceptableNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
+    const highestReadyNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
       ? nextChainNonce
       : ethers.BigNumber.from(nextLocalNonce);
 
-    return lowestAcceptableNonce;
+    return highestReadyNonce;
   }
 
   /**
@@ -71,7 +69,7 @@ export default class TxService {
    */
   async tryMoveFutureTxs(
     pubKey: string,
-    lowestAcceptableNonce: ethers.BigNumber,
+    highestReadyNonce: ethers.BigNumber,
   ) {
     let futureTxsToRemove: TransactionData[];
 
@@ -85,16 +83,16 @@ export default class TxService {
       );
 
       for (const tx of futureTxs) {
-        if (lowestAcceptableNonce.gt(tx.nonce)) {
+        if (highestReadyNonce.gt(tx.nonce)) {
           // TODO: Pick tx with highest reward instead
           console.warn(`Nonce from past was in futureTxs`);
           futureTxsToRemove.push(tx);
-        } else if (lowestAcceptableNonce.eq(tx.nonce)) {
+        } else if (highestReadyNonce.eq(tx.nonce)) {
           futureTxsToRemove.push(tx);
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
           txsToAdd.push(txWithoutId);
-          lowestAcceptableNonce = lowestAcceptableNonce.add(1);
+          highestReadyNonce = highestReadyNonce.add(1);
         } else {
           break;
         }
@@ -139,7 +137,7 @@ export default class TxService {
    * same key so that they will be processed in the correct sequence.
    */
   async replaceReadyTx(
-    lowestAcceptableNonce: ethers.BigNumber,
+    highestReadyNonce: ethers.BigNumber,
     txData: TransactionData,
   ): Promise<AddTransactionFailure[]> {
     const existingTx = await this.readyTxTable.find(
@@ -180,7 +178,7 @@ export default class TxService {
       this.readyTxTable.add(txData),
     );
 
-    if (lowestAcceptableNonce.sub(1).eq(txData.nonce)) {
+    if (highestReadyNonce.sub(1).eq(txData.nonce)) {
       await Promise.all(promises);
       return [];
     }
