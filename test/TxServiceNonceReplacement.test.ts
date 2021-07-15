@@ -149,11 +149,17 @@ Fixture.test(
 Fixture.test(
   "replacing a tx causes reinsertion of following txs to fix order",
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createTxService({
+      // Small query limit forces multiple batches when processing the
+      // reinsertion, checking that batching works correctly
+      txQueryLimit: 2,
+      maxFutureTxs: 1000,
+    });
+
     const [w1, w2] = await fx.setupWallets(2);
 
     const txs = await Promise.all(
-      Range(3).map((i) =>
+      Range(5).map((i) =>
         fx.createTxData({
           blsSigner: w1.blsSigner,
           contract: fx.walletService.erc20,
@@ -181,7 +187,9 @@ Fixture.test(
         { ...txs[0], txId: 1 },
         { ...txs[1], txId: 2 },
         { ...txs[2], txId: 3 },
-        { ...txOther, txId: 4 },
+        { ...txs[3], txId: 4 },
+        { ...txs[4], txId: 5 },
+        { ...txOther, txId: 6 },
       ],
       future: [],
     });
@@ -205,9 +213,11 @@ Fixture.test(
     assertEquals(await fx.allTxs(txService), {
       ready: [
         { ...txs[0], txId: 1 },
-        { ...txOther, txId: 4 },
-        { ...txReplacement, txId: 5 },
-        { ...txs[2], txId: 6 },
+        { ...txOther, txId: 6 },
+        { ...txReplacement, txId: 7 },
+        { ...txs[2], txId: 8 },
+        { ...txs[3], txId: 9 },
+        { ...txs[4], txId: 10 },
       ],
       future: [],
     });
