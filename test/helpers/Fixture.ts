@@ -193,31 +193,37 @@ export default class Fixture {
    * reward tokens.
    */
   async setupWallets(count: number, ...extraSeeds: string[]) {
-    return await Promise.all(
-      Range(count).map(async (i) => {
-        const blsSigner = this.createBlsSigner(`${i}`, ...extraSeeds);
-        const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
+    const wallets = [];
 
-        await this.walletService.sendTxs([
-          await this.createTxData({
-            blsSigner,
-            contract: this.walletService.erc20,
-            method: "mint",
-            args: [blsWallet.address, "1000"],
-            nonceOffset: 0,
-          }),
-          await this.createTxData({
-            blsSigner,
-            contract: this.walletService.rewardErc20,
-            method: "mint",
-            args: [blsWallet.address, "1000"],
-            nonceOffset: 1,
-          }),
-        ]);
+    // Unfortunately attempting to parallelize these causes duplicate nonce
+    // issues. This might be mitigated by collecting `TransactionResponse`s in a
+    // serial way but then awaiting .wait() in parallel. That's a significant
+    // refactor though that I'm avoiding right now.
+    for (const i of Range(count)) {
+      const blsSigner = this.createBlsSigner(`${i}`, ...extraSeeds);
+      const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
 
-        return { blsSigner, blsWallet };
-      }),
-    );
+      await this.walletService.sendTxs([
+        await this.createTxData({
+          blsSigner,
+          contract: this.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "1000"],
+          nonceOffset: 0,
+        }),
+        await this.createTxData({
+          blsSigner,
+          contract: this.walletService.rewardErc20,
+          method: "mint",
+          args: [blsWallet.address, "1000"],
+          nonceOffset: 1,
+        }),
+      ]);
+
+      wallets.push({ blsSigner, blsWallet });
+    }
+
+    return wallets;
   }
 
   async cleanup() {

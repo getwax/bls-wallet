@@ -1,6 +1,7 @@
 import { assertEquals, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
+import Range from "./helpers/Range.ts";
 
 Fixture.test(
   "reusing a nonce from ready txs fails with insufficient-reward",
@@ -140,6 +141,74 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       ready: [{ ...tx, txId: 1 }],
+      future: [],
+    });
+  },
+);
+
+Fixture.test(
+  "replacing a tx causes reinsertion of following txs to fix order",
+  async (fx) => {
+    const txService = await fx.createTxService();
+    const [w1, w2] = await fx.setupWallets(2);
+
+    const txs = await Promise.all(
+      Range(3).map((i) =>
+        fx.createTxData({
+          blsSigner: w1.blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [w1.blsWallet.address, `${i}`],
+          nonceOffset: i,
+        })
+      ),
+    );
+
+    const txOther = await fx.createTxData({
+      blsSigner: w2.blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [w1.blsWallet.address, "1"],
+    });
+
+    for (const tx of [...txs, txOther]) {
+      const failures = await txService.add(tx);
+      assertEquals(failures, []);
+    }
+
+    assertEquals(await fx.allTxs(txService), {
+      ready: [
+        { ...txs[0], txId: 1 },
+        { ...txs[1], txId: 2 },
+        { ...txs[2], txId: 3 },
+        { ...txOther, txId: 4 },
+      ],
+      future: [],
+    });
+
+    // Now replace txs[1] and the replacement should be at the end but also
+    // txs[2] should be moved to the end.
+
+    const txReplacement = await fx.createTxData({
+      blsSigner: w1.blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [w1.blsWallet.address, "11"],
+      nonceOffset: 1,
+      tokenRewardAmount: ethers.BigNumber.from(1),
+    });
+
+    const failures = await txService.add(txReplacement);
+
+    assertEquals(failures, []);
+
+    assertEquals(await fx.allTxs(txService), {
+      ready: [
+        { ...txs[0], txId: 1 },
+        { ...txOther, txId: 4 },
+        { ...txReplacement, txId: 5 },
+        { ...txs[2], txId: 6 },
+      ],
       future: [],
     });
   },
