@@ -146,80 +146,82 @@ Fixture.test(
   },
 );
 
-Fixture.test(
-  "replacing a tx causes reinsertion of following txs to fix order",
-  async (fx) => {
-    const txService = await fx.createTxService({
-      // Small query limit forces multiple batches when processing the
-      // reinsertion, checking that batching works correctly
-      txQueryLimit: 2,
-      maxFutureTxs: 1000,
-    });
+function reinsertionTest(extraTxs: number) {
+  Fixture.test(
+    [
+      "replacing a tx causes reinsertion of following txs to fix order",
+      `(extraTxs: ${extraTxs})`,
+    ].join(" "),
+    async (fx) => {
+      const txService = await fx.createTxService({
+        // Small query limit forces multiple batches when processing the
+        // reinsertion, checking that batching works correctly
+        txQueryLimit: 2,
+        maxFutureTxs: 1000,
+      });
 
-    const [w1, w2] = await fx.setupWallets(2);
+      const [w1, w2] = await fx.setupWallets(2);
 
-    const txs = await Promise.all(
-      Range(5).map((i) =>
-        fx.createTxData({
-          blsSigner: w1.blsSigner,
-          contract: fx.walletService.erc20,
-          method: "mint",
-          args: [w1.blsWallet.address, `${i}`],
-          nonceOffset: i,
-        })
-      ),
-    );
+      const txs = await Promise.all(
+        Range(2 + extraTxs).map((i) =>
+          fx.createTxData({
+            blsSigner: w1.blsSigner,
+            contract: fx.walletService.erc20,
+            method: "mint",
+            args: [w1.blsWallet.address, `${i}`],
+            nonceOffset: i,
+          })
+        ),
+      );
 
-    const txOther = await fx.createTxData({
-      blsSigner: w2.blsSigner,
-      contract: fx.walletService.erc20,
-      method: "mint",
-      args: [w1.blsWallet.address, "1"],
-    });
+      const txOther = await fx.createTxData({
+        blsSigner: w2.blsSigner,
+        contract: fx.walletService.erc20,
+        method: "mint",
+        args: [w1.blsWallet.address, "1"],
+      });
 
-    for (const tx of [...txs, txOther]) {
-      const failures = await txService.add(tx);
+      for (const tx of [...txs, txOther]) {
+        const failures = await txService.add(tx);
+        assertEquals(failures, []);
+      }
+
+      assertEquals(await fx.allTxs(txService), {
+        ready: [
+          ...txs.map((tx, i) => ({ ...tx, txId: i + 1 })),
+          { ...txOther, txId: txs.length + 1 },
+        ],
+        future: [],
+      });
+
+      // Now replace txs[1] and the replacement should be at the end but also
+      // all the extraTxs should be moved to the end.
+
+      const txReplacement = await fx.createTxData({
+        blsSigner: w1.blsSigner,
+        contract: fx.walletService.erc20,
+        method: "mint",
+        args: [w1.blsWallet.address, "11"],
+        nonceOffset: 1,
+        tokenRewardAmount: ethers.BigNumber.from(1),
+      });
+
+      const failures = await txService.add(txReplacement);
+
       assertEquals(failures, []);
-    }
 
-    assertEquals(await fx.allTxs(txService), {
-      ready: [
-        { ...txs[0], txId: 1 },
-        { ...txs[1], txId: 2 },
-        { ...txs[2], txId: 3 },
-        { ...txs[3], txId: 4 },
-        { ...txs[4], txId: 5 },
-        { ...txOther, txId: 6 },
-      ],
-      future: [],
-    });
+      assertEquals(await fx.allTxs(txService), {
+        ready: [
+          { ...txs[0], txId: 1 },
+          { ...txOther, txId: txs.length + 1 },
+          { ...txReplacement, txId: txs.length + 2 },
+          ...txs.slice(2).map((tx, i) => ({ ...tx, txId: txs.length + 3 + i })),
+        ],
+        future: [],
+      });
+    },
+  );
+}
 
-    // Now replace txs[1] and the replacement should be at the end but also
-    // txs[2] should be moved to the end.
-
-    const txReplacement = await fx.createTxData({
-      blsSigner: w1.blsSigner,
-      contract: fx.walletService.erc20,
-      method: "mint",
-      args: [w1.blsWallet.address, "11"],
-      nonceOffset: 1,
-      tokenRewardAmount: ethers.BigNumber.from(1),
-    });
-
-    const failures = await txService.add(txReplacement);
-
-    assertEquals(failures, []);
-
-    assertEquals(await fx.allTxs(txService), {
-      ready: [
-        { ...txs[0], txId: 1 },
-        { ...txOther, txId: 6 },
-        { ...txReplacement, txId: 7 },
-        { ...txs[2], txId: 8 },
-        { ...txs[3], txId: 9 },
-        { ...txs[4], txId: 10 },
-      ],
-      future: [],
-    });
-  },
-);
+reinsertionTest(3);
+reinsertionTest(4);
