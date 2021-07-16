@@ -1,8 +1,10 @@
 import { ethers, QueryClient } from "../../deps/index.ts";
 import groupBy from "../helpers/groupBy.ts";
+import Mutex from "../helpers/Mutex.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import * as env from "./env.ts";
+import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
 
@@ -14,40 +16,47 @@ export default class TxService {
 
   constructor(
     public queryClient: QueryClient,
+    public txTablesMutex: Mutex,
     public readyTxTable: TxTable,
     public futureTxTable: TxTable,
     public walletService: WalletService,
     public config = TxService.defaultConfig,
   ) {}
 
+  runQueryGroup<T>(body: () => Promise<T>): Promise<T> {
+    return runQueryGroup(this.txTablesMutex, this.queryClient, body);
+  }
+
   async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
-    const {
-      failures,
-      nextNonce: nextChainNonce,
-    } = await this.walletService.checkTx(txData);
+    return await this.runQueryGroup(async () => {
+      const {
+        failures,
+        nextNonce: nextChainNonce,
+      } = await this.walletService.checkTx(txData);
 
-    if (failures.length > 0) {
-      return failures;
-    }
+      if (failures.length > 0) {
+        return failures;
+      }
 
-    const highestReadyNonce = await this.HighestReadyNonce(
-      nextChainNonce,
-      txData.pubKey,
-    );
+      const highestReadyNonce = await this.HighestReadyNonce(
+        nextChainNonce,
+        txData.pubKey,
+      );
 
-    if (txData.nonce < highestReadyNonce) {
-      return await this.replaceReadyTx(highestReadyNonce, txData);
-    }
+      if (txData.nonce < highestReadyNonce) {
+        return await this.replaceReadyTx(highestReadyNonce, txData);
+      }
 
-    if (highestReadyNonce === txData.nonce) {
-      this.readyTxTable.add(txData);
-      this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
-    } else {
-      this.ensureFutureTxSpace();
-      this.futureTxTable.add(txData);
-    }
+      if (highestReadyNonce === txData.nonce) {
+        this.readyTxTable.add(txData);
+        this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
+      } else {
+        this.ensureFutureTxSpace();
+        this.futureTxTable.add(txData);
+      }
 
-    return [];
+      return [];
+    });
   }
 
   /**

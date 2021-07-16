@@ -10,8 +10,12 @@ import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
 import TxTable from "./TxTable.ts";
 import createQueryClient from "./createQueryClient.ts";
+import Mutex from "../helpers/Mutex.ts";
 
 const queryClient = createQueryClient();
+
+const txTablesMutex = new Mutex();
+
 const readyTxTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
 
 const futureTxTable = await TxTable.create(
@@ -20,7 +24,14 @@ const futureTxTable = await TxTable.create(
 );
 
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
-const txService = new TxService(futureTxTable, readyTxTable, walletService);
+
+const txService = new TxService(
+  queryClient,
+  txTablesMutex,
+  futureTxTable,
+  readyTxTable,
+  walletService,
+);
 
 const adminService = new AdminService(
   walletService,

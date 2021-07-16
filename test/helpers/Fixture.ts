@@ -9,6 +9,7 @@ import dataPayload from "./dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "./Range.ts";
+import Mutex from "../../src/helpers/Mutex.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -165,6 +166,8 @@ export default class Fixture {
     const suffix = this.rng.address("table-name-suffix").slice(2, 12);
     const queryClient = createQueryClient();
 
+    const txTablesMutex = new Mutex();
+
     const tableName = `txs_test_${suffix}`;
     const txTable = await TxTable.create(queryClient, tableName);
 
@@ -178,6 +181,7 @@ export default class Fixture {
 
     return new TxService(
       queryClient,
+      txTablesMutex,
       txTable,
       futureTxTable,
       this.walletService,
