@@ -1,4 +1,4 @@
-import { ethers } from "../../deps/index.ts";
+import { ethers, QueryClient } from "../../deps/index.ts";
 import groupBy from "../helpers/groupBy.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
@@ -13,6 +13,7 @@ export default class TxService {
   };
 
   constructor(
+    public queryClient: QueryClient,
     public readyTxTable: TxTable,
     public futureTxTable: TxTable,
     public walletService: WalletService,
@@ -20,27 +21,30 @@ export default class TxService {
   ) {}
 
   async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
-    const { failures, nextNonce } = await this.walletService.checkTx(txData);
+    const {
+      failures,
+      nextNonce: nextChainNonce,
+    } = await this.walletService.checkTx(txData);
 
     if (failures.length > 0) {
       return failures;
     }
 
     const highestReadyNonce = await this.HighestReadyNonce(
-      nextNonce,
+      nextChainNonce,
       txData.pubKey,
     );
 
     if (txData.nonce < highestReadyNonce) {
-      return this.replaceReadyTx(highestReadyNonce, txData);
+      return await this.replaceReadyTx(highestReadyNonce, txData);
     }
 
     if (highestReadyNonce === txData.nonce) {
-      await this.readyTxTable.add(txData);
-      await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
+      this.readyTxTable.add(txData);
+      this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
     } else {
-      await this.ensureFutureTxSpace();
-      await this.futureTxTable.add(txData);
+      this.ensureFutureTxSpace();
+      this.futureTxTable.add(txData);
     }
 
     return [];
@@ -93,7 +97,7 @@ export default class TxService {
 
       for (const tx of bestFutureTxs) {
         if (tx.nonce < highestReadyNonce) {
-          await this.replaceReadyTx(highestReadyNonce, tx);
+          this.replaceReadyTx(highestReadyNonce, tx);
         } else if (tx.nonce === highestReadyNonce) {
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
@@ -232,10 +236,8 @@ export default class TxService {
         const newTx = { ...tx };
         delete newTx.txId;
 
-        promises.push(
-          this.readyTxTable.remove(tx),
-          this.readyTxTable.add(newTx),
-        );
+        this.readyTxTable.remove(tx);
+        this.readyTxTable.add(newTx);
       }
 
       lastNonceReplaced = followupTxs[followupTxs.length - 1].nonce;

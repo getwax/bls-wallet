@@ -176,7 +176,13 @@ export default class Fixture {
       await queryClient.disconnect();
     });
 
-    return new TxService(txTable, futureTxTable, this.walletService, config);
+    return new TxService(
+      queryClient,
+      txTable,
+      futureTxTable,
+      this.walletService,
+      config,
+    );
   }
 
   async allTxs(

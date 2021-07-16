@@ -33,24 +33,6 @@ const txOptions: TableOptions = {
   encodedParams: { type: DataType.VarChar },
 };
 
-export class ActionGroup {
-  sqlActions: string[] = [];
-
-  add(sqlAction: string) {
-    sqlAction = sqlAction.trim();
-
-    if (sqlAction[sqlAction.length - 1] !== ";") {
-      throw new Error("Expected sqlAction to end in a semicolon");
-    }
-
-    this.sqlActions.push(sqlAction);
-  }
-
-  Sql() {
-    return ["BEGIN;", ...this.sqlActions, "COMMIT;"].join("\n");
-  }
-}
-
 export default class TxTable {
   txTable: QueryTable<TransactionData>;
   safeName: string;
@@ -70,20 +52,16 @@ export default class TxTable {
     return txTable;
   }
 
-  static Group() {
-    return new ActionGroup();
-  }
-
   async add(...txs: TransactionData[]) {
     await this.txTable.insert(...txs);
   }
 
   async remove(...txs: TransactionData[]) {
-    for (const tx of txs) {
-      await this.txTable
+    await Promise.all(txs.map((tx) =>
+      this.txTable
         .where({ txId: assertExists(tx.txId) })
-        .delete();
-    }
+        .delete()
+    ));
   }
 
   async count(): Promise<bigint> {
@@ -133,7 +111,11 @@ export default class TxTable {
     return rows[0] ?? null;
   }
 
-  /** Find transactions for this public key after the provided nonce */
+  /**
+   * Find transactions for this public key after the provided nonce.
+   *
+   * Note: In nonce order.
+   */
   async findAfter(
     pubKey: string,
     nonce: number,
@@ -145,6 +127,7 @@ export default class TxTable {
         WHERE
           "pubKey" = $1 AND
           "nonce" > ${nonce}
+        ORDER BY "nonce" ASC
         LIMIT ${limit}
       `,
       [pubKey],
