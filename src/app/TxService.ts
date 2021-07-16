@@ -49,9 +49,9 @@ export default class TxService {
 
       if (highestReadyNonce === txData.nonce) {
         this.readyTxTable.add(txData);
-        this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
+        await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
       } else {
-        this.ensureFutureTxSpace();
+        await this.ensureFutureTxSpace();
         this.futureTxTable.add(txData);
       }
 
@@ -106,7 +106,7 @@ export default class TxService {
 
       for (const tx of bestFutureTxs) {
         if (tx.nonce < highestReadyNonce) {
-          this.replaceReadyTx(highestReadyNonce, tx);
+          await this.replaceReadyTx(highestReadyNonce, tx);
         } else if (tx.nonce === highestReadyNonce) {
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
