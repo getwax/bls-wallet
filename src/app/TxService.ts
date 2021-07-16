@@ -30,17 +30,13 @@ export default class TxService {
       txData.pubKey,
     );
 
-    if (highestReadyNonce.gt(txData.nonce)) {
+    if (txData.nonce < highestReadyNonce) {
       return this.replaceReadyTx(highestReadyNonce, txData);
     }
 
-    if (highestReadyNonce.eq(txData.nonce)) {
+    if (highestReadyNonce === txData.nonce) {
       await this.readyTxTable.add(txData);
-
-      await this.tryMoveFutureTxs(
-        txData.pubKey,
-        highestReadyNonce.toNumber() + 1,
-      );
+      await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
     } else {
       await this.ensureFutureTxSpace();
       await this.futureTxTable.add(txData);
@@ -57,14 +53,19 @@ export default class TxService {
   async HighestReadyNonce(
     nextChainNonce: ethers.BigNumber,
     pubKey: string,
-  ): Promise<ethers.BigNumber> {
+  ): Promise<number> {
     const nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
 
     const highestReadyNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
       ? nextChainNonce
       : ethers.BigNumber.from(nextLocalNonce);
 
-    return highestReadyNonce;
+    // This will cause problems above 2^53. Currently we already store nonces as
+    // 32 bit integers in the database anyway though. For now, numbers are more
+    // convenient.
+    //
+    // More information: https://github.com/jzaki/aggregator/issues/36.
+    return highestReadyNonce.toNumber();
   }
 
   /**
@@ -90,11 +91,7 @@ export default class TxService {
 
       for (; futureTxs[i]?.nonce < highestReadyNonce; i++) {
         futureTxsToRemove.push(futureTxs[i]);
-
-        await this.replaceReadyTx(
-          ethers.BigNumber.from(highestReadyNonce),
-          futureTxs[i],
-        );
+        await this.replaceReadyTx(highestReadyNonce, futureTxs[i]);
       }
 
       for (; futureTxs[i]?.nonce === highestReadyNonce; i++) {
@@ -155,7 +152,7 @@ export default class TxService {
    * same key so that they will be processed in the correct sequence.
    */
   async replaceReadyTx(
-    highestReadyNonce: ethers.BigNumber,
+    highestReadyNonce: number,
     txData: TransactionData,
   ): Promise<AddTransactionFailure[]> {
     const existingTx = await this.readyTxTable.find(
@@ -196,7 +193,7 @@ export default class TxService {
       this.readyTxTable.add(txData),
     );
 
-    if (highestReadyNonce.sub(1).eq(txData.nonce)) {
+    if (highestReadyNonce - 1 === txData.nonce) {
       await Promise.all(promises);
       return [];
     }
