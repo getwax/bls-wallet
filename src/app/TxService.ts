@@ -1,4 +1,5 @@
 import { ethers } from "../../deps/index.ts";
+import groupBy from "../helpers/groupBy.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import * as env from "./env.ts";
@@ -79,7 +80,6 @@ export default class TxService {
     let futureTxsToRemove: TransactionData[];
 
     do {
-      futureTxsToRemove = [];
       const txsToAdd: TransactionData[] = [];
 
       const futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
@@ -87,31 +87,25 @@ export default class TxService {
         this.config.txQueryLimit,
       );
 
-      let i = 0;
+      const bestFutureTxs = groupBy(futureTxs, (tx) => tx.nonce)
+        .map((txGroup) => this.pickBestReward(txGroup.elements));
 
-      for (; futureTxs[i]?.nonce < highestReadyNonce; i++) {
-        futureTxsToRemove.push(futureTxs[i]);
-        await this.replaceReadyTx(highestReadyNonce, futureTxs[i]);
-      }
-
-      for (; futureTxs[i]?.nonce === highestReadyNonce; i++) {
-        futureTxsToRemove.push(futureTxs[i]);
-        let futureTx = futureTxs[i];
-        const nonce = futureTx.nonce;
-
-        for (; futureTxs[i + 1]?.nonce === nonce; i++) {
-          futureTxsToRemove.push(futureTxs[i + 1]);
-
-          if (this.isRewardBetter(futureTxs[i + 1], futureTx)) {
-            futureTx = futureTxs[i + 1];
-          }
+      for (const tx of bestFutureTxs) {
+        if (tx.nonce < highestReadyNonce) {
+          await this.replaceReadyTx(highestReadyNonce, tx);
+        } else if (tx.nonce === highestReadyNonce) {
+          const txWithoutId = { ...tx };
+          delete txWithoutId.txId;
+          txsToAdd.push(txWithoutId);
+          highestReadyNonce++;
+        } else {
+          break;
         }
-
-        const futureTxWithoutId = { ...futureTx };
-        delete futureTxWithoutId.txId;
-        txsToAdd.push(futureTxWithoutId);
-        highestReadyNonce++;
       }
+
+      futureTxsToRemove = futureTxs.filter(
+        (tx) => tx.nonce < highestReadyNonce,
+      );
 
       await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
@@ -238,5 +232,11 @@ export default class TxService {
     const rightReward = ethers.BigNumber.from(right.tokenRewardAmount);
 
     return leftReward.gt(rightReward);
+  }
+
+  pickBestReward(txs: TransactionData[]) {
+    return txs.reduce((left, right) =>
+      this.isRewardBetter(left, right) ? left : right
+    );
   }
 }
