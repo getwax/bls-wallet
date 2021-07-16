@@ -71,7 +71,7 @@ export default class TxService {
 
   /**
    * Move any future txs for the given public key that have become ready into
-   * ready txs.
+   * ready txs. TODO: More here.
    */
   async tryMoveFutureTxs(
     pubKey: string,
@@ -109,6 +109,8 @@ export default class TxService {
 
       await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
+
+      // TODO: Improve readability of exit condition
     } while (futureTxsToRemove.length === this.config.txQueryLimit);
   }
 
@@ -147,7 +149,7 @@ export default class TxService {
    */
   async replaceReadyTx(
     highestReadyNonce: number,
-    txData: TransactionData,
+    txData: TransactionData, // TODO: naming
   ): Promise<AddTransactionFailure[]> {
     const existingTx = await this.readyTxTable.find(
       txData.pubKey,
@@ -191,6 +193,8 @@ export default class TxService {
       await Promise.all(promises);
       return [];
     }
+
+    // TODO: Separate function for followups
 
     let followupTxs;
     let lastNonceReplaced = txData.nonce;
