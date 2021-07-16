@@ -33,11 +33,31 @@ const txOptions: TableOptions = {
   encodedParams: { type: DataType.VarChar },
 };
 
+export class ActionGroup {
+  sqlActions: string[] = [];
+
+  add(sqlAction: string) {
+    sqlAction = sqlAction.trim();
+
+    if (sqlAction[sqlAction.length - 1] !== ";") {
+      throw new Error("Expected sqlAction to end in a semicolon");
+    }
+
+    this.sqlActions.push(sqlAction);
+  }
+
+  Sql() {
+    return ["BEGIN;", ...this.sqlActions, "COMMIT;"].join("\n");
+  }
+}
+
 export default class TxTable {
   txTable: QueryTable<TransactionData>;
+  safeName: string;
 
   private constructor(public queryClient: QueryClient, txTableName: string) {
     this.txTable = this.queryClient.table<TransactionData>(txTableName);
+    this.safeName = unsketchify(this.txTable.name);
   }
 
   static async create(
@@ -48,6 +68,10 @@ export default class TxTable {
     await txTable.txTable.create(txOptions, CreateTableMode.IfNotExists);
 
     return txTable;
+  }
+
+  static Group() {
+    return new ActionGroup();
   }
 
   async add(...txs: TransactionData[]) {
@@ -117,7 +141,7 @@ export default class TxTable {
   ): Promise<TransactionData[]> {
     return await this.queryClient.query(
       `
-        SELECT * from ${unsketchify(this.txTable.name)}
+        SELECT * from ${this.safeName}
         WHERE
           "pubKey" = $1 AND
           "nonce" > ${nonce}
@@ -150,13 +174,13 @@ export default class TxTable {
 
   async clear() {
     return await this.queryClient.query(`
-      DELETE from ${unsketchify(this.txTable.name)}
+      DELETE from ${this.safeName}
     `);
   }
 
   async clearBeforeId(txId: number) {
     await this.queryClient.query(`
-      DELETE from ${unsketchify(this.txTable.name)}
+      DELETE from ${this.safeName}
       WHERE "txId" < ${txId}
     `);
   }
