@@ -149,18 +149,18 @@ export default class TxService {
    */
   async replaceReadyTx(
     highestReadyNonce: number,
-    txData: TransactionData, // TODO: naming
+    newTx: TransactionData,
   ): Promise<AddTransactionFailure[]> {
     const existingTx = await this.readyTxTable.find(
-      txData.pubKey,
-      txData.nonce,
+      newTx.pubKey,
+      newTx.nonce,
     );
 
     if (existingTx === null) {
       return [{
         type: "duplicate-nonce",
         description: [
-          `nonce ${txData.nonce} was a replacement candidate but it appears to`,
+          `nonce ${newTx.nonce} was a replacement candidate but it appears to`,
           "have been submitted during processing",
         ].join(" "),
       }];
@@ -170,11 +170,11 @@ export default class TxService {
       // mempool. Complicated.
     }
 
-    if (!this.isRewardBetter(txData, existingTx)) {
+    if (!this.isRewardBetter(newTx, existingTx)) {
       return [{
         type: "insufficient-reward",
         description: [
-          `${ethers.BigNumber.from(txData.tokenRewardAmount)} is an`,
+          `${ethers.BigNumber.from(newTx.tokenRewardAmount)} is an`,
           "insufficient reward because there is already a tx with this nonce",
           "with a reward of",
           ethers.BigNumber.from(existingTx.tokenRewardAmount),
@@ -186,10 +186,10 @@ export default class TxService {
 
     promises.push(
       this.readyTxTable.remove(existingTx),
-      this.readyTxTable.add(txData),
+      this.readyTxTable.add(newTx),
     );
 
-    if (highestReadyNonce - 1 === txData.nonce) {
+    if (highestReadyNonce - 1 === newTx.nonce) {
       await Promise.all(promises);
       return [];
     }
@@ -197,11 +197,11 @@ export default class TxService {
     // TODO: Separate function for followups
 
     let followupTxs;
-    let lastNonceReplaced = txData.nonce;
+    let lastNonceReplaced = newTx.nonce;
 
     while (true) {
       followupTxs = await this.readyTxTable.findAfter(
-        txData.pubKey,
+        newTx.pubKey,
         lastNonceReplaced,
         this.config.txQueryLimit,
       );
