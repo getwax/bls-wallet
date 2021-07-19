@@ -78,7 +78,7 @@ export default class TxService {
     pubKey: string,
     highestReadyNonce: number,
   ) {
-    let needNextBatch;
+    let needNextBatch: boolean;
 
     do {
       const txsToAdd: TransactionData[] = [];
@@ -213,10 +213,11 @@ export default class TxService {
   async reinsertUnorderedReadyTxs(newTx: TransactionData) {
     const promises: Promise<unknown>[] = [];
 
-    let followupTxs;
+    let finished: boolean;
+    let followupTxs: TransactionData[];
     let lastNonceReplaced = newTx.nonce;
 
-    while (true) {
+    do {
       followupTxs = await this.readyTxTable.findAfter(
         newTx.pubKey,
         lastNonceReplaced,
@@ -239,10 +240,11 @@ export default class TxService {
 
       lastNonceReplaced = followupTxs[followupTxs.length - 1].nonce;
 
-      if (followupTxs.length < this.config.txQueryLimit) {
-        break;
-      }
-    }
+      // If followupTxs is under the query limit, then we know there aren't any
+      // more followups to process. Otherwise, we need to get more txs from the
+      // database and keep going.
+      finished = followupTxs.length < this.config.txQueryLimit;
+    } while (!finished);
 
     await Promise.all(promises);
   }
