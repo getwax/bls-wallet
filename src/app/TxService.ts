@@ -170,9 +170,9 @@ export default class TxService {
     const size = await this.futureTxTable.count();
 
     if (size >= this.config.maxFutureTxs) {
-      const first = await this.futureTxTable.First();
+      const [first] = await this.futureTxTable.getHighestPriority(1);
 
-      if (first === null) {
+      if (first === undefined) {
         console.warn(
           "Future txs unexpectedly empty when it seemed to need pruning",
         );
@@ -301,7 +301,6 @@ export default class TxService {
 
   async runBatch() {
     return await this.runQueryGroup(async () => {
-      // TODO
     });
   }
 }

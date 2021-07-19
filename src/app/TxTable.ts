@@ -71,17 +71,17 @@ export default class TxTable {
     return result[0].count as bigint;
   }
 
-  async First(): Promise<TransactionData | null> {
+  async getHighestPriority(limit: number): Promise<TransactionData[]> {
     const rows = await this.txTable
       .where()
       .order({
         column: "txId",
         type: OrderByType.Ascending,
       })
-      .limit(1)
+      .limit(limit)
       .select();
 
-    return rows[0] ?? null;
+    return rows;
   }
 
   async pubKeyTxsInNonceOrder(
