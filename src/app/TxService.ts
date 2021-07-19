@@ -71,7 +71,8 @@ export default class TxService {
 
   /**
    * Move any future txs for the given public key that have become ready into
-   * ready txs. TODO: More here.
+   * ready txs. These future txs can share nonces, so we also pick the txs with
+   * the best rewards here to ensure duplicate nonces don't reach ready txs.
    */
   async tryMoveFutureTxs(
     pubKey: string,
