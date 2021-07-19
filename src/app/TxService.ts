@@ -1,8 +1,10 @@
 import { ethers, QueryClient } from "../../deps/index.ts";
+import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
+import BatchTimer from "./BatchTimer.ts";
 import * as env from "./env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
@@ -12,16 +14,39 @@ export default class TxService {
   static defaultConfig = {
     txQueryLimit: env.TX_QUERY_LIMIT,
     maxFutureTxs: env.MAX_FUTURE_TXS,
+    maxAggregationSize: env.MAX_AGGREGATION_SIZE,
+    maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
   };
 
+  batchTimer: BatchTimer;
+
   constructor(
+    public clock: IClock,
     public queryClient: QueryClient,
     public txTablesMutex: Mutex,
     public readyTxTable: TxTable,
     public futureTxTable: TxTable,
     public walletService: WalletService,
     public config = TxService.defaultConfig,
-  ) {}
+  ) {
+    this.batchTimer = new BatchTimer(
+      clock,
+      config.maxAggregationDelayMillis,
+      () => this.runBatch(),
+    );
+
+    this.checkReadyTxCount();
+  }
+
+  async checkReadyTxCount() {
+    const readyTxCount = await this.readyTxTable.count();
+
+    if (readyTxCount >= this.config.maxAggregationSize) {
+      this.batchTimer.trigger();
+    } else if (readyTxCount > 0) {
+      this.batchTimer.notifyTxWaiting();
+    }
+  }
 
   runQueryGroup<T>(body: () => Promise<T>): Promise<T> {
     return runQueryGroup(this.txTablesMutex, this.queryClient, body);
@@ -50,6 +75,7 @@ export default class TxService {
       if (highestReadyNonce === txData.nonce) {
         this.readyTxTable.add(txData);
         await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
+        this.checkReadyTxCount();
       } else {
         await this.ensureFutureTxSpace();
         this.futureTxTable.add(txData);
@@ -271,5 +297,11 @@ export default class TxService {
     return txs.reduce((left, right) =>
       this.isRewardBetter(left, right) ? left : right
     );
+  }
+
+  async runBatch() {
+    return await this.runQueryGroup(async () => {
+      // TODO
+    });
   }
 }
