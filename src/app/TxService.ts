@@ -301,6 +301,41 @@ export default class TxService {
 
   async runBatch() {
     return await this.runQueryGroup(async () => {
+      const priorityTxs = await this.readyTxTable.getHighestPriority(
+        this.config.txQueryLimit,
+      );
+
+      const rewardBalances = Object.fromEntries(
+        priorityTxs.map((tx) => [tx.pubKey, ethers.BigNumber.from(0)]),
+      );
+
+      await Promise.all(
+        Object.keys(rewardBalances).map(async (pubKey) => {
+          rewardBalances[pubKey] = await this.walletService
+            .getRewardBalanceOf(pubKey);
+        }),
+      );
+
+      const batchTxs: TransactionData[] = [];
+      const insufficientRewardTxs: TransactionData[] = [];
+
+      for (const tx of priorityTxs) {
+        rewardBalances[tx.pubKey] = rewardBalances[tx.pubKey]
+          .sub(tx.tokenRewardAmount);
+
+        if (rewardBalances[tx.pubKey].lt(0)) {
+          insufficientRewardTxs.push(tx);
+        } else {
+          batchTxs.push(tx);
+        }
+
+        if (batchTxs.length >= this.config.maxAggregationSize) {
+          break;
+        }
+      }
+
+      await this.walletService.sendTxs(batchTxs);
+      await this.removeReadyTxs(...batchTxs, ...insufficientRewardTxs);
     });
   }
 }
