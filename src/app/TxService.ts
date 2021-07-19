@@ -1,4 +1,5 @@
 import { ethers } from "../../deps/index.ts";
+import groupBy from "../helpers/groupBy.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import * as env from "./env.ts";
@@ -7,7 +8,7 @@ import WalletService from "./WalletService.ts";
 
 export default class TxService {
   static defaultConfig = {
-    futureBatchSize: env.FUTURE_BATCH_SIZE,
+    txQueryLimit: env.TX_QUERY_LIMIT,
     maxFutureTxs: env.MAX_FUTURE_TXS,
   };
 
@@ -25,31 +26,18 @@ export default class TxService {
       return failures;
     }
 
-    const lowestAcceptableNonce = await this.LowestAcceptableNonce(
+    const highestReadyNonce = await this.HighestReadyNonce(
       nextNonce,
       txData.pubKey,
     );
 
-    if (lowestAcceptableNonce.gt(txData.nonce)) {
-      console.warn(
-        "Not implemented: replace future transaction",
-      );
-
-      return [
-        {
-          type: "duplicate-nonce",
-          description: [
-            `nonce ${txData.nonce} is already queued for aggregation (the`,
-            `lowest acceptable nonce for this wallet is`,
-            `${lowestAcceptableNonce.toString()})`,
-          ].join(" "),
-        },
-      ];
+    if (txData.nonce < highestReadyNonce) {
+      return this.replaceReadyTx(highestReadyNonce, txData);
     }
 
-    if (lowestAcceptableNonce.eq(txData.nonce)) {
+    if (highestReadyNonce === txData.nonce) {
       await this.readyTxTable.add(txData);
-      await this.tryMoveFutureTxs(txData.pubKey, lowestAcceptableNonce.add(1));
+      await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
     } else {
       await this.ensureFutureTxSpace();
       await this.futureTxTable.add(txData);
@@ -59,64 +47,79 @@ export default class TxService {
   }
 
   /**
-   * Find the lowest acceptable nonce based on chain and the ready tx table.
-   *
-   * Here 'acceptable' means able to be accepted into the ready tx table. This
-   * means that it comes after the transactions on chain, but also that it comes
-   * after the transactions already in the ready tx table.
+   * Find the highest nonce that can be added to ready txs. This needs to be
+   * higher than both the latest nonce on chain and any tx nonces (for this key)
+   * that are locally ready.
    */
-  async LowestAcceptableNonce(
+  async HighestReadyNonce(
     nextChainNonce: ethers.BigNumber,
     pubKey: string,
-  ): Promise<ethers.BigNumber> {
+  ): Promise<number> {
     const nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
 
-    const lowestAcceptableNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
+    const highestReadyNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
       ? nextChainNonce
       : ethers.BigNumber.from(nextLocalNonce);
 
-    return lowestAcceptableNonce;
+    // This will cause problems above 2^53. Currently we already store nonces as
+    // 32 bit integers in the database anyway though. For now, numbers are more
+    // convenient.
+    //
+    // More information: https://github.com/jzaki/aggregator/issues/36.
+    return highestReadyNonce.toNumber();
   }
 
   /**
    * Move any future txs for the given public key that have become ready into
-   * ready txs.
+   * ready txs. These future txs can share nonces, so we also pick the txs with
+   * the best rewards here to ensure duplicate nonces don't reach ready txs.
    */
   async tryMoveFutureTxs(
     pubKey: string,
-    lowestAcceptableNonce: ethers.BigNumber,
+    highestReadyNonce: number,
   ) {
-    let futureTxs;
-    let foundGap = false;
+    let needNextBatch: boolean;
 
     do {
-      const futureTxsToRemove: TransactionData[] = [];
       const txsToAdd: TransactionData[] = [];
 
-      futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
+      const futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
         pubKey,
-        this.config.futureBatchSize,
+        this.config.txQueryLimit,
       );
 
-      for (const tx of futureTxs) {
-        if (lowestAcceptableNonce.gt(tx.nonce)) {
-          console.warn(`Nonce from past was in futureTxs`);
-          futureTxsToRemove.push(tx);
-        } else if (lowestAcceptableNonce.eq(tx.nonce)) {
-          futureTxsToRemove.push(tx);
+      const bestFutureTxs = groupBy(futureTxs, (tx) => tx.nonce)
+        .map((txGroup) => this.pickBestReward(txGroup.elements));
+
+      for (const tx of bestFutureTxs) {
+        if (tx.nonce < highestReadyNonce) {
+          await this.replaceReadyTx(highestReadyNonce, tx);
+        } else if (tx.nonce === highestReadyNonce) {
           const txWithoutId = { ...tx };
           delete txWithoutId.txId;
           txsToAdd.push(txWithoutId);
-          lowestAcceptableNonce = lowestAcceptableNonce.add(1);
+          highestReadyNonce++;
         } else {
-          foundGap = true;
           break;
         }
       }
 
+      const futureTxsToRemove = futureTxs.filter(
+        (tx) => tx.nonce < highestReadyNonce,
+      );
+
       await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
-    } while (futureTxs.length !== 0 && !foundGap);
+
+      // If we remove all future txs in this batch, we need to process the next
+      // one too.
+      //
+      // To put it another way, if there is a future tx that doesn't get
+      // removed, that signals that we've reached a nonce that can't be moved
+      // to ready txs, and any following batches will all be at least that
+      // nonce, and so cannot be moved to ready txs.
+      needNextBatch = futureTxsToRemove.length === this.config.txQueryLimit;
+    } while (needNextBatch);
   }
 
   /**
@@ -144,5 +147,118 @@ export default class TxService {
 
       this.futureTxTable.clearBeforeId(newFirstId);
     }
+  }
+
+  /**
+   * Replace a ready transaction with one of the same nonce.
+   *
+   * Note: This also means re-inserting any followup ready transactions of the
+   * same key so that they will be processed in the correct sequence.
+   */
+  async replaceReadyTx(
+    highestReadyNonce: number,
+    newTx: TransactionData,
+  ): Promise<AddTransactionFailure[]> {
+    const existingTx = await this.readyTxTable.find(
+      newTx.pubKey,
+      newTx.nonce,
+    );
+
+    if (existingTx === null) {
+      return [{
+        type: "duplicate-nonce",
+        description: [
+          `nonce ${newTx.nonce} was a replacement candidate but it appears to`,
+          "have been submitted during processing",
+        ].join(" "),
+      }];
+
+      // Possible enhancement: Track submitted txs and consider also submitting
+      // replacements. This would interfere with aggregate txs already in the
+      // mempool. Complicated.
+    }
+
+    if (!this.isRewardBetter(newTx, existingTx)) {
+      return [{
+        type: "insufficient-reward",
+        description: [
+          `${ethers.BigNumber.from(newTx.tokenRewardAmount)} is an`,
+          "insufficient reward because there is already a tx with this nonce",
+          "with a reward of",
+          ethers.BigNumber.from(existingTx.tokenRewardAmount),
+        ].join(" "),
+      }];
+    }
+
+    await Promise.all([
+      this.readyTxTable.remove(existingTx),
+      this.readyTxTable.add(newTx),
+    ]);
+
+    const latestReadyNonce = highestReadyNonce - 1;
+    const causedUnorderedReadyTxs = newTx.nonce < latestReadyNonce;
+
+    if (causedUnorderedReadyTxs) {
+      await this.reinsertUnorderedReadyTxs(newTx);
+    }
+
+    return [];
+  }
+
+  /**
+   * When a ready tx is replaced, the new tx causes any following nonces for
+   * that address to be incorrectly ordered. Here we reinsert those txs to fix
+   * that.
+   */
+  async reinsertUnorderedReadyTxs(newTx: TransactionData) {
+    const promises: Promise<unknown>[] = [];
+
+    let finished: boolean;
+    let followupTxs: TransactionData[];
+    let lastNonceReplaced = newTx.nonce;
+
+    do {
+      followupTxs = await this.readyTxTable.findAfter(
+        newTx.pubKey,
+        lastNonceReplaced,
+        this.config.txQueryLimit,
+      );
+
+      if (followupTxs.length === 0) {
+        break;
+      }
+
+      for (const tx of followupTxs) {
+        const newTx = { ...tx };
+        delete newTx.txId;
+
+        promises.push(
+          this.readyTxTable.remove(tx),
+          this.readyTxTable.add(newTx),
+        );
+      }
+
+      lastNonceReplaced = followupTxs[followupTxs.length - 1].nonce;
+
+      // If followupTxs is under the query limit, then we know there aren't any
+      // more followups to process. Otherwise, we need to get more txs from the
+      // database and keep going.
+      finished = followupTxs.length < this.config.txQueryLimit;
+    } while (!finished);
+
+    await Promise.all(promises);
+  }
+
+  isRewardBetter(left: TransactionData, right: TransactionData) {
+    const leftReward = ethers.BigNumber.from(left.tokenRewardAmount);
+    const rightReward = ethers.BigNumber.from(right.tokenRewardAmount);
+
+    return leftReward.gt(rightReward);
+  }
+
+  pickBestReward(txs: TransactionData[]) {
+    return txs.reduce((left, right) =>
+      this.isRewardBetter(left, right) ? left : right
+    );
   }
 }

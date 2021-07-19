@@ -4,5 +4,12 @@
   "deno.unstable": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno",
-  "debug.javascript.unmapMissingSources": true
+  "debug.javascript.unmapMissingSources": true,
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.hg/store/**": true,
+    "**/cov_profile/**": true
+  }
 }

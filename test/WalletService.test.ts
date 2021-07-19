@@ -61,23 +61,7 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 Fixture.test(
   "WalletService sends aggregate transaction with token rewards",
   async (fx) => {
-    const blsSigner = fx.createBlsSigner();
-    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
-
-    await fx.walletService.sendTx(
-      await fx.createTxData({
-        blsSigner,
-        contract: fx.walletService.rewardErc20,
-        method: "mint",
-        args: [blsWallet.address, "1000"],
-      }),
-    );
-
-    assertEquals(
-      (await fx.walletService.rewardErc20.balanceOf(blsWallet.address))
-        .toNumber(),
-      1000,
-    );
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
     const tx1 = await fx.createTxData({
       blsSigner,
@@ -101,7 +85,7 @@ Fixture.test(
 
     assertEquals(
       (await fx.walletService.erc20.balanceOf(blsWallet.address)).toNumber(),
-      8,
+      1008,
     );
 
     assertEquals(

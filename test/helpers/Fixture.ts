@@ -8,6 +8,7 @@ import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
 import dataPayload from "./dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
+import Range from "./Range.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -185,6 +186,44 @@ export default class Fixture {
       ready: await txService.readyTxTable.all(),
       future: await txService.futureTxTable.all(),
     };
+  }
+
+  /**
+   * Sets up wallets for testing. These wallets are also given 1000 test and
+   * reward tokens.
+   */
+  async setupWallets(count: number, ...extraSeeds: string[]) {
+    const wallets = [];
+
+    // Unfortunately attempting to parallelize these causes duplicate nonce
+    // issues. This might be mitigated by collecting `TransactionResponse`s in a
+    // serial way but then awaiting .wait() in parallel. That's a significant
+    // refactor though that I'm avoiding right now.
+    for (const i of Range(count)) {
+      const blsSigner = this.createBlsSigner(`${i}`, ...extraSeeds);
+      const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
+
+      await this.walletService.sendTxs([
+        await this.createTxData({
+          blsSigner,
+          contract: this.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "1000"],
+          nonceOffset: 0,
+        }),
+        await this.createTxData({
+          blsSigner,
+          contract: this.walletService.rewardErc20,
+          method: "mint",
+          args: [blsWallet.address, "1000"],
+          nonceOffset: 1,
+        }),
+      ]);
+
+      wallets.push({ blsSigner, blsWallet });
+    }
+
+    return wallets;
   }
 
   async cleanup() {
