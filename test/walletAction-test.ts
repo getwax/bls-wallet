@@ -171,6 +171,8 @@ describe('WalletActions', async function () {
   });
 
   it("should airdrop", async function() {
+    th = new TokenHelper(fx);
+
     let blsWalletAddresses = await fx.createBLSWallets();
     let testToken = await TokenHelper.deployTestToken();
 
