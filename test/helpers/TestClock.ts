@@ -7,7 +7,9 @@ type WaitEntry = {
 
 export default class TestClock implements IClock {
   // A trillion milliseconds after the unix epoch, which is mid-2001
-  #time = 1e12;
+  static startTime = 1e12;
+
+  #time = TestClock.startTime;
 
   waitQueue: WaitEntry[] = [];
 
