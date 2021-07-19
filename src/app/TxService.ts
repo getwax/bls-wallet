@@ -78,7 +78,7 @@ export default class TxService {
     pubKey: string,
     highestReadyNonce: number,
   ) {
-    let futureTxsToRemove: TransactionData[];
+    let needNextBatch;
 
     do {
       const txsToAdd: TransactionData[] = [];
@@ -104,15 +104,22 @@ export default class TxService {
         }
       }
 
-      futureTxsToRemove = futureTxs.filter(
+      const futureTxsToRemove = futureTxs.filter(
         (tx) => tx.nonce < highestReadyNonce,
       );
 
       await this.readyTxTable.add(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
 
-      // TODO: Improve readability of exit condition
-    } while (futureTxsToRemove.length === this.config.txQueryLimit);
+      // If we remove all future txs in this batch, we need to process the next
+      // one too.
+      //
+      // To put it another way, if there is a future tx that doesn't get
+      // removed, that signals that we've reached a nonce that can't be moved
+      // to ready txs, and any following batches will all be at least that
+      // nonce, and so cannot be moved to ready txs.
+      needNextBatch = futureTxsToRemove.length === this.config.txQueryLimit;
+    } while (needNextBatch);
   }
 
   /**
