@@ -190,19 +190,28 @@ export default class TxService {
       }];
     }
 
-    const promises: Promise<unknown>[] = [];
-
-    promises.push(
+    await Promise.all([
       this.readyTxTable.remove(existingTx),
       this.readyTxTable.add(newTx),
-    );
+    ]);
 
-    if (highestReadyNonce - 1 === newTx.nonce) {
-      await Promise.all(promises);
-      return [];
+    const latestReadyNonce = highestReadyNonce - 1;
+    const causedUnorderedReadyTxs = newTx.nonce < latestReadyNonce;
+
+    if (causedUnorderedReadyTxs) {
+      await this.reinsertUnorderedReadyTxs(newTx);
     }
 
-    // TODO: Separate function for followups
+    return [];
+  }
+
+  /**
+   * When a ready tx is replaced, the new tx causes any following nonces for
+   * that address to be incorrectly ordered. Here we reinsert those txs to fix
+   * that.
+   */
+  async reinsertUnorderedReadyTxs(newTx: TransactionData) {
+    const promises: Promise<unknown>[] = [];
 
     let followupTxs;
     let lastNonceReplaced = newTx.nonce;
@@ -236,7 +245,6 @@ export default class TxService {
     }
 
     await Promise.all(promises);
-    return [];
   }
 
   isRewardBetter(left: TransactionData, right: TransactionData) {
