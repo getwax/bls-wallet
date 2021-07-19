@@ -3,7 +3,7 @@ import { assertEquals } from "./deps.ts";
 import BatchTimer from "../src/app/BatchTimer.ts";
 import TestClock from "./helpers/TestClock.ts";
 
-Deno.test("BatchTimer triggers after configured delay", async () => {
+function Fixture() {
   const clock = new TestClock();
   const batchTimes: number[] = [];
 
@@ -14,6 +14,12 @@ Deno.test("BatchTimer triggers after configured delay", async () => {
       batchTimes.push(clock.now() - TestClock.startTime);
     },
   );
+
+  return { clock, timer, batchTimes };
+}
+
+Deno.test("BatchTimer triggers after configured delay", async () => {
+  const { clock, timer, batchTimes } = Fixture();
 
   timer.notifyTxWaiting();
   await clock.advance(1e12);
