@@ -1,3 +1,4 @@
+import TxService from "../src/app/TxService.ts";
 import { assertEquals, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
@@ -220,8 +221,8 @@ Fixture.test(
   "when future txs reach maxFutureTxs, the oldest ones are dropped",
   async (fx) => {
     const txService = await fx.createTxService({
+      ...TxService.defaultConfig,
       maxFutureTxs: 3,
-      txQueryLimit: 100,
     });
 
     const blsSigner = fx.createBlsSigner();
@@ -263,10 +264,10 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
     ].join(" "),
     async (fx) => {
       const txService = await fx.createTxService({
+        ...TxService.defaultConfig,
         // Small query limit forces multiple batches when processing the
         // future txs, checking that batching works correctly
         txQueryLimit: 2,
-        maxFutureTxs: 1000,
       });
 
       const blsSigner = fx.createBlsSigner("other");
@@ -335,10 +336,10 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
     ].join(" "),
     async (fx) => {
       const txService = await fx.createTxService({
+        ...TxService.defaultConfig,
         // Small query limit forces multiple batches when processing the
         // future txs, checking that batching works correctly
         txQueryLimit: 2,
-        maxFutureTxs: 1000,
       });
 
       const blsSigner = fx.createBlsSigner("other");

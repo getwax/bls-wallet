@@ -10,6 +10,7 @@ import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "./Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
+import TestClock from "./TestClock.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -85,6 +86,7 @@ export default class Fixture {
   }
 
   cleanupJobs: (() => void | Promise<void>)[] = [];
+  clock = new TestClock();
 
   private constructor(
     public testName: string,
@@ -180,6 +182,7 @@ export default class Fixture {
     });
 
     return new TxService(
+      this.clock,
       queryClient,
       txTablesMutex,
       txTable,
