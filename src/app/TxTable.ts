@@ -35,9 +35,11 @@ const txOptions: TableOptions = {
 
 export default class TxTable {
   txTable: QueryTable<TransactionData>;
+  safeName: string;
 
   private constructor(public queryClient: QueryClient, txTableName: string) {
     this.txTable = this.queryClient.table<TransactionData>(txTableName);
+    this.safeName = unsketchify(this.txTable.name);
   }
 
   static async create(
@@ -55,11 +57,11 @@ export default class TxTable {
   }
 
   async remove(...txs: TransactionData[]) {
-    for (const tx of txs) {
-      await this.txTable
+    await Promise.all(txs.map((tx) =>
+      this.txTable
         .where({ txId: assertExists(tx.txId) })
-        .delete();
-    }
+        .delete()
+    ));
   }
 
   async count(): Promise<bigint> {
@@ -109,7 +111,11 @@ export default class TxTable {
     return rows[0] ?? null;
   }
 
-  /** Find transactions for this public key after the provided nonce */
+  /**
+   * Find transactions for this public key after the provided nonce.
+   *
+   * Note: In nonce order.
+   */
   async findAfter(
     pubKey: string,
     nonce: number,
@@ -117,10 +123,11 @@ export default class TxTable {
   ): Promise<TransactionData[]> {
     return await this.queryClient.query(
       `
-        SELECT * from ${unsketchify(this.txTable.name)}
+        SELECT * from ${this.safeName}
         WHERE
           "pubKey" = $1 AND
           "nonce" > ${nonce}
+        ORDER BY "nonce" ASC
         LIMIT ${limit}
       `,
       [pubKey],
@@ -150,13 +157,13 @@ export default class TxTable {
 
   async clear() {
     return await this.queryClient.query(`
-      DELETE from ${unsketchify(this.txTable.name)}
+      DELETE from ${this.safeName}
     `);
   }
 
   async clearBeforeId(txId: number) {
     await this.queryClient.query(`
-      DELETE from ${unsketchify(this.txTable.name)}
+      DELETE from ${this.safeName}
       WHERE "txId" < ${txId}
     `);
   }

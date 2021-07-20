@@ -469,3 +469,47 @@ Fixture.test(
     });
   },
 );
+
+Fixture.test(
+  [
+    "concurrently request many contiguous txs in a jumbled order - all find",
+    "their way to ready and don't get stuck in future",
+  ].join(" "),
+  async (fx) => {
+    const txService = await fx.createTxService();
+
+    const blsSigner = fx.createBlsSigner();
+    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+    const randomOrder = [2, 1, 6, 3, 7, 0, 4, 9, 5, 8];
+
+    const txs = await Promise.all(
+      randomOrder.map((i) =>
+        fx.createTxData({
+          blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "1"],
+          nonceOffset: i,
+        })
+      ),
+    );
+
+    const allFailures = await Promise.all(txs.map((tx) => txService.add(tx)));
+    assertEquals(allFailures.flat(), []);
+
+    const { ready, future } = await fx.allTxs(txService);
+
+    assertEquals(future, []);
+
+    const readyWithStrippedIds = ready.map((tx) => {
+      const stripped = { ...tx };
+      delete stripped.txId;
+      return stripped;
+    });
+
+    const sortedTxs = txs.slice().sort((txA, txB) => txA.nonce - txB.nonce);
+
+    assertEquals(readyWithStrippedIds, sortedTxs);
+  },
+);

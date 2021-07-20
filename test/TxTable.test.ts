@@ -18,8 +18,12 @@ function test(name: string, fn: (txTable: TxTable) => Promise<void>) {
       try {
         await fn(txTable);
       } finally {
-        await txTable.drop();
-        await queryClient.disconnect();
+        try {
+          await txTable.drop();
+          await queryClient.disconnect();
+        } catch (error) {
+          console.error("cleanup error:", error);
+        }
       }
     },
   });
