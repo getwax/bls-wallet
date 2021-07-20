@@ -268,6 +268,9 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
         // Small query limit forces multiple batches when processing the
         // future txs, checking that batching works correctly
         txQueryLimit: 2,
+
+        // Prevent batching to focus on testing which table txs land in
+        maxAggregationSize: 100,
       });
 
       const blsSigner = fx.createBlsSigner("other");

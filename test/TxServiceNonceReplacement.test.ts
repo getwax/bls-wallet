@@ -159,6 +159,9 @@ function reinsertionTest(extraTxs: number) {
         // Small query limit forces multiple batches when processing the
         // reinsertion, checking that batching works correctly
         txQueryLimit: 2,
+
+        // Prevent batching to focus on testing which table txs land in
+        maxAggregationSize: 100,
       });
 
       const [w1, w2] = await fx.setupWallets(2);
