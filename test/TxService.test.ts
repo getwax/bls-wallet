@@ -480,7 +480,12 @@ Fixture.test(
     "their way to ready and don't get stuck in future",
   ].join(" "),
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createTxService({
+      ...TxService.defaultConfig,
+
+      // Prevent batching to focus on testing which table txs land in
+      maxAggregationSize: 100,
+    });
 
     const blsSigner = fx.createBlsSigner();
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
