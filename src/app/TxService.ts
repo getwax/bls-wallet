@@ -18,7 +18,7 @@ export default class TxService {
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
   };
 
-  batchTimer: BatchTimer;
+  batchTimer: BatchTimer<void>;
 
   constructor(
     public clock: IClock,

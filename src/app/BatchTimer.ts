@@ -1,12 +1,13 @@
 import { IClock } from "../helpers/Clock.ts";
 
-export default class BatchTimer {
+export default class BatchTimer<T> {
   clearTimer: (() => void) | null = null;
+  nextTriggerCompleteResolvers: ((promise: Promise<T>) => void)[] = [];
 
   constructor(
     public clock: IClock,
     public maxDelayMillis: number,
-    public onTrigger: () => void,
+    public onTrigger: () => Promise<T>,
   ) {}
 
   notifyTxWaiting() {
@@ -33,6 +34,19 @@ export default class BatchTimer {
       this.clearTimer();
     }
 
-    this.onTrigger();
+    const resolvers = this.nextTriggerCompleteResolvers;
+    this.nextTriggerCompleteResolvers = [];
+
+    const promise = this.onTrigger();
+
+    for (const resolve of resolvers) {
+      resolve(promise);
+    }
+  }
+
+  waitForNextCompletion() {
+    return new Promise<T>((resolve) =>
+      this.nextTriggerCompleteResolvers.push(resolve)
+    );
   }
 }
