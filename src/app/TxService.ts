@@ -286,6 +286,72 @@ export default class TxService {
     await Promise.all(promises);
   }
 
+  async removeReadyTxs(txs: TransactionData[]) {
+    this.readyTxTable.remove(...txs);
+
+    await Promise.all(
+      TxService.PublicKeys(txs).map((pk) =>
+        this.demoteNoLongerReadyTxs(
+          pk,
+          txs.find((tx) => tx.pubKey === pk)!,
+        )
+      ),
+    );
+  }
+
+  async demoteNoLongerReadyTxs(
+    /** Public key this operation applies to */
+    pubKey: string,
+    /**
+     * Example transaction with this public key, facilitating a call to
+     * this.walletService.checkTx
+     *
+     * Enhancement: Remove the need for this by providing a way to check the
+     * next chain nonce of a public key without checking a transaction.
+     */
+    exampleTx: TransactionData,
+  ) {
+    const promises: Promise<unknown>[] = [];
+
+    const { nextNonce: nextChainNonce } = await this.walletService
+      .checkTx(exampleTx);
+
+    const highestReadyNonce = await this.HighestReadyNonce(
+      nextChainNonce,
+      pubKey,
+    );
+
+    let finished: boolean;
+    let txs: TransactionData[];
+    let removeAfterNonce = highestReadyNonce;
+
+    do {
+      txs = await this.readyTxTable.findAfter(
+        pubKey,
+        removeAfterNonce,
+        this.config.txQueryLimit,
+      );
+
+      if (txs.length === 0) {
+        break;
+      }
+
+      promises.push(
+        this.readyTxTable.remove(...txs),
+        this.futureTxTable.add(...txs),
+      );
+
+      removeAfterNonce = txs[txs.length - 1].nonce;
+
+      // If txs is under the query limit, then we know there aren't any more txs
+      // to process. Otherwise, we need to get more txs from the database and
+      // keep going.
+      finished = txs.length < this.config.txQueryLimit;
+    } while (!finished);
+
+    await Promise.all(promises);
+  }
+
   isRewardBetter(left: TransactionData, right: TransactionData) {
     const leftReward = ethers.BigNumber.from(left.tokenRewardAmount);
     const rightReward = ethers.BigNumber.from(right.tokenRewardAmount);
@@ -305,14 +371,15 @@ export default class TxService {
         this.config.txQueryLimit,
       );
 
+      const pubKeys = TxService.PublicKeys(priorityTxs);
+
       const rewardBalances = Object.fromEntries(
-        priorityTxs.map((tx) => [tx.pubKey, ethers.BigNumber.from(0)]),
+        pubKeys.map((pk) => [pk, ethers.BigNumber.from(0)]),
       );
 
       await Promise.all(
-        Object.keys(rewardBalances).map(async (pubKey) => {
-          rewardBalances[pubKey] = await this.walletService
-            .getRewardBalanceOf(pubKey);
+        pubKeys.map(async (pk) => {
+          rewardBalances[pk] = await this.walletService.getRewardBalanceOf(pk);
         }),
       );
 
@@ -335,7 +402,13 @@ export default class TxService {
       }
 
       await this.walletService.sendTxs(batchTxs);
-      await this.removeReadyTxs(...batchTxs, ...insufficientRewardTxs);
+      await this.removeReadyTxs([...batchTxs, ...insufficientRewardTxs]);
+
+      this.checkReadyTxCount();
     });
+  }
+
+  static PublicKeys(txs: TransactionData[]) {
+    return Object.keys(Object.fromEntries(txs.map((tx) => [tx.pubKey])));
   }
 }
