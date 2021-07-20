@@ -124,8 +124,12 @@ export default class WalletService {
     return await txResponse.wait();
   }
 
-  async getRewardBalanceOf(pubKey: string): Promise<BigNumber> {
-    return await this.rewardErc20.balanceOf(pubKey);
+  async getBalanceOf(address: string): Promise<BigNumber> {
+    return await this.erc20.balanceOf(address);
+  }
+
+  async getRewardBalanceOf(address: string): Promise<BigNumber> {
+    return await this.rewardErc20.balanceOf(address);
   }
 
   async getAggregatorBalance(): Promise<BigNumber> {

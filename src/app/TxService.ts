@@ -379,7 +379,12 @@ export default class TxService {
 
       await Promise.all(
         pubKeys.map(async (pk) => {
-          rewardBalances[pk] = await this.walletService.getRewardBalanceOf(pk);
+          const address = pk; // TODO: This is wrong, fix it
+          throw new Error("fixme");
+
+          rewardBalances[pk] = await this.walletService.getRewardBalanceOf(
+            address,
+          );
         }),
       );
 
