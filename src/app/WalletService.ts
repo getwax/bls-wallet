@@ -138,6 +138,18 @@ export default class WalletService {
     );
   }
 
+  async WalletAddress(pubKey: string): Promise<string | null> {
+    const address: string = await this.verificationGateway.walletFromHash(
+      ethers.utils.keccak256(pubKey),
+    );
+
+    if (address === ethers.constants.AddressZero) {
+      return null;
+    }
+
+    return address;
+  }
+
   private static getAggregatorSigner(privateKey: string) {
     const provider = new ethers.providers.JsonRpcProvider();
     const aggregatorSigner = new Wallet(privateKey, provider);

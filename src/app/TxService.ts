@@ -379,8 +379,12 @@ export default class TxService {
 
       await Promise.all(
         pubKeys.map(async (pk) => {
-          const address = pk; // TODO: This is wrong, fix it
-          throw new Error("fixme");
+          const address = await this.walletService.WalletAddress(pk);
+
+          if (address === null) {
+            console.warn(`Unable to map public key ${pk} to address`);
+            return;
+          }
 
           rewardBalances[pk] = await this.walletService.getRewardBalanceOf(
             address,

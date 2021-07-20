@@ -12,6 +12,7 @@ function Fixture() {
     5000,
     () => {
       batchTimes.push(clock.now() - TestClock.startTime);
+      return Promise.resolve();
     },
   );
 
