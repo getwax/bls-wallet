@@ -12,7 +12,7 @@ const txServiceConfig = {
   maxAggregationDelayMillis: 5000,
 };
 
-Fixture.test("submit a single transaction in a timed batch", async (fx) => {
+Fixture.test("submits a single transaction in a timed batch", async (fx) => {
   const txService = await fx.createTxService(txServiceConfig);
   const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
@@ -50,7 +50,7 @@ Fixture.test("submit a single transaction in a timed batch", async (fx) => {
   });
 });
 
-Fixture.test("submit a full batch without delay", async (fx) => {
+Fixture.test("submits a full batch without delay", async (fx) => {
   const txService = await fx.createTxService();
   const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
@@ -85,7 +85,7 @@ Fixture.test(
   [
     "submits batch from over-full readyTxs without delay and submits leftover",
     "txs after delay",
-  ].join(""),
+  ].join(" "),
   async (fx) => {
     const txService = await fx.createTxService();
     const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
@@ -134,6 +134,49 @@ Fixture.test(
       await fx.walletService.getBalanceOf(blsWallet.address),
       ethers.BigNumber.from(1007), // 1000 (initial) + 7 * 1 (mint txs)
     );
+  },
+);
+
+Fixture.test(
+  "submits 3 batches added concurrently in a jumbled order",
+  async (fx) => {
+    const txService = await fx.createTxService();
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
+
+    const batchesCompletePromise = (async () => {
+      await txService.batchTimer.waitForNextCompletion();
+      await txService.batchTimer.waitForNextCompletion();
+      await txService.batchTimer.waitForNextCompletion();
+    })();
+
+    const txs = await Promise.all(
+      fx.rng.shuffle(Range(15)).map((i) =>
+        fx.createTxData({
+          blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "1"],
+          nonceOffset: i,
+        })
+      ),
+    );
+
+    const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
+    assertEquals(failures.flat(), []);
+
+    await batchesCompletePromise;
+
+    // Check mints have occurred
+    assertEquals(
+      await fx.walletService.getBalanceOf(blsWallet.address),
+      ethers.BigNumber.from(1015), // 1000 (initial) + 15 * 1 (mint txs)
+    );
+
+    // Nothing left over
+    assertEquals(await fx.allTxs(txService), {
+      ready: [],
+      future: [],
+    });
   },
 );
 
