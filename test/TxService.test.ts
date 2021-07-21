@@ -509,14 +509,11 @@ Fixture.test(
 
     assertEquals(future, []);
 
-    const readyWithStrippedIds = ready.map((tx) => {
-      const stripped = { ...tx };
-      delete stripped.txId;
-      return stripped;
-    });
-
     const sortedTxs = txs.slice().sort((txA, txB) => txA.nonce - txB.nonce);
 
-    assertEquals(readyWithStrippedIds, sortedTxs);
+    assertEquals(
+      ready.map(TxService.removeTxId),
+      sortedTxs,
+    );
   },
 );
