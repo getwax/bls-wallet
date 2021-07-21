@@ -30,6 +30,35 @@ Fixture.test("WalletService sends single transaction", async (fx) => {
   assertEquals(balance.toNumber(), 7);
 });
 
+Fixture.test(
+  "WalletService sends single transaction with token reward",
+  async (fx) => {
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
+
+    const tx = await fx.createTxData({
+      blsSigner,
+      contract: fx.walletService.erc20,
+      method: "mint",
+      args: [blsWallet.address, "3"],
+      tokenRewardAmount: ethers.BigNumber.from(8),
+      nonceOffset: 0,
+    });
+
+    await fx.walletService.sendTx(tx);
+
+    assertEquals(
+      (await fx.walletService.erc20.balanceOf(blsWallet.address)).toNumber(),
+      1003,
+    );
+
+    assertEquals(
+      (await fx.walletService.rewardErc20.balanceOf(blsWallet.address))
+        .toNumber(),
+      1000 - 8,
+    );
+  },
+);
+
 Fixture.test("WalletService sends aggregate transaction", async (fx) => {
   const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
