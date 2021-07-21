@@ -29,10 +29,12 @@ export default class BatchTimer<T> {
     }
   }
 
+  clear() {
+    this.clearTimer?.();
+  }
+
   trigger() {
-    if (this.clearTimer) {
-      this.clearTimer();
-    }
+    this.clear();
 
     const resolvers = this.nextTriggerCompleteResolvers;
     this.nextTriggerCompleteResolvers = [];
