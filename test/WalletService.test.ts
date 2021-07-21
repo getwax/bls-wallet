@@ -1,6 +1,7 @@
 import { assert, assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
+import Range from "./helpers/Range.ts";
 
 Fixture.test("WalletService gets aggregator balance", async (fx) => {
   assert(
@@ -65,29 +66,25 @@ Fixture.test(
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
     for (let i = 1; i <= 2; i++) {
-      const tx1 = await fx.createTxData({
-        blsSigner,
-        contract: fx.walletService.erc20,
-        method: "mint",
-        args: [blsWallet.address, "3"],
-        nonceOffset: 0,
-      });
+      const txs = await Promise.all(
+        Range(5).map((i) =>
+          fx.createTxData({
+            blsSigner,
+            contract: fx.walletService.erc20,
+            method: "mint",
+            args: [blsWallet.address, "1"],
+            nonceOffset: i,
+          })
+        ),
+      );
 
-      const tx2 = await fx.createTxData({
-        blsSigner,
-        contract: fx.walletService.erc20,
-        method: "mint",
-        args: [blsWallet.address, "5"],
-        nonceOffset: 1,
-      });
-
-      await fx.walletService.sendTxs([tx1, tx2]);
+      await fx.walletService.sendTxs(txs);
 
       const balance: BigNumber = await fx.walletService.erc20.balanceOf(
         blsWallet.address,
       );
 
-      assertEquals(balance.toNumber(), i * 8);
+      assertEquals(balance.toNumber(), i * 5);
     }
   },
 );
