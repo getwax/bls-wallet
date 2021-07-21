@@ -396,15 +396,21 @@ export default class TxService {
 
       const batchTxs: TransactionData[] = [];
       const insufficientRewardTxs: TransactionData[] = [];
+      const gappedPubKeys: string[] = [];
 
       for (const tx of priorityTxs) {
-        rewardBalances[tx.pubKey] = rewardBalances[tx.pubKey]
-          .sub(tx.tokenRewardAmount);
+        if (gappedPubKeys.includes(tx.pubKey)) {
+          continue;
+        }
 
-        if (rewardBalances[tx.pubKey].lt(0)) {
-          insufficientRewardTxs.push(tx);
-        } else {
+        if (rewardBalances[tx.pubKey].gte(tx.tokenRewardAmount)) {
           batchTxs.push(tx);
+
+          rewardBalances[tx.pubKey] = rewardBalances[tx.pubKey]
+            .sub(tx.tokenRewardAmount);
+        } else {
+          insufficientRewardTxs.push(tx);
+          gappedPubKeys.push(tx.pubKey);
         }
 
         if (batchTxs.length >= this.config.maxAggregationSize) {
