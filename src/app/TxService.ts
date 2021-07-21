@@ -45,6 +45,8 @@ export default class TxService {
       this.batchTimer.trigger();
     } else if (readyTxCount > 0) {
       this.batchTimer.notifyTxWaiting();
+    } else {
+      this.batchTimer.clear();
     }
   }
 
