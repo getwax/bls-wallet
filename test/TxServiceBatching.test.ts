@@ -138,6 +138,3 @@ Fixture.test(
 );
 
 // TODO: More tests
-
-// TODO: Retest "concurrently" with batching
-//       (derive concrete failure case from it)
