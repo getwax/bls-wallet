@@ -5,9 +5,13 @@ import words from "./words.ts";
 
 const { keccak256 } = ethers.utils;
 
+function byteToHex(byte: number): string {
+  return byte.toString(16).padStart(2, "0");
+}
+
 function hash(data: string) {
   const byteValues = Array.from(new TextEncoder().encode(data));
-  const hex = `0x${byteValues.map((byte) => byte.toString(16)).join("")}`;
+  const hex = `0x${byteValues.map(byteToHex).join("")}`;
 
   return keccak256(hex);
 }
