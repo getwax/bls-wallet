@@ -70,7 +70,7 @@ export default class Fixture {
   }
 
   static async create(testName: string): Promise<Fixture> {
-    const rng = Rng.root.child(testName);
+    const rng = Rng.root.seed(testName);
 
     const walletService = new WalletService(rng.address("aggregatorSigner"));
 
