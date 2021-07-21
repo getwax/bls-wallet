@@ -72,7 +72,9 @@ export default class Fixture {
   static async create(testName: string): Promise<Fixture> {
     const rng = Rng.root.seed(testName);
 
-    const walletService = new WalletService(rng.address("aggregatorSigner"));
+    const walletService = new WalletService(
+      rng.seed("aggregatorSigner").address(),
+    );
 
     const chainId =
       (await walletService.aggregatorSigner.provider.getNetwork()).chainId;
@@ -98,7 +100,7 @@ export default class Fixture {
   createBlsSigner(...extraSeeds: string[]) {
     return blsSignerFactory.getSigner(
       DOMAIN,
-      this.rng.address("blsSigner", ...extraSeeds),
+      this.rng.seed("blsSigner", ...extraSeeds).address(),
     );
   }
 
@@ -165,7 +167,7 @@ export default class Fixture {
   }
 
   async createTxService(config = TxService.defaultConfig) {
-    const suffix = this.rng.address("table-name-suffix").slice(2, 12);
+    const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
     const queryClient = createQueryClient();
 
     const txTablesMutex = new Mutex();
