@@ -412,7 +412,10 @@ export default class TxService {
         }
       }
 
-      await this.walletService.sendTxs(batchTxs);
+      if (batchTxs.length > 0) {
+        await this.walletService.sendTxs(batchTxs);
+      }
+
       await this.removeReadyTxs([...batchTxs, ...insufficientRewardTxs]);
 
       this.checkReadyTxCount();
