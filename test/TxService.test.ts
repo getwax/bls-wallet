@@ -490,10 +490,8 @@ Fixture.test(
     const blsSigner = fx.createBlsSigner();
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
-    const randomOrder = [2, 1, 6, 3, 7, 0, 4, 9, 5, 8];
-
     const txs = await Promise.all(
-      randomOrder.map((i) =>
+      fx.rng.shuffle(Range(10)).map((i) =>
         fx.createTxData({
           blsSigner,
           contract: fx.walletService.erc20,
