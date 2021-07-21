@@ -89,6 +89,10 @@ export default class WalletService {
   }
 
   async sendTxs(txs: TransactionData[]) {
+    if (txs.length === 0) {
+      throw new Error("Cannot process empty batch");
+    }
+
     const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
     const aggSignature = hubbleBls.signer.aggregate(txSignatures);
 
