@@ -81,6 +81,62 @@ Fixture.test("submit a full batch without delay", async (fx) => {
   );
 });
 
+Fixture.test(
+  [
+    "submits batch from over-full readyTxs without delay and submits leftover",
+    "txs after delay",
+  ].join(""),
+  async (fx) => {
+    const txService = await fx.createTxService();
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
+
+    const firstBatchPromise = txService.batchTimer.waitForNextCompletion();
+
+    const txs = await Promise.all(
+      Range(7).map((i) =>
+        fx.createTxData({
+          blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "1"],
+          nonceOffset: i,
+        })
+      ),
+    );
+
+    const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
+    assertEquals(failures.flat(), []);
+
+    await firstBatchPromise;
+
+    // Check mints have occurred, ensuring a batch has occurred even though the
+    // clock has not advanced
+    assertEquals(
+      await fx.walletService.getBalanceOf(blsWallet.address),
+      ethers.BigNumber.from(1005), // 1000 (initial) + 5 * 1 (mint txs)
+    );
+
+    // Leftover txs
+    assertEquals(await fx.allTxs(txService), {
+      ready: [
+        { ...txs[5], txId: 6 },
+        { ...txs[6], txId: 7 },
+      ],
+      future: [],
+    });
+
+    const secondBatchPromise = txService.batchTimer.waitForNextCompletion();
+
+    await fx.clock.advance(5000);
+    await secondBatchPromise;
+
+    assertEquals(
+      await fx.walletService.getBalanceOf(blsWallet.address),
+      ethers.BigNumber.from(1007), // 1000 (initial) + 7 * 1 (mint txs)
+    );
+  },
+);
+
 // TODO: More tests
 
 // TODO: Retest "concurrently" with batching
