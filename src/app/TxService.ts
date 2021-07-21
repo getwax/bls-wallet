@@ -310,17 +310,22 @@ export default class TxService {
   ) {
     const promises: Promise<unknown>[] = [];
 
-    const { nextNonce: nextChainNonce } = await this.walletService
-      .checkTx(exampleTx);
+    let nextNonce = (await this.walletService.checkTx(exampleTx))
+      .nextNonce.toNumber();
 
     let finished: boolean;
     let txs: TransactionData[];
-    let removeAfterNonce = nextChainNonce.toNumber();
+
+    // Start by finding after one less than the next nonce, so that the first
+    // result returned is the next nonce if it is available. This allows us to
+    // increment nextNonce and allow readyTxs that are not gapped to stay in
+    // ready.
+    let findAfterNonce = nextNonce - 1;
 
     do {
       txs = await this.readyTxTable.findAfter(
         pubKey,
-        removeAfterNonce,
+        findAfterNonce,
         this.config.txQueryLimit,
       );
 
@@ -328,12 +333,18 @@ export default class TxService {
         break;
       }
 
-      promises.push(
-        this.readyTxTable.remove(...txs),
-        this.futureTxTable.add(...txs.map(TxService.removeTxId)),
-      );
+      for (const tx of txs) {
+        if (tx.nonce === nextNonce) {
+          nextNonce++;
+        } else {
+          promises.push(
+            this.readyTxTable.remove(tx),
+            this.futureTxTable.add(TxService.removeTxId(tx)),
+          );
+        }
+      }
 
-      removeAfterNonce = txs[txs.length - 1].nonce;
+      findAfterNonce = txs[txs.length - 1].nonce;
 
       // If txs is under the query limit, then we know there aren't any more txs
       // to process. Otherwise, we need to get more txs from the database and
