@@ -54,8 +54,6 @@ Fixture.test("submits a full batch without delay", async (fx) => {
   const txService = await fx.createTxService();
   const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
-  const firstBatchPromise = txService.batchTimer.waitForCompletedBatches(1);
-
   const txs = await Promise.all(
     Range(5).map((i) =>
       fx.createTxData({
@@ -71,7 +69,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
   const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
   assertEquals(failures.flat(), []);
 
-  await firstBatchPromise;
+  await txService.batchTimer.waitForCompletedBatches(1);
 
   // Check mints have occurred, ensuring a batch has occurred even though the
   // clock has not advanced
@@ -170,4 +168,57 @@ Fixture.test(
   },
 );
 
-// TODO: More tests
+Fixture.test(
+  [
+    "tx with insufficient reward gets removed and following tx is moved into",
+    "future",
+  ].join(" "),
+  async (fx) => {
+    const txService = await fx.createTxService();
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
+
+    const txs = await Promise.all(
+      Range(3).map((i) =>
+        fx.createTxData({
+          blsSigner,
+          contract: fx.walletService.erc20,
+          method: "mint",
+          args: [blsWallet.address, "1"],
+          tokenRewardAmount: ethers.BigNumber.from(
+            [
+              800, // First tx will work because 800 <= 1000
+              800, // Second tx will be dropped because 1600 > 1000
+              100, // Third tx will be moved to future because 900 <= 1000 but it
+              // has become nonce gapped
+            ][i],
+          ),
+          nonceOffset: i,
+        })
+      ),
+    );
+
+    const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
+    assertEquals(failures.flat(), []);
+
+    await fx.clock.advance(txService.batchTimer.maxDelayMillis);
+    await txService.batchTimer.waitForCompletedBatches(1);
+
+    assertEquals(
+      await fx.walletService.getBalanceOf(blsWallet.address),
+      ethers.BigNumber.from(1001), // only one tx worked
+    );
+
+    assertEquals(await fx.allTxs(txService), {
+      ready: [
+        // txs[0] was submitted and dropped
+        // txs[1] would be ready, but it was dropped for having insufficient
+        // reward
+      ],
+      future: [
+        // txs[2] is moved to future because it became nonce gapped from txs[1]
+        // getting dropped
+        { ...txs[2], txId: 1 },
+      ],
+    });
+  },
+);
