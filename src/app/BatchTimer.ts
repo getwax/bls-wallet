@@ -1,13 +1,19 @@
 import { IClock } from "../helpers/Clock.ts";
 
-export default class BatchTimer<T> {
+type CompletedBatchListener = {
+  resolve: () => void;
+  completedBatchCount: number;
+};
+
+export default class BatchTimer {
   clearTimer: (() => void) | null = null;
-  nextTriggerCompleteResolvers: ((promise: Promise<T>) => void)[] = [];
+  completedBatchListeners: CompletedBatchListener[] = [];
+  completedBatchCount = 0;
 
   constructor(
     public clock: IClock,
     public maxDelayMillis: number,
-    public onTrigger: () => Promise<T>,
+    public runBatch: () => Promise<unknown>,
   ) {}
 
   notifyTxWaiting() {
@@ -33,22 +39,34 @@ export default class BatchTimer<T> {
     this.clearTimer?.();
   }
 
-  trigger() {
+  async trigger() {
     this.clear();
 
-    const resolvers = this.nextTriggerCompleteResolvers;
-    this.nextTriggerCompleteResolvers = [];
+    await this.runBatch();
+    this.completedBatchCount++;
 
-    const promise = this.onTrigger();
+    this.completedBatchListeners = this.completedBatchListeners.filter(
+      (listener) => {
+        if (listener.completedBatchCount <= this.completedBatchCount) {
+          listener.resolve();
+          return false;
+        }
 
-    for (const resolve of resolvers) {
-      resolve(promise);
-    }
+        return true;
+      },
+    );
   }
 
-  waitForNextCompletion() {
-    return new Promise<T>((resolve) =>
-      this.nextTriggerCompleteResolvers.push(resolve)
+  async waitForCompletedBatches(completedBatchCount: number) {
+    if (completedBatchCount <= this.completedBatchCount) {
+      return;
+    }
+
+    await new Promise<void>((resolve) =>
+      this.completedBatchListeners.push({
+        resolve,
+        completedBatchCount,
+      })
     );
   }
 }

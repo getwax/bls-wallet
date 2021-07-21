@@ -37,7 +37,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
   });
 
   fx.clock.advance(5000);
-  await txService.batchTimer.waitForNextCompletion();
+  await txService.batchTimer.waitForCompletedBatches(1);
 
   assertEquals(
     await fx.walletService.getBalanceOf(blsWallet.address),
@@ -54,7 +54,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
   const txService = await fx.createTxService();
   const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
-  const firstBatchPromise = txService.batchTimer.waitForNextCompletion();
+  const firstBatchPromise = txService.batchTimer.waitForCompletedBatches(1);
 
   const txs = await Promise.all(
     Range(5).map((i) =>
@@ -90,8 +90,6 @@ Fixture.test(
     const txService = await fx.createTxService();
     const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
-    const firstBatchPromise = txService.batchTimer.waitForNextCompletion();
-
     const txs = await Promise.all(
       Range(7).map((i) =>
         fx.createTxData({
@@ -107,7 +105,7 @@ Fixture.test(
     const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
     assertEquals(failures.flat(), []);
 
-    await firstBatchPromise;
+    await txService.batchTimer.waitForCompletedBatches(1);
 
     // Check mints have occurred, ensuring a batch has occurred even though the
     // clock has not advanced
@@ -125,10 +123,8 @@ Fixture.test(
       future: [],
     });
 
-    const secondBatchPromise = txService.batchTimer.waitForNextCompletion();
-
     await fx.clock.advance(5000);
-    await secondBatchPromise;
+    await txService.batchTimer.waitForCompletedBatches(2);
 
     assertEquals(
       await fx.walletService.getBalanceOf(blsWallet.address),
@@ -142,12 +138,6 @@ Fixture.test(
   async (fx) => {
     const txService = await fx.createTxService();
     const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
-
-    const batchesCompletePromise = (async () => {
-      await txService.batchTimer.waitForNextCompletion();
-      await txService.batchTimer.waitForNextCompletion();
-      await txService.batchTimer.waitForNextCompletion();
-    })();
 
     const txs = await Promise.all(
       fx.rng.shuffle(Range(15)).map((i) =>
@@ -164,7 +154,7 @@ Fixture.test(
     const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
     assertEquals(failures.flat(), []);
 
-    await batchesCompletePromise;
+    await txService.batchTimer.waitForCompletedBatches(3);
 
     // Check mints have occurred
     assertEquals(
