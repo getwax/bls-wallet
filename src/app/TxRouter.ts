@@ -16,6 +16,14 @@ export default function TxRouter(txService: TxService) {
   const router = new Router({ prefix: "/" });
 
   router.post("transaction", async (ctx) => {
+    const contentType = ctx.request.headers.get("content-type") ?? "";
+
+    if (!contentType.includes("application/json")) {
+      return fail(ctx, [
+        { type: "invalid-format", description: "non-json content type" },
+      ]);
+    }
+
     const body: unknown = await (await ctx.request.body()).value;
 
     const parsedBody = parseTransactionData(body);
