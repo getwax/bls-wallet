@@ -12,17 +12,17 @@ import {
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
-} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.4.0?dts";
 import {
   BigNumber,
   BigNumberish,
-} from "https://cdn.skypack.dev/@ethersproject/bignumber@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/bignumber@5.4.0?dts";
 import {
   Network,
   Networkish,
-} from "https://cdn.skypack.dev/@ethersproject/networks@5.2.0?dts";
-import { Deferrable } from "https://cdn.skypack.dev/@ethersproject/properties@5.2.0?dts";
-import { Transaction } from "https://cdn.skypack.dev/@ethersproject/transactions@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/networks@5.4.0?dts";
+import { Deferrable } from "https://cdn.skypack.dev/@ethersproject/properties@5.4.0?dts";
+import { Transaction } from "https://cdn.skypack.dev/@ethersproject/transactions@5.4.0?dts";
 import { Formatter } from "./formatter.d.ts";
 export declare class Event {
   readonly listener: Listener;
