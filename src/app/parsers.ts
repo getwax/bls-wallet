@@ -64,6 +64,41 @@ function parseString(value: unknown): ParseResult<string> {
   return { failures: ["not a string"] };
 }
 
+function parseFixedLengthHex(requiredByteLength: number): Parser<string> {
+  return (value) => {
+    const parsedString = parseString(value);
+
+    if ("failures" in parsedString) {
+      return parsedString;
+    }
+
+    const str = parsedString.success;
+
+    const prefix = `${requiredByteLength}-byte hex string`;
+    const failures: string[] = [];
+
+    if (str.slice(0, 2) !== "0x") {
+      failures.push("missing 0x prefix");
+    }
+
+    if (!/0x[a-f]*/i.test(str)) {
+      failures.push("contains non-hex characters");
+    }
+
+    const byteLength = (str.length - 2) / 2;
+
+    if (byteLength !== requiredByteLength) {
+      failures.push(`incorrect byte length: ${byteLength}`);
+    }
+
+    if (failures.length > 0) {
+      return { failures: failures.map((f) => `${prefix}: ${f}`) };
+    }
+
+    return { success: str };
+  };
+}
+
 function parseNumber(value: unknown): ParseResult<number> {
   if (typeof value === "number") {
     return { success: value };
@@ -78,7 +113,7 @@ export function parseTransactionData(
   console.log("parsing", txData);
 
   const result = combine(
-    field(txData, "pubKey", parseString),
+    field(txData, "pubKey", parseFixedLengthHex(128)),
     field(txData, "nonce", parseNumber),
     field(txData, "signature", parseString),
     field(txData, "tokenRewardAmount", parseString),
