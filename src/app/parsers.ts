@@ -119,11 +119,11 @@ export function parseTransactionData(
   const result = combine(
     field(txData, "pubKey", parseHex({ bytes: 128 })),
     field(txData, "nonce", parseNumber),
-    field(txData, "signature", parseString),
-    field(txData, "tokenRewardAmount", parseString),
-    field(txData, "contractAddress", parseString),
-    field(txData, "methodId", parseString),
-    field(txData, "encodedParams", parseString),
+    field(txData, "signature", parseHex({ bytes: 64 })),
+    field(txData, "tokenRewardAmount", parseHex({ bytes: 32 })),
+    field(txData, "contractAddress", parseHex({ bytes: 20 })),
+    field(txData, "methodId", parseHex({ bytes: 4 })),
+    field(txData, "encodedParams", parseHex()),
   );
 
   if ("failures" in result) {
