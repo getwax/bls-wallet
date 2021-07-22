@@ -1,8 +1,8 @@
 export * from "../deps/index.ts";
 
-export { assert } from "https://deno.land/std@0.97.0/testing/asserts.ts";
+export { assert } from "https://deno.land/std@0.102.0/testing/asserts.ts";
 
-import { assertEquals as assertLooseEquals } from "https://deno.land/std@0.97.0/testing/asserts.ts";
+import { assertEquals as assertLooseEquals } from "https://deno.land/std@0.102.0/testing/asserts.ts";
 export { assertLooseEquals };
 
 // Simply delegates to std assertEquals (exported as assertLooseEquals) but
