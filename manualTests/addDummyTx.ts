@@ -10,7 +10,7 @@ function dummyHex(length: number) {
   }`;
 }
 
-const failures = await client.addTransaction({
+const tx = {
   pubKey: dummyHex(128),
   nonce: 1,
   signature: dummyHex(64),
@@ -18,6 +18,10 @@ const failures = await client.addTransaction({
   contractAddress: dummyHex(20),
   methodId: dummyHex(4),
   encodedParams: dummyHex(7),
-});
+};
+
+console.log("sending", tx);
+
+const failures = await client.addTransaction(tx);
 
 console.log({ failures });

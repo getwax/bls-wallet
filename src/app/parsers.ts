@@ -84,7 +84,7 @@ function parseHex(opts: Partial<{ bytes: number }> = {}): Parser<string> {
       failures.push("missing 0x prefix");
     }
 
-    if (!/0x[a-f]*/i.test(str)) {
+    if (!/[a-f]*/i.test(str.slice(2))) {
       failures.push("contains non-hex characters");
     }
 
