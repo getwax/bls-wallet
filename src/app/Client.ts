@@ -18,6 +18,9 @@ export default class Client {
     const resp = await fetch(`${this.origin}/transaction`, {
       method: "POST",
       body: JSON.stringify(tx),
+      headers: {
+        "content-type": "application/json",
+      },
     });
 
     const text = await resp.text();
