@@ -64,7 +64,7 @@ function parseString(value: unknown): ParseResult<string> {
   return { failures: ["not a string"] };
 }
 
-function parseFixedLengthHex(requiredByteLength: number): Parser<string> {
+function parseHex(opts: Partial<{ bytes: number }> = {}): Parser<string> {
   return (value) => {
     const parsedString = parseString(value);
 
@@ -74,7 +74,10 @@ function parseFixedLengthHex(requiredByteLength: number): Parser<string> {
 
     const str = parsedString.success;
 
-    const prefix = `${requiredByteLength}-byte hex string`;
+    const prefix = "bytes" in opts
+      ? `${opts.bytes}-byte hex string`
+      : "hex string";
+
     const failures: string[] = [];
 
     if (str.slice(0, 2) !== "0x") {
@@ -87,7 +90,10 @@ function parseFixedLengthHex(requiredByteLength: number): Parser<string> {
 
     const byteLength = (str.length - 2) / 2;
 
-    if (byteLength !== requiredByteLength) {
+    if (
+      byteLength % 1 !== 0 ||
+      ("bytes" in opts && byteLength !== opts.bytes)
+    ) {
       failures.push(`incorrect byte length: ${byteLength}`);
     }
 
@@ -110,10 +116,8 @@ function parseNumber(value: unknown): ParseResult<number> {
 export function parseTransactionData(
   txData: unknown,
 ): ParseResult<TransactionData> {
-  console.log("parsing", txData);
-
   const result = combine(
-    field(txData, "pubKey", parseFixedLengthHex(128)),
+    field(txData, "pubKey", parseHex({ bytes: 128 })),
     field(txData, "nonce", parseNumber),
     field(txData, "signature", parseString),
     field(txData, "tokenRewardAmount", parseString),
