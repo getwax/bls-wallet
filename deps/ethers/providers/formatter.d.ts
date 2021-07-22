@@ -2,9 +2,9 @@ import {
   Block,
   TransactionReceipt,
   TransactionResponse,
-} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.2.0?dts";
-import { BigNumber } from "https://cdn.skypack.dev/@ethersproject/bignumber@5.2.0?dts";
-import { AccessList } from "https://cdn.skypack.dev/@ethersproject/transactions@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.4.0?dts";
+import { BigNumber } from "https://cdn.skypack.dev/@ethersproject/bignumber@5.4.0?dts";
+import { AccessList } from "https://cdn.skypack.dev/@ethersproject/transactions@5.4.0?dts";
 export declare type FormatFunc = (value: any) => any;
 export declare type FormatFuncs = {
   [key: string]: FormatFunc;

@@ -9,7 +9,7 @@ import {
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
-} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.4.0?dts";
 // import { getNetwork } from "/-/@ethersproject/networks@v5.2.0-e3HRcqzoBNcCkYb1KfIv/dist=es2020,mode=types/index.d.ts";
 // import { Network, Networkish } from "/-/@ethersproject/networks@v5.2.0-e3HRcqzoBNcCkYb1KfIv/dist=es2020,mode=types/index.d.ts";
 // import { BaseProvider, EnsProvider, EnsResolver, Resolver } from "./base-provider.d.ts";
