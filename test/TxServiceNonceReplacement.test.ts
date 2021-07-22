@@ -1,3 +1,4 @@
+import TxService from "../src/app/TxService.ts";
 import { assertEquals, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
@@ -154,10 +155,13 @@ function reinsertionTest(extraTxs: number) {
     ].join(" "),
     async (fx) => {
       const txService = await fx.createTxService({
+        ...TxService.defaultConfig,
         // Small query limit forces multiple batches when processing the
         // reinsertion, checking that batching works correctly
         txQueryLimit: 2,
-        maxFutureTxs: 1000,
+
+        // Prevent batching to focus on testing which table txs land in
+        maxAggregationSize: 100,
       });
 
       const [w1, w2] = await fx.setupWallets(2);

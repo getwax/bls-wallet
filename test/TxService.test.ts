@@ -1,3 +1,4 @@
+import TxService from "../src/app/TxService.ts";
 import { assertEquals, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
@@ -220,8 +221,8 @@ Fixture.test(
   "when future txs reach maxFutureTxs, the oldest ones are dropped",
   async (fx) => {
     const txService = await fx.createTxService({
+      ...TxService.defaultConfig,
       maxFutureTxs: 3,
-      txQueryLimit: 100,
     });
 
     const blsSigner = fx.createBlsSigner();
@@ -263,10 +264,13 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
     ].join(" "),
     async (fx) => {
       const txService = await fx.createTxService({
+        ...TxService.defaultConfig,
         // Small query limit forces multiple batches when processing the
         // future txs, checking that batching works correctly
         txQueryLimit: 2,
-        maxFutureTxs: 1000,
+
+        // Prevent batching to focus on testing which table txs land in
+        maxAggregationSize: 100,
       });
 
       const blsSigner = fx.createBlsSigner("other");
@@ -335,10 +339,10 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
     ].join(" "),
     async (fx) => {
       const txService = await fx.createTxService({
+        ...TxService.defaultConfig,
         // Small query limit forces multiple batches when processing the
         // future txs, checking that batching works correctly
         txQueryLimit: 2,
-        maxFutureTxs: 1000,
       });
 
       const blsSigner = fx.createBlsSigner("other");
@@ -476,15 +480,18 @@ Fixture.test(
     "their way to ready and don't get stuck in future",
   ].join(" "),
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createTxService({
+      ...TxService.defaultConfig,
+
+      // Prevent batching to focus on testing which table txs land in
+      maxAggregationSize: 100,
+    });
 
     const blsSigner = fx.createBlsSigner();
     const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
-    const randomOrder = [2, 1, 6, 3, 7, 0, 4, 9, 5, 8];
-
     const txs = await Promise.all(
-      randomOrder.map((i) =>
+      fx.rng.shuffle(Range(10)).map((i) =>
         fx.createTxData({
           blsSigner,
           contract: fx.walletService.erc20,
@@ -502,14 +509,11 @@ Fixture.test(
 
     assertEquals(future, []);
 
-    const readyWithStrippedIds = ready.map((tx) => {
-      const stripped = { ...tx };
-      delete stripped.txId;
-      return stripped;
-    });
-
     const sortedTxs = txs.slice().sort((txA, txB) => txA.nonce - txB.nonce);
 
-    assertEquals(readyWithStrippedIds, sortedTxs);
+    assertEquals(
+      ready.map(TxService.removeTxId),
+      sortedTxs,
+    );
   },
 );

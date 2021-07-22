@@ -1,8 +1,10 @@
 import { ethers, QueryClient } from "../../deps/index.ts";
+import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
+import BatchTimer from "./BatchTimer.ts";
 import * as env from "./env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
@@ -12,16 +14,41 @@ export default class TxService {
   static defaultConfig = {
     txQueryLimit: env.TX_QUERY_LIMIT,
     maxFutureTxs: env.MAX_FUTURE_TXS,
+    maxAggregationSize: env.MAX_AGGREGATION_SIZE,
+    maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
   };
 
+  batchTimer: BatchTimer;
+
   constructor(
+    public clock: IClock,
     public queryClient: QueryClient,
     public txTablesMutex: Mutex,
     public readyTxTable: TxTable,
     public futureTxTable: TxTable,
     public walletService: WalletService,
     public config = TxService.defaultConfig,
-  ) {}
+  ) {
+    this.batchTimer = new BatchTimer(
+      clock,
+      config.maxAggregationDelayMillis,
+      () => this.runBatch(),
+    );
+
+    this.checkReadyTxCount();
+  }
+
+  async checkReadyTxCount() {
+    const readyTxCount = await this.readyTxTable.count();
+
+    if (readyTxCount >= this.config.maxAggregationSize) {
+      this.batchTimer.trigger();
+    } else if (readyTxCount > 0) {
+      this.batchTimer.notifyTxWaiting();
+    } else {
+      this.batchTimer.clear();
+    }
+  }
 
   runQueryGroup<T>(body: () => Promise<T>): Promise<T> {
     return runQueryGroup(this.txTablesMutex, this.queryClient, body);
@@ -50,6 +77,7 @@ export default class TxService {
       if (highestReadyNonce === txData.nonce) {
         this.readyTxTable.add(txData);
         await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
+        this.checkReadyTxCount();
       } else {
         await this.ensureFutureTxSpace();
         this.futureTxTable.add(txData);
@@ -108,9 +136,7 @@ export default class TxService {
         if (tx.nonce < highestReadyNonce) {
           await this.replaceReadyTx(highestReadyNonce, tx);
         } else if (tx.nonce === highestReadyNonce) {
-          const txWithoutId = { ...tx };
-          delete txWithoutId.txId;
-          txsToAdd.push(txWithoutId);
+          txsToAdd.push(TxService.removeTxId(tx));
           highestReadyNonce++;
         } else {
           break;
@@ -144,9 +170,9 @@ export default class TxService {
     const size = await this.futureTxTable.count();
 
     if (size >= this.config.maxFutureTxs) {
-      const first = await this.futureTxTable.First();
+      const [first] = await this.futureTxTable.getHighestPriority(1);
 
-      if (first === null) {
+      if (first === undefined) {
         console.warn(
           "Future txs unexpectedly empty when it seemed to need pruning",
         );
@@ -242,11 +268,8 @@ export default class TxService {
       }
 
       for (const tx of followupTxs) {
-        const newTx = { ...tx };
-        delete newTx.txId;
-
         this.readyTxTable.remove(tx);
-        this.readyTxTable.add(newTx);
+        this.readyTxTable.add(TxService.removeTxId(tx));
       }
 
       lastNonceReplaced = followupTxs[followupTxs.length - 1].nonce;
@@ -255,6 +278,78 @@ export default class TxService {
       // more followups to process. Otherwise, we need to get more txs from the
       // database and keep going.
       finished = followupTxs.length < this.config.txQueryLimit;
+    } while (!finished);
+
+    await Promise.all(promises);
+  }
+
+  async removeReadyTxs(txs: TransactionData[]) {
+    this.readyTxTable.remove(...txs);
+
+    await Promise.all(
+      TxService.PublicKeys(txs).map((pk) =>
+        this.demoteNoLongerReadyTxs(
+          pk,
+          txs.find((tx) => tx.pubKey === pk)!,
+        )
+      ),
+    );
+  }
+
+  async demoteNoLongerReadyTxs(
+    /** Public key this operation applies to */
+    pubKey: string,
+    /**
+     * Example transaction with this public key, facilitating a call to
+     * this.walletService.checkTx
+     *
+     * Enhancement: Remove the need for this by providing a way to check the
+     * next chain nonce of a public key without checking a transaction.
+     */
+    exampleTx: TransactionData,
+  ) {
+    const promises: Promise<unknown>[] = [];
+
+    let nextNonce = (await this.walletService.checkTx(exampleTx))
+      .nextNonce.toNumber();
+
+    let finished: boolean;
+    let txs: TransactionData[];
+
+    // Start by finding after one less than the next nonce, so that the first
+    // result returned is the next nonce if it is available. This allows us to
+    // increment nextNonce and allow readyTxs that are not gapped to stay in
+    // ready.
+    let findAfterNonce = nextNonce - 1;
+
+    do {
+      txs = await this.readyTxTable.findAfter(
+        pubKey,
+        findAfterNonce,
+        this.config.txQueryLimit,
+      );
+
+      if (txs.length === 0) {
+        break;
+      }
+
+      for (const tx of txs) {
+        if (tx.nonce === nextNonce) {
+          nextNonce++;
+        } else {
+          promises.push(
+            this.readyTxTable.remove(tx),
+            this.futureTxTable.add(TxService.removeTxId(tx)),
+          );
+        }
+      }
+
+      findAfterNonce = txs[txs.length - 1].nonce;
+
+      // If txs is under the query limit, then we know there aren't any more txs
+      // to process. Otherwise, we need to get more txs from the database and
+      // keep going.
+      finished = txs.length < this.config.txQueryLimit;
     } while (!finished);
 
     await Promise.all(promises);
@@ -271,5 +366,76 @@ export default class TxService {
     return txs.reduce((left, right) =>
       this.isRewardBetter(left, right) ? left : right
     );
+  }
+
+  async runBatch() {
+    return await this.runQueryGroup(async () => {
+      const priorityTxs = await this.readyTxTable.getHighestPriority(
+        this.config.txQueryLimit,
+      );
+
+      const pubKeys = TxService.PublicKeys(priorityTxs);
+
+      const rewardBalances = Object.fromEntries(
+        pubKeys.map((pk) => [pk, ethers.BigNumber.from(0)]),
+      );
+
+      await Promise.all(
+        pubKeys.map(async (pk) => {
+          const address = await this.walletService.WalletAddress(pk);
+
+          if (address === null) {
+            console.warn(`Unable to map public key ${pk} to address`);
+            return;
+          }
+
+          rewardBalances[pk] = await this.walletService.getRewardBalanceOf(
+            address,
+          );
+        }),
+      );
+
+      const batchTxs: TransactionData[] = [];
+      const insufficientRewardTxs: TransactionData[] = [];
+      const gappedPubKeys: string[] = [];
+
+      for (const tx of priorityTxs) {
+        if (gappedPubKeys.includes(tx.pubKey)) {
+          continue;
+        }
+
+        if (rewardBalances[tx.pubKey].gte(tx.tokenRewardAmount)) {
+          batchTxs.push(tx);
+
+          rewardBalances[tx.pubKey] = rewardBalances[tx.pubKey]
+            .sub(tx.tokenRewardAmount);
+        } else {
+          insufficientRewardTxs.push(tx);
+          gappedPubKeys.push(tx.pubKey);
+        }
+
+        if (batchTxs.length >= this.config.maxAggregationSize) {
+          break;
+        }
+      }
+
+      if (batchTxs.length > 0) {
+        await this.walletService.sendTxs(batchTxs);
+      }
+
+      await this.removeReadyTxs([...batchTxs, ...insufficientRewardTxs]);
+
+      this.checkReadyTxCount();
+    });
+  }
+
+  static PublicKeys(txs: TransactionData[]) {
+    return Object.keys(Object.fromEntries(txs.map((tx) => [tx.pubKey])));
+  }
+
+  static removeTxId(tx: TransactionData) {
+    const newTx = { ...tx };
+    delete newTx.txId;
+    return newTx;
   }
 }

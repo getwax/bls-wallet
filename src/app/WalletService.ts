@@ -89,6 +89,10 @@ export default class WalletService {
   }
 
   async sendTxs(txs: TransactionData[]) {
+    if (txs.length === 0) {
+      throw new Error("Cannot process empty batch");
+    }
+
     const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
     const aggSignature = hubbleBls.signer.aggregate(txSignatures);
 
@@ -124,10 +128,30 @@ export default class WalletService {
     return await txResponse.wait();
   }
 
+  async getBalanceOf(address: string): Promise<BigNumber> {
+    return await this.erc20.balanceOf(address);
+  }
+
+  async getRewardBalanceOf(address: string): Promise<BigNumber> {
+    return await this.rewardErc20.balanceOf(address);
+  }
+
   async getAggregatorBalance(): Promise<BigNumber> {
     return await this.erc20.balanceOf(
       env.DEPLOYER_ADDRESS,
     );
+  }
+
+  async WalletAddress(pubKey: string): Promise<string | null> {
+    const address: string = await this.verificationGateway.walletFromHash(
+      ethers.utils.keccak256(pubKey),
+    );
+
+    if (address === ethers.constants.AddressZero) {
+      return null;
+    }
+
+    return address;
   }
 
   private static getAggregatorSigner(privateKey: string) {

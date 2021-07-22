@@ -1,6 +1,7 @@
 import { assert, assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
+import Range from "./helpers/Range.ts";
 
 Fixture.test("WalletService gets aggregator balance", async (fx) => {
   assert(
@@ -57,6 +58,36 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 
   assertEquals(balance.toNumber(), 8);
 });
+
+Fixture.test(
+  "WalletService sends multiple aggregate transactions",
+  async (fx) => {
+    const blsSigner = fx.createBlsSigner();
+    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+    for (let i = 1; i <= 2; i++) {
+      const txs = await Promise.all(
+        Range(5).map((i) =>
+          fx.createTxData({
+            blsSigner,
+            contract: fx.walletService.erc20,
+            method: "mint",
+            args: [blsWallet.address, "1"],
+            nonceOffset: i,
+          })
+        ),
+      );
+
+      await fx.walletService.sendTxs(txs);
+
+      const balance: BigNumber = await fx.walletService.erc20.balanceOf(
+        blsWallet.address,
+      );
+
+      assertEquals(balance.toNumber(), i * 5);
+    }
+  },
+);
 
 Fixture.test(
   "WalletService sends aggregate transaction with token rewards",

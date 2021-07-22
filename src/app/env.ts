@@ -40,4 +40,10 @@ export const TX_QUERY_LIMIT = requireIntEnv("TX_QUERY_LIMIT");
 
 export const MAX_FUTURE_TXS = requireIntEnv("MAX_FUTURE_TXS");
 
+export const MAX_AGGREGATION_SIZE = requireIntEnv("MAX_AGGREGATION_SIZE");
+
+export const MAX_AGGREGATION_DELAY_MILLIS = requireIntEnv(
+  "MAX_AGGREGATION_DELAY_MILLIS",
+);
+
 export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");

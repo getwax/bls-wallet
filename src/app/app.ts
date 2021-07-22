@@ -11,6 +11,9 @@ import notFoundHandler from "./notFoundHandler.ts";
 import TxTable from "./TxTable.ts";
 import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
+import Clock from "../helpers/Clock.ts";
+
+const clock = Clock.create();
 
 const queryClient = createQueryClient();
 
@@ -26,6 +29,7 @@ const futureTxTable = await TxTable.create(
 const walletService = new WalletService(env.PRIVATE_KEY_AGG);
 
 const txService = new TxService(
+  clock,
   queryClient,
   txTablesMutex,
   futureTxTable,
