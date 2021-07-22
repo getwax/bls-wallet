@@ -1,7 +1,7 @@
 import { assert, assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
-import Range from "./helpers/Range.ts";
+import Range from "../src/helpers/Range.ts";
 
 Fixture.test("WalletService gets aggregator balance", async (fx) => {
   assert(

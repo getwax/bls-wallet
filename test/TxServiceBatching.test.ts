@@ -1,7 +1,7 @@
 import TxService from "../src/app/TxService.ts";
 import { assertEquals, ethers } from "./deps.ts";
 import Fixture from "./helpers/Fixture.ts";
-import Range from "./helpers/Range.ts";
+import Range from "../src/helpers/Range.ts";
 
 const txServiceConfig = {
   ...TxService.defaultConfig,
