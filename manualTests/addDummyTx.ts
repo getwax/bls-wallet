@@ -6,7 +6,7 @@ const client = new Client(`http://localhost:${env.PORT}`);
 
 function dummyHex(length: number) {
   return `0x${
-    Range(length).map((i) => (i % 10).toString().padStart(2, "0")).join("")
+    Range(length).map((i) => (i % 100).toString().padStart(2, "0")).join("")
   }`;
 }
 
