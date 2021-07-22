@@ -173,11 +173,12 @@ contract VerificationGateway is Initializable
         require(callSuccess && checkResult, "VerificationGateway: sig not verified with nonce+data");
 
         if (tokenRewardAmount > 0) {
-            walletFromHash[publicKeyHash].payTokenAmount(
+            bool success = walletFromHash[publicKeyHash].payTokenAmount(
                 paymentToken,
                 msg.sender,
                 tokenRewardAmount
             );
+            require(success, "VerificationGateway: Could not pay nominated reward");
         }
 
         bool result = walletFromHash[publicKeyHash].action(
@@ -283,13 +284,14 @@ contract VerificationGateway is Initializable
             // publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
             wallet = walletFromHash[txs[i].publicKeyHash];
 
-            // if the wallet nonce for the tx matches the current wallet's nonce
+            // if the wallet nonce for the tx matches the current wallet's nonce,
             // action the transaction after payment. This won't be the case if 
-            // a previous tx in txs for the wallet has failed.
+            // a previous tx in txs for the wallet has failed to pay.
             if (txNonces[i] == wallet.nonce()) {
                 bool paymentPending = txs[i].tokenRewardAmount > 0;
                 if (paymentPending) {
-                    paymentPending = wallet.payTokenAmount(
+                    // on payment success, paymentPending is false
+                    paymentPending = !wallet.payTokenAmount(
                         paymentToken,
                         rewardAddress,
                         txs[i].tokenRewardAmount

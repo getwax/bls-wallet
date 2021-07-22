@@ -30,14 +30,14 @@ contract BLSWallet is Initializable
         address recipient,
         uint256 amount
     ) public onlyGateway returns (
-        bool result
+        bool success
     ) {
         bytes memory transferFn = abi.encodeWithSignature(
             "transfer(address,uint256)",
             recipient,
             amount
         );
-        (result, ) = address(token).call(transferFn);
+        (success, ) = address(token).call(transferFn);
     }
 
     /**
