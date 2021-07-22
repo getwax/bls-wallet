@@ -10,12 +10,11 @@ export default function TxRouter(txService: TxService) {
     const txData: TransactionData = await (await ctx.request.body()).value;
     const failures = await txService.add(txData);
 
-    if (failures.length === 0) {
-      ctx.response.body = "Transaction added";
-    } else {
+    if (failures.length > 0) {
       ctx.response.status = HTTPStatus.BadRequest;
-      ctx.response.body = { failures };
     }
+
+    ctx.response.body = { failures };
   });
 
   return router;
