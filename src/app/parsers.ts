@@ -41,7 +41,7 @@ function field<T>(
   name: string,
   parser: Parser<T>,
 ): ParseResult<T> {
-  if (obj === null || typeof obj !== "object") {
+  if (typeof obj !== "object" || obj === null || !(name in obj)) {
     return { failures: [`field ${name}: not provided`] };
   }
 
