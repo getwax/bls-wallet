@@ -39,7 +39,7 @@ export default class WalletService {
     );
 
     this.erc20 = new Contract(
-      env.TOKEN_ADDRESS,
+      env.TEST_TOKEN_ADDRESS,
       ovmContractABIs["MockERC20.json"].abi,
       this.aggregatorSigner,
     );
