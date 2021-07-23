@@ -1,4 +1,9 @@
-import { blsSignerFactory, ethers, hubbleBls } from "../../deps/index.ts";
+import {
+  blsSignerFactory,
+  Contract,
+  ethers,
+  hubbleBls,
+} from "../../deps/index.ts";
 
 import Rng from "./Rng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
@@ -11,6 +16,7 @@ import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "./Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
+import * as env from "../env.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -90,12 +96,20 @@ export default class Fixture {
   cleanupJobs: (() => void | Promise<void>)[] = [];
   clock = new TestClock();
 
+  testErc20: Contract;
+
   private constructor(
     public testName: string,
     public rng: Rng,
     public chainId: number,
     public walletService: WalletService,
-  ) {}
+  ) {
+    this.testErc20 = new Contract(
+      env.TEST_TOKEN_ADDRESS,
+      ovmContractABIs["MockERC20.json"].abi,
+      this.walletService.aggregatorSigner,
+    );
+  }
 
   createBlsSigner(...extraSeeds: string[]) {
     return blsSignerFactory.getSigner(
@@ -221,7 +235,7 @@ export default class Fixture {
       await this.walletService.sendTxs([
         await this.createTxData({
           blsSigner,
-          contract: this.walletService.erc20,
+          contract: this.testErc20,
           method: "mint",
           args: [blsWallet.address, "1000"],
           nonceOffset: 0,

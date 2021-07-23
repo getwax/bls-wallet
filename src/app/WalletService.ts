@@ -29,19 +29,12 @@ const pubKeyStringLength = 258;
 
 export default class WalletService {
   aggregatorSigner: Wallet;
-  erc20: Contract;
   rewardErc20: Contract;
   verificationGateway: Contract;
 
   constructor(public aggPrivateKey: string) {
     this.aggregatorSigner = WalletService.getAggregatorSigner(
       this.aggPrivateKey,
-    );
-
-    this.erc20 = new Contract(
-      env.TEST_TOKEN_ADDRESS,
-      ovmContractABIs["MockERC20.json"].abi,
-      this.aggregatorSigner,
     );
 
     this.rewardErc20 = new Contract(
@@ -132,20 +125,9 @@ export default class WalletService {
     return await txResponse.wait();
   }
 
-  async getBalanceOf(addressOrPubKey: string): Promise<BigNumber> {
-    const address = await this.WalletAddress(addressOrPubKey);
-    return await this.erc20.balanceOf(address);
-  }
-
   async getRewardBalanceOf(addressOrPubKey: string): Promise<BigNumber> {
     const address = await this.WalletAddress(addressOrPubKey);
     return await this.rewardErc20.balanceOf(address);
-  }
-
-  async getAggregatorBalance(): Promise<BigNumber> {
-    return await this.erc20.balanceOf(
-      env.DEPLOYER_ADDRESS,
-    );
   }
 
   async WalletAddress(addressOrPubKey: string): Promise<string> {

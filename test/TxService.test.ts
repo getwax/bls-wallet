@@ -12,7 +12,7 @@ Fixture.test("adds valid transaction", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "3"],
     nonceOffset: 0,
@@ -34,7 +34,7 @@ Fixture.test("rejects transaction with invalid signature", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "3"],
     nonceOffset: 0,
@@ -64,7 +64,7 @@ Fixture.test("rejects transaction with nonce from the past", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "3"],
     nonceOffset: -1,
@@ -93,7 +93,7 @@ Fixture.test(
 
     const tx = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
       nonceOffset: -1,
@@ -132,7 +132,7 @@ Fixture.test("adds tx with future nonce to futureTxs", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "3"],
     nonceOffset: 1,
@@ -164,7 +164,7 @@ Fixture.test(
     // Add tx in the future
     const txB = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
       nonceOffset: 1,
@@ -180,7 +180,7 @@ Fixture.test(
     // was added first.
     const otherTx = await fx.createTxData({
       blsSigner: otherBlsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [otherBlsWallet.address, "3"],
     });
@@ -196,7 +196,7 @@ Fixture.test(
     // Add txA, which makes txB ready
     const txA = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
     });
@@ -232,7 +232,7 @@ Fixture.test(
       Range(5).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.walletService.erc20,
+          contract: fx.testErc20,
           method: "mint",
           args: [blsWallet.address, "3"],
           nonceOffset: i + 1,
@@ -288,7 +288,7 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
       for (const i of Range(futureTxCount)) {
         const futureTx = await fx.createTxData({
           blsSigner,
-          contract: fx.walletService.erc20,
+          contract: fx.testErc20,
           method: "mint",
           args: [blsWallet.address, "3"],
           nonceOffset: futureTxCount - i,
@@ -308,7 +308,7 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
       // Add tx, which makes futureTxs ready
       const tx = await fx.createTxData({
         blsSigner,
-        contract: fx.walletService.erc20,
+        contract: fx.testErc20,
         method: "mint",
         args: [blsWallet.address, "3"],
       });
@@ -360,7 +360,7 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
       for (const i of Range(futureTxCount)) {
         const futureTx = await fx.createTxData({
           blsSigner,
-          contract: fx.walletService.erc20,
+          contract: fx.testErc20,
           method: "mint",
           args: [blsWallet.address, "3"],
           nonceOffset: 1,
@@ -381,7 +381,7 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
       // Add tx, which makes futureTxs ready
       const tx = await fx.createTxData({
         blsSigner,
-        contract: fx.walletService.erc20,
+        contract: fx.testErc20,
         method: "mint",
         args: [blsWallet.address, "3"],
       });
@@ -423,7 +423,7 @@ Fixture.test(
     // Add multiple txs in the future (and out of order)
     const tx4 = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
       nonceOffset: 3,
@@ -434,7 +434,7 @@ Fixture.test(
 
     const tx2 = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
       nonceOffset: 1,
@@ -454,7 +454,7 @@ Fixture.test(
     // Add tx1, which makes earlier txs ready
     const tx1 = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
     });
@@ -494,7 +494,7 @@ Fixture.test(
       fx.rng.shuffle(Range(10)).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.walletService.erc20,
+          contract: fx.testErc20,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,
