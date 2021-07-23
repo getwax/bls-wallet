@@ -18,7 +18,6 @@ export const VERIFICATION_GATEWAY_ADDRESS = requireEnv(
 
 export const BLS_EXPANDER_ADDRESS = requireEnv("BLS_EXPANDER_ADDRESS");
 
-export const TEST_TOKEN_ADDRESS = requireEnv("TEST_TOKEN_ADDRESS");
 export const REWARD_TOKEN_ADDRESS = requireEnv("REWARD_TOKEN_ADDRESS");
 
 export const PG = {
