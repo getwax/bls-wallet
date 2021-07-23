@@ -283,7 +283,7 @@ export default class TxService {
     await Promise.all(promises);
   }
 
-  async removeReadyTxs(txs: TransactionData[]) {
+  async removeFromReady(txs: TransactionData[]) {
     this.readyTxTable.remove(...txs);
 
     await Promise.all(
@@ -423,7 +423,7 @@ export default class TxService {
         await this.walletService.sendTxs(batchTxs);
       }
 
-      await this.removeReadyTxs([...batchTxs, ...insufficientRewardTxs]);
+      await this.removeFromReady([...batchTxs, ...insufficientRewardTxs]);
 
       this.checkReadyTxCount();
     });
