@@ -377,13 +377,10 @@ export default class TxService {
       const pubKeys = TxService.PublicKeys(priorityTxs);
 
       const rewardBalances = Object.fromEntries(
-        pubKeys.map((pk) => [pk, ethers.BigNumber.from(0)]),
-      );
-
-      await Promise.all(
-        pubKeys.map(async (pk) => {
-          rewardBalances[pk] = await this.walletService.getRewardBalanceOf(pk);
-        }),
+        await Promise.all(pubKeys.map(async (pk) => [
+          pk,
+          await this.walletService.getRewardBalanceOf(pk),
+        ])),
       );
 
       const batchTxs: TransactionData[] = [];
