@@ -136,7 +136,7 @@ export default class TxService {
         if (tx.nonce < highestReadyNonce) {
           await this.replaceReadyTx(highestReadyNonce, tx);
         } else if (tx.nonce === highestReadyNonce) {
-          txsToAdd.push(TxService.removeTxId(tx));
+          txsToAdd.push(tx);
           highestReadyNonce++;
         } else {
           break;
@@ -147,7 +147,7 @@ export default class TxService {
         (tx) => tx.nonce < highestReadyNonce,
       );
 
-      await this.readyTxTable.add(...txsToAdd);
+      await this.readyTxTable.addWithNewId(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
 
       // If we remove all future txs in this batch, we need to process the next
@@ -269,7 +269,7 @@ export default class TxService {
 
       for (const tx of followupTxs) {
         this.readyTxTable.remove(tx);
-        this.readyTxTable.add(TxService.removeTxId(tx));
+        this.readyTxTable.addWithNewId(tx);
       }
 
       lastNonceReplaced = followupTxs[followupTxs.length - 1].nonce;
@@ -339,7 +339,7 @@ export default class TxService {
         } else {
           promises.push(
             this.readyTxTable.remove(tx),
-            this.futureTxTable.add(TxService.removeTxId(tx)),
+            this.futureTxTable.addWithNewId(tx),
           );
         }
       }
@@ -431,11 +431,5 @@ export default class TxService {
 
   static PublicKeys(txs: TransactionData[]) {
     return Object.keys(Object.fromEntries(txs.map((tx) => [tx.pubKey])));
-  }
-
-  static removeTxId(tx: TransactionData) {
-    const newTx = { ...tx };
-    delete newTx.txId;
-    return newTx;
   }
 }

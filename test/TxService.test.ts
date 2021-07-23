@@ -509,10 +509,16 @@ Fixture.test(
 
     assertEquals(future, []);
 
+    const readyTxsWithoutIds = ready.map((tx) => {
+      const txWithoutId = { ...tx };
+      delete txWithoutId.txId;
+      return txWithoutId;
+    });
+
     const sortedTxs = txs.slice().sort((txA, txB) => txA.nonce - txB.nonce);
 
     assertEquals(
-      ready.map(TxService.removeTxId),
+      readyTxsWithoutIds,
       sortedTxs,
     );
   },

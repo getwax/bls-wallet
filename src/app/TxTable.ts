@@ -56,6 +56,16 @@ export default class TxTable {
     await this.txTable.insert(...txs);
   }
 
+  async addWithNewId(...txs: TransactionData[]) {
+    const txsWithoutIds = txs.map((tx) => {
+      const txWithoutId = { ...tx };
+      delete txWithoutId.txId;
+      return txWithoutId;
+    });
+
+    return await this.add(...txsWithoutIds);
+  }
+
   async remove(...txs: TransactionData[]) {
     await Promise.all(txs.map((tx) =>
       this.txTable
