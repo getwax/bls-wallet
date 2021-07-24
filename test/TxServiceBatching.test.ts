@@ -18,7 +18,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "1"],
   });
@@ -27,7 +27,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
   assertEquals(failures, []);
 
   assertEquals(
-    await fx.walletService.getBalanceOf(blsWallet.address),
+    await fx.testErc20.balanceOf(blsWallet.address),
     ethers.BigNumber.from(1000),
   );
 
@@ -40,7 +40,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
   await txService.batchTimer.waitForCompletedBatches(1);
 
   assertEquals(
-    await fx.walletService.getBalanceOf(blsWallet.address),
+    await fx.testErc20.balanceOf(blsWallet.address),
     ethers.BigNumber.from(1001),
   );
 
@@ -58,7 +58,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
     Range(5).map((i) =>
       fx.createTxData({
         blsSigner,
-        contract: fx.walletService.erc20,
+        contract: fx.testErc20,
         method: "mint",
         args: [blsWallet.address, "1"],
         nonceOffset: i,
@@ -74,7 +74,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
   // Check mints have occurred, ensuring a batch has occurred even though the
   // clock has not advanced
   assertEquals(
-    await fx.walletService.getBalanceOf(blsWallet.address),
+    await fx.testErc20.balanceOf(blsWallet.address),
     ethers.BigNumber.from(1005), // 1000 (initial) + 5 * 1 (mint txs)
   );
 });
@@ -92,7 +92,7 @@ Fixture.test(
       Range(7).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.walletService.erc20,
+          contract: fx.testErc20,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,
@@ -108,7 +108,7 @@ Fixture.test(
     // Check mints have occurred, ensuring a batch has occurred even though the
     // clock has not advanced
     assertEquals(
-      await fx.walletService.getBalanceOf(blsWallet.address),
+      await fx.testErc20.balanceOf(blsWallet.address),
       ethers.BigNumber.from(1005), // 1000 (initial) + 5 * 1 (mint txs)
     );
 
@@ -125,7 +125,7 @@ Fixture.test(
     await txService.batchTimer.waitForCompletedBatches(2);
 
     assertEquals(
-      await fx.walletService.getBalanceOf(blsWallet.address),
+      await fx.testErc20.balanceOf(blsWallet.address),
       ethers.BigNumber.from(1007), // 1000 (initial) + 7 * 1 (mint txs)
     );
   },
@@ -141,7 +141,7 @@ Fixture.test(
       fx.rng.shuffle(Range(15)).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.walletService.erc20,
+          contract: fx.testErc20,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,
@@ -156,7 +156,7 @@ Fixture.test(
 
     // Check mints have occurred
     assertEquals(
-      await fx.walletService.getBalanceOf(blsWallet.address),
+      await fx.testErc20.balanceOf(blsWallet.address),
       ethers.BigNumber.from(1015), // 1000 (initial) + 15 * 1 (mint txs)
     );
 
@@ -181,7 +181,7 @@ Fixture.test(
       Range(3).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.walletService.erc20,
+          contract: fx.testErc20,
           method: "mint",
           args: [blsWallet.address, "1"],
           tokenRewardAmount: ethers.BigNumber.from(
@@ -204,7 +204,7 @@ Fixture.test(
     await txService.batchTimer.waitForCompletedBatches(1);
 
     assertEquals(
-      await fx.walletService.getBalanceOf(blsWallet.address),
+      await fx.testErc20.balanceOf(blsWallet.address),
       ethers.BigNumber.from(1001), // only one tx worked
     );
 

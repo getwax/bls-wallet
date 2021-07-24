@@ -20,7 +20,9 @@ export default class AdminService {
   }
 
   async getAggregatorBalance() {
-    return await this.walletService.getAggregatorBalance();
+    return await this.walletService.getRewardBalanceOf(
+      this.walletService.aggregatorSigner.address,
+    );
   }
 
   async txCount() {

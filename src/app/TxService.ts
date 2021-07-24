@@ -154,7 +154,7 @@ export default class TxService {
         if (tx.nonce < highestReadyNonce) {
           await this.replaceReadyTx(highestReadyNonce, tx);
         } else if (tx.nonce === highestReadyNonce) {
-          txsToAdd.push(TxService.removeTxId(tx));
+          txsToAdd.push(tx);
           highestReadyNonce++;
         } else {
           break;
@@ -165,7 +165,7 @@ export default class TxService {
         (tx) => tx.nonce < highestReadyNonce,
       );
 
-      await this.readyTxTable.add(...txsToAdd);
+      await this.readyTxTable.addWithNewId(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
 
       // If we remove all future txs in this batch, we need to process the next
@@ -287,7 +287,7 @@ export default class TxService {
 
       for (const tx of followupTxs) {
         this.readyTxTable.remove(tx);
-        this.readyTxTable.add(TxService.removeTxId(tx));
+        this.readyTxTable.addWithNewId(tx);
       }
 
       lastNonceReplaced = followupTxs[followupTxs.length - 1].nonce;
@@ -301,7 +301,7 @@ export default class TxService {
     await Promise.all(promises);
   }
 
-  async removeReadyTxs(txs: TransactionData[]) {
+  async removeFromReady(txs: TransactionData[]) {
     this.readyTxTable.remove(...txs);
 
     await Promise.all(
@@ -357,7 +357,7 @@ export default class TxService {
         } else {
           promises.push(
             this.readyTxTable.remove(tx),
-            this.futureTxTable.add(TxService.removeTxId(tx)),
+            this.futureTxTable.addWithNewId(tx),
           );
         }
       }
@@ -395,22 +395,10 @@ export default class TxService {
       const pubKeys = TxService.PublicKeys(priorityTxs);
 
       const rewardBalances = Object.fromEntries(
-        pubKeys.map((pk) => [pk, ethers.BigNumber.from(0)]),
-      );
-
-      await Promise.all(
-        pubKeys.map(async (pk) => {
-          const address = await this.walletService.WalletAddress(pk);
-
-          if (address === null) {
-            console.warn(`Unable to map public key ${pk} to address`);
-            return;
-          }
-
-          rewardBalances[pk] = await this.walletService.getRewardBalanceOf(
-            address,
-          );
-        }),
+        await Promise.all(pubKeys.map(async (pk) => [
+          pk,
+          await this.walletService.getRewardBalanceOf(pk),
+        ])),
       );
 
       const batchTxs: TransactionData[] = [];
@@ -441,7 +429,7 @@ export default class TxService {
         await this.walletService.sendTxs(batchTxs);
       }
 
-      await this.removeReadyTxs([...batchTxs, ...insufficientRewardTxs]);
+      await this.removeFromReady([...batchTxs, ...insufficientRewardTxs]);
 
       this.checkReadyTxCount();
     });
@@ -449,11 +437,5 @@ export default class TxService {
 
   static PublicKeys(txs: TransactionData[]) {
     return Object.keys(Object.fromEntries(txs.map((tx) => [tx.pubKey])));
-  }
-
-  static removeTxId(tx: TransactionData) {
-    const newTx = { ...tx };
-    delete newTx.txId;
-    return newTx;
   }
 }

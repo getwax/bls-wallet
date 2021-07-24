@@ -1,13 +1,7 @@
-import { assert, assertEquals, BigNumber, ethers } from "./deps.ts";
+import { assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
-
-Fixture.test("WalletService gets aggregator balance", async (fx) => {
-  assert(
-    (await fx.walletService.getAggregatorBalance()).gt(0),
-  );
-});
 
 Fixture.test("WalletService sends single transaction", async (fx) => {
   const blsSigner = fx.createBlsSigner();
@@ -15,7 +9,7 @@ Fixture.test("WalletService sends single transaction", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "7"],
     nonceOffset: 0,
@@ -23,7 +17,7 @@ Fixture.test("WalletService sends single transaction", async (fx) => {
 
   await fx.walletService.sendTx(tx);
 
-  const balance: BigNumber = await fx.walletService.erc20.balanceOf(
+  const balance: BigNumber = await fx.testErc20.balanceOf(
     blsWallet.address,
   );
 
@@ -65,7 +59,7 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 
   const tx1 = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "3"],
     nonceOffset: 0,
@@ -73,7 +67,7 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 
   const tx2 = await fx.createTxData({
     blsSigner,
-    contract: fx.walletService.erc20,
+    contract: fx.testErc20,
     method: "mint",
     args: [blsWallet.address, "5"],
     nonceOffset: 1,
@@ -81,7 +75,7 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 
   await fx.walletService.sendTxs([tx1, tx2]);
 
-  const balance: BigNumber = await fx.walletService.erc20.balanceOf(
+  const balance: BigNumber = await fx.testErc20.balanceOf(
     blsWallet.address,
   );
 
@@ -99,7 +93,7 @@ Fixture.test(
         Range(5).map((i) =>
           fx.createTxData({
             blsSigner,
-            contract: fx.walletService.erc20,
+            contract: fx.testErc20,
             method: "mint",
             args: [blsWallet.address, "1"],
             nonceOffset: i,
@@ -109,7 +103,7 @@ Fixture.test(
 
       await fx.walletService.sendTxs(txs);
 
-      const balance: BigNumber = await fx.walletService.erc20.balanceOf(
+      const balance: BigNumber = await fx.testErc20.balanceOf(
         blsWallet.address,
       );
 
@@ -125,7 +119,7 @@ Fixture.test(
 
     const tx1 = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
       tokenRewardAmount: ethers.BigNumber.from(8),
@@ -134,7 +128,7 @@ Fixture.test(
 
     const tx2 = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "5"],
       tokenRewardAmount: ethers.BigNumber.from(13),
@@ -144,7 +138,7 @@ Fixture.test(
     await fx.walletService.sendTxs([tx1, tx2]);
 
     assertEquals(
-      (await fx.walletService.erc20.balanceOf(blsWallet.address)).toNumber(),
+      (await fx.testErc20.balanceOf(blsWallet.address)).toNumber(),
       1008,
     );
 

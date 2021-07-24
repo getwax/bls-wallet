@@ -10,6 +10,7 @@ import * as env from "./env.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
+import assert from "../helpers/assert.ts";
 
 function getKeyHash(pubkey: string) {
   return ethers.utils.keccak256(ethers.utils.solidityPack(
@@ -23,21 +24,17 @@ export type TxCheckResult = {
   nextNonce: ethers.BigNumber;
 };
 
+const addressStringLength = 42;
+const pubKeyStringLength = 258;
+
 export default class WalletService {
   aggregatorSigner: Wallet;
-  erc20: Contract;
   rewardErc20: Contract;
   verificationGateway: Contract;
 
   constructor(public aggPrivateKey: string) {
     this.aggregatorSigner = WalletService.getAggregatorSigner(
       this.aggPrivateKey,
-    );
-
-    this.erc20 = new Contract(
-      env.TOKEN_ADDRESS,
-      ovmContractABIs["MockERC20.json"].abi,
-      this.aggregatorSigner,
     );
 
     this.rewardErc20 = new Contract(
@@ -128,28 +125,31 @@ export default class WalletService {
     return await txResponse.wait();
   }
 
-  async getBalanceOf(address: string): Promise<BigNumber> {
-    return await this.erc20.balanceOf(address);
-  }
-
-  async getRewardBalanceOf(address: string): Promise<BigNumber> {
+  async getRewardBalanceOf(addressOrPubKey: string): Promise<BigNumber> {
+    const address = await this.WalletAddress(addressOrPubKey);
     return await this.rewardErc20.balanceOf(address);
   }
 
-  async getAggregatorBalance(): Promise<BigNumber> {
-    return await this.erc20.balanceOf(
-      env.DEPLOYER_ADDRESS,
-    );
-  }
+  async WalletAddress(addressOrPubKey: string): Promise<string> {
+    if (addressOrPubKey.length === addressStringLength) {
+      return addressOrPubKey;
+    }
 
-  async WalletAddress(pubKey: string): Promise<string | null> {
+    assert(
+      addressOrPubKey.length === pubKeyStringLength,
+      "addressOrPubKey length matches neither address nor public key",
+    );
+
+    const pubKey = addressOrPubKey;
+
     const address: string = await this.verificationGateway.walletFromHash(
       ethers.utils.keccak256(pubKey),
     );
 
-    if (address === ethers.constants.AddressZero) {
-      return null;
-    }
+    assert(
+      address !== ethers.constants.AddressZero,
+      "Wallet does not exist",
+    );
 
     return address;
   }
