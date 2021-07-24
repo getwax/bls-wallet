@@ -56,10 +56,28 @@ export default class TxService {
 
   async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
     return await this.runQueryGroup(async () => {
+      let checkTxResult;
+
+      try {
+        checkTxResult = await this.walletService.checkTx(txData);
+      } catch (error) {
+        if (error.message.includes("code=UNPREDICTABLE_GAS_LIMIT,")) {
+          return [{
+            type: "unpredictable-gas-limit",
+            description: [
+              "Checking transaction produced UNPREDICTABLE_GAS_LIMIT, which",
+              "may not be super-helpful. We don't know what went wrong.",
+            ].join(" "),
+          }];
+        }
+
+        throw error;
+      }
+
       const {
         failures,
         nextNonce: nextChainNonce,
-      } = await this.walletService.checkTx(txData);
+      } = checkTxResult;
 
       if (failures.length > 0) {
         return failures;

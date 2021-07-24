@@ -2,21 +2,21 @@ import {
   Provider,
   TransactionRequest,
   TransactionResponse,
-} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/abstract-provider@5.4.0?dts";
 import {
   Signer,
   TypedDataDomain,
   TypedDataField,
   TypedDataSigner,
-} from "https://cdn.skypack.dev/@ethersproject/abstract-signer@5.2.0?dts";
-import { Bytes } from "https://cdn.skypack.dev/@ethersproject/bytes@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/abstract-signer@5.4.0?dts";
+import { Bytes } from "https://cdn.skypack.dev/@ethersproject/bytes@5.4.0?dts";
 import {
   Network,
   Networkish,
-} from "https://cdn.skypack.dev/@ethersproject/networks@5.2.0?dts";
-import { Deferrable } from "https://cdn.skypack.dev/@ethersproject/properties@5.2.0?dts";
-import { AccessList } from "https://cdn.skypack.dev/@ethersproject/transactions@5.2.0?dts";
-import { ConnectionInfo } from "https://cdn.skypack.dev/@ethersproject/web@5.2.0?dts";
+} from "https://cdn.skypack.dev/@ethersproject/networks@5.4.0?dts";
+import { Deferrable } from "https://cdn.skypack.dev/@ethersproject/properties@5.4.0?dts";
+import { AccessList } from "https://cdn.skypack.dev/@ethersproject/transactions@5.4.0?dts";
+import { ConnectionInfo } from "https://cdn.skypack.dev/@ethersproject/web@5.4.0?dts";
 import { BaseProvider, Event } from "./base-provider.d.ts";
 export declare class JsonRpcSigner extends Signer implements TypedDataSigner {
   readonly provider: JsonRpcProvider;

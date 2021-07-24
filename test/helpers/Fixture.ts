@@ -8,7 +8,7 @@ import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
 import dataPayload from "./dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
-import Range from "./Range.ts";
+import Range from "../../src/helpers/Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
 
@@ -155,11 +155,17 @@ export default class Fixture {
 
     const signature = blsSigner.sign(message);
 
+    let tokenRewardAmountStr = tokenRewardAmount.toHexString();
+
+    tokenRewardAmountStr = `0x${
+      tokenRewardAmountStr.slice(2).padStart(64, "0")
+    }`;
+
     return {
       pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
       nonce,
       signature: hubbleBls.mcl.dumpG1(signature),
-      tokenRewardAmount: tokenRewardAmount.toString(),
+      tokenRewardAmount: tokenRewardAmountStr,
       contractAddress: contract.address,
       methodId: encodedFunction.slice(0, 10),
       encodedParams: `0x${encodedFunction.slice(10)}`,
