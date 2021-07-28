@@ -29,8 +29,15 @@ contract BLSWallet is Initializable
         IERC20 token,
         address recipient,
         uint256 amount
-    ) public onlyGateway {
-        require(token.transfer(recipient, amount));
+    ) public onlyGateway returns (
+        bool success
+    ) {
+        bytes memory transferFn = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            recipient,
+            amount
+        );
+        (success, ) = address(token).call(transferFn);
     }
 
     /**
@@ -44,7 +51,6 @@ contract BLSWallet is Initializable
         bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
 
         (success, ) = address(contractAddress).call(encodedFunction);
-        require(success, "BLSWallet: action failed to call encodedFunction");
         nonce++;
     }
 

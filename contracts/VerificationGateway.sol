@@ -22,7 +22,7 @@ contract VerificationGateway is Initializable
     mapping (bytes32 => uint256[BLS_LEN]) blsKeysFromHash;
     mapping (bytes32 => BLSWallet) public walletFromHash;
 
-    IERC20 paymentToken;
+    IERC20 public paymentToken;
 
     function initialize(IERC20 token) public initializer {
         paymentToken = token;
@@ -60,6 +60,7 @@ contract VerificationGateway is Initializable
                 ))
             )
         );
+        
         result = callSuccess && checkResult;
         nextNonce = walletFromHash[publicKeyHash].nonce();
     }
@@ -172,11 +173,12 @@ contract VerificationGateway is Initializable
         require(callSuccess && checkResult, "VerificationGateway: sig not verified with nonce+data");
 
         if (tokenRewardAmount > 0) {
-            walletFromHash[publicKeyHash].payTokenAmount(
+            bool success = walletFromHash[publicKeyHash].payTokenAmount(
                 paymentToken,
                 msg.sender,
                 tokenRewardAmount
             );
+            require(success, "VerificationGateway: Could not pay nominated reward");
         }
 
         bool result = walletFromHash[publicKeyHash].action(
@@ -194,6 +196,71 @@ contract VerificationGateway is Initializable
         bytes encodedParams;
     }
 
+
+    /**
+    @param txs array of transaction data
+    @return nonces an array of corresponding nonces from the current wallet nonce
+    */
+    function noncesForTxs(
+        TxData[] calldata txs
+    ) internal view returns (
+        uint256[] memory nonces
+    ) {
+        nonces = new uint256[](txs.length);
+        nonces[0] = walletFromHash[txs[0].publicKeyHash].nonce();
+        for (uint32 i=1; i<txs.length; i++) {
+            // start with nonce from wallet's nonce
+            nonces[i] = walletFromHash[txs[i].publicKeyHash].nonce();
+            // check past txs in reverse order for previous tx from wallet
+            uint32 pastIndex = i;
+            do {
+                pastIndex--;
+                // if the address matches, the nonce is one more than the previous
+                if (txs[i].publicKeyHash == txs[pastIndex].publicKeyHash) {
+                    nonces[i] = nonces[pastIndex] + 1;
+                    break;
+                }
+            } while(pastIndex != 0);
+        }
+    }
+
+    /**
+    @param signature aggregated signature
+    @param txs transaction data to be processed
+    @param txNonces wallet nonce per tx in txs
+    */
+    function verifySignatures(
+        uint256[2] calldata signature,
+        TxData[] calldata txs,
+        uint256[] memory txNonces
+    ) public view {
+        uint256 txCount = txs.length;
+        uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
+        uint256[2][] memory messages = new uint256[2][](txCount);
+
+        for (uint256 i = 0; i<txCount; i++) {
+            // construct params for signature verification
+            publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
+            messages[i] = messagePoint(
+                txNonces[i],
+                txs[i].tokenRewardAmount,
+                txs[i].contractAddress,
+                keccak256(abi.encodePacked(
+                    txs[i].methodID,
+                    txs[i].encodedParams
+                ))
+            );
+        }
+
+        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+            signature,
+            publicKeys,
+            messages
+        );
+
+        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+    }
+
     /**
     @dev Assumes multiple txs from the same wallet appear in order
     of ascending nonce. Wallet txs do not have to be consecutive. 
@@ -203,46 +270,52 @@ contract VerificationGateway is Initializable
         uint256[2] calldata signature,
         TxData[] calldata txs
     ) external {
-        uint256 txCount = txs.length;
-        uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
-        uint256[2][] memory messages = new uint256[2][](txCount);
+        // uint256 txCount = txs.length;
+        // uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
+        // uint256[2][] memory messages = new uint256[2][](txCount);
         BLSWallet wallet;
-        for (uint256 i = 0; i<txCount; i++) {
-            // // construct params for signature verification
-            publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
+
+        uint256[] memory txNonces = noncesForTxs(txs);
+        verifySignatures(signature, txs, txNonces);
+
+        // attempt payment and actions
+        for (uint256 i = 0; i<txs.length; i++) {
+            // construct params for signature verification
+            // publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
             wallet = walletFromHash[txs[i].publicKeyHash];
-            messages[i] = messagePoint(
-                wallet.nonce(),
-                txs[i].tokenRewardAmount,
-                txs[i].contractAddress,
-                keccak256(abi.encodePacked(
-                    txs[i].methodID,
-                    txs[i].encodedParams
-                ))
-            );
 
-            if (txs[i].tokenRewardAmount > 0) {
-                wallet.payTokenAmount(
-                    paymentToken,
-                    rewardAddress,
-                    txs[i].tokenRewardAmount
-                );
+            // if the wallet nonce for the tx matches the current wallet's nonce,
+            // action the transaction after payment. This won't be the case if 
+            // a previous tx in txs for the wallet has failed to pay.
+            if (txNonces[i] == wallet.nonce()) {
+                bool paymentPending = txs[i].tokenRewardAmount > 0;
+                if (paymentPending) {
+                    // on payment success, paymentPending is false
+                    paymentPending = !wallet.payTokenAmount(
+                        paymentToken,
+                        rewardAddress,
+                        txs[i].tokenRewardAmount
+                    );
+                }
+
+                if (paymentPending == false) {
+                    // execute transaction (increments nonce)
+                    wallet.action(
+                        txs[i].contractAddress,
+                        txs[i].methodID,
+                        txs[i].encodedParams
+                    );
+                }
             }
-
-            // execute transaction (increments nonce), will revert if all signatures not satisfied
-            wallet.action(
-                txs[i].contractAddress,
-                txs[i].methodID,
-                txs[i].encodedParams
-            );
         }
 
-        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
-            signature,
-            publicKeys,
-            messages
-        );
-        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+        // (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+        //     signature,
+        //     publicKeys,
+        //     messages
+        // );
+        // // revert everything if signatures not satisfied
+        // require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
     }
 
     function messagePoint(

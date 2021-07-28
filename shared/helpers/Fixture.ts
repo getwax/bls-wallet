@@ -4,13 +4,8 @@ import { ethers, network } from "hardhat";
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
 const utils = ethers.utils;
 
-// import * as mcl from "../server/src/lib/hubble-bls/src/mcl";
-
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
-
-import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
-import { exit } from "process";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);

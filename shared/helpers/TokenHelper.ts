@@ -8,7 +8,7 @@ import Fixture from "./Fixture";
 export default class TokenHelper {
 
   static readonly initialSupply = ethers.utils.parseUnits("1000000")
-  readonly userStartAmount;
+  readonly userStartAmount: BigNumber;
 
   testToken: Contract;
   constructor(public fx: Fixture) { 
@@ -16,7 +16,7 @@ export default class TokenHelper {
   }
 
   /// @dev Contract deployed by first ethers signer, has initial supply
-  static async deployTestToken(): Promise<Contract> {
+  static async deployTestToken(balanceAddress:string=null): Promise<Contract> {
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     let mockERC20 = await MockERC20.deploy(
       "AnyToken",
@@ -24,6 +24,14 @@ export default class TokenHelper {
       TokenHelper.initialSupply
     );
     await mockERC20.deployed();
+
+    if (balanceAddress) {
+      await mockERC20.transfer(
+        balanceAddress,
+        TokenHelper.initialSupply
+      );
+    }
+
     return mockERC20;
   }
 

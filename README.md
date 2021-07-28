@@ -13,7 +13,7 @@ Parameters of external layer 2 transactions are stored on layer 1 when "co-ordin
 
 So as well as the benefits of smart contract wallets and layer 2 usage, gas savings from reduced call data is achieved in 3 ways:
 1. single aggregated signature (BLS)
-2. no duplicate parameters
+2. de-duplicate of parameters across aggregated txs
 3. compressed parameters
 
 Note: each of these savings is proportional to the number of transactions submitted in a batch. So when using all three methods, additional savings are roughly O(3n).
@@ -25,11 +25,7 @@ Note: each of these savings is proportional to the number of transactions submit
 3. Create contract wallet with existing ECDSA keypair
 
 ## See it in action
-TODO:
-- install local cli signer
-- use example dapp on georli and copy transaction message data
-- sign copied message (with required data, eg wallet nonce)
-- send to aggregator
+COMING SOON - demo web wallet
 
 # Components
 
