@@ -99,7 +99,6 @@ describe('WalletActions', async function () {
       expect(walletBalance).to.equal(th.userStartAmount);
     }
 
-    console.log("Send between wallets...");
     // bls transfer each wallet's balance to first wallet
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       await th.transferFrom(
@@ -177,7 +176,6 @@ describe('WalletActions', async function () {
     let testToken = await TokenHelper.deployTestToken();
 
     // send all to first address
-    console.log("Send tokens to first bls wallet");
     let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
     await(await testToken.connect(fx.signers[0]).transfer(
       blsWalletAddresses[0],
@@ -207,7 +205,6 @@ describe('WalletActions', async function () {
 
     let aggSignature = aggregate(signatures);
 
-    console.log("Airdrop");
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
       Fixture.blsKeyHash(fx.blsSigners[0]),
       aggSignature,
