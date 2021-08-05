@@ -7,6 +7,8 @@ const utils = ethers.utils;
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
+import dataPayload from "./dataPayload";
+
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
@@ -49,7 +51,9 @@ export default class Fixture {
   /// @dev Contracts deployed by first ethers signer 
   static async create(
     blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
-    initialized: boolean=true
+    initialized: boolean=true,
+    vgAddress: string=undefined,
+    expanderAddress: string=undefined,
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
 
@@ -66,17 +70,29 @@ export default class Fixture {
 
     // deploy Verification Gateway
     let VerificationGateway = await ethers.getContractFactory("VerificationGateway");
-    let verificationGateway = await VerificationGateway.deploy();
-    await verificationGateway.deployed();
-    if (initialized) {
-      await verificationGateway.initialize(zeroAddress);
+    let verificationGateway;
+    if (vgAddress) {
+      verificationGateway = VerificationGateway.attach(vgAddress);
     }
-  
+    else {
+      verificationGateway = await VerificationGateway.deploy();
+      await verificationGateway.deployed();
+      if (initialized) {
+        await verificationGateway.initialize(zeroAddress);
+      }
+    }
+
     let BLSExpander = await ethers.getContractFactory("BLSExpander");
-    let blsExpander = await BLSExpander.deploy(); 
-    await blsExpander.deployed();
-    await blsExpander.initialize(verificationGateway.address);
-  
+    let blsExpander;
+    if (expanderAddress) {
+      blsExpander = BLSExpander.attach(expanderAddress);
+    }
+    else {
+      blsExpander = await BLSExpander.deploy(); 
+      await blsExpander.deployed();
+      await blsExpander.initialize(verificationGateway.address);
+    }
+
     let encodedCreate = utils.defaultAbiCoder.encode(
       ["string"],
       ["Create BLS Wallet."]
@@ -112,20 +128,13 @@ export default class Fixture {
     contractAddress: any,
     encodedFunction: string
   ) {
-    let encodedFunctionHash = utils.solidityKeccak256(
-      ["bytes"],
-      [encodedFunction]
+    return dataPayload(
+      this.chainId,
+      nonce,
+      reward,
+      contractAddress,
+      encodedFunction
     );
-    return utils.solidityPack(
-      ["uint256","uint256","uint256","address","bytes32"],
-      [
-        this.chainId,
-        nonce,
-        reward,
-        contractAddress.toString(),
-        encodedFunctionHash
-      ]
-    ); 
   }
 
   async gatewayCall(

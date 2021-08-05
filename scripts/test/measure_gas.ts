@@ -1,10 +1,9 @@
-import { BigNumber, Signer, Contract } from "ethers";
-import { readFile, readFileSync } from "fs";
+import { BigNumber } from "ethers";
 
-import Fixture from "../shared/helpers/Fixture";
-import TokenHelper from "../shared/helpers/TokenHelper";
+import Fixture from "../../shared/helpers/Fixture";
+import TokenHelper from "../../shared/helpers/TokenHelper";
 
-import { aggregate } from "../shared/lib/hubble-bls/src/signer";
+import { aggregate } from "../../shared/lib/hubble-bls/src/signer";
 
 let fx: Fixture;
 let th: TokenHelper;

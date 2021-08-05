@@ -5,6 +5,7 @@ import { expect, assert, should } from "chai";
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "../shared/helpers/Fixture";
+import dataPayload from "../shared/helpers/dataPayload";
 import { TxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
@@ -12,6 +13,7 @@ import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber, providers } from "ethers";
 import { getAddress } from "ethers/lib/utils";
 import { doesNotMatch } from "assert";
+
 
 
 describe('TokenPayments', async function () {
@@ -113,7 +115,8 @@ describe('TokenPayments', async function () {
         "walletCrossCheck",
         [publicKeyHash]
       );
-      let dataToSign = fx.dataPayload(
+      let dataToSign = dataPayload(
+        fx.chainId,
         walletNonce,
         reward,
         fx.verificationGateway.address,
