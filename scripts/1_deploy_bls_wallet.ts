@@ -28,7 +28,7 @@ async function main() {
   const VerificationGateway = await ethers.getContractFactory("VerificationGateway");
   verificationGateway = await VerificationGateway.deploy();
   await verificationGateway.deployed();
-  verificationGateway.initialize(
+  await verificationGateway.initialize(
     payToken.address
   );
   console.log(`verificationGateway: ${verificationGateway.address}`);
@@ -37,7 +37,7 @@ async function main() {
   const BLSExpander = await ethers.getContractFactory("BLSExpander");
   blsExpander = await BLSExpander.deploy();
   await blsExpander.deployed();
-  blsExpander.initialize(
+  await blsExpander.initialize(
     verificationGateway.address
   );
   console.log(`blsExpander: ${blsExpander.address}`);
