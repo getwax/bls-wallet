@@ -31,7 +31,7 @@ Fixture.test(
 
     const tx = await fx.createTxData({
       blsSigner,
-      contract: fx.walletService.erc20,
+      contract: fx.testErc20,
       method: "mint",
       args: [blsWallet.address, "3"],
       tokenRewardAmount: ethers.BigNumber.from(8),
@@ -41,7 +41,7 @@ Fixture.test(
     await fx.walletService.sendTx(tx);
 
     assertEquals(
-      (await fx.walletService.erc20.balanceOf(blsWallet.address)).toNumber(),
+      (await fx.testErc20.balanceOf(blsWallet.address)).toNumber(),
       1003,
     );
 
