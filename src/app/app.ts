@@ -1,6 +1,6 @@
 import { Application } from "../../deps/index.ts";
 
-import * as env from "./env.ts";
+import * as env from "../env.ts";
 import WalletService from "./WalletService.ts";
 import TxService from "./TxService.ts";
 import TxRouter from "./TxRouter.ts";

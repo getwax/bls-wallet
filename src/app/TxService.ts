@@ -5,7 +5,7 @@ import Mutex from "../helpers/Mutex.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import BatchTimer from "./BatchTimer.ts";
-import * as env from "./env.ts";
+import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";

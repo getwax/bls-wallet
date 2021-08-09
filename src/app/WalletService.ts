@@ -6,7 +6,7 @@ import {
   Wallet,
 } from "../../deps/index.ts";
 
-import * as env from "./env.ts";
+import * as env from "../env.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";

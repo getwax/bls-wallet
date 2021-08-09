@@ -1,7 +1,7 @@
 // Useful for when breaking database changes are made.
 
 import createQueryClient from "../src/app/createQueryClient.ts";
-import * as env from "../src/app/env.ts";
+import * as env from "../src/env.ts";
 import TxTable from "../src/app/TxTable.ts";
 
 const queryClient = createQueryClient();

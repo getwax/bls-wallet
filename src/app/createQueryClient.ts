@@ -1,6 +1,6 @@
 import { QueryClient } from "../../deps/index.ts";
 
-import * as env from "./env.ts";
+import * as env from "../env.ts";
 
 export default function createQueryClient(): QueryClient {
   const client = new QueryClient({

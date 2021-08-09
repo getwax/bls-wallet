@@ -2,7 +2,7 @@ import {
   requireBoolEnv,
   requireEnv,
   requireIntEnv,
-} from "../helpers/envTools.ts";
+} from "./helpers/envTools.ts";
 
 export const PORT = requireIntEnv("PORT");
 

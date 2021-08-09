@@ -7,10 +7,10 @@ import {
 
 import testRng from "./testRng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
-import createBLSWallet from "./createBLSWallet.ts";
+import createBLSWallet from "../../src/chain/createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
 import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
-import dataPayload from "./dataPayload.ts";
+import dataPayload from "../../src/chain/dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "../../src/helpers/Range.ts";
