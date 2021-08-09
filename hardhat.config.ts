@@ -44,6 +44,9 @@ const config: HardhatUserConfig = {
     ]
   },
   networks: {
+    gethDev: {
+      url: `http://localhost:8545`
+    },
     optimistic: {
       url: `http://localhost:8545`,
       accounts: [
