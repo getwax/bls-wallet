@@ -50,7 +50,7 @@ export default class Wallet {
     const walletContract = new ethers.Contract(
       walletAddress,
       ovmContractABIs["BLSWallet.json"].abi,
-      // this.walletService.aggregatorSigner,
+      provider,
     );
 
     return new Wallet(
