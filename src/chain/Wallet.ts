@@ -35,7 +35,7 @@ export default class Wallet {
     const verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
       ovmContractABIs["VerificationGateway.json"].abi,
-      // this.aggregatorSigner,
+      provider,
     );
 
     const walletAddress: string = await verificationGateway.walletFromHash(
@@ -64,21 +64,24 @@ export default class Wallet {
     );
   }
 
-  async buildTx({
+  async Nonce() {
+    return Number(await this.walletContract.nonce());
+  }
+
+  buildTx({
     contract,
     method,
     args,
     tokenRewardAmount = ethers.BigNumber.from(0),
-    nonceOffset = 0,
+    nonce,
   }: {
     contract: ethers.Contract;
     method: string;
     args: string[];
     tokenRewardAmount?: ethers.BigNumber;
-    nonceOffset?: number;
-  }): Promise<TransactionData> {
+    nonce: number;
+  }): TransactionData {
     const encodedFunction = contract.interface.encodeFunctionData(method, args);
-    const nonce = Number(await this.walletContract.nonce()) + nonceOffset;
 
     const message = dataPayload(
       this.network.chainId,
