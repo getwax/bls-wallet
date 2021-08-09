@@ -54,18 +54,22 @@ export default class Fixture {
     initialized: boolean=true,
     vgAddress: string=undefined,
     expanderAddress: string=undefined,
+    secretNumbers: number[]=undefined
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
 
     let allSigners = await ethers.getSigners();
     let signers = (allSigners).slice(0, Fixture.ECDSA_ACCOUNTS_LENGTH);
     let addresses = await Promise.all(signers.map(acc => acc.getAddress())) as string[];
-  
+
     let blsSignerFactory = await BlsSignerFactory.new();
     let blsSigners = new Array(blsWalletCount);
     for (let i=0; i<blsSigners.length; i++) {
-      let randomNumber = Math.abs(Math.random() * 0xffffffff << 0);
-      blsSigners[i] = blsSignerFactory.getSigner(DOMAIN, "0x"+randomNumber.toString(16));
+      let secretNumber = Math.abs(Math.random() * 0xffffffff << 0);
+      if (secretNumbers) {
+        secretNumber = secretNumbers[i]; // error here if not enough numbers provided
+      }
+      blsSigners[i] = blsSignerFactory.getSigner(DOMAIN, "0x"+secretNumber.toString(16));
     }
 
     // deploy Verification Gateway

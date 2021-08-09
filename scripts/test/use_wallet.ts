@@ -1,44 +1,93 @@
 import { Address } from "cluster";
 import { Contract, ContractFactory } from "ethers";
+import { getContractAddress } from "ethers/lib/utils";
 import { network, ethers } from "hardhat";
+import { exit } from "process";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
 
 import { aggregate } from "../../shared/lib/hubble-bls/src/signer";
 
-let fx: Fixture;
-let ERC20: ContractFactory;
+let config: DeployedAddresses;
+
+let ethToken: Contract;
 let rewardToken: Contract;
 
-let vgAddress: string;
-let expanderAddress: string;
+let blsWallets: Contract[];
+
+interface DeployedAddresses {
+  ethAddress: string|undefined;
+  rewardAddress: string|undefined;
+  vgAddress: string|undefined;
+  expanderAddress: string|undefined;
+  tokenAddress: string|undefined;
+  blsAddresses: string[]|undefined;
+}
 
 async function main() {
-  await attachContracts();
-  
-  let balances = await Promise.all(
-    fx.addresses.map( a => rewardToken.balanceOf(a) )
-  );
-  console.log(balances.map( ethers.utils.formatEther ));
+  config = addressesForNetwork(network.name);
+
+  let fx = await setup([
+    +process.env.BLS_SECRET_NUM_1,
+    +process.env.BLS_SECRET_NUM_2,
+    +process.env.BLS_SECRET_NUM_3
+  ]);
+  // console.log(await fx.createBLSWallets()); // only needed when first deploying contract wallets
+  blsWallets = config.blsAddresses.map( a => fx.BLSWallet.attach(a) );
 
 }
 
-async function attachContracts() {
+function addressesForNetwork(networkName: string): DeployedAddresses {
+  let c: DeployedAddresses;
   if (network.name === `optimistic`) {
-    vgAddress = `${process.env.LOCAL_VERIFICATION_GATEWAY_ADDRESS}`;
-    expanderAddress = `${process.env.LOCAL_BLS_EXPANDER_ADDRESS}`;
+    c = {
+      ethAddress:undefined,
+      rewardAddress: process.env.LOCAL_REWARD_CONTRACT_ADDRESS,
+      vgAddress:process.env.LOCAL_VERIFICATION_GATEWAY_ADDRESS,
+      expanderAddress: process.env.LOCAL_BLS_EXPANDER_ADDRESS,
+      tokenAddress: undefined,
+      blsAddresses: [
+        '0x69A9c53e7000c8B7aF3f70212ba7a8E30fB30Cb4',
+        '0xAeaDee30db4e75c64BC8ABE54f818b8fc9097f1b',
+        '0x4FCa9CA9938Ee6b4E3200a295b1152c72d6df0b7'
+      ]
+    };
   }
   else if (network.name === `optimisticKovan`) {
-    vgAddress = `${process.env.OKOVAN_VERIFICATION_GATEWAY_ADDRESS}`;
-    expanderAddress = `${process.env.OKOVAN_BLS_EXPANDER_ADDRESS}`;
+    c = {
+      ethAddress: process.env.OKOVAN_ETH_CONTRACT_ADDRESS,
+      vgAddress: process.env.OKOVAN_VERIFICATION_GATEWAY_ADDRESS,
+      expanderAddress: process.env.OKOVAN_BLS_EXPANDER_ADDRESS,
+      rewardAddress: process.env.OKOVAN_REWARD_CONTRACT_ADDRESS,
+      tokenAddress: process.env.OKOVAN_ERC20_CONTRACT_ADDRESS,
+      blsAddresses: [
+        '0xEc76AE8adEFc6462986A673Feff40b2Cdd56B3BC',
+        '0x808AeC84A987368B915a7Fd048cd1B20859FcbC9',
+        '0x00478B7Ea27581f901D84a7ea2989f68416d3568'
+      ]
+    }
   } else {
     throw new Error(`Not configured for "${network.name}"`);
   }
 
-  fx = await Fixture.create(1, true, vgAddress, expanderAddress);
-  let rewardAddress = await fx.verificationGateway.paymentToken();  
-  ERC20 = await ethers.getContractFactory("MockERC20");
-  rewardToken = ERC20.attach(rewardAddress);
+  return c;
+}
+
+async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
+  let fx = await Fixture.create(
+    blsSecretNumbers.length,
+    true,
+    config.vgAddress,
+    config.expanderAddress,
+    blsSecretNumbers
+  );
+
+  let ERC20 = await ethers.getContractFactory("MockERC20");
+  ERC20.attach(config.rewardAddress);
+  if (config.ethAddress) {
+    ethToken = ERC20.attach(config.ethAddress);
+  }  
+  return fx;
 }
 
 main()
