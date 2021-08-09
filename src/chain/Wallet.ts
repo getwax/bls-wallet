@@ -18,17 +18,17 @@ export default class Wallet {
     public provider: ethers.providers.Provider,
     public network: ethers.providers.Network,
     public verificationGateway: Contract,
-    public blsSignerAddress: string,
+    public blsSecret: string,
     public blsSigner: hubbleBls.signer.BlsSigner,
     public walletAddress: string,
     public walletContract: Contract,
   ) {}
 
   static async connect(
-    blsSignerAddress: string,
+    blsSecret: string,
     provider = new ethers.providers.JsonRpcProvider(),
   ) {
-    const blsSigner = blsSignerFactory.getSigner(domain, blsSignerAddress);
+    const blsSigner = blsSignerFactory.getSigner(domain, blsSecret);
 
     const blsPubKeyHash = blsKeyHash(blsSigner);
 
@@ -57,7 +57,7 @@ export default class Wallet {
       provider,
       await provider.getNetwork(),
       verificationGateway,
-      blsSignerAddress,
+      blsSecret,
       blsSigner,
       walletAddress,
       walletContract,

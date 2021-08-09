@@ -2,8 +2,8 @@ import { blsSignerFactory, ethers } from "../deps/index.ts";
 
 import * as env from "../src/env.ts";
 import ovmContractABIs from "../ovmContractABIs/index.ts";
-import createBLSWallet from "../test/helpers/createBLSWallet.ts";
-import blsKeyHash from "../test/helpers/blsKeyHash.ts";
+import createBLSWallet from "../src/chain/createBLSWallet.ts";
+import blsKeyHash from "../src/chain/blsKeyHash.ts";
 
 const utils = ethers.utils;
 
