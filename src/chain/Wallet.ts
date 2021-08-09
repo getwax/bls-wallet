@@ -1,9 +1,16 @@
-import { blsSignerFactory, Contract, ethers } from "../../deps/index.ts";
+import {
+  blsSignerFactory,
+  Contract,
+  ethers,
+  hubbleBls,
+} from "../../deps/index.ts";
 
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
+import type { TransactionData } from "../app/TxTable.ts";
 import * as env from "../env.ts";
 import assert from "../helpers/assert.ts";
 import blsKeyHash from "./blsKeyHash.ts";
+import dataPayload from "./dataPayload.ts";
 import domain from "./domain.ts";
 
 export default class Wallet {
@@ -12,6 +19,7 @@ export default class Wallet {
     public network: ethers.providers.Network,
     public verificationGateway: Contract,
     public blsSignerAddress: string,
+    public blsSigner: hubbleBls.signer.BlsSigner,
     public walletAddress: string,
     public walletContract: Contract,
   ) {}
@@ -50,8 +58,52 @@ export default class Wallet {
       await provider.getNetwork(),
       verificationGateway,
       blsSignerAddress,
+      blsSigner,
       walletAddress,
       walletContract,
     );
+  }
+
+  async buildTx({
+    contract,
+    method,
+    args,
+    tokenRewardAmount = ethers.BigNumber.from(0),
+    nonceOffset = 0,
+  }: {
+    contract: ethers.Contract;
+    method: string;
+    args: string[];
+    tokenRewardAmount?: ethers.BigNumber;
+    nonceOffset?: number;
+  }): Promise<TransactionData> {
+    const encodedFunction = contract.interface.encodeFunctionData(method, args);
+    const nonce = Number(await this.walletContract.nonce()) + nonceOffset;
+
+    const message = dataPayload(
+      this.network.chainId,
+      nonce,
+      tokenRewardAmount.toNumber(),
+      contract.address,
+      encodedFunction,
+    );
+
+    const signature = this.blsSigner.sign(message);
+
+    let tokenRewardAmountStr = tokenRewardAmount.toHexString();
+
+    tokenRewardAmountStr = `0x${
+      tokenRewardAmountStr.slice(2).padStart(64, "0")
+    }`;
+
+    return {
+      pubKey: hubbleBls.mcl.dumpG2(this.blsSigner.pubkey),
+      nonce,
+      signature: hubbleBls.mcl.dumpG1(signature),
+      tokenRewardAmount: tokenRewardAmountStr,
+      contractAddress: contract.address,
+      methodId: encodedFunction.slice(0, 10),
+      encodedParams: `0x${encodedFunction.slice(10)}`,
+    };
   }
 }
