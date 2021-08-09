@@ -13,53 +13,55 @@ import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
 
-const clock = Clock.create();
+export default async function app() {
+  const clock = Clock.create();
 
-const queryClient = createQueryClient();
+  const queryClient = createQueryClient();
 
-const txTablesMutex = new Mutex();
+  const txTablesMutex = new Mutex();
 
-const readyTxTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
+  const readyTxTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
 
-const futureTxTable = await TxTable.create(
-  queryClient,
-  env.FUTURE_TX_TABLE_NAME,
-);
+  const futureTxTable = await TxTable.create(
+    queryClient,
+    env.FUTURE_TX_TABLE_NAME,
+  );
 
-const walletService = new WalletService(env.PRIVATE_KEY_AGG);
+  const walletService = new WalletService(env.PRIVATE_KEY_AGG);
 
-const txService = new TxService(
-  clock,
-  queryClient,
-  txTablesMutex,
-  futureTxTable,
-  readyTxTable,
-  walletService,
-);
+  const txService = new TxService(
+    clock,
+    queryClient,
+    txTablesMutex,
+    futureTxTable,
+    readyTxTable,
+    walletService,
+  );
 
-const adminService = new AdminService(
-  walletService,
-  readyTxTable,
-  futureTxTable,
-);
+  const adminService = new AdminService(
+    walletService,
+    readyTxTable,
+    futureTxTable,
+  );
 
-const routers = [
-  TxRouter(txService),
-  AdminRouter(adminService),
-];
+  const routers = [
+    TxRouter(txService),
+    AdminRouter(adminService),
+  ];
 
-const app = new Application();
+  const app = new Application();
 
-app.use(errorHandler);
+  app.use(errorHandler);
 
-for (const router of routers) {
-  app.use(router.routes(), router.allowedMethods());
+  for (const router of routers) {
+    app.use(router.routes(), router.allowedMethods());
+  }
+
+  app.use(notFoundHandler);
+
+  app.addEventListener("listen", () => {
+    console.log(`Listening on port ${env.PORT}...`);
+  });
+
+  await app.listen({ port: env.PORT });
 }
-
-app.use(notFoundHandler);
-
-app.addEventListener("listen", () => {
-  console.log(`Listening on port ${env.PORT}...`);
-});
-
-await app.listen({ port: env.PORT });
