@@ -5,7 +5,7 @@ import {
   hubbleBls,
 } from "../../deps/index.ts";
 
-import Rng from "./Rng.ts";
+import testRng from "./testRng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import createBLSWallet from "./createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
@@ -76,7 +76,7 @@ export default class Fixture {
   }
 
   static async create(testName: string): Promise<Fixture> {
-    const rng = Rng.root.seed(testName);
+    const rng = testRng.seed(testName);
 
     const walletService = new WalletService(
       rng.seed("aggregatorSigner").address(),
@@ -100,7 +100,7 @@ export default class Fixture {
 
   private constructor(
     public testName: string,
-    public rng: Rng,
+    public rng: typeof testRng,
     public chainId: number,
     public walletService: WalletService,
   ) {
