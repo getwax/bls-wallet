@@ -7,7 +7,7 @@ import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
 
-const leadTarget = 5;
+const leadTarget = 50;
 const pollingInterval = 400;
 const sendWalletCount = 50;
 
