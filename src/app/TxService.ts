@@ -461,8 +461,17 @@ export default class TxService {
           this.unconfirmedTxs.add(tx);
         }
 
-        this.walletService.sendTxsWithoutWait(batchTxs)
+        const responsePromise = this.walletService.sendTxsWithoutWait(batchTxs);
+
+        responsePromise.catch((error) => {
+          console.error("Response error", error.stack);
+        });
+
+        responsePromise
           .then((response) => response.wait())
+          .catch((error) => {
+            console.error("Wait error", error.stack);
+          })
           .then(() => {
             for (const tx of batchTxs) {
               this.unconfirmedTxs.delete(tx);
