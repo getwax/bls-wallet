@@ -1,3 +1,5 @@
+#!/usr/bin/env -S deno run --allow-net --unstable --allow-read
+
 // Useful for when breaking database changes are made.
 
 import createQueryClient from "../src/app/createQueryClient.ts";
