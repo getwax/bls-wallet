@@ -102,6 +102,59 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
   assertEquals(balance.toNumber(), 8);
 });
 
+Fixture.test("WalletService sends large aggregate mint tx", async (fx) => {
+  const blsSigner = fx.createBlsSigner();
+  const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+
+  const size = 11;
+
+  const txs = await Promise.all(
+    Range(size).map((i) =>
+      fx.createTxData({
+        blsSigner,
+        contract: fx.testErc20,
+        method: "mint",
+        args: [blsWallet.address, "1"],
+        nonceOffset: i,
+      })
+    ),
+  );
+
+  await fx.walletService.sendTxs(txs);
+
+  const balance: BigNumber = await fx.testErc20.balanceOf(
+    blsWallet.address,
+  );
+
+  assertEquals(balance.toNumber(), size);
+});
+
+Fixture.test("WalletService sends large aggregate transfer tx", async (fx) => {
+  const [sendWallet, recvWallet] = await fx.setupWallets(2);
+
+  const size = 12;
+
+  const txs = await Promise.all(
+    Range(size).map((i) =>
+      fx.createTxData({
+        blsSigner: sendWallet.blsSigner,
+        contract: fx.testErc20,
+        method: "transfer",
+        args: [recvWallet.blsWallet.address, "1"],
+        nonceOffset: i,
+      })
+    ),
+  );
+
+  await fx.walletService.sendTxs(txs);
+
+  const balance: BigNumber = await fx.testErc20.balanceOf(
+    recvWallet.blsWallet.address,
+  );
+
+  assertEquals(balance.toNumber(), 1000 + size);
+});
+
 Fixture.test(
   "WalletService sends multiple aggregate transactions",
   async (fx) => {
