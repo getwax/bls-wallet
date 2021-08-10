@@ -55,7 +55,7 @@ export default class WalletService {
 
   static async create(aggPrivateKey: string): Promise<WalletService> {
     const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
-    const nextNonce = (await aggregatorSigner.getTransactionCount()) + 1;
+    const nextNonce = (await aggregatorSigner.getTransactionCount());
 
     return new WalletService(aggregatorSigner, nextNonce);
   }

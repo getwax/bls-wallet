@@ -17,6 +17,7 @@ import Range from "../../src/helpers/Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
 import * as env from "../env.ts";
+import Signer from "./Signer.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -119,9 +120,18 @@ export default class Fixture {
   }
 
   async getOrCreateBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
+    const verificationGateway = new ethers.Contract(
+      env.VERIFICATION_GATEWAY_ADDRESS,
+      ovmContractABIs["VerificationGateway.json"].abi,
+      Signer(
+        this.walletService.aggregatorSigner.provider,
+        this.rng.seed("signer").address(),
+      ),
+    );
+
     return await createBLSWallet(
       this.chainId,
-      this.walletService.verificationGateway,
+      verificationGateway,
       signer,
     );
   }
