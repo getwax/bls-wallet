@@ -6,7 +6,7 @@ export default class MockErc20 {
 
   constructor(
     address: string,
-    provider: ethers.providers.Provider,
+    provider: ethers.providers.Provider | ethers.Signer,
   ) {
     this.contract = new ethers.Contract(
       address,
@@ -17,5 +17,12 @@ export default class MockErc20 {
 
   async balanceOf(address: string): Promise<ethers.BigNumber> {
     return await this.contract.balanceOf(address);
+  }
+
+  async mint(address: string, amount: ethers.BigNumber) {
+    await (await this.contract.mint(
+      address,
+      amount,
+    )).wait();
   }
 }
