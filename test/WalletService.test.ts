@@ -3,7 +3,7 @@ import { assertEquals, BigNumber, ethers } from "./deps.ts";
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
-Fixture.test("WalletService sends single transaction", async (fx) => {
+Fixture.test("WalletService sends single tx", async (fx) => {
   const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
 
@@ -22,6 +22,26 @@ Fixture.test("WalletService sends single transaction", async (fx) => {
   );
 
   assertEquals(balance.toNumber(), 7);
+});
+
+Fixture.test("WalletService sends single transfer tx", async (fx) => {
+  const wallets = await fx.setupWallets(2);
+
+  const tx = await fx.createTxData({
+    blsSigner: wallets[0].blsSigner,
+    contract: fx.testErc20,
+    method: "transfer",
+    args: [wallets[1].blsWallet.address, "1"],
+    nonceOffset: 0,
+  });
+
+  await fx.walletService.sendTx(tx);
+
+  const balances: BigNumber[] = await Promise.all(wallets.map(
+    (w) => fx.testErc20.balanceOf(w.blsWallet.address),
+  ));
+
+  assertEquals(balances.map((b) => b.toNumber()), [999, 1001]);
 });
 
 Fixture.test(
