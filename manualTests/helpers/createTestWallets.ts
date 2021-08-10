@@ -12,7 +12,7 @@ export default async function createTestWallets(
   seed = Rng.generateSeed(),
 ) {
   const blsSecretsRng = Rng.root.seed(seed, "blsSecret");
-  const walletService = new WalletService(env.PRIVATE_KEY_AGG);
+  const walletService = await WalletService.create(env.PRIVATE_KEY_AGG);
   const network = await walletService.aggregatorSigner.provider.getNetwork();
 
   const wallets: { blsSecret: string; walletAddress: string }[] = [];

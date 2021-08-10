@@ -169,3 +169,40 @@ Fixture.test(
     );
   },
 );
+
+Fixture.test(
+  "WalletService can concurrently send txs with consecutive nonces",
+  async (fx) => {
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
+
+    const txs = await Promise.all(
+      Range(2).map((i) =>
+        fx.createTxData({
+          blsSigner,
+          contract: fx.testErc20,
+          method: "mint",
+          args: [blsWallet.address, "1"],
+          nonceOffset: i,
+        })
+      ),
+    );
+
+    await Promise.all(
+      txs.map(async (tx, i) => {
+        // Increasing the delay below (100) increases the chance of success but
+        // the block numbers are always different when it succeeds.
+        await new Promise((resolve) => setTimeout(resolve, 100 * i));
+
+        console.log("sending", tx.nonce);
+        const recpt = await fx.walletService.sendTxs([tx]);
+        console.log("sent", tx.nonce, "block:", recpt.blockNumber);
+      }),
+    );
+
+    const balance: ethers.BigNumber = await fx.testErc20.balanceOf(
+      blsWallet.address,
+    );
+
+    assertEquals(balance.toNumber(), 1002);
+  },
+);

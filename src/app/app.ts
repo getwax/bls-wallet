@@ -27,14 +27,14 @@ export default async function app() {
     env.FUTURE_TX_TABLE_NAME,
   );
 
-  const walletService = new WalletService(env.PRIVATE_KEY_AGG);
+  const walletService = await WalletService.create(env.PRIVATE_KEY_AGG);
 
   const txService = new TxService(
     clock,
     queryClient,
     txTablesMutex,
-    futureTxTable,
     readyTxTable,
+    futureTxTable,
     walletService,
   );
 

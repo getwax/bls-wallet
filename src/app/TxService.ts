@@ -18,6 +18,7 @@ export default class TxService {
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
   };
 
+  unconfirmedTxs = new Set<TransactionData>();
   batchTimer: BatchTimer;
 
   constructor(
@@ -105,6 +106,19 @@ export default class TxService {
     });
   }
 
+  HighestUnconfirmedNonce(pubKey: string): number | null {
+    const unconfirmedTxs = [...this.unconfirmedTxs.values()]
+      .filter((tx) => tx.pubKey === pubKey);
+
+    if (unconfirmedTxs.length === 0) {
+      return null;
+    }
+
+    return unconfirmedTxs
+      .map((tx) => tx.nonce)
+      .reduce((a, b) => Math.max(a, b));
+  }
+
   /**
    * Find the highest nonce that can be added to ready txs. This needs to be
    * higher than both the latest nonce on chain and any tx nonces (for this key)
@@ -114,7 +128,15 @@ export default class TxService {
     nextChainNonce: ethers.BigNumber,
     pubKey: string,
   ): Promise<number> {
-    const nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
+    const highestUnconfirmedNonce = this.HighestUnconfirmedNonce(pubKey);
+    let nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
+
+    if (
+      highestUnconfirmedNonce !== null &&
+      (nextLocalNonce === null || highestUnconfirmedNonce >= nextLocalNonce)
+    ) {
+      nextLocalNonce = highestUnconfirmedNonce + 1;
+    }
 
     const highestReadyNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
       ? nextChainNonce
@@ -331,6 +353,15 @@ export default class TxService {
     let nextNonce = (await this.walletService.checkTx(exampleTx))
       .nextNonce.toNumber();
 
+    const highestUnconfirmedNonce = this.HighestUnconfirmedNonce(pubKey);
+
+    if (
+      highestUnconfirmedNonce !== null &&
+      highestUnconfirmedNonce >= nextNonce
+    ) {
+      nextNonce = highestUnconfirmedNonce + 1;
+    }
+
     let finished: boolean;
     let txs: TransactionData[];
 
@@ -426,7 +457,17 @@ export default class TxService {
       }
 
       if (batchTxs.length > 0) {
-        await this.walletService.sendTxs(batchTxs);
+        for (const tx of batchTxs) {
+          this.unconfirmedTxs.add(tx);
+        }
+
+        this.walletService.sendTxsWithoutWait(batchTxs)
+          .then((response) => response.wait())
+          .then(() => {
+            for (const tx of batchTxs) {
+              this.unconfirmedTxs.delete(tx);
+            }
+          });
       }
 
       await this.removeFromReady([...batchTxs, ...insufficientRewardTxs]);

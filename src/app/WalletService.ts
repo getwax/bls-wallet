@@ -28,15 +28,13 @@ const addressStringLength = 42;
 const pubKeyStringLength = 258;
 
 export default class WalletService {
-  aggregatorSigner: Wallet;
   rewardErc20: Contract;
   verificationGateway: Contract;
 
-  constructor(public aggPrivateKey: string) {
-    this.aggregatorSigner = WalletService.getAggregatorSigner(
-      this.aggPrivateKey,
-    );
-
+  constructor(
+    public aggregatorSigner: Wallet,
+    public nextNonce: number,
+  ) {
     this.rewardErc20 = new Contract(
       env.REWARD_TOKEN_ADDRESS,
       ovmContractABIs["MockERC20.json"].abi,
@@ -48,6 +46,18 @@ export default class WalletService {
       ovmContractABIs["VerificationGateway.json"].abi,
       this.aggregatorSigner,
     );
+  }
+
+  NextNonce() {
+    const result = this.nextNonce++;
+    return result;
+  }
+
+  static async create(aggPrivateKey: string): Promise<WalletService> {
+    const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
+    const nextNonce = (await aggregatorSigner.getTransactionCount()) + 1;
+
+    return new WalletService(aggregatorSigner, nextNonce);
   }
 
   async checkTx(tx: TransactionData): Promise<TxCheckResult> {
@@ -85,7 +95,7 @@ export default class WalletService {
     return { failures, nextNonce };
   }
 
-  async sendTxs(txs: TransactionData[]) {
+  async sendTxsWithoutWait(txs: TransactionData[]) {
     if (txs.length === 0) {
       throw new Error("Cannot process empty batch");
     }
@@ -104,15 +114,21 @@ export default class WalletService {
           methodID: tx.methodId,
           encodedParams: tx.encodedParams,
         })),
+        { nonce: this.NextNonce() },
       );
 
-    return await txResponse.wait();
+    return txResponse;
+  }
+
+  async sendTxs(txs: TransactionData[]) {
+    const response = await this.sendTxsWithoutWait(txs);
+    return response.wait();
   }
 
   async sendTx(tx: TransactionData) {
     const txSignature = hubbleBls.mcl.loadG1(tx.signature);
 
-    const txResponse: ethers.providers.TransactionResponse = await this
+    const txResponse = await this
       .verificationGateway.blsCall(
         getKeyHash(tx.pubKey),
         txSignature,
@@ -120,6 +136,7 @@ export default class WalletService {
         tx.contractAddress,
         tx.methodId,
         tx.encodedParams,
+        { nonce: this.NextNonce() },
       );
 
     return await txResponse.wait();
