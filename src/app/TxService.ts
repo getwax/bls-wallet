@@ -457,17 +457,19 @@ export default class TxService {
       }
 
       if (batchTxs.length > 0) {
-        for (const tx of batchTxs) {
-          this.unconfirmedTxs.add(tx);
-        }
+        // for (const tx of batchTxs) {
+        //   this.unconfirmedTxs.add(tx);
+        // }
 
-        this.walletService.sendTxsWithoutWait(batchTxs)
-          .then((response) => response.wait())
-          .then(() => {
-            for (const tx of batchTxs) {
-              this.unconfirmedTxs.delete(tx);
-            }
-          });
+        // this.walletService.sendTxsWithoutWait(batchTxs)
+        //   .then((response) => response.wait())
+        //   .then(() => {
+        //     for (const tx of batchTxs) {
+        //       this.unconfirmedTxs.delete(tx);
+        //     }
+        //   });
+
+        await this.walletService.sendTxs(batchTxs);
       }
 
       await this.removeFromReady([...batchTxs, ...insufficientRewardTxs]);

@@ -103,6 +103,8 @@ export default class WalletService {
     const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
     const aggSignature = hubbleBls.signer.aggregate(txSignatures);
 
+    console.log("Sending", txs.map((tx) => tx.txId));
+
     const txResponse: ethers.providers.TransactionResponse = await this
       .verificationGateway.blsCallMany(
         this.aggregatorSigner.address,

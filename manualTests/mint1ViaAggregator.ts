@@ -6,7 +6,7 @@ import assert from "../src/helpers/assert.ts";
 import delay from "../src/helpers/delay.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
-import createTestWallet from "./helpers/createTestWallet.ts";
+import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
 
 const provider = new ethers.providers.JsonRpcProvider();
 
@@ -14,7 +14,7 @@ const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
 const client = new Client(`http://localhost:${env.PORT}`);
 
-const { blsSecret } = await createTestWallet();
+const { wallets: [{ blsSecret }] } = await createTestWalletsCached(provider, 1);
 const wallet = await Wallet.connect(blsSecret, provider);
 
 const startBalance = await testErc20.balanceOf(wallet.walletAddress);
