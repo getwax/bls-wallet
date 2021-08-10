@@ -1,3 +1,3 @@
-import createTestWallet from "./helpers/createTestWallet.ts";
+import createTestWallets from "./helpers/createTestWallets.ts";
 
-console.log(await createTestWallet());
+console.log(await createTestWallets(1));
