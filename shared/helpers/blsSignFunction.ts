@@ -3,7 +3,6 @@ import { BigNumber, Contract, BaseContract, utils } from "ethers";
 import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 import { solG1 } from "../lib/hubble-bls/src/mcl"
 
-import dataPayload from "./dataPayload";
 import Fixture, { FullTxData, TxData } from "./Fixture";
 
 export default function blsSignFunction(
@@ -33,25 +32,3 @@ export default function blsSignFunction(
     fullTxData.blsSigner.sign(dataToSign)
   ];
 }
-
-// export default function blsSignTransfer(
-//   blsSigner: BlsSignerInterface,
-//   chainId: number,
-//   nonce: number,
-//   token: Contract,
-//   recipientAddress: string,
-//   amount: BigNumber
-// ): [string, solG1] {
-//   let encodedTransfer = token.interface.encodeFunctionData(
-//     "transfer",
-//     [recipientAddress, amount.toString()]
-//   );
-//   let dataToSign = dataPayload(
-//     chainId,
-//     nonce,
-//     BigNumber.from(0),
-//     token.address,
-//     encodedTransfer
-//   );
-//   return [encodedTransfer, blsSigner.sign(dataToSign)];
-// }

@@ -4,9 +4,11 @@ import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
+import dataPayload from "../shared/helpers/dataPayload";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber, providers } from "ethers";
+import blsSignFunction from "../shared/helpers/blsSignFunction";
 
 describe('WalletActions', async function () {
   let fx: Fixture;
@@ -34,28 +36,19 @@ describe('WalletActions', async function () {
 
     const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
 
-    let encodedFunction = fx.VerificationGateway.interface.encodeFunctionData(
-      "walletCrossCheck",
-      [blsPubKeyHash]
-    );
-  
-    let dataToSign = await fx.dataPayload(
-      0,
-      BigNumber.from(0),
-      fx.verificationGateway.address,
-      encodedFunction
-    );
-  
-    let signature = blsSigner.sign(dataToSign);
-  
+    let [txData, signature] = blsSignFunction({
+      blsSigner: blsSigner,
+      chainId: fx.chainId,
+      nonce: 0,
+      reward: BigNumber.from(0),
+      contract: fx.verificationGateway,
+      functionName: "walletCrossCheck",
+      params: [Fixture.blsKeyHash(blsSigner)]    
+    });
     let {result, nextNonce} = await fx.verificationGateway.callStatic.checkSig(
       0,
-      BigNumber.from(0),
-      blsPubKeyHash,
-      signature,
-      fx.verificationGateway.address,
-      encodedFunction.substring(0,10),
-      '0x'+encodedFunction.substr(10)
+      txData,
+      signature
     );
     expect(result).to.equal(true);
     expect(nextNonce).to.equal(BigNumber.from(1));
@@ -64,7 +57,8 @@ describe('WalletActions', async function () {
   it("should create many wallets", async function() {
     let signatures: any[] = new Array(fx.blsSigners.length);
 
-    let dataToSign = fx.dataPayload(
+    let dataToSign = dataPayload(
+      fx.chainId,
       0,
       BigNumber.from(0),
       fx.verificationGateway.address,
@@ -127,7 +121,8 @@ describe('WalletActions', async function () {
 
     let signatures: any[] = new Array(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let dataToSign = fx.dataPayload(
+      let dataToSign = dataPayload(
+        fx.chainId,
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
         BigNumber.from(0),
         th.testToken.address,
@@ -191,7 +186,8 @@ describe('WalletActions', async function () {
       );
       encodedParams[i] = '0x'+encodedFunction.substr(10);
 
-      let dataToSign = fx.dataPayload(
+      let dataToSign = dataPayload(
+        fx.chainId,
         nonce++,
         reward,
         testToken.address,

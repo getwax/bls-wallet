@@ -8,8 +8,6 @@ import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-b
 import { solG1 } from "../lib/hubble-bls/src/mcl"
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
-import dataPayload from "./dataPayload";
-
 import createBLSWallet from "./createBLSWallet";
 import blsSignFunction from "./blsSignFunction";
 
@@ -156,50 +154,10 @@ export default class Fixture {
     return txData
   }
 
-  dataPayload(
-    nonce: any,
-    reward: BigNumber,
-    contractAddress: any,
-    encodedFunction: string
-  ) {
-    return dataPayload(
-      this.chainId,
-      nonce,
-      reward,
-      contractAddress,
-      encodedFunction
-    );
-  }
-
   async gatewayCallFull(txDataFull: FullTxData) {
     let [txData, sig] = blsSignFunction(txDataFull);
     await this.blsCallSigned(txData, sig);
   }
-
-  // async gatewayCall(
-  //   blsSigner: BlsSignerInterface,
-  //   nonce: number,
-  //   reward: BigNumber,
-  //   contractAddress: string,
-  //   encodedFunction: string
-  // ) {
-  //   let dataToSign = this.dataPayload(
-  //     nonce,
-  //     reward,
-  //     contractAddress,
-  //     encodedFunction
-  //   );
-  //   let signature = blsSigner.sign(dataToSign);
-
-  //   await this.blsCallSigned(
-  //     blsSigner,
-  //     signature,
-  //     reward,
-  //     contractAddress,
-  //     encodedFunction.substring(0,10),
-  //     '0x'+encodedFunction.substr(10)
-  //   );
-  // }
 
   async blsCallSigned(txData: TxData, sig: solG1) {
     // can be called by any ecdsa wallet

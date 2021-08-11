@@ -33,14 +33,17 @@ contract VerificationGateway is Initializable
         uint256[BLS_LEN] publicKey
     );
 
+    struct TxData {
+        bytes32 publicKeyHash;
+        uint256 tokenRewardAmount;
+        address contractAddress;
+        bytes4 methodId; //bytes4(keccak256(bytes(fnSig))
+        bytes encodedParams;
+    }
     function checkSig(
         uint256 signedNonce,
-        uint256 tokenRewardAmount,
-        bytes32 publicKeyHash,
-        uint256[2] calldata signature,
-        address contractAddress,
-        bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
-        bytes calldata encodedParams
+        TxData calldata txData,
+        uint256[2] calldata signature
     ) external view
     returns (
         bool result,
@@ -48,20 +51,20 @@ contract VerificationGateway is Initializable
     ) {
         (bool checkResult, bool callSuccess) = BLS.verifySingle(
             signature,
-            blsKeysFromHash[publicKeyHash],
+            blsKeysFromHash[txData.publicKeyHash],
             messagePoint(
                 signedNonce,
-                tokenRewardAmount,
-                contractAddress,
+                txData.tokenRewardAmount,
+                txData.contractAddress,
                 keccak256(abi.encodePacked(
-                    methodId,
-                    encodedParams
+                    txData.methodId,
+                    txData.encodedParams
                 ))
             )
         );
         
         result = callSuccess && checkResult;
-        nextNonce = walletFromHash[publicKeyHash].nonce();
+        nextNonce = walletFromHash[txData.publicKeyHash].nonce();
     }
 
     function walletCrossCheck(bytes32 hash) public view {
@@ -186,15 +189,6 @@ contract VerificationGateway is Initializable
             encodedParams
         );
     }
-
-    struct TxData {
-        bytes32 publicKeyHash;
-        uint256 tokenRewardAmount;
-        address contractAddress;
-        bytes4 methodId;
-        bytes encodedParams;
-    }
-
 
     /**
     @param txs array of transaction data
