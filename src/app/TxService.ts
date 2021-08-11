@@ -461,22 +461,29 @@ export default class TxService {
           this.unconfirmedTxs.add(tx);
         }
 
-        const responsePromise = this.walletService.sendTxsWithoutWait(batchTxs);
-
-        responsePromise.catch((error) => {
-          console.error("Response error", error.stack);
-        });
-
-        responsePromise
-          .then((response) => response.wait())
-          .catch((error) => {
-            console.error("Wait error", error.stack);
-          })
-          .then(() => {
+        this.walletService.sendTxsWithRetries(batchTxs, 3, 1000)
+          .finally(() => {
             for (const tx of batchTxs) {
               this.unconfirmedTxs.delete(tx);
             }
           });
+
+        // const responsePromise = this.walletService.sendTxsWithoutWait(batchTxs);
+
+        // responsePromise.catch((error) => {
+        //   console.error("Response error", error.stack);
+        // });
+
+        // responsePromise
+        //   .then((response) => response.wait())
+        //   .catch((error) => {
+        //     console.error("Wait error", error.stack);
+        //   })
+        //   .then(() => {
+        //     for (const tx of batchTxs) {
+        //       this.unconfirmedTxs.delete(tx);
+        //     }
+        //   });
 
         // await this.walletService.sendTxs(batchTxs);
       }

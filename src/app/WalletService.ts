@@ -1,6 +1,7 @@
 import {
   BigNumber,
   Contract,
+  delay,
   ethers,
   hubbleBls,
   Wallet,
@@ -11,6 +12,7 @@ import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
+import assertExists from "../helpers/assertExists.ts";
 
 function getKeyHash(pubkey: string) {
   return ethers.utils.keccak256(ethers.utils.solidityPack(
@@ -125,6 +127,64 @@ export default class WalletService {
   async sendTxs(txs: TransactionData[]) {
     const response = await this.sendTxsWithoutWait(txs);
     return response.wait();
+  }
+
+  async sendTxsWithRetries(
+    txs: TransactionData[],
+    maxAttempts: number,
+    retryDelay: number,
+  ) {
+    assert(txs.length > 0, "Cannot process empty batch");
+    assert(maxAttempts > 0, "Must have at least one attempt");
+
+    const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
+    const aggSignature = hubbleBls.signer.aggregate(txSignatures);
+
+    const args = [
+      this.aggregatorSigner.address,
+      aggSignature,
+      txs.map((tx) => ({
+        publicKeyHash: getKeyHash(tx.pubKey),
+        tokenRewardAmount: tx.tokenRewardAmount,
+        contractAddress: tx.contractAddress,
+        methodID: tx.methodId,
+        encodedParams: tx.encodedParams,
+      })),
+      { nonce: this.NextNonce() },
+    ];
+
+    const attempt = async () => {
+      const txResponse: ethers.providers.TransactionResponse = await this
+        .verificationGateway.blsCallMany(...args);
+
+      return txResponse.wait();
+    };
+
+    const txIds = txs.map((tx) => tx.txId);
+
+    let waitResult: Promise<ethers.providers.TransactionReceipt> | null = null;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const attemptSuffix = i > 0 ? ` (attempt ${i + 1})` : "";
+      console.log(`Sending${attemptSuffix}`, txIds);
+
+      try {
+        waitResult = attempt();
+        return await waitResult;
+      } catch (error) {
+        if (i !== maxAttempts - 1) {
+          console.error(
+            `Attempt ${i + 1} failed, retrying in ${retryDelay}ms`,
+            txIds,
+            error,
+          );
+
+          await delay(retryDelay);
+        }
+      }
+    }
+
+    return await assertExists(waitResult);
   }
 
   async sendTx(tx: TransactionData) {

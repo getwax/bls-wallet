@@ -1,3 +1,5 @@
+export { delay } from "https://deno.land/std@0.103.0/async/delay.ts";
+
 import { config as dotEnvConfig } from "https://deno.land/x/dotenv@v2.0.0/mod.ts";
 export { dotEnvConfig };
 

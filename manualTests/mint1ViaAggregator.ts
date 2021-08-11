@@ -1,9 +1,8 @@
-import { ethers } from "../deps/index.ts";
+import { delay, ethers } from "../deps/index.ts";
 
 import Client from "../src/app/Client.ts";
 import Wallet from "../src/chain/Wallet.ts";
 import assert from "../src/helpers/assert.ts";
-import delay from "../src/helpers/delay.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
