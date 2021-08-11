@@ -1,4 +1,4 @@
-import { assertEquals, BigNumber, ethers } from "./deps.ts";
+import { assertEquals, BigNumber, delay, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -242,13 +242,11 @@ Fixture.test(
 
     await Promise.all(
       txs.map(async (tx, i) => {
-        // Increasing the delay below (100) increases the chance of success but
-        // the block numbers are always different when it succeeds.
-        await new Promise((resolve) => setTimeout(resolve, 100 * i));
+        // Stagger the txs slightly so that they are likely to arrive in order
+        // but are still trying to get into the same block
+        await delay(100 * i);
 
-        console.log("sending", tx.nonce);
-        const recpt = await fx.walletService.sendTxs([tx]);
-        console.log("sent", tx.nonce, "block:", recpt.blockNumber);
+        await fx.walletService.sendTxsWithRetries([tx], 10, 300);
       }),
     );
 
