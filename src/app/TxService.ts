@@ -489,7 +489,7 @@ export default class TxService {
 
         (async () => {
           try {
-            const recpt = await this.walletService.sendTxsWithRetries(
+            const recpt = await this.walletService.sendTxs(
               batchTxs,
               Infinity,
               300,

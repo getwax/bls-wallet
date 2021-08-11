@@ -12,7 +12,6 @@ import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
-import assertExists from "../helpers/assertExists.ts";
 import AppEvent from "./AppEvent.ts";
 
 function getKeyHash(pubkey: string) {
@@ -102,60 +101,18 @@ export default class WalletService {
     return { failures, nextNonce };
   }
 
-  async sendTxsWithoutWait(txs: TransactionData[]) {
-    if (txs.length === 0) {
-      throw new Error("Cannot process empty batch");
-    }
-
-    const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
-    const aggSignature = hubbleBls.signer.aggregate(txSignatures);
-
-    const txIds = txs.map((tx) => tx.txId);
-
-    this.emit({
-      type: "batch-attempt",
-      data: { attemptNumber: 1, txIds },
-    });
-
-    const txResponse: ethers.providers.TransactionResponse = await this
-      .verificationGateway.blsCallMany(
-        this.aggregatorSigner.address,
-        aggSignature,
-        txs.map((tx) => ({
-          publicKeyHash: getKeyHash(tx.pubKey),
-          tokenRewardAmount: tx.tokenRewardAmount,
-          contractAddress: tx.contractAddress,
-          methodID: tx.methodId,
-          encodedParams: tx.encodedParams,
-        })),
-        { nonce: this.NextNonce() },
-      );
-
-    this.emit({
-      type: "batch-sent",
-      data: { txIds },
-    });
-
-    return txResponse;
-  }
-
-  async sendTxs(txs: TransactionData[]) {
-    const response = await this.sendTxsWithoutWait(txs);
-    return response.wait();
-  }
-
-  async sendTxsWithRetries(
+  async sendTxs(
     txs: TransactionData[],
-    maxAttempts: number,
-    retryDelay: number,
-  ) {
+    maxAttempts = 1,
+    retryDelay = 300,
+  ): Promise<ethers.providers.TransactionReceipt> {
     assert(txs.length > 0, "Cannot process empty batch");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
     const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
     const aggSignature = hubbleBls.signer.aggregate(txSignatures);
 
-    const args = [
+    const blsCallManyArgs = [
       this.aggregatorSigner.address,
       aggSignature,
       txs.map((tx) => ({
@@ -169,15 +126,26 @@ export default class WalletService {
     ];
 
     const attempt = async () => {
-      const txResponse: ethers.providers.TransactionResponse = await this
-        .verificationGateway.blsCallMany(...args);
+      let txResponse: ethers.providers.TransactionResponse;
 
-      return txResponse.wait();
+      try {
+        txResponse = await this.verificationGateway.blsCallMany(
+          ...blsCallManyArgs,
+        );
+      } catch (error) {
+        // Distinguish this error because it means something bigger is wrong
+        // with the transaction and it's not worth retrying.
+        return { type: "responseError" as const, value: error };
+      }
+
+      try {
+        return { type: "receipt" as const, value: await txResponse.wait() };
+      } catch (error) {
+        return { type: "waitError" as const, value: error };
+      }
     };
 
     const txIds = txs.map((tx) => tx.txId);
-
-    let waitResult: Promise<ethers.providers.TransactionReceipt> | null = null;
 
     for (let i = 0; i < maxAttempts; i++) {
       this.emit({
@@ -185,26 +153,35 @@ export default class WalletService {
         data: { attemptNumber: i + 1, txIds },
       });
 
-      try {
-        waitResult = attempt();
-        return await waitResult;
-      } catch (error) {
-        if (i !== maxAttempts - 1) {
-          this.emit({
-            type: "batch-attempt-failed",
-            data: {
-              attemptNumber: i + 1,
-              txIds,
-              error,
-            },
-          });
+      const attemptResult = await attempt();
 
-          await delay(retryDelay);
-        }
+      if (attemptResult.type === "receipt") {
+        return attemptResult.value;
+      }
+
+      if (attemptResult.type === "responseError") {
+        throw attemptResult.value;
+      }
+
+      const waitError = attemptResult.value;
+
+      if (i !== maxAttempts - 1) {
+        this.emit({
+          type: "batch-attempt-failed",
+          data: {
+            attemptNumber: i + 1,
+            txIds,
+            error: waitError,
+          },
+        });
+
+        await delay(retryDelay);
+      } else {
+        throw waitError;
       }
     }
 
-    return await assertExists(waitResult);
+    throw new Error("Expected return or throw from attempt loop");
   }
 
   async sendTx(tx: TransactionData) {
