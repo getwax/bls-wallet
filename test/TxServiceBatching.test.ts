@@ -38,6 +38,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
 
   fx.clock.advance(5000);
   await txService.batchTimer.waitForCompletedBatches(1);
+  await txService.waitForConfirmations();
 
   assertEquals(
     await fx.testErc20.balanceOf(blsWallet.address),
@@ -51,7 +52,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
 });
 
 Fixture.test("submits a full batch without delay", async (fx) => {
-  const txService = await fx.createTxService();
+  const txService = await fx.createTxService(txServiceConfig);
   const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
   const txs = await Promise.all(
@@ -70,6 +71,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
   assertEquals(failures.flat(), []);
 
   await txService.batchTimer.waitForCompletedBatches(1);
+  await txService.waitForConfirmations();
 
   // Check mints have occurred, ensuring a batch has occurred even though the
   // clock has not advanced
@@ -85,7 +87,7 @@ Fixture.test(
     "txs after delay",
   ].join(" "),
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createTxService(txServiceConfig);
     const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
     const txs = await Promise.all(
@@ -104,6 +106,7 @@ Fixture.test(
     assertEquals(failures.flat(), []);
 
     await txService.batchTimer.waitForCompletedBatches(1);
+    await txService.waitForConfirmations();
 
     // Check mints have occurred, ensuring a batch has occurred even though the
     // clock has not advanced
@@ -123,6 +126,7 @@ Fixture.test(
 
     await fx.clock.advance(5000);
     await txService.batchTimer.waitForCompletedBatches(2);
+    await txService.waitForConfirmations();
 
     assertEquals(
       await fx.testErc20.balanceOf(blsWallet.address),
@@ -134,7 +138,7 @@ Fixture.test(
 Fixture.test(
   "submits 3 batches added concurrently in a jumbled order",
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createTxService(txServiceConfig);
     const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
     const txs = await Promise.all(
@@ -153,6 +157,7 @@ Fixture.test(
     assertEquals(failures.flat(), []);
 
     await txService.batchTimer.waitForCompletedBatches(3);
+    await txService.waitForConfirmations();
 
     // Check mints have occurred
     assertEquals(
@@ -174,7 +179,7 @@ Fixture.test(
     "future",
   ].join(" "),
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createTxService(txServiceConfig);
     const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
     const txs = await Promise.all(
@@ -202,6 +207,7 @@ Fixture.test(
 
     await fx.clock.advance(txService.batchTimer.maxDelayMillis);
     await txService.batchTimer.waitForCompletedBatches(1);
+    await txService.waitForConfirmations();
 
     assertEquals(
       await fx.testErc20.balanceOf(blsWallet.address),

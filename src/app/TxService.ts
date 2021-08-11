@@ -465,6 +465,7 @@ export default class TxService {
         while (
           this.unconfirmedTxs.size + batchTxs.length > maxUnconfirmedTxs
         ) {
+          // FIXME: Polling
           this.emit({ type: "waiting-unconfirmed-space" });
           await delay(1000);
         }
@@ -500,6 +501,23 @@ export default class TxService {
 
       this.checkReadyTxCount();
     });
+  }
+
+  async waitForConfirmations() {
+    const startUnconfirmedTxs = [...this.unconfirmedTxs];
+
+    while (true) {
+      const allConfirmed = startUnconfirmedTxs.every(
+        (tx) => !this.unconfirmedTxs.has(tx),
+      );
+
+      if (allConfirmed) {
+        break;
+      }
+
+      // FIXME: Polling
+      await delay(100);
+    }
   }
 
   static PublicKeys(txs: TransactionData[]) {
