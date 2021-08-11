@@ -23,6 +23,7 @@ export default class TxService {
 
   unconfirmedTxs = new Set<TransactionData>();
   batchTimer: BatchTimer;
+  batchesInProgress = 0;
 
   constructor(
     public emit: (evt: AppEvent) => void,
@@ -44,6 +45,12 @@ export default class TxService {
   }
 
   async checkReadyTxCount() {
+    if (this.batchesInProgress > 0) {
+      // No need to check because there is already a batch in progress, and a
+      // new check is run after every batch.
+      return;
+    }
+
     const readyTxCount = await this.readyTxTable.count();
 
     if (readyTxCount >= this.config.maxAggregationSize) {
@@ -423,7 +430,9 @@ export default class TxService {
   }
 
   async runBatch() {
-    return await this.runQueryGroup(async () => {
+    this.batchesInProgress++;
+
+    const batchResult = await this.runQueryGroup(async () => {
       const priorityTxs = await this.readyTxTable.getHighestPriority(
         this.config.txQueryLimit,
       );
@@ -498,9 +507,12 @@ export default class TxService {
       }
 
       await this.removeFromReady([...batchTxs, ...insufficientRewardTxs]);
-
-      this.checkReadyTxCount();
     });
+
+    this.batchesInProgress--;
+    this.checkReadyTxCount();
+
+    return batchResult;
   }
 
   async waitForConfirmations() {
