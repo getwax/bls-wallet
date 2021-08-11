@@ -246,7 +246,7 @@ Fixture.test(
         // but are still trying to get into the same block
         await delay(100 * i);
 
-        await fx.walletService.sendTxsWithRetries([tx], 10, 300);
+        await fx.walletService.sendTxs([tx], 10, 300);
       }),
     );
 
