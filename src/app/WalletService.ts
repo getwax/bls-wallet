@@ -176,7 +176,7 @@ export default class WalletService {
           console.error(
             `Attempt ${i + 1} failed, retrying in ${retryDelay}ms`,
             txIds,
-            error,
+            error.message.slice(0, 100),
           );
 
           await delay(retryDelay);

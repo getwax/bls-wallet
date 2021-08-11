@@ -1,4 +1,4 @@
-import { ethers, QueryClient } from "../../deps/index.ts";
+import { delay, ethers, QueryClient } from "../../deps/index.ts";
 import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
@@ -9,6 +9,8 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
+
+const maxUnconfirmedTxs = 36;
 
 export default class TxService {
   static defaultConfig = {
@@ -457,16 +459,35 @@ export default class TxService {
       }
 
       if (batchTxs.length > 0) {
+        while (
+          this.unconfirmedTxs.size + batchTxs.length > maxUnconfirmedTxs
+        ) {
+          console.log("Waiting for space for new unconfirmed txs");
+          await delay(1000);
+        }
+
         for (const tx of batchTxs) {
           this.unconfirmedTxs.add(tx);
         }
 
-        this.walletService.sendTxsWithRetries(batchTxs, 3, 1000)
-          .finally(() => {
+        (async () => {
+          try {
+            const recpt = await this.walletService.sendTxsWithRetries(
+              batchTxs,
+              Infinity,
+              300,
+            );
+
+            console.log(
+              `Success, block ${recpt.blockNumber}`,
+              batchTxs.map((tx) => tx.txId),
+            );
+          } finally {
             for (const tx of batchTxs) {
               this.unconfirmedTxs.delete(tx);
             }
-          });
+          }
+        })();
 
         // const responsePromise = this.walletService.sendTxsWithoutWait(batchTxs);
 

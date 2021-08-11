@@ -6,7 +6,7 @@ import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
 
-const leadTarget = 50;
+const leadTarget = 48;
 const pollingInterval = 400;
 const sendWalletCount = 50;
 
@@ -69,23 +69,12 @@ let sendWalletIndex = 0;
   }
 })();
 
-let txsCompletedUpdateTime = Date.now();
-let txsPerSec = 0;
+const startTime = Date.now();
 
 (async () => {
   while (true) {
     const balance = await testErc20.balanceOf(recvWallet.walletAddress);
-    const oldTxsCompleted = txsCompleted;
     txsCompleted = balance.sub(startBalance).toNumber();
-    const newTxsCompleted = txsCompleted - oldTxsCompleted;
-
-    if (newTxsCompleted > 0) {
-      const oldUpdateTime = txsCompletedUpdateTime;
-      txsCompletedUpdateTime = Date.now();
-
-      txsPerSec = 1000 * newTxsCompleted /
-        (txsCompletedUpdateTime - oldUpdateTime);
-    }
 
     await delay(pollingInterval);
   }
@@ -94,6 +83,8 @@ let txsPerSec = 0;
 (async () => {
   while (true) {
     console.clear();
+
+    const txsPerSec = 1000 * txsCompleted / (Date.now() - startTime);
 
     console.log({
       txsSent,
