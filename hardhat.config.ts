@@ -44,6 +44,17 @@ const config: HardhatUserConfig = {
     ]
   },
   networks: {
+    gethDev: {
+      url: `http://localhost:8545`,
+      accounts: [
+        `0x${process.env.PRIVATE_KEY_AGG}`,
+        `0x${process.env.PRIVATE_KEY_002}`,
+        `0x${process.env.PRIVATE_KEY_003}`,
+        `0x${process.env.PRIVATE_KEY_004}`,
+        `0x${process.env.PRIVATE_KEY_005}`
+      ],
+      gasPrice: 0
+    },
     optimistic: {
       url: `http://localhost:8545`,
       accounts: [

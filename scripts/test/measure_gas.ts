@@ -54,7 +54,7 @@ async function logGasForTransfers() {
 
     let aggSignature = aggregate(signatures);
 
-    let methodID = encodedFunctions[0].substring(0,10);
+    let methodId = encodedFunctions[0].substring(0,10);
     let encodedParamSets = encodedFunctions.map( a => '0x'+a.substr(10) );
     try {
       let gasEstimate = await fx.blsExpander.estimateGas.blsCallMultiSameCallerContractFunction(
@@ -62,7 +62,7 @@ async function logGasForTransfers() {
         aggSignature,
         Array(signatures.length).fill(0),
         th.testToken.address,
-        methodID,
+        methodId,
         encodedParamSets
       )
 
@@ -72,7 +72,7 @@ async function logGasForTransfers() {
         aggSignature,
         Array(signatures.length).fill(0),
         th.testToken.address,
-        methodID,
+        methodId,
         encodedParamSets
       );
       gasResults.limit = (response.gasLimit as BigNumber).toNumber();

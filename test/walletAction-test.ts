@@ -3,7 +3,6 @@ import { expect, assert } from "chai";
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "../shared/helpers/Fixture";
-import { TxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
@@ -25,7 +24,6 @@ describe('WalletActions', async function () {
       .to.equal(Fixture.blsKeyHash(blsSigner));
 
     // Check revert when adding same wallet twice
-    // console.log(providers.getNetwork());
     // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
 
   });
@@ -33,7 +31,6 @@ describe('WalletActions', async function () {
   it('should check signature', async function () {
     let blsSigner = fx.blsSigners[0];
     await fx.createBLSWallet(blsSigner);
-    // let blsWallet = BLSWallet.attach(walletAddress);
 
     const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
 

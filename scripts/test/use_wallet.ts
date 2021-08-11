@@ -1,17 +1,18 @@
-import { Address } from "cluster";
-import { Contract, ContractFactory } from "ethers";
+import { BigNumber, Contract, ContractFactory } from "ethers";
 import { getContractAddress } from "ethers/lib/utils";
-import { network, ethers } from "hardhat";
+import { network } from "hardhat";
 import { exit } from "process";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
 
-import { aggregate } from "../../shared/lib/hubble-bls/src/signer";
+import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
+import { BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
 
 let config: DeployedAddresses;
 
 let ethToken: Contract;
 let rewardToken: Contract;
+
 
 let blsWallets: Contract[];
 
@@ -27,15 +28,25 @@ interface DeployedAddresses {
 async function main() {
   config = addressesForNetwork(network.name);
 
+  // setup fixture with bls wallet secret numbers
   let fx = await setup([
     +process.env.BLS_SECRET_NUM_1,
     +process.env.BLS_SECRET_NUM_2,
     +process.env.BLS_SECRET_NUM_3
   ]);
-  // console.log(await fx.createBLSWallets()); // only needed when first deploying contract wallets
+
+  let createNew = false;
+  if (createNew) {
+    config.blsAddresses = await fx.createBLSWallets();
+    console.log(`Created new blsWallet contracts: ${config.blsAddresses}`);
+  }
   blsWallets = config.blsAddresses.map( a => fx.BLSWallet.attach(a) );
 
+
+
 }
+
+
 
 function addressesForNetwork(networkName: string): DeployedAddresses {
   let c: DeployedAddresses;

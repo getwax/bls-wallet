@@ -39,7 +39,7 @@ contract VerificationGateway is Initializable
         bytes32 publicKeyHash,
         uint256[2] calldata signature,
         address contractAddress,
-        bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
+        bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
     ) external view
     returns (
@@ -54,7 +54,7 @@ contract VerificationGateway is Initializable
                 tokenRewardAmount,
                 contractAddress,
                 keccak256(abi.encodePacked(
-                    methodID,
+                    methodId,
                     encodedParams
                 ))
             )
@@ -118,7 +118,7 @@ contract VerificationGateway is Initializable
         uint256[2] calldata signature,
         uint256 tokenRewardAmount,
         address contractAddress,
-        bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
+        bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
     ) public {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
@@ -141,7 +141,7 @@ contract VerificationGateway is Initializable
             signature,
             tokenRewardAmount,
             contractAddress,
-            methodID,
+            methodId,
             encodedParams
         );
     }
@@ -151,7 +151,7 @@ contract VerificationGateway is Initializable
         uint256[2] calldata signature,
         uint256 tokenRewardAmount,
         address contractAddress,
-        bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
+        bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
     ) public {
         bytes32 publicKeyHash = callingPublicKeyHash;
@@ -164,7 +164,7 @@ contract VerificationGateway is Initializable
                 tokenRewardAmount,
                 contractAddress,
                 keccak256(abi.encodePacked(
-                    methodID,
+                    methodId,
                     encodedParams
                 ))
             )
@@ -182,7 +182,7 @@ contract VerificationGateway is Initializable
 
         bool result = walletFromHash[publicKeyHash].action(
             contractAddress,
-            methodID,
+            methodId,
             encodedParams
         );
     }
@@ -191,7 +191,7 @@ contract VerificationGateway is Initializable
         bytes32 publicKeyHash;
         uint256 tokenRewardAmount;
         address contractAddress;
-        bytes4 methodID;
+        bytes4 methodId;
         bytes encodedParams;
     }
 
@@ -245,7 +245,7 @@ contract VerificationGateway is Initializable
                 txs[i].tokenRewardAmount,
                 txs[i].contractAddress,
                 keccak256(abi.encodePacked(
-                    txs[i].methodID,
+                    txs[i].methodId,
                     txs[i].encodedParams
                 ))
             );
@@ -301,7 +301,7 @@ contract VerificationGateway is Initializable
                     // execute transaction (increments nonce)
                     wallet.action(
                         txs[i].contractAddress,
-                        txs[i].methodID,
+                        txs[i].methodId,
                         txs[i].encodedParams
                     );
                 }

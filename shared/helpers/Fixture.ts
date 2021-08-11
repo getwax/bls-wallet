@@ -5,21 +5,35 @@ import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from
 const utils = ethers.utils;
 
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
+import { solG1 } from "../lib/hubble-bls/src/mcl"
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
 import dataPayload from "./dataPayload";
+
+import createBLSWallet from "./createBLSWallet";
+import blsSignFunction from "./blsSignFunction";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
 const zeroBLSPubKey = [0, 0, 0, 0].map(BigNumber.from);
-const zeroAddress = "0x0000000000000000000000000000000000000000";
+const zeroAddress = "0x" + "0".repeat(40);
+
+export type FullTxData = {
+  blsSigner: BlsSignerInterface,
+  chainId: number,
+  nonce: number,
+  reward: BigNumber,
+  contract: Contract,
+  functionName: string,
+  params: any[]
+}
 
 export type TxData = {
   publicKeyHash: any;
   tokenRewardAmount: BigNumber;
   contractAddress: string;
-  methodID: string;
+  methodId: string;
   encodedParams: string;
 }
 
@@ -126,6 +140,22 @@ export default class Fixture {
     ));
   }
 
+  static txDataFromFull(fullTxData: FullTxData) {
+    let encodedFunction = fullTxData.contract.interface.encodeFunctionData(
+      fullTxData.functionName,
+      fullTxData.params
+    );
+
+    let txData: TxData = {
+      publicKeyHash: Fixture.blsKeyHash(fullTxData.blsSigner),
+      tokenRewardAmount: fullTxData.reward,
+      contractAddress: fullTxData.contract.address,
+      methodId: encodedFunction.substring(0,10),
+      encodedParams: '0x'+encodedFunction.substr(10)
+    }
+    return txData
+  }
+
   dataPayload(
     nonce: any,
     reward: BigNumber,
@@ -141,29 +171,45 @@ export default class Fixture {
     );
   }
 
-  async gatewayCall(
-    blsSigner,
-    nonce,
-    reward,
-    contractAddress,
-    encodedFunction
-  ) {
-    let dataToSign = this.dataPayload(
-      nonce,
-      reward,
-      contractAddress,
-      encodedFunction
-    );
-    let signature = blsSigner.sign(dataToSign);
+  async gatewayCallFull(txDataFull: FullTxData) {
+    let [txData, sig] = blsSignFunction(txDataFull);
+    await this.blsCallSigned(txData, sig);
+  }
 
+  // async gatewayCall(
+  //   blsSigner: BlsSignerInterface,
+  //   nonce: number,
+  //   reward: BigNumber,
+  //   contractAddress: string,
+  //   encodedFunction: string
+  // ) {
+  //   let dataToSign = this.dataPayload(
+  //     nonce,
+  //     reward,
+  //     contractAddress,
+  //     encodedFunction
+  //   );
+  //   let signature = blsSigner.sign(dataToSign);
+
+  //   await this.blsCallSigned(
+  //     blsSigner,
+  //     signature,
+  //     reward,
+  //     contractAddress,
+  //     encodedFunction.substring(0,10),
+  //     '0x'+encodedFunction.substr(10)
+  //   );
+  // }
+
+  async blsCallSigned(txData: TxData, sig: solG1) {
     // can be called by any ecdsa wallet
     await(await this.verificationGateway.blsCall(
-      Fixture.blsKeyHash(blsSigner),
-      signature,
-      reward,
-      contractAddress,
-      encodedFunction.substring(0,10),
-      '0x'+encodedFunction.substr(10)
+      txData.publicKeyHash,
+      sig,
+      txData.tokenRewardAmount,
+      txData.contractAddress,
+      txData.methodId,
+      txData.encodedParams
     )).wait();
   }
 
@@ -171,32 +217,12 @@ export default class Fixture {
     blsSigner: BlsSignerInterface,
     reward: BigNumber = BigNumber.from(0)
   ): Promise<any> {
-    const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
-
-    let encodedFunction = this.VerificationGateway.interface.encodeFunctionData(
-      "walletCrossCheck",
-      [blsPubKeyHash]
+    return await createBLSWallet(
+      this.chainId,
+      this.verificationGateway,
+      blsSigner,
+      reward
     );
-    let dataToSign = await this.dataPayload(
-      0,
-      reward,
-      this.verificationGateway.address,
-      encodedFunction
-    );
-
-    let signature = blsSigner.sign(dataToSign);
-
-    // can be called by any ecdsa wallet
-    await (await this.verificationGateway.blsCallCreate(
-      blsSigner.pubkey,
-      signature,
-      reward,
-      this.verificationGateway.address,
-      encodedFunction.substring(0,10),
-      '0x'+encodedFunction.substr(10)
-    )).wait();
-
-    return await this.verificationGateway.walletFromHash(blsPubKeyHash);
   }
 
   /**

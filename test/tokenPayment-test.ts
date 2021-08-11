@@ -6,7 +6,7 @@ import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "../shared/helpers/Fixture";
 import dataPayload from "../shared/helpers/dataPayload";
-import { TxData } from "../shared/helpers/Fixture";
+import { FullTxData, TxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
@@ -16,7 +16,7 @@ import { doesNotMatch } from "assert";
 
 
 
-describe('TokenPayments', async function () {
+describe.only('TokenPayments', async function () {
   let fx: Fixture;
   let th: TokenHelper;
   let blsWalletAddresses: string[];
@@ -32,20 +32,37 @@ describe('TokenPayments', async function () {
     const reward = ethers.utils.parseUnits("10");
 
     let blsSigner = fx.blsSigners[0];
-    const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
+    
+    let txDataFull: FullTxData = {
+      blsSigner: blsSigner,
+      chainId: fx.chainId,
+      nonce: 1, //next nonce after creation
+      reward: reward,
+      contract:fx.verificationGateway,
+      functionName:"walletCrossCheck",
+      params:[Fixture.blsKeyHash(blsSigner)]
+    }
 
-    let encodedFunction = fx.VerificationGateway.interface.encodeFunctionData(
-      "walletCrossCheck",
-      [blsPubKeyHash]
-    );
     let aggBalanceBefore = await th.testToken.balanceOf(await fx.signers[0].getAddress());
-    await fx.gatewayCall(
-      blsSigner,
-      1, //next nonce after creation
-      reward,
-      fx.verificationGateway.address,
-      encodedFunction
-    );
+
+    await fx.gatewayCallFull(txDataFull);
+
+
+
+    // let blsSigner = fx.blsSigners[0];
+    // const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
+
+    // let encodedFunction = fx.VerificationGateway.interface.encodeFunctionData(
+    //   "walletCrossCheck",
+    //   [blsPubKeyHash]
+    // );
+    // await fx.gatewayCall(
+    //   blsSigner,
+    //   1, //next nonce after creation
+    //   reward,
+    //   fx.verificationGateway.address,
+    //   encodedFunction
+    // );
     let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[0]);
 
     expect(walletBalance).to.equal(th.userStartAmount.sub(reward));
@@ -62,20 +79,30 @@ describe('TokenPayments', async function () {
     let actionToken = await TokenHelper.deployTestToken(blsWalletAddresses[0]);
     const actionAmount = ethers.utils.parseUnits("5");
     const burnAddress = "0x" + "1234".padStart(40, "0");
-    let encodedFunction = th.testToken.interface.encodeFunctionData(
-      "transfer",
-      [burnAddress, actionAmount]
-    );
+    // let encodedFunction = th.testToken.interface.encodeFunctionData(
+    //   "transfer",
+    //   [burnAddress, actionAmount]
+    // );
 
     let walletNonce = 1;  //next nonce after creation
+
+    let txDataFull:FullTxData = {
+      blsSigner: blsSigner,
+      chainId: fx.chainId,
+      nonce: walletNonce++,
+      reward: reward,
+      contract: actionToken,
+      functionName: "transfer",
+      params: [burnAddress, actionAmount]    
+    } 
     let walletActionBalanceBefore = await actionToken.balanceOf(blsWalletAddresses[0]);
-    await fx.gatewayCall(
-      blsSigner,
-      walletNonce++,
-      reward,
-      actionToken.address,
-      encodedFunction
-    );
+    await fx.gatewayCallFull(txDataFull);
+    //   blsSigner,
+    //   walletNonce++,
+    //   reward,
+    //   actionToken.address,
+    //   encodedFunction
+    // );
     let walletActionBalanceAfter = await actionToken.balanceOf(blsWalletAddresses[0]);
 
     //successfull transfer of action-token
@@ -85,13 +112,15 @@ describe('TokenPayments', async function () {
 
     let failedTestMessage = "GatewayCall should not execute with insufficient reward.";
     try {
-      await fx.gatewayCall(
-        blsSigner,
-        walletNonce++,
-        walletBalance.add(1), // promise to reward more than balance
-        actionToken.address,
-        encodedFunction
-      );
+      txDataFull.nonce = walletNonce++;
+      txDataFull.reward = walletBalance.add(1);
+      await fx.gatewayCallFull(txDataFull);
+      //   blsSigner,
+      //   walletNonce++,
+      //   walletBalance.add(1), // promise to reward more than balance
+      //   actionToken.address,
+      //   encodedFunction
+      // );
       expect.fail(failedTestMessage);
     } catch(e) {
       if (e.message == failedTestMessage) {
@@ -127,7 +156,7 @@ describe('TokenPayments', async function () {
         publicKeyHash: publicKeyHash,
         tokenRewardAmount: reward,
         contractAddress: fx.verificationGateway.address,
-        methodID: sigHash,
+        methodId: sigHash,
         encodedParams: '0x'+encodedFunction.substr(10)
       }
       signatures[i] = fx.blsSigners[i].sign(dataToSign);
@@ -183,7 +212,7 @@ describe('TokenPayments', async function () {
         publicKeyHash: Fixture.blsKeyHash(fx.blsSigners[i]),
         tokenRewardAmount: reward,
         contractAddress: th.testToken.address,
-        methodID: sigHash,
+        methodId: sigHash,
         encodedParams: '0x'+encodedFunction.substr(10)
       }
       signatures[i] = fx.blsSigners[i].sign(dataToSign);
@@ -239,7 +268,7 @@ describe('TokenPayments', async function () {
         publicKeyHash: Fixture.blsKeyHash(fx.blsSigners[i]),
         tokenRewardAmount: rewards[i],
         contractAddress: th.testToken.address,
-        methodID: sigHash,
+        methodId: sigHash,
         encodedParams: '0x'+encodedFunction.substr(10)
       }
       signatures[i] = fx.blsSigners[i].sign(dataToSign);

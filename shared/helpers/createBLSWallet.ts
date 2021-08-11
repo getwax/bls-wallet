@@ -1,14 +1,16 @@
-import { ethers, hubbleBls } from "../../deps/index.ts";
+import { ethers } from "hardhat";
+import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 
-import blsKeyHash from "./blsKeyHash.ts";
-import dataPayload from "./dataPayload.ts";
+import blsKeyHash from "./blsKeyHash";
+import dataPayload from "./dataPayload";
 
-type BlsSignerInterface = hubbleBls.signer.BlsSignerInterface;
+import { BigNumber, Contract } from "ethers";
 
 export default async function createBLSWallet(
   chainId: number,
-  verificationGateway: ethers.Contract,
+  verificationGateway: Contract,
   blsSigner: BlsSignerInterface,
+  reward: BigNumber = BigNumber.from(0)
 ): Promise<string> {
   const blsPubKeyHash = blsKeyHash(blsSigner);
 
@@ -27,8 +29,8 @@ export default async function createBLSWallet(
 
   const dataToSign = await dataPayload(
     chainId,
-    0,
-    0,
+    0, // initial nonce
+    reward,
     verificationGateway.address,
     encodedFunction,
   );
@@ -39,7 +41,7 @@ export default async function createBLSWallet(
   await (await verificationGateway.blsCallCreate(
     blsSigner.pubkey,
     signature,
-    ethers.BigNumber.from(0),
+    reward,
     verificationGateway.address,
     encodedFunction.substring(0, 10),
     "0x" + encodedFunction.substr(10),
