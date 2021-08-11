@@ -40,59 +40,56 @@ let txsAdded = 0;
 let txsCompleted = 0;
 let sendWalletIndex = 0;
 
-(async () => {
-  while (true) {
-    const lead = txsSent - txsCompleted;
-    const leadDeficit = leadTarget - lead;
+pollingLoop(() => {
+  // Send transactions
 
-    for (let i = 0; i < leadDeficit; i++) {
-      sendWalletIndex = (sendWalletIndex + 1) % sendWalletCount;
-      const sendWallet = sendWallets[sendWalletIndex];
-      const nonce = nextNonceMap.get(sendWallet)!;
-      nextNonceMap.set(sendWallet, nonce + 1);
+  const lead = txsSent - txsCompleted;
+  const leadDeficit = leadTarget - lead;
 
-      const tx = sendWallet.buildTx({
-        contract: testErc20.contract,
-        method: "transfer",
-        args: [recvWallet.walletAddress, "1"],
-        nonce,
-      });
+  for (let i = 0; i < leadDeficit; i++) {
+    sendWalletIndex = (sendWalletIndex + 1) % sendWalletCount;
+    const sendWallet = sendWallets[sendWalletIndex];
+    const nonce = nextNonceMap.get(sendWallet)!;
+    nextNonceMap.set(sendWallet, nonce + 1);
 
-      client.addTransaction(tx).then(() => {
-        txsAdded++;
-      });
+    const tx = sendWallet.buildTx({
+      contract: testErc20.contract,
+      method: "transfer",
+      args: [recvWallet.walletAddress, "1"],
+      nonce,
+    });
 
-      txsSent++;
-    }
+    client.addTransaction(tx).then(() => {
+      txsAdded++;
+    });
 
-    await delay(pollingInterval);
+    txsSent++;
   }
-})();
+});
 
 const startTime = Date.now();
 
-(async () => {
-  while (true) {
-    const balance = await testErc20.balanceOf(recvWallet.walletAddress);
-    txsCompleted = balance.sub(startBalance).toNumber();
+pollingLoop(async () => {
+  // Calculate and show stats
 
+  const balance = await testErc20.balanceOf(recvWallet.walletAddress);
+  txsCompleted = balance.sub(startBalance).toNumber();
+
+  console.clear();
+
+  const txsPerSec = 1000 * txsCompleted / (Date.now() - startTime);
+
+  console.log({
+    txsSent,
+    txsAdded,
+    txsCompleted,
+    txsPerSec: txsPerSec.toFixed(1),
+  });
+});
+
+async function pollingLoop(body: () => unknown) {
+  while (true) {
+    await body();
     await delay(pollingInterval);
   }
-})();
-
-(async () => {
-  while (true) {
-    console.clear();
-
-    const txsPerSec = 1000 * txsCompleted / (Date.now() - startTime);
-
-    console.log({
-      txsSent,
-      txsAdded,
-      txsCompleted,
-      txsPerSec: txsPerSec.toFixed(1),
-    });
-
-    await delay(pollingInterval);
-  }
-})();
+}
