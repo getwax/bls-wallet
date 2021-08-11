@@ -1,8 +1,11 @@
 import { QueryClient } from "../../deps/index.ts";
 
 import * as env from "../env.ts";
+import AppEvent from "./AppEvent.ts";
 
-export default function createQueryClient(): QueryClient {
+export default function createQueryClient(
+  emit: (evt: AppEvent) => void,
+): QueryClient {
   const client = new QueryClient({
     hostname: env.PG.HOST,
     port: env.PG.PORT,
@@ -17,9 +20,13 @@ export default function createQueryClient(): QueryClient {
   if (env.LOG_QUERIES) {
     const originalQuery = client.query.bind(client);
 
-    client.query = async (...args) => {
-      console.log("query:", ...args);
-      return await originalQuery(...args);
+    client.query = async (sql, params) => {
+      emit({
+        type: "db-query",
+        data: { sql, params: params ?? [] },
+      });
+
+      return await originalQuery(sql, params);
     };
   }
 

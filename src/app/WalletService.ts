@@ -13,6 +13,7 @@ import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import assertExists from "../helpers/assertExists.ts";
+import AppEvent from "./AppEvent.ts";
 
 function getKeyHash(pubkey: string) {
   return ethers.utils.keccak256(ethers.utils.solidityPack(
@@ -34,6 +35,7 @@ export default class WalletService {
   verificationGateway: Contract;
 
   constructor(
+    public emit: (evt: AppEvent) => void,
     public aggregatorSigner: Wallet,
     public nextNonce: number,
   ) {
@@ -55,11 +57,14 @@ export default class WalletService {
     return result;
   }
 
-  static async create(aggPrivateKey: string): Promise<WalletService> {
+  static async create(
+    emit: (evt: AppEvent) => void,
+    aggPrivateKey: string,
+  ): Promise<WalletService> {
     const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
     const nextNonce = (await aggregatorSigner.getTransactionCount());
 
-    return new WalletService(aggregatorSigner, nextNonce);
+    return new WalletService(emit, aggregatorSigner, nextNonce);
   }
 
   async checkTx(tx: TransactionData): Promise<TxCheckResult> {
@@ -105,7 +110,12 @@ export default class WalletService {
     const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
     const aggSignature = hubbleBls.signer.aggregate(txSignatures);
 
-    console.log("Sending", txs.map((tx) => tx.txId));
+    const txIds = txs.map((tx) => tx.txId);
+
+    this.emit({
+      type: "batch-attempt",
+      data: { attemptNumber: 1, txIds },
+    });
 
     const txResponse: ethers.providers.TransactionResponse = await this
       .verificationGateway.blsCallMany(
@@ -120,6 +130,11 @@ export default class WalletService {
         })),
         { nonce: this.NextNonce() },
       );
+
+    this.emit({
+      type: "batch-sent",
+      data: { txIds },
+    });
 
     return txResponse;
   }
@@ -165,19 +180,24 @@ export default class WalletService {
     let waitResult: Promise<ethers.providers.TransactionReceipt> | null = null;
 
     for (let i = 0; i < maxAttempts; i++) {
-      const attemptSuffix = i > 0 ? ` (attempt ${i + 1})` : "";
-      console.log(`Sending${attemptSuffix}`, txIds);
+      this.emit({
+        type: "batch-attempt",
+        data: { attemptNumber: i + 1, txIds },
+      });
 
       try {
         waitResult = attempt();
         return await waitResult;
       } catch (error) {
         if (i !== maxAttempts - 1) {
-          console.error(
-            `Attempt ${i + 1} failed, retrying in ${retryDelay}ms`,
-            txIds,
-            error.message.slice(0, 100),
-          );
+          this.emit({
+            type: "batch-attempt-failed",
+            data: {
+              attemptNumber: i + 1,
+              txIds,
+              error,
+            },
+          });
 
           await delay(retryDelay);
         }

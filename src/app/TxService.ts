@@ -9,6 +9,7 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
+import AppEvent from "./AppEvent.ts";
 
 const maxUnconfirmedTxs = 36;
 
@@ -24,6 +25,7 @@ export default class TxService {
   batchTimer: BatchTimer;
 
   constructor(
+    public emit: (evt: AppEvent) => void,
     public clock: IClock,
     public queryClient: QueryClient,
     public txTablesMutex: Mutex,
@@ -215,9 +217,10 @@ export default class TxService {
       const [first] = await this.futureTxTable.getHighestPriority(1);
 
       if (first === undefined) {
-        console.warn(
-          "Future txs unexpectedly empty when it seemed to need pruning",
-        );
+        this.emit({
+          type: "warning",
+          data: "Future txs unexpectedly empty when it seemed to need pruning",
+        });
 
         return;
       }
@@ -462,7 +465,7 @@ export default class TxService {
         while (
           this.unconfirmedTxs.size + batchTxs.length > maxUnconfirmedTxs
         ) {
-          console.log("Waiting for space for new unconfirmed txs");
+          this.emit({ type: "waiting-unconfirmed-space" });
           await delay(1000);
         }
 
@@ -478,35 +481,19 @@ export default class TxService {
               300,
             );
 
-            console.log(
-              `Success, block ${recpt.blockNumber}`,
-              batchTxs.map((tx) => tx.txId),
-            );
+            this.emit({
+              type: "batch-confirmed",
+              data: {
+                txIds: batchTxs.map((tx) => tx.txId),
+                blockNumber: recpt.blockNumber,
+              },
+            });
           } finally {
             for (const tx of batchTxs) {
               this.unconfirmedTxs.delete(tx);
             }
           }
         })();
-
-        // const responsePromise = this.walletService.sendTxsWithoutWait(batchTxs);
-
-        // responsePromise.catch((error) => {
-        //   console.error("Response error", error.stack);
-        // });
-
-        // responsePromise
-        //   .then((response) => response.wait())
-        //   .catch((error) => {
-        //     console.error("Wait error", error.stack);
-        //   })
-        //   .then(() => {
-        //     for (const tx of batchTxs) {
-        //       this.unconfirmedTxs.delete(tx);
-        //     }
-        //   });
-
-        // await this.walletService.sendTxs(batchTxs);
       }
 
       await this.removeFromReady([...batchTxs, ...insufficientRewardTxs]);

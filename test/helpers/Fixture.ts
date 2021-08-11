@@ -18,6 +18,7 @@ import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
 import * as env from "../env.ts";
 import Signer from "./Signer.ts";
+import AppEvent from "../../src/app/AppEvent.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -80,19 +81,28 @@ export default class Fixture {
     const rng = testRng.seed(testName);
 
     const walletService = await WalletService.create(
+      (evt) => fx.emit(evt),
       rng.seed("aggregatorSigner").address(),
     );
 
     const chainId =
       (await walletService.aggregatorSigner.provider.getNetwork()).chainId;
 
-    return new Fixture(
+    const fx: Fixture = new Fixture(
       testName,
       rng,
       chainId,
       walletService,
     );
+
+    return fx;
   }
+
+  appEvents: AppEvent[] = [];
+
+  emit = (evt: AppEvent) => {
+    this.appEvents.push(evt);
+  };
 
   cleanupJobs: (() => void | Promise<void>)[] = [];
   clock = new TestClock();
@@ -198,7 +208,7 @@ export default class Fixture {
 
   async createTxService(config = TxService.defaultConfig) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
-    const queryClient = createQueryClient();
+    const queryClient = createQueryClient(this.emit);
 
     const txTablesMutex = new Mutex();
 
@@ -214,6 +224,7 @@ export default class Fixture {
     });
 
     return new TxService(
+      this.emit,
       this.clock,
       queryClient,
       txTablesMutex,

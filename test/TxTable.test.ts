@@ -12,7 +12,7 @@ function test(name: string, fn: (txTable: TxTable) => Promise<void>) {
     fn: async () => {
       const tableName = `txs_test_${counter++}_${Date.now()}`;
 
-      const queryClient = createQueryClient();
+      const queryClient = createQueryClient(() => {});
       const txTable = await TxTable.create(queryClient, tableName);
 
       try {

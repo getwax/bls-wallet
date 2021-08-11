@@ -12,11 +12,12 @@ import TxTable from "./TxTable.ts";
 import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
+import AppEvent from "./AppEvent.ts";
 
-export default async function app() {
+export default async function app(emit: (evt: AppEvent) => void) {
   const clock = Clock.create();
 
-  const queryClient = createQueryClient();
+  const queryClient = createQueryClient(emit);
 
   const txTablesMutex = new Mutex();
 
@@ -27,9 +28,10 @@ export default async function app() {
     env.FUTURE_TX_TABLE_NAME,
   );
 
-  const walletService = await WalletService.create(env.PRIVATE_KEY_AGG);
+  const walletService = await WalletService.create(emit, env.PRIVATE_KEY_AGG);
 
   const txService = new TxService(
+    emit,
     clock,
     queryClient,
     txTablesMutex,
@@ -60,7 +62,7 @@ export default async function app() {
   app.use(notFoundHandler);
 
   app.addEventListener("listen", () => {
-    console.log(`Listening on port ${env.PORT}...`);
+    emit({ type: "listening", data: { port: env.PORT } });
   });
 
   await app.listen({ port: env.PORT });
