@@ -94,18 +94,23 @@ export default class TxService {
         return failures;
       }
 
-      const highestReadyNonce = await this.HighestReadyNonce(
-        nextChainNonce,
+      const nextNonce = await this.NextNonce(
+        // This will cause problems above 2^53. Currently we already store
+        // nonces as 32 bit integers in the database anyway though. For now,
+        // numbers are more convenient.
+        //
+        // More information: https://github.com/jzaki/aggregator/issues/36.
+        nextChainNonce.toNumber(),
         txData.pubKey,
       );
 
-      if (txData.nonce < highestReadyNonce) {
-        return await this.replaceReadyTx(highestReadyNonce, txData);
+      if (txData.nonce < nextNonce) {
+        return await this.replaceReadyTx(nextNonce, txData);
       }
 
-      if (highestReadyNonce === txData.nonce) {
+      if (nextNonce === txData.nonce) {
         this.readyTxTable.add(txData);
-        await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
+        await this.tryMoveFutureTxs(txData.pubKey, nextNonce + 1);
         this.checkReadyTxCount();
       } else {
         await this.ensureFutureTxSpace();
@@ -116,48 +121,41 @@ export default class TxService {
     });
   }
 
-  HighestUnconfirmedNonce(pubKey: string): number | null {
+  /**
+   * Find the nonce that would come after the unconfirmed transactions for this
+   * public key, or zero.
+   */
+  NextUnconfirmedNonce(pubKey: string): number {
     const unconfirmedTxs = [...this.unconfirmedTxs.values()]
       .filter((tx) => tx.pubKey === pubKey);
 
     if (unconfirmedTxs.length === 0) {
-      return null;
+      return 0;
     }
 
-    return unconfirmedTxs
+    return 1 + unconfirmedTxs
       .map((tx) => tx.nonce)
       .reduce((a, b) => Math.max(a, b));
   }
 
   /**
    * Find the highest nonce that can be added to ready txs. This needs to be
-   * higher than both the latest nonce on chain and any tx nonces (for this key)
-   * that are locally ready.
+   * higher than:
+   * - the latest nonce on chain
+   * - the latest nonce in the ready table
+   * - the latest nonce in unconfirmed txs
    */
-  async HighestReadyNonce(
-    nextChainNonce: ethers.BigNumber,
+  async NextNonce(
+    nextChainNonce: number,
     pubKey: string,
   ): Promise<number> {
-    const highestUnconfirmedNonce = this.HighestUnconfirmedNonce(pubKey);
-    let nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
+    const candidates = [
+      nextChainNonce,
+      await this.readyTxTable.nextNonceOf(pubKey),
+      this.NextUnconfirmedNonce(pubKey),
+    ];
 
-    if (
-      highestUnconfirmedNonce !== null &&
-      (nextLocalNonce === null || highestUnconfirmedNonce >= nextLocalNonce)
-    ) {
-      nextLocalNonce = highestUnconfirmedNonce + 1;
-    }
-
-    const highestReadyNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
-      ? nextChainNonce
-      : ethers.BigNumber.from(nextLocalNonce);
-
-    // This will cause problems above 2^53. Currently we already store nonces as
-    // 32 bit integers in the database anyway though. For now, numbers are more
-    // convenient.
-    //
-    // More information: https://github.com/jzaki/aggregator/issues/36.
-    return highestReadyNonce.toNumber();
+    return candidates.reduce((a, b) => Math.max(a, b));
   }
 
   /**
@@ -167,7 +165,7 @@ export default class TxService {
    */
   async tryMoveFutureTxs(
     pubKey: string,
-    highestReadyNonce: number,
+    nextNonce: number,
   ) {
     let needNextBatch: boolean;
 
@@ -183,19 +181,17 @@ export default class TxService {
         .map((txGroup) => this.pickBestReward(txGroup.elements));
 
       for (const tx of bestFutureTxs) {
-        if (tx.nonce < highestReadyNonce) {
-          await this.replaceReadyTx(highestReadyNonce, tx);
-        } else if (tx.nonce === highestReadyNonce) {
+        if (tx.nonce < nextNonce) {
+          await this.replaceReadyTx(nextNonce, tx);
+        } else if (tx.nonce === nextNonce) {
           txsToAdd.push(tx);
-          highestReadyNonce++;
+          nextNonce++;
         } else {
           break;
         }
       }
 
-      const futureTxsToRemove = futureTxs.filter(
-        (tx) => tx.nonce < highestReadyNonce,
-      );
+      const futureTxsToRemove = futureTxs.filter((tx) => tx.nonce < nextNonce);
 
       await this.readyTxTable.addWithNewId(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
@@ -246,7 +242,7 @@ export default class TxService {
    * same key so that they will be processed in the correct sequence.
    */
   async replaceReadyTx(
-    highestReadyNonce: number,
+    nextNonce: number,
     newTx: TransactionData,
   ): Promise<AddTransactionFailure[]> {
     const existingTx = await this.readyTxTable.find(
@@ -285,7 +281,7 @@ export default class TxService {
       this.readyTxTable.add(newTx),
     ]);
 
-    const latestReadyNonce = highestReadyNonce - 1;
+    const latestReadyNonce = nextNonce - 1;
     const causedUnorderedReadyTxs = newTx.nonce < latestReadyNonce;
 
     if (causedUnorderedReadyTxs) {
@@ -361,17 +357,14 @@ export default class TxService {
   ) {
     const promises: Promise<unknown>[] = [];
 
-    let nextNonce = (await this.walletService.checkTx(exampleTx))
+    const nextChainNonce = (await this.walletService.checkTx(exampleTx))
       .nextNonce.toNumber();
 
-    const highestUnconfirmedNonce = this.HighestUnconfirmedNonce(pubKey);
+    const nextUnconfirmedNonce = this.NextUnconfirmedNonce(pubKey);
 
-    if (
-      highestUnconfirmedNonce !== null &&
-      highestUnconfirmedNonce >= nextNonce
-    ) {
-      nextNonce = highestUnconfirmedNonce + 1;
-    }
+    // Ready tx nonces are not included here because it is those very txs that
+    // we may be demoting.
+    let nextNonce = Math.max(nextChainNonce, nextUnconfirmedNonce);
 
     let finished: boolean;
     let txs: TransactionData[];

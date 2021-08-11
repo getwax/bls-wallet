@@ -148,7 +148,7 @@ export default class TxTable {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
   }
 
-  async nextNonceOf(pubKey: string): Promise<number | null> {
+  async nextNonceOf(pubKey: string): Promise<number> {
     const results = await this.txTable
       .where({ pubKey })
       .order({
@@ -159,7 +159,7 @@ export default class TxTable {
       .select();
 
     if (results.length === 0) {
-      return null;
+      return 0;
     }
 
     return results[0].nonce + 1;
