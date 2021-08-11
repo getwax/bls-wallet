@@ -138,7 +138,15 @@ Fixture.test(
 Fixture.test(
   "submits 3 batches added concurrently in a jumbled order",
   async (fx) => {
-    const txService = await fx.createTxService(txServiceConfig);
+    const txService = await fx.createTxService({
+      ...txServiceConfig,
+
+      // TODO: Stop overriding this when BlsWallet nonces become explicit.
+      // Without this, batches will be sent concurrently, and the batches that
+      // are dependent on the first one will get rejected on the sig check.
+      maxUnconfirmedAggregations: 1,
+    });
+
     const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
     const txs = await Promise.all(
