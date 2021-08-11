@@ -1,7 +1,7 @@
 import { delay, ethers } from "../deps/index.ts";
 
 import Client from "../src/app/Client.ts";
-import Wallet from "../src/chain/Wallet.ts";
+import BlsWallet from "../src/chain/BlsWallet.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
@@ -22,12 +22,12 @@ const { wallets: walletDetails } = await createTestWalletsCached(
 );
 
 const [recvWallet, ...sendWallets] = await Promise.all(walletDetails.map(
-  ({ blsSecret }) => Wallet.connect(blsSecret, provider),
+  ({ blsSecret }) => BlsWallet.connect(blsSecret, provider),
 ));
 
 const startBalance = await testErc20.balanceOf(recvWallet.walletAddress);
 
-const nextNonceMap = new Map<Wallet, number>(
+const nextNonceMap = new Map<BlsWallet, number>(
   await Promise.all(sendWallets.map(async (sendWallet) => {
     const nextNonce = await sendWallet.Nonce();
 

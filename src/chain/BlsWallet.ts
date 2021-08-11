@@ -13,7 +13,7 @@ import blsKeyHash from "./blsKeyHash.ts";
 import dataPayload from "./dataPayload.ts";
 import domain from "./domain.ts";
 
-export default class Wallet {
+export default class BlsWallet {
   private constructor(
     public provider: ethers.providers.Provider,
     public network: ethers.providers.Network,
@@ -53,7 +53,7 @@ export default class Wallet {
       provider,
     );
 
-    return new Wallet(
+    return new BlsWallet(
       provider,
       await provider.getNetwork(),
       verificationGateway,
