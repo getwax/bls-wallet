@@ -11,14 +11,13 @@ import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
 import AppEvent from "./AppEvent.ts";
 
-const maxUnconfirmedTxs = 36;
-
 export default class TxService {
   static defaultConfig = {
     txQueryLimit: env.TX_QUERY_LIMIT,
     maxFutureTxs: env.MAX_FUTURE_TXS,
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
+    maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
   };
 
   unconfirmedTxs = new Set<TransactionData>();
@@ -471,6 +470,11 @@ export default class TxService {
       }
 
       if (batchTxs.length > 0) {
+        const maxUnconfirmedTxs = (
+          this.config.maxUnconfirmedAggregations *
+          this.config.maxAggregationSize
+        );
+
         while (
           this.unconfirmedTxs.size + batchTxs.length > maxUnconfirmedTxs
         ) {
