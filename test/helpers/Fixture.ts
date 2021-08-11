@@ -102,6 +102,14 @@ export default class Fixture {
 
   emit = (evt: AppEvent) => {
     this.appEvents.push(evt);
+
+    if (env.TEST_LOGGING) {
+      if ("data" in evt) {
+        console.log(evt.type, evt.data);
+      } else {
+        console.log(evt.type);
+      }
+    }
   };
 
   cleanupJobs: (() => void | Promise<void>)[] = [];
