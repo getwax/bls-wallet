@@ -1,3 +1,12 @@
-import createTestWallets from "./helpers/createTestWallets.ts";
+import { ethers } from "../deps/index.ts";
+import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 
-console.log(await createTestWallets(1));
+const [wallet] = await TestBlsWallets(
+  new ethers.providers.JsonRpcProvider(),
+  1,
+);
+
+console.log({
+  secret: wallet.secret,
+  address: wallet.walletContract.address,
+});

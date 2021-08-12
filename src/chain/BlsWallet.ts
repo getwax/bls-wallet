@@ -23,11 +23,15 @@ export default class BlsWallet {
     public verificationGateway: Contract,
     public secret: string,
     public blsSigner: hubbleBls.signer.BlsSigner,
-    public walletAddress: string,
+    public address: string,
     public walletContract: Contract,
   ) {}
 
-  static async ContractAddress(
+  static async Exists(secret: string, signerOrProvider: SignerOrProvider) {
+    return await BlsWallet.Address(secret, signerOrProvider) !== null;
+  }
+
+  static async Address(
     secret: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<string | null> {
@@ -41,15 +45,15 @@ export default class BlsWallet {
       signerOrProvider,
     );
 
-    const walletAddress: string = await verificationGateway.walletFromHash(
+    const address: string = await verificationGateway.walletFromHash(
       blsPubKeyHash,
     );
 
-    if (walletAddress === ethers.constants.AddressZero) {
+    if (address === ethers.constants.AddressZero) {
       return null;
     }
 
-    return walletAddress;
+    return address;
   }
 
   static async create(secret: string, parent: ethers.Wallet) {
@@ -66,7 +70,7 @@ export default class BlsWallet {
     const blsSigner = BlsWallet.#Signer(secret);
     const verificationGateway = this.#VerificationGateway(provider);
 
-    const contractAddress = await BlsWallet.ContractAddress(secret, provider);
+    const contractAddress = await BlsWallet.Address(secret, provider);
     assert(contractAddress !== null, "Wallet does not exist");
 
     const walletContract = new ethers.Contract(

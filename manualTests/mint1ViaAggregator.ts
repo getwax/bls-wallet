@@ -3,11 +3,10 @@
 import { delay, ethers } from "../deps/index.ts";
 
 import Client from "../src/app/Client.ts";
-import BlsWallet from "../src/chain/BlsWallet.ts";
 import assert from "../src/helpers/assert.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
-import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
+import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
@@ -15,17 +14,16 @@ const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
 const client = new Client(`http://localhost:${env.PORT}`);
 
-const { wallets: [{ blsSecret }] } = await createTestWalletsCached(provider, 1);
-const wallet = await BlsWallet.connect(blsSecret, provider);
+const [wallet] = await TestBlsWallets(provider, 1);
 
-const startBalance = await testErc20.balanceOf(wallet.walletAddress);
+const startBalance = await testErc20.balanceOf(wallet.address);
 
 let nextNonce = await wallet.Nonce();
 
 const tx = wallet.buildTx({
   contract: testErc20.contract,
   method: "mint",
-  args: [wallet.walletAddress, "1"],
+  args: [wallet.address, "1"],
   nonce: nextNonce++,
 });
 
@@ -37,7 +35,7 @@ assert(failures.length === 0);
 console.log("Success response from aggregator");
 
 while (true) {
-  const balance = (await testErc20.balanceOf(wallet.walletAddress));
+  const balance = (await testErc20.balanceOf(wallet.address));
 
   console.log({
     startBalance: startBalance.toString(),

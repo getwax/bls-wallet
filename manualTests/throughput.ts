@@ -1,31 +1,44 @@
 import { delay, ethers } from "../deps/index.ts";
 
 import Client from "../src/app/Client.ts";
+import AdminWallet from "../src/chain/AdminWallet.ts";
 import BlsWallet from "../src/chain/BlsWallet.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
-import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
+import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 
 const leadTarget = 48;
 const pollingInterval = 400;
 const sendWalletCount = 50;
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
+const adminWallet = AdminWallet(provider);
 
 const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
 const client = new Client(`http://localhost:${env.PORT}`);
 
-const { wallets: walletDetails } = await createTestWalletsCached(
+const [recvWallet, ...sendWallets] = await TestBlsWallets(
   provider,
   sendWalletCount + 1,
 );
 
-const [recvWallet, ...sendWallets] = await Promise.all(walletDetails.map(
-  ({ blsSecret }) => BlsWallet.connect(blsSecret, provider),
-));
+for (const wallet of sendWallets) {
+  const testErc20 = new MockErc20(
+    env.TEST_TOKEN_ADDRESS,
+    adminWallet,
+  );
 
-const startBalance = await testErc20.balanceOf(recvWallet.walletAddress);
+  if (
+    (await testErc20.balanceOf(wallet.address)).lt(
+      ethers.BigNumber.from(10).pow(17),
+    )
+  ) {
+    await testErc20.mint(wallet.address, ethers.BigNumber.from(10).pow(18));
+  }
+}
+
+const startBalance = await testErc20.balanceOf(recvWallet.address);
 
 const nextNonceMap = new Map<BlsWallet, number>(
   await Promise.all(sendWallets.map(async (sendWallet) => {
@@ -55,7 +68,7 @@ pollingLoop(() => {
     const tx = sendWallet.buildTx({
       contract: testErc20.contract,
       method: "transfer",
-      args: [recvWallet.walletAddress, "1"],
+      args: [recvWallet.address, "1"],
       nonce,
     });
 
@@ -72,7 +85,7 @@ const startTime = Date.now();
 pollingLoop(async () => {
   // Calculate and show stats
 
-  const balance = await testErc20.balanceOf(recvWallet.walletAddress);
+  const balance = await testErc20.balanceOf(recvWallet.address);
   txsCompleted = balance.sub(startBalance).toNumber();
 
   console.clear();
