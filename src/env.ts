@@ -2,7 +2,7 @@ import {
   requireBoolEnv,
   requireEnv,
   requireIntEnv,
-} from "../helpers/envTools.ts";
+} from "./helpers/envTools.ts";
 
 export const PORT = requireIntEnv("PORT");
 
@@ -43,6 +43,10 @@ export const MAX_AGGREGATION_SIZE = requireIntEnv("MAX_AGGREGATION_SIZE");
 
 export const MAX_AGGREGATION_DELAY_MILLIS = requireIntEnv(
   "MAX_AGGREGATION_DELAY_MILLIS",
+);
+
+export const MAX_UNCONFIRMED_AGGREGATIONS = requireIntEnv(
+  "MAX_UNCONFIRMED_AGGREGATIONS",
 );
 
 export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");

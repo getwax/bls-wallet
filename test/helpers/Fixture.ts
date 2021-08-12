@@ -5,18 +5,20 @@ import {
   hubbleBls,
 } from "../../deps/index.ts";
 
-import Rng from "./Rng.ts";
+import testRng from "./testRng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
-import createBLSWallet from "./createBLSWallet.ts";
+import createBLSWallet from "../../src/chain/createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
 import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
-import dataPayload from "./dataPayload.ts";
+import dataPayload from "../../src/chain/dataPayload.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "../../src/helpers/Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
 import * as env from "../env.ts";
+import Signer from "./Signer.ts";
+import AppEvent from "../../src/app/AppEvent.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -76,22 +78,39 @@ export default class Fixture {
   }
 
   static async create(testName: string): Promise<Fixture> {
-    const rng = Rng.root.seed(testName);
+    const rng = testRng.seed(testName);
 
-    const walletService = new WalletService(
+    const walletService = await WalletService.create(
+      (evt) => fx.emit(evt),
       rng.seed("aggregatorSigner").address(),
     );
 
     const chainId =
       (await walletService.aggregatorSigner.provider.getNetwork()).chainId;
 
-    return new Fixture(
+    const fx: Fixture = new Fixture(
       testName,
       rng,
       chainId,
       walletService,
     );
+
+    return fx;
   }
+
+  appEvents: AppEvent[] = [];
+
+  emit = (evt: AppEvent) => {
+    this.appEvents.push(evt);
+
+    if (env.TEST_LOGGING) {
+      if ("data" in evt) {
+        console.log(evt.type, evt.data);
+      } else {
+        console.log(evt.type);
+      }
+    }
+  };
 
   cleanupJobs: (() => void | Promise<void>)[] = [];
   clock = new TestClock();
@@ -100,7 +119,7 @@ export default class Fixture {
 
   private constructor(
     public testName: string,
-    public rng: Rng,
+    public rng: typeof testRng,
     public chainId: number,
     public walletService: WalletService,
   ) {
@@ -119,9 +138,18 @@ export default class Fixture {
   }
 
   async getOrCreateBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
+    const verificationGateway = new ethers.Contract(
+      env.VERIFICATION_GATEWAY_ADDRESS,
+      ovmContractABIs["VerificationGateway.json"].abi,
+      Signer(
+        this.walletService.aggregatorSigner.provider,
+        this.rng.seed("signer").address(),
+      ),
+    );
+
     return await createBLSWallet(
       this.chainId,
-      this.walletService.verificationGateway,
+      verificationGateway,
       signer,
     );
   }
@@ -188,7 +216,7 @@ export default class Fixture {
 
   async createTxService(config = TxService.defaultConfig) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
-    const queryClient = createQueryClient();
+    const queryClient = createQueryClient(this.emit);
 
     const txTablesMutex = new Mutex();
 
@@ -204,6 +232,7 @@ export default class Fixture {
     });
 
     return new TxService(
+      this.emit,
       this.clock,
       queryClient,
       txTablesMutex,

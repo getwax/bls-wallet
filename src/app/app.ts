@@ -1,6 +1,6 @@
 import { Application } from "../../deps/index.ts";
 
-import * as env from "./env.ts";
+import * as env from "../env.ts";
 import WalletService from "./WalletService.ts";
 import TxService from "./TxService.ts";
 import TxRouter from "./TxRouter.ts";
@@ -12,54 +12,58 @@ import TxTable from "./TxTable.ts";
 import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
+import AppEvent from "./AppEvent.ts";
 
-const clock = Clock.create();
+export default async function app(emit: (evt: AppEvent) => void) {
+  const clock = Clock.create();
 
-const queryClient = createQueryClient();
+  const queryClient = createQueryClient(emit);
 
-const txTablesMutex = new Mutex();
+  const txTablesMutex = new Mutex();
 
-const readyTxTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
+  const readyTxTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
 
-const futureTxTable = await TxTable.create(
-  queryClient,
-  env.FUTURE_TX_TABLE_NAME,
-);
+  const futureTxTable = await TxTable.create(
+    queryClient,
+    env.FUTURE_TX_TABLE_NAME,
+  );
 
-const walletService = new WalletService(env.PRIVATE_KEY_AGG);
+  const walletService = await WalletService.create(emit, env.PRIVATE_KEY_AGG);
 
-const txService = new TxService(
-  clock,
-  queryClient,
-  txTablesMutex,
-  futureTxTable,
-  readyTxTable,
-  walletService,
-);
+  const txService = new TxService(
+    emit,
+    clock,
+    queryClient,
+    txTablesMutex,
+    readyTxTable,
+    futureTxTable,
+    walletService,
+  );
 
-const adminService = new AdminService(
-  walletService,
-  readyTxTable,
-  futureTxTable,
-);
+  const adminService = new AdminService(
+    walletService,
+    readyTxTable,
+    futureTxTable,
+  );
 
-const routers = [
-  TxRouter(txService),
-  AdminRouter(adminService),
-];
+  const routers = [
+    TxRouter(txService),
+    AdminRouter(adminService),
+  ];
 
-const app = new Application();
+  const app = new Application();
 
-app.use(errorHandler);
+  app.use(errorHandler);
 
-for (const router of routers) {
-  app.use(router.routes(), router.allowedMethods());
+  for (const router of routers) {
+    app.use(router.routes(), router.allowedMethods());
+  }
+
+  app.use(notFoundHandler);
+
+  app.addEventListener("listen", () => {
+    emit({ type: "listening", data: { port: env.PORT } });
+  });
+
+  await app.listen({ port: env.PORT });
 }
-
-app.use(notFoundHandler);
-
-app.addEventListener("listen", () => {
-  console.log(`Listening on port ${env.PORT}...`);
-});
-
-await app.listen({ port: env.PORT });

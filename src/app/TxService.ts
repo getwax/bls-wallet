@@ -1,14 +1,15 @@
-import { ethers, QueryClient } from "../../deps/index.ts";
+import { delay, ethers, QueryClient } from "../../deps/index.ts";
 import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
 
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import BatchTimer from "./BatchTimer.ts";
-import * as env from "./env.ts";
+import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService from "./WalletService.ts";
+import AppEvent from "./AppEvent.ts";
 
 export default class TxService {
   static defaultConfig = {
@@ -16,11 +17,15 @@ export default class TxService {
     maxFutureTxs: env.MAX_FUTURE_TXS,
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
+    maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
   };
 
+  unconfirmedTxs = new Set<TransactionData>();
   batchTimer: BatchTimer;
+  batchesInProgress = 0;
 
   constructor(
+    public emit: (evt: AppEvent) => void,
     public clock: IClock,
     public queryClient: QueryClient,
     public txTablesMutex: Mutex,
@@ -39,6 +44,12 @@ export default class TxService {
   }
 
   async checkReadyTxCount() {
+    if (this.batchesInProgress > 0) {
+      // No need to check because there is already a batch in progress, and a
+      // new check is run after every batch.
+      return;
+    }
+
     const readyTxCount = await this.readyTxTable.count();
 
     if (readyTxCount >= this.config.maxAggregationSize) {
@@ -83,18 +94,23 @@ export default class TxService {
         return failures;
       }
 
-      const highestReadyNonce = await this.HighestReadyNonce(
-        nextChainNonce,
+      const nextNonce = await this.NextNonce(
+        // This will cause problems above 2^53. Currently we already store
+        // nonces as 32 bit integers in the database anyway though. For now,
+        // numbers are more convenient.
+        //
+        // More information: https://github.com/jzaki/aggregator/issues/36.
+        nextChainNonce.toNumber(),
         txData.pubKey,
       );
 
-      if (txData.nonce < highestReadyNonce) {
-        return await this.replaceReadyTx(highestReadyNonce, txData);
+      if (txData.nonce < nextNonce) {
+        return await this.replaceReadyTx(nextNonce, txData);
       }
 
-      if (highestReadyNonce === txData.nonce) {
+      if (nextNonce === txData.nonce) {
         this.readyTxTable.add(txData);
-        await this.tryMoveFutureTxs(txData.pubKey, highestReadyNonce + 1);
+        await this.tryMoveFutureTxs(txData.pubKey, nextNonce + 1);
         this.checkReadyTxCount();
       } else {
         await this.ensureFutureTxSpace();
@@ -106,26 +122,40 @@ export default class TxService {
   }
 
   /**
-   * Find the highest nonce that can be added to ready txs. This needs to be
-   * higher than both the latest nonce on chain and any tx nonces (for this key)
-   * that are locally ready.
+   * Find the nonce that would come after the unconfirmed transactions for this
+   * public key, or zero.
    */
-  async HighestReadyNonce(
-    nextChainNonce: ethers.BigNumber,
+  NextUnconfirmedNonce(pubKey: string): number {
+    const unconfirmedTxs = [...this.unconfirmedTxs.values()]
+      .filter((tx) => tx.pubKey === pubKey);
+
+    if (unconfirmedTxs.length === 0) {
+      return 0;
+    }
+
+    return 1 + unconfirmedTxs
+      .map((tx) => tx.nonce)
+      .reduce((a, b) => Math.max(a, b));
+  }
+
+  /**
+   * Find the highest nonce that can be added to ready txs. This needs to be
+   * higher than:
+   * - the latest nonce on chain
+   * - the latest nonce in the ready table
+   * - the latest nonce in unconfirmed txs
+   */
+  async NextNonce(
+    nextChainNonce: number,
     pubKey: string,
   ): Promise<number> {
-    const nextLocalNonce = await this.readyTxTable.nextNonceOf(pubKey);
+    const candidates = [
+      nextChainNonce,
+      await this.readyTxTable.nextNonceOf(pubKey),
+      this.NextUnconfirmedNonce(pubKey),
+    ];
 
-    const highestReadyNonce = nextChainNonce.gt(nextLocalNonce ?? 0)
-      ? nextChainNonce
-      : ethers.BigNumber.from(nextLocalNonce);
-
-    // This will cause problems above 2^53. Currently we already store nonces as
-    // 32 bit integers in the database anyway though. For now, numbers are more
-    // convenient.
-    //
-    // More information: https://github.com/jzaki/aggregator/issues/36.
-    return highestReadyNonce.toNumber();
+    return candidates.reduce((a, b) => Math.max(a, b));
   }
 
   /**
@@ -135,7 +165,7 @@ export default class TxService {
    */
   async tryMoveFutureTxs(
     pubKey: string,
-    highestReadyNonce: number,
+    nextNonce: number,
   ) {
     let needNextBatch: boolean;
 
@@ -151,19 +181,17 @@ export default class TxService {
         .map((txGroup) => this.pickBestReward(txGroup.elements));
 
       for (const tx of bestFutureTxs) {
-        if (tx.nonce < highestReadyNonce) {
-          await this.replaceReadyTx(highestReadyNonce, tx);
-        } else if (tx.nonce === highestReadyNonce) {
+        if (tx.nonce < nextNonce) {
+          await this.replaceReadyTx(nextNonce, tx);
+        } else if (tx.nonce === nextNonce) {
           txsToAdd.push(tx);
-          highestReadyNonce++;
+          nextNonce++;
         } else {
           break;
         }
       }
 
-      const futureTxsToRemove = futureTxs.filter(
-        (tx) => tx.nonce < highestReadyNonce,
-      );
+      const futureTxsToRemove = futureTxs.filter((tx) => tx.nonce < nextNonce);
 
       await this.readyTxTable.addWithNewId(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
@@ -191,9 +219,10 @@ export default class TxService {
       const [first] = await this.futureTxTable.getHighestPriority(1);
 
       if (first === undefined) {
-        console.warn(
-          "Future txs unexpectedly empty when it seemed to need pruning",
-        );
+        this.emit({
+          type: "warning",
+          data: "Future txs unexpectedly empty when it seemed to need pruning",
+        });
 
         return;
       }
@@ -213,7 +242,7 @@ export default class TxService {
    * same key so that they will be processed in the correct sequence.
    */
   async replaceReadyTx(
-    highestReadyNonce: number,
+    nextNonce: number,
     newTx: TransactionData,
   ): Promise<AddTransactionFailure[]> {
     const existingTx = await this.readyTxTable.find(
@@ -252,7 +281,7 @@ export default class TxService {
       this.readyTxTable.add(newTx),
     ]);
 
-    const latestReadyNonce = highestReadyNonce - 1;
+    const latestReadyNonce = nextNonce - 1;
     const causedUnorderedReadyTxs = newTx.nonce < latestReadyNonce;
 
     if (causedUnorderedReadyTxs) {
@@ -328,8 +357,14 @@ export default class TxService {
   ) {
     const promises: Promise<unknown>[] = [];
 
-    let nextNonce = (await this.walletService.checkTx(exampleTx))
+    const nextChainNonce = (await this.walletService.checkTx(exampleTx))
       .nextNonce.toNumber();
+
+    const nextUnconfirmedNonce = this.NextUnconfirmedNonce(pubKey);
+
+    // Ready tx nonces are not included here because it is those very txs that
+    // we may be demoting.
+    let nextNonce = Math.max(nextChainNonce, nextUnconfirmedNonce);
 
     let finished: boolean;
     let txs: TransactionData[];
@@ -387,7 +422,9 @@ export default class TxService {
   }
 
   async runBatch() {
-    return await this.runQueryGroup(async () => {
+    this.batchesInProgress++;
+
+    const batchResult = await this.runQueryGroup(async () => {
       const priorityTxs = await this.readyTxTable.getHighestPriority(
         this.config.txQueryLimit,
       );
@@ -426,13 +463,70 @@ export default class TxService {
       }
 
       if (batchTxs.length > 0) {
-        await this.walletService.sendTxs(batchTxs);
+        const maxUnconfirmedTxs = (
+          this.config.maxUnconfirmedAggregations *
+          this.config.maxAggregationSize
+        );
+
+        while (
+          this.unconfirmedTxs.size + batchTxs.length > maxUnconfirmedTxs
+        ) {
+          // FIXME: Polling
+          this.emit({ type: "waiting-unconfirmed-space" });
+          await delay(1000);
+        }
+
+        for (const tx of batchTxs) {
+          this.unconfirmedTxs.add(tx);
+        }
+
+        (async () => {
+          try {
+            const recpt = await this.walletService.sendTxs(
+              batchTxs,
+              Infinity,
+              300,
+            );
+
+            this.emit({
+              type: "batch-confirmed",
+              data: {
+                txIds: batchTxs.map((tx) => tx.txId),
+                blockNumber: recpt.blockNumber,
+              },
+            });
+          } finally {
+            for (const tx of batchTxs) {
+              this.unconfirmedTxs.delete(tx);
+            }
+          }
+        })();
       }
 
       await this.removeFromReady([...batchTxs, ...insufficientRewardTxs]);
-
-      this.checkReadyTxCount();
     });
+
+    this.batchesInProgress--;
+    this.checkReadyTxCount();
+
+    return batchResult;
+  }
+
+  async waitForConfirmations() {
+    const startUnconfirmedTxs = [...this.unconfirmedTxs];
+
+    while (true) {
+      const allConfirmed = startUnconfirmedTxs.every(
+        (tx) => !this.unconfirmedTxs.has(tx),
+      );
+
+      if (allConfirmed) {
+        break;
+      }
+
+      // FIXME: Polling
+      await delay(100);
+    }
   }
 
   static PublicKeys(txs: TransactionData[]) {

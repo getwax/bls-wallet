@@ -1,2 +1,3 @@
 .env
 cov_profile*
+/wallets.json
