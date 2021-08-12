@@ -68,11 +68,34 @@ There are two options here:
       ```
    3. Restart postgres `sudo systemctl restart postgresql`.
 
+## Configuration
+
+```sh
+cp .env.example .env
+```
+
+Edit values as needed, e.g. private key and contract addresses.
+
+You can also configure multiple environments by appending `.<name>`, for example
+you might have:
+
+```
+.env.local
+.env.optimistic-kovan
+```
+
+If you don't have a `.env`, you will need to append `--env <name>` to all
+commands.
+
 ## Running
 
 Can be run locally or hosted.
 
-`deno run --allow-net --allow-env --allow-read  --unstable src/app/app.ts`
+```sh
+./programs/aggregator.ts
+# Or if you have a named environment (see configuration section):
+# ./programs/aggregator.ts --env <name>
+```
 
 ## Testing
 
