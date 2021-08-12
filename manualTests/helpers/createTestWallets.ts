@@ -14,7 +14,7 @@ export default async function createTestWallets(
   seed = Rng.generateSeed(),
 ) {
   const rng = Rng.root.seed(seed);
-  const signer = Signer(provider, rng.seed("signer").address());
+  const signer = Signer(provider, env.PRIVATE_KEY_AGG);
   const network = await provider.getNetwork();
 
   const verificationGateway = new ethers.Contract(

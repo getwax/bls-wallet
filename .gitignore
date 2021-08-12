@@ -1,4 +1,4 @@
 .env*
 !.env.example
 cov_profile*
-/wallets.json
+/wallets.*
