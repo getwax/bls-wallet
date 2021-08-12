@@ -10,45 +10,67 @@ import type { TransactionData } from "../app/TxTable.ts";
 import * as env from "../env.ts";
 import assert from "../helpers/assert.ts";
 import blsKeyHash from "./blsKeyHash.ts";
+import createBLSWallet from "./createBLSWallet.ts";
 import dataPayload from "./dataPayload.ts";
 import domain from "./domain.ts";
+
+type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
 export default class BlsWallet {
   private constructor(
     public provider: ethers.providers.Provider,
     public network: ethers.providers.Network,
     public verificationGateway: Contract,
-    public blsSecret: string,
+    public secret: string,
     public blsSigner: hubbleBls.signer.BlsSigner,
     public walletAddress: string,
     public walletContract: Contract,
   ) {}
 
-  static async connect(
-    blsSecret: string,
-    provider = new ethers.providers.JsonRpcProvider(env.RPC_URL),
-  ) {
-    const blsSigner = blsSignerFactory.getSigner(domain, blsSecret);
+  static async ContractAddress(
+    secret: string,
+    signerOrProvider: SignerOrProvider,
+  ): Promise<string | null> {
+    const blsSigner = BlsWallet.#Signer(secret);
 
     const blsPubKeyHash = blsKeyHash(blsSigner);
 
     const verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
       ovmContractABIs["VerificationGateway.json"].abi,
-      provider,
+      signerOrProvider,
     );
 
     const walletAddress: string = await verificationGateway.walletFromHash(
       blsPubKeyHash,
     );
 
-    assert(
-      walletAddress !== ethers.constants.AddressZero,
-      "Wallet does not exist",
+    if (walletAddress === ethers.constants.AddressZero) {
+      return null;
+    }
+
+    return walletAddress;
+  }
+
+  static async create(secret: string, parent: ethers.Wallet) {
+    await createBLSWallet(
+      await parent.getChainId(),
+      this.#VerificationGateway(parent),
+      this.#Signer(secret),
     );
 
+    return await BlsWallet.connect(secret, parent.provider);
+  }
+
+  static async connect(secret: string, provider: ethers.providers.Provider) {
+    const blsSigner = BlsWallet.#Signer(secret);
+    const verificationGateway = this.#VerificationGateway(provider);
+
+    const contractAddress = await BlsWallet.ContractAddress(secret, provider);
+    assert(contractAddress !== null, "Wallet does not exist");
+
     const walletContract = new ethers.Contract(
-      walletAddress,
+      contractAddress,
       ovmContractABIs["BLSWallet.json"].abi,
       provider,
     );
@@ -57,9 +79,9 @@ export default class BlsWallet {
       provider,
       await provider.getNetwork(),
       verificationGateway,
-      blsSecret,
+      secret,
       blsSigner,
-      walletAddress,
+      contractAddress,
       walletContract,
     );
   }
@@ -108,5 +130,17 @@ export default class BlsWallet {
       methodId: encodedFunction.slice(0, 10),
       encodedParams: `0x${encodedFunction.slice(10)}`,
     };
+  }
+
+  static #Signer(secret: string) {
+    return blsSignerFactory.getSigner(domain, secret);
+  }
+
+  static #VerificationGateway(signerOrProvider: SignerOrProvider) {
+    return new Contract(
+      env.VERIFICATION_GATEWAY_ADDRESS,
+      ovmContractABIs["VerificationGateway.json"].abi,
+      signerOrProvider,
+    );
   }
 }
