@@ -17,7 +17,7 @@ import Range from "../../src/helpers/Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
 import * as env from "../env.ts";
-import Signer from "./Signer.ts";
+import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
@@ -141,10 +141,7 @@ export default class Fixture {
     const verificationGateway = new ethers.Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
       ovmContractABIs["VerificationGateway.json"].abi,
-      Signer(
-        this.walletService.aggregatorSigner.provider,
-        this.rng.seed("signer").address(),
-      ),
+      AdminWallet(this.walletService.aggregatorSigner.provider),
     );
 
     return await createBLSWallet(

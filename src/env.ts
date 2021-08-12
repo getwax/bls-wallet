@@ -11,6 +11,7 @@ export const PORT = requireIntEnv("PORT");
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
 
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
+export const PRIVATE_KEY_ADMIN = requireEnv("PRIVATE_KEY_ADMIN");
 
 export const DEPLOYER_ADDRESS = requireEnv("DEPLOYER_ADDRESS");
 

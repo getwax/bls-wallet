@@ -5,7 +5,7 @@ import * as env from "../../test/env.ts";
 import Rng from "../../src/helpers/Rng.ts";
 import MockErc20 from "../../test/helpers/MockErc20.ts";
 import Range from "../../src/helpers/Range.ts";
-import Signer from "../../test/helpers/Signer.ts";
+import AdminWallet from "../../src/chain/AdminWallet.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
 
 export default async function createTestWallets(
@@ -14,13 +14,13 @@ export default async function createTestWallets(
   seed = Rng.generateSeed(),
 ) {
   const rng = Rng.root.seed(seed);
-  const signer = Signer(provider, env.PRIVATE_KEY_AGG);
+  const adminWallet = AdminWallet(provider);
   const network = await provider.getNetwork();
 
   const verificationGateway = new ethers.Contract(
     env.VERIFICATION_GATEWAY_ADDRESS,
     ovmContractABIs["VerificationGateway.json"].abi,
-    signer,
+    adminWallet,
   );
 
   const wallets: { blsSecret: string; walletAddress: string }[] = [];
@@ -40,7 +40,7 @@ export default async function createTestWallets(
 
     const testErc20 = new MockErc20(
       env.TEST_TOKEN_ADDRESS,
-      signer,
+      adminWallet,
     );
 
     await testErc20.mint(walletAddress, ethers.BigNumber.from(10).pow(18));
