@@ -231,7 +231,7 @@ export default class WalletService {
   }
 
   private static getAggregatorSigner(privateKey: string) {
-    const provider = new ethers.providers.JsonRpcProvider();
+    const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
     const aggregatorSigner = new Wallet(privateKey, provider);
 
     if (env.USE_TEST_NET) {

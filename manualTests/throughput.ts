@@ -10,7 +10,7 @@ const leadTarget = 48;
 const pollingInterval = 400;
 const sendWalletCount = 50;
 
-const provider = new ethers.providers.JsonRpcProvider();
+const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
 const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 

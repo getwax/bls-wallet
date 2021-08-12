@@ -10,7 +10,7 @@ const utils = ethers.utils;
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = utils.arrayify(DOMAIN_HEX);
 
-const provider = new ethers.providers.JsonRpcProvider();
+const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 const aggregatorSigner = new ethers.Wallet(env.PRIVATE_KEY_AGG, provider);
 
 if (env.USE_TEST_NET) {

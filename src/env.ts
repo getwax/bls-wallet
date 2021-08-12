@@ -4,6 +4,8 @@ import {
   requireIntEnv,
 } from "./helpers/envTools.ts";
 
+export const RPC_URL = requireEnv("RPC_URL");
+
 export const PORT = requireIntEnv("PORT");
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");

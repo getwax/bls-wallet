@@ -26,7 +26,7 @@ export default class BlsWallet {
 
   static async connect(
     blsSecret: string,
-    provider = new ethers.providers.JsonRpcProvider(),
+    provider = new ethers.providers.JsonRpcProvider(env.RPC_URL),
   ) {
     const blsSigner = blsSignerFactory.getSigner(domain, blsSecret);
 

@@ -7,7 +7,7 @@ import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import createTestWalletsCached from "./helpers/createTestWalletsCached.ts";
 
-const provider = new ethers.providers.JsonRpcProvider();
+const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
 const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
