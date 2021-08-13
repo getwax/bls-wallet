@@ -326,7 +326,11 @@ export default class Fixture {
         return nil;
       }));
 
-      await this.walletService.sendTxs(txs.filter(isNotNil));
+      const filteredTxs = txs.filter(isNotNil);
+
+      if (filteredTxs.length > 0) {
+        await this.walletService.sendTxs(txs.filter(isNotNil));
+      }
 
       wallets.push({ blsSigner, blsWallet });
     }
