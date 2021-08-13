@@ -1,4 +1,5 @@
 import { dotEnvConfig, exists, parseArgs } from "../../deps/index.ts";
+import nil from "./nil.ts";
 
 const args = parseArgs(Deno.args);
 
@@ -14,14 +15,14 @@ if (!await exists(envFile)) {
 
 const dotEnv = dotEnvConfig({ path: envFile });
 
-export function optionalEnv(envName: string): string | null {
-  return dotEnv[envName] ?? Deno.env.get(envName) ?? null;
+export function optionalEnv(envName: string): string | nil {
+  return dotEnv[envName] ?? Deno.env.get(envName);
 }
 
 export function requireEnv(envName: string): string {
   const value = optionalEnv(envName);
 
-  if (value === null) {
+  if (value === nil) {
     throw new Error(`Missing required environment variable ${envName}`);
   }
 

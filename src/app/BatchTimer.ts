@@ -1,4 +1,5 @@
 import { IClock } from "../helpers/Clock.ts";
+import nil from "../helpers/nil.ts";
 
 type CompletedBatchListener = {
   resolve: () => void;
@@ -6,7 +7,7 @@ type CompletedBatchListener = {
 };
 
 export default class BatchTimer {
-  clearTimer: (() => void) | null = null;
+  clearTimer: (() => void) | nil = nil;
   completedBatchListeners: CompletedBatchListener[] = [];
   completedBatchCount = 0;
 
@@ -23,7 +24,7 @@ export default class BatchTimer {
 
       this.clearTimer = () => {
         cleared = true;
-        this.clearTimer = null;
+        this.clearTimer = nil;
       };
 
       this.clock.wait(this.maxDelayMillis)

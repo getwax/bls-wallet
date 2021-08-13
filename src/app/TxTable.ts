@@ -10,6 +10,7 @@ import {
 } from "../../deps/index.ts";
 
 import assertExists from "../helpers/assertExists.ts";
+import nil from "../helpers/nil.ts";
 
 export type TransactionData = {
   txId?: number;
@@ -123,13 +124,13 @@ export default class TxTable {
     return await this.queryClient.query(`SELECT * FROM ${this.txTable.name}`);
   }
 
-  async find(pubKey: string, nonce: number): Promise<TransactionData | null> {
+  async find(pubKey: string, nonce: number): Promise<TransactionData | nil> {
     const rows = await this.txTable
       .where({ pubKey, nonce })
       .limit(1)
       .select();
 
-    return rows[0] ?? null;
+    return rows[0];
   }
 
   /**

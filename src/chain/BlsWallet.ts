@@ -9,6 +9,7 @@ import ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "../app/TxTable.ts";
 import * as env from "../env.ts";
 import assert from "../helpers/assert.ts";
+import nil from "../helpers/nil.ts";
 import blsKeyHash from "./blsKeyHash.ts";
 import createBLSWallet from "./createBLSWallet.ts";
 import dataPayload from "./dataPayload.ts";
@@ -28,13 +29,13 @@ export default class BlsWallet {
   ) {}
 
   static async Exists(secret: string, signerOrProvider: SignerOrProvider) {
-    return await BlsWallet.Address(secret, signerOrProvider) !== null;
+    return await BlsWallet.Address(secret, signerOrProvider) !== nil;
   }
 
   static async Address(
     secret: string,
     signerOrProvider: SignerOrProvider,
-  ): Promise<string | null> {
+  ): Promise<string | nil> {
     const blsSigner = BlsWallet.#Signer(secret);
 
     const blsPubKeyHash = blsKeyHash(blsSigner);
@@ -50,7 +51,7 @@ export default class BlsWallet {
     );
 
     if (address === ethers.constants.AddressZero) {
-      return null;
+      return nil;
     }
 
     return address;
@@ -64,7 +65,7 @@ export default class BlsWallet {
     );
 
     const wallet = await BlsWallet.connect(secret, parent.provider);
-    assert(wallet !== null);
+    assert(wallet !== nil);
 
     return wallet;
   }
@@ -75,8 +76,8 @@ export default class BlsWallet {
 
     const contractAddress = await BlsWallet.Address(secret, provider);
 
-    if (contractAddress === null) {
-      return null;
+    if (contractAddress === nil) {
+      return nil;
     }
 
     const walletContract = new ethers.Contract(

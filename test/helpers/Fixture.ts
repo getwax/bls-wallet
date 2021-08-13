@@ -15,7 +15,6 @@ import * as env from "../env.ts";
 import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 import MockErc20 from "./MockErc20.ts";
-import { assert } from "../deps.ts";
 import nil, { isNotNil } from "../../src/helpers/nil.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");

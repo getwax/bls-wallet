@@ -10,6 +10,7 @@ import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
 import WalletService, { TxCheckResult } from "./WalletService.ts";
 import AppEvent from "./AppEvent.ts";
+import nil from "../helpers/nil.ts";
 
 export default class TxService {
   static defaultConfig = {
@@ -265,7 +266,7 @@ export default class TxService {
       newTx.nonce,
     );
 
-    if (existingTx === null) {
+    if (existingTx === nil) {
       return [{
         type: "duplicate-nonce",
         description: [
