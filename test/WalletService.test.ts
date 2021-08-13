@@ -1,4 +1,4 @@
-import { assertEquals, BigNumber, delay, ethers } from "./deps.ts";
+import { assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -6,6 +6,7 @@ import Range from "../src/helpers/Range.ts";
 Fixture.test("WalletService sends single tx", async (fx) => {
   const blsSigner = fx.createBlsSigner();
   const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+  const startBalance = await fx.testErc20.balanceOf(blsWallet.address);
 
   const tx = await fx.createTxData({
     blsSigner,
@@ -21,7 +22,7 @@ Fixture.test("WalletService sends single tx", async (fx) => {
     blsWallet.address,
   );
 
-  assertEquals(balance.toNumber(), 7);
+  assertEquals(balance.toNumber(), startBalance.toNumber() + 7);
 });
 
 Fixture.test("WalletService sends single transfer tx", async (fx) => {
@@ -74,8 +75,7 @@ Fixture.test(
 );
 
 Fixture.test("WalletService sends aggregate transaction", async (fx) => {
-  const blsSigner = fx.createBlsSigner();
-  const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+  const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
   const tx1 = await fx.createTxData({
     blsSigner,
@@ -99,12 +99,11 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
     blsWallet.address,
   );
 
-  assertEquals(balance.toNumber(), 8);
+  assertEquals(balance.toNumber(), 1008);
 });
 
 Fixture.test("WalletService sends large aggregate mint tx", async (fx) => {
-  const blsSigner = fx.createBlsSigner();
-  const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+  const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
   const size = 11;
 
@@ -126,7 +125,7 @@ Fixture.test("WalletService sends large aggregate mint tx", async (fx) => {
     blsWallet.address,
   );
 
-  assertEquals(balance.toNumber(), size);
+  assertEquals(balance.toNumber(), 1000 + size);
 });
 
 Fixture.test("WalletService sends large aggregate transfer tx", async (fx) => {
@@ -158,8 +157,7 @@ Fixture.test("WalletService sends large aggregate transfer tx", async (fx) => {
 Fixture.test(
   "WalletService sends multiple aggregate transactions",
   async (fx) => {
-    const blsSigner = fx.createBlsSigner();
-    const blsWallet = await fx.getOrCreateBlsWallet(blsSigner);
+    const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
 
     for (let i = 1; i <= 2; i++) {
       const txs = await Promise.all(
@@ -180,7 +178,7 @@ Fixture.test(
         blsWallet.address,
       );
 
-      assertEquals(balance.toNumber(), i * 5);
+      assertEquals(balance.toNumber(), 1000 + i * 5);
     }
   },
 );
