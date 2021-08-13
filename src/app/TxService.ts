@@ -8,7 +8,7 @@ import BatchTimer from "./BatchTimer.ts";
 import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
-import WalletService from "./WalletService.ts";
+import WalletService, { TxCheckResult } from "./WalletService.ts";
 import AppEvent from "./AppEvent.ts";
 
 export default class TxService {
@@ -66,25 +66,25 @@ export default class TxService {
   }
 
   async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
-    return await this.runQueryGroup(async () => {
-      let checkTxResult;
+    let checkTxResult: TxCheckResult;
 
-      try {
-        checkTxResult = await this.walletService.checkTx(txData);
-      } catch (error) {
-        if (error.message.includes("code=UNPREDICTABLE_GAS_LIMIT,")) {
-          return [{
-            type: "unpredictable-gas-limit",
-            description: [
-              "Checking transaction produced UNPREDICTABLE_GAS_LIMIT, which",
-              "may not be super-helpful. We don't know what went wrong.",
-            ].join(" "),
-          }];
-        }
-
-        throw error;
+    try {
+      checkTxResult = await this.walletService.checkTx(txData);
+    } catch (error) {
+      if (error.message.includes("code=UNPREDICTABLE_GAS_LIMIT,")) {
+        return [{
+          type: "unpredictable-gas-limit",
+          description: [
+            "Checking transaction produced UNPREDICTABLE_GAS_LIMIT, which",
+            "may not be super-helpful. We don't know what went wrong.",
+          ].join(" "),
+        }];
       }
 
+      throw error;
+    }
+
+    return await this.runQueryGroup(async () => {
       const {
         failures,
         nextNonce: nextChainNonce,
