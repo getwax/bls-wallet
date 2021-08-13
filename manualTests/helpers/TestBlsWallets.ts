@@ -10,7 +10,7 @@ export default async function TestBlsWallets(
   count: number,
 ) {
   const parent = AdminWallet(provider);
-  const rng = Rng.root.seed(env.TEST_BLS_WALLETS_SECRET);
+  const rng = Rng.root.seed(env.PRIVATE_KEY_ADMIN, env.TEST_BLS_WALLETS_SECRET);
 
   const wallets: BlsWallet[] = [];
 
