@@ -1,9 +1,4 @@
-import {
-  blsSignerFactory,
-  Contract,
-  ethers,
-  hubbleBls,
-} from "../../deps/index.ts";
+import { blsSignerFactory, ethers, hubbleBls } from "../../deps/index.ts";
 
 import testRng from "./testRng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
@@ -20,6 +15,8 @@ import * as env from "../env.ts";
 import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 import MockErc20 from "./MockErc20.ts";
+import { assert } from "../deps.ts";
+import nil, { isNotNil } from "../../src/helpers/nil.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -117,6 +114,7 @@ export default class Fixture {
   clock = new TestClock();
 
   testErc20: MockErc20;
+  adminWallet: ethers.Wallet;
 
   private constructor(
     public testName: string,
@@ -127,6 +125,11 @@ export default class Fixture {
     this.testErc20 = new MockErc20(
       env.TEST_TOKEN_ADDRESS,
       this.walletService.aggregatorSigner,
+    );
+
+    this.adminWallet = AdminWallet(
+      this.walletService.aggregatorSigner.provider,
+      this.rng.seed("admin-wallet").address(),
     );
   }
 
@@ -141,10 +144,7 @@ export default class Fixture {
     const verificationGateway = new ethers.Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
       ovmContractABIs["VerificationGateway.json"].abi,
-      AdminWallet(
-        this.walletService.aggregatorSigner.provider,
-        this.rng.seed("admin-wallet").address(),
-      ),
+      this.adminWallet,
     );
 
     return await createBLSWallet(
@@ -259,6 +259,14 @@ export default class Fixture {
   async setupWallets(count: number, ...extraSeeds: string[]) {
     const wallets = [];
 
+    const tokens = [
+      this.testErc20,
+      new MockErc20(
+        this.walletService.rewardErc20.address,
+        this.walletService.aggregatorSigner.provider,
+      ),
+    ];
+
     // Unfortunately attempting to parallelize these causes duplicate nonce
     // issues. This might be mitigated by collecting `TransactionResponse`s in a
     // serial way but then awaiting .wait() in parallel. That's a significant
@@ -267,22 +275,39 @@ export default class Fixture {
       const blsSigner = this.createBlsSigner(`${i}`, ...extraSeeds);
       const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
 
-      await this.walletService.sendTxs([
-        await this.createTxData({
-          blsSigner,
-          contract: this.testErc20.contract,
-          method: "mint",
-          args: [blsWallet.address, "1000"],
-          nonceOffset: 0,
-        }),
-        await this.createTxData({
-          blsSigner,
-          contract: this.walletService.rewardErc20,
-          method: "mint",
-          args: [blsWallet.address, "1000"],
-          nonceOffset: 1,
-        }),
-      ]);
+      const txs = await Promise.all(tokens.map(async (token, i) => {
+        const balance = await token.balanceOf(blsWallet.address);
+
+        // When seeding tests, we can generate wallets from previous tests, and
+        // this can cause unexpected balances if we blindly mint instead of
+        // doing this top-up.
+        const topUp = ethers.BigNumber.from(1000).sub(balance);
+
+        if (topUp.gt(0)) {
+          return await this.createTxData({
+            blsSigner,
+            contract: token.contract,
+            method: "mint",
+            args: [blsWallet.address, topUp.toString()],
+            nonceOffset: i,
+          });
+        }
+
+        if (topUp.lt(0)) {
+          console.log("topUp", topUp.toString());
+          return await this.createTxData({
+            blsSigner,
+            contract: token.contract,
+            method: "transfer",
+            args: [this.adminWallet.address, topUp.mul(-1).toString()],
+            nonceOffset: i,
+          });
+        }
+
+        return nil;
+      }));
+
+      await this.walletService.sendTxs(txs.filter(isNotNil));
 
       wallets.push({ blsSigner, blsWallet });
     }
