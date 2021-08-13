@@ -222,7 +222,7 @@ Fixture.test(
       ethers.BigNumber.from(1001), // only one tx worked
     );
 
-    assertEquals(await fx.allTxs(txService), {
+    assertEquals(await fx.allTxsWithoutIds(txService), {
       ready: [
         // txs[0] was submitted and dropped
         // txs[1] would be ready, but it was dropped for having insufficient
@@ -231,7 +231,7 @@ Fixture.test(
       future: [
         // txs[2] is moved to future because it became nonce gapped from txs[1]
         // getting dropped
-        { ...txs[2], txId: 1 },
+        { ...txs[2] },
       ],
     });
   },

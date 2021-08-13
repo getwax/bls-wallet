@@ -256,6 +256,22 @@ export default class Fixture {
     };
   }
 
+  async allTxsWithoutIds(
+    txService: TxService,
+  ): Promise<{ ready: TransactionData[]; future: TransactionData[] }> {
+    const removeId = (tx: TransactionData) => {
+      delete tx.txId;
+      return tx;
+    };
+
+    const { ready, future } = await this.allTxs(txService);
+
+    return {
+      ready: ready.map(removeId),
+      future: future.map(removeId),
+    };
+  }
+
   /**
    * Sets up wallets for testing. These wallets are also given 1000 test and
    * reward tokens.

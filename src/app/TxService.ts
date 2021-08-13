@@ -104,17 +104,32 @@ export default class TxService {
         txData.pubKey,
       );
 
+      const emitAdded = (category: "ready" | "future") => {
+        this.emit({
+          type: "tx-added",
+          data: {
+            category,
+            pubKeyShort: txData.pubKey.slice(2, 9),
+            nonce: txData.nonce,
+          },
+        });
+      };
+
       if (txData.nonce < nextNonce) {
-        return await this.replaceReadyTx(nextNonce, txData);
+        const result = await this.replaceReadyTx(nextNonce, txData);
+        emitAdded("ready");
+        return result;
       }
 
       if (nextNonce === txData.nonce) {
         this.readyTxTable.add(txData);
         await this.tryMoveFutureTxs(txData.pubKey, nextNonce + 1);
+        emitAdded("ready");
         this.checkReadyTxCount();
       } else {
         await this.ensureFutureTxSpace();
         this.futureTxTable.add(txData);
+        emitAdded("future");
       }
 
       return [];

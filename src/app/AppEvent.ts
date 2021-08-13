@@ -16,6 +16,10 @@ type AppEvent = (
   | { type: "batch-sent"; data: { txIds: TxId[] } }
   | { type: "batch-confirmed"; data: { txIds: TxId[]; blockNumber: number } }
   | { type: "warning"; data: string }
+  | {
+    type: "tx-added";
+    data: { category: "ready" | "future"; pubKeyShort: string; nonce: number };
+  }
 );
 
 export default AppEvent;
