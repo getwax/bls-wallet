@@ -19,6 +19,7 @@ import TestClock from "./TestClock.ts";
 import * as env from "../env.ts";
 import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
+import MockErc20 from "./MockErc20.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -115,7 +116,7 @@ export default class Fixture {
   cleanupJobs: (() => void | Promise<void>)[] = [];
   clock = new TestClock();
 
-  testErc20: Contract;
+  testErc20: MockErc20;
 
   private constructor(
     public testName: string,
@@ -123,9 +124,8 @@ export default class Fixture {
     public chainId: number,
     public walletService: WalletService,
   ) {
-    this.testErc20 = new Contract(
+    this.testErc20 = new MockErc20(
       env.TEST_TOKEN_ADDRESS,
-      ovmContractABIs["MockERC20.json"].abi,
       this.walletService.aggregatorSigner,
     );
   }
@@ -270,7 +270,7 @@ export default class Fixture {
       await this.walletService.sendTxs([
         await this.createTxData({
           blsSigner,
-          contract: this.testErc20,
+          contract: this.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1000"],
           nonceOffset: 0,

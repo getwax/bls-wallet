@@ -9,7 +9,7 @@ Fixture.test("WalletService sends single tx", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.testErc20,
+    contract: fx.testErc20.contract,
     method: "mint",
     args: [blsWallet.address, "7"],
     nonceOffset: 0,
@@ -29,7 +29,7 @@ Fixture.test("WalletService sends single transfer tx", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner: wallets[0].blsSigner,
-    contract: fx.testErc20,
+    contract: fx.testErc20.contract,
     method: "transfer",
     args: [wallets[1].blsWallet.address, "1"],
     nonceOffset: 0,
@@ -51,7 +51,7 @@ Fixture.test(
 
     const tx = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "3"],
       tokenRewardAmount: ethers.BigNumber.from(8),
@@ -79,7 +79,7 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 
   const tx1 = await fx.createTxData({
     blsSigner,
-    contract: fx.testErc20,
+    contract: fx.testErc20.contract,
     method: "mint",
     args: [blsWallet.address, "3"],
     nonceOffset: 0,
@@ -87,7 +87,7 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
 
   const tx2 = await fx.createTxData({
     blsSigner,
-    contract: fx.testErc20,
+    contract: fx.testErc20.contract,
     method: "mint",
     args: [blsWallet.address, "5"],
     nonceOffset: 1,
@@ -112,7 +112,7 @@ Fixture.test("WalletService sends large aggregate mint tx", async (fx) => {
     Range(size).map((i) =>
       fx.createTxData({
         blsSigner,
-        contract: fx.testErc20,
+        contract: fx.testErc20.contract,
         method: "mint",
         args: [blsWallet.address, "1"],
         nonceOffset: i,
@@ -138,7 +138,7 @@ Fixture.test("WalletService sends large aggregate transfer tx", async (fx) => {
     Range(size).map((i) =>
       fx.createTxData({
         blsSigner: sendWallet.blsSigner,
-        contract: fx.testErc20,
+        contract: fx.testErc20.contract,
         method: "transfer",
         args: [recvWallet.blsWallet.address, "1"],
         nonceOffset: i,
@@ -166,7 +166,7 @@ Fixture.test(
         Range(5).map((i) =>
           fx.createTxData({
             blsSigner,
-            contract: fx.testErc20,
+            contract: fx.testErc20.contract,
             method: "mint",
             args: [blsWallet.address, "1"],
             nonceOffset: i,
@@ -192,7 +192,7 @@ Fixture.test(
 
     const tx1 = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "3"],
       tokenRewardAmount: ethers.BigNumber.from(8),
@@ -201,7 +201,7 @@ Fixture.test(
 
     const tx2 = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "5"],
       tokenRewardAmount: ethers.BigNumber.from(13),
@@ -232,7 +232,7 @@ Fixture.test(
       Range(2).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.testErc20,
+          contract: fx.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,

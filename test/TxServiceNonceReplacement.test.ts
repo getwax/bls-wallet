@@ -14,7 +14,7 @@ Fixture.test(
 
     const tx = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "3"],
     });
@@ -24,7 +24,7 @@ Fixture.test(
 
     const txDuplicateNonce = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "5"],
       // because the previous tx isn't on chain, the default nonce offset of
@@ -64,7 +64,7 @@ Fixture.test(
 
     const tx = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "3"],
     });
@@ -79,7 +79,7 @@ Fixture.test(
 
     const txReplacement = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "5"],
       // because the previous tx isn't on chain, the default nonce offset of
@@ -109,7 +109,7 @@ Fixture.test(
 
     const tx = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "3"],
       tokenRewardAmount: ethers.BigNumber.from(2),
@@ -125,7 +125,7 @@ Fixture.test(
 
     const txReplacement = await fx.createTxData({
       blsSigner,
-      contract: fx.testErc20,
+      contract: fx.testErc20.contract,
       method: "mint",
       args: [blsWallet.address, "5"],
       // because the previous tx isn't on chain, the default nonce offset of
@@ -170,7 +170,7 @@ function reinsertionTest(extraTxs: number) {
         Range(2 + extraTxs).map((i) =>
           fx.createTxData({
             blsSigner: w1.blsSigner,
-            contract: fx.testErc20,
+            contract: fx.testErc20.contract,
             method: "mint",
             args: [w1.blsWallet.address, `${i}`],
             nonceOffset: i,
@@ -180,7 +180,7 @@ function reinsertionTest(extraTxs: number) {
 
       const txOther = await fx.createTxData({
         blsSigner: w2.blsSigner,
-        contract: fx.testErc20,
+        contract: fx.testErc20.contract,
         method: "mint",
         args: [w1.blsWallet.address, "1"],
       });
@@ -203,7 +203,7 @@ function reinsertionTest(extraTxs: number) {
 
       const txReplacement = await fx.createTxData({
         blsSigner: w1.blsSigner,
-        contract: fx.testErc20,
+        contract: fx.testErc20.contract,
         method: "mint",
         args: [w1.blsWallet.address, "11"],
         nonceOffset: 1,

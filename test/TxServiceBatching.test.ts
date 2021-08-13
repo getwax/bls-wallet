@@ -18,7 +18,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.testErc20,
+    contract: fx.testErc20.contract,
     method: "mint",
     args: [blsWallet.address, "1"],
   });
@@ -59,7 +59,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
     Range(5).map((i) =>
       fx.createTxData({
         blsSigner,
-        contract: fx.testErc20,
+        contract: fx.testErc20.contract,
         method: "mint",
         args: [blsWallet.address, "1"],
         nonceOffset: i,
@@ -94,7 +94,7 @@ Fixture.test(
       Range(7).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.testErc20,
+          contract: fx.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,
@@ -153,7 +153,7 @@ Fixture.test(
       fx.rng.shuffle(Range(15)).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.testErc20,
+          contract: fx.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,
@@ -194,7 +194,7 @@ Fixture.test(
       Range(3).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.testErc20,
+          contract: fx.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1"],
           tokenRewardAmount: ethers.BigNumber.from(
