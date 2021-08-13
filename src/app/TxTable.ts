@@ -52,6 +52,17 @@ export default class TxTable {
     return txTable;
   }
 
+  static async createFresh(
+    queryClient: QueryClient,
+    txTableName: string,
+  ) {
+    const txTable = new TxTable(queryClient, txTableName);
+    await txTable.txTable.drop(true);
+    await txTable.txTable.create(txOptions, CreateTableMode.IfNotExists);
+
+    return txTable;
+  }
+
   async add(...txs: TransactionData[]) {
     await this.txTable.insert(...txs);
   }

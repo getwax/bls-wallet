@@ -221,13 +221,17 @@ export default class Fixture {
     const txTablesMutex = new Mutex();
 
     const tableName = `txs_test_${suffix}`;
-    const txTable = await TxTable.create(queryClient, tableName);
+    const txTable = await TxTable.createFresh(queryClient, tableName);
 
     const futureTableName = `future_txs_test_${suffix}`;
-    const futureTxTable = await TxTable.create(queryClient, futureTableName);
+    const futureTxTable = await TxTable.createFresh(
+      queryClient,
+      futureTableName,
+    );
 
     this.cleanupJobs.push(async () => {
       await txTable.drop();
+      await futureTxTable.drop();
       await queryClient.disconnect();
     });
 
@@ -294,7 +298,6 @@ export default class Fixture {
         }
 
         if (topUp.lt(0)) {
-          console.log("topUp", topUp.toString());
           return await this.createTxData({
             blsSigner,
             contract: token.contract,
