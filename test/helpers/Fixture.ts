@@ -141,7 +141,10 @@ export default class Fixture {
     const verificationGateway = new ethers.Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
       ovmContractABIs["VerificationGateway.json"].abi,
-      AdminWallet(this.walletService.aggregatorSigner.provider),
+      AdminWallet(
+        this.walletService.aggregatorSigner.provider,
+        this.rng.seed("admin-wallet").address(),
+      ),
     );
 
     return await createBLSWallet(
