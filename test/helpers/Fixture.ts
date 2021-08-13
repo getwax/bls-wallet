@@ -1,9 +1,4 @@
-import {
-  blsSignerFactory,
-  Contract,
-  ethers,
-  hubbleBls,
-} from "../../deps/index.ts";
+import { blsSignerFactory, ethers, hubbleBls } from "../../deps/index.ts";
 
 import testRng from "./testRng.ts";
 import ovmContractABIs from "../../ovmContractABIs/index.ts";
@@ -17,8 +12,10 @@ import Range from "../../src/helpers/Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
 import * as env from "../env.ts";
-import Signer from "./Signer.ts";
+import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
+import MockErc20 from "./MockErc20.ts";
+import nil, { isNotNil } from "../../src/helpers/nil.ts";
 
 const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
 const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
@@ -115,7 +112,8 @@ export default class Fixture {
   cleanupJobs: (() => void | Promise<void>)[] = [];
   clock = new TestClock();
 
-  testErc20: Contract;
+  testErc20: MockErc20;
+  adminWallet: ethers.Wallet;
 
   private constructor(
     public testName: string,
@@ -123,10 +121,14 @@ export default class Fixture {
     public chainId: number,
     public walletService: WalletService,
   ) {
-    this.testErc20 = new Contract(
+    this.testErc20 = new MockErc20(
       env.TEST_TOKEN_ADDRESS,
-      ovmContractABIs["MockERC20.json"].abi,
       this.walletService.aggregatorSigner,
+    );
+
+    this.adminWallet = AdminWallet(
+      this.walletService.aggregatorSigner.provider,
+      this.rng.seed("admin-wallet").address(),
     );
   }
 
@@ -141,10 +143,7 @@ export default class Fixture {
     const verificationGateway = new ethers.Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
       ovmContractABIs["VerificationGateway.json"].abi,
-      Signer(
-        this.walletService.aggregatorSigner.provider,
-        this.rng.seed("signer").address(),
-      ),
+      this.adminWallet,
     );
 
     return await createBLSWallet(
@@ -221,13 +220,17 @@ export default class Fixture {
     const txTablesMutex = new Mutex();
 
     const tableName = `txs_test_${suffix}`;
-    const txTable = await TxTable.create(queryClient, tableName);
+    const txTable = await TxTable.createFresh(queryClient, tableName);
 
     const futureTableName = `future_txs_test_${suffix}`;
-    const futureTxTable = await TxTable.create(queryClient, futureTableName);
+    const futureTxTable = await TxTable.createFresh(
+      queryClient,
+      futureTableName,
+    );
 
     this.cleanupJobs.push(async () => {
       await txTable.drop();
+      await futureTxTable.drop();
       await queryClient.disconnect();
     });
 
@@ -252,12 +255,36 @@ export default class Fixture {
     };
   }
 
+  async allTxsWithoutIds(
+    txService: TxService,
+  ): Promise<{ ready: TransactionData[]; future: TransactionData[] }> {
+    const removeId = (tx: TransactionData) => {
+      delete tx.txId;
+      return tx;
+    };
+
+    const { ready, future } = await this.allTxs(txService);
+
+    return {
+      ready: ready.map(removeId),
+      future: future.map(removeId),
+    };
+  }
+
   /**
    * Sets up wallets for testing. These wallets are also given 1000 test and
    * reward tokens.
    */
   async setupWallets(count: number, ...extraSeeds: string[]) {
     const wallets = [];
+
+    const tokens = [
+      this.testErc20,
+      new MockErc20(
+        this.walletService.rewardErc20.address,
+        this.walletService.aggregatorSigner.provider,
+      ),
+    ];
 
     // Unfortunately attempting to parallelize these causes duplicate nonce
     // issues. This might be mitigated by collecting `TransactionResponse`s in a
@@ -267,22 +294,42 @@ export default class Fixture {
       const blsSigner = this.createBlsSigner(`${i}`, ...extraSeeds);
       const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
 
-      await this.walletService.sendTxs([
-        await this.createTxData({
-          blsSigner,
-          contract: this.testErc20,
-          method: "mint",
-          args: [blsWallet.address, "1000"],
-          nonceOffset: 0,
-        }),
-        await this.createTxData({
-          blsSigner,
-          contract: this.walletService.rewardErc20,
-          method: "mint",
-          args: [blsWallet.address, "1000"],
-          nonceOffset: 1,
-        }),
-      ]);
+      const txs = await Promise.all(tokens.map(async (token, i) => {
+        const balance = await token.balanceOf(blsWallet.address);
+
+        // When seeding tests, we can generate wallets from previous tests, and
+        // this can cause unexpected balances if we blindly mint instead of
+        // doing this top-up.
+        const topUp = ethers.BigNumber.from(1000).sub(balance);
+
+        if (topUp.gt(0)) {
+          return await this.createTxData({
+            blsSigner,
+            contract: token.contract,
+            method: "mint",
+            args: [blsWallet.address, topUp.toString()],
+            nonceOffset: i,
+          });
+        }
+
+        if (topUp.lt(0)) {
+          return await this.createTxData({
+            blsSigner,
+            contract: token.contract,
+            method: "transfer",
+            args: [this.adminWallet.address, topUp.mul(-1).toString()],
+            nonceOffset: i,
+          });
+        }
+
+        return nil;
+      }));
+
+      const filteredTxs = txs.filter(isNotNil);
+
+      if (filteredTxs.length > 0) {
+        await this.walletService.sendTxs(txs.filter(isNotNil));
+      }
 
       wallets.push({ blsSigner, blsWallet });
     }

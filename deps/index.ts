@@ -1,4 +1,6 @@
 export { delay } from "https://deno.land/std@0.103.0/async/delay.ts";
+export { parse as parseArgs } from "https://deno.land/std@0.103.0/flags/mod.ts";
+export { exists } from "https://deno.land/std@0.103.0/fs/mod.ts";
 
 import { config as dotEnvConfig } from "https://deno.land/x/dotenv@v2.0.0/mod.ts";
 export { dotEnvConfig };

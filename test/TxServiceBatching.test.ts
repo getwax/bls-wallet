@@ -18,7 +18,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
 
   const tx = await fx.createTxData({
     blsSigner,
-    contract: fx.testErc20,
+    contract: fx.testErc20.contract,
     method: "mint",
     args: [blsWallet.address, "1"],
   });
@@ -59,7 +59,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
     Range(5).map((i) =>
       fx.createTxData({
         blsSigner,
-        contract: fx.testErc20,
+        contract: fx.testErc20.contract,
         method: "mint",
         args: [blsWallet.address, "1"],
         nonceOffset: i,
@@ -94,7 +94,7 @@ Fixture.test(
       Range(7).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.testErc20,
+          contract: fx.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,
@@ -153,7 +153,7 @@ Fixture.test(
       fx.rng.shuffle(Range(15)).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.testErc20,
+          contract: fx.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1"],
           nonceOffset: i,
@@ -194,7 +194,7 @@ Fixture.test(
       Range(3).map((i) =>
         fx.createTxData({
           blsSigner,
-          contract: fx.testErc20,
+          contract: fx.testErc20.contract,
           method: "mint",
           args: [blsWallet.address, "1"],
           tokenRewardAmount: ethers.BigNumber.from(
@@ -222,7 +222,7 @@ Fixture.test(
       ethers.BigNumber.from(1001), // only one tx worked
     );
 
-    assertEquals(await fx.allTxs(txService), {
+    assertEquals(await fx.allTxsWithoutIds(txService), {
       ready: [
         // txs[0] was submitted and dropped
         // txs[1] would be ready, but it was dropped for having insufficient
@@ -231,7 +231,7 @@ Fixture.test(
       future: [
         // txs[2] is moved to future because it became nonce gapped from txs[1]
         // getting dropped
-        { ...txs[2], txId: 1 },
+        { ...txs[2] },
       ],
     });
   },

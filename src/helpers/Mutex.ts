@@ -1,3 +1,5 @@
+import nil from "./nil.ts";
+
 class Lock {
   release: () => void;
 
@@ -8,15 +10,15 @@ class Lock {
 
 export default class Mutex {
   #queue: ((lock: Lock) => void)[] = [];
-  #currentLock: Lock | null = null;
+  #currentLock: Lock | nil = nil;
 
-  tryLock(): Lock | null {
-    if (this.#currentLock === null) {
+  tryLock(): Lock | nil {
+    if (this.#currentLock === nil) {
       this.#currentLock = new Lock((lock) => this.#release(lock));
       return this.#currentLock;
     }
 
-    return null;
+    return nil;
   }
 
   Lock(): Promise<Lock> {
@@ -30,7 +32,7 @@ export default class Mutex {
   }
 
   isLocked() {
-    return this.#currentLock !== null;
+    return this.#currentLock !== nil;
   }
 
   #release(lock: Lock) {
@@ -38,7 +40,7 @@ export default class Mutex {
       throw new Error("invalid release");
     }
 
-    this.#currentLock = null;
+    this.#currentLock = nil;
 
     const resolveNext = this.#queue.shift();
 

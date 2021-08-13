@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read
+#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --unstable
 
 import app from "../src/app/app.ts";
 import AppEvent from "../src/app/AppEvent.ts";

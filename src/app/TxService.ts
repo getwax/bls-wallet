@@ -8,8 +8,9 @@ import BatchTimer from "./BatchTimer.ts";
 import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TransactionData } from "./TxTable.ts";
-import WalletService from "./WalletService.ts";
+import WalletService, { TxCheckResult } from "./WalletService.ts";
 import AppEvent from "./AppEvent.ts";
+import nil from "../helpers/nil.ts";
 
 export default class TxService {
   static defaultConfig = {
@@ -66,25 +67,25 @@ export default class TxService {
   }
 
   async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
-    return await this.runQueryGroup(async () => {
-      let checkTxResult;
+    let checkTxResult: TxCheckResult;
 
-      try {
-        checkTxResult = await this.walletService.checkTx(txData);
-      } catch (error) {
-        if (error.message.includes("code=UNPREDICTABLE_GAS_LIMIT,")) {
-          return [{
-            type: "unpredictable-gas-limit",
-            description: [
-              "Checking transaction produced UNPREDICTABLE_GAS_LIMIT, which",
-              "may not be super-helpful. We don't know what went wrong.",
-            ].join(" "),
-          }];
-        }
-
-        throw error;
+    try {
+      checkTxResult = await this.walletService.checkTx(txData);
+    } catch (error) {
+      if (error.message.includes("code=UNPREDICTABLE_GAS_LIMIT,")) {
+        return [{
+          type: "unpredictable-gas-limit",
+          description: [
+            "Checking transaction produced UNPREDICTABLE_GAS_LIMIT, which",
+            "may not be super-helpful. We don't know what went wrong.",
+          ].join(" "),
+        }];
       }
 
+      throw error;
+    }
+
+    return await this.runQueryGroup(async () => {
       const {
         failures,
         nextNonce: nextChainNonce,
@@ -104,17 +105,32 @@ export default class TxService {
         txData.pubKey,
       );
 
+      const emitAdded = (category: "ready" | "future") => {
+        this.emit({
+          type: "tx-added",
+          data: {
+            category,
+            pubKeyShort: txData.pubKey.slice(2, 9),
+            nonce: txData.nonce,
+          },
+        });
+      };
+
       if (txData.nonce < nextNonce) {
-        return await this.replaceReadyTx(nextNonce, txData);
+        const result = await this.replaceReadyTx(nextNonce, txData);
+        emitAdded("ready");
+        return result;
       }
 
       if (nextNonce === txData.nonce) {
         this.readyTxTable.add(txData);
         await this.tryMoveFutureTxs(txData.pubKey, nextNonce + 1);
+        emitAdded("ready");
         this.checkReadyTxCount();
       } else {
         await this.ensureFutureTxSpace();
         this.futureTxTable.add(txData);
+        emitAdded("future");
       }
 
       return [];
@@ -250,7 +266,7 @@ export default class TxService {
       newTx.nonce,
     );
 
-    if (existingTx === null) {
+    if (existingTx === nil) {
       return [{
         type: "duplicate-nonce",
         description: [
