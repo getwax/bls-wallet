@@ -2,14 +2,26 @@
 
 import { delay, ethers } from "../deps/index.ts";
 
+import * as env from "../test/env.ts";
 import Client from "../src/app/Client.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
 import BlsWallet from "../src/chain/BlsWallet.ts";
-import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 
-const leadTarget = 48;
+const logStartTime = Date.now();
+
+const RelativeTimestamp = () => (
+  Math.floor((Date.now() - logStartTime) / 1000)
+    .toString()
+    .padStart(4, "0")
+);
+
+function log(...args: unknown[]) {
+  console.log(RelativeTimestamp(), ...args);
+}
+
+const leadTarget = env.MAX_AGGREGATION_SIZE * env.MAX_UNCONFIRMED_AGGREGATIONS;
 const pollingInterval = 400;
 const sendWalletCount = 50;
 
@@ -20,10 +32,14 @@ const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
 const client = new Client(`http://localhost:${env.PORT}`);
 
+log("Connecting/creating test wallets...");
+
 const [recvWallet, ...sendWallets] = await TestBlsWallets(
   provider,
   sendWalletCount + 1,
 );
+
+log("Checking/minting test tokens...");
 
 for (const wallet of sendWallets) {
   const testErc20 = new MockErc20(
@@ -36,11 +52,14 @@ for (const wallet of sendWallets) {
       ethers.BigNumber.from(10).pow(17),
     )
   ) {
+    log("Minting test token for wallet", wallet.address);
     await testErc20.mint(wallet.address, ethers.BigNumber.from(10).pow(18));
   }
 }
 
 const startBalance = await testErc20.balanceOf(recvWallet.address);
+
+log("Getting nonces...");
 
 const nextNonceMap = new Map<BlsWallet, number>(
   await Promise.all(sendWallets.map(async (sendWallet) => {
@@ -49,6 +68,8 @@ const nextNonceMap = new Map<BlsWallet, number>(
     return [sendWallet, nextNonce] as const;
   })),
 );
+
+log("Begin throughput test");
 
 let txsSent = 0;
 let txsAdded = 0;

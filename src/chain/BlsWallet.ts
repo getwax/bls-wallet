@@ -63,7 +63,10 @@ export default class BlsWallet {
       this.#Signer(secret),
     );
 
-    return await BlsWallet.connect(secret, parent.provider);
+    const wallet = await BlsWallet.connect(secret, parent.provider);
+    assert(wallet !== null);
+
+    return wallet;
   }
 
   static async connect(secret: string, provider: ethers.providers.Provider) {
@@ -71,7 +74,10 @@ export default class BlsWallet {
     const verificationGateway = this.#VerificationGateway(provider);
 
     const contractAddress = await BlsWallet.Address(secret, provider);
-    assert(contractAddress !== null, "Wallet does not exist");
+
+    if (contractAddress === null) {
+      return null;
+    }
 
     const walletContract = new ethers.Contract(
       contractAddress,
