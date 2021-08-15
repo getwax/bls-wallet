@@ -1,9 +1,7 @@
 import { BigNumber, Contract, ContractFactory } from "ethers";
-import { getContractAddress } from "ethers/lib/utils";
 import { network } from "hardhat";
-import { exit } from "process";
-import Fixture from "../../shared/helpers/Fixture";
-import TokenHelper from "../../shared/helpers/TokenHelper";
+import Fixture, { FullTxData } from "../../shared/helpers/Fixture";
+import blsSignFunction from "../../shared/helpers/blsSignFunction";
 
 import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
 import { BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
@@ -41,11 +39,28 @@ async function main() {
     console.log(`Created new blsWallet contracts: ${config.blsAddresses}`);
   }
   blsWallets = config.blsAddresses.map( a => fx.BLSWallet.attach(a) );
-
-
+  // blsSignFunction({
+  //   blsSigner: fx.blsSigners[0],
+  //   chainId: fx.chainId,
+  //   nonce: ,
+  //   reward: ,
+  //   contract: ,
+  //   functionName: ,
+  //   params: []
+  //   })
 
 }
 
+// class Wallet {
+
+//   constructor(
+//     signer: BlsSignerInterface,
+//     contract: Contract
+//   ) {
+
+
+//   }
+// }
 
 
 function addressesForNetwork(networkName: string): DeployedAddresses {

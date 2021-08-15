@@ -10,12 +10,12 @@ import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/
 
 import createBLSWallet from "./createBLSWallet";
 import blsSignFunction from "./blsSignFunction";
+import blsKeyHash from "./blsKeyHash";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
 const zeroBLSPubKey = [0, 0, 0, 0].map(BigNumber.from);
-const zeroAddress = "0x" + "0".repeat(40);
 
 export type FullTxData = {
   blsSigner: BlsSignerInterface,
@@ -94,7 +94,7 @@ export default class Fixture {
       verificationGateway = await VerificationGateway.deploy();
       await verificationGateway.deployed();
       if (initialized) {
-        await verificationGateway.initialize(zeroAddress);
+        await verificationGateway.initialize(ethers.constants.AddressZero);
       }
     }
 
@@ -131,12 +131,12 @@ export default class Fixture {
     );
   }
 
-  static blsKeyHash(blsSigner: BlsSignerInterface) {
-    return keccak256(utils.solidityPack(
-      ["uint256[4]"],
-      [blsSigner.pubkey]
-    ));
-  }
+  // static blsKeyHash(blsSigner: BlsSignerInterface) {
+  //   return keccak256(utils.solidityPack(
+  //     ["uint256[4]"],
+  //     [blsSigner.pubkey]
+  //   ));
+  // }
 
   static txDataFromFull(fullTxData: FullTxData) {
     let encodedFunction = fullTxData.contract.interface.encodeFunctionData(
@@ -145,7 +145,7 @@ export default class Fixture {
     );
 
     let txData: TxData = {
-      publicKeyHash: Fixture.blsKeyHash(fullTxData.blsSigner),
+      publicKeyHash: blsKeyHash(fullTxData.blsSigner),
       tokenRewardAmount: fullTxData.reward,
       contractAddress: fullTxData.contract.address,
       methodId: encodedFunction.substring(0,10),

@@ -1,4 +1,6 @@
 import { BigNumber } from "ethers";
+import blsKeyHash from "../../shared/helpers/blsKeyHash";
+import dataPayload from "../../shared/helpers/dataPayload";
 
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
@@ -42,7 +44,8 @@ async function logGasForTransfers() {
         ["0x"+(i+1).toString(16).padStart(40, '0'), 1]
       );
   
-      let dataToSign = fx.dataPayload(
+      let dataToSign = dataPayload(
+        fx.chainId,
         nonce++,
         BigNumber.from(0),
         th.testToken.address,
@@ -58,7 +61,7 @@ async function logGasForTransfers() {
     let encodedParamSets = encodedFunctions.map( a => '0x'+a.substr(10) );
     try {
       let gasEstimate = await fx.blsExpander.estimateGas.blsCallMultiSameCallerContractFunction(
-        Fixture.blsKeyHash(fx.blsSigners[0]),
+        blsKeyHash(fx.blsSigners[0]),
         aggSignature,
         Array(signatures.length).fill(0),
         th.testToken.address,
@@ -68,7 +71,7 @@ async function logGasForTransfers() {
 
       gasResults.estimate = gasEstimate.toNumber();
       let response = await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-        Fixture.blsKeyHash(fx.blsSigners[0]),
+        blsKeyHash(fx.blsSigners[0]),
         aggSignature,
         Array(signatures.length).fill(0),
         th.testToken.address,

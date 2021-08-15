@@ -12,6 +12,7 @@ import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber, providers } from "ethers";
 import { getAddress } from "ethers/lib/utils";
 import { doesNotMatch } from "assert";
+import blsKeyHash from "../shared/helpers/blsKeyHash";
 import blsSignFunction from "../shared/helpers/blsSignFunction";
 
 
@@ -40,7 +41,7 @@ describe('TokenPayments', async function () {
       reward: reward,
       contract:fx.verificationGateway,
       functionName:"walletCrossCheck",
-      params:[Fixture.blsKeyHash(blsSigner)]
+      params:[blsKeyHash(blsSigner)]
     }
 
     let aggBalanceBefore = await th.testToken.balanceOf(await fx.signers[0].getAddress());
@@ -56,7 +57,7 @@ describe('TokenPayments', async function () {
     const reward = ethers.utils.parseUnits("10");
     
     let blsSigner = fx.blsSigners[0];
-    const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
+    const blsPubKeyHash = blsKeyHash(blsSigner);
 
     let actionToken = await TokenHelper.deployTestToken(blsWalletAddresses[0]);
     const actionAmount = ethers.utils.parseUnits("5");
@@ -112,7 +113,7 @@ describe('TokenPayments', async function () {
         reward: reward,
         contract: fx.verificationGateway,
         functionName: "walletCrossCheck",
-        params: [Fixture.blsKeyHash(fx.blsSigners[i])]
+        params: [blsKeyHash(fx.blsSigners[i])]
       });
     }
 
