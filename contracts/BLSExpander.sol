@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.7.0;
-// pragma abicoder v2;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.7.0 <0.9.0;
+pragma abicoder v2;
 
 import "./VerificationGateway.sol";
 
@@ -22,7 +21,7 @@ contract BLSExpander is Initializable {
         uint256[2] memory signature,
         uint256[] calldata tokenRewardAmounts,
         address contractAddress,
-        bytes4[] calldata methodIDs,
+        bytes4[] calldata methodIds,
         bytes[] calldata encodedParamSets
     ) external {
         uint256 length = publicKeyHashes.length;
@@ -31,7 +30,7 @@ contract BLSExpander is Initializable {
             txs[i].publicKeyHash = publicKeyHashes[i];
             txs[i].tokenRewardAmount = tokenRewardAmounts[i];
             txs[i].contractAddress = contractAddress;
-            txs[i].methodID = methodIDs[i];
+            txs[i].methodId = methodIds[i];
             txs[i].encodedParams = encodedParamSets[i];
         }
 
@@ -49,7 +48,7 @@ contract BLSExpander is Initializable {
         uint256[2] memory signature,
         uint256[] calldata tokenRewardAmounts,
         address[] calldata contractAddresses,
-        bytes4[] calldata methodIDs,
+        bytes4[] calldata methodIds,
         bytes[] calldata encodedParamSets
     ) external {
         uint256 length = contractAddresses.length;
@@ -58,7 +57,7 @@ contract BLSExpander is Initializable {
             txs[i].publicKeyHash = publicKeyHash;
             txs[i].tokenRewardAmount = tokenRewardAmounts[i];
             txs[i].contractAddress = contractAddresses[i];
-            txs[i].methodID = methodIDs[i];
+            txs[i].methodId = methodIds[i];
             txs[i].encodedParams = encodedParamSets[i];
         }
 
@@ -76,7 +75,7 @@ contract BLSExpander is Initializable {
         uint256[2] memory signature,
         uint256[] calldata tokenRewardAmounts,
         address contractAddress,
-        bytes4 methodID,
+        bytes4 methodId,
         bytes[] calldata encodedParamSets
     ) external {
         uint256 length = encodedParamSets.length;
@@ -85,7 +84,7 @@ contract BLSExpander is Initializable {
             txs[i].publicKeyHash = publicKeyHash;
             txs[i].tokenRewardAmount = tokenRewardAmounts[i];
             txs[i].contractAddress = contractAddress;
-            txs[i].methodID = methodID;
+            txs[i].methodId = methodId;
             txs[i].encodedParams = encodedParamSets[i];
         }
 
@@ -103,7 +102,7 @@ contract BLSExpander is Initializable {
         uint256[2] memory signature,
         uint256[] calldata tokenRewardAmounts,
         address contractAddress,
-        bytes4 methodID,
+        bytes4 methodId,
         bytes calldata encodedParams
     ) external {
         uint256 length = publicKeyHashes.length;
@@ -112,7 +111,7 @@ contract BLSExpander is Initializable {
             txs[i].publicKeyHash = publicKeyHashes[i];
             txs[i].tokenRewardAmount = tokenRewardAmounts[i];
             txs[i].contractAddress = contractAddress;
-            txs[i].methodID = methodID;
+            txs[i].methodId = methodId;
             txs[i].encodedParams = encodedParams;
         }
 

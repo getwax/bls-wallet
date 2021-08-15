@@ -1,5 +1,6 @@
 .envrc
-.env
+.env*
+!.env.example
 node_modules
 
 #Hardhat files

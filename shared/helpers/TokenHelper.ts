@@ -1,13 +1,15 @@
 import { ethers } from "hardhat";
+import { utils } from "ethers";
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
 
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
 
-import Fixture from "./Fixture";
+import blsSignFunction from "./blsSignFunction";
+import Fixture, { FullTxData } from "./Fixture";
 
 export default class TokenHelper {
 
-  static readonly initialSupply = ethers.utils.parseUnits("1000000")
+  static readonly initialSupply = utils.parseUnits("1000000")
   readonly userStartAmount: BigNumber;
 
   testToken: Contract;
@@ -72,17 +74,24 @@ export default class TokenHelper {
     recipient: string,
     amount: BigNumber
   ) {
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    let encodedFunction = MockERC20.interface.encodeFunctionData(
-      "transfer",
-      [recipient, amount.toString()]
-    );
-    await this.fx.gatewayCall(
-      sender,
-      nonce,
-      reward,
-      this.testToken.address,
-      encodedFunction
-    );
+    let fullTxData: FullTxData = {
+      blsSigner: sender,
+      chainId: this.fx.chainId,
+      nonce: nonce,
+      reward: reward,
+      contract: this.testToken,
+      functionName: "transfer",
+      params: [recipient, amount]
+    }
+    let [txData, sig] = blsSignFunction(fullTxData);
+
+    await this.fx.blsCallSigned(txData, sig);
+    //   sender,
+    //   sig,
+    //   reward,
+    //   this.testToken.address,
+    //   encodedFunction.substring(0,10),
+    //   '0x'+encodedFunction.substr(10)
+    // );
   }
 }

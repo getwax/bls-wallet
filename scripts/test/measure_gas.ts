@@ -1,10 +1,11 @@
-import { BigNumber, Signer, Contract } from "ethers";
-import { readFile, readFileSync } from "fs";
+import { BigNumber } from "ethers";
+import blsKeyHash from "../../shared/helpers/blsKeyHash";
+import dataPayload from "../../shared/helpers/dataPayload";
 
-import Fixture from "../shared/helpers/Fixture";
-import TokenHelper from "../shared/helpers/TokenHelper";
+import Fixture from "../../shared/helpers/Fixture";
+import TokenHelper from "../../shared/helpers/TokenHelper";
 
-import { aggregate } from "../shared/lib/hubble-bls/src/signer";
+import { aggregate } from "../../shared/lib/hubble-bls/src/signer";
 
 let fx: Fixture;
 let th: TokenHelper;
@@ -43,7 +44,8 @@ async function logGasForTransfers() {
         ["0x"+(i+1).toString(16).padStart(40, '0'), 1]
       );
   
-      let dataToSign = fx.dataPayload(
+      let dataToSign = dataPayload(
+        fx.chainId,
         nonce++,
         BigNumber.from(0),
         th.testToken.address,
@@ -55,25 +57,25 @@ async function logGasForTransfers() {
 
     let aggSignature = aggregate(signatures);
 
-    let methodID = encodedFunctions[0].substring(0,10);
+    let methodId = encodedFunctions[0].substring(0,10);
     let encodedParamSets = encodedFunctions.map( a => '0x'+a.substr(10) );
     try {
       let gasEstimate = await fx.blsExpander.estimateGas.blsCallMultiSameCallerContractFunction(
-        Fixture.blsKeyHash(fx.blsSigners[0]),
+        blsKeyHash(fx.blsSigners[0]),
         aggSignature,
         Array(signatures.length).fill(0),
         th.testToken.address,
-        methodID,
+        methodId,
         encodedParamSets
       )
 
       gasResults.estimate = gasEstimate.toNumber();
       let response = await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-        Fixture.blsKeyHash(fx.blsSigners[0]),
+        blsKeyHash(fx.blsSigners[0]),
         aggSignature,
         Array(signatures.length).fill(0),
         th.testToken.address,
-        methodID,
+        methodId,
         encodedParamSets
       );
       gasResults.limit = (response.gasLimit as BigNumber).toNumber();

@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.7.0;
-// pragma abicoder v2;
-pragma experimental ABIEncoderV2;
+pragma solidity >=0.7.0 <0.9.0;
+pragma abicoder v2;
 
 // Modified for solidity 0.7.0
 import "./lib/BLS.sol"; //from hubble repo
@@ -34,14 +33,17 @@ contract VerificationGateway is Initializable
         uint256[BLS_LEN] publicKey
     );
 
+    struct TxData {
+        bytes32 publicKeyHash;
+        uint256 tokenRewardAmount;
+        address contractAddress;
+        bytes4 methodId; //bytes4(keccak256(bytes(fnSig))
+        bytes encodedParams;
+    }
     function checkSig(
         uint256 signedNonce,
-        uint256 tokenRewardAmount,
-        bytes32 publicKeyHash,
-        uint256[2] calldata signature,
-        address contractAddress,
-        bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
-        bytes calldata encodedParams
+        TxData calldata txData,
+        uint256[2] calldata signature
     ) external view
     returns (
         bool result,
@@ -49,20 +51,20 @@ contract VerificationGateway is Initializable
     ) {
         (bool checkResult, bool callSuccess) = BLS.verifySingle(
             signature,
-            blsKeysFromHash[publicKeyHash],
+            blsKeysFromHash[txData.publicKeyHash],
             messagePoint(
                 signedNonce,
-                tokenRewardAmount,
-                contractAddress,
+                txData.tokenRewardAmount,
+                txData.contractAddress,
                 keccak256(abi.encodePacked(
-                    methodID,
-                    encodedParams
+                    txData.methodId,
+                    txData.encodedParams
                 ))
             )
         );
         
         result = callSuccess && checkResult;
-        nextNonce = walletFromHash[publicKeyHash].nonce();
+        nextNonce = walletFromHash[txData.publicKeyHash].nonce();
     }
 
     function walletCrossCheck(bytes32 hash) public view {
@@ -119,7 +121,7 @@ contract VerificationGateway is Initializable
         uint256[2] calldata signature,
         uint256 tokenRewardAmount,
         address contractAddress,
-        bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
+        bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
     ) public {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
@@ -142,7 +144,7 @@ contract VerificationGateway is Initializable
             signature,
             tokenRewardAmount,
             contractAddress,
-            methodID,
+            methodId,
             encodedParams
         );
     }
@@ -152,7 +154,7 @@ contract VerificationGateway is Initializable
         uint256[2] calldata signature,
         uint256 tokenRewardAmount,
         address contractAddress,
-        bytes4 methodID, //bytes4(keccak256(bytes(fnSig))
+        bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
     ) public {
         bytes32 publicKeyHash = callingPublicKeyHash;
@@ -165,7 +167,7 @@ contract VerificationGateway is Initializable
                 tokenRewardAmount,
                 contractAddress,
                 keccak256(abi.encodePacked(
-                    methodID,
+                    methodId,
                     encodedParams
                 ))
             )
@@ -183,19 +185,10 @@ contract VerificationGateway is Initializable
 
         bool result = walletFromHash[publicKeyHash].action(
             contractAddress,
-            methodID,
+            methodId,
             encodedParams
         );
     }
-
-    struct TxData {
-        bytes32 publicKeyHash;
-        uint256 tokenRewardAmount;
-        address contractAddress;
-        bytes4 methodID;
-        bytes encodedParams;
-    }
-
 
     /**
     @param txs array of transaction data
@@ -246,7 +239,7 @@ contract VerificationGateway is Initializable
                 txs[i].tokenRewardAmount,
                 txs[i].contractAddress,
                 keccak256(abi.encodePacked(
-                    txs[i].methodID,
+                    txs[i].methodId,
                     txs[i].encodedParams
                 ))
             );
@@ -302,7 +295,7 @@ contract VerificationGateway is Initializable
                     // execute transaction (increments nonce)
                     wallet.action(
                         txs[i].contractAddress,
-                        txs[i].methodID,
+                        txs[i].methodId,
                         txs[i].encodedParams
                     );
                 }

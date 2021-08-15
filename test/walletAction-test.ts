@@ -3,11 +3,13 @@ import { expect, assert } from "chai";
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "../shared/helpers/Fixture";
-import { TxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
+import dataPayload from "../shared/helpers/dataPayload";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber, providers } from "ethers";
+import blsKeyHash from "../shared/helpers/blsKeyHash";
+import blsSignFunction from "../shared/helpers/blsSignFunction";
 
 describe('WalletActions', async function () {
   let fx: Fixture;
@@ -22,10 +24,9 @@ describe('WalletActions', async function () {
 
     let blsWallet = fx.BLSWallet.attach(walletAddress);
     expect(await blsWallet.publicKeyHash())
-      .to.equal(Fixture.blsKeyHash(blsSigner));
+      .to.equal(blsKeyHash(blsSigner));
 
     // Check revert when adding same wallet twice
-    // console.log(providers.getNetwork());
     // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
 
   });
@@ -33,32 +34,22 @@ describe('WalletActions', async function () {
   it('should check signature', async function () {
     let blsSigner = fx.blsSigners[0];
     await fx.createBLSWallet(blsSigner);
-    // let blsWallet = BLSWallet.attach(walletAddress);
 
-    const blsPubKeyHash = Fixture.blsKeyHash(blsSigner);
+    const blsPubKeyHash = blsKeyHash(blsSigner);
 
-    let encodedFunction = fx.VerificationGateway.interface.encodeFunctionData(
-      "walletCrossCheck",
-      [blsPubKeyHash]
-    );
-  
-    let dataToSign = await fx.dataPayload(
-      0,
-      BigNumber.from(0),
-      fx.verificationGateway.address,
-      encodedFunction
-    );
-  
-    let signature = blsSigner.sign(dataToSign);
-  
+    let [txData, signature] = blsSignFunction({
+      blsSigner: blsSigner,
+      chainId: fx.chainId,
+      nonce: 0,
+      reward: BigNumber.from(0),
+      contract: fx.verificationGateway,
+      functionName: "walletCrossCheck",
+      params: [blsKeyHash(blsSigner)]    
+    });
     let {result, nextNonce} = await fx.verificationGateway.callStatic.checkSig(
       0,
-      BigNumber.from(0),
-      blsPubKeyHash,
-      signature,
-      fx.verificationGateway.address,
-      encodedFunction.substring(0,10),
-      '0x'+encodedFunction.substr(10)
+      txData,
+      signature
     );
     expect(result).to.equal(true);
     expect(nextNonce).to.equal(BigNumber.from(1));
@@ -67,7 +58,8 @@ describe('WalletActions', async function () {
   it("should create many wallets", async function() {
     let signatures: any[] = new Array(fx.blsSigners.length);
 
-    let dataToSign = fx.dataPayload(
+    let dataToSign = dataPayload(
+      fx.chainId,
       0,
       BigNumber.from(0),
       fx.verificationGateway.address,
@@ -82,7 +74,7 @@ describe('WalletActions', async function () {
       fx.blsSigners.map( s => s.pubkey ),
       aggSignature
     )).wait();
-    let publicKeyHash = Fixture.blsKeyHash(fx.blsSigners[0]);
+    let publicKeyHash = blsKeyHash(fx.blsSigners[0]);
     let blsWalletAddress = await fx.verificationGateway.walletFromHash(publicKeyHash);
     let blsWallet = fx.BLSWallet.attach(blsWalletAddress);
     expect(await blsWallet.gateway())
@@ -130,7 +122,8 @@ describe('WalletActions', async function () {
 
     let signatures: any[] = new Array(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let dataToSign = fx.dataPayload(
+      let dataToSign = dataPayload(
+        fx.chainId,
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
         BigNumber.from(0),
         th.testToken.address,
@@ -145,7 +138,7 @@ describe('WalletActions', async function () {
 
     // can be called by any ecdsa wallet
     await(await fx.blsExpander.blsCallMultiSameContractFunctionParams(
-      fx.blsSigners.map(Fixture.blsKeyHash),
+      fx.blsSigners.map(blsKeyHash),
       aggSignature,
       Array(signatures.length).fill(0),
       th.testToken.address,
@@ -194,7 +187,8 @@ describe('WalletActions', async function () {
       );
       encodedParams[i] = '0x'+encodedFunction.substr(10);
 
-      let dataToSign = fx.dataPayload(
+      let dataToSign = dataPayload(
+        fx.chainId,
         nonce++,
         reward,
         testToken.address,
@@ -206,7 +200,7 @@ describe('WalletActions', async function () {
     let aggSignature = aggregate(signatures);
 
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-      Fixture.blsKeyHash(fx.blsSigners[0]),
+      blsKeyHash(fx.blsSigners[0]),
       aggSignature,
       Array(signatures.length).fill(0),
       testToken.address,
