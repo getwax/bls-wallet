@@ -2,9 +2,7 @@ import * as hubbleBls from "../deps/hubble-bls";
 
 import { AggregateTransactionData, TransactionData } from "./types";
 
-export default function aggregate(
-  txs: TransactionData[],
-): AggregateTransactionData {
+export default (txs: TransactionData[]): AggregateTransactionData => {
   const sigsG1 = txs.map(tx => hubbleBls.mcl.loadG1(tx.signature));
   const aggSigG1 = hubbleBls.signer.aggregate(sigsG1);
 

@@ -2,10 +2,11 @@ import { keccak256 } from "@ethersproject/keccak256";
 import { pack as solidityPack } from "@ethersproject/solidity";
 import { RawTransactionData } from "./types";
 
-export default function encodeMessageForSigning(
+export default (
   chainId: number,
+) => (
   rawTxData: RawTransactionData,
-): string {
+): string => {
   const encodedFunctionHash = keccak256(solidityPack(
     ["bytes"],
     [rawTxData.encodedFunctionData],
