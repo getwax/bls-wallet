@@ -1,5 +1,5 @@
 {
-  "name": "bls-signer",
+  "name": "bls-wallet-signer",
   "version": "1.0.0",
   "description": "Client-side tool for signing bls transaction data",
   "main": "dist/index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jzaki/bls-signer.git"
+    "url": "git+https://github.com/jzaki/bls-wallet-signer.git"
   },
   "keywords": [
     "ethereum",
@@ -20,9 +20,9 @@
   "author": "Andrew Morris",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jzaki/bls-signer/issues"
+    "url": "https://github.com/jzaki/bls-wallet-signer/issues"
   },
-  "homepage": "https://github.com/jzaki/bls-signer#readme",
+  "homepage": "https://github.com/jzaki/bls-wallet-signer#readme",
   "dependencies": {
     "@ethersproject/abi": "^5.4.0",
     "@ethersproject/bignumber": "^5.4.1",
