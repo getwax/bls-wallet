@@ -1,7 +1,7 @@
-import type { Interface } from "@ethersproject/abi";
 import type { BigNumber } from "@ethersproject/bignumber";
 import { arrayify } from "@ethersproject/bytes";
 import { keccak256 } from "@ethersproject/keccak256";
+import { pack as solidityPack } from "@ethersproject/solidity";
 
 export const BLS_DOMAIN = arrayify(keccak256("0xfeedbee5"));
 
@@ -16,28 +16,34 @@ export type TransactionData = {
 };
 
 export default function sign({
-  contractInterface,
-  method,
-  args,
+  chainId,
+  contractAddress,
+  encodedFunctionData,
   tokenRewardAmount,
   nonce,
   blsPrivateKey,
 }: {
-  contractInterface: Interface;
-  method: string;
-  args: string[];
+  chainId: number,
+  contractAddress: string;
+  encodedFunctionData: string;
   tokenRewardAmount: BigNumber;
   nonce: BigNumber;
   blsPrivateKey: string;
 }): TransactionData {
-  const encodedFunction = contractInterface.encodeFunctionData(method, args);
+  const encodedFunctionHash = keccak256(solidityPack(
+    ["bytes"],
+    [encodedFunctionData],
+  ));
 
-  const message = dataPayload(
-    this.network.chainId,
-    nonce,
-    tokenRewardAmount.toNumber(),
-    contract.address,
-    encodedFunction,
+  const message = solidityPack(
+    ["uint256", "uint256", "uint256", "address", "bytes32"],
+    [
+      chainId,
+      nonce,
+      tokenRewardAmount,
+      contractAddress,
+      encodedFunctionHash,
+    ]
   );
 
   const signature = this.blsSigner.sign(message);
