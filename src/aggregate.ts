@@ -16,6 +16,6 @@ export default (txs: TransactionData[]): AggregateTransactionData => {
       tokenRewardAmount: tx.tokenRewardAmount,
       publicKey: tx.publicKey,
     })),
-    aggregateSignature,
+    signature: aggregateSignature,
   };
 }

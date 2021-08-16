@@ -5,6 +5,7 @@ import defaultDomain from "./defaultDomain";
 import getPublicKey from "./getPublicKey";
 import sign from "./sign";
 import verify from "./verify";
+import verifyAggregate from "./verifyAggregate";
 
 export * from "./types";
 
@@ -22,5 +23,6 @@ export default async function init({
     getPublicKey: getPublicKey(domain),
     sign: sign(domain, chainId),
     verify: verify(domain, chainId),
+    verifyAggregate: verifyAggregate(domain, chainId),
   };
 }

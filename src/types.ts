@@ -20,5 +20,5 @@ export type AggregateTransactionData = {
     tokenRewardAmount: BigNumber;
     publicKey: string;
   }[],
-  aggregateSignature: string,
+  signature: string,
 };
