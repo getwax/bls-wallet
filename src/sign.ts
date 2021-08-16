@@ -13,8 +13,12 @@ export default (
 ): TransactionData => {
   const message = encodeMessageForSigning(chainId)(rawTransactionData);
 
-  const blsSigner = new hubbleBls.signer.BlsSigner(domain, privateKey);
-  const signature = hubbleBls.mcl.dumpG1(blsSigner.sign(message));
+  const signer = new hubbleBls.signer.BlsSigner(
+    domain,
+    hubbleBls.mcl.loadFr(privateKey),
+  );
+
+  const signature = hubbleBls.mcl.dumpG1(signer.sign(message));
 
   return {
     ...rawTransactionData,

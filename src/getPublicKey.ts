@@ -5,7 +5,10 @@ export default (
 ) => (
   privateKey: string
 ): string => {
-  const signer = new hubbleBls.signer.BlsSigner(domain, privateKey);
+  const signer = new hubbleBls.signer.BlsSigner(
+    domain,
+    hubbleBls.mcl.loadFr(privateKey),
+  );
 
   return hubbleBls.mcl.dumpG2(signer.pubkey);
 };
