@@ -24,6 +24,10 @@
   },
   "homepage": "https://github.com/jzaki/bls-signer#readme",
   "dependencies": {
+    "@ethersproject/abi": "^5.4.0",
+    "@ethersproject/bignumber": "^5.4.1",
+    "@ethersproject/bytes": "^5.4.0",
+    "@ethersproject/keccak256": "^5.4.0",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.6.1",
