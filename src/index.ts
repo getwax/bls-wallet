@@ -1,3 +1,2 @@
-import main from "./main";
-
-main();
+export { default as sign } from "./sign";
+export { default as createBlsSignerFactory } from "./createBlsSignerFactory";
