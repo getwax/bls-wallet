@@ -1,9 +1,9 @@
 import type { BigNumber } from "@ethersproject/bignumber";
 import { arrayify } from "@ethersproject/bytes";
 import { keccak256 } from "@ethersproject/keccak256";
-import { pack as solidityPack } from "@ethersproject/solidity";
 
 import * as hubbleBls from "../deps/hubble-bls";
+import sign from "./sign";
 
 export const BLS_DOMAIN = arrayify(keccak256("0xfeedbee5"));
 
@@ -17,7 +17,7 @@ export type TransactionData = {
   encodedParams: string;
 };
 
-export default function sign({
+export default function createTransactionData({
   blsSignerFactory,
   chainId,
   contractAddress,
@@ -33,24 +33,26 @@ export default function sign({
   tokenRewardAmount: BigNumber;
   nonce: BigNumber;
   blsPrivateKey: string;
-}): string {
-  const encodedFunctionHash = keccak256(solidityPack(
-    ["bytes"],
-    [encodedFunctionData],
-  ));
+}): TransactionData {
+  const signature = sign({
+    blsSignerFactory,
+    chainId,
+    contractAddress,
+    encodedFunctionData,
+    tokenRewardAmount,
+    nonce,
+    blsPrivateKey,
+  });
 
-  const message = solidityPack(
-    ["uint256", "uint256", "uint256", "address", "bytes32"],
-    [
-      chainId,
-      nonce,
-      tokenRewardAmount,
-      contractAddress,
-      encodedFunctionHash,
-    ]
-  );
-
-  const blsSigner = blsSignerFactory.getSigner(BLS_DOMAIN, blsPrivateKey);
-
-  return hubbleBls.mcl.dumpG1(blsSigner.sign(message));
+  return {
+    pubKey: hubbleBls.mcl.dumpG2(
+      blsSignerFactory.getSigner(BLS_DOMAIN, blsPrivateKey).pubkey
+    ),
+    nonce,
+    signature,
+    tokenRewardAmount,
+    contractAddress: contractAddress,
+    methodId: encodedFunctionData.slice(0, 10),
+    encodedParams: `0x${encodedFunctionData.slice(10)}`,
+  };
 }
