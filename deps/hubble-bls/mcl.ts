@@ -11,6 +11,7 @@ import {
   MismatchLength,
 } from "./exceptions";
 
+declare const require: (name: string) => any;
 const mcl = require("mcl-wasm");
 
 export const FIELD_ORDER = BigNumber.from(
