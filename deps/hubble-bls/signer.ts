@@ -11,7 +11,6 @@ import {
   parseG1,
   parseG2,
   PublicKey,
-  randFr,
   SecretKey,
   sign,
   solG1,
@@ -80,8 +79,8 @@ export class BlsSignerFactory {
   }
   private constructor() {}
 
-  public getSigner(domain: Domain, secretHex?: string) {
-    const secret = secretHex ? parseFr(secretHex) : randFr();
+  public getSigner(domain: Domain, secretHex: string) {
+    const secret = parseFr(secretHex);
     return new BlsSigner(domain, secret);
   }
 }
