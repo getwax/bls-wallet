@@ -3,6 +3,7 @@ import { mcl } from "../deps/hubble-bls";
 import aggregate from "./aggregate";
 import getPublicKey from "./getPublicKey";
 import sign from "./sign";
+import verify from "./verify";
 
 export * from "./types";
 
@@ -11,7 +12,8 @@ export default async function init() {
 
   return {
     aggregate,
-    sign,
     getPublicKey,
+    sign,
+    verify,
   };
 }
