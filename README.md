@@ -108,3 +108,7 @@ NB each test must use unique address(es). (+ init code)
 ## Development
 
 VSCode + Deno extension
+
+## System Diagram
+
+![System Diagram](./diagram.svg)
