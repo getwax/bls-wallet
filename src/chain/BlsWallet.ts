@@ -5,7 +5,7 @@ import {
   hubbleBls,
 } from "../../deps/index.ts";
 
-import ovmContractABIs from "../../ovmContractABIs/index.ts";
+import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "../app/TxTable.ts";
 import * as env from "../env.ts";
 import assert from "../helpers/assert.ts";
@@ -42,7 +42,7 @@ export default class BlsWallet {
 
     const verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      ovmContractABIs["VerificationGateway.json"].abi,
+      ovmContractABIs.VerificationGateway.abi,
       signerOrProvider,
     );
 
@@ -82,7 +82,7 @@ export default class BlsWallet {
 
     const walletContract = new ethers.Contract(
       contractAddress,
-      ovmContractABIs["BLSWallet.json"].abi,
+      ovmContractABIs.BLSWallet.abi,
       provider,
     );
 
@@ -150,7 +150,7 @@ export default class BlsWallet {
   static #VerificationGateway(signerOrProvider: SignerOrProvider) {
     return new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      ovmContractABIs["VerificationGateway.json"].abi,
+      ovmContractABIs.VerificationGateway.abi,
       signerOrProvider,
     );
   }

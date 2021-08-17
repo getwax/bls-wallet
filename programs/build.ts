@@ -1,11 +1,15 @@
 #!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write
 
-import { ensureDir } from "https://deno.land/std@0.103.0/fs/mod.ts";
-
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";
+import dotEnvPath from "../src/helpers/dotEnvPath.ts";
 
-await ensureDir(`${repoDir}/build`);
+const buildDir = `${repoDir}/build`;
+
+await Deno.remove(buildDir, { recursive: true });
+await Deno.mkdir(buildDir);
+
+await Deno.copyFile(dotEnvPath, `${buildDir}/.env`);
 
 const outputPath = `${repoDir}/build/aggregator.js`;
 
@@ -17,4 +21,4 @@ await shell.run(
   outputPath,
 );
 
-console.log(`Built ${outputPath} successfully`);
+console.log("Aggregator build complete");

@@ -1,5 +1,5 @@
 import { ethers } from "../../deps/index.ts";
-import ovmContractABIs from "../../ovmContractABIs/index.ts";
+import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 
 export default class MockErc20 {
   contract: ethers.Contract;
@@ -10,7 +10,7 @@ export default class MockErc20 {
   ) {
     this.contract = new ethers.Contract(
       address,
-      ovmContractABIs["MockERC20.json"].abi,
+      ovmContractABIs.MockERC20.abi,
       provider,
     );
   }

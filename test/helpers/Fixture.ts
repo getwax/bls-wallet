@@ -1,7 +1,7 @@
 import { blsSignerFactory, ethers, hubbleBls } from "../../deps/index.ts";
 
 import testRng from "./testRng.ts";
-import ovmContractABIs from "../../ovmContractABIs/index.ts";
+import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import createBLSWallet from "../../src/chain/createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
 import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
@@ -142,7 +142,7 @@ export default class Fixture {
   async getOrCreateBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
     const verificationGateway = new ethers.Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      ovmContractABIs["VerificationGateway.json"].abi,
+      ovmContractABIs.VerificationGateway.abi,
       this.adminWallet,
     );
 
@@ -156,7 +156,7 @@ export default class Fixture {
   connectBlsWallet(address: string) {
     return new ethers.Contract(
       address,
-      ovmContractABIs["BLSWallet.json"].abi,
+      ovmContractABIs.BLSWallet.abi,
       this.walletService.aggregatorSigner,
     );
   }

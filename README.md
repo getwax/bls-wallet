@@ -8,12 +8,26 @@ Gateway.
 
 ## Installation
 
-Install [Deno](deno.land). Uses ethers, Oak, Postgresql... see src/app/deps.ts.
+Install [Deno](deno.land).
+
+### Configuration
 
 ```sh
 cp .env.example .env
-# Modify parameters as needed
 ```
+
+Edit values as needed, e.g. private key and contract addresses.
+
+You can also configure multiple environments by appending `.<name>`, for example
+you might have:
+
+```
+.env.local
+.env.optimistic-kovan
+```
+
+If you don't have a `.env`, you will need to append `--env <name>` to all
+commands.
 
 ### PostgreSQL
 
@@ -68,25 +82,6 @@ There are two options here:
       ```
    3. Restart postgres `sudo systemctl restart postgresql`.
 
-## Configuration
-
-```sh
-cp .env.example .env
-```
-
-Edit values as needed, e.g. private key and contract addresses.
-
-You can also configure multiple environments by appending `.<name>`, for example
-you might have:
-
-```
-.env.local
-.env.optimistic-kovan
-```
-
-If you don't have a `.env`, you will need to append `--env <name>` to all
-commands.
-
 ## Running
 
 Can be run locally or hosted.
@@ -113,4 +108,9 @@ VSCode + Deno extension
 
 ![System Diagram](./diagram.svg)
 
-## Hosting
+## Hosting Guide
+
+1. Configure your server to allow TCP on ports 80 and 443
+2. Follow the [Installation](#Installation) instructions
+3. Run `./programs/build.ts` (supplying `--env` if using a named env)
+4. Run `docker build . -t aggregator`
