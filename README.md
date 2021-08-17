@@ -34,6 +34,7 @@ commands.
 Install, e.g.:
 
 ```sh
+sudo apt update
 sudo apt install postgresql postgresql-contrib
 ```
 
@@ -112,5 +113,10 @@ VSCode + Deno extension
 
 1. Configure your server to allow TCP on ports 80 and 443
 2. Follow the [Installation](#Installation) instructions
-3. Run `./programs/build.ts` (supplying `--env` if using a named env)
-4. Run `docker build . -t aggregator`
+3. Install docker and nginx:
+   `sudo apt update && sudo apt install docker.io nginx`
+
+4. Run `./programs/build.ts`
+
+- If you're using a named environment, add `--env <name>`
+- If `docker` requires `sudo`, add `--sudo-docker`
