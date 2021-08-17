@@ -1,4 +1,4 @@
-import { NullSigner } from "./exceptions.ts";
+import { NullSigner } from "./exceptions";
 import {
   aggregateRaw,
   Domain,
@@ -11,14 +11,13 @@ import {
   parseG1,
   parseG2,
   PublicKey,
-  randFr,
   SecretKey,
   sign,
   solG1,
   solG2,
   verifyMultipleRaw,
   verifyRaw,
-} from "./mcl.ts";
+} from "./mcl";
 
 export interface BlsSignerInterface {
   pubkey: solG2;
@@ -80,13 +79,13 @@ export class BlsSignerFactory {
   }
   private constructor() {}
 
-  public getSigner(domain: Domain, secretHex?: string) {
-    const secret = secretHex ? parseFr(secretHex) : randFr();
+  public getSigner(domain: Domain, secretHex: string) {
+    const secret = parseFr(secretHex);
     return new BlsSigner(domain, secret);
   }
 }
 
-class BlsSigner extends BlsVerifier implements BlsSignerInterface {
+export class BlsSigner extends BlsVerifier implements BlsSignerInterface {
   private _pubkey: PublicKey;
   constructor(public domain: Domain, private secret: SecretKey) {
     super(domain);

@@ -1,12 +1,7 @@
-import {
-  arrayify,
-  BigNumber,
-  hexlify,
-  isHexString,
-  mcl,
-  randomBytes,
-} from "./deps.ts";
-import { hashToField } from "./hashToField.ts";
+import { BigNumber } from "@ethersproject/bignumber";
+import { arrayify, hexlify, isHexString } from "@ethersproject/bytes";
+
+import { hashToField } from "./hashToField";
 import {
   BadByteLength,
   BadDomain,
@@ -14,7 +9,10 @@ import {
   BadMessage,
   EmptyArray,
   MismatchLength,
-} from "./exceptions.ts";
+} from "./exceptions";
+
+declare const require: (name: string) => any;
+const mcl = require("mcl-wasm");
 
 export const FIELD_ORDER = BigNumber.from(
   "0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47",
@@ -126,12 +124,6 @@ export function getPubkey(secret: SecretKey): PublicKey {
   return pubkey;
 }
 
-export function newKeyPair(): keyPair {
-  const secret = randFr();
-  const pubkey = getPubkey(secret);
-  return { pubkey, secret };
-}
-
 export function sign(
   message: string,
   secret: SecretKey,
@@ -189,33 +181,6 @@ export function aggregateRaw(signatures: Signature[]): Signature {
   }
   aggregated.normalize();
   return aggregated;
-}
-
-export function randFr(): mclFR {
-  const r = hexlify(randomBytes(12));
-  const fr = new mcl.Fr();
-  fr.setHashOf(r);
-  return fr;
-}
-
-export function randMclG1(): mclG1 {
-  const p = mcl.mul(g1(), randFr());
-  p.normalize();
-  return p;
-}
-
-export function randMclG2(): mclG2 {
-  const p = mcl.mul(g2(), randFr());
-  p.normalize();
-  return p;
-}
-
-export function randG1(): solG1 {
-  return g1ToHex(randMclG1());
-}
-
-export function randG2(): solG2 {
-  return g2ToHex(randMclG2());
 }
 
 export function parseFr(hex: string) {

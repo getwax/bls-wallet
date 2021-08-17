@@ -1,6 +1,10 @@
-import { arrayify, BigNumber, sha256, zeroPad } from "./deps.ts";
+// import { arrayify, BigNumber, sha256, zeroPad } from "./deps.ts";
 
-import { BadDomain } from "./exceptions.ts";
+import { BigNumber } from "@ethersproject/bignumber";
+import { arrayify, zeroPad } from "@ethersproject/bytes";
+import { sha256 } from "@ethersproject/sha2";
+
+import { BadDomain } from "./exceptions";
 
 export const FIELD_ORDER = BigNumber.from(
   "0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47",
