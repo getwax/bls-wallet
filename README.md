@@ -112,3 +112,5 @@ VSCode + Deno extension
 ## System Diagram
 
 ![System Diagram](./diagram.svg)
+
+## Hosting
