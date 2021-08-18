@@ -11,10 +11,10 @@ npm install bls-wallet-signer
 
 ```ts
 import ethers from "ethers";
-import BlsWalletSigner from "bls-wallet-signer";
+import { initBlsWalletSigner } from "bls-wallet-signer";
 
 (async () => {
-  const signer = await BlsWalletSigner({ chainId: 10 });
+  const signer = await initBlsWalletSigner({ chainId: 10 });
 
   const privateKey = "0x...256 bits of private hex data here";
 

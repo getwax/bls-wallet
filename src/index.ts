@@ -3,13 +3,16 @@ import { mcl } from "../deps/hubble-bls";
 import aggregate from "./aggregate";
 import defaultDomain from "./defaultDomain";
 import getPublicKey from "./getPublicKey";
+import AsyncReturnType from "./helpers/AsyncReturnType";
 import sign from "./sign";
 import verify from "./verify";
 import verifyAggregate from "./verifyAggregate";
 
 export * from "./types";
 
-export default async function init({
+export type BlsWalletSigner = AsyncReturnType<typeof initBlsWalletSigner>;
+
+export async function initBlsWalletSigner({
   domain = defaultDomain,
   chainId,
 }: {
