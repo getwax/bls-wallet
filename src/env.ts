@@ -6,6 +6,7 @@ import {
 
 export const RPC_URL = requireEnv("RPC_URL");
 
+export const ORIGIN = requireEnv("ORIGIN");
 export const PORT = requireIntEnv("PORT");
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
