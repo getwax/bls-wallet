@@ -1,4 +1,4 @@
-import { dotEnvConfig } from "../../deps/index.ts";
+import { dotEnvConfig } from "../../deps.ts";
 
 import dotEnvPath from "./dotEnvPath.ts";
 import nil from "./nil.ts";

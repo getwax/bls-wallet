@@ -7,7 +7,7 @@ import {
   QueryTable,
   TableOptions,
   unsketchify,
-} from "../../deps/index.ts";
+} from "../../deps.ts";
 
 import assertExists from "../helpers/assertExists.ts";
 import nil from "../helpers/nil.ts";

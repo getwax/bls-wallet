@@ -1,4 +1,4 @@
-import { ethers, hubbleBls } from "../../deps/index.ts";
+import { ethers, hubbleBls } from "../../deps.ts";
 
 const { utils } = ethers;
 

@@ -1,4 +1,4 @@
-import { ethers, hubbleBls } from "../../deps/index.ts";
+import { ethers, hubbleBls } from "../../deps.ts";
 
 import blsKeyHash from "./blsKeyHash.ts";
 import dataPayload from "./dataPayload.ts";

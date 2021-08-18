@@ -1,4 +1,4 @@
-import { exists, parseArgs } from "../../deps/index.ts";
+import { exists, parseArgs } from "../../deps.ts";
 
 const args = parseArgs(Deno.args);
 

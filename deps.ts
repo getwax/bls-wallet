@@ -19,17 +19,14 @@ export type {
   RouterContext,
 } from "https://deno.land/x/oak@v7.5.0/mod.ts";
 
-import { ethers } from "https://esm.sh/ethers@5.4.4";
-export { ethers };
+export {
+  BigNumber,
+  Contract,
+  ethers,
+  Wallet,
+} from "https://esm.sh/ethers@5.4.4";
 
-export const BigNumber = ethers.BigNumber;
-export type BigNumber = ethers.BigNumber;
-
-export const Contract = ethers.Contract;
-export type Contract = ethers.Contract;
-
-export const Wallet = ethers.Wallet;
-export type Wallet = ethers.Wallet;
+export { default as BlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.1.1";
 
 // Database dependencies
 export {
@@ -43,10 +40,3 @@ export {
 } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
 
 export type { TableOptions } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
-
-import * as hubbleBlsImport from "./hubble-bls/mod.ts";
-
-export const blsSignerFactory = await hubbleBlsImport.signer
-  .BlsSignerFactory.new();
-
-export * as hubbleBls from "./hubble-bls/mod.ts";

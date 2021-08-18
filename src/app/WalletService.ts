@@ -5,7 +5,7 @@ import {
   ethers,
   hubbleBls,
   Wallet,
-} from "../../deps/index.ts";
+} from "../../deps.ts";
 
 import * as env from "../env.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";

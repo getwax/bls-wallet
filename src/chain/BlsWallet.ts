@@ -1,9 +1,4 @@
-import {
-  blsSignerFactory,
-  Contract,
-  ethers,
-  hubbleBls,
-} from "../../deps/index.ts";
+import { blsSignerFactory, Contract, ethers, hubbleBls } from "../../deps.ts";
 
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "../app/TxTable.ts";

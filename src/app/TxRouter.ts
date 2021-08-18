@@ -1,4 +1,4 @@
-import { HTTPStatus, Router, RouterContext } from "../../deps/index.ts";
+import { HTTPStatus, Router, RouterContext } from "../../deps.ts";
 import assert from "../helpers/assert.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import { parseTransactionData } from "./parsers.ts";

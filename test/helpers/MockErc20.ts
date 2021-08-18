@@ -1,4 +1,4 @@
-import { ethers } from "../../deps/index.ts";
+import { ethers } from "../../deps.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 
 export default class MockErc20 {

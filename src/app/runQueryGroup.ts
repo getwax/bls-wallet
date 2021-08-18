@@ -1,4 +1,4 @@
-import { QueryClient } from "../../deps/index.ts";
+import { QueryClient } from "../../deps.ts";
 import Mutex from "../helpers/Mutex.ts";
 
 export default async function runQueryGroup<T>(

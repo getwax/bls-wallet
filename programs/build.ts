@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write
 
-import { parseArgs } from "../deps/index.ts";
+import { parseArgs } from "../deps.ts";
 
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";

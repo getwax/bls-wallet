@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { delay, ethers } from "../deps/index.ts";
+import { delay, ethers } from "../deps.ts";
 
 import Client from "../src/app/Client.ts";
 import assert from "../src/helpers/assert.ts";

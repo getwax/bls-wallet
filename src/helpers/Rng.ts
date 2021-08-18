@@ -1,4 +1,4 @@
-import { ethers } from "../../deps/index.ts";
+import { ethers } from "../../deps.ts";
 
 import words from "./words.ts";
 

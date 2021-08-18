@@ -1,4 +1,4 @@
-import { Application, hubbleBls } from "../../deps/index.ts";
+import { Application, hubbleBls } from "../../deps.ts";
 
 import * as env from "../env.ts";
 import WalletService from "./WalletService.ts";

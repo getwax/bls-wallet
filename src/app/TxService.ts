@@ -1,4 +1,4 @@
-import { delay, ethers, QueryClient } from "../../deps/index.ts";
+import { delay, ethers, QueryClient } from "../../deps.ts";
 import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";

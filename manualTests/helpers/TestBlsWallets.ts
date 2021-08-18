@@ -1,4 +1,4 @@
-import { ethers } from "../../deps/index.ts";
+import { ethers } from "../../deps.ts";
 
 import * as env from "../../test/env.ts";
 import AdminWallet from "../../src/chain/AdminWallet.ts";

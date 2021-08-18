@@ -1,4 +1,4 @@
-import { blsSignerFactory, ethers, hubbleBls } from "../../deps/index.ts";
+import { blsSignerFactory, ethers, hubbleBls } from "../../deps.ts";
 
 import testRng from "./testRng.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
