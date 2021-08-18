@@ -1,9 +1,7 @@
-import { ethers, hubbleBls } from "../../deps.ts";
+import { ethers } from "../../deps.ts";
 
 import blsKeyHash from "./blsKeyHash.ts";
 import dataPayload from "./dataPayload.ts";
-
-type BlsSignerInterface = hubbleBls.signer.BlsSignerInterface;
 
 export default async function createBLSWallet(
   chainId: number,

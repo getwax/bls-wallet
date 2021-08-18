@@ -1,12 +1,8 @@
-import { ethers, hubbleBls } from "../../deps.ts";
+import { ethers } from "../../deps.ts";
 
-const { utils } = ethers;
-
-type BlsSignerInterface = hubbleBls.signer.BlsSignerInterface;
-
-export default function blsKeyHash(blsSigner: BlsSignerInterface) {
-  return utils.keccak256(utils.solidityPack(
+export default function blsKeyHash(publicKey: string) {
+  return ethers.utils.keccak256(ethers.utils.solidityPack(
     ["uint256[4]"],
-    [blsSigner.pubkey],
+    [publicKey],
   ));
 }

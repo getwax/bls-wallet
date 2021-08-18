@@ -1,25 +1,21 @@
 import {
   BigNumber,
+  BlsWalletSigner,
   Contract,
   delay,
   ethers,
-  hubbleBls,
+  TransactionData,
   Wallet,
 } from "../../deps.ts";
 
 import * as env from "../env.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
-import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
-
-function getKeyHash(pubkey: string) {
-  return ethers.utils.keccak256(ethers.utils.solidityPack(
-    ["uint256[4]"],
-    [hubbleBls.mcl.loadG2(pubkey)],
-  ));
-}
+import AsyncReturnType from "../helpers/AsyncReturnType.ts";
+import { TxTableRow } from "./TxTable.ts";
+import blsKeyHash from "../chain/blsKeyHash.ts";
 
 export type TxCheckResult = {
   failures: AddTransactionFailure[];
@@ -36,6 +32,7 @@ export default class WalletService {
   constructor(
     public emit: (evt: AppEvent) => void,
     public aggregatorSigner: Wallet,
+    public blsWalletSigner: AsyncReturnType<typeof BlsWalletSigner>,
     public nextNonce: number,
   ) {
     this.rewardErc20 = new Contract(
@@ -62,8 +59,15 @@ export default class WalletService {
   ): Promise<WalletService> {
     const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
     const nextNonce = (await aggregatorSigner.getTransactionCount());
+    const chainId = await aggregatorSigner.getChainId();
+    const blsWalletSigner = await BlsWalletSigner({ chainId });
 
-    return new WalletService(emit, aggregatorSigner, nextNonce);
+    return new WalletService(
+      emit,
+      aggregatorSigner,
+      blsWalletSigner,
+      nextNonce,
+    );
   }
 
   async checkTx(tx: TransactionData): Promise<TxCheckResult> {
@@ -72,11 +76,11 @@ export default class WalletService {
       .checkSig(
         tx.nonce,
         ethers.BigNumber.from(tx.tokenRewardAmount),
-        getKeyHash(tx.pubKey),
-        hubbleBls.mcl.loadG1(tx.signature),
+        blsKeyHash(tx.publicKey),
+        tx.signature,
         tx.contractAddress,
-        tx.methodId,
-        tx.encodedParams,
+        tx.encodedFunctionData.slice(0, 10),
+        `0x${tx.encodedFunctionData.slice(10)}`,
       );
 
     const failures: AddTransactionFailure[] = [];
@@ -102,25 +106,24 @@ export default class WalletService {
   }
 
   async sendTxs(
-    txs: TransactionData[],
+    txs: TxTableRow[],
     maxAttempts = 1,
     retryDelay = 300,
   ): Promise<ethers.providers.TransactionReceipt> {
     assert(txs.length > 0, "Cannot process empty batch");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
-    const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
-    const aggSignature = hubbleBls.signer.aggregate(txSignatures);
+    const aggregateTx = this.blsWalletSigner.aggregate(txs);
 
     const blsCallManyArgs = [
       this.aggregatorSigner.address,
-      aggSignature,
+      aggregateTx.signature,
       txs.map((tx) => ({
-        publicKeyHash: getKeyHash(tx.pubKey),
+        publicKeyHash: blsKeyHash(tx.publicKey),
         tokenRewardAmount: tx.tokenRewardAmount,
         contractAddress: tx.contractAddress,
-        methodID: tx.methodId,
-        encodedParams: tx.encodedParams,
+        methodID: tx.encodedFunctionData.slice(0, 10),
+        encodedParams: `0x${tx.encodedFunctionData.slice(10)}`,
       })),
       { nonce: this.NextNonce() },
     ];
@@ -185,16 +188,14 @@ export default class WalletService {
   }
 
   async sendTx(tx: TransactionData) {
-    const txSignature = hubbleBls.mcl.loadG1(tx.signature);
-
     const txResponse = await this
       .verificationGateway.blsCall(
-        getKeyHash(tx.pubKey),
-        txSignature,
+        getKeyHash(tx.publicKey),
+        tx.signature,
         ethers.BigNumber.from(tx.tokenRewardAmount),
         tx.contractAddress,
-        tx.methodId,
-        tx.encodedParams,
+        tx.encodedFunctionData.slice(0, 10),
+        `0x${tx.encodedFunctionData.slice(10)}`,
         { nonce: this.NextNonce() },
       );
 

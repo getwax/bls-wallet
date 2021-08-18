@@ -1,4 +1,5 @@
 import {
+  BigNumber,
   Constraint,
   CreateTableMode,
   DataType,
@@ -6,40 +7,57 @@ import {
   QueryClient,
   QueryTable,
   TableOptions,
+  TransactionData,
   unsketchify,
 } from "../../deps.ts";
 
 import assertExists from "../helpers/assertExists.ts";
 import nil from "../helpers/nil.ts";
 
-export type TransactionData = {
+type RawTxTableRow = {
   txId?: number;
-  pubKey: string;
-  nonce: number;
-  signature: string;
-  tokenRewardAmount: string;
   contractAddress: string;
-  methodId: string;
-  encodedParams: string;
+  encodedFunctionData: string;
+  nonce: number;
+  tokenRewardAmount: string;
+  publicKey: string;
+  signature: string;
 };
 
 const txOptions: TableOptions = {
   txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
-  pubKey: { type: DataType.VarChar, length: 258 },
-  nonce: { type: DataType.Integer },
-  signature: { type: DataType.VarChar, length: 130 },
-  tokenRewardAmount: { type: DataType.VarChar, length: 66 },
   contractAddress: { type: DataType.VarChar, length: 42 },
-  methodId: { type: DataType.VarChar, length: 10 },
-  encodedParams: { type: DataType.VarChar },
+  encodedFunctionData: { type: DataType.VarChar },
+  nonce: { type: DataType.Integer },
+  tokenRewardAmount: { type: DataType.VarChar, length: 66 },
+  publicKey: { type: DataType.VarChar, length: 258 },
+  signature: { type: DataType.VarChar, length: 130 },
 };
 
+export type TxTableRow = TransactionData & { txId?: number };
+
+function toRawRow(row: TxTableRow): RawTxTableRow {
+  return {
+    ...row,
+    nonce: row.nonce.toNumber(),
+    tokenRewardAmount: row.tokenRewardAmount.toHexString(),
+  };
+}
+
+function fromRawRow(row: RawTxTableRow): TxTableRow {
+  return {
+    ...row,
+    nonce: BigNumber.from(row.nonce),
+    tokenRewardAmount: BigNumber.from(row.tokenRewardAmount),
+  };
+}
+
 export default class TxTable {
-  txTable: QueryTable<TransactionData>;
+  txTable: QueryTable<RawTxTableRow>;
   safeName: string;
 
   private constructor(public queryClient: QueryClient, txTableName: string) {
-    this.txTable = this.queryClient.table<TransactionData>(txTableName);
+    this.txTable = this.queryClient.table<RawTxTableRow>(txTableName);
     this.safeName = unsketchify(this.txTable.name);
   }
 
@@ -64,11 +82,11 @@ export default class TxTable {
     return txTable;
   }
 
-  async add(...txs: TransactionData[]) {
-    await this.txTable.insert(...txs);
+  async add(...txs: TxTableRow[]) {
+    await this.txTable.insert(...txs.map(toRawRow));
   }
 
-  async addWithNewId(...txs: TransactionData[]) {
+  async addWithNewId(...txs: TxTableRow[]) {
     const txsWithoutIds = txs.map((tx) => {
       const txWithoutId = { ...tx };
       delete txWithoutId.txId;
@@ -78,7 +96,7 @@ export default class TxTable {
     return await this.add(...txsWithoutIds);
   }
 
-  async remove(...txs: TransactionData[]) {
+  async remove(...txs: TxTableRow[]) {
     await Promise.all(txs.map((tx) =>
       this.txTable
         .where({ txId: assertExists(tx.txId) })
@@ -93,7 +111,7 @@ export default class TxTable {
     return result[0].count as bigint;
   }
 
-  async getHighestPriority(limit: number): Promise<TransactionData[]> {
+  async getHighestPriority(limit: number): Promise<TxTableRow[]> {
     const rows = await this.txTable
       .where()
       .order({
@@ -103,34 +121,40 @@ export default class TxTable {
       .limit(limit)
       .select();
 
-    return rows;
+    return rows.map(fromRawRow);
   }
 
   async pubKeyTxsInNonceOrder(
-    pubKey: string,
+    publicKey: string,
     limit: number,
-  ): Promise<TransactionData[]> {
-    return await this.txTable
-      .where({ pubKey })
+  ): Promise<TxTableRow[]> {
+    const rows = await this.txTable
+      .where({ publicKey })
       .order({
         column: "nonce",
         type: OrderByType.Ascending,
       })
       .limit(limit)
       .select();
+
+    return rows.map(fromRawRow);
   }
 
-  async all(): Promise<TransactionData[]> {
-    return await this.queryClient.query(`SELECT * FROM ${this.txTable.name}`);
+  async all(): Promise<TxTableRow[]> {
+    const rows: RawTxTableRow[] = await this.queryClient.query(
+      `SELECT * FROM ${this.txTable.name}`,
+    );
+
+    return rows.map(fromRawRow);
   }
 
-  async find(pubKey: string, nonce: number): Promise<TransactionData | nil> {
+  async find(publicKey: string, nonce: BigNumber): Promise<TxTableRow | nil> {
     const rows = await this.txTable
-      .where({ pubKey, nonce })
+      .where({ publicKey, nonce: nonce.toNumber() })
       .limit(1)
       .select();
 
-    return rows[0];
+    return fromRawRow(rows[0]);
   }
 
   /**
@@ -142,8 +166,8 @@ export default class TxTable {
     pubKey: string,
     nonce: number,
     limit: number,
-  ): Promise<TransactionData[]> {
-    return await this.queryClient.query(
+  ): Promise<TxTableRow[]> {
+    const rows: RawTxTableRow[] = await this.queryClient.query(
       `
         SELECT * from ${this.safeName}
         WHERE
@@ -154,15 +178,17 @@ export default class TxTable {
       `,
       [pubKey],
     );
+
+    return rows.map(fromRawRow);
   }
 
   async drop() {
     await this.txTable.create(txOptions, CreateTableMode.DropIfExists);
   }
 
-  async nextNonceOf(pubKey: string): Promise<number> {
+  async nextNonceOf(publicKey: string): Promise<BigNumber> {
     const results = await this.txTable
-      .where({ pubKey })
+      .where({ publicKey })
       .order({
         column: "nonce",
         type: OrderByType.Descending,
@@ -171,10 +197,10 @@ export default class TxTable {
       .select();
 
     if (results.length === 0) {
-      return 0;
+      return BigNumber.from(0);
     }
 
-    return results[0].nonce + 1;
+    return BigNumber.from(results[0].nonce + 1);
   }
 
   async clear() {

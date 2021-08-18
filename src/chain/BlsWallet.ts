@@ -1,9 +1,15 @@
-import { blsSignerFactory, Contract, ethers, hubbleBls } from "../../deps.ts";
+import {
+  BigNumber,
+  BlsWalletSigner,
+  Contract,
+  ethers,
+  TransactionData,
+} from "../../deps.ts";
 
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
-import type { TransactionData } from "../app/TxTable.ts";
 import * as env from "../env.ts";
 import assert from "../helpers/assert.ts";
+import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import nil from "../helpers/nil.ts";
 import blsKeyHash from "./blsKeyHash.ts";
 import createBLSWallet from "./createBLSWallet.ts";
@@ -17,21 +23,21 @@ export default class BlsWallet {
     public provider: ethers.providers.Provider,
     public network: ethers.providers.Network,
     public verificationGateway: Contract,
-    public secret: string,
-    public blsSigner: hubbleBls.signer.BlsSigner,
+    public blsWalletSigner: AsyncReturnType<typeof BlsWalletSigner>,
+    public privateKey: string,
     public address: string,
     public walletContract: Contract,
   ) {}
 
-  static async Exists(secret: string, signerOrProvider: SignerOrProvider) {
-    return await BlsWallet.Address(secret, signerOrProvider) !== nil;
+  static async Exists(privateKey: string, signerOrProvider: SignerOrProvider) {
+    return await BlsWallet.Address(privateKey, signerOrProvider) !== nil;
   }
 
   static async Address(
-    secret: string,
+    privateKey: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<string | nil> {
-    const blsSigner = BlsWallet.#Signer(secret);
+    const blsSigner = BlsWallet.#Signer(privateKey);
 
     const blsPubKeyHash = blsKeyHash(blsSigner);
 
@@ -52,24 +58,26 @@ export default class BlsWallet {
     return address;
   }
 
-  static async create(secret: string, parent: ethers.Wallet) {
+  static async create(privateKey: string, parent: ethers.Wallet) {
     await createBLSWallet(
       await parent.getChainId(),
       this.#VerificationGateway(parent),
-      this.#Signer(secret),
+      this.#Signer(privateKey),
     );
 
-    const wallet = await BlsWallet.connect(secret, parent.provider);
+    const wallet = await BlsWallet.connect(privateKey, parent.provider);
     assert(wallet !== nil);
 
     return wallet;
   }
 
-  static async connect(secret: string, provider: ethers.providers.Provider) {
-    const blsSigner = BlsWallet.#Signer(secret);
+  static async connect(
+    privateKey: string,
+    provider: ethers.providers.Provider,
+  ) {
     const verificationGateway = this.#VerificationGateway(provider);
 
-    const contractAddress = await BlsWallet.Address(secret, provider);
+    const contractAddress = await BlsWallet.Address(privateKey, provider);
 
     if (contractAddress === nil) {
       return nil;
@@ -81,12 +89,14 @@ export default class BlsWallet {
       provider,
     );
 
+    const network = await provider.getNetwork();
+
     return new BlsWallet(
       provider,
-      await provider.getNetwork(),
+      network,
       verificationGateway,
-      secret,
-      blsSigner,
+      await BlsWalletSigner({ chainId: network.chainId }),
+      privateKey,
       contractAddress,
       walletContract,
     );
@@ -100,46 +110,27 @@ export default class BlsWallet {
     contract,
     method,
     args,
-    tokenRewardAmount = ethers.BigNumber.from(0),
+    tokenRewardAmount = BigNumber.from(0),
     nonce,
   }: {
     contract: ethers.Contract;
     method: string;
     args: string[];
-    tokenRewardAmount?: ethers.BigNumber;
-    nonce: number;
+    tokenRewardAmount?: BigNumber;
+    nonce: BigNumber;
   }): TransactionData {
-    const encodedFunction = contract.interface.encodeFunctionData(method, args);
-
-    const message = dataPayload(
-      this.network.chainId,
-      nonce,
-      tokenRewardAmount.toNumber(),
-      contract.address,
-      encodedFunction,
+    return this.blsWalletSigner.sign(
+      {
+        contractAddress: contract.address,
+        encodedFunctionData: contract.interface.encodeFunctionData(
+          method,
+          args,
+        ),
+        nonce,
+        tokenRewardAmount,
+      },
+      this.privateKey,
     );
-
-    const signature = this.blsSigner.sign(message);
-
-    let tokenRewardAmountStr = tokenRewardAmount.toHexString();
-
-    tokenRewardAmountStr = `0x${
-      tokenRewardAmountStr.slice(2).padStart(64, "0")
-    }`;
-
-    return {
-      pubKey: hubbleBls.mcl.dumpG2(this.blsSigner.pubkey),
-      nonce,
-      signature: hubbleBls.mcl.dumpG1(signature),
-      tokenRewardAmount: tokenRewardAmountStr,
-      contractAddress: contract.address,
-      methodId: encodedFunction.slice(0, 10),
-      encodedParams: `0x${encodedFunction.slice(10)}`,
-    };
-  }
-
-  static #Signer(secret: string) {
-    return blsSignerFactory.getSigner(domain, secret);
   }
 
   static #VerificationGateway(signerOrProvider: SignerOrProvider) {
