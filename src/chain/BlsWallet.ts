@@ -3,6 +3,7 @@ import {
   BlsWalletSigner,
   Contract,
   ethers,
+  initBlsWalletSigner,
   TransactionData,
 } from "../../deps.ts";
 
@@ -13,8 +14,6 @@ import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import nil from "../helpers/nil.ts";
 import blsKeyHash from "./blsKeyHash.ts";
 import createBLSWallet from "./createBLSWallet.ts";
-import dataPayload from "./dataPayload.ts";
-import domain from "./domain.ts";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -23,7 +22,7 @@ export default class BlsWallet {
     public provider: ethers.providers.Provider,
     public network: ethers.providers.Network,
     public verificationGateway: Contract,
-    public blsWalletSigner: AsyncReturnType<typeof BlsWalletSigner>,
+    public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
     public address: string,
     public walletContract: Contract,
@@ -36,10 +35,13 @@ export default class BlsWallet {
   static async Address(
     privateKey: string,
     signerOrProvider: SignerOrProvider,
+    blsWalletSigner?: BlsWalletSigner,
   ): Promise<string | nil> {
-    const blsSigner = BlsWallet.#Signer(privateKey);
+    const chainId = "getChainId" in signerOrProvider
+      ? await signerOrProvider.getChainId()
+      : (await signerOrProvider.getNetwork()).chainId;
 
-    const blsPubKeyHash = blsKeyHash(blsSigner);
+    blsWalletSigner ??= await initBlsWalletSigner({ chainId });
 
     const verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
@@ -48,7 +50,7 @@ export default class BlsWallet {
     );
 
     const address: string = await verificationGateway.walletFromHash(
-      blsPubKeyHash,
+      blsWalletSigner.getPublicKeyHash(privateKey),
     );
 
     if (address === ethers.constants.AddressZero) {
@@ -75,6 +77,12 @@ export default class BlsWallet {
     privateKey: string,
     provider: ethers.providers.Provider,
   ) {
+    const network = await provider.getNetwork();
+
+    const blsWalletSigner = await initBlsWalletSigner({
+      chainId: network.chainId,
+    });
+
     const verificationGateway = this.#VerificationGateway(provider);
 
     const contractAddress = await BlsWallet.Address(privateKey, provider);
@@ -89,13 +97,11 @@ export default class BlsWallet {
       provider,
     );
 
-    const network = await provider.getNetwork();
-
     return new BlsWallet(
       provider,
       network,
       verificationGateway,
-      await BlsWalletSigner({ chainId: network.chainId }),
+      blsWalletSigner,
       privateKey,
       contractAddress,
       walletContract,

@@ -19,7 +19,7 @@ export default async function createBLSWallet(
   }
 
   const encodedFunction = verificationGateway.interface.encodeFunctionData(
-    "walletCrossCheck",
+    "walletCrossCheck", // TODO: Figure out this thing...
     [blsPubKeyHash],
   );
 

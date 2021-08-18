@@ -4,6 +4,7 @@ import {
   Contract,
   delay,
   ethers,
+  initBlsWalletSigner,
   TransactionData,
   Wallet,
 } from "../../deps.ts";
@@ -13,7 +14,6 @@ import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
-import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import { TxTableRow } from "./TxTable.ts";
 import blsKeyHash from "../chain/blsKeyHash.ts";
 
@@ -32,7 +32,7 @@ export default class WalletService {
   constructor(
     public emit: (evt: AppEvent) => void,
     public aggregatorSigner: Wallet,
-    public blsWalletSigner: AsyncReturnType<typeof BlsWalletSigner>,
+    public blsWalletSigner: BlsWalletSigner,
     public nextNonce: number,
   ) {
     this.rewardErc20 = new Contract(
@@ -60,7 +60,7 @@ export default class WalletService {
     const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
     const nextNonce = (await aggregatorSigner.getTransactionCount());
     const chainId = await aggregatorSigner.getChainId();
-    const blsWalletSigner = await BlsWalletSigner({ chainId });
+    const blsWalletSigner = await initBlsWalletSigner({ chainId });
 
     return new WalletService(
       emit,
@@ -190,7 +190,7 @@ export default class WalletService {
   async sendTx(tx: TransactionData) {
     const txResponse = await this
       .verificationGateway.blsCall(
-        getKeyHash(tx.publicKey),
+        ethers.utils.keccak256(tx.publicKey),
         tx.signature,
         ethers.BigNumber.from(tx.tokenRewardAmount),
         tx.contractAddress,
