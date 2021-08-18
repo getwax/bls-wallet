@@ -8,7 +8,7 @@ import {
 } from "../../deps/index.ts";
 
 import * as env from "../env.ts";
-import ovmContractABIs from "../../ovmContractABIs/index.ts";
+import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
@@ -40,13 +40,13 @@ export default class WalletService {
   ) {
     this.rewardErc20 = new Contract(
       env.REWARD_TOKEN_ADDRESS,
-      ovmContractABIs["MockERC20.json"].abi,
+      ovmContractABIs.MockERC20.abi,
       this.aggregatorSigner,
     );
 
     this.verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      ovmContractABIs["VerificationGateway.json"].abi,
+      ovmContractABIs.VerificationGateway.abi,
       this.aggregatorSigner,
     );
   }

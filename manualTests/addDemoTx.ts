@@ -4,7 +4,7 @@ import Client from "../src/app/Client.ts";
 import * as env from "../src/env.ts";
 import Fixture from "../test/helpers/Fixture.ts";
 
-const client = new Client(`http://localhost:${env.PORT}`);
+const client = new Client(env.ORIGIN);
 
 const fx = await Fixture.create(import.meta.url);
 const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);

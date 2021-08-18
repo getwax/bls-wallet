@@ -12,7 +12,7 @@ const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
 const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
-const client = new Client(`http://localhost:${env.PORT}`);
+const client = new Client(env.ORIGIN);
 
 const [wallet] = await TestBlsWallets(provider, 1);
 

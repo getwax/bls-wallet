@@ -4,7 +4,7 @@ import Client from "../src/app/Client.ts";
 import * as env from "../src/env.ts";
 import Range from "../src/helpers/Range.ts";
 
-const client = new Client(`http://localhost:${env.PORT}`);
+const client = new Client(env.ORIGIN);
 
 function dummyHex(length: number) {
   return `0x${
