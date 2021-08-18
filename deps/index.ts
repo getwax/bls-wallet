@@ -19,10 +19,8 @@ export type {
   RouterContext,
 } from "https://deno.land/x/oak@v7.5.0/mod.ts";
 
-// Ethers dependencies
-import ethers from "./ethers/index.ts";
-
-export { default as ethers } from "./ethers/index.ts";
+import { ethers } from "https://esm.sh/ethers@5.4.4";
+export { ethers };
 
 export const BigNumber = ethers.BigNumber;
 export type BigNumber = ethers.BigNumber;
