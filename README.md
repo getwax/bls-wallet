@@ -44,7 +44,7 @@ Create a user called `bls`:
 $ sudo -u postgres createuser --interactive
 Enter name of role to add: bls
 Shall the new role be a superuser? (y/n) n
-Shall the new role be allowed to create databases? (y/n) y
+Shall the new role be allowed to create databases? (y/n) n
 Shall the new role be allowed to create more new roles? (y/n) n
 ```
 
@@ -55,7 +55,7 @@ $ sudo -u postgres psql
 psql (12.6 (Ubuntu 12.6-0ubuntu0.20.04.1))
 Type "help" for help.
 
-postgres=# ALTER USER bls WITH PASSWORD 'blstest';
+postgres=# ALTER USER bls WITH PASSWORD 'generate-a-strong-password';
 ```
 
 Create a table called `bls_aggregator`:
@@ -120,3 +120,29 @@ VSCode + Deno extension
 
 - If you're using a named environment, add `--env <name>`
 - If `docker` requires `sudo`, add `--sudo-docker`
+
+5. Configure log rotation in docker by setting `/etc/docker/daemon.json` to:
+
+```json
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  }
+}
+```
+
+and restart docker `sudo systemctl restart docker`
+
+6. Load the docker image: `sudo docker load <docker-image.tar.gz`
+7. Run the aggregator:
+
+```sh
+sudo docker run \
+  --name aggregator \
+  -d \
+  --net=host \
+  --restart=unless-stopped \
+  aggregator:latest
+```
