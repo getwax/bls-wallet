@@ -121,7 +121,7 @@ VSCode + Deno extension
 - If you're using a named environment, add `--env <name>`
 - If `docker` requires `sudo`, add `--sudo-docker`
 
-5. Configure log rotation in docker by setting `/etc/docker/daemon.json` to:
+5. Configure log rotation in docker by setting `/etc/docker/daemon.json` to
 
 ```json
 {
@@ -146,3 +146,37 @@ sudo docker run \
   --restart=unless-stopped \
   aggregator:latest
 ```
+
+8. Create `/etc/nginx/sites-available/aggregator`
+
+```nginx
+server {
+  server_name your-domain.org;
+
+  root /home/aggregator/static-content;
+  index index.html;
+
+  location / {
+    try_files $uri $uri/ @aggregator;
+  }
+
+  location @aggregator {
+    proxy_pass http://localhost:3000;
+  }
+}
+```
+
+This allows you to add some static content at `/home/aggregator/static-content`.
+Adding static content is optional; requests that don't match static content will
+be passed to the aggregator.
+
+9. Create a symlink in sites-enabled
+
+```sh
+ln -s /etc/nginx/sites-available/aggregator /etc/nginx/sites-enabled/aggregator
+```
+
+Reload nginx for config to take effect: `sudo nginx -s reload`
+
+10. Set up https for your domain by following the instructions at
+    https://certbot.eff.org/lets-encrypt/ubuntufocal-nginx.
