@@ -3,7 +3,7 @@ import { arrayify } from "@ethersproject/bytes";
 import { keccak256 } from "@ethersproject/keccak256";
 import { expect } from "chai";
 
-import init, { RawTransactionData } from "../src";
+import { initBlsWalletSigner, RawTransactionData } from "../src";
 
 const domain = arrayify(keccak256("0xfeedbee5"));
 const weiPerToken = BigNumber.from(10).pow(18);
@@ -32,7 +32,10 @@ const samples = (() => {
 
 describe("index", () => {
   it("signs and verifies transaction", async () => {
-    const { sign, verify } = await init({ chainId: 123, domain });
+    const { sign, verify } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+    });
 
     const { rawTx, privateKey, otherPrivateKey } = samples;
 
@@ -67,7 +70,7 @@ describe("index", () => {
       sign,
       aggregate,
       verifyAggregate,
-    } = await init({ chainId: 123, domain });
+    } = await initBlsWalletSigner({ chainId: 123, domain });
 
     const { rawTx, privateKey } = samples;
 
