@@ -5,6 +5,7 @@ import {
   delay,
   ethers,
   initBlsWalletSigner,
+  keccak256,
   TransactionData,
   Wallet,
 } from "../../deps.ts";
@@ -15,7 +16,7 @@ import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import { TxTableRow } from "./TxTable.ts";
-import blsKeyHash from "../chain/blsKeyHash.ts";
+import splitHex256 from "../helpers/splitHex256.ts";
 
 export type TxCheckResult = {
   failures: AddTransactionFailure[];
@@ -76,8 +77,8 @@ export default class WalletService {
       .checkSig(
         tx.nonce,
         ethers.BigNumber.from(tx.tokenRewardAmount),
-        blsKeyHash(tx.publicKey),
-        tx.signature,
+        keccak256(tx.publicKey),
+        splitHex256(tx.signature),
         tx.contractAddress,
         tx.encodedFunctionData.slice(0, 10),
         `0x${tx.encodedFunctionData.slice(10)}`,
@@ -117,9 +118,9 @@ export default class WalletService {
 
     const blsCallManyArgs = [
       this.aggregatorSigner.address,
-      aggregateTx.signature,
+      splitHex256(aggregateTx.signature),
       txs.map((tx) => ({
-        publicKeyHash: blsKeyHash(tx.publicKey),
+        publicKeyHash: keccak256(tx.publicKey),
         tokenRewardAmount: tx.tokenRewardAmount,
         contractAddress: tx.contractAddress,
         methodID: tx.encodedFunctionData.slice(0, 10),
@@ -191,7 +192,7 @@ export default class WalletService {
     const txResponse = await this
       .verificationGateway.blsCall(
         ethers.utils.keccak256(tx.publicKey),
-        tx.signature,
+        splitHex256(tx.signature),
         ethers.BigNumber.from(tx.tokenRewardAmount),
         tx.contractAddress,
         tx.encodedFunctionData.slice(0, 10),

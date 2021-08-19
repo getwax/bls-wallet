@@ -11,6 +11,7 @@ import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import * as env from "../env.ts";
 import assert from "../helpers/assert.ts";
 import nil from "../helpers/nil.ts";
+import splitHex256 from "../helpers/splitHex256.ts";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -72,8 +73,8 @@ export default class BlsWallet {
     );
 
     await (await verificationGateway.blsCallCreate(
-      tx.publicKey,
-      tx.signature,
+      splitHex256(tx.publicKey),
+      splitHex256(tx.signature),
       tx.tokenRewardAmount,
       tx.contractAddress,
       tx.encodedFunctionData.slice(0, 10),

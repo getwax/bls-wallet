@@ -1,7 +1,6 @@
 import { expect } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
-import blsKeyHash from "../src/chain/blsKeyHash.ts";
 
 Fixture.test("should register new wallet", async (fx) => {
   const blsSigner = fx.createBlsSigner();

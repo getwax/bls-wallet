@@ -26,6 +26,9 @@ export {
   Wallet,
 } from "https://esm.sh/ethers@5.4.4";
 
+import { ethers } from "https://esm.sh/ethers@5.4.4";
+export const keccak256 = ethers.utils.keccak256;
+
 export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.3.5";
 
 export type {
