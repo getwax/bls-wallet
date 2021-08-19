@@ -20,21 +20,25 @@ Interaction with web3 applications can be slow, costly, and risky.
     * wallet creation
     * erc20 transfers
 * Submit txs to hosted [aggregator](https://github.com/jzaki/bls-wallet-aggregator)
+* Basic feedback from aggregator for UI updates (tx received, tx mined. tx dropped?)
 
 ### Upcoming
 * Secure storage of EDDSA and ECDSA keys
 * Social recovery
     * nominate guardians
     * recover contract wallet
-* Interact seamlessly with L2 dapps
+* Receive tx data from existing L2 dapps on networks:
     * Optimism
     * Arbitrum (coming soon)
     * ...
 * Receive and review multiple txs from dapps
     * sign all and submit to aggregator
+* Wallet feedback (from L2 sequencer)
+    * listening to wallet events
+    * wallet tx history
 
 ### Future
-* Sign and submit multiple transactions as one
+* Sign and submit multiple transactions as one (to L2 sequencer)
     * local signature aggregation
 * Review and sign typed data (712)
 
@@ -47,9 +51,14 @@ Interaction with web3 applications can be slow, costly, and risky.
 * signature verification
 * signature aggregation
 
+### Servers
+* Aggregator
+* Future: L2 Sequencer
+
 ### User Interface Base
 * Extension for Chrome/Brave and Firefox
     * Web Extensions? combined extensions standard
+* [storyboard](https://drive.protonmail.com/urls/J7EECNCGS0#2xqYOqlIzeaB)
 * Common:
     * Network name (hover chainId)
     * Current BLS Key (option to create)
