@@ -1,11 +1,8 @@
-import { blsSignerFactory, ethers, hubbleBls } from "../../deps.ts";
+import { ethers, TransactionData } from "../../deps.ts";
 
 import testRng from "./testRng.ts";
-import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
-import createBLSWallet from "../../src/chain/createBLSWallet.ts";
 import WalletService from "../../src/app/WalletService.ts";
-import TxTable, { TransactionData } from "../../src/app/TxTable.ts";
-import dataPayload from "../../src/chain/dataPayload.ts";
+import TxTable, { TxTableRow } from "../../src/app/TxTable.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "../../src/helpers/Range.ts";
@@ -16,41 +13,10 @@ import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 import MockErc20 from "./MockErc20.ts";
 import nil, { isNotNil } from "../../src/helpers/nil.ts";
-
-const DOMAIN_HEX = ethers.utils.keccak256("0xfeedbee5");
-const DOMAIN = ethers.utils.arrayify(DOMAIN_HEX);
+import BlsWallet from "../../src/chain/BlsWallet.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
-
-function getInnerError(error: Error): Error | undefined {
-  const innerError = (error as ExplicitAny).error;
-
-  return innerError instanceof Error ? innerError : undefined;
-}
-
-function wrapInnermostError(error: Error): Error {
-  let currError = error;
-  let nextError = getInnerError(currError);
-
-  while (nextError) {
-    currError = nextError;
-    nextError = getInnerError(currError);
-  }
-
-  if (currError === error) {
-    return error;
-  }
-
-  const wrappedError = new Error(
-    `\n  innermost error: ${currError.message}` +
-      `\n\n  error: ${error.message}`,
-  );
-
-  (wrappedError as ExplicitAny).error = error;
-
-  return wrappedError;
-}
 
 export default class Fixture {
   static test(
@@ -132,85 +98,8 @@ export default class Fixture {
     );
   }
 
-  createBlsSigner(...extraSeeds: string[]) {
-    return blsSignerFactory.getSigner(
-      DOMAIN,
-      this.rng.seed("blsSigner", ...extraSeeds).address(),
-    );
-  }
-
-  async getOrCreateBlsWalletAddress(signer: hubbleBls.signer.BlsSigner) {
-    const verificationGateway = new ethers.Contract(
-      env.VERIFICATION_GATEWAY_ADDRESS,
-      ovmContractABIs.VerificationGateway.abi,
-      this.adminWallet,
-    );
-
-    return await createBLSWallet(
-      this.chainId,
-      verificationGateway,
-      signer,
-    );
-  }
-
-  connectBlsWallet(address: string) {
-    return new ethers.Contract(
-      address,
-      ovmContractABIs.BLSWallet.abi,
-      this.walletService.aggregatorSigner,
-    );
-  }
-
-  async getOrCreateBlsWallet(signer: hubbleBls.signer.BlsSigner) {
-    return this.connectBlsWallet(
-      await this.getOrCreateBlsWalletAddress(signer),
-    );
-  }
-
-  async createTxData({
-    blsSigner,
-    contract,
-    method,
-    args,
-    tokenRewardAmount = ethers.BigNumber.from(0),
-    nonceOffset = 0,
-  }: {
-    blsSigner: hubbleBls.signer.BlsSigner;
-    contract: ethers.Contract;
-    method: string;
-    args: string[];
-    tokenRewardAmount?: ethers.BigNumber;
-    nonceOffset?: number;
-  }): Promise<TransactionData> {
-    const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
-    const encodedFunction = contract.interface.encodeFunctionData(method, args);
-    const nonce = Number(await blsWallet.nonce()) + nonceOffset;
-
-    const message = dataPayload(
-      this.chainId,
-      nonce,
-      tokenRewardAmount.toNumber(),
-      contract.address,
-      encodedFunction,
-    );
-
-    const signature = blsSigner.sign(message);
-
-    let tokenRewardAmountStr = tokenRewardAmount.toHexString();
-
-    tokenRewardAmountStr = `0x${
-      tokenRewardAmountStr.slice(2).padStart(64, "0")
-    }`;
-
-    return {
-      pubKey: hubbleBls.mcl.dumpG2(blsSigner.pubkey),
-      nonce,
-      signature: hubbleBls.mcl.dumpG1(signature),
-      tokenRewardAmount: tokenRewardAmountStr,
-      contractAddress: contract.address,
-      methodId: encodedFunction.slice(0, 10),
-      encodedParams: `0x${encodedFunction.slice(10)}`,
-    };
+  createBlsPrivateKey(...extraSeeds: string[]) {
+    return this.rng.seed("blsPrivateKey", ...extraSeeds).address();
   }
 
   async createTxService(config = TxService.defaultConfig) {
@@ -249,25 +138,14 @@ export default class Fixture {
   async allTxs(
     txService: TxService,
   ): Promise<{ ready: TransactionData[]; future: TransactionData[] }> {
-    return {
-      ready: await txService.readyTxTable.all(),
-      future: await txService.futureTxTable.all(),
-    };
-  }
-
-  async allTxsWithoutIds(
-    txService: TxService,
-  ): Promise<{ ready: TransactionData[]; future: TransactionData[] }> {
-    const removeId = (tx: TransactionData) => {
+    const removeId = (tx: TxTableRow) => {
       delete tx.txId;
       return tx;
     };
 
-    const { ready, future } = await this.allTxs(txService);
-
     return {
-      ready: ready.map(removeId),
-      future: future.map(removeId),
+      ready: (await txService.readyTxTable.all()).map(removeId),
+      future: (await txService.futureTxTable.all()).map(removeId),
     };
   }
 
@@ -291,11 +169,13 @@ export default class Fixture {
     // serial way but then awaiting .wait() in parallel. That's a significant
     // refactor though that I'm avoiding right now.
     for (const i of Range(count)) {
-      const blsSigner = this.createBlsSigner(`${i}`, ...extraSeeds);
-      const blsWallet = await this.getOrCreateBlsWallet(blsSigner);
+      const wallet = await BlsWallet.connectOrCreate(
+        this.createBlsPrivateKey(`${i}`, ...extraSeeds),
+        this.adminWallet,
+      );
 
       const txs = await Promise.all(tokens.map(async (token, i) => {
-        const balance = await token.balanceOf(blsWallet.address);
+        const balance = await token.balanceOf(wallet.address);
 
         // When seeding tests, we can generate wallets from previous tests, and
         // this can cause unexpected balances if we blindly mint instead of
@@ -303,22 +183,20 @@ export default class Fixture {
         const topUp = ethers.BigNumber.from(1000).sub(balance);
 
         if (topUp.gt(0)) {
-          return await this.createTxData({
-            blsSigner,
+          return wallet.sign({
             contract: token.contract,
             method: "mint",
-            args: [blsWallet.address, topUp.toString()],
-            nonceOffset: i,
+            args: [wallet.address, topUp.toString()],
+            nonce: (await wallet.Nonce()).add(i),
           });
         }
 
         if (topUp.lt(0)) {
-          return await this.createTxData({
-            blsSigner,
+          return wallet.sign({
             contract: token.contract,
             method: "transfer",
             args: [this.adminWallet.address, topUp.mul(-1).toString()],
-            nonceOffset: i,
+            nonce: (await wallet.Nonce()).add(i),
           });
         }
 
@@ -331,7 +209,7 @@ export default class Fixture {
         await this.walletService.sendTxs(txs.filter(isNotNil));
       }
 
-      wallets.push({ blsSigner, blsWallet });
+      wallets.push(wallet);
     }
 
     return wallets;
@@ -342,4 +220,33 @@ export default class Fixture {
       await job();
     }
   }
+}
+
+function getInnerError(error: Error): Error | undefined {
+  const innerError = (error as ExplicitAny).error;
+
+  return innerError instanceof Error ? innerError : undefined;
+}
+
+function wrapInnermostError(error: Error): Error {
+  let currError = error;
+  let nextError = getInnerError(currError);
+
+  while (nextError) {
+    currError = nextError;
+    nextError = getInnerError(currError);
+  }
+
+  if (currError === error) {
+    return error;
+  }
+
+  const wrappedError = new Error(
+    `\n  innermost error: ${currError.message}` +
+      `\n\n  error: ${error.message}`,
+  );
+
+  (wrappedError as ExplicitAny).error = error;
+
+  return wrappedError;
 }

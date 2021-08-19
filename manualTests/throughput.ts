@@ -88,7 +88,7 @@ pollingLoop(() => {
     const nonce = nextNonceMap.get(sendWallet)!;
     nextNonceMap.set(sendWallet, nonce + 1);
 
-    const tx = sendWallet.buildTx({
+    const tx = sendWallet.sign({
       contract: testErc20.contract,
       method: "transfer",
       args: [recvWallet.address, "1"],

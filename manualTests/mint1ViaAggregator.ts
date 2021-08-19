@@ -18,13 +18,11 @@ const [wallet] = await TestBlsWallets(provider, 1);
 
 const startBalance = await testErc20.balanceOf(wallet.address);
 
-let nextNonce = await wallet.Nonce();
-
-const tx = wallet.buildTx({
+const tx = wallet.sign({
   contract: testErc20.contract,
   method: "mint",
   args: [wallet.address, "1"],
-  nonce: nextNonce++,
+  nonce: await wallet.Nonce(),
 });
 
 console.log("Sending mint tx to aggregator");

@@ -164,7 +164,7 @@ export default class TxTable {
    */
   async findAfter(
     pubKey: string,
-    nonce: number,
+    nonce: BigNumber,
     limit: number,
   ): Promise<TxTableRow[]> {
     const rows: RawTxTableRow[] = await this.queryClient.query(
@@ -172,7 +172,7 @@ export default class TxTable {
         SELECT * from ${this.safeName}
         WHERE
           "pubKey" = $1 AND
-          "nonce" > ${nonce}
+          "nonce" > ${nonce.toNumber()}
         ORDER BY "nonce" ASC
         LIMIT ${limit}
       `,

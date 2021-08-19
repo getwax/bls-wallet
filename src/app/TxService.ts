@@ -1,4 +1,10 @@
-import { delay, ethers, QueryClient } from "../../deps.ts";
+import {
+  BigNumber,
+  delay,
+  ethers,
+  QueryClient,
+  TransactionData,
+} from "../../deps.ts";
 import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
@@ -7,7 +13,7 @@ import AddTransactionFailure from "./AddTransactionFailure.ts";
 import BatchTimer from "./BatchTimer.ts";
 import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
-import TxTable, { TransactionData } from "./TxTable.ts";
+import TxTable, { TxTableRow } from "./TxTable.ts";
 import WalletService, { TxCheckResult } from "./WalletService.ts";
 import AppEvent from "./AppEvent.ts";
 import nil from "../helpers/nil.ts";
@@ -21,7 +27,7 @@ export default class TxService {
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
   };
 
-  unconfirmedTxs = new Set<TransactionData>();
+  unconfirmedTxs = new Set<TxTableRow>();
   batchTimer: BatchTimer;
   batchesInProgress = 0;
 
@@ -96,13 +102,14 @@ export default class TxService {
       }
 
       const nextNonce = await this.NextNonce(
+        // TODO: Move this to some other .toNumber() conversion
         // This will cause problems above 2^53. Currently we already store
         // nonces as 32 bit integers in the database anyway though. For now,
         // numbers are more convenient.
         //
         // More information: https://github.com/jzaki/aggregator/issues/36.
-        nextChainNonce.toNumber(),
-        txData.pubKey,
+        nextChainNonce,
+        txData.publicKey,
       );
 
       const emitAdded = (category: "ready" | "future") => {
@@ -110,21 +117,21 @@ export default class TxService {
           type: "tx-added",
           data: {
             category,
-            pubKeyShort: txData.pubKey.slice(2, 9),
-            nonce: txData.nonce,
+            pubKeyShort: txData.publicKey.slice(2, 9),
+            nonce: txData.nonce.toNumber(),
           },
         });
       };
 
-      if (txData.nonce < nextNonce) {
+      if (txData.nonce.lt(nextNonce)) {
         const result = await this.replaceReadyTx(nextNonce, txData);
         emitAdded("ready");
         return result;
       }
 
-      if (nextNonce === txData.nonce) {
+      if (nextNonce.eq(txData.nonce)) {
         this.readyTxTable.add(txData);
-        await this.tryMoveFutureTxs(txData.pubKey, nextNonce + 1);
+        await this.tryMoveFutureTxs(txData.publicKey, nextNonce.add(1));
         emitAdded("ready");
         this.checkReadyTxCount();
       } else {
@@ -141,17 +148,19 @@ export default class TxService {
    * Find the nonce that would come after the unconfirmed transactions for this
    * public key, or zero.
    */
-  NextUnconfirmedNonce(pubKey: string): number {
+  NextUnconfirmedNonce(pubKey: string): BigNumber {
     const unconfirmedTxs = [...this.unconfirmedTxs.values()]
-      .filter((tx) => tx.pubKey === pubKey);
+      .filter((tx) => tx.publicKey === pubKey);
 
     if (unconfirmedTxs.length === 0) {
-      return 0;
+      return BigNumber.from(0);
     }
 
-    return 1 + unconfirmedTxs
+    const highestUnconfirmedNonce = unconfirmedTxs
       .map((tx) => tx.nonce)
-      .reduce((a, b) => Math.max(a, b));
+      .reduce(bigMax);
+
+    return highestUnconfirmedNonce.add(1);
   }
 
   /**
@@ -162,16 +171,16 @@ export default class TxService {
    * - the latest nonce in unconfirmed txs
    */
   async NextNonce(
-    nextChainNonce: number,
-    pubKey: string,
-  ): Promise<number> {
+    nextChainNonce: BigNumber,
+    publicKey: string,
+  ): Promise<BigNumber> {
     const candidates = [
       nextChainNonce,
-      await this.readyTxTable.nextNonceOf(pubKey),
-      this.NextUnconfirmedNonce(pubKey),
+      await this.readyTxTable.nextNonceOf(publicKey),
+      this.NextUnconfirmedNonce(publicKey),
     ];
 
-    return candidates.reduce((a, b) => Math.max(a, b));
+    return candidates.reduce(bigMax);
   }
 
   /**
@@ -181,7 +190,7 @@ export default class TxService {
    */
   async tryMoveFutureTxs(
     pubKey: string,
-    nextNonce: number,
+    nextNonce: BigNumber,
   ) {
     let needNextBatch: boolean;
 
@@ -201,7 +210,7 @@ export default class TxService {
           await this.replaceReadyTx(nextNonce, tx);
         } else if (tx.nonce === nextNonce) {
           txsToAdd.push(tx);
-          nextNonce++;
+          nextNonce = nextNonce.add(1);
         } else {
           break;
         }
@@ -258,11 +267,11 @@ export default class TxService {
    * same key so that they will be processed in the correct sequence.
    */
   async replaceReadyTx(
-    nextNonce: number,
+    nextNonce: BigNumber,
     newTx: TransactionData,
   ): Promise<AddTransactionFailure[]> {
     const existingTx = await this.readyTxTable.find(
-      newTx.pubKey,
+      newTx.publicKey,
       newTx.nonce,
     );
 
@@ -297,8 +306,8 @@ export default class TxService {
       this.readyTxTable.add(newTx),
     ]);
 
-    const latestReadyNonce = nextNonce - 1;
-    const causedUnorderedReadyTxs = newTx.nonce < latestReadyNonce;
+    const latestReadyNonce = nextNonce.sub(1);
+    const causedUnorderedReadyTxs = newTx.nonce.lt(latestReadyNonce);
 
     if (causedUnorderedReadyTxs) {
       await this.reinsertUnorderedReadyTxs(newTx);
@@ -321,7 +330,7 @@ export default class TxService {
 
     do {
       followupTxs = await this.readyTxTable.findAfter(
-        newTx.pubKey,
+        newTx.publicKey,
         lastNonceReplaced,
         this.config.txQueryLimit,
       );
@@ -346,14 +355,14 @@ export default class TxService {
     await Promise.all(promises);
   }
 
-  async removeFromReady(txs: TransactionData[]) {
+  async removeFromReady(txs: TxTableRow[]) {
     this.readyTxTable.remove(...txs);
 
     await Promise.all(
       TxService.PublicKeys(txs).map((pk) =>
         this.demoteNoLongerReadyTxs(
           pk,
-          txs.find((tx) => tx.pubKey === pk)!,
+          txs.find((tx) => tx.publicKey === pk)!,
         )
       ),
     );
@@ -361,7 +370,7 @@ export default class TxService {
 
   async demoteNoLongerReadyTxs(
     /** Public key this operation applies to */
-    pubKey: string,
+    publicKey: string,
     /**
      * Example transaction with this public key, facilitating a call to
      * this.walletService.checkTx
@@ -374,13 +383,13 @@ export default class TxService {
     const promises: Promise<unknown>[] = [];
 
     const nextChainNonce = (await this.walletService.checkTx(exampleTx))
-      .nextNonce.toNumber();
+      .nextNonce;
 
-    const nextUnconfirmedNonce = this.NextUnconfirmedNonce(pubKey);
+    const nextUnconfirmedNonce = this.NextUnconfirmedNonce(publicKey);
 
     // Ready tx nonces are not included here because it is those very txs that
     // we may be demoting.
-    let nextNonce = Math.max(nextChainNonce, nextUnconfirmedNonce);
+    let nextNonce = bigMax(nextChainNonce, nextUnconfirmedNonce);
 
     let finished: boolean;
     let txs: TransactionData[];
@@ -389,11 +398,11 @@ export default class TxService {
     // result returned is the next nonce if it is available. This allows us to
     // increment nextNonce and allow readyTxs that are not gapped to stay in
     // ready.
-    let findAfterNonce = nextNonce - 1;
+    let findAfterNonce = nextNonce.sub(1);
 
     do {
       txs = await this.readyTxTable.findAfter(
-        pubKey,
+        publicKey,
         findAfterNonce,
         this.config.txQueryLimit,
       );
@@ -404,7 +413,7 @@ export default class TxService {
 
       for (const tx of txs) {
         if (tx.nonce === nextNonce) {
-          nextNonce++;
+          nextNonce = nextNonce.add(1);
         } else {
           promises.push(
             this.readyTxTable.remove(tx),
@@ -454,23 +463,23 @@ export default class TxService {
         ])),
       );
 
-      const batchTxs: TransactionData[] = [];
-      const insufficientRewardTxs: TransactionData[] = [];
+      const batchTxs: TxTableRow[] = [];
+      const insufficientRewardTxs: TxTableRow[] = [];
       const gappedPubKeys: string[] = [];
 
       for (const tx of priorityTxs) {
-        if (gappedPubKeys.includes(tx.pubKey)) {
+        if (gappedPubKeys.includes(tx.publicKey)) {
           continue;
         }
 
-        if (rewardBalances[tx.pubKey].gte(tx.tokenRewardAmount)) {
+        if (rewardBalances[tx.publicKey].gte(tx.tokenRewardAmount)) {
           batchTxs.push(tx);
 
-          rewardBalances[tx.pubKey] = rewardBalances[tx.pubKey]
+          rewardBalances[tx.publicKey] = rewardBalances[tx.publicKey]
             .sub(tx.tokenRewardAmount);
         } else {
           insufficientRewardTxs.push(tx);
-          gappedPubKeys.push(tx.pubKey);
+          gappedPubKeys.push(tx.publicKey);
         }
 
         if (batchTxs.length >= this.config.maxAggregationSize) {
@@ -546,6 +555,10 @@ export default class TxService {
   }
 
   static PublicKeys(txs: TransactionData[]) {
-    return Object.keys(Object.fromEntries(txs.map((tx) => [tx.pubKey])));
+    return Object.keys(Object.fromEntries(txs.map((tx) => [tx.publicKey])));
   }
+}
+
+function bigMax(a: BigNumber, b: BigNumber) {
+  return a.gt(b) ? a : b;
 }

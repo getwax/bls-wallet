@@ -121,11 +121,11 @@ export default class BlsWallet {
     );
   }
 
-  async Nonce() {
-    return Number(await this.walletContract.nonce());
+  async Nonce(): Promise<BigNumber> {
+    return await this.walletContract.nonce();
   }
 
-  buildTx({
+  sign({
     contract,
     method,
     args,
