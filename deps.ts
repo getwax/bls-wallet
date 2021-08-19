@@ -26,12 +26,12 @@ export {
   Wallet,
 } from "https://esm.sh/ethers@5.4.4";
 
-export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.3.0";
+export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.3.5";
 
 export type {
   BlsWalletSigner,
   TransactionData,
-} from "https://esm.sh/bls-wallet-signer@0.3.0";
+} from "https://esm.sh/bls-wallet-signer@0.3.5";
 
 // Database dependencies
 export {
