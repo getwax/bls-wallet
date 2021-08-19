@@ -154,7 +154,7 @@ export default class TxTable {
       .limit(1)
       .select();
 
-    return fromRawRow(rows[0]);
+    return rows[0] && fromRawRow(rows[0]);
   }
 
   /**

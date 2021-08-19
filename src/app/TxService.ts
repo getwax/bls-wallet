@@ -202,13 +202,13 @@ export default class TxService {
         this.config.txQueryLimit,
       );
 
-      const bestFutureTxs = groupBy(futureTxs, (tx) => tx.nonce)
+      const bestFutureTxs = groupByNonce(futureTxs)
         .map((txGroup) => this.pickBestReward(txGroup.elements));
 
       for (const tx of bestFutureTxs) {
-        if (tx.nonce < nextNonce) {
+        if (tx.nonce.lt(nextNonce)) {
           await this.replaceReadyTx(nextNonce, tx);
-        } else if (tx.nonce === nextNonce) {
+        } else if (tx.nonce.eq(nextNonce)) {
           txsToAdd.push(tx);
           nextNonce = nextNonce.add(1);
         } else {
@@ -216,7 +216,9 @@ export default class TxService {
         }
       }
 
-      const futureTxsToRemove = futureTxs.filter((tx) => tx.nonce < nextNonce);
+      const futureTxsToRemove = futureTxs.filter((tx) =>
+        tx.nonce.lt(nextNonce)
+      );
 
       await this.readyTxTable.addWithNewId(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
@@ -359,7 +361,7 @@ export default class TxService {
     this.readyTxTable.remove(...txs);
 
     await Promise.all(
-      TxService.PublicKeys(txs).map((pk) =>
+      PublicKeys(txs).map((pk) =>
         this.demoteNoLongerReadyTxs(
           pk,
           txs.find((tx) => tx.publicKey === pk)!,
@@ -454,7 +456,7 @@ export default class TxService {
         this.config.txQueryLimit,
       );
 
-      const pubKeys = TxService.PublicKeys(priorityTxs);
+      const pubKeys = PublicKeys(priorityTxs);
 
       const rewardBalances = Object.fromEntries(
         await Promise.all(pubKeys.map(async (pk) => [
@@ -553,12 +555,16 @@ export default class TxService {
       await delay(100);
     }
   }
+}
 
-  static PublicKeys(txs: TransactionData[]) {
-    return Object.keys(Object.fromEntries(txs.map((tx) => [tx.publicKey])));
-  }
+function PublicKeys(txs: TransactionData[]) {
+  return Object.keys(Object.fromEntries(txs.map((tx) => [tx.publicKey])));
 }
 
 function bigMax(a: BigNumber, b: BigNumber) {
   return a.gt(b) ? a : b;
+}
+
+function groupByNonce(txs: TxTableRow[]) {
+  return groupBy(txs, (tx) => tx.nonce, (a, b) => a.eq(b));
 }

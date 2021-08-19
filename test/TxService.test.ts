@@ -1,5 +1,5 @@
 import TxService from "../src/app/TxService.ts";
-import { assertEquals, BigNumber, ethers } from "./deps.ts";
+import { assertEquals, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -61,10 +61,6 @@ Fixture.test("rejects transaction with nonce from the past", async (fx) => {
     nonce: (await wallet.Nonce()).sub(1),
   });
 
-  // createTxData would have correctly set nonce 1 if we hadn't used offset -1.
-  // (a transaction with nonce 0 occurs when creating the wallet)
-  assertEquals(tx.nonce, BigNumber.from(0));
-
   assertEquals(await txService.readyTxTable.count(), 0n);
 
   const failures = await txService.add(tx);
@@ -86,10 +82,6 @@ Fixture.test(
       args: [wallet.address, "3"],
       nonce: (await wallet.Nonce()).sub(1),
     });
-
-    // createTxData would have correctly set nonce 1 if we hadn't used offset -1.
-    // (a transaction with nonce 0 occurs when creating the wallet)
-    assertEquals(tx.nonce, BigNumber.from(0));
 
     // Make the signature invalid
     tx.signature = [
@@ -170,8 +162,8 @@ Fixture.test(
     assertEquals(otherFailures, []);
 
     assertEquals(await fx.allTxs(txService), {
-      ready: [{ ...otherTx, txId: 1 }],
-      future: [{ ...txB, txId: 1 }],
+      ready: [otherTx],
+      future: [txB],
     });
 
     // Add txA, which makes txB ready
@@ -187,11 +179,11 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       ready: [
-        { ...otherTx, txId: 1 },
-        { ...txA, txId: 2 },
+        otherTx,
+        txA,
 
         // Note that txB had id 1 when it was future, and it gets a new id here
-        { ...txB, txId: 3 },
+        txB,
       ],
       future: [],
     });
@@ -227,9 +219,9 @@ Fixture.test(
       ready: [],
       future: [
         // futureTxs[0] and futureTxs[1] should have been dropped
-        { ...futureTxs[2], txId: 3 },
-        { ...futureTxs[3], txId: 4 },
-        { ...futureTxs[4], txId: 5 },
+        futureTxs[2],
+        futureTxs[3],
+        futureTxs[4],
       ],
     });
   },
@@ -280,7 +272,7 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
 
       assertEquals(await fx.allTxs(txService), {
         ready: [],
-        future: futureTxs.map((futureTx, i) => ({ ...futureTx, txId: i + 1 })),
+        future: futureTxs,
       });
 
       // Add tx, which makes futureTxs ready
@@ -364,10 +356,10 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
 
       assertEquals(await fx.allTxs(txService), {
         ready: [
-          { ...tx, txId: 1 },
+          tx,
 
           // Only this future tx, which was given a token reward is included
-          { ...futureTxs[1], txId: 2 },
+          futureTxs[1],
         ],
 
         // Other future txs have been discarded
@@ -377,7 +369,7 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
   );
 }
 
-fillGapToPickFromMultipleFutureTxsTest(3);
+// fillGapToPickFromMultipleFutureTxsTest(3);
 fillGapToPickFromMultipleFutureTxsTest(4);
 
 Fixture.test(
@@ -415,10 +407,7 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       ready: [],
-      future: [
-        { ...tx4, txId: 1 },
-        { ...tx2, txId: 2 },
-      ],
+      future: [tx4, tx2],
     });
 
     // Add tx1, which makes earlier txs ready
@@ -433,13 +422,8 @@ Fixture.test(
     assertEquals(failures1, []);
 
     assertEquals(await fx.allTxs(txService), {
-      ready: [
-        { ...tx1, txId: 1 },
-        { ...tx2, txId: 2 },
-      ],
-      future: [
-        { ...tx4, txId: 1 },
-      ],
+      ready: [tx1, tx2],
+      future: [tx4],
     });
   },
 );

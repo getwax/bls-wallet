@@ -6,6 +6,7 @@ type Group<T, M> = {
 export default function groupBy<T, M extends (element: T) => unknown>(
   elements: T[],
   Measure: M,
+  measuresEqual: (a: ReturnType<M>, b: ReturnType<M>) => boolean,
 ): Group<T, ReturnType<M>>[] {
   if (elements.length === 0) {
     return [];
@@ -25,7 +26,7 @@ export default function groupBy<T, M extends (element: T) => unknown>(
     const element = elements[i];
     const measure = Measure(element) as ReturnType<M>;
 
-    if (measure === currentGroup.measure) {
+    if (measuresEqual(measure, currentGroup.measure)) {
       currentGroup.elements.push(element);
     } else {
       groups.push(currentGroup);
