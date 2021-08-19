@@ -1,4 +1,10 @@
-import { TransactionData } from "./TxTable.ts";
+import { BigNumber, TransactionData } from "../../deps.ts";
+
+export type TransactionDataDTO = {
+  [K in keyof TransactionData]: (
+    TransactionData[K] extends BigNumber ? string : TransactionData[K]
+  );
+};
 
 type ParseResult<T> = (
   | { success: T }
@@ -115,15 +121,14 @@ function parseNumber(value: unknown): ParseResult<number> {
 
 export function parseTransactionData(
   txData: unknown,
-): ParseResult<TransactionData> {
+): ParseResult<TransactionDataDTO> {
   const result = combine(
-    field(txData, "pubKey", parseHex({ bytes: 128 })),
-    field(txData, "nonce", parseNumber),
+    field(txData, "publicKey", parseHex({ bytes: 128 })),
+    field(txData, "nonce", parseHex()),
     field(txData, "signature", parseHex({ bytes: 64 })),
-    field(txData, "tokenRewardAmount", parseHex({ bytes: 32 })),
+    field(txData, "tokenRewardAmount", parseHex()),
     field(txData, "contractAddress", parseHex({ bytes: 20 })),
-    field(txData, "methodId", parseHex({ bytes: 4 })),
-    field(txData, "encodedParams", parseHex()),
+    field(txData, "encodedFunctionData", parseHex()),
   );
 
   if ("failures" in result) {
@@ -131,24 +136,22 @@ export function parseTransactionData(
   }
 
   const [
-    pubKey,
+    publicKey,
     nonce,
     signature,
     tokenRewardAmount,
     contractAddress,
-    methodId,
-    encodedParams,
+    encodedFunctionData,
   ] = result.success;
 
   return {
     success: {
-      pubKey,
+      publicKey,
       nonce,
       signature,
       tokenRewardAmount,
       contractAddress,
-      methodId,
-      encodedParams,
+      encodedFunctionData,
     },
   };
 }
