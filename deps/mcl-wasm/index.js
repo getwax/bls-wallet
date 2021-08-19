@@ -28,11 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// const crypto = require('crypto')
+const crypto = require('crypto')
 const mclCreateModule = require('./mcl_c.js')
 const mclSetupFactory = require('./mcl')
 
-const getRandomValues = () => { throw new Error("Random values unavailable") }
+const getRandomValues = crypto.randomFillSync
 const mcl = mclSetupFactory(mclCreateModule, getRandomValues)
 
 module.exports = mcl
