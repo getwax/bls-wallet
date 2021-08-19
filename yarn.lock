@@ -596,12 +596,10 @@ log-symbols@4.1.0:
     chalk "^4.1.0"
     is-unicode-supported "^0.1.0"
 
-mcl-wasm@^0.7.8:
-  version "0.7.8"
-  resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-0.7.8.tgz"
-  integrity sha512-qNHlYO6wuEtSoH5A8TcZfCEHtw8gGPqF6hLZpQn2SVd/Mck0ELIKOkmj072D98S9B9CI/jZybTUC96q1P2/ZDw==
-  dependencies:
-    typescript "^4.3.4"
+mcl-wasm@0.7.6:
+  version "0.7.6"
+  resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-0.7.6.tgz#c1789ebda5565d49b77d2ee195ff3e4d282f1554"
+  integrity sha512-cbRl3sUOkBeRY2hsM4t1EIln2TIdQBkSiTOqNTv/4Hu5KOECnMWCgjIf+a9Ebunyn22VKqkMF3zj6ejRzz7YBw==
 
 minimalistic-assert@^1.0.0, minimalistic-assert@^1.0.1:
   version "1.0.1"
@@ -805,7 +803,7 @@ type-detect@^4.0.0, type-detect@^4.0.5:
   resolved "https://registry.yarnpkg.com/type-detect/-/type-detect-4.0.8.tgz"
   integrity sha512-0fr/mIH1dlO+x7TlcMy+bIDqKPsw/70tVyeHW787goQjhmqaZe10uwLujubK9q9Lg6Fiho1KUKDYz0Z7k7g5/g==
 
-typescript@^4.3.4, typescript@^4.3.5:
+typescript@^4.3.5:
   version "4.3.5"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.3.5.tgz"
   integrity sha512-DqQgihaQ9cUrskJo9kIyW/+g0Vxsk8cDtZ52a3NGh0YNTfpUSArXSohyUGnvbPazEPLu398C0UxmKSOrPumUzA==
