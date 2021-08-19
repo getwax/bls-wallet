@@ -1,12 +1,12 @@
 {
   "name": "bls-wallet-signer",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Client-side tool for signing bls transaction data",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "yarn clean && tsc && cp -a deps/mcl-wasm dist/deps/.",
+    "build": "tsc",
     "test": "mocha dist/**/*.test.js"
   },
   "repository": {
@@ -33,6 +33,7 @@
     "@ethersproject/keccak256": "^5.4.0",
     "@ethersproject/sha2": "^5.4.0",
     "@ethersproject/solidity": "^5.4.0",
+    "mcl-wasm": "0.7.6",
     "typescript": "^4.3.5"
   },
   "devDependencies": {

@@ -7,7 +7,7 @@ export default (
 ): string => {
   const signer = new hubbleBls.signer.BlsSigner(
     domain,
-    hubbleBls.mcl.loadFr(privateKey),
+    hubbleBls.mcl.parseFr(privateKey),
   );
 
   return hubbleBls.mcl.dumpG2(signer.pubkey);

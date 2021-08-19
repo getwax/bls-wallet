@@ -15,7 +15,7 @@ export default (
 
   const signer = new hubbleBls.signer.BlsSigner(
     domain,
-    hubbleBls.mcl.loadFr(privateKey),
+    hubbleBls.mcl.parseFr(privateKey),
   );
 
   const signature = hubbleBls.mcl.dumpG1(signer.sign(message));

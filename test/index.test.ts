@@ -42,8 +42,8 @@ describe("index", () => {
     const tx = sign(rawTx, privateKey);
 
     expect(tx.signature).to.equal([
-      "0x3029b820b2556ad22b102b7973e9b96c0d7615a0ae6ec3dea6bd2a5cf8bf8bc92ede8",
-      "84303e8f7541c655501f6c05d8d0d8c3063f372fe86e82ef04a2844199e",
+      "0x177500780b42f245e98229245126c9042e1cdaadc7ada72021ddd43492963a7b26f7a",
+      "a8f971b133e9f61d4197b4fb40fc82f5c239183cba80d6338a64500cb27",
     ].join(""));
 
     expect(verify(tx)).to.equal(true);
@@ -78,8 +78,8 @@ describe("index", () => {
     const aggregateTx = aggregate([tx, tx]);
 
     expect(aggregateTx.signature).to.equal([
-      "0x06a5a217ddc5e7404288c61009f115185be0ca9bce42492ed704d2134983df1e24ca1",
-      "3d4a19996f4ecbdc6b355c277975b2fb43348b0589e36babf3298fb7369",
+      "0x2cc0b05e8200cf564042735d15e2cc98181e730203530300022aafdd1ceb905830430",
+      "28617145dca56a00bf0693710e24683616ff4a42bc3cca7d587b36ff91f",
     ].join(""));
 
     expect(verifyAggregate(aggregateTx)).to.equal(true);
