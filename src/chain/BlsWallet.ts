@@ -10,10 +10,7 @@ import {
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import * as env from "../env.ts";
 import assert from "../helpers/assert.ts";
-import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import nil from "../helpers/nil.ts";
-import blsKeyHash from "./blsKeyHash.ts";
-import createBLSWallet from "./createBLSWallet.ts";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -37,17 +34,8 @@ export default class BlsWallet {
     signerOrProvider: SignerOrProvider,
     blsWalletSigner?: BlsWalletSigner,
   ): Promise<string | nil> {
-    const chainId = "getChainId" in signerOrProvider
-      ? await signerOrProvider.getChainId()
-      : (await signerOrProvider.getNetwork()).chainId;
-
-    blsWalletSigner ??= await initBlsWalletSigner({ chainId });
-
-    const verificationGateway = new Contract(
-      env.VERIFICATION_GATEWAY_ADDRESS,
-      ovmContractABIs.VerificationGateway.abi,
-      signerOrProvider,
-    );
+    blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
+    const verificationGateway = this.#VerificationGateway(signerOrProvider);
 
     const address: string = await verificationGateway.walletFromHash(
       blsWalletSigner.getPublicKeyHash(privateKey),
@@ -60,14 +48,39 @@ export default class BlsWallet {
     return address;
   }
 
-  static async create(privateKey: string, parent: ethers.Wallet) {
-    await createBLSWallet(
-      await parent.getChainId(),
-      this.#VerificationGateway(parent),
-      this.#Signer(privateKey),
+  static async connectOrCreate(privateKey: string, parent: ethers.Wallet) {
+    let wallet = await BlsWallet.connect(privateKey, parent.provider);
+
+    if (wallet !== nil) {
+      return wallet;
+    }
+
+    const blsWalletSigner = await this.#BlsWalletSigner(parent);
+    const verificationGateway = this.#VerificationGateway(parent);
+
+    const tx = blsWalletSigner.sign(
+      {
+        contractAddress: verificationGateway.address,
+        encodedFunctionData: verificationGateway.interface.encodeFunctionData(
+          "walletCrossCheck",
+          [blsWalletSigner.getPublicKeyHash(privateKey)],
+        ),
+        nonce: BigNumber.from(0),
+        tokenRewardAmount: BigNumber.from(0),
+      },
+      privateKey,
     );
 
-    const wallet = await BlsWallet.connect(privateKey, parent.provider);
+    await (await verificationGateway.blsCallCreate(
+      tx.publicKey,
+      tx.signature,
+      tx.tokenRewardAmount,
+      tx.contractAddress,
+      tx.encodedFunctionData.slice(0, 10),
+      `0x${tx.encodedFunctionData.slice(10)}`,
+    )).wait();
+
+    wallet = await BlsWallet.connect(privateKey, parent.provider);
     assert(wallet !== nil);
 
     return wallet;
@@ -145,5 +158,13 @@ export default class BlsWallet {
       ovmContractABIs.VerificationGateway.abi,
       signerOrProvider,
     );
+  }
+
+  static async #BlsWalletSigner(signerOrProvider: SignerOrProvider) {
+    const chainId = "getChainId" in signerOrProvider
+      ? await signerOrProvider.getChainId()
+      : (await signerOrProvider.getNetwork()).chainId;
+
+    return await initBlsWalletSigner({ chainId });
   }
 }
