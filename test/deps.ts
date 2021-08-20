@@ -10,5 +10,3 @@ export { assertLooseEquals };
 export function assertEquals<L, R extends L>(left: L, right: R) {
   assertLooseEquals(left, right);
 }
-
-export { expect, mock } from "https://deno.land/x/expect@v0.2.6/mod.ts";
