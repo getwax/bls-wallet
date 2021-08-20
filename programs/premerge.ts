@@ -27,19 +27,29 @@ function Checks(): Check[] {
     ["lint", async () => {
       await shell.run("deno", "lint", ".");
     }],
+    ["todos and fixmes", async () => { // merge-ok
+      const searchArgs = [
+        "egrep",
+        "--color",
+        "-ni",
+        "todo|fixme", // merge-ok
+        ...(await allFiles()),
+      ];
+
+      const matches = await shell.Lines(...searchArgs);
+
+      const notOkMatches = matches.filter((m) => !m.includes("merge-ok"));
+
+      if (notOkMatches.length > 0) {
+        console.error(notOkMatches.join("\n"));
+        throw new Error(`${notOkMatches.length} todos/fixmes found`); // merge-ok
+      }
+    }],
     ["typescript", async () => {
       let testFilePath: string | nil = nil;
 
       try {
-        const tsFiles = [
-          ...await shell.Lines("git", "ls-files"),
-          ...await shell.Lines(
-            "git",
-            "ls-files",
-            "--others",
-            "--exclude-standard",
-          ),
-        ].filter((f) => f.endsWith(".ts"));
+        const tsFiles = (await allFiles()).filter((f) => f.endsWith(".ts"));
 
         testFilePath = await Deno.makeTempFile({ suffix: ".ts" });
 
@@ -69,5 +79,17 @@ function Checks(): Check[] {
         envName,
       );
     }],
+  ];
+}
+
+async function allFiles() {
+  return [
+    ...await shell.Lines("git", "ls-files"),
+    ...await shell.Lines(
+      "git",
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+    ),
   ];
 }

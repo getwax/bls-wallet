@@ -498,7 +498,7 @@ export default class TxService {
         while (
           this.unconfirmedTxs.size + batchTxs.length > maxUnconfirmedTxs
         ) {
-          // FIXME: Polling
+          // FIXME (merge-ok): Polling
           this.emit({ type: "waiting-unconfirmed-space" });
           await delay(1000);
         }
@@ -551,7 +551,7 @@ export default class TxService {
         break;
       }
 
-      // FIXME: Polling
+      // FIXME (merge-ok): Polling
       await delay(100);
     }
   }

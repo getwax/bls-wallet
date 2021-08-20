@@ -136,9 +136,10 @@ Fixture.test(
     const txService = await fx.createTxService({
       ...txServiceConfig,
 
-      // TODO: Stop overriding this when BlsWallet nonces become explicit.
-      // Without this, batches will be sent concurrently, and the batches that
-      // are dependent on the first one will get rejected on the sig check.
+      // TODO (merge-ok): Stop overriding this when BlsWallet nonces become
+      // explicit. Without this, batches will be sent concurrently, and the
+      // batches that are dependent on the first one will get rejected on the
+      // sig check.
       maxUnconfirmedAggregations: 1,
     });
 

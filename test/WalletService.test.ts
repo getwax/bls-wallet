@@ -198,10 +198,10 @@ Fixture.test(
   },
 );
 
-// FIXME: This test is flaky but I think it's just the optimism dev environment
-// being weird - it seems to reject txs based on confirmed state only sometimes.
-// This causes tx2,tx3 to fail because it says tx3 will fail the sig check
-// because it gets the wrong nonce because tx2 hasn't been confirmed.
+// FIXME (merge-ok): This test is flaky but I think it's just the optimism dev
+// environment being weird - it seems to reject txs based on confirmed state
+// only sometimes. This causes tx2,tx3 to fail because it says tx3 will fail the
+// sig check because it gets the wrong nonce because tx2 hasn't been confirmed.
 // Fixture.test(
 //   "WalletService can concurrently send txs with consecutive nonces",
 //   async (fx) => {
