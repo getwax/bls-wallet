@@ -11,6 +11,6 @@ const [wallet] = await TestBlsWallets(
 );
 
 console.log({
-  secret: wallet.secret,
+  privateKey: wallet.privateKey,
   address: wallet.walletContract.address,
 });

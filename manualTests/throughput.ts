@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { delay, ethers } from "../deps.ts";
+import { BigNumber, delay, ethers } from "../deps.ts";
 
 import * as env from "../test/env.ts";
 import Client from "../src/app/Client.ts";
@@ -61,7 +61,7 @@ const startBalance = await testErc20.balanceOf(recvWallet.address);
 
 log("Getting nonces...");
 
-const nextNonceMap = new Map<BlsWallet, number>(
+const nextNonceMap = new Map<BlsWallet, BigNumber>(
   await Promise.all(sendWallets.map(async (sendWallet) => {
     const nextNonce = await sendWallet.Nonce();
 
@@ -86,7 +86,7 @@ pollingLoop(() => {
     sendWalletIndex = (sendWalletIndex + 1) % sendWalletCount;
     const sendWallet = sendWallets[sendWalletIndex];
     const nonce = nextNonceMap.get(sendWallet)!;
-    nextNonceMap.set(sendWallet, nonce + 1);
+    nextNonceMap.set(sendWallet, nonce.add(1));
 
     const tx = sendWallet.sign({
       contract: testErc20.contract,
