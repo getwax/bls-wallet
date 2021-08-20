@@ -7,49 +7,67 @@ import { envName } from "../src/helpers/dotEnvPath.ts";
 
 Deno.chdir(repoDir);
 
-await lint();
-await checkTypes();
-await test();
+for (const [name, run] of Checks()) {
+  console.log(`\nCheck: ${name}...\n`);
 
-async function lint() {
-  await shell.run("deno", "lint", ".");
+  const startTime = Date.now();
+  await run();
+  const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+  console.log(`\n...completed in ${duration}s\n`);
 }
 
-async function checkTypes() {
-  let testFilePath: string | nil = nil;
+type Check = [
+  name: string,
+  run: () => Promise<void>,
+];
 
-  try {
-    const tsFiles = [
-      ...await shell.Lines("git", "ls-files"),
-      ...await shell.Lines("git", "ls-files", "--others", "--exclude-standard"),
-    ].filter((f) => f.endsWith(".ts"));
+function Checks(): Check[] {
+  return [
+    ["lint", async () => {
+      await shell.run("deno", "lint", ".");
+    }],
+    ["typescript", async () => {
+      let testFilePath: string | nil = nil;
 
-    testFilePath = await Deno.makeTempFile({ suffix: ".ts" });
+      try {
+        const tsFiles = [
+          ...await shell.Lines("git", "ls-files"),
+          ...await shell.Lines(
+            "git",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+          ),
+        ].filter((f) => f.endsWith(".ts"));
 
-    await Deno.writeTextFile(
-      testFilePath,
-      tsFiles.map((f) => `import "${repoDir}/${f}";`).join("\n"),
-    );
+        testFilePath = await Deno.makeTempFile({ suffix: ".ts" });
 
-    await shell.run("deno", "cache", "--unstable", testFilePath);
-  } finally {
-    if (testFilePath !== nil) {
-      await Deno.remove(testFilePath);
-    }
-  }
-}
+        await Deno.writeTextFile(
+          testFilePath,
+          tsFiles.map((f) => `import "${repoDir}/${f}";`).join("\n"),
+        );
 
-async function test() {
-  await shell.run(
-    "deno",
-    "test",
-    "-j",
-    "--allow-net",
-    "--allow-env",
-    "--allow-read",
-    "--unstable",
-    "--",
-    "--env",
-    envName,
-  );
+        await shell.run("deno", "cache", "--unstable", testFilePath);
+      } finally {
+        if (testFilePath !== nil) {
+          await Deno.remove(testFilePath);
+        }
+      }
+    }],
+    ["test", async () => {
+      await shell.run(
+        "deno",
+        "test",
+        "-j",
+        "--allow-net",
+        "--allow-env",
+        "--allow-read",
+        "--unstable",
+        "--",
+        "--env",
+        envName,
+      );
+    }],
+  ];
 }
