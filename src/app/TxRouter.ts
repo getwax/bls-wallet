@@ -42,7 +42,7 @@ export default function TxRouter(txService: TxService) {
     const failures = await txService.add({
       ...txData,
       nonce: BigNumber.from(txData.nonce),
-      tokenRewardAmount: BigNumber.from(txData.nonce),
+      tokenRewardAmount: BigNumber.from(txData.tokenRewardAmount),
     });
 
     if (failures.length > 0) {
