@@ -13,7 +13,7 @@ function dummyHex(length: number) {
 }
 
 const tx = {
-  pubKey: dummyHex(128),
+  publicKey: dummyHex(128),
   nonce: 1,
   signature: dummyHex(64),
   tokenRewardAmount: dummyHex(32),

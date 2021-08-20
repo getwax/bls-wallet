@@ -18,7 +18,11 @@ type AppEvent = (
   | { type: "warning"; data: string }
   | {
     type: "tx-added";
-    data: { category: "ready" | "future"; pubKeyShort: string; nonce: number };
+    data: {
+      category: "ready" | "future";
+      publicKeyShort: string;
+      nonce: number;
+    };
   }
 );
 

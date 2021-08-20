@@ -117,7 +117,7 @@ export default class TxService {
           type: "tx-added",
           data: {
             category,
-            pubKeyShort: txData.publicKey.slice(2, 9),
+            publicKeyShort: txData.publicKey.slice(2, 9),
             nonce: txData.nonce.toNumber(),
           },
         });
@@ -148,9 +148,9 @@ export default class TxService {
    * Find the nonce that would come after the unconfirmed transactions for this
    * public key, or zero.
    */
-  NextUnconfirmedNonce(pubKey: string): BigNumber {
+  NextUnconfirmedNonce(publicKey: string): BigNumber {
     const unconfirmedTxs = [...this.unconfirmedTxs.values()]
-      .filter((tx) => tx.publicKey === pubKey);
+      .filter((tx) => tx.publicKey === publicKey);
 
     if (unconfirmedTxs.length === 0) {
       return BigNumber.from(0);
@@ -189,7 +189,7 @@ export default class TxService {
    * the best rewards here to ensure duplicate nonces don't reach ready txs.
    */
   async tryMoveFutureTxs(
-    pubKey: string,
+    publicKey: string,
     nextNonce: BigNumber,
   ) {
     let needNextBatch: boolean;
@@ -197,8 +197,8 @@ export default class TxService {
     do {
       const txsToAdd: TransactionData[] = [];
 
-      const futureTxs = await this.futureTxTable.pubKeyTxsInNonceOrder(
-        pubKey,
+      const futureTxs = await this.futureTxTable.publicKeyTxsInNonceOrder(
+        publicKey,
         this.config.txQueryLimit,
       );
 
@@ -414,7 +414,7 @@ export default class TxService {
       }
 
       for (const tx of txs) {
-        if (tx.nonce === nextNonce) {
+        if (tx.nonce.eq(nextNonce)) {
           nextNonce = nextNonce.add(1);
         } else {
           promises.push(
@@ -456,10 +456,10 @@ export default class TxService {
         this.config.txQueryLimit,
       );
 
-      const pubKeys = PublicKeys(priorityTxs);
+      const publicKeys = PublicKeys(priorityTxs);
 
       const rewardBalances = Object.fromEntries(
-        await Promise.all(pubKeys.map(async (pk) => [
+        await Promise.all(publicKeys.map(async (pk) => [
           pk,
           await this.walletService.getRewardBalanceOf(pk),
         ])),
@@ -467,10 +467,10 @@ export default class TxService {
 
       const batchTxs: TxTableRow[] = [];
       const insufficientRewardTxs: TxTableRow[] = [];
-      const gappedPubKeys: string[] = [];
+      const gappedPublicKeys: string[] = [];
 
       for (const tx of priorityTxs) {
-        if (gappedPubKeys.includes(tx.publicKey)) {
+        if (gappedPublicKeys.includes(tx.publicKey)) {
           continue;
         }
 
@@ -481,7 +481,7 @@ export default class TxService {
             .sub(tx.tokenRewardAmount);
         } else {
           insufficientRewardTxs.push(tx);
-          gappedPubKeys.push(tx.publicKey);
+          gappedPublicKeys.push(tx.publicKey);
         }
 
         if (batchTxs.length >= this.config.maxAggregationSize) {

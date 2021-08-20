@@ -124,7 +124,7 @@ export default class TxTable {
     return rows.map(fromRawRow);
   }
 
-  async pubKeyTxsInNonceOrder(
+  async publicKeyTxsInNonceOrder(
     publicKey: string,
     limit: number,
   ): Promise<TxTableRow[]> {
@@ -163,7 +163,7 @@ export default class TxTable {
    * Note: In nonce order.
    */
   async findAfter(
-    pubKey: string,
+    publicKey: string,
     nonce: BigNumber,
     limit: number,
   ): Promise<TxTableRow[]> {
@@ -171,12 +171,12 @@ export default class TxTable {
       `
         SELECT * from ${this.safeName}
         WHERE
-          "pubKey" = $1 AND
+          "publicKey" = $1 AND
           "nonce" > ${nonce.toNumber()}
         ORDER BY "nonce" ASC
         LIMIT ${limit}
       `,
-      [pubKey],
+      [publicKey],
     );
 
     return rows.map(fromRawRow);

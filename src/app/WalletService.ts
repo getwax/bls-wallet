@@ -24,7 +24,7 @@ export type TxCheckResult = {
 };
 
 const addressStringLength = 42;
-const pubKeyStringLength = 258;
+const publicKeyStringLength = 258;
 
 export default class WalletService {
   rewardErc20: Contract;
@@ -203,25 +203,25 @@ export default class WalletService {
     return await txResponse.wait();
   }
 
-  async getRewardBalanceOf(addressOrPubKey: string): Promise<BigNumber> {
-    const address = await this.WalletAddress(addressOrPubKey);
+  async getRewardBalanceOf(addressOrPublicKey: string): Promise<BigNumber> {
+    const address = await this.WalletAddress(addressOrPublicKey);
     return await this.rewardErc20.balanceOf(address);
   }
 
-  async WalletAddress(addressOrPubKey: string): Promise<string> {
-    if (addressOrPubKey.length === addressStringLength) {
-      return addressOrPubKey;
+  async WalletAddress(addressOrPublicKey: string): Promise<string> {
+    if (addressOrPublicKey.length === addressStringLength) {
+      return addressOrPublicKey;
     }
 
     assert(
-      addressOrPubKey.length === pubKeyStringLength,
-      "addressOrPubKey length matches neither address nor public key",
+      addressOrPublicKey.length === publicKeyStringLength,
+      "addressOrPublicKey length matches neither address nor public key",
     );
 
-    const pubKey = addressOrPubKey;
+    const publicKey = addressOrPublicKey;
 
     const address: string = await this.verificationGateway.walletFromHash(
-      ethers.utils.keccak256(pubKey),
+      ethers.utils.keccak256(publicKey),
     );
 
     assert(
