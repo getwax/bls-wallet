@@ -69,7 +69,7 @@ export default class TxService {
   }
 
   runQueryGroup<T>(body: () => Promise<T>): Promise<T> {
-    return runQueryGroup(this.txTablesMutex, this.queryClient, body);
+    return runQueryGroup(this.emit, this.txTablesMutex, this.queryClient, body);
   }
 
   async add(txData: TransactionData): Promise<AddTransactionFailure[]> {

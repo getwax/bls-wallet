@@ -1,7 +1,9 @@
 import { QueryClient } from "../../deps.ts";
 import Mutex from "../helpers/Mutex.ts";
+import AppEvent from "./AppEvent.ts";
 
 export default async function runQueryGroup<T>(
+  emit: (evt: AppEvent) => void,
   mutex: Mutex,
   queryClient: QueryClient,
   body: () => Promise<T>,
@@ -15,7 +17,11 @@ export default async function runQueryGroup<T>(
     completed = true;
     return result;
   } catch (error) {
-    console.error(error.stack);
+    emit({
+      type: "error",
+      data: error.stack,
+    });
+
     throw error;
   } finally {
     lock.release();

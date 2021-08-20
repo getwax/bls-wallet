@@ -24,6 +24,10 @@ type AppEvent = (
       nonce: number;
     };
   }
+  | {
+    type: "error";
+    data: string;
+  }
 );
 
 export default AppEvent;
