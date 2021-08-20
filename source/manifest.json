@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Sample WebExtension",
+  "name": "BLS Wallet",
   "version": "0.0.0",
 
   "icons": {
@@ -9,7 +9,7 @@
     "48": "assets/icons/favicon-48.png",
     "128": "assets/icons/favicon-128.png"
   },
-  "description": "Sample description",
+  "description": "Web extension for managing a BLS wallet",
   "homepage_url": "https://blswallet.org",
   "short_name": "Sample Name",
 

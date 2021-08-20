@@ -10,7 +10,13 @@ body {
 
 #popup {
   min-width: 350px;
-  padding: 30px 20px;
+  padding: 0 0 1em 0;
+
+  .heading {
+    background-color: rgb(10, 125, 94);
+    color: white;
+    padding: 1em;
+  }
 
   h2 {
     font-size: 25px;

@@ -10,7 +10,9 @@ function openWebPage(url: string): Promise<Tabs.Tab> {
 const Popup: React.FC = () => {
   return (
     <section id="popup">
-      <h2>WEB-EXTENSION-STARTER</h2>
+      <div className="heading">
+        <h2>BLS Wallet</h2>
+      </div>
       <button
         id="options__button"
         type="button"
