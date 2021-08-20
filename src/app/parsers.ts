@@ -42,7 +42,7 @@ function combine<Results extends ParseResult<unknown>[]>(
   return { failures };
 }
 
-function field<T>(
+export function field<T>(
   obj: unknown,
   name: string,
   parser: Parser<T>,
@@ -70,7 +70,9 @@ function parseString(value: unknown): ParseResult<string> {
   return { failures: ["not a string"] };
 }
 
-function parseHex(opts: Partial<{ bytes: number }> = {}): Parser<string> {
+export function parseHex(
+  opts: Partial<{ bytes: number }> = {},
+): Parser<string> {
   return (value) => {
     const parsedString = parseString(value);
 
@@ -111,7 +113,7 @@ function parseHex(opts: Partial<{ bytes: number }> = {}): Parser<string> {
   };
 }
 
-function parseNumber(value: unknown): ParseResult<number> {
+export function parseNumber(value: unknown): ParseResult<number> {
   if (typeof value === "number") {
     return { success: value };
   }

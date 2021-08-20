@@ -103,9 +103,6 @@ Fixture.test(
     const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
     assertEquals(failures.flat(), []);
 
-    const allTxs = await fx.allTxs(txService);
-    debugger;
-
     await txService.batchTimer.waitForCompletedBatches(1);
     await txService.waitForConfirmations();
 
