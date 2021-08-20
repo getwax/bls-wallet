@@ -39,7 +39,13 @@ export type TxTableRow = TransactionData & { txId?: number };
 function toRawRow(row: TxTableRow): RawTxTableRow {
   return {
     ...row,
+
+    // This will cause problems from 2^31 because we're using 32 bit integers.
+    // It's also a problem from 2^53 for js numbers.
+    //
+    // More information: https://github.com/jzaki/aggregator/issues/36.
     nonce: row.nonce.toNumber(),
+
     tokenRewardAmount: row.tokenRewardAmount.toHexString(),
   };
 }

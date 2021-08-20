@@ -102,12 +102,6 @@ export default class TxService {
       }
 
       const nextNonce = await this.NextNonce(
-        // TODO: Move this to some other .toNumber() conversion
-        // This will cause problems above 2^53. Currently we already store
-        // nonces as 32 bit integers in the database anyway though. For now,
-        // numbers are more convenient.
-        //
-        // More information: https://github.com/jzaki/aggregator/issues/36.
         nextChainNonce,
         txData.publicKey,
       );
