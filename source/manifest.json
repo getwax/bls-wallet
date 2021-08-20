@@ -10,7 +10,7 @@
     "128": "assets/icons/favicon-128.png"
   },
   "description": "Sample description",
-  "homepage_url": "https://github.com/abhijithvijayan/web-extension-starter",
+  "homepage_url": "https://blswallet.org",
   "short_name": "Sample Name",
 
   "permissions": [
@@ -22,9 +22,9 @@
 
   "content_security_policy": "script-src 'self'; object-src 'self'",
 
-  "__chrome|firefox__author": "abhijithvijayan",
+  "__chrome|firefox__author": "Andrew Morris",
   "__opera__developer": {
-    "name": "abhijithvijayan"
+    "name": "Andrew Morris"
   },
 
   "__firefox__applications": {

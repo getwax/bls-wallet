@@ -1,15 +1,14 @@
 {
-  "name": "web-extension-starter",
-  "version": "2.0.0",
-  "description": "Web extension starter using react and typescript",
+  "name": "bls-wallet-extension",
+  "version": "0.1.0",
+  "description": "Web extension for managing a BLS wallet",
   "private": true,
-  "repository": "https://github.com/abhijithvijayan/web-extension-starter.git",
+  "repository": "https://github.com/jzaki/bls-wallet-extension.git",
   "author": {
-    "name": "abhijithvijayan",
-    "email": "email@abhijithvijayan.in",
-    "url": "https://abhijithvijayan.in"
+    "name": "Andrew Morris",
+    "email": "voltrevo@gmail.com",
+    "url": "https://blswallet.org"
   },
-  "license": "MIT",
   "engines": {
     "node": ">=10.0.0",
     "yarn": ">= 1.0.0"

@@ -27,23 +27,11 @@ const Popup: React.FC = () => {
               type="button"
               onClick={(): Promise<Tabs.Tab> => {
                 return openWebPage(
-                  'https://github.com/abhijithvijayan/web-extension-starter'
+                  'https://github.com/jzaki/bls-wallet-extension'
                 );
               }}
             >
               GitHub
-            </button>
-          </li>
-          <li>
-            <button
-              type="button"
-              onClick={(): Promise<Tabs.Tab> => {
-                return openWebPage(
-                  'https://www.buymeacoffee.com/abhijithvijayan'
-                );
-              }}
-            >
-              Buy Me A Coffee
             </button>
           </li>
         </ul>
