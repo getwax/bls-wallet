@@ -188,7 +188,9 @@ export default class WalletService {
     throw new Error("Expected return or throw from attempt loop");
   }
 
-  async sendTx(tx: TransactionData) {
+  async sendTx(
+    tx: TransactionData,
+  ): Promise<ethers.providers.TransactionReceipt> {
     const txResponse = await this
       .verificationGateway.blsCall(
         ethers.utils.keccak256(tx.publicKey),
