@@ -14,6 +14,9 @@ export default async function runQueryGroup<T>(
     const result = await body();
     completed = true;
     return result;
+  } catch (error) {
+    console.error(error.stack);
+    throw error;
   } finally {
     lock.release();
     await queryClient.query(completed ? "COMMIT" : "ROLLBACK");
