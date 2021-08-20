@@ -1,5 +1,5 @@
 import TxService from "../src/app/TxService.ts";
-import { assertEquals, ethers } from "./deps.ts";
+import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -79,7 +79,7 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "5"],
-      tokenRewardAmount: ethers.BigNumber.from(1),
+      tokenRewardAmount: BigNumber.from(1),
       nonce: walletNonce,
     });
 
@@ -107,7 +107,7 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "3"],
-      tokenRewardAmount: ethers.BigNumber.from(2),
+      tokenRewardAmount: BigNumber.from(2),
       nonce: walletNonce,
     });
 
@@ -125,7 +125,7 @@ Fixture.test(
       args: [wallet.address, "5"],
       // because the previous tx isn't on chain, the default nonce offset of
       // zero should conflict
-      tokenRewardAmount: ethers.BigNumber.from(1),
+      tokenRewardAmount: BigNumber.from(1),
       nonce: walletNonce,
     });
 
@@ -196,7 +196,7 @@ function reinsertionTest(extraTxs: number) {
         contract: fx.testErc20.contract,
         method: "mint",
         args: [w1.address, "11"],
-        tokenRewardAmount: ethers.BigNumber.from(1),
+        tokenRewardAmount: BigNumber.from(1),
         nonce: w1Nonce.add(1),
       });
 

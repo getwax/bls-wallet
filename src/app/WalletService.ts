@@ -20,7 +20,7 @@ import splitHex256 from "../helpers/splitHex256.ts";
 
 export type TxCheckResult = {
   failures: AddTransactionFailure[];
-  nextNonce: ethers.BigNumber;
+  nextNonce: BigNumber;
 };
 
 const addressStringLength = 42;
@@ -72,11 +72,11 @@ export default class WalletService {
   }
 
   async checkTx(tx: TransactionData): Promise<TxCheckResult> {
-    const [signedCorrectly, nextNonce]: [boolean, ethers.BigNumber] = await this
+    const [signedCorrectly, nextNonce]: [boolean, BigNumber] = await this
       .verificationGateway
       .checkSig(
         tx.nonce,
-        ethers.BigNumber.from(tx.tokenRewardAmount),
+        BigNumber.from(tx.tokenRewardAmount),
         keccak256(tx.publicKey),
         splitHex256(tx.signature),
         tx.contractAddress,
@@ -93,7 +93,7 @@ export default class WalletService {
       });
     }
 
-    if (ethers.BigNumber.from(tx.nonce).lt(nextNonce)) {
+    if (BigNumber.from(tx.nonce).lt(nextNonce)) {
       failures.push({
         type: "duplicate-nonce",
         description: [
@@ -195,7 +195,7 @@ export default class WalletService {
       .verificationGateway.blsCall(
         ethers.utils.keccak256(tx.publicKey),
         splitHex256(tx.signature),
-        ethers.BigNumber.from(tx.tokenRewardAmount),
+        BigNumber.from(tx.tokenRewardAmount),
         tx.contractAddress,
         tx.encodedFunctionData.slice(0, 10),
         `0x${tx.encodedFunctionData.slice(10)}`,

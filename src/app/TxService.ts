@@ -1,10 +1,4 @@
-import {
-  BigNumber,
-  delay,
-  ethers,
-  QueryClient,
-  TransactionData,
-} from "../../deps.ts";
+import { BigNumber, delay, QueryClient, TransactionData } from "../../deps.ts";
 import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
@@ -289,10 +283,10 @@ export default class TxService {
       return [{
         type: "insufficient-reward",
         description: [
-          `${ethers.BigNumber.from(newTx.tokenRewardAmount)} is an`,
+          `${BigNumber.from(newTx.tokenRewardAmount)} is an`,
           "insufficient reward because there is already a tx with this nonce",
           "with a reward of",
-          ethers.BigNumber.from(existingTx.tokenRewardAmount),
+          BigNumber.from(existingTx.tokenRewardAmount),
         ].join(" "),
       }];
     }
@@ -430,8 +424,8 @@ export default class TxService {
   }
 
   isRewardBetter(left: TransactionData, right: TransactionData) {
-    const leftReward = ethers.BigNumber.from(left.tokenRewardAmount);
-    const rightReward = ethers.BigNumber.from(right.tokenRewardAmount);
+    const leftReward = BigNumber.from(left.tokenRewardAmount);
+    const rightReward = BigNumber.from(right.tokenRewardAmount);
 
     return leftReward.gt(rightReward);
   }

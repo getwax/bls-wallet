@@ -1,4 +1,4 @@
-import { assertEquals, BigNumber, ethers } from "./deps.ts";
+import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -49,7 +49,7 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "3"],
-      tokenRewardAmount: ethers.BigNumber.from(8),
+      tokenRewardAmount: BigNumber.from(8),
       nonce: await wallet.Nonce(),
     });
 
@@ -173,14 +173,14 @@ Fixture.test(
         contract: fx.testErc20.contract,
         method: "mint",
         args: [wallet.address, "3"],
-        tokenRewardAmount: ethers.BigNumber.from(8),
+        tokenRewardAmount: BigNumber.from(8),
         nonce: walletNonce,
       }),
       wallet.sign({
         contract: fx.testErc20.contract,
         method: "mint",
         args: [wallet.address, "5"],
-        tokenRewardAmount: ethers.BigNumber.from(13),
+        tokenRewardAmount: BigNumber.from(13),
         nonce: walletNonce.add(1),
       }),
     ]);

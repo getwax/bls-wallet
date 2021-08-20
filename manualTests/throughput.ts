@@ -49,11 +49,11 @@ for (const wallet of sendWallets) {
 
   if (
     (await testErc20.balanceOf(wallet.address)).lt(
-      ethers.BigNumber.from(10).pow(17),
+      BigNumber.from(10).pow(17),
     )
   ) {
     log("Minting test token for wallet", wallet.address);
-    await testErc20.mint(wallet.address, ethers.BigNumber.from(10).pow(18));
+    await testErc20.mint(wallet.address, BigNumber.from(10).pow(18));
   }
 }
 

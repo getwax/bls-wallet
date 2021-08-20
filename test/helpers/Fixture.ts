@@ -1,4 +1,4 @@
-import { ethers, TransactionData } from "../../deps.ts";
+import { BigNumber, ethers, TransactionData } from "../../deps.ts";
 
 import testRng from "./testRng.ts";
 import WalletService from "../../src/app/WalletService.ts";
@@ -180,7 +180,7 @@ export default class Fixture {
         // When seeding tests, we can generate wallets from previous tests, and
         // this can cause unexpected balances if we blindly mint instead of
         // doing this top-up.
-        const topUp = ethers.BigNumber.from(1000).sub(balance);
+        const topUp = BigNumber.from(1000).sub(balance);
 
         if (topUp.gt(0)) {
           return wallet.sign({

@@ -1,5 +1,5 @@
 import TxService from "../src/app/TxService.ts";
-import { assertEquals, ethers } from "./deps.ts";
+import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -329,7 +329,7 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
           method: "mint",
           args: [wallet.address, "3"],
           nonce: walletNonce.add(1),
-          tokenRewardAmount: ethers.BigNumber.from(i === 1 ? 1 : 0),
+          tokenRewardAmount: BigNumber.from(i === 1 ? 1 : 0),
         });
 
         const failures = await txService.add(futureTx);
