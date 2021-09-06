@@ -1,30 +1,20 @@
 import { BigNumber, HTTPStatus, Router, RouterContext } from "../../deps.ts";
 import assert from "../helpers/assert.ts";
+import nil from "../helpers/nil.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import { parseTransactionData } from "./parsers.ts";
 
 import TxService from "./TxService.ts";
 
-function fail(ctx: RouterContext, failures: AddTransactionFailure[]) {
-  assert(failures.length > 0);
-
-  ctx.response.status = HTTPStatus.BadRequest;
-  ctx.response.body = { failures };
-}
-
 export default function TxRouter(txService: TxService) {
   const router = new Router({ prefix: "/" });
 
   router.post("transaction", async (ctx) => {
-    const contentType = ctx.request.headers.get("content-type") ?? "";
+    const body = await getJsonBodyOrFail(ctx);
 
-    if (!contentType.includes("application/json")) {
-      return fail(ctx, [
-        { type: "invalid-format", description: "non-json content type" },
-      ]);
+    if (body === nil) {
+      return;
     }
-
-    const body: unknown = await (await ctx.request.body()).value;
 
     const parsedBody = parseTransactionData(body);
 
@@ -53,4 +43,23 @@ export default function TxRouter(txService: TxService) {
   });
 
   return router;
+}
+
+async function getJsonBodyOrFail(ctx: RouterContext): Promise<unknown> {
+  const contentType = ctx.request.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    return fail(ctx, [
+      { type: "invalid-format", description: "non-json content type" },
+    ]);
+  }
+
+  return await (await ctx.request.body()).value;
+}
+
+function fail(ctx: RouterContext, failures: AddTransactionFailure[]) {
+  assert(failures.length > 0);
+
+  ctx.response.status = HTTPStatus.BadRequest;
+  ctx.response.body = { failures };
 }
