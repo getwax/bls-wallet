@@ -15,66 +15,63 @@ import TxService from "./TxService.ts";
 export default function TxRouter(txService: TxService) {
   const router = new Router({ prefix: "/" });
 
-  router.post("transaction", async (ctx) => {
-    const tx = await parseTxOrFail(ctx);
+  router.post(
+    "transaction",
+    TxHandler(async (ctx, tx) => {
+      const failures = await txService.add(tx);
 
-    if (tx === nil) {
-      return;
-    }
+      if (failures.length > 0) {
+        return fail(ctx, failures);
+      }
 
-    const failures = await txService.add(tx);
-
-    if (failures.length > 0) {
-      return fail(ctx, failures);
-    }
-
-    ctx.response.body = { failures: [] };
-  });
+      ctx.response.body = { failures: [] };
+    }),
+  );
 
   return router;
 }
 
-async function parseTxOrFail(
-  ctx: RouterContext,
-): Promise<TransactionData | nil> {
-  const jsonBody = await parseJsonBodyOrFail(ctx);
+function TxHandler(fn: (ctx: RouterContext, tx: TransactionData) => void) {
+  return JsonHandler(async (ctx, json) => {
+    const parsedBody = parseTransactionDataDTO(json);
 
-  if (jsonBody === nil) {
-    return nil;
-  }
+    if ("failures" in parsedBody) {
+      fail(
+        ctx,
+        parsedBody.failures.map(
+          (description) => ({ type: "invalid-format", description }),
+        ),
+      );
 
-  const parsedBody = parseTransactionDataDTO(jsonBody);
+      return nil;
+    }
 
-  if ("failures" in parsedBody) {
-    fail(
-      ctx,
-      parsedBody.failures.map(
-        (description) => ({ type: "invalid-format", description }),
-      ),
-    );
+    const dto = parsedBody.success;
 
-    return nil;
-  }
+    const tx: TransactionData = {
+      ...dto,
+      nonce: BigNumber.from(dto.nonce),
+      tokenRewardAmount: BigNumber.from(dto.tokenRewardAmount),
+    };
 
-  const dto = parsedBody.success;
-
-  return {
-    ...dto,
-    nonce: BigNumber.from(dto.nonce),
-    tokenRewardAmount: BigNumber.from(dto.tokenRewardAmount),
-  };
+    return await fn(ctx, tx);
+  });
 }
 
-async function parseJsonBodyOrFail(ctx: RouterContext): Promise<unknown> {
-  const contentType = ctx.request.headers.get("content-type") ?? "";
+function JsonHandler(fn: (ctx: RouterContext, json: unknown) => void) {
+  return async (ctx: RouterContext) => {
+    const contentType = ctx.request.headers.get("content-type") ?? "";
 
-  if (!contentType.includes("application/json")) {
-    return fail(ctx, [
-      { type: "invalid-format", description: "non-json content type" },
-    ]);
-  }
+    if (!contentType.includes("application/json")) {
+      return fail(ctx, [
+        { type: "invalid-format", description: "non-json content type" },
+      ]);
+    }
 
-  return await (await ctx.request.body()).value;
+    const json = await (await ctx.request.body()).value;
+
+    return await fn(ctx, json);
+  };
 }
 
 function fail(ctx: RouterContext, failures: AddTransactionFailure[]) {
