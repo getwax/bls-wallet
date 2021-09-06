@@ -4,6 +4,7 @@ type AddTransactionFailure = (
   | { type: "duplicate-nonce"; description: string }
   | { type: "insufficient-reward"; description: string }
   | { type: "unpredictable-gas-limit"; description: string }
+  | { type: "invalid-creation"; description: string }
 );
 
 export default AddTransactionFailure;

@@ -4,6 +4,7 @@ import {
   Contract,
   ethers,
   initBlsWalletSigner,
+  keccak256,
   TransactionData,
 } from "../../deps.ts";
 
@@ -56,6 +57,53 @@ export default class BlsWallet {
     return address;
   }
 
+  /** Creates a special transaction used for the creation of a wallet. */
+  static async signCreation(
+    privateKey: string,
+    signerOrProvider: SignerOrProvider,
+  ): Promise<TransactionData> {
+    const blsWalletSigner = await this.#BlsWalletSigner(signerOrProvider);
+    const verificationGateway = this.#VerificationGateway(signerOrProvider);
+
+    return blsWalletSigner.sign(
+      {
+        contractAddress: verificationGateway.address,
+        encodedFunctionData: verificationGateway.interface.encodeFunctionData(
+          "walletCrossCheck",
+          [blsWalletSigner.getPublicKeyHash(privateKey)],
+        ),
+        nonce: BigNumber.from(0),
+        tokenRewardAmount: BigNumber.from(0),
+      },
+      privateKey,
+    );
+  }
+
+  static validateCreationTx(
+    tx: TransactionData,
+    signerOrProvider: SignerOrProvider,
+  ): { failures: string[] } {
+    const verificationGateway = this.#VerificationGateway(signerOrProvider);
+
+    const expectedEncodedFunctionData = verificationGateway.interface
+      .encodeFunctionData(
+        "walletCrossCheck",
+        [keccak256(tx.publicKey)],
+      );
+
+    const failures: string[] = [];
+
+    if (tx.encodedFunctionData !== expectedEncodedFunctionData) {
+      failures.push("encoded function data mismatch");
+    }
+
+    if (tx.contractAddress !== verificationGateway.address) {
+      failures.push("contract address mismatch");
+    }
+
+    return { failures };
+  }
+
   /**
    * Instantiate a `BLSWallet` associated with the provided key.
    *
@@ -73,23 +121,9 @@ export default class BlsWallet {
       return wallet;
     }
 
-    const blsWalletSigner = await this.#BlsWalletSigner(parent);
-    const verificationGateway = this.#VerificationGateway(parent);
+    const tx = await BlsWallet.signCreation(privateKey, parent);
 
-    const tx = blsWalletSigner.sign(
-      {
-        contractAddress: verificationGateway.address,
-        encodedFunctionData: verificationGateway.interface.encodeFunctionData(
-          "walletCrossCheck",
-          [blsWalletSigner.getPublicKeyHash(privateKey)],
-        ),
-        nonce: BigNumber.from(0),
-        tokenRewardAmount: BigNumber.from(0),
-      },
-      privateKey,
-    );
-
-    await (await verificationGateway.blsCallCreate(
+    await (await this.#VerificationGateway(parent).blsCallCreate(
       splitHex256(tx.publicKey),
       splitHex256(tx.signature),
       tx.tokenRewardAmount,
