@@ -14,24 +14,29 @@ import {
 import assertExists from "../helpers/assertExists.ts";
 import nil from "../helpers/nil.ts";
 
+/**
+ * Representation used when talking to the database. It's 'raw' in the sense
+ * that it only uses primitive types, because the database cannot know about
+ * custom classes like BigNumber.
+ */
 type RawTxTableRow = {
   txId?: number;
-  contractAddress: string;
-  encodedFunctionData: string;
-  nonce: number;
-  tokenRewardAmount: string;
   publicKey: string;
   signature: string;
+  nonce: number;
+  tokenRewardAmount: string;
+  contractAddress: string;
+  encodedFunctionData: string;
 };
 
 const txOptions: TableOptions = {
   txId: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
-  contractAddress: { type: DataType.VarChar, length: 42 },
-  encodedFunctionData: { type: DataType.VarChar },
-  nonce: { type: DataType.Integer },
-  tokenRewardAmount: { type: DataType.VarChar, length: 66 },
   publicKey: { type: DataType.VarChar, length: 258 },
   signature: { type: DataType.VarChar, length: 130 },
+  nonce: { type: DataType.Integer },
+  tokenRewardAmount: { type: DataType.VarChar, length: 66 },
+  contractAddress: { type: DataType.VarChar, length: 42 },
+  encodedFunctionData: { type: DataType.VarChar },
 };
 
 export type TxTableRow = TransactionData & { txId?: number };
@@ -154,7 +159,10 @@ export default class TxTable {
     return rows.map(fromRawRow);
   }
 
-  async find(publicKey: string, nonce: BigNumber): Promise<TxTableRow | nil> {
+  async findSingle(
+    publicKey: string,
+    nonce: BigNumber,
+  ): Promise<TxTableRow | nil> {
     const rows = await this.txTable
       .where({ publicKey, nonce: nonce.toNumber() })
       .limit(1)

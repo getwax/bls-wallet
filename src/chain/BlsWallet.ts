@@ -26,13 +26,20 @@ export default class BlsWallet {
     public walletContract: Contract,
   ) {}
 
+  /** Checks whether the wallet contract has been created for this key. */
   static async Exists(privateKey: string, signerOrProvider: SignerOrProvider) {
     return await BlsWallet.Address(privateKey, signerOrProvider) !== nil;
   }
 
+  /** Get the wallet contract address for the given key, if it exists. */
   static async Address(
     privateKey: string,
     signerOrProvider: SignerOrProvider,
+    /**
+     * Internal value associated with the bls-wallet-signer library that can be
+     * provided as an optimization, otherwise it will be created
+     * automatically.
+     */
     blsWalletSigner?: BlsWalletSigner,
   ): Promise<string | nil> {
     blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
@@ -49,7 +56,17 @@ export default class BlsWallet {
     return address;
   }
 
-  static async connectOrCreate(privateKey: string, parent: ethers.Wallet) {
+  /**
+   * Instantiate a `BLSWallet` associated with the provided key.
+   *
+   * Creates the associated wallet contract if it doesn't exist yet, which is
+   * why a parent wallet is required to create it.
+   */
+  static async connectOrCreate(
+    privateKey: string,
+    /** Wallet used to create the new wallet, if needed. */
+    parent: ethers.Wallet,
+  ) {
     let wallet = await BlsWallet.connect(privateKey, parent.provider);
 
     if (wallet !== nil) {
@@ -87,10 +104,14 @@ export default class BlsWallet {
     return wallet;
   }
 
+  /**
+   * Instantiate a `BLSWallet` associated with the provided key if the
+   * associated wallet contract already exists.
+   */
   static async connect(
     privateKey: string,
     provider: ethers.providers.Provider,
-  ) {
+  ): Promise<BlsWallet | nil> {
     const network = await provider.getNetwork();
 
     const blsWalletSigner = await initBlsWalletSigner({
@@ -122,10 +143,18 @@ export default class BlsWallet {
     );
   }
 
+  /**
+   * Get the next expected nonce for the wallet contract based on the latest
+   * block.
+   */
   async Nonce(): Promise<BigNumber> {
     return await this.walletContract.nonce();
   }
 
+  /**
+   * Sign a transaction, producing a `TransactionData` object suitable for use
+   * with an aggregator.
+   */
   sign({
     contract,
     method,

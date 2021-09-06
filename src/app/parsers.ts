@@ -126,8 +126,8 @@ export function parseTransactionData(
 ): ParseResult<TransactionDataDTO> {
   const result = combine(
     field(txData, "publicKey", parseHex({ bytes: 128 })),
-    field(txData, "nonce", parseHex()),
     field(txData, "signature", parseHex({ bytes: 64 })),
+    field(txData, "nonce", parseHex()),
     field(txData, "tokenRewardAmount", parseHex()),
     field(txData, "contractAddress", parseHex({ bytes: 20 })),
     field(txData, "encodedFunctionData", parseHex()),
@@ -139,8 +139,8 @@ export function parseTransactionData(
 
   const [
     publicKey,
-    nonce,
     signature,
+    nonce,
     tokenRewardAmount,
     contractAddress,
     encodedFunctionData,
@@ -149,8 +149,8 @@ export function parseTransactionData(
   return {
     success: {
       publicKey,
-      nonce,
       signature,
+      nonce,
       tokenRewardAmount,
       contractAddress,
       encodedFunctionData,

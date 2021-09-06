@@ -260,7 +260,7 @@ export default class TxService {
     nextNonce: BigNumber,
     newTx: TransactionData,
   ): Promise<AddTransactionFailure[]> {
-    const existingTx = await this.readyTxTable.find(
+    const existingTx = await this.readyTxTable.findSingle(
       newTx.publicKey,
       newTx.nonce,
     );

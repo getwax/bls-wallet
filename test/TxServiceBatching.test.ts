@@ -49,8 +49,6 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
     ready: [],
     future: [],
   });
-
-  console.log("here");
 });
 
 Fixture.test("submits a full batch without delay", async (fx) => {
