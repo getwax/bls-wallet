@@ -1,4 +1,4 @@
-import { QueryClient } from "../../deps/index.ts";
+import { QueryClient } from "../../deps.ts";
 
 import * as env from "../env.ts";
 import AppEvent from "./AppEvent.ts";

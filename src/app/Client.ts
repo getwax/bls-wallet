@@ -1,5 +1,6 @@
+import { TransactionData } from "../../deps.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
-import { TransactionData } from "./TxTable.ts";
+import { TransactionDataDTO } from "./parsers.ts";
 
 export default class Client {
   origin: string;
@@ -15,9 +16,15 @@ export default class Client {
   }
 
   async addTransaction(tx: TransactionData): Promise<AddTransactionFailure[]> {
+    const txDto: TransactionDataDTO = {
+      ...tx,
+      nonce: tx.nonce.toHexString(),
+      tokenRewardAmount: tx.tokenRewardAmount.toHexString(),
+    };
+
     const resp = await fetch(`${this.origin}/transaction`, {
       method: "POST",
-      body: JSON.stringify(tx),
+      body: JSON.stringify(txDto),
       headers: {
         "content-type": "application/json",
       },

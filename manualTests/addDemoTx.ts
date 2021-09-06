@@ -7,13 +7,13 @@ import Fixture from "../test/helpers/Fixture.ts";
 const client = new Client(env.ORIGIN);
 
 const fx = await Fixture.create(import.meta.url);
-const [{ blsSigner, blsWallet }] = await fx.setupWallets(1);
+const [wallet] = await fx.setupWallets(1);
 
-const tx = await fx.createTxData({
-  blsSigner,
-  contract: fx.walletService.erc20,
+const tx = wallet.sign({
+  contract: fx.testErc20.contract,
   method: "mint",
-  args: [blsWallet.address, "20"],
+  args: [wallet.address, "20"],
+  nonce: await wallet.Nonce(),
 });
 
 console.log("sending", tx);

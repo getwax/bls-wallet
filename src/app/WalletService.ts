@@ -1,33 +1,30 @@
 import {
   BigNumber,
+  BlsWalletSigner,
   Contract,
   delay,
   ethers,
-  hubbleBls,
+  initBlsWalletSigner,
+  keccak256,
+  TransactionData,
   Wallet,
-} from "../../deps/index.ts";
+} from "../../deps.ts";
 
 import * as env from "../env.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
-import type { TransactionData } from "./TxTable.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
-
-function getKeyHash(pubkey: string) {
-  return ethers.utils.keccak256(ethers.utils.solidityPack(
-    ["uint256[4]"],
-    [hubbleBls.mcl.loadG2(pubkey)],
-  ));
-}
+import { TxTableRow } from "./TxTable.ts";
+import splitHex256 from "../helpers/splitHex256.ts";
 
 export type TxCheckResult = {
   failures: AddTransactionFailure[];
-  nextNonce: ethers.BigNumber;
+  nextNonce: BigNumber;
 };
 
 const addressStringLength = 42;
-const pubKeyStringLength = 258;
+const publicKeyStringLength = 258;
 
 export default class WalletService {
   rewardErc20: Contract;
@@ -36,6 +33,7 @@ export default class WalletService {
   constructor(
     public emit: (evt: AppEvent) => void,
     public aggregatorSigner: Wallet,
+    public blsWalletSigner: BlsWalletSigner,
     public nextNonce: number,
   ) {
     this.rewardErc20 = new Contract(
@@ -62,21 +60,28 @@ export default class WalletService {
   ): Promise<WalletService> {
     const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
     const nextNonce = (await aggregatorSigner.getTransactionCount());
+    const chainId = await aggregatorSigner.getChainId();
+    const blsWalletSigner = await initBlsWalletSigner({ chainId });
 
-    return new WalletService(emit, aggregatorSigner, nextNonce);
+    return new WalletService(
+      emit,
+      aggregatorSigner,
+      blsWalletSigner,
+      nextNonce,
+    );
   }
 
   async checkTx(tx: TransactionData): Promise<TxCheckResult> {
-    const [signedCorrectly, nextNonce]: [boolean, ethers.BigNumber] = await this
+    const [signedCorrectly, nextNonce]: [boolean, BigNumber] = await this
       .verificationGateway
       .checkSig(
         tx.nonce,
-        ethers.BigNumber.from(tx.tokenRewardAmount),
-        getKeyHash(tx.pubKey),
-        hubbleBls.mcl.loadG1(tx.signature),
+        BigNumber.from(tx.tokenRewardAmount),
+        keccak256(tx.publicKey),
+        splitHex256(tx.signature),
         tx.contractAddress,
-        tx.methodId,
-        tx.encodedParams,
+        tx.encodedFunctionData.slice(0, 10),
+        `0x${tx.encodedFunctionData.slice(10)}`,
       );
 
     const failures: AddTransactionFailure[] = [];
@@ -88,7 +93,7 @@ export default class WalletService {
       });
     }
 
-    if (ethers.BigNumber.from(tx.nonce).lt(nextNonce)) {
+    if (BigNumber.from(tx.nonce).lt(nextNonce)) {
       failures.push({
         type: "duplicate-nonce",
         description: [
@@ -102,25 +107,24 @@ export default class WalletService {
   }
 
   async sendTxs(
-    txs: TransactionData[],
+    txs: TxTableRow[],
     maxAttempts = 1,
     retryDelay = 300,
   ): Promise<ethers.providers.TransactionReceipt> {
     assert(txs.length > 0, "Cannot process empty batch");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
-    const txSignatures = txs.map((tx) => hubbleBls.mcl.loadG1(tx.signature));
-    const aggSignature = hubbleBls.signer.aggregate(txSignatures);
+    const aggregateTx = this.blsWalletSigner.aggregate(txs);
 
     const blsCallManyArgs = [
       this.aggregatorSigner.address,
-      aggSignature,
+      splitHex256(aggregateTx.signature),
       txs.map((tx) => ({
-        publicKeyHash: getKeyHash(tx.pubKey),
+        publicKeyHash: keccak256(tx.publicKey),
         tokenRewardAmount: tx.tokenRewardAmount,
         contractAddress: tx.contractAddress,
-        methodID: tx.methodId,
-        encodedParams: tx.encodedParams,
+        methodID: tx.encodedFunctionData.slice(0, 10),
+        encodedParams: `0x${tx.encodedFunctionData.slice(10)}`,
       })),
       { nonce: this.NextNonce() },
     ];
@@ -184,42 +188,42 @@ export default class WalletService {
     throw new Error("Expected return or throw from attempt loop");
   }
 
-  async sendTx(tx: TransactionData) {
-    const txSignature = hubbleBls.mcl.loadG1(tx.signature);
-
+  async sendTx(
+    tx: TransactionData,
+  ): Promise<ethers.providers.TransactionReceipt> {
     const txResponse = await this
       .verificationGateway.blsCall(
-        getKeyHash(tx.pubKey),
-        txSignature,
-        ethers.BigNumber.from(tx.tokenRewardAmount),
+        ethers.utils.keccak256(tx.publicKey),
+        splitHex256(tx.signature),
+        BigNumber.from(tx.tokenRewardAmount),
         tx.contractAddress,
-        tx.methodId,
-        tx.encodedParams,
+        tx.encodedFunctionData.slice(0, 10),
+        `0x${tx.encodedFunctionData.slice(10)}`,
         { nonce: this.NextNonce() },
       );
 
     return await txResponse.wait();
   }
 
-  async getRewardBalanceOf(addressOrPubKey: string): Promise<BigNumber> {
-    const address = await this.WalletAddress(addressOrPubKey);
+  async getRewardBalanceOf(addressOrPublicKey: string): Promise<BigNumber> {
+    const address = await this.WalletAddress(addressOrPublicKey);
     return await this.rewardErc20.balanceOf(address);
   }
 
-  async WalletAddress(addressOrPubKey: string): Promise<string> {
-    if (addressOrPubKey.length === addressStringLength) {
-      return addressOrPubKey;
+  async WalletAddress(addressOrPublicKey: string): Promise<string> {
+    if (addressOrPublicKey.length === addressStringLength) {
+      return addressOrPublicKey;
     }
 
     assert(
-      addressOrPubKey.length === pubKeyStringLength,
-      "addressOrPubKey length matches neither address nor public key",
+      addressOrPublicKey.length === publicKeyStringLength,
+      "addressOrPublicKey length matches neither address nor public key",
     );
 
-    const pubKey = addressOrPubKey;
+    const publicKey = addressOrPublicKey;
 
     const address: string = await this.verificationGateway.walletFromHash(
-      ethers.utils.keccak256(pubKey),
+      ethers.utils.keccak256(publicKey),
     );
 
     assert(

@@ -1,4 +1,10 @@
-import { TransactionData } from "./TxTable.ts";
+import { BigNumber, TransactionData } from "../../deps.ts";
+
+export type TransactionDataDTO = {
+  [K in keyof TransactionData]: (
+    TransactionData[K] extends BigNumber ? string : TransactionData[K]
+  );
+};
 
 type ParseResult<T> = (
   | { success: T }
@@ -36,7 +42,7 @@ function combine<Results extends ParseResult<unknown>[]>(
   return { failures };
 }
 
-function field<T>(
+export function field<T>(
   obj: unknown,
   name: string,
   parser: Parser<T>,
@@ -64,7 +70,9 @@ function parseString(value: unknown): ParseResult<string> {
   return { failures: ["not a string"] };
 }
 
-function parseHex(opts: Partial<{ bytes: number }> = {}): Parser<string> {
+export function parseHex(
+  opts: Partial<{ bytes: number }> = {},
+): Parser<string> {
   return (value) => {
     const parsedString = parseString(value);
 
@@ -105,7 +113,7 @@ function parseHex(opts: Partial<{ bytes: number }> = {}): Parser<string> {
   };
 }
 
-function parseNumber(value: unknown): ParseResult<number> {
+export function parseNumber(value: unknown): ParseResult<number> {
   if (typeof value === "number") {
     return { success: value };
   }
@@ -115,15 +123,14 @@ function parseNumber(value: unknown): ParseResult<number> {
 
 export function parseTransactionData(
   txData: unknown,
-): ParseResult<TransactionData> {
+): ParseResult<TransactionDataDTO> {
   const result = combine(
-    field(txData, "pubKey", parseHex({ bytes: 128 })),
-    field(txData, "nonce", parseNumber),
+    field(txData, "publicKey", parseHex({ bytes: 128 })),
     field(txData, "signature", parseHex({ bytes: 64 })),
-    field(txData, "tokenRewardAmount", parseHex({ bytes: 32 })),
+    field(txData, "nonce", parseHex()),
+    field(txData, "tokenRewardAmount", parseHex()),
     field(txData, "contractAddress", parseHex({ bytes: 20 })),
-    field(txData, "methodId", parseHex({ bytes: 4 })),
-    field(txData, "encodedParams", parseHex()),
+    field(txData, "encodedFunctionData", parseHex()),
   );
 
   if ("failures" in result) {
@@ -131,24 +138,22 @@ export function parseTransactionData(
   }
 
   const [
-    pubKey,
-    nonce,
+    publicKey,
     signature,
+    nonce,
     tokenRewardAmount,
     contractAddress,
-    methodId,
-    encodedParams,
+    encodedFunctionData,
   ] = result.success;
 
   return {
     success: {
-      pubKey,
-      nonce,
+      publicKey,
       signature,
+      nonce,
       tokenRewardAmount,
       contractAddress,
-      methodId,
-      encodedParams,
+      encodedFunctionData,
     },
   };
 }

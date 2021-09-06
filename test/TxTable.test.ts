@@ -1,6 +1,6 @@
-import { assertEquals } from "./deps.ts";
+import { assertEquals, BigNumber, TransactionData } from "./deps.ts";
 
-import TxTable, { TransactionData } from "../src/app/TxTable.ts";
+import TxTable from "../src/app/TxTable.ts";
 import createQueryClient from "../src/app/createQueryClient.ts";
 
 let counter = 0;
@@ -31,14 +31,12 @@ function test(name: string, fn: (txTable: TxTable) => Promise<void>) {
 
 const sampleTransactions: TransactionData[] = [
   {
-    txId: 1,
-    pubKey: "pubKey",
-    nonce: 123,
+    publicKey: "publicKey",
+    nonce: BigNumber.from(123),
     signature: "signature",
-    tokenRewardAmount: "0x00",
-    contractAddress: "recipient",
-    methodId: "methodId",
-    encodedParams: "encodedParams",
+    tokenRewardAmount: BigNumber.from(0),
+    contractAddress: "contractAddress",
+    encodedFunctionData: "encodedFunctionData",
   },
 ];
 
@@ -55,5 +53,5 @@ test("Has one transaction after adding transaction", async (txTable) => {
 test("Can retrieve transaction", async (txTable) => {
   await txTable.add(sampleTransactions[0]);
 
-  assertEquals(await txTable.all(), [sampleTransactions[0]]);
+  assertEquals(await txTable.all(), [{ ...sampleTransactions[0], txId: 1 }]);
 });

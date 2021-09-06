@@ -1,4 +1,4 @@
-import { Application, hubbleBls } from "../../deps/index.ts";
+import { Application } from "../../deps.ts";
 
 import * as env from "../env.ts";
 import WalletService from "./WalletService.ts";
@@ -64,8 +64,6 @@ export default async function app(emit: (evt: AppEvent) => void) {
   app.addEventListener("listen", () => {
     emit({ type: "listening", data: { port: env.PORT } });
   });
-
-  await hubbleBls.mcl.init();
 
   await app.listen({ port: env.PORT });
 }

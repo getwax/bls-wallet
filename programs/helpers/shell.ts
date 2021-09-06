@@ -39,6 +39,10 @@ export async function String(...cmd: string[]): Promise<string> {
 export async function Lines(...cmd: string[]): Promise<string[]> {
   let text = await String(...cmd);
 
+  if (text === "") {
+    return [];
+  }
+
   // Ignore trailing newline
   if (text[text.length - 1] === "\n") {
     text = text.slice(0, -1);

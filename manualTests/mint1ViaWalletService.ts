@@ -2,17 +2,21 @@
 
 import { delay, ethers } from "../deps.ts";
 
-import Client from "../src/app/Client.ts";
-import assert from "../src/helpers/assert.ts";
+import WalletService from "../src/app/WalletService.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
-const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
+const walletService = await WalletService.create(
+  (evt) => {
+    console.log(evt);
+  },
+  env.PRIVATE_KEY_AGG,
+);
 
-const client = new Client(env.ORIGIN);
+const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
 const [wallet] = await TestBlsWallets(provider, 1);
 
@@ -25,12 +29,16 @@ const tx = wallet.sign({
   nonce: await wallet.Nonce(),
 });
 
-console.log("Sending mint tx to aggregator");
+console.log("Sending via walletService");
 
-const failures = await client.addTransaction(tx);
-assert(failures.length === 0, failures.map((f) => f.description).join(", "));
-
-console.log("Success response from aggregator");
+(async () => {
+  try {
+    await walletService.sendTxs([tx]);
+  } catch (error) {
+    console.error(error.stack);
+    Deno.exit(1);
+  }
+})();
 
 while (true) {
   const balance = (await testErc20.balanceOf(wallet.address));

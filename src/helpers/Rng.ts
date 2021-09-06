@@ -1,4 +1,4 @@
-import { ethers } from "../../deps/index.ts";
+import { BigNumber, ethers } from "../../deps.ts";
 
 import words from "./words.ts";
 
@@ -35,7 +35,7 @@ export default class Rng {
   uint32() {
     const hash = this.seed("uint32").#hash();
 
-    return ethers.BigNumber.from(hash).mod(2 ** 32).toNumber();
+    return BigNumber.from(hash).mod(2 ** 32).toNumber();
   }
 
   Sequence<T>(extract: (rng: Rng) => T): () => T {

@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { ethers } from "../deps/index.ts";
+import { ethers } from "../deps.ts";
 
 import * as env from "../src/env.ts";
 

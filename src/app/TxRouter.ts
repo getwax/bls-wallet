@@ -1,4 +1,4 @@
-import { HTTPStatus, Router, RouterContext } from "../../deps/index.ts";
+import { BigNumber, HTTPStatus, Router, RouterContext } from "../../deps.ts";
 import assert from "../helpers/assert.ts";
 import AddTransactionFailure from "./AddTransactionFailure.ts";
 import { parseTransactionData } from "./parsers.ts";
@@ -39,7 +39,11 @@ export default function TxRouter(txService: TxService) {
 
     const txData = parsedBody.success;
 
-    const failures = await txService.add(txData);
+    const failures = await txService.add({
+      ...txData,
+      nonce: BigNumber.from(txData.nonce),
+      tokenRewardAmount: BigNumber.from(txData.tokenRewardAmount),
+    });
 
     if (failures.length > 0) {
       return fail(ctx, failures);

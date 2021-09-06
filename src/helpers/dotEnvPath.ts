@@ -1,8 +1,8 @@
-import { exists, parseArgs } from "../../deps/index.ts";
+import { exists, parseArgs } from "../../deps.ts";
 
 const args = parseArgs(Deno.args);
 
-const envName = args.env;
+export const envName = args.env;
 const dotEnvPath = envName ? `.env.${envName}` : ".env";
 
 if (!await exists(dotEnvPath)) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { delay, ethers } from "../deps/index.ts";
+import { BigNumber, delay, ethers } from "../deps.ts";
 
 import * as env from "../test/env.ts";
 import Client from "../src/app/Client.ts";
@@ -49,11 +49,11 @@ for (const wallet of sendWallets) {
 
   if (
     (await testErc20.balanceOf(wallet.address)).lt(
-      ethers.BigNumber.from(10).pow(17),
+      BigNumber.from(10).pow(17),
     )
   ) {
     log("Minting test token for wallet", wallet.address);
-    await testErc20.mint(wallet.address, ethers.BigNumber.from(10).pow(18));
+    await testErc20.mint(wallet.address, BigNumber.from(10).pow(18));
   }
 }
 
@@ -61,7 +61,7 @@ const startBalance = await testErc20.balanceOf(recvWallet.address);
 
 log("Getting nonces...");
 
-const nextNonceMap = new Map<BlsWallet, number>(
+const nextNonceMap = new Map<BlsWallet, BigNumber>(
   await Promise.all(sendWallets.map(async (sendWallet) => {
     const nextNonce = await sendWallet.Nonce();
 
@@ -86,9 +86,9 @@ pollingLoop(() => {
     sendWalletIndex = (sendWalletIndex + 1) % sendWalletCount;
     const sendWallet = sendWallets[sendWalletIndex];
     const nonce = nextNonceMap.get(sendWallet)!;
-    nextNonceMap.set(sendWallet, nonce + 1);
+    nextNonceMap.set(sendWallet, nonce.add(1));
 
-    const tx = sendWallet.buildTx({
+    const tx = sendWallet.sign({
       contract: testErc20.contract,
       method: "transfer",
       args: [recvWallet.address, "1"],

@@ -1,4 +1,4 @@
-import { ethers } from "../../deps/index.ts";
+import { BigNumber, ethers } from "../../deps.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 
 export default class MockErc20 {
@@ -15,11 +15,11 @@ export default class MockErc20 {
     );
   }
 
-  async balanceOf(address: string): Promise<ethers.BigNumber> {
+  async balanceOf(address: string): Promise<BigNumber> {
     return await this.contract.balanceOf(address);
   }
 
-  async mint(address: string, amount: ethers.BigNumber) {
+  async mint(address: string, amount: BigNumber) {
     await (await this.contract.mint(
       address,
       amount,

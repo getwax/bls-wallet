@@ -1,4 +1,4 @@
-import { ethers, Router } from "../../deps/index.ts";
+import { ethers, Router } from "../../deps.ts";
 
 import AdminService from "./AdminService.ts";
 

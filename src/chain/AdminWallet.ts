@@ -1,4 +1,4 @@
-import { ethers, Wallet } from "../../deps/index.ts";
+import { ethers, Wallet } from "../../deps.ts";
 
 import * as env from "../env.ts";
 

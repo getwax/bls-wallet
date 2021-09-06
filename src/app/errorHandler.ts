@@ -1,4 +1,4 @@
-import { Middleware } from "../../deps/index.ts";
+import { Middleware } from "../../deps.ts";
 
 const errorHandler: Middleware = async ({ response }, nextFn) => {
   try {

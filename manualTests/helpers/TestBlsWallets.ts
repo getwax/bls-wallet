@@ -1,4 +1,4 @@
-import { ethers } from "../../deps/index.ts";
+import { ethers } from "../../deps.ts";
 
 import * as env from "../../test/env.ts";
 import AdminWallet from "../../src/chain/AdminWallet.ts";
@@ -30,7 +30,7 @@ export default async function TestBlsWallets(
     } else {
       const secret = rng.seed(`${i}`).address();
       console.log(`Test wallet ${i} doesn't yet exist, creating...`);
-      wallets.push(await BlsWallet.create(secret, parent));
+      wallets.push(await BlsWallet.connectOrCreate(secret, parent));
       console.log("Created");
     }
   }
