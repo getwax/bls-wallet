@@ -121,7 +121,7 @@ export function parseNumber(value: unknown): ParseResult<number> {
   return { failures: ["not a number"] };
 }
 
-export function parseTransactionData(
+export function parseTransactionDataDTO(
   txData: unknown,
 ): ParseResult<TransactionDataDTO> {
   const result = combine(
