@@ -14,6 +14,8 @@
 		"no-console": "off",
 		"no-extend-native": "off",
 		"react/jsx-props-no-spreading": "off",
+		"react/no-set-state": "off",
+		"react/destructuring-assignment": "off",
 		"jsx-a11y/label-has-associated-control": "off",
 		"class-methods-use-this": "off",
 		"max-classes-per-file": "off",
@@ -21,7 +23,21 @@
 		"node/no-unpublished-import": "off",
 		"node/no-unsupported-features/es-syntax": ["error", {
 			"ignores": ["modules"]
-		}]
+		}],
+		"prettier/prettier": [
+			"error",
+			{
+				"bracketSpacing": true,
+				"jsxBracketSameLine": false,
+				"printWidth": 80,
+				"semi": true,
+				"singleQuote": true,
+				"tabWidth": 2,
+				"trailingComma": "es5",
+				"useTabs": false,
+				"proseWrap": "always"
+			}
+		]
 	},
 	"env": {
 		"webextensions": true

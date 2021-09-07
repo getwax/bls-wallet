@@ -1,45 +1,34 @@
+import { BlsWalletSigner } from 'bls-wallet-signer';
 import * as React from 'react';
-import {browser, Tabs} from 'webextension-polyfill-ts';
+import blsWalletSignerPromise from './blsWalletSignerPromise';
+import StatusView from './StatusView';
 
 import './styles.scss';
 
-function openWebPage(url: string): Promise<Tabs.Tab> {
-  return browser.tabs.create({url});
-}
+// eslint-disable-next-line @typescript-eslint/ban-types
+type Props = {};
 
-const Popup: React.FC = () => {
-  return (
-    <section id="popup">
-      <div className="heading">
-        <h2>BLS Wallet</h2>
-      </div>
-      <button
-        id="options__button"
-        type="button"
-        onClick={(): Promise<Tabs.Tab> => {
-          return openWebPage('options.html');
-        }}
-      >
-        Options Page
-      </button>
-      <div className="links__holder">
-        <ul>
-          <li>
-            <button
-              type="button"
-              onClick={(): Promise<Tabs.Tab> => {
-                return openWebPage(
-                  'https://github.com/jzaki/bls-wallet-extension'
-                );
-              }}
-            >
-              GitHub
-            </button>
-          </li>
-        </ul>
-      </div>
-    </section>
-  );
+type State = {
+  blsWalletSigner?: BlsWalletSigner;
 };
 
-export default Popup;
+export default class Popup extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {};
+
+    blsWalletSignerPromise.then((blsWalletSigner) => {
+      this.setState({ blsWalletSigner });
+    });
+  }
+
+  render(): React.ReactNode {
+    console.log(this.state.blsWalletSigner);
+    if (this.state.blsWalletSigner) {
+      return <StatusView blsWalletSigner={this.state.blsWalletSigner} />;
+    }
+
+    return <>Loading...</>;
+  }
+}
