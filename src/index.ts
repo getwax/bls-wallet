@@ -31,7 +31,7 @@ export async function initBlsWalletSigner({
   return {
     aggregate,
     getPublicKey: getPublicKey(signerFactory, domain),
-    getPublicKeyHash: getPublicKeyHash(domain),
+    getPublicKeyHash: getPublicKeyHash(signerFactory, domain),
     sign: sign(signerFactory, domain, chainId),
     verify: verify(domain, chainId),
     verifyAggregate: verifyAggregate(domain, chainId),
