@@ -12,7 +12,7 @@ import {
 
 import * as env from "../env.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
-import AddTransactionFailure from "./AddTransactionFailure.ts";
+import TransactionFailure from "./TransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import { TxTableRow } from "./TxTable.ts";
@@ -20,7 +20,7 @@ import splitHex256 from "../helpers/splitHex256.ts";
 import BlsWallet from "../chain/BlsWallet.ts";
 
 export type TxCheckResult = {
-  failures: AddTransactionFailure[];
+  failures: TransactionFailure[];
   nextNonce: BigNumber;
 };
 
@@ -85,7 +85,7 @@ export default class WalletService {
         `0x${tx.encodedFunctionData.slice(10)}`,
       );
 
-    const failures: AddTransactionFailure[] = [];
+    const failures: TransactionFailure[] = [];
 
     if (signedCorrectly === false) {
       failures.push({
@@ -208,7 +208,7 @@ export default class WalletService {
 
   async createWallet(
     tx: TransactionData,
-  ): Promise<string | { failures: AddTransactionFailure[] }> {
+  ): Promise<string | { failures: TransactionFailure[] }> {
     const checkResult = await this.checkTx(tx);
 
     const creationValidation = BlsWallet.validateCreationTx(
@@ -216,7 +216,7 @@ export default class WalletService {
       this.aggregatorSigner.provider,
     );
 
-    const failures: AddTransactionFailure[] = [
+    const failures: TransactionFailure[] = [
       ...checkResult.failures,
       ...creationValidation.failures.map((description) => ({
         type: "invalid-creation" as const,

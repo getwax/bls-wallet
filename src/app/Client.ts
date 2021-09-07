@@ -1,5 +1,5 @@
 import { TransactionData } from "../../deps.ts";
-import AddTransactionFailure from "./AddTransactionFailure.ts";
+import TransactionFailure from "./TransactionFailure.ts";
 import { TransactionDataDTO } from "./parsers.ts";
 
 export default class Client {
@@ -15,7 +15,7 @@ export default class Client {
     this.origin = new URL(url).origin;
   }
 
-  async addTransaction(tx: TransactionData): Promise<AddTransactionFailure[]> {
+  async addTransaction(tx: TransactionData): Promise<TransactionFailure[]> {
     const txDto: TransactionDataDTO = {
       ...tx,
       nonce: tx.nonce.toHexString(),
