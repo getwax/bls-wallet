@@ -12,6 +12,22 @@ body {
   padding: 0 0 1em 0;
   font-size: 1.5em;
 
+  button {
+    padding: 0.35em;
+    border: 1px solid black;
+    border-radius: 3px;
+    background-color: #ccc;
+
+    &:not(:first-child) {
+      margin-left: 0.5em;
+    }
+
+    &:hover {
+      background-color: #aaa;
+      cursor: pointer;
+    }
+  }
+
   .heading {
     background-color: rgb(10, 29, 125);
     color: white;
