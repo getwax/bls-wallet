@@ -13,6 +13,7 @@ import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
 import AppEvent from "./AppEvent.ts";
+import WalletRouter from "./WalletRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
   const clock = Clock.create();
@@ -48,10 +49,35 @@ export default async function app(emit: (evt: AppEvent) => void) {
 
   const routers = [
     TxRouter(txService),
+    WalletRouter(walletService),
     AdminRouter(adminService),
   ];
 
   const app = new Application();
+
+  app.use(async (ctx, next) => {
+    const startTime = Date.now();
+
+    emit({
+      type: "request-start",
+      data: {
+        method: ctx.request.method,
+        path: ctx.request.url.pathname,
+      },
+    });
+
+    await next();
+
+    emit({
+      type: "request-end",
+      data: {
+        method: ctx.request.method,
+        path: ctx.request.url.pathname,
+        status: ctx.response.status,
+        duration: Date.now() - startTime,
+      },
+    });
+  });
 
   app.use(errorHandler);
 

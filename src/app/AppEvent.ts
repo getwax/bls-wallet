@@ -1,3 +1,5 @@
+import { HTTPMethods } from "../../deps.ts";
+
 type TxId = number | undefined;
 
 type AppEvent = (
@@ -27,6 +29,22 @@ type AppEvent = (
   | {
     type: "error";
     data: string;
+  }
+  | {
+    type: "request-start";
+    data: {
+      method: HTTPMethods;
+      path: string;
+    };
+  }
+  | {
+    type: "request-end";
+    data: {
+      method: HTTPMethods;
+      path: string;
+      status: number;
+      duration: number;
+    };
   }
 );
 

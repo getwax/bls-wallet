@@ -43,7 +43,7 @@ export default class Client {
   }
 
   async createWallet(tx: TransactionData): Promise<CreateWalletResult> {
-    const resp = await fetch(`${this.origin}/admin/wallet`, {
+    const resp = await fetch(`${this.origin}/wallet`, {
       method: "POST",
       body: JSON.stringify(toDto(tx)),
       headers: {

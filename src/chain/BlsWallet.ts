@@ -79,19 +79,24 @@ export default class BlsWallet {
     );
   }
 
-  static validateCreationTx(
+  static async validateCreationTx(
     tx: TransactionData,
     signerOrProvider: SignerOrProvider,
-  ): { failures: string[] } {
+  ): Promise<{ failures: string[] }> {
+    const blsWalletSigner = await this.#BlsWalletSigner(signerOrProvider);
     const verificationGateway = this.#VerificationGateway(signerOrProvider);
+
+    const failures: string[] = [];
+
+    if (!blsWalletSigner.verify(tx)) {
+      failures.push("invalid signature");
+    }
 
     const expectedEncodedFunctionData = verificationGateway.interface
       .encodeFunctionData(
         "walletCrossCheck",
         [keccak256(tx.publicKey)],
       );
-
-    const failures: string[] = [];
 
     if (tx.encodedFunctionData !== expectedEncodedFunctionData) {
       failures.push("encoded function data mismatch");

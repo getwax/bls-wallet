@@ -215,20 +215,17 @@ export default class WalletService {
   async createWallet(
     tx: TransactionData,
   ): Promise<CreateWalletResult> {
-    const checkResult = await this.checkTx(tx);
+    const failures: TransactionFailure[] = [];
 
-    const creationValidation = BlsWallet.validateCreationTx(
+    const creationValidation = await BlsWallet.validateCreationTx(
       tx,
       this.aggregatorSigner.provider,
     );
 
-    const failures: TransactionFailure[] = [
-      ...checkResult.failures,
-      ...creationValidation.failures.map((description) => ({
-        type: "invalid-creation" as const,
-        description,
-      })),
-    ];
+    failures.push(...creationValidation.failures.map((description) => ({
+      type: "invalid-creation" as const,
+      description,
+    })));
 
     if (failures.length > 0) {
       return { address: nil, failures };
