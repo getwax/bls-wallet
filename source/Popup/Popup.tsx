@@ -24,7 +24,6 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
-    console.log(this.state.blsWalletSigner);
     if (this.state.blsWalletSigner) {
       return (
         <div id="popup">
