@@ -13,7 +13,7 @@ export default function WalletRouter(walletService: WalletService) {
       const createResult = await walletService.createWallet(tx);
 
       if (typeof createResult === "string") {
-        ctx.response.body = { address: createResult };
+        ctx.response.body = createResult;
       } else {
         failRequest(ctx, createResult.failures);
       }

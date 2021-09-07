@@ -18,10 +18,16 @@ import AppEvent from "./AppEvent.ts";
 import { TxTableRow } from "./TxTable.ts";
 import splitHex256 from "../helpers/splitHex256.ts";
 import BlsWallet from "../chain/BlsWallet.ts";
+import nil from "../helpers/nil.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
   nextNonce: BigNumber;
+};
+
+export type CreateWalletResult = {
+  address?: string;
+  failures: TransactionFailure[];
 };
 
 const addressStringLength = 42;
@@ -208,7 +214,7 @@ export default class WalletService {
 
   async createWallet(
     tx: TransactionData,
-  ): Promise<string | { failures: TransactionFailure[] }> {
+  ): Promise<CreateWalletResult> {
     const checkResult = await this.checkTx(tx);
 
     const creationValidation = BlsWallet.validateCreationTx(
@@ -225,7 +231,7 @@ export default class WalletService {
     ];
 
     if (failures.length > 0) {
-      return { failures };
+      return { address: nil, failures };
     }
 
     await (await this.verificationGateway.blsCallCreate(
@@ -237,9 +243,11 @@ export default class WalletService {
       `0x${tx.encodedFunctionData.slice(10)}`,
     )).wait();
 
-    return await this.verificationGateway.walletFromHash(
+    const address = await this.verificationGateway.walletFromHash(
       keccak256(tx.publicKey),
     );
+
+    return { address, failures };
   }
 
   async getRewardBalanceOf(addressOrPublicKey: string): Promise<BigNumber> {
