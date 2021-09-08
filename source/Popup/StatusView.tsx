@@ -18,8 +18,9 @@ type Overlay = (
     errorMsg?: string;
   }
   | {
-    type: 'test';
-    asdf?: string;
+    type: 'confirm';
+    msg: string;
+    yesAction: keyof StatusView;
   }
 );
 
@@ -83,8 +84,24 @@ export default class StatusView extends React.Component<Props, State> {
         </>;
       }
 
-      case 'test': {
-        return <>Test overlay</>;
+      case 'confirm': {
+        let yesAction = this[overlay.yesAction];
+
+        if (typeof yesAction !== 'function') {
+          console.error(`yesAction ${overlay.yesAction} is not a function`);
+          setTimeout(() => this.popOverlay(), 1000);
+          return <>Error (see console)</>;
+        }
+
+        yesAction = yesAction.bind(this);
+
+        return <>
+          <div>{overlay.msg}</div>
+          <div>
+            <button type="button" onClick={() => { yesAction(); this.popOverlay() }}>Yes</button>
+            <button type="button" onClick={() => this.popOverlay()}>No</button>
+          </div>
+        </>;
       }
 
       default: {
@@ -127,7 +144,7 @@ export default class StatusView extends React.Component<Props, State> {
         </span>
         <span
           className="pseudo-button"
-          onClick={() => this.deleteKey()}
+          onClick={() => this.confirmDeleteKey()}
           onKeyDown={(evt) => evt.key === 'Enter' && this.downloadKey()}
         >
           ❌
@@ -144,8 +161,15 @@ export default class StatusView extends React.Component<Props, State> {
     });
   }
 
+  confirmDeleteKey(): void {
+    this.pushOverlay({
+      type: 'confirm',
+      msg: 'Are you sure you want to delete your private key?',
+      yesAction: 'deleteKey',
+    });
+  }
+
   deleteKey(): void {
-    // TODO: Prompt for confirmation
     this.setState({
       wallet: undefined,
     });
