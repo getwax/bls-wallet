@@ -1,3 +1,4 @@
+import * as ethers from 'ethers';
 import * as React from 'react';
 import { BlsWalletSigner } from 'bls-wallet-signer';
 import { browser } from 'webextension-polyfill-ts';
@@ -5,9 +6,12 @@ import { browser } from 'webextension-polyfill-ts';
 import assert from '../helpers/assert';
 import Range from '../helpers/Range';
 import never from '../helpers/never';
-import { walletStorageKey } from './config';
+import { chainRpcUrl, walletStorageKey } from './config';
+import BlsWallet from '../chain/BLSWallet';
 
 /* eslint-disable prettier/prettier */
+
+const provider = new ethers.providers.JsonRpcProvider(chainRpcUrl);
 
 type Props = {
   blsWalletSigner: BlsWalletSigner;
@@ -80,9 +84,7 @@ export default class StatusView extends React.Component<Props, State> {
 
     browser.storage.local.get(walletStorageKey).then(results => {
       if (walletStorageKey in results) {
-        this.setState({
-          wallet: results[walletStorageKey],
-        });
+        this.setWallet(results[walletStorageKey]);
       }
     });
   }
@@ -289,6 +291,7 @@ export default class StatusView extends React.Component<Props, State> {
       browser.storage.local.remove(walletStorageKey);
     } else {
       browser.storage.local.set({ [walletStorageKey]: wallet });
+      this.lookForExistingWallet(wallet);
     }
 
     this.setState({ wallet });
@@ -406,6 +409,33 @@ export default class StatusView extends React.Component<Props, State> {
     this.setState({ addressLoading: true });
 
     console.warn('Not implemented: create wallet');
+  }
+
+  lookForExistingWallet(wallet: State['wallet']): void {
+    if (wallet === undefined) {
+      return;
+    }
+
+    this.setState({
+      addressLoading: true,
+    });
+
+    BlsWallet.Address(wallet.privateKey, provider).then((address) => {
+      this.setState({
+        addressLoading: false,
+      });
+
+      const latestWallet = this.state.wallet;
+
+      if (latestWallet?.privateKey !== wallet.privateKey) {
+        return;
+      }
+
+      this.setWallet({
+        ...latestWallet,
+        address,
+      });
+    });
   }
 
   PublicKey(): string | undefined {
