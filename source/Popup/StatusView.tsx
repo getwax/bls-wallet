@@ -1,4 +1,3 @@
-import * as ethers from 'ethers';
 import * as React from 'react';
 import { BlsWalletSigner } from 'bls-wallet-signer';
 
@@ -38,6 +37,8 @@ type State = {
 };
 
 export default class StatusView extends React.Component<Props, State> {
+  privateKeyInputElement?: HTMLTextAreaElement;
+
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -80,10 +81,17 @@ export default class StatusView extends React.Component<Props, State> {
         return <>
           <div>Enter your private key below</div>
           <div>
-            <textarea/>
+            <textarea ref={ref => { this.privateKeyInputElement = ref ?? undefined; }}/>
           </div>
+          {(() => {
+            if (overlay.errorMsg !== undefined) {
+              return <div style={{ color: 'red' }}>{overlay.errorMsg}</div>;
+            }
+
+            return <></>;
+          })()}
           <div>
-            <button type="button">Submit</button>
+            <button type="button" onClick={() => this.loadPrivateKey()}>Submit</button>
             <button type="button" onClick={() => this.popOverlay()}>Cancel</button>
           </div>
         </>;
@@ -112,12 +120,20 @@ export default class StatusView extends React.Component<Props, State> {
       case 'private-key-display': {
         return <>
           <p>
-            Store this private key with care. If anyone gains access to this key
+            Store this private key with care.
+          </p>
+          <p>
+            It&apos;s different from your public key displayed on the main
+            page, which can be shared to allow others to interact with your
+            account, such as send you assets.
+          </p>
+          <p>
+            This is the <i>private</i> key, and if anyone gains access to it
             they will have access to your account, including the ability to
             move your assets into another account.
           </p>
 
-          <div>
+          <p>
             {(() => {
               if (!overlay.show) {
                 return (
@@ -132,11 +148,11 @@ export default class StatusView extends React.Component<Props, State> {
 
               return <p>{overlay.text}</p>;
             })()}
-          </div>
+          </p>
 
-          <div>
+          <p>
             <button type="button" onClick={() => this.popOverlay()}>Back</button>
-          </div>
+          </p>
         </>;
       }
 
@@ -218,15 +234,48 @@ export default class StatusView extends React.Component<Props, State> {
       console.warn('privateKey not found during downloadKey()');
       return;
     }
-
-    const privateKeyBytes = ethers.utils.arrayify(privateKey);
-    const text = ethers.utils.base58.encode(privateKeyBytes);
     
     this.pushOverlay({
       type: 'private-key-display',
       show: false,
-      text,
+      text: privateKey,
     });
+  }
+
+  loadPrivateKey(): void {
+    if (this.privateKeyInputElement === undefined) {
+      this.setOverlayState({ type: 'restore', errorMsg: 'input element missing' });
+      return;
+    }
+
+    const inputText = this.privateKeyInputElement.value.trim();
+
+    const expectedBits = 256;
+    const expectedBytes = expectedBits / 8;
+
+    const expectedLength = (
+      2 + // 0x
+      2 * expectedBytes // 2 hex characters per byte
+    );
+
+    if (inputText.length !== expectedLength) {
+      this.setOverlayState({ type: 'restore', errorMsg: 'Incorrect length' });
+      return;
+    }
+
+    if (!/0x([0-9a-f])*/i.test(inputText)) {
+      this.setOverlayState({ type: 'restore', errorMsg: 'Incorrect format' });
+      return;
+    }
+
+    this.setState({
+      wallet: {
+        privateKey: inputText,
+      },
+    });
+
+    // TODO: Check we're popping the right overlay?
+    this.popOverlay();
   }
 
   pushOverlay(overlay: Overlay): void {
