@@ -1,11 +1,14 @@
 import * as React from 'react';
 import { BlsWalletSigner } from 'bls-wallet-signer';
+import { browser } from 'webextension-polyfill-ts';
 
 import assert from '../helpers/assert';
 import Range from '../helpers/Range';
 import never from '../helpers/never';
 
 /* eslint-disable prettier/prettier */
+
+const walletStorageKey = 'default-wallet';
 
 type Props = {
   blsWalletSigner: BlsWalletSigner;
@@ -38,12 +41,66 @@ type State = {
 
 export default class StatusView extends React.Component<Props, State> {
   privateKeyInputElement?: HTMLTextAreaElement;
+  cleanupTasks: (() => void)[] = [];
 
   constructor(props: Props) {
     super(props);
+
     this.state = {
       overlays: [],
     };
+
+    this.listenToStorage();
+  }
+
+  listenToStorage(): void {
+    type Listener = Parameters<typeof browser.storage.onChanged.addListener>[0];
+
+    const listener: Listener = (changes, areaName) => {
+      if (areaName !== 'local') {
+        return;
+      }
+
+      const walletChange = changes[walletStorageKey];
+
+      if (walletChange === undefined) {
+        return;
+      }
+
+      this.setState({
+        wallet: walletChange.newValue,
+      });
+    };
+
+    browser.storage.onChanged.addListener(listener);
+
+    this.cleanupTasks.push(() => {
+      browser.storage.onChanged.removeListener(listener);
+    });
+
+    browser.storage.local.get(walletStorageKey).then(results => {
+      if (walletStorageKey in results) {
+        this.setState({
+          wallet: results[walletStorageKey],
+        });
+      }
+    });
+  }
+
+  componentWillUnmount(): void {
+    while (true) {
+      const task = this.cleanupTasks.shift();
+
+      if (task === undefined) {
+        break;
+      }
+
+      try {
+        task();
+      } catch (error) {
+        console.error(error);
+      }
+    }
   }
 
   render(): React.ReactNode {
@@ -205,11 +262,19 @@ export default class StatusView extends React.Component<Props, State> {
     );
   }
 
+  setWallet(wallet: State['wallet']): void {
+    if (wallet === undefined) {
+      browser.storage.local.remove(walletStorageKey);
+    } else {
+      browser.storage.local.set({ [walletStorageKey]: wallet });
+    }
+
+    this.setState({ wallet });
+  }
+
   createKey(): void {
-    this.setState({
-      wallet: {
-        privateKey: generateRandomHex(256),
-      },
+    this.setWallet({
+      privateKey: generateRandomHex(256),
     });
   }
 
@@ -222,9 +287,7 @@ export default class StatusView extends React.Component<Props, State> {
   }
 
   deleteKey(): void {
-    this.setState({
-      wallet: undefined,
-    });
+    this.setWallet(undefined);
   }
 
   displayPrivateKey(): void {
@@ -268,10 +331,8 @@ export default class StatusView extends React.Component<Props, State> {
       return;
     }
 
-    this.setState({
-      wallet: {
-        privateKey: inputText,
-      },
+    this.setWallet({
+      privateKey: inputText,
     });
 
     // TODO: Check we're popping the right overlay?

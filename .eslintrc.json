@@ -13,6 +13,7 @@
 	"rules": {
 		"no-console": "off",
 		"no-extend-native": "off",
+		"no-constant-condition": "off",
 		"react/jsx-props-no-spreading": "off",
 		"react/no-set-state": "off",
 		"react/destructuring-assignment": "off",
@@ -39,7 +40,8 @@
 			}
 		],
 		"@typescript-eslint/explicit-function-return-type": "off",
-		"@typescript-eslint/no-use-before-define": "off"
+		"@typescript-eslint/no-use-before-define": "off",
+		"@typescript-eslint/lines-between-class-members": "off"
 	},
 	"env": {
 		"webextensions": true
