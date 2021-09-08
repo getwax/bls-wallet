@@ -28,6 +28,18 @@ body {
     }
   }
 
+  .pseudo-button {
+    padding: 0.35em;
+
+    &:not(:first-child) {
+      margin-left: 0.5em;
+    }
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
   .heading {
     background-color: rgb(10, 29, 125);
     color: white;
@@ -46,6 +58,10 @@ body {
   }
   
   .basic-form {
+    td {
+      height: 2.2em;
+    }
+
     td:first-child {
       text-align: right;
       padding-right: 1em;
