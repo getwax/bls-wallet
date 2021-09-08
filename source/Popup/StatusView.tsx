@@ -22,6 +22,11 @@ type Overlay = (
     msg: string;
     yesAction: keyof StatusView;
   }
+  | {
+    type: 'private-key-display';
+    text: string;
+    show: boolean;
+  }
 );
 
 type State = {
@@ -73,7 +78,7 @@ export default class StatusView extends React.Component<Props, State> {
     switch (overlay.type) {
       case 'restore': {
         return <>
-          <div>Drag in your private key file or paste it below</div>
+          <div>Enter your private key below</div>
           <div>
             <textarea/>
           </div>
@@ -100,6 +105,37 @@ export default class StatusView extends React.Component<Props, State> {
           <div>
             <button type="button" onClick={() => { yesAction(); this.popOverlay() }}>Yes</button>
             <button type="button" onClick={() => this.popOverlay()}>No</button>
+          </div>
+        </>;
+      }
+
+      case 'private-key-display': {
+        return <>
+          <p>
+            Store this private key with care. If anyone gains access to this key
+            they will have access to your account, including the ability to
+            move your assets into another account.
+          </p>
+
+          <div>
+            {(() => {
+              if (!overlay.show) {
+                return (
+                  <button
+                    type="button"
+                    onClick={() => this.setOverlayState({ type: 'private-key-display', show: true })}
+                  >
+                    Click to show
+                  </button>
+                );
+              }
+
+              return <p>{overlay.text}</p>;
+            })()}
+          </div>
+
+          <div>
+            <button type="button" onClick={() => this.popOverlay()}>Back</button>
           </div>
         </>;
       }
@@ -137,15 +173,15 @@ export default class StatusView extends React.Component<Props, State> {
         </span>
         <span
           className="pseudo-button"
-          onClick={() => this.downloadKey()}
-          onKeyDown={(evt) => evt.key === 'Enter' && this.downloadKey()}
+          onClick={() => this.displayPrivateKey()}
+          onKeyDown={(evt) => evt.key === 'Enter' && this.displayPrivateKey()}
         >
           ⬇️
         </span>
         <span
           className="pseudo-button"
           onClick={() => this.confirmDeleteKey()}
-          onKeyDown={(evt) => evt.key === 'Enter' && this.downloadKey()}
+          onKeyDown={(evt) => evt.key === 'Enter' && this.confirmDeleteKey()}
         >
           ❌
         </span>
@@ -175,7 +211,7 @@ export default class StatusView extends React.Component<Props, State> {
     });
   }
 
-  downloadKey(): void {
+  displayPrivateKey(): void {
     const privateKey = this.state.wallet?.privateKey;
 
     if (privateKey === undefined) {
@@ -184,27 +220,13 @@ export default class StatusView extends React.Component<Props, State> {
     }
 
     const privateKeyBytes = ethers.utils.arrayify(privateKey);
-    const privateKeyBase64 = ethers.utils.base64.encode(privateKeyBytes);
-
-    const content = [
-      '-----BEGIN BLS PRIVATE KEY-----',
-      privateKeyBase64,
-      '-----END BLS PRIVATE KEY-----',
-    ].join('\n');
-
-    const privateKeyUrl = URL.createObjectURL(
-      new Blob([content], { type: 'text/plain' })
-    );
-
-    const anchorTag = document.createElement('a');
-    anchorTag.setAttribute('download', 'private-key');
-    anchorTag.setAttribute('href', privateKeyUrl);
-    anchorTag.style.display = 'none';
-    document.body.appendChild(anchorTag);
-    anchorTag.click();
-    document.body.removeChild(anchorTag);
-
-    URL.revokeObjectURL(privateKeyUrl);
+    const text = ethers.utils.base58.encode(privateKeyBytes);
+    
+    this.pushOverlay({
+      type: 'private-key-display',
+      show: false,
+      text,
+    });
   }
 
   pushOverlay(overlay: Overlay): void {
