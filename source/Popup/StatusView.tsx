@@ -6,12 +6,14 @@ import { browser } from 'webextension-polyfill-ts';
 import assert from '../helpers/assert';
 import Range from '../helpers/Range';
 import never from '../helpers/never';
-import { chainRpcUrl, walletStorageKey } from './config';
+import { aggregatorUrl, chainRpcUrl, walletStorageKey } from './config';
 import BlsWallet from '../chain/BLSWallet';
+import AggregatorClient from '../AggregatorClient';
 
 /* eslint-disable prettier/prettier */
 
 const provider = new ethers.providers.JsonRpcProvider(chainRpcUrl);
+const aggregatorClient = new AggregatorClient(aggregatorUrl);
 
 type Props = {
   blsWalletSigner: BlsWalletSigner;
@@ -287,11 +289,16 @@ export default class StatusView extends React.Component<Props, State> {
   }
 
   setWallet(wallet: State['wallet']): void {
+    const previousPrivateKey = this.state.wallet?.privateKey;
+
     if (wallet === undefined) {
       browser.storage.local.remove(walletStorageKey);
     } else {
       browser.storage.local.set({ [walletStorageKey]: wallet });
-      this.lookForExistingWallet(wallet);
+
+      if (wallet.privateKey !== previousPrivateKey) {
+        this.lookForExistingWallet(wallet);
+      }
     }
 
     this.setState({ wallet });
@@ -398,17 +405,29 @@ export default class StatusView extends React.Component<Props, State> {
     });
   }
 
-  createWallet(): void {
+  async createWallet(): Promise<void> {
+    const { privateKey } = this.state.wallet ?? {};
     const publicKey = this.PublicKey();
 
-    if (publicKey === undefined) {
-      console.error("Can't create a wallet without a public key");
+    if (privateKey === undefined || publicKey === undefined) {
+      console.error("Can't create a wallet without a key");
       return;
     }
 
     this.setState({ addressLoading: true });
 
-    console.warn('Not implemented: create wallet');
+    const creationTx = await BlsWallet.signCreation(privateKey, provider);
+
+    const createResult = await aggregatorClient.createWallet(creationTx);
+
+    if (createResult.address !== undefined) {
+      // The address is in the createResult but we'd rather just check with the
+      // network to potential mishaps from incorrect aggregators.
+      this.lookForExistingWallet(this.state.wallet);
+    } else {
+      console.error('Create wallet failed', createResult);
+      this.setState({ addressLoading: false });
+    }
   }
 
   lookForExistingWallet(wallet: State['wallet']): void {
