@@ -5,10 +5,9 @@ import { browser } from 'webextension-polyfill-ts';
 import assert from '../helpers/assert';
 import Range from '../helpers/Range';
 import never from '../helpers/never';
+import { walletStorageKey } from './config';
 
 /* eslint-disable prettier/prettier */
-
-const walletStorageKey = 'default-wallet';
 
 type Props = {
   blsWalletSigner: BlsWalletSigner;
@@ -36,6 +35,7 @@ type State = {
     privateKey: string;
     address?: string;
   };
+  addressLoading?: boolean;
   overlays: Overlay[];
 };
 
@@ -125,7 +125,7 @@ export default class StatusView extends React.Component<Props, State> {
           </tr>
           <tr>
             <td>BLS Wallet</td>
-            <td>address...</td>
+            <td>{this.renderWalletField()}</td>
           </tr>
         </table>
       );
@@ -262,6 +262,28 @@ export default class StatusView extends React.Component<Props, State> {
     );
   }
 
+  renderWalletField(): React.ReactNode {
+    const address = this.state.wallet?.address;
+
+    if (address === undefined) {
+      if (this.state.wallet?.privateKey === undefined) {
+        return <>&lt;none&gt;</>;
+      }
+
+      if (this.state.addressLoading) {
+        return <>Loading...</>;
+      }
+
+      return <button type="button" onClick={() => this.createWallet()}>
+        Create
+      </button>;
+    }
+
+    return <span>
+      {address.slice(0, 6)}...{address.slice(-4)}
+    </span>;
+  }
+
   setWallet(wallet: State['wallet']): void {
     if (wallet === undefined) {
       browser.storage.local.remove(walletStorageKey);
@@ -371,6 +393,19 @@ export default class StatusView extends React.Component<Props, State> {
     this.pushOverlay({
       type: 'restore',
     });
+  }
+
+  createWallet(): void {
+    const publicKey = this.PublicKey();
+
+    if (publicKey === undefined) {
+      console.error("Can't create a wallet without a public key");
+      return;
+    }
+
+    this.setState({ addressLoading: true });
+
+    console.warn('Not implemented: create wallet');
   }
 
   PublicKey(): string | undefined {
