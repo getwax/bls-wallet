@@ -4,22 +4,39 @@ import { BlsWalletSigner } from 'bls-wallet-signer';
 
 import assert from '../helpers/assert';
 import Range from '../helpers/Range';
+import never from '../helpers/never';
+
+/* eslint-disable prettier/prettier */
 
 type Props = {
   blsWalletSigner: BlsWalletSigner;
 };
+
+type Overlay = (
+  | {
+    type: 'restore';
+    errorMsg?: string;
+  }
+  | {
+    type: 'test';
+    asdf?: string;
+  }
+);
 
 type State = {
   wallet?: {
     privateKey: string;
     address?: string;
   };
+  overlays: Overlay[];
 };
 
 export default class StatusView extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = {};
+    this.state = {
+      overlays: [],
+    };
   }
 
   render(): React.ReactNode {
@@ -27,19 +44,53 @@ export default class StatusView extends React.Component<Props, State> {
       <div className="status-view">
         <div className="heading">Quill 🪶</div>
         <div className="body">
-          <table className="basic-form">
-            <tr>
-              <td>BLS Key</td>
-              <td>{this.renderKeyField()}</td>
-            </tr>
-            <tr>
-              <td>BLS Wallet</td>
-              <td>address...</td>
-            </tr>
-          </table>
+          {this.renderBody()}
         </div>
       </div>
     );
+  }
+
+  // eslint-disable-next-line consistent-return
+  renderBody(): React.ReactNode {
+    if (this.state.overlays.length === 0) {
+      return (
+        <table className="basic-form">
+          <tr>
+            <td>BLS Key</td>
+            <td>{this.renderKeyField()}</td>
+          </tr>
+          <tr>
+            <td>BLS Wallet</td>
+            <td>address...</td>
+          </tr>
+        </table>
+      );
+    }
+
+    const overlay = this.state.overlays[this.state.overlays.length - 1];
+
+    switch (overlay.type) {
+      case 'restore': {
+        return <>
+          <div>Drag in your private key file or paste it below</div>
+          <div>
+            <textarea/>
+          </div>
+          <div>
+            <button type="button">Submit</button>
+            <button type="button" onClick={() => this.popOverlay()}>Cancel</button>
+          </div>
+        </>;
+      }
+
+      case 'test': {
+        return <>Test overlay</>;
+      }
+
+      default: {
+        never(overlay);
+      }
+    }
   }
 
   renderKeyField(): React.ReactNode {
@@ -51,7 +102,13 @@ export default class StatusView extends React.Component<Props, State> {
           <button type="button" onClick={() => this.createKey()}>
             Create
           </button>
-          <button type="button">Restore</button>
+          <span
+            className="pseudo-button"
+            onClick={() => this.restoreKey()}
+            onKeyDown={(evt) => evt.key === 'Enter' && this.restoreKey()}
+          >
+            ⬆️
+          </span>
         </>
       );
     }
@@ -124,6 +181,40 @@ export default class StatusView extends React.Component<Props, State> {
     document.body.removeChild(anchorTag);
 
     URL.revokeObjectURL(privateKeyUrl);
+  }
+
+  pushOverlay(overlay: Overlay): void {
+    this.setState({
+      overlays: [...this.state.overlays, overlay],
+    });
+  }
+
+  popOverlay(): void {
+    this.setState({
+      overlays: this.state.overlays.slice(0, -1),
+    });
+  }
+
+  setOverlayState(overlay: { type: Overlay['type'] } & Partial<Overlay>): void {
+    for (let i = this.state.overlays.length - 1; i >= 0; i -= 1) {
+      if (this.state.overlays[i].type === overlay.type) {
+        const newOverlay = { ...this.state.overlays[i], ...overlay } as Overlay;
+
+        this.setState({
+          overlays: [...this.state.overlays.slice(0, i), newOverlay, ...this.state.overlays.slice(i + 1)],
+        })
+
+        return;
+      }
+    }
+
+    console.error("Matching overlay not found in setOverlayState", overlay);
+  }
+
+  restoreKey(): void {
+    this.pushOverlay({
+      type: 'restore',
+    });
   }
 
   PublicKey(): string | undefined {
