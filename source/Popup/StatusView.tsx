@@ -1,12 +1,8 @@
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
 
-import assert from '../helpers/assert';
-import Range from '../helpers/Range';
 import never from '../helpers/never';
-import BlsWallet from '../chain/BlsWallet';
-import { WALLET_STORAGE_KEY } from '../env';
 import type App from './App';
+import { AppState } from './App';
 
 type Props = {
   app: App;
@@ -20,7 +16,7 @@ type Overlay =
   | {
       type: 'confirm';
       msg: string;
-      yesAction: keyof StatusView;
+      yesAction: keyof App;
     }
   | {
       type: 'private-key-display';
@@ -29,11 +25,7 @@ type Overlay =
     };
 
 type State = {
-  wallet?: {
-    privateKey: string;
-    address?: string;
-  };
-  addressLoading?: boolean;
+  appState: AppState;
   overlays: Overlay[];
 };
 
@@ -45,42 +37,19 @@ export default class StatusView extends React.Component<Props, State> {
     super(props);
 
     this.state = {
+      appState: props.app.state,
       overlays: [],
     };
 
-    this.listenToStorage();
-  }
-
-  listenToStorage(): void {
-    type Listener = Parameters<typeof browser.storage.onChanged.addListener>[0];
-
-    const listener: Listener = (changes, areaName) => {
-      if (areaName !== 'local') {
-        return;
-      }
-
-      const walletChange = changes[WALLET_STORAGE_KEY];
-
-      if (walletChange === undefined) {
-        return;
-      }
-
-      this.setState({
-        wallet: walletChange.newValue,
-      });
+    const appStateListener = (appState: AppState) => {
+      this.setState({ appState });
     };
 
-    browser.storage.onChanged.addListener(listener);
+    props.app.events.on('state', appStateListener);
 
-    this.cleanupTasks.push(() => {
-      browser.storage.onChanged.removeListener(listener);
-    });
-
-    browser.storage.local.get(WALLET_STORAGE_KEY).then((results) => {
-      if (WALLET_STORAGE_KEY in results) {
-        this.setWallet(results[WALLET_STORAGE_KEY]);
-      }
-    });
+    this.cleanupTasks.push(() =>
+      props.app.events.off('state', appStateListener),
+    );
   }
 
   componentWillUnmount(): void {
@@ -154,15 +123,15 @@ export default class StatusView extends React.Component<Props, State> {
       }
 
       case 'confirm': {
-        let yesAction = this[overlay.yesAction];
+        const unboundYesAction = this.props.app[overlay.yesAction];
 
-        if (typeof yesAction !== 'function') {
+        if (typeof unboundYesAction !== 'function') {
           console.error(`yesAction ${overlay.yesAction} is not a function`);
           setTimeout(() => this.popOverlay(), 1000);
           return <>Error (see console)</>;
         }
 
-        yesAction = yesAction.bind(this);
+        const yesAction = unboundYesAction.bind(this.props.app) as () => void;
 
         return (
           <>
@@ -238,12 +207,15 @@ export default class StatusView extends React.Component<Props, State> {
   }
 
   renderKeyField(): React.ReactNode {
-    const publicKey = this.PublicKey();
+    const publicKey = this.props.app.PublicKey();
 
     if (publicKey === undefined) {
       return (
         <>
-          <button type="button" onClick={() => this.createKey()}>
+          <button
+            type="button"
+            onClick={() => this.props.app.createPrivateKey()}
+          >
             Create
           </button>
           <span
@@ -281,19 +253,19 @@ export default class StatusView extends React.Component<Props, State> {
   }
 
   renderWalletField(): React.ReactNode {
-    const address = this.state.wallet?.address;
+    const address = this.state.appState.walletAddress;
 
     if (address === undefined) {
-      if (this.state.wallet?.privateKey === undefined) {
+      if (this.state.appState.privateKey === undefined) {
         return <>&lt;none&gt;</>;
       }
 
-      if (this.state.addressLoading) {
+      if (this.state.appState.walletAddressLoadCount > 0) {
         return <>Loading...</>;
       }
 
       return (
-        <button type="button" onClick={() => this.createWallet()}>
+        <button type="button" onClick={() => this.props.app.createWallet()}>
           Create
         </button>
       );
@@ -306,45 +278,19 @@ export default class StatusView extends React.Component<Props, State> {
     );
   }
 
-  setWallet(wallet: State['wallet']): void {
-    const previousPrivateKey = this.state.wallet?.privateKey;
-
-    if (wallet === undefined) {
-      browser.storage.local.remove(WALLET_STORAGE_KEY);
-    } else {
-      browser.storage.local.set({ [WALLET_STORAGE_KEY]: wallet });
-
-      if (wallet.privateKey !== previousPrivateKey) {
-        this.lookForExistingWallet(wallet);
-      }
-    }
-
-    this.setState({ wallet });
-  }
-
-  createKey(): void {
-    this.setWallet({
-      privateKey: generateRandomHex(256),
-    });
-  }
-
   confirmDeleteKey(): void {
     this.pushOverlay({
       type: 'confirm',
       msg: 'Are you sure you want to delete your private key?',
-      yesAction: 'deleteKey',
+      yesAction: 'deletePrivateKey',
     });
   }
 
-  deleteKey(): void {
-    this.setWallet(undefined);
-  }
-
   displayPrivateKey(): void {
-    const privateKey = this.state.wallet?.privateKey;
+    const privateKey = this.state.appState?.privateKey;
 
     if (privateKey === undefined) {
-      console.warn('privateKey not found during downloadKey()');
+      console.warn('privateKey not found during displayPrivateKey()');
       return;
     }
 
@@ -361,34 +307,21 @@ export default class StatusView extends React.Component<Props, State> {
         type: 'restore',
         errorMsg: 'input element missing',
       });
+
       return;
     }
 
-    const inputText = this.privateKeyInputElement.value.trim();
+    try {
+      this.props.app.loadPrivateKey(this.privateKeyInputElement.value.trim());
 
-    const expectedBits = 256;
-    const expectedBytes = expectedBits / 8;
-
-    const expectedLength =
-      2 + // 0x
-      2 * expectedBytes; // 2 hex characters per byte
-
-    if (inputText.length !== expectedLength) {
-      this.setOverlayState({ type: 'restore', errorMsg: 'Incorrect length' });
-      return;
+      // TODO: Check we're popping the right overlay?
+      this.popOverlay();
+    } catch (error) {
+      this.setOverlayState({
+        type: 'restore',
+        errorMsg: (error as Error).message,
+      });
     }
-
-    if (!/0x([0-9a-f])*/i.test(inputText)) {
-      this.setOverlayState({ type: 'restore', errorMsg: 'Incorrect format' });
-      return;
-    }
-
-    this.setWallet({
-      privateKey: inputText,
-    });
-
-    // TODO: Check we're popping the right overlay?
-    this.popOverlay();
   }
 
   pushOverlay(overlay: Overlay): void {
@@ -428,86 +361,4 @@ export default class StatusView extends React.Component<Props, State> {
       type: 'restore',
     });
   }
-
-  async createWallet(): Promise<void> {
-    const { privateKey } = this.state.wallet ?? {};
-    const publicKey = this.PublicKey();
-
-    if (privateKey === undefined || publicKey === undefined) {
-      console.error("Can't create a wallet without a key");
-      return;
-    }
-
-    this.setState({ addressLoading: true });
-
-    const creationTx = await BlsWallet.signCreation(
-      privateKey,
-      this.props.app.provider,
-    );
-
-    const createResult = await this.props.app.aggregatorClient.createWallet(
-      creationTx,
-    );
-
-    if (createResult.address !== undefined) {
-      // The address is in the createResult but we'd rather just check with the
-      // network to potential mishaps from incorrect aggregators.
-      this.lookForExistingWallet(this.state.wallet);
-    } else {
-      console.error('Create wallet failed', createResult);
-      this.setState({ addressLoading: false });
-    }
-  }
-
-  lookForExistingWallet(wallet: State['wallet']): void {
-    if (wallet === undefined) {
-      return;
-    }
-
-    this.setState({
-      addressLoading: true,
-    });
-
-    BlsWallet.Address(wallet.privateKey, this.props.app.provider).then(
-      (address) => {
-        this.setState({
-          addressLoading: false,
-        });
-
-        const latestWallet = this.state.wallet;
-
-        if (latestWallet?.privateKey !== wallet.privateKey) {
-          return;
-        }
-
-        this.setWallet({
-          ...latestWallet,
-          address,
-        });
-      },
-    );
-  }
-
-  PublicKey(): string | undefined {
-    const { privateKey } = this.state.wallet ?? {};
-
-    if (privateKey === undefined) {
-      return undefined;
-    }
-
-    return this.props.app.blsWalletSigner.getPublicKey(privateKey);
-  }
-}
-
-function generateRandomHex(bits: number) {
-  const bytes = bits / 8;
-  assert(bytes === Math.round(bytes));
-
-  const hexBytes = Range(bytes).map(() =>
-    Math.floor(256 * Math.random())
-      .toString(16)
-      .padStart(2, '0'),
-  );
-
-  return `0x${hexBytes.join('')}`;
 }
