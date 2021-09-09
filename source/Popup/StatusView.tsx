@@ -72,25 +72,29 @@ export default class StatusView extends React.Component<Props, State> {
     return <div className="status-view">{this.renderContent()}</div>;
   }
 
-  // eslint-disable-next-line consistent-return
   renderContent(): React.ReactNode {
-    if (this.state.overlays.length === 0) {
-      return (
-        <table className="basic-form">
-          <tr>
-            <td>BLS Key</td>
-            <td>{this.renderKeyField()}</td>
-          </tr>
-          <tr>
-            <td>BLS Wallet</td>
-            <td>{this.renderWalletField()}</td>
-          </tr>
-        </table>
-      );
-    }
-
     const overlay = this.state.overlays[this.state.overlays.length - 1];
 
+    if (overlay !== undefined) {
+      return this.renderOverlay(overlay);
+    }
+
+    return (
+      <table className="basic-form">
+        <tr>
+          <td>BLS Key</td>
+          <td>{this.renderKeyField()}</td>
+        </tr>
+        <tr>
+          <td>BLS Wallet</td>
+          <td>{this.renderWalletField()}</td>
+        </tr>
+      </table>
+    );
+  }
+
+  // eslint-disable-next-line consistent-return
+  renderOverlay(overlay: Overlay): React.ReactNode {
     switch (overlay.type) {
       case 'restore': {
         return (
@@ -357,8 +361,6 @@ export default class StatusView extends React.Component<Props, State> {
   }
 
   restoreKey(): void {
-    this.pushOverlay({
-      type: 'restore',
-    });
+    this.pushOverlay({ type: 'restore' });
   }
 }
