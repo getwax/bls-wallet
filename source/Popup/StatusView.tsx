@@ -8,28 +8,25 @@ import BlsWallet from '../chain/BlsWallet';
 import { WALLET_STORAGE_KEY } from '../env';
 import type App from '../App';
 
-/* eslint-disable prettier/prettier */
-
 type Props = {
   app: App;
 };
 
-type Overlay = (
+type Overlay =
   | {
-    type: 'restore';
-    errorMsg?: string;
-  }
+      type: 'restore';
+      errorMsg?: string;
+    }
   | {
-    type: 'confirm';
-    msg: string;
-    yesAction: keyof StatusView;
-  }
+      type: 'confirm';
+      msg: string;
+      yesAction: keyof StatusView;
+    }
   | {
-    type: 'private-key-display';
-    text: string;
-    show: boolean;
-  }
-);
+      type: 'private-key-display';
+      text: string;
+      show: boolean;
+    };
 
 type State = {
   wallet?: {
@@ -79,7 +76,7 @@ export default class StatusView extends React.Component<Props, State> {
       browser.storage.onChanged.removeListener(listener);
     });
 
-    browser.storage.local.get(WALLET_STORAGE_KEY).then(results => {
+    browser.storage.local.get(WALLET_STORAGE_KEY).then((results) => {
       if (WALLET_STORAGE_KEY in results) {
         this.setWallet(results[WALLET_STORAGE_KEY]);
       }
@@ -106,9 +103,7 @@ export default class StatusView extends React.Component<Props, State> {
     return (
       <div className="status-view">
         <div className="heading">Quill 🪶</div>
-        <div className="body">
-          {this.renderBody()}
-        </div>
+        <div className="body">{this.renderBody()}</div>
       </div>
     );
   }
@@ -134,23 +129,33 @@ export default class StatusView extends React.Component<Props, State> {
 
     switch (overlay.type) {
       case 'restore': {
-        return <>
-          <div>Enter your private key below</div>
-          <div>
-            <textarea ref={ref => { this.privateKeyInputElement = ref ?? undefined; }}/>
-          </div>
-          {(() => {
-            if (overlay.errorMsg !== undefined) {
-              return <div style={{ color: 'red' }}>{overlay.errorMsg}</div>;
-            }
+        return (
+          <>
+            <div>Enter your private key below</div>
+            <div>
+              <textarea
+                ref={(ref) => {
+                  this.privateKeyInputElement = ref ?? undefined;
+                }}
+              />
+            </div>
+            {(() => {
+              if (overlay.errorMsg !== undefined) {
+                return <div style={{ color: 'red' }}>{overlay.errorMsg}</div>;
+              }
 
-            return <></>;
-          })()}
-          <div>
-            <button type="button" onClick={() => this.loadPrivateKey()}>Submit</button>
-            <button type="button" onClick={() => this.popOverlay()}>Cancel</button>
-          </div>
-        </>;
+              return <></>;
+            })()}
+            <div>
+              <button type="button" onClick={() => this.loadPrivateKey()}>
+                Submit
+              </button>
+              <button type="button" onClick={() => this.popOverlay()}>
+                Cancel
+              </button>
+            </div>
+          </>
+        );
       }
 
       case 'confirm': {
@@ -164,52 +169,71 @@ export default class StatusView extends React.Component<Props, State> {
 
         yesAction = yesAction.bind(this);
 
-        return <>
-          <div>{overlay.msg}</div>
-          <div>
-            <button type="button" onClick={() => { yesAction(); this.popOverlay() }}>Yes</button>
-            <button type="button" onClick={() => this.popOverlay()}>No</button>
-          </div>
-        </>;
+        return (
+          <>
+            <div>{overlay.msg}</div>
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  yesAction();
+                  this.popOverlay();
+                }}
+              >
+                Yes
+              </button>
+              <button type="button" onClick={() => this.popOverlay()}>
+                No
+              </button>
+            </div>
+          </>
+        );
       }
 
       case 'private-key-display': {
-        return <>
-          <p>
-            Store this private key with care.
-          </p>
-          <p>
-            It&apos;s different from your public key displayed on the main
-            page, which can be shared to allow others to interact with your
-            account, such as send you assets.
-          </p>
-          <p>
-            This is the <i>private</i> key, and if anyone gains access to it
-            they will have access to your account, including the ability to
-            move your assets into another account.
-          </p>
+        return (
+          <>
+            <p>Store this private key with care.</p>
+            <p>
+              It&apos;s different from your public key displayed on the main
+              page, which can be shared to allow others to interact with your
+              account, such as send you assets.
+            </p>
+            <p>
+              This is the <i>private</i> key, and if anyone gains access to it
+              they will have access to your account, including the ability to
+              move your assets into another account.
+            </p>
 
-          <p>
-            {(() => {
-              if (!overlay.show) {
-                return (
-                  <button
-                    type="button"
-                    onClick={() => this.setOverlayState({ type: 'private-key-display', show: true })}
-                  >
-                    Click to show
-                  </button>
-                );
-              }
+            <p>
+              {(() => {
+                if (!overlay.show) {
+                  return (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        this.setOverlayState({
+                          type: 'private-key-display',
+                          show: true,
+                        })
+                      }
+                    >
+                      Click to show
+                    </button>
+                  );
+                }
 
-              return <p>{overlay.text}</p>;
-            })()}
-          </p>
+                return <p>{overlay.text}</p>;
+              })()}
+            </p>
 
-          <p>
-            <button type="button" onClick={() => this.popOverlay()}>Back</button>
-          </p>
-        </>;
+            <p>
+              <button type="button" onClick={() => this.popOverlay()}>
+                Back
+              </button>
+            </p>
+          </>
+        );
       }
 
       default: {
@@ -273,14 +297,18 @@ export default class StatusView extends React.Component<Props, State> {
         return <>Loading...</>;
       }
 
-      return <button type="button" onClick={() => this.createWallet()}>
-        Create
-      </button>;
+      return (
+        <button type="button" onClick={() => this.createWallet()}>
+          Create
+        </button>
+      );
     }
 
-    return <span>
-      {address.slice(0, 6)}...{address.slice(-4)}
-    </span>;
+    return (
+      <span>
+        {address.slice(0, 6)}...{address.slice(-4)}
+      </span>
+    );
   }
 
   setWallet(wallet: State['wallet']): void {
@@ -324,7 +352,7 @@ export default class StatusView extends React.Component<Props, State> {
       console.warn('privateKey not found during downloadKey()');
       return;
     }
-    
+
     this.pushOverlay({
       type: 'private-key-display',
       show: false,
@@ -334,7 +362,10 @@ export default class StatusView extends React.Component<Props, State> {
 
   loadPrivateKey(): void {
     if (this.privateKeyInputElement === undefined) {
-      this.setOverlayState({ type: 'restore', errorMsg: 'input element missing' });
+      this.setOverlayState({
+        type: 'restore',
+        errorMsg: 'input element missing',
+      });
       return;
     }
 
@@ -343,10 +374,9 @@ export default class StatusView extends React.Component<Props, State> {
     const expectedBits = 256;
     const expectedBytes = expectedBits / 8;
 
-    const expectedLength = (
+    const expectedLength =
       2 + // 0x
-      2 * expectedBytes // 2 hex characters per byte
-    );
+      2 * expectedBytes; // 2 hex characters per byte
 
     if (inputText.length !== expectedLength) {
       this.setOverlayState({ type: 'restore', errorMsg: 'Incorrect length' });
@@ -384,14 +414,18 @@ export default class StatusView extends React.Component<Props, State> {
         const newOverlay = { ...this.state.overlays[i], ...overlay } as Overlay;
 
         this.setState({
-          overlays: [...this.state.overlays.slice(0, i), newOverlay, ...this.state.overlays.slice(i + 1)],
-        })
+          overlays: [
+            ...this.state.overlays.slice(0, i),
+            newOverlay,
+            ...this.state.overlays.slice(i + 1),
+          ],
+        });
 
         return;
       }
     }
 
-    console.error("Matching overlay not found in setOverlayState", overlay);
+    console.error('Matching overlay not found in setOverlayState', overlay);
   }
 
   restoreKey(): void {
@@ -439,25 +473,24 @@ export default class StatusView extends React.Component<Props, State> {
       addressLoading: true,
     });
 
-    BlsWallet.Address(
-      wallet.privateKey,
-      this.props.app.provider,
-    ).then((address) => {
-      this.setState({
-        addressLoading: false,
-      });
+    BlsWallet.Address(wallet.privateKey, this.props.app.provider).then(
+      (address) => {
+        this.setState({
+          addressLoading: false,
+        });
 
-      const latestWallet = this.state.wallet;
+        const latestWallet = this.state.wallet;
 
-      if (latestWallet?.privateKey !== wallet.privateKey) {
-        return;
-      }
+        if (latestWallet?.privateKey !== wallet.privateKey) {
+          return;
+        }
 
-      this.setWallet({
-        ...latestWallet,
-        address,
-      });
-    });
+        this.setWallet({
+          ...latestWallet,
+          address,
+        });
+      },
+    );
   }
 
   PublicKey(): string | undefined {
@@ -478,7 +511,7 @@ function generateRandomHex(bits: number) {
   const hexBytes = Range(bytes).map(() =>
     Math.floor(256 * Math.random())
       .toString(16)
-      .padStart(2, '0')
+      .padStart(2, '0'),
   );
 
   return `0x${hexBytes.join('')}`;

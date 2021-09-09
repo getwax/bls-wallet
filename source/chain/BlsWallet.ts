@@ -18,8 +18,6 @@ import splitHex256 from '../helpers/splitHex256';
 import BLSWallet from './ovmContractABIs/BLSWallet';
 import VerificationGateway from './ovmContractABIs/VerificationGateway';
 
-/* eslint-disable prettier/prettier */
-
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
 export default class BlsWallet {
@@ -38,7 +36,9 @@ export default class BlsWallet {
     privateKey: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<boolean> {
-    return await BlsWallet.Address(privateKey, signerOrProvider) !== undefined;
+    return (
+      (await BlsWallet.Address(privateKey, signerOrProvider)) !== undefined
+    );
   }
 
   /** Get the wallet contract address for the given key, if it exists. */
@@ -101,11 +101,10 @@ export default class BlsWallet {
       failures.push('invalid signature');
     }
 
-    const expectedEncodedFunctionData = verificationGateway.interface
-      .encodeFunctionData(
-        'walletCrossCheck',
-        [keccak256(tx.publicKey)],
-      );
+    const expectedEncodedFunctionData =
+      verificationGateway.interface.encodeFunctionData('walletCrossCheck', [
+        keccak256(tx.publicKey),
+      ]);
 
     if (tx.encodedFunctionData !== expectedEncodedFunctionData) {
       failures.push('encoded function data mismatch');
@@ -137,14 +136,16 @@ export default class BlsWallet {
 
     const tx = await BlsWallet.signCreation(privateKey, parent);
 
-    await (await this.#VerificationGateway(parent).blsCallCreate(
-      splitHex256(tx.publicKey),
-      splitHex256(tx.signature),
-      tx.tokenRewardAmount,
-      tx.contractAddress,
-      tx.encodedFunctionData.slice(0, 10),
-      `0x${tx.encodedFunctionData.slice(10)}`,
-    )).wait();
+    await (
+      await this.#VerificationGateway(parent).blsCallCreate(
+        splitHex256(tx.publicKey),
+        splitHex256(tx.signature),
+        tx.tokenRewardAmount,
+        tx.contractAddress,
+        tx.encodedFunctionData.slice(0, 10),
+        `0x${tx.encodedFunctionData.slice(10)}`,
+      )
+    ).wait();
 
     wallet = await BlsWallet.connect(privateKey, parent.provider);
     assert(wallet !== undefined);
@@ -241,9 +242,10 @@ export default class BlsWallet {
   static async #BlsWalletSigner(
     signerOrProvider: SignerOrProvider,
   ): Promise<BlsWalletSigner> {
-    const chainId = 'getChainId' in signerOrProvider
-      ? await signerOrProvider.getChainId()
-      : (await signerOrProvider.getNetwork()).chainId;
+    const chainId =
+      'getChainId' in signerOrProvider
+        ? await signerOrProvider.getChainId()
+        : (await signerOrProvider.getNetwork()).chainId;
 
     return await initBlsWalletSigner({ chainId });
   }
