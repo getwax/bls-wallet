@@ -6,7 +6,7 @@ import Range from '../helpers/Range';
 import never from '../helpers/never';
 import BlsWallet from '../chain/BlsWallet';
 import { WALLET_STORAGE_KEY } from '../env';
-import type App from '../App';
+import type App from './App';
 
 type Props = {
   app: App;

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type App from '../App';
+import type App from './App';
 import StatusView from './StatusView';
 
 import './styles.scss';

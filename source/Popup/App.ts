@@ -1,6 +1,6 @@
 import { BlsWalletSigner } from 'bls-wallet-signer';
 import type { ethers } from 'ethers';
-import type AggregatorClient from './AggregatorClient';
+import type AggregatorClient from '../AggregatorClient';
 
 export default class App {
   constructor(
