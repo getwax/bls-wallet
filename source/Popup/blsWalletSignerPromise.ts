@@ -1,6 +1,5 @@
 import { initBlsWalletSigner } from 'bls-wallet-signer';
 
-// TODO: Config
-const chainId = 420;
+import { chainId } from './config';
 
 export default initBlsWalletSigner({ chainId });

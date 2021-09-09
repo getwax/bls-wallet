@@ -1,3 +1,4 @@
+export const chainId = 420;
 export const walletStorageKey = 'default-wallet';
 export const aggregatorUrl = 'http://localhost:3000';
 export const chainRpcUrl = 'http://localhost:8545';
