@@ -2,8 +2,7 @@
 pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
-// Modified for solidity 0.7.0
-import "./lib/BLS.sol"; //from hubble repo
+import "./lib/IBLS.sol"; // to use a deployed BLS library
 import "./lib/IERC20.sol";
 
 import "./BLSWallet.sol";
@@ -22,8 +21,14 @@ contract VerificationGateway is Initializable
     mapping (bytes32 => BLSWallet) public walletFromHash;
 
     IERC20 public paymentToken;
+    IBLS blsLib;
 
-    function initialize(IERC20 token) public initializer {
+    /**
+    @param bls verified bls library contract address
+    @param token default payment token
+     */
+    function initialize(IBLS bls, IERC20 token) public initializer {
+        blsLib = bls;
         paymentToken = token;
     }
 
@@ -52,7 +57,7 @@ contract VerificationGateway is Initializable
         bool result,
         uint256 nextNonce
     ) {
-        (bool checkResult, bool callSuccess) = BLS.verifySingle(
+        (bool checkResult, bool callSuccess) = blsLib.verifySingle(
             signature,
             blsKeysFromHash[txData.publicKeyHash],
             messagePoint(
@@ -96,7 +101,7 @@ contract VerificationGateway is Initializable
             );
         }
 
-        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+        (bool checkResult, bool callSuccess) = blsLib.verifyMultiple(
             signature,
             publicKeys,
             messages
@@ -206,7 +211,7 @@ contract VerificationGateway is Initializable
     ) public {
         bytes32 publicKeyHash = callingPublicKeyHash;
 
-        (bool checkResult, bool callSuccess) = BLS.verifySingle(
+        (bool checkResult, bool callSuccess) = blsLib.verifySingle(
             signature,
             blsKeysFromHash[publicKeyHash],
             messagePoint(
@@ -297,7 +302,7 @@ contract VerificationGateway is Initializable
             );
         }
 
-        (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+        (bool checkResult, bool callSuccess) = blsLib.verifyMultiple(
             signature,
             publicKeys,
             messages
@@ -356,7 +361,7 @@ contract VerificationGateway is Initializable
             }
         }
 
-        // (bool checkResult, bool callSuccess) = BLS.verifyMultiple(
+        // (bool checkResult, bool callSuccess) = blsLib.verifyMultiple(
         //     signature,
         //     publicKeys,
         //     messages
@@ -378,7 +383,7 @@ contract VerificationGateway is Initializable
         assembly {
             chainId := chainid()
         }
-        return BLS.hashToPoint(
+        return blsLib.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(
                 chainId, //block.chainid,
