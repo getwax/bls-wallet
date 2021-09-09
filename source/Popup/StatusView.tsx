@@ -86,6 +86,10 @@ export default class StatusView extends React.Component<Props, State> {
           <td>{this.renderKeyField()}</td>
         </tr>
         <tr>
+          <td>Network</td>
+          <td>Optimism</td>
+        </tr>
+        <tr>
           <td>BLS Wallet</td>
           <td>{this.renderWalletField()}</td>
         </tr>
