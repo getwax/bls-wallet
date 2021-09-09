@@ -1,22 +1,17 @@
-import * as ethers from 'ethers';
 import * as React from 'react';
-import { BlsWalletSigner } from 'bls-wallet-signer';
 import { browser } from 'webextension-polyfill-ts';
 
 import assert from '../helpers/assert';
 import Range from '../helpers/Range';
 import never from '../helpers/never';
 import BlsWallet from '../chain/BlsWallet';
-import AggregatorClient from '../AggregatorClient';
-import { AGGREGATOR_URL, CHAIN_RPC_URL, WALLET_STORAGE_KEY } from '../env';
+import { WALLET_STORAGE_KEY } from '../env';
+import type App from '../App';
 
 /* eslint-disable prettier/prettier */
 
-const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
-const aggregatorClient = new AggregatorClient(AGGREGATOR_URL);
-
 type Props = {
-  blsWalletSigner: BlsWalletSigner;
+  app: App;
 };
 
 type Overlay = (
@@ -416,9 +411,14 @@ export default class StatusView extends React.Component<Props, State> {
 
     this.setState({ addressLoading: true });
 
-    const creationTx = await BlsWallet.signCreation(privateKey, provider);
+    const creationTx = await BlsWallet.signCreation(
+      privateKey,
+      this.props.app.provider,
+    );
 
-    const createResult = await aggregatorClient.createWallet(creationTx);
+    const createResult = await this.props.app.aggregatorClient.createWallet(
+      creationTx,
+    );
 
     if (createResult.address !== undefined) {
       // The address is in the createResult but we'd rather just check with the
@@ -439,7 +439,10 @@ export default class StatusView extends React.Component<Props, State> {
       addressLoading: true,
     });
 
-    BlsWallet.Address(wallet.privateKey, provider).then((address) => {
+    BlsWallet.Address(
+      wallet.privateKey,
+      this.props.app.provider,
+    ).then((address) => {
       this.setState({
         addressLoading: false,
       });
@@ -464,7 +467,7 @@ export default class StatusView extends React.Component<Props, State> {
       return undefined;
     }
 
-    return this.props.blsWalletSigner.getPublicKey(privateKey);
+    return this.props.app.blsWalletSigner.getPublicKey(privateKey);
   }
 }
 

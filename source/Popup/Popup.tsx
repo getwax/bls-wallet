@@ -1,15 +1,15 @@
-import { BlsWalletSigner } from 'bls-wallet-signer';
 import * as React from 'react';
-import blsWalletSignerPromise from './blsWalletSignerPromise';
+import type App from '../App';
 import StatusView from './StatusView';
 
 import './styles.scss';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-type Props = {};
+type Props = {
+  appPromise: Promise<App>;
+};
 
 type State = {
-  blsWalletSigner?: BlsWalletSigner;
+  app?: App;
 };
 
 export default class Popup extends React.Component<Props, State> {
@@ -18,16 +18,16 @@ export default class Popup extends React.Component<Props, State> {
 
     this.state = {};
 
-    blsWalletSignerPromise.then((blsWalletSigner) => {
-      this.setState({ blsWalletSigner });
+    this.props.appPromise.then((app) => {
+      this.setState({ app });
     });
   }
 
   render(): React.ReactNode {
-    if (this.state.blsWalletSigner) {
+    if (this.state.app) {
       return (
         <div id="popup">
-          <StatusView blsWalletSigner={this.state.blsWalletSigner} />
+          <StatusView app={this.state.app} />
         </div>
       );
     }
