@@ -1,0 +1,3 @@
+[submodule "contracts/lib/hubble-contracts"]
+	path = contracts/lib/hubble-contracts
+	url = git@github.com:thehubbleproject/hubble-contracts.git
