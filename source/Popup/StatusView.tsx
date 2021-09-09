@@ -100,16 +100,11 @@ export default class StatusView extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
-    return (
-      <div className="status-view">
-        <div className="heading">Quill 🪶</div>
-        <div className="body">{this.renderBody()}</div>
-      </div>
-    );
+    return <div className="status-view">{this.renderContent()}</div>;
   }
 
   // eslint-disable-next-line consistent-return
-  renderBody(): React.ReactNode {
+  renderContent(): React.ReactNode {
     if (this.state.overlays.length === 0) {
       return (
         <table className="basic-form">

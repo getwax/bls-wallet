@@ -24,12 +24,17 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
+    return (
+      <div className="popup">
+        <div className="heading">Quill 🪶</div>
+        <div className="body">{this.renderBody()}</div>
+      </div>
+    );
+  }
+
+  renderBody(): React.ReactNode {
     if (this.state.app) {
-      return (
-        <div id="popup">
-          <StatusView app={this.state.app} />
-        </div>
-      );
+      return <StatusView app={this.state.app} />;
     }
 
     return <>Loading...</>;
