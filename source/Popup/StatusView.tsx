@@ -7,7 +7,7 @@ import assert from '../helpers/assert';
 import Range from '../helpers/Range';
 import never from '../helpers/never';
 import { aggregatorUrl, chainRpcUrl, walletStorageKey } from './config';
-import BlsWallet from '../chain/BLSWallet';
+import BlsWallet from '../chain/BlsWallet';
 import AggregatorClient from '../AggregatorClient';
 
 /* eslint-disable prettier/prettier */
