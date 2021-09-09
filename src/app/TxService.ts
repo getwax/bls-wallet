@@ -3,7 +3,7 @@ import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
 
-import AddTransactionFailure from "./AddTransactionFailure.ts";
+import TransactionFailure from "./TransactionFailure.ts";
 import BatchTimer from "./BatchTimer.ts";
 import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
@@ -66,7 +66,7 @@ export default class TxService {
     return runQueryGroup(this.emit, this.txTablesMutex, this.queryClient, body);
   }
 
-  async add(txData: TransactionData): Promise<AddTransactionFailure[]> {
+  async add(txData: TransactionData): Promise<TransactionFailure[]> {
     let checkTxResult: TxCheckResult;
 
     try {
@@ -259,7 +259,7 @@ export default class TxService {
   async replaceReadyTx(
     nextNonce: BigNumber,
     newTx: TransactionData,
-  ): Promise<AddTransactionFailure[]> {
+  ): Promise<TransactionFailure[]> {
     const existingTx = await this.readyTxTable.findSingle(
       newTx.publicKey,
       newTx.nonce,

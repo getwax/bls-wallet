@@ -2,6 +2,7 @@ import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
+import BlsWallet from "../src/chain/BlsWallet.ts";
 
 Fixture.test("WalletService sends single tx", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
@@ -232,3 +233,15 @@ Fixture.test(
 //     assertEquals(balance.toNumber(), 1002);
 //   },
 // );
+
+Fixture.test("WalletService can create a wallet", async (fx) => {
+  const tx = await BlsWallet.signCreation(
+    fx.rng.seed("aggregator-free-wallet").address(),
+    fx.adminWallet.provider,
+  );
+
+  const creationResult = await fx.walletService.createWallet(tx);
+
+  assertEquals(typeof creationResult.address, "string");
+  assertEquals(creationResult.failures, []);
+});

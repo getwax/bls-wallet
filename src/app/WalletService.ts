@@ -12,15 +12,22 @@ import {
 
 import * as env from "../env.ts";
 import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
-import AddTransactionFailure from "./AddTransactionFailure.ts";
+import TransactionFailure from "./TransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import { TxTableRow } from "./TxTable.ts";
 import splitHex256 from "../helpers/splitHex256.ts";
+import BlsWallet from "../chain/BlsWallet.ts";
+import nil from "../helpers/nil.ts";
 
 export type TxCheckResult = {
-  failures: AddTransactionFailure[];
+  failures: TransactionFailure[];
   nextNonce: BigNumber;
+};
+
+export type CreateWalletResult = {
+  address?: string;
+  failures: TransactionFailure[];
 };
 
 const addressStringLength = 42;
@@ -84,7 +91,7 @@ export default class WalletService {
         `0x${tx.encodedFunctionData.slice(10)}`,
       );
 
-    const failures: AddTransactionFailure[] = [];
+    const failures: TransactionFailure[] = [];
 
     if (signedCorrectly === false) {
       failures.push({
@@ -203,6 +210,41 @@ export default class WalletService {
       );
 
     return await txResponse.wait();
+  }
+
+  async createWallet(
+    tx: TransactionData,
+  ): Promise<CreateWalletResult> {
+    const failures: TransactionFailure[] = [];
+
+    const creationValidation = await BlsWallet.validateCreationTx(
+      tx,
+      this.aggregatorSigner.provider,
+    );
+
+    failures.push(...creationValidation.failures.map((description) => ({
+      type: "invalid-creation" as const,
+      description,
+    })));
+
+    if (failures.length > 0) {
+      return { address: nil, failures };
+    }
+
+    await (await this.verificationGateway.blsCallCreate(
+      splitHex256(tx.publicKey),
+      splitHex256(tx.signature),
+      tx.tokenRewardAmount,
+      tx.contractAddress,
+      tx.encodedFunctionData.slice(0, 10),
+      `0x${tx.encodedFunctionData.slice(10)}`,
+    )).wait();
+
+    const address = await this.verificationGateway.walletFromHash(
+      keccak256(tx.publicKey),
+    );
+
+    return { address, failures };
   }
 
   async getRewardBalanceOf(addressOrPublicKey: string): Promise<BigNumber> {

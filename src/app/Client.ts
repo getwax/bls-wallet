@@ -1,6 +1,7 @@
 import { TransactionData } from "../../deps.ts";
-import AddTransactionFailure from "./AddTransactionFailure.ts";
-import { TransactionDataDTO } from "./parsers.ts";
+import TransactionFailure from "./TransactionFailure.ts";
+import { TransactionDataDto } from "./parsers.ts";
+import type { CreateWalletResult } from "./WalletService.ts";
 
 export default class Client {
   origin: string;
@@ -15,16 +16,10 @@ export default class Client {
     this.origin = new URL(url).origin;
   }
 
-  async addTransaction(tx: TransactionData): Promise<AddTransactionFailure[]> {
-    const txDto: TransactionDataDTO = {
-      ...tx,
-      nonce: tx.nonce.toHexString(),
-      tokenRewardAmount: tx.tokenRewardAmount.toHexString(),
-    };
-
+  async addTransaction(tx: TransactionData): Promise<TransactionFailure[]> {
     const resp = await fetch(`${this.origin}/transaction`, {
       method: "POST",
-      body: JSON.stringify(txDto),
+      body: JSON.stringify(toDto(tx)),
       headers: {
         "content-type": "application/json",
       },
@@ -46,4 +41,38 @@ export default class Client {
 
     return json.failures;
   }
+
+  async createWallet(tx: TransactionData): Promise<CreateWalletResult> {
+    const resp = await fetch(`${this.origin}/wallet`, {
+      method: "POST",
+      body: JSON.stringify(toDto(tx)),
+      headers: {
+        "content-type": "application/json",
+      },
+    });
+
+    const text = await resp.text();
+
+    let json;
+
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`Unexpected invalid JSON response: ${text}`);
+    }
+
+    if (json === null || typeof json !== "object" || !("failures" in json)) {
+      throw new Error(`Unexpected response: ${text}`);
+    }
+
+    return json;
+  }
+}
+
+function toDto(tx: TransactionData): TransactionDataDto {
+  return {
+    ...tx,
+    nonce: tx.nonce.toHexString(),
+    tokenRewardAmount: tx.tokenRewardAmount.toHexString(),
+  };
 }
