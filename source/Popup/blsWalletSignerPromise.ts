@@ -1,5 +1,5 @@
 import { initBlsWalletSigner } from 'bls-wallet-signer';
 
-import { chainId } from './config';
+import { CHAIN_ID } from '../env';
 
-export default initBlsWalletSigner({ chainId });
+export default initBlsWalletSigner({ chainId: CHAIN_ID });

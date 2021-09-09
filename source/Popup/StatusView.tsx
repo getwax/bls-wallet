@@ -6,14 +6,14 @@ import { browser } from 'webextension-polyfill-ts';
 import assert from '../helpers/assert';
 import Range from '../helpers/Range';
 import never from '../helpers/never';
-import { aggregatorUrl, chainRpcUrl, walletStorageKey } from './config';
 import BlsWallet from '../chain/BlsWallet';
 import AggregatorClient from '../AggregatorClient';
+import { AGGREGATOR_URL, CHAIN_RPC_URL, WALLET_STORAGE_KEY } from '../env';
 
 /* eslint-disable prettier/prettier */
 
-const provider = new ethers.providers.JsonRpcProvider(chainRpcUrl);
-const aggregatorClient = new AggregatorClient(aggregatorUrl);
+const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
+const aggregatorClient = new AggregatorClient(AGGREGATOR_URL);
 
 type Props = {
   blsWalletSigner: BlsWalletSigner;
@@ -67,7 +67,7 @@ export default class StatusView extends React.Component<Props, State> {
         return;
       }
 
-      const walletChange = changes[walletStorageKey];
+      const walletChange = changes[WALLET_STORAGE_KEY];
 
       if (walletChange === undefined) {
         return;
@@ -84,9 +84,9 @@ export default class StatusView extends React.Component<Props, State> {
       browser.storage.onChanged.removeListener(listener);
     });
 
-    browser.storage.local.get(walletStorageKey).then(results => {
-      if (walletStorageKey in results) {
-        this.setWallet(results[walletStorageKey]);
+    browser.storage.local.get(WALLET_STORAGE_KEY).then(results => {
+      if (WALLET_STORAGE_KEY in results) {
+        this.setWallet(results[WALLET_STORAGE_KEY]);
       }
     });
   }
@@ -292,9 +292,9 @@ export default class StatusView extends React.Component<Props, State> {
     const previousPrivateKey = this.state.wallet?.privateKey;
 
     if (wallet === undefined) {
-      browser.storage.local.remove(walletStorageKey);
+      browser.storage.local.remove(WALLET_STORAGE_KEY);
     } else {
-      browser.storage.local.set({ [walletStorageKey]: wallet });
+      browser.storage.local.set({ [WALLET_STORAGE_KEY]: wallet });
 
       if (wallet.privateKey !== previousPrivateKey) {
         this.lookForExistingWallet(wallet);

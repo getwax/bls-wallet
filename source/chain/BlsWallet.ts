@@ -11,10 +11,10 @@ import {
 import * as ethers from 'ethers';
 import { BigNumber, Contract } from 'ethers';
 import { keccak256 } from 'ethers/lib/utils';
+import { VERIFICATION_GATEWAY_ADDRESS } from '../env';
 
 import assert from '../helpers/assert';
 import splitHex256 from '../helpers/splitHex256';
-import { verificationGatewayAddress } from '../Popup/config';
 import BLSWallet from './ovmContractABIs/BLSWallet';
 import VerificationGateway from './ovmContractABIs/VerificationGateway';
 
@@ -232,7 +232,7 @@ export default class BlsWallet {
 
   static #VerificationGateway(signerOrProvider: SignerOrProvider): Contract {
     return new Contract(
-      verificationGatewayAddress,
+      VERIFICATION_GATEWAY_ADDRESS,
       VerificationGateway.abi,
       signerOrProvider,
     );

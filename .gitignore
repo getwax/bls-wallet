@@ -202,3 +202,7 @@ dist/
 !.yarn/releases
 !.yarn/plugins
 .pnp.*
+
+# Non-template additions
+.env*
+!.env.example

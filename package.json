@@ -28,6 +28,7 @@
     "@babel/runtime": "^7.14.0",
     "advanced-css-reset": "^1.2.2",
     "bls-wallet-signer": "^0.3.6",
+    "dotenv-webpack": "^7.0.3",
     "emoji-log": "^1.0.2",
     "ethers": "^5.4.6",
     "react": "^17.0.2",
