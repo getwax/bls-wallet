@@ -74,3 +74,16 @@ Interaction with web3 applications can be slow, costly, and risky.
     * signed txs per row
         * method name - nonce - (send)
     * (aggregate) - (send all)
+
+## Development
+
+Copy `.env.example` to `.env.local`, updating values as needed.
+
+The 'local' in `.env.local` is your environment name. You need to supply this
+to webpack by prefixing webpack-related commands with `ENV=local`.
+
+To run the dev server:
+
+```sh
+ENV=local yarn run dev:chrome # or dev:firefox etc, see scripts in package.json
+```
