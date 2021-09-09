@@ -1,12 +1,12 @@
 import {
-  parseTransactionDataDTO,
-  TransactionDataDTO,
+  parseTransactionDataDto,
+  TransactionDataDto,
 } from "../src/app/parsers.ts";
 import { assertEquals } from "./deps.ts";
 
-Deno.test("parseTransactionDataDTO reports missing fields for undefined", () => {
+Deno.test("parseTransactionDataDto reports missing fields for undefined", () => {
   assertEquals(
-    parseTransactionDataDTO(undefined),
+    parseTransactionDataDto(undefined),
     {
       failures: [
         "field publicKey: not provided",
@@ -20,8 +20,8 @@ Deno.test("parseTransactionDataDTO reports missing fields for undefined", () => 
   );
 });
 
-Deno.test("parseTransactionDataDTO accepts dummy values", () => {
-  const dummyTxData: TransactionDataDTO = {
+Deno.test("parseTransactionDataDto accepts dummy values", () => {
+  const dummyTxData: TransactionDataDto = {
     "publicKey": [
       "0x000102030405060708091011121314151617181920212223242526272829303132333",
       "43536373839404142434445464748495051525354555657585960616263646566676869",
@@ -41,7 +41,7 @@ Deno.test("parseTransactionDataDTO accepts dummy values", () => {
   };
 
   assertEquals(
-    parseTransactionDataDTO(dummyTxData),
+    parseTransactionDataDto(dummyTxData),
     { success: dummyTxData },
   );
 });

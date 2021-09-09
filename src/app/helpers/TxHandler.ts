@@ -1,6 +1,6 @@
 import { BigNumber, RouterContext, TransactionData } from "../../../deps.ts";
 import nil from "../../helpers/nil.ts";
-import { parseTransactionDataDTO } from "../parsers.ts";
+import { parseTransactionDataDto } from "../parsers.ts";
 import failRequest from "./failRequest.ts";
 import JsonHandler from "./JsonHandler.ts";
 
@@ -8,7 +8,7 @@ export default function TxHandler(
   fn: (ctx: RouterContext, tx: TransactionData) => void,
 ) {
   return JsonHandler(async (ctx, json) => {
-    const parsedBody = parseTransactionDataDTO(json);
+    const parsedBody = parseTransactionDataDto(json);
 
     if ("failures" in parsedBody) {
       failRequest(

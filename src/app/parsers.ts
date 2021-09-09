@@ -1,6 +1,6 @@
 import { BigNumber, TransactionData } from "../../deps.ts";
 
-export type TransactionDataDTO = {
+export type TransactionDataDto = {
   [K in keyof TransactionData]: (
     TransactionData[K] extends BigNumber ? string : TransactionData[K]
   );
@@ -121,9 +121,9 @@ export function parseNumber(value: unknown): ParseResult<number> {
   return { failures: ["not a number"] };
 }
 
-export function parseTransactionDataDTO(
+export function parseTransactionDataDto(
   txData: unknown,
-): ParseResult<TransactionDataDTO> {
+): ParseResult<TransactionDataDto> {
   const result = combine(
     field(txData, "publicKey", parseHex({ bytes: 128 })),
     field(txData, "signature", parseHex({ bytes: 64 })),

@@ -1,6 +1,6 @@
 import { TransactionData } from "../../deps.ts";
 import TransactionFailure from "./TransactionFailure.ts";
-import { TransactionDataDTO } from "./parsers.ts";
+import { TransactionDataDto } from "./parsers.ts";
 import type { CreateWalletResult } from "./WalletService.ts";
 
 export default class Client {
@@ -69,7 +69,7 @@ export default class Client {
   }
 }
 
-function toDto(tx: TransactionData): TransactionDataDTO {
+function toDto(tx: TransactionData): TransactionDataDto {
   return {
     ...tx,
     nonce: tx.nonce.toHexString(),
