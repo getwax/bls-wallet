@@ -1,4 +1,4 @@
-// Note: This code is mostly a copied from
+// Note: This code is mostly copied from
 //   bls-wallet-aggregator/src/chain/BlsWallet.ts
 // This might be a separate module in future. For now, any changes should be
 // made there first, not here.
