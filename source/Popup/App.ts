@@ -13,8 +13,11 @@ import Range from '../helpers/Range';
 
 export type AppState = {
   privateKey?: string;
-  walletAddress?: string;
-  walletAddressLoadCount: number;
+  walletAddress: {
+    value?: string;
+    loadCounter: number;
+  };
+  walletNonce?: string;
 };
 
 type Events = {
@@ -24,6 +27,7 @@ type Events = {
 export default class App {
   events = new EventEmitter() as TypedEventEmitter<Events>;
   cleanupTasks: (() => void)[] = [];
+  wallet?: BlsWallet;
 
   state: AppState;
 
@@ -34,9 +38,16 @@ export default class App {
     public storage: typeof browser.storage.local,
   ) {
     this.state = {
-      walletAddressLoadCount: 0,
+      walletAddress: {
+        loadCounter: 0,
+      },
     };
 
+    this.setupStorage();
+    this.setupBlockListener();
+  }
+
+  setupStorage(): void {
     type Listener = Parameters<typeof browser.storage.onChanged.addListener>[0];
 
     const listener: Listener = (changes, areaName) => {
@@ -66,6 +77,30 @@ export default class App {
     });
   }
 
+  setupBlockListener(): void {
+    const listener = async () => {
+      if (
+        this.wallet &&
+        this.state.privateKey &&
+        this.wallet.privateKey === this.state.privateKey
+      ) {
+        const newNonce = (await this.wallet.Nonce()).toString();
+
+        if (newNonce !== this.state.walletNonce) {
+          this.setState({
+            walletNonce: (await this.wallet.Nonce()).toString(),
+          });
+        }
+      }
+    };
+
+    this.provider.on('block', listener);
+
+    this.cleanupTasks.push(() => {
+      this.provider.off('block', listener);
+    });
+  }
+
   cleanup(): void {
     while (true) {
       const task = this.cleanupTasks.shift();
@@ -84,8 +119,12 @@ export default class App {
 
   setState(updates: Partial<AppState>): void {
     const oldPrivateKey = this.state.privateKey;
+    const oldWalletAddress = this.state.walletAddress.value;
+
     this.state = { ...this.state, ...updates };
 
+    // When the private key changes, update storage and check for an associated
+    // wallet
     if (this.state.privateKey !== oldPrivateKey) {
       if (this.state.privateKey === undefined) {
         browser.storage.local.remove(PRIVATE_KEY_STORAGE_KEY);
@@ -96,6 +135,11 @@ export default class App {
       }
 
       this.checkWalletAddress();
+    }
+
+    // When the wallet address changes, clear the wallet nonce
+    if (this.state.walletAddress.value !== oldWalletAddress) {
+      this.state = { ...this.state, walletNonce: undefined };
     }
 
     this.events.emit('state', this.state);
@@ -168,7 +212,13 @@ export default class App {
 
   async checkWalletAddress(): Promise<void> {
     if (this.state.privateKey === undefined) {
-      this.setState({ walletAddress: undefined });
+      this.setState({
+        walletAddress: {
+          ...this.state.walletAddress,
+          value: undefined,
+        },
+      });
+
       return;
     }
 
@@ -176,7 +226,7 @@ export default class App {
     const lookupPrivateKey = this.state.privateKey;
 
     try {
-      const walletAddress = await BlsWallet.Address(
+      this.wallet = await BlsWallet.connect(
         this.state.privateKey,
         this.provider,
       );
@@ -186,8 +236,17 @@ export default class App {
       }
 
       this.setState({
-        walletAddress,
+        walletAddress: {
+          ...this.state.walletAddress,
+          value: this.wallet?.address,
+        },
       });
+
+      if (this.wallet) {
+        this.setState({
+          walletNonce: (await this.wallet.Nonce()).toString(),
+        });
+      }
     } finally {
       this.decrementWalletAddressLoading();
     }
@@ -195,13 +254,19 @@ export default class App {
 
   incrementWalletAddressLoading(): void {
     this.setState({
-      walletAddressLoadCount: this.state.walletAddressLoadCount + 1,
+      walletAddress: {
+        ...this.state.walletAddress,
+        loadCounter: this.state.walletAddress.loadCounter + 1,
+      },
     });
   }
 
   decrementWalletAddressLoading(): void {
     this.setState({
-      walletAddressLoadCount: this.state.walletAddressLoadCount - 1,
+      walletAddress: {
+        ...this.state.walletAddress,
+        loadCounter: this.state.walletAddress.loadCounter - 1,
+      },
     });
   }
 }

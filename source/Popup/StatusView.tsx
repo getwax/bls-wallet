@@ -93,7 +93,9 @@ export default class StatusView extends React.Component<Props, State> {
           <td>BLS Wallet</td>
           <td>{this.renderWalletField()}</td>
           <td>
-            <span className="nonce">#123</span>
+            <span className="nonce">
+              #{this.state.appState.walletNonce ?? ''}
+            </span>
           </td>
         </tr>
       </table>
@@ -266,14 +268,14 @@ export default class StatusView extends React.Component<Props, State> {
   }
 
   renderWalletField(): React.ReactNode {
-    const address = this.state.appState.walletAddress;
+    const address = this.state.appState.walletAddress.value;
 
     if (address === undefined) {
       if (this.state.appState.privateKey === undefined) {
         return <>&lt;none&gt;</>;
       }
 
-      if (this.state.appState.walletAddressLoadCount > 0) {
+      if (this.state.appState.walletAddress.loadCounter > 0) {
         return <>Loading...</>;
       }
 
