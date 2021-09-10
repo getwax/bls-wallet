@@ -83,7 +83,7 @@ export default class StatusView extends React.Component<Props, State> {
       <table className="basic-form">
         <tr>
           <td>BLS Key</td>
-          <td>{this.renderKeyField()}</td>
+          {this.renderKeyField()}
         </tr>
         <tr>
           <td>Network</td>
@@ -92,6 +92,9 @@ export default class StatusView extends React.Component<Props, State> {
         <tr>
           <td>BLS Wallet</td>
           <td>{this.renderWalletField()}</td>
+          <td>
+            <span className="nonce">#123</span>
+          </td>
         </tr>
       </table>
     );
@@ -219,7 +222,7 @@ export default class StatusView extends React.Component<Props, State> {
 
     if (publicKey === undefined) {
       return (
-        <>
+        <td>
           <button
             type="button"
             onClick={() => this.props.app.createPrivateKey()}
@@ -233,29 +236,31 @@ export default class StatusView extends React.Component<Props, State> {
           >
             ⬆️
           </span>
-        </>
+        </td>
       );
     }
 
     return (
       <>
-        <span>
+        <td>
           {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
-        </span>
-        <span
-          className="pseudo-button"
-          onClick={() => this.displayPrivateKey()}
-          onKeyDown={(evt) => evt.key === 'Enter' && this.displayPrivateKey()}
-        >
-          ⬇️
-        </span>
-        <span
-          className="pseudo-button"
-          onClick={() => this.confirmDeleteKey()}
-          onKeyDown={(evt) => evt.key === 'Enter' && this.confirmDeleteKey()}
-        >
-          ❌
-        </span>
+        </td>
+        <td>
+          <span
+            className="pseudo-button"
+            onClick={() => this.displayPrivateKey()}
+            onKeyDown={(evt) => evt.key === 'Enter' && this.displayPrivateKey()}
+          >
+            ⬇️
+          </span>
+          <span
+            className="pseudo-button"
+            onClick={() => this.confirmDeleteKey()}
+            onKeyDown={(evt) => evt.key === 'Enter' && this.confirmDeleteKey()}
+          >
+            ❌
+          </span>
+        </td>
       </>
     );
   }
