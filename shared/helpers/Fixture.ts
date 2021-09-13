@@ -1,8 +1,7 @@
-
 import { ethers, network } from "hardhat";
+const utils = ethers.utils;
 
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
-const utils = ethers.utils;
 
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
 import { solG1 } from "../lib/hubble-bls/src/mcl"
@@ -22,6 +21,7 @@ export type FullTxData = {
   chainId: number,
   nonce: number,
   reward: BigNumber,
+  ethValue: BigNumber,
   contract: Contract,
   functionName: string,
   params: any[]
@@ -30,6 +30,7 @@ export type FullTxData = {
 export type TxData = {
   publicKeyHash: any;
   tokenRewardAmount: BigNumber;
+  ethValue: BigNumber;
   contractAddress: string;
   methodId: string;
   encodedParams: string;
@@ -42,6 +43,7 @@ export default class Fixture {
 
   private constructor(
     public chainId: number,
+    public provider,
 
     public signers: Signer[],
     public addresses: string[],
@@ -69,6 +71,7 @@ export default class Fixture {
     secretNumbers: number[]=undefined
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
+    let provider = ethers.provider;
 
     let allSigners = await ethers.getSigners();
     let signers = (allSigners).slice(0, Fixture.ECDSA_ACCOUNTS_LENGTH);
@@ -118,6 +121,7 @@ export default class Fixture {
   
     return new Fixture(
       chainId,
+      ethers.provider,
       signers,
       addresses,
       blsSignerFactory,
@@ -147,6 +151,7 @@ export default class Fixture {
     let txData: TxData = {
       publicKeyHash: blsKeyHash(fullTxData.blsSigner),
       tokenRewardAmount: fullTxData.reward,
+      ethValue: fullTxData.ethValue,
       contractAddress: fullTxData.contract.address,
       methodId: encodedFunction.substring(0,10),
       encodedParams: '0x'+encodedFunction.substr(10)
@@ -165,6 +170,7 @@ export default class Fixture {
       txData.publicKeyHash,
       sig,
       txData.tokenRewardAmount,
+      txData.ethValue,
       txData.contractAddress,
       txData.methodId,
       txData.encodedParams

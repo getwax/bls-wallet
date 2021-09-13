@@ -10,7 +10,8 @@ export default async function createBLSWallet(
   chainId: number,
   verificationGateway: Contract,
   blsSigner: BlsSignerInterface,
-  reward: BigNumber = BigNumber.from(0)
+  reward: BigNumber = BigNumber.from(0),
+  ethValue: BigNumber = BigNumber.from(0)
 ): Promise<string> {
   const blsPubKeyHash = blsKeyHash(blsSigner);
 
@@ -31,6 +32,7 @@ export default async function createBLSWallet(
     chainId,
     0, // initial nonce
     reward,
+    ethValue,
     verificationGateway.address,
     encodedFunction,
   );
@@ -42,6 +44,7 @@ export default async function createBLSWallet(
     blsSigner.pubkey,
     signature,
     reward,
+    ethValue,
     verificationGateway.address,
     encodedFunction.substring(0, 10),
     "0x" + encodedFunction.substr(10),

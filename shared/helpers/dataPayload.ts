@@ -7,6 +7,7 @@ export default function dataPayload(
   chainId: number,
   nonce: number,
   reward: BigNumber,
+  ethValue: BigNumber,
   contractAddress: string,
   encodedFunction: string,
 ) {
@@ -15,11 +16,12 @@ export default function dataPayload(
     [encodedFunction],
   );
   return utils.solidityPack(
-    ["uint256", "uint256", "uint256", "address", "bytes32"],
+    ["uint256", "uint256", "uint256", "uint256", "address", "bytes32"],
     [
       chainId,
       nonce,
       reward,
+      ethValue,
       contractAddress.toString(),
       encodedFunctionHash,
     ],

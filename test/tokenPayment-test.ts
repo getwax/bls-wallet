@@ -39,6 +39,7 @@ describe('TokenPayments', async function () {
       chainId: fx.chainId,
       nonce: 1, //next nonce after creation
       reward: reward,
+      ethValue: BigNumber.from(0),
       contract:fx.verificationGateway,
       functionName:"walletCrossCheck",
       params:[blsKeyHash(blsSigner)]
@@ -70,6 +71,7 @@ describe('TokenPayments', async function () {
       chainId: fx.chainId,
       nonce: walletNonce++,
       reward: reward,
+      ethValue: BigNumber.from(0),
       contract: actionToken,
       functionName: "transfer",
       params: [burnAddress, actionAmount]    
@@ -111,6 +113,7 @@ describe('TokenPayments', async function () {
         chainId: fx.chainId,
         nonce: walletNonce,
         reward: reward,
+        ethValue: BigNumber.from(0),
         contract: fx.verificationGateway,
         functionName: "walletCrossCheck",
         params: [blsKeyHash(fx.blsSigners[i])]
@@ -163,6 +166,7 @@ describe('TokenPayments', async function () {
         chainId: fx.chainId,
         nonce: walletNonce,
         reward: reward,
+        ethValue: BigNumber.from(0),
         contract: th.testToken,
         functionName: "transfer",
         params: [burnAddress, actionAmount]
@@ -209,6 +213,7 @@ describe('TokenPayments', async function () {
         chainId: fx.chainId,
         nonce: walletNonce,
         reward: rewards[i],
+        ethValue: BigNumber.from(0),
         contract: th.testToken,
         functionName: "transfer",
         params: [burnAddress, actionAmount]

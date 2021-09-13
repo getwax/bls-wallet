@@ -36,10 +36,12 @@ contract VerificationGateway is Initializable
     struct TxData {
         bytes32 publicKeyHash;
         uint256 tokenRewardAmount;
+        uint256 ethValue;
         address contractAddress;
         bytes4 methodId; //bytes4(keccak256(bytes(fnSig))
         bytes encodedParams;
     }
+
     function checkSig(
         uint256 signedNonce,
         TxData calldata txData,
@@ -55,6 +57,7 @@ contract VerificationGateway is Initializable
             messagePoint(
                 signedNonce,
                 txData.tokenRewardAmount,
+                txData.ethValue,
                 txData.contractAddress,
                 keccak256(abi.encodePacked(
                     txData.methodId,
@@ -67,7 +70,7 @@ contract VerificationGateway is Initializable
         nextNonce = walletFromHash[txData.publicKeyHash].nonce();
     }
 
-    function walletCrossCheck(bytes32 hash) public view {
+    function walletCrossCheck(bytes32 hash) public payable {
         require(msg.sender == address(walletFromHash[hash]));
     }
 
@@ -84,6 +87,7 @@ contract VerificationGateway is Initializable
             messages[i] = messagePoint(
                 0,
                 tokenRewardAmounts[i],
+                0,
                 address(this),
                 hashCreate
             );
@@ -120,6 +124,7 @@ contract VerificationGateway is Initializable
         uint256[4] calldata publicKey,
         uint256[2] calldata signature,
         uint256 tokenRewardAmount,
+        uint256 ethValue,
         address contractAddress,
         bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
@@ -143,6 +148,7 @@ contract VerificationGateway is Initializable
             publicKeyHash,
             signature,
             tokenRewardAmount,
+            ethValue,
             contractAddress,
             methodId,
             encodedParams
@@ -153,6 +159,7 @@ contract VerificationGateway is Initializable
         bytes32 callingPublicKeyHash,
         uint256[2] calldata signature,
         uint256 tokenRewardAmount,
+        uint256 ethValue,
         address contractAddress,
         bytes4 methodId, //bytes4(keccak256(bytes(fnSig))
         bytes calldata encodedParams
@@ -165,6 +172,7 @@ contract VerificationGateway is Initializable
             messagePoint(
                 walletFromHash[publicKeyHash].nonce(),
                 tokenRewardAmount,
+                ethValue,
                 contractAddress,
                 keccak256(abi.encodePacked(
                     methodId,
@@ -182,8 +190,8 @@ contract VerificationGateway is Initializable
             );
             require(success, "VerificationGateway: Could not pay nominated reward");
         }
-
         bool result = walletFromHash[publicKeyHash].action(
+            ethValue,
             contractAddress,
             methodId,
             encodedParams
@@ -237,6 +245,7 @@ contract VerificationGateway is Initializable
             messages[i] = messagePoint(
                 txNonces[i],
                 txs[i].tokenRewardAmount,
+                txs[i].ethValue,
                 txs[i].contractAddress,
                 keccak256(abi.encodePacked(
                     txs[i].methodId,
@@ -294,6 +303,7 @@ contract VerificationGateway is Initializable
                 if (paymentPending == false) {
                     // execute transaction (increments nonce)
                     wallet.action(
+                        txs[i].ethValue,
                         txs[i].contractAddress,
                         txs[i].methodId,
                         txs[i].encodedParams
@@ -314,6 +324,7 @@ contract VerificationGateway is Initializable
     function messagePoint(
         uint256 nonce,
         uint256 tokenRewardAmount,
+        uint256 ethValue,
         address contractAddress,
         bytes32 encodedFunctionHash
     ) internal view returns (uint256[2] memory) {
@@ -327,6 +338,7 @@ contract VerificationGateway is Initializable
                 chainId, //block.chainid,
                 nonce,
                 tokenRewardAmount,
+                ethValue,
                 contractAddress,
                 encodedFunctionHash
             )

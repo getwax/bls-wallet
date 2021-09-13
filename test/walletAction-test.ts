@@ -2,16 +2,19 @@ import { expect, assert } from "chai";
 
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
-import Fixture from "../shared/helpers/Fixture";
+import { ethers, network } from "hardhat";
+const utils = ethers.utils;
+
+import Fixture, { FullTxData, TxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 import dataPayload from "../shared/helpers/dataPayload";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
-import { BigNumber, providers } from "ethers";
+import { BigNumber } from "ethers";
 import blsKeyHash from "../shared/helpers/blsKeyHash";
 import blsSignFunction from "../shared/helpers/blsSignFunction";
 
-describe('WalletActions', async function () {
+describe.only('WalletActions', async function () {
   let fx: Fixture;
   let th: TokenHelper;
   beforeEach(async function() {
@@ -31,6 +34,51 @@ describe('WalletActions', async function () {
 
   });
 
+  it('should receive ETH', async function() {
+    let blsSigner = fx.blsSigners[0];  
+    let walletAddress = await fx.createBLSWallet(blsSigner);
+
+    let walletBalanceBefore = await fx.provider.getBalance(walletAddress);
+
+    let ethToTransfer = utils.parseEther("0.001");
+
+    await fx.signers[0].sendTransaction({
+      to: walletAddress,
+      value: ethToTransfer
+    });
+
+    let walletBalanceAfter = await fx.provider.getBalance(walletAddress);
+    expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
+  });
+
+  it.only('should send ETH', async function() {
+    // send money to sender bls wallet
+    let senderBlsSigner = fx.blsSigners[0];
+    let senderAddress = await fx.createBLSWallet(senderBlsSigner);
+    let ethToTransfer = utils.parseEther("0.001");
+    await fx.signers[0].sendTransaction({
+      to: senderAddress,
+      value: ethToTransfer
+    });
+
+    expect(await fx.provider.getBalance(senderAddress)).to.equal(ethToTransfer);
+    expect(await fx.provider.getBalance(fx.verificationGateway.address)).to.equal(0);
+
+    await fx.gatewayCallFull({
+      blsSigner: senderBlsSigner,
+      chainId: fx.chainId,
+      nonce: 1,
+      reward: BigNumber.from(0),
+      ethValue: ethToTransfer,
+      contract: fx.verificationGateway,
+      functionName: "walletCrossCheck",
+      params: [blsKeyHash(senderBlsSigner)]    
+    })
+
+    expect(await fx.provider.getBalance(senderAddress)).to.equal(0);
+    expect(await fx.provider.getBalance(fx.verificationGateway.address)).to.equal(ethToTransfer);
+  })
+
   it('should check signature', async function () {
     let blsSigner = fx.blsSigners[0];
     await fx.createBLSWallet(blsSigner);
@@ -42,6 +90,7 @@ describe('WalletActions', async function () {
       chainId: fx.chainId,
       nonce: 0,
       reward: BigNumber.from(0),
+      ethValue: BigNumber.from(0),
       contract: fx.verificationGateway,
       functionName: "walletCrossCheck",
       params: [blsKeyHash(blsSigner)]    
@@ -61,6 +110,7 @@ describe('WalletActions', async function () {
     let dataToSign = dataPayload(
       fx.chainId,
       0,
+      BigNumber.from(0),
       BigNumber.from(0),
       fx.verificationGateway.address,
       fx.encodedCreate
@@ -125,6 +175,7 @@ describe('WalletActions', async function () {
       let dataToSign = dataPayload(
         fx.chainId,
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
+        BigNumber.from(0),
         BigNumber.from(0),
         th.testToken.address,
         encodedFunction
@@ -191,6 +242,7 @@ describe('WalletActions', async function () {
         fx.chainId,
         nonce++,
         reward,
+        BigNumber.from(0),
         testToken.address,
         encodedFunction
       );

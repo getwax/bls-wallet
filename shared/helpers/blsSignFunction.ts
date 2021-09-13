@@ -1,5 +1,7 @@
 import { BigNumber, Contract, BaseContract, utils } from "ethers";
 
+import dataPayload from "./dataPayload";
+
 import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 import { solG1 } from "../lib/hubble-bls/src/mcl"
 
@@ -12,20 +14,13 @@ export default function blsSignFunction(
     fullTxData.functionName,
     fullTxData.params
   );
-  const encodedFunctionHash = utils.solidityKeccak256(
-    ["bytes"],
-    [encodedFunction],
-  );
-
-  let dataToSign = utils.solidityPack(
-    ["uint256", "uint256", "uint256", "address", "bytes32"],
-    [
-      fullTxData.chainId,
-      fullTxData.nonce,
-      fullTxData.reward,
-      fullTxData.contract.address,
-      encodedFunctionHash,
-    ],
+  let dataToSign = dataPayload(
+    fullTxData.chainId,
+    fullTxData.nonce,
+    fullTxData.reward,
+    fullTxData.ethValue,
+    fullTxData.contract.address,
+    encodedFunction
   );
   return [
     Fixture.txDataFromFull(fullTxData),

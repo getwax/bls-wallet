@@ -79,6 +79,7 @@ export default class TokenHelper {
       chainId: this.fx.chainId,
       nonce: nonce,
       reward: reward,
+      ethValue: BigNumber.from(0),
       contract: this.testToken,
       functionName: "transfer",
       params: [recipient, amount]
