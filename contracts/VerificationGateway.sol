@@ -57,20 +57,21 @@ contract VerificationGateway is Initializable
         bool result,
         uint256 nextNonce
     ) {
+        uint256[2] memory msgPoint = messagePoint(
+            signedNonce,
+            txData.tokenRewardAmount,
+            txData.ethValue,
+            txData.contractAddress,
+            keccak256(abi.encodePacked(
+                txData.methodId,
+                txData.encodedParams
+            )),
+            sendOnly
+        );
         (bool checkResult, bool callSuccess) = blsLib.verifySingle(
             signature,
             blsKeysFromHash[txData.publicKeyHash],
-            messagePoint(
-                signedNonce,
-                txData.tokenRewardAmount,
-                txData.ethValue,
-                txData.contractAddress,
-                keccak256(abi.encodePacked(
-                    txData.methodId,
-                    txData.encodedParams
-                )),
-                sendOnly
-            )
+            msgPoint
         );
         
         result = callSuccess && checkResult;
@@ -172,7 +173,7 @@ contract VerificationGateway is Initializable
     ) public {
         bytes32 publicKeyHash = callingPublicKeyHash;
 
-        (bool checkResult, bool callSuccess) = BLS.verifySingle(
+        (bool checkResult, bool callSuccess) = blsLib.verifySingle(
             signature,
             blsKeysFromHash[publicKeyHash],
             messagePoint(
