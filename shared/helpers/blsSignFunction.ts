@@ -5,25 +5,36 @@ import dataPayload from "./dataPayload";
 import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 import { solG1 } from "../lib/hubble-bls/src/mcl"
 
-import Fixture, { FullTxData, TxData } from "./Fixture";
+import Fixture, { FullTxData, TxDataCall, TxDataSend } from "./Fixture";
 
 export default function blsSignFunction(
-  fullTxData:FullTxData
-): [TxData, solG1] {
-  let encodedFunction = fullTxData.contract.interface.encodeFunctionData(
-    fullTxData.functionName,
-    fullTxData.params
-  );
+  fullTxData:FullTxData,
+  address=""
+): [TxDataCall|TxDataSend, solG1] {
+  let encodedFunction = "";
+  if (fullTxData.functionName !== "") {
+    encodedFunction = fullTxData.contract.interface.encodeFunctionData(
+      fullTxData.functionName,
+      fullTxData.params
+    );
+  }
+  let txDataSend = Fixture.txDataFromFull(fullTxData) as TxDataSend;
+  if (address === "") {
+    address = fullTxData.contract.address;
+  }
+  else {
+    txDataSend.recipientAddress = address;
+  }
   let dataToSign = dataPayload(
     fullTxData.chainId,
     fullTxData.nonce,
     fullTxData.reward,
     fullTxData.ethValue,
-    fullTxData.contract.address,
+    address,
     encodedFunction
   );
   return [
-    Fixture.txDataFromFull(fullTxData),
+    txDataSend,
     fullTxData.blsSigner.sign(dataToSign)
   ];
 }

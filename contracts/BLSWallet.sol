@@ -2,7 +2,10 @@
 pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
+
+//To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/Initializable.sol";
+
 import "./lib/IERC20.sol";
 import "hardhat/console.sol";
 
@@ -27,9 +30,13 @@ contract BLSWallet is Initializable
 
     function sendEther(
         address payable recipient,
-        uint256 amount) onlyGateway public payable {
-        (bool sent, bytes memory data) = recipient.call{value: amount}("");
-        require(sent, "Failed to send Ether");
+        uint256 ethValue
+    ) onlyGateway public payable returns (
+        bool success,
+        bytes memory
+    ) {
+        (success, ) = recipient.call{value: ethValue}("");
+        require(success, "recipient couldn't receive Ether");
     }
 
     function payTokenAmount(
@@ -55,7 +62,7 @@ contract BLSWallet is Initializable
         address contractAddress,
         bytes4 methodID,
         bytes memory encodedParams
-    ) public onlyGateway returns (bool success) {
+    ) public payable onlyGateway returns (bool success) {
         bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
         if (ethValue > 0) {
             (success, ) = payable(contractAddress).call{value: ethValue}(encodedFunction);

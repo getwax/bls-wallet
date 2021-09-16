@@ -64,7 +64,7 @@ const config: HardhatUserConfig = {
         `0x${process.env.PRIVATE_KEY_004}`,
         `0x${process.env.PRIVATE_KEY_005}`
       ],
-      gasPrice: 15000000,
+      gasPrice: 0,//15000000,
       ovm: true
     },
     optimisticKovan: {
