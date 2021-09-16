@@ -2,16 +2,17 @@
 pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
+
+//To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/Initializable.sol";
+
 import "./lib/IERC20.sol";
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
 }
 
-/** @dev TODO (WIP): protect from replay (nonce, chainId).
- */
 contract BLSWallet is Initializable
 {
     address public gateway;
@@ -22,6 +23,20 @@ contract BLSWallet is Initializable
         publicKeyHash = blsKeyHash;
         gateway = msg.sender;
         nonce = 0;
+    }
+
+    receive() external payable {}
+    fallback() external payable {}
+
+    function sendEther(
+        address payable recipient,
+        uint256 ethValue
+    ) onlyGateway public payable returns (
+        bool success,
+        bytes memory
+    ) {
+        (success, ) = recipient.call{value: ethValue}("");
+        require(success, "recipient couldn't receive Ether");
     }
 
     function payTokenAmount(
@@ -43,13 +58,18 @@ contract BLSWallet is Initializable
     @dev The methodID called is `require`d to succeed. This may change in the future.
      */
     function action(
+        uint256 ethValue,
         address contractAddress,
         bytes4 methodID,
         bytes memory encodedParams
-    ) public onlyGateway returns (bool success) {
+    ) public payable onlyGateway returns (bool success) {
         bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
-
-        (success, ) = address(contractAddress).call(encodedFunction);
+        if (ethValue > 0) {
+            (success, ) = payable(contractAddress).call{value: ethValue}(encodedFunction);
+        }
+        else {
+            (success, ) = address(contractAddress).call(encodedFunction);
+        }
         nonce++;
     }
 

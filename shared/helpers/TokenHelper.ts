@@ -5,7 +5,7 @@ import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
 
 import blsSignFunction from "./blsSignFunction";
-import Fixture, { FullTxData } from "./Fixture";
+import Fixture, { FullTxData, TxDataCall } from "./Fixture";
 
 export default class TokenHelper {
 
@@ -79,13 +79,14 @@ export default class TokenHelper {
       chainId: this.fx.chainId,
       nonce: nonce,
       reward: reward,
+      ethValue: BigNumber.from(0),
       contract: this.testToken,
       functionName: "transfer",
       params: [recipient, amount]
     }
     let [txData, sig] = blsSignFunction(fullTxData);
 
-    await this.fx.blsCallSigned(txData, sig);
+    await this.fx.blsCallSigned(txData as TxDataCall, sig);
     //   sender,
     //   sig,
     //   reward,

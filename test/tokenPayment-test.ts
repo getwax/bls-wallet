@@ -5,7 +5,7 @@ import { expect, assert, should } from "chai";
 import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "../shared/helpers/Fixture";
-import { FullTxData, TxData } from "../shared/helpers/Fixture";
+import { FullTxData, TxDataCall, TxDataSend } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
@@ -39,6 +39,7 @@ describe('TokenPayments', async function () {
       chainId: fx.chainId,
       nonce: 1, //next nonce after creation
       reward: reward,
+      ethValue: BigNumber.from(0),
       contract:fx.verificationGateway,
       functionName:"walletCrossCheck",
       params:[blsKeyHash(blsSigner)]
@@ -70,6 +71,7 @@ describe('TokenPayments', async function () {
       chainId: fx.chainId,
       nonce: walletNonce++,
       reward: reward,
+      ethValue: BigNumber.from(0),
       contract: actionToken,
       functionName: "transfer",
       params: [burnAddress, actionAmount]    
@@ -99,22 +101,26 @@ describe('TokenPayments', async function () {
   it("should reward tx submitter (callMany)", async function() {
     const reward = ethers.utils.parseUnits("10");
 
-    let txs: TxData[] = new Array(blsWalletAddresses.length);
+    let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
     let signatures: any[] = new Array(blsWalletAddresses.length);
 
     let sigHash = fx.VerificationGateway.interface.getSighash("walletCrossCheck");
 
     let walletNonce = 1;  //next nonce after creation
+    let tx: TxDataCall|TxDataSend;
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      [txs[i], signatures[i]] = blsSignFunction({
+      
+      [tx, signatures[i]] = blsSignFunction({
         blsSigner: fx.blsSigners[i],
         chainId: fx.chainId,
         nonce: walletNonce,
         reward: reward,
+        ethValue: BigNumber.from(0),
         contract: fx.verificationGateway,
         functionName: "walletCrossCheck",
         params: [blsKeyHash(fx.blsSigners[i])]
       });
+      txs[i] = tx as TxDataCall;
     }
 
     let aggSignature = aggregate(signatures);
@@ -143,7 +149,7 @@ describe('TokenPayments', async function () {
   it("should perform wallet actions with reward (multi call)", async function() {
     const reward = ethers.utils.parseUnits("10");
 
-    let txs: TxData[] = new Array(blsWalletAddresses.length);
+    let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
     let signatures: any[] = new Array(blsWalletAddresses.length);
 
     const burnAddress = "0x" + "1234".padStart(40, "0");
@@ -156,17 +162,19 @@ describe('TokenPayments', async function () {
     let sigHash = encodedFunction.substr(0, 10);
 
     let walletNonce = 1;
-
+    let tx: TxDataCall|TxDataSend;
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      [txs[i], signatures[i]] = blsSignFunction({
+      [tx, signatures[i]] = blsSignFunction({
         blsSigner: fx.blsSigners[i],
         chainId: fx.chainId,
         nonce: walletNonce,
         reward: reward,
+        ethValue: BigNumber.from(0),
         contract: th.testToken,
         functionName: "transfer",
         params: [burnAddress, actionAmount]
       });
+      txs[i] = tx as TxDataCall;
     }
 
     let aggSignature = aggregate(signatures);
@@ -188,7 +196,7 @@ describe('TokenPayments', async function () {
 
   it("should skip wallet actions that can't pay reward (multi call)", async function() {
 
-    let txs: TxData[] = new Array(blsWalletAddresses.length);
+    let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
     let signatures: any[] = new Array(blsWalletAddresses.length);
 
     const burnAddress = "0x" + "1234".padStart(40, "0");
@@ -202,18 +210,19 @@ describe('TokenPayments', async function () {
     // Reward amount greater than balance (for failure)
     const insufficientRewardIndex = 2;
     rewards[insufficientRewardIndex] = balancesBefore[insufficientRewardIndex].add(1);
-
+    let tx: TxDataCall|TxDataSend;
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      [txs[i], signatures[i]] = blsSignFunction({
+      [tx, signatures[i]] = blsSignFunction({
         blsSigner: fx.blsSigners[i],
         chainId: fx.chainId,
         nonce: walletNonce,
         reward: rewards[i],
+        ethValue: BigNumber.from(0),
         contract: th.testToken,
         functionName: "transfer",
         params: [burnAddress, actionAmount]
       });
-
+      txs[i] = tx as TxDataCall;
     }
     let aggSignature = aggregate(signatures);
 

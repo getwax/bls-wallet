@@ -1,8 +1,7 @@
-
 import { ethers, network } from "hardhat";
+const utils = ethers.utils;
 
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
-const utils = ethers.utils;
 
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
 import { solG1 } from "../lib/hubble-bls/src/mcl"
@@ -11,6 +10,7 @@ import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/
 import createBLSWallet from "./createBLSWallet";
 import blsSignFunction from "./blsSignFunction";
 import blsKeyHash from "./blsKeyHash";
+import { send } from "process";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
@@ -22,17 +22,25 @@ export type FullTxData = {
   chainId: number,
   nonce: number,
   reward: BigNumber,
+  ethValue: BigNumber,
   contract: Contract,
   functionName: string,
   params: any[]
 }
 
-export type TxData = {
+export type TxDataCall = {
   publicKeyHash: any;
   tokenRewardAmount: BigNumber;
+  ethValue: BigNumber;
   contractAddress: string;
   methodId: string;
   encodedParams: string;
+}
+export type TxDataSend = {
+  publicKeyHash: any;
+  tokenRewardAmount: BigNumber;
+  recipientAddress: string;
+  ethValue: BigNumber;
 }
 
 export default class Fixture {
@@ -42,6 +50,7 @@ export default class Fixture {
 
   private constructor(
     public chainId: number,
+    public provider,
 
     public signers: Signer[],
     public addresses: string[],
@@ -69,6 +78,7 @@ export default class Fixture {
     secretNumbers: number[]=undefined
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
+    let provider = ethers.provider;
 
     let allSigners = await ethers.getSigners();
     let signers = (allSigners).slice(0, Fixture.ECDSA_ACCOUNTS_LENGTH);
@@ -118,6 +128,7 @@ export default class Fixture {
   
     return new Fixture(
       chainId,
+      ethers.provider,
       signers,
       addresses,
       blsSignerFactory,
@@ -138,33 +149,62 @@ export default class Fixture {
   //   ));
   // }
 
-  static txDataFromFull(fullTxData: FullTxData) {
-    let encodedFunction = fullTxData.contract.interface.encodeFunctionData(
-      fullTxData.functionName,
-      fullTxData.params
-    );
+  static txDataFromFull(fullTxData: FullTxData): TxDataCall|TxDataSend {
+    let sendOnly = (fullTxData.functionName === "");
 
-    let txData: TxData = {
-      publicKeyHash: blsKeyHash(fullTxData.blsSigner),
-      tokenRewardAmount: fullTxData.reward,
-      contractAddress: fullTxData.contract.address,
-      methodId: encodedFunction.substring(0,10),
-      encodedParams: '0x'+encodedFunction.substr(10)
+    if (sendOnly) {
+      return {
+        publicKeyHash: blsKeyHash(fullTxData.blsSigner),
+        tokenRewardAmount: fullTxData.reward,
+        ethValue: fullTxData.ethValue,
+        recipientAddress: fullTxData.contract.address
+      } as TxDataSend;
     }
-    return txData
+    else {
+      let encodedFunction = fullTxData.contract.interface.encodeFunctionData(
+        fullTxData.functionName,
+        fullTxData.params
+      );
+
+      return {
+        publicKeyHash: blsKeyHash(fullTxData.blsSigner),
+        tokenRewardAmount: fullTxData.reward,
+        ethValue: fullTxData.ethValue,
+        contractAddress: fullTxData.contract.address,
+        methodId: (encodedFunction!="")?encodedFunction.substring(0,10):"0x00000000",
+        encodedParams: (encodedFunction!="")?'0x'+encodedFunction.substr(10):"0x00"
+      } as TxDataCall;
+    }
   }
 
+  async gatewaySend(txDataFull: FullTxData, address: string) {
+    txDataFull.functionName = "";
+    let [txData, sig] = blsSignFunction(txDataFull, address);
+    await this.blsSendSigned(txData as TxDataSend, sig);
+  }
+
+  async blsSendSigned(txData: TxDataSend, sig: solG1) {
+    // can be called by any ecdsa wallet
+    await(await this.verificationGateway.blsSend(
+      txData.publicKeyHash,
+      sig,
+      txData.tokenRewardAmount,
+      txData.ethValue,
+      txData.recipientAddress
+    )).wait();
+  }
   async gatewayCallFull(txDataFull: FullTxData) {
     let [txData, sig] = blsSignFunction(txDataFull);
-    await this.blsCallSigned(txData, sig);
+    await this.blsCallSigned(txData as TxDataCall, sig);
   }
 
-  async blsCallSigned(txData: TxData, sig: solG1) {
+  async blsCallSigned(txData: TxDataCall, sig: solG1) {
     // can be called by any ecdsa wallet
     await(await this.verificationGateway.blsCall(
       txData.publicKeyHash,
       sig,
       txData.tokenRewardAmount,
+      txData.ethValue,
       txData.contractAddress,
       txData.methodId,
       txData.encodedParams

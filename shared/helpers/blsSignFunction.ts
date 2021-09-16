@@ -1,34 +1,40 @@
 import { BigNumber, Contract, BaseContract, utils } from "ethers";
 
+import dataPayload from "./dataPayload";
+
 import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 import { solG1 } from "../lib/hubble-bls/src/mcl"
 
-import Fixture, { FullTxData, TxData } from "./Fixture";
+import Fixture, { FullTxData, TxDataCall, TxDataSend } from "./Fixture";
 
 export default function blsSignFunction(
-  fullTxData:FullTxData
-): [TxData, solG1] {
-  let encodedFunction = fullTxData.contract.interface.encodeFunctionData(
-    fullTxData.functionName,
-    fullTxData.params
-  );
-  const encodedFunctionHash = utils.solidityKeccak256(
-    ["bytes"],
-    [encodedFunction],
-  );
-
-  let dataToSign = utils.solidityPack(
-    ["uint256", "uint256", "uint256", "address", "bytes32"],
-    [
-      fullTxData.chainId,
-      fullTxData.nonce,
-      fullTxData.reward,
-      fullTxData.contract.address,
-      encodedFunctionHash,
-    ],
+  fullTxData:FullTxData,
+  address=""
+): [TxDataCall|TxDataSend, solG1] {
+  let encodedFunction = "";
+  if (fullTxData.functionName !== "") {
+    encodedFunction = fullTxData.contract.interface.encodeFunctionData(
+      fullTxData.functionName,
+      fullTxData.params
+    );
+  }
+  let txDataSend = Fixture.txDataFromFull(fullTxData) as TxDataSend;
+  if (address === "") {
+    address = fullTxData.contract.address;
+  }
+  else {
+    txDataSend.recipientAddress = address;
+  }
+  let dataToSign = dataPayload(
+    fullTxData.chainId,
+    fullTxData.nonce,
+    fullTxData.reward,
+    fullTxData.ethValue,
+    address,
+    encodedFunction
   );
   return [
-    Fixture.txDataFromFull(fullTxData),
+    txDataSend,
     fullTxData.blsSigner.sign(dataToSign)
   ];
 }
