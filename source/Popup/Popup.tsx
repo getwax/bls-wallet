@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import type App from './App';
+import CompactQuillHeading from './components/CompactQuillHeading';
 import LargeQuillHeading from './components/LargeQuillHeading';
 import StatusView from './StatusView';
 
@@ -31,7 +32,7 @@ export default class Popup extends React.Component<Props, State> {
       return (
         <div className="popup">
           <div className="section">
-            <LargeQuillHeading />
+            <CompactQuillHeading />
           </div>
           <div className="section">
             <div className="button highlight">Main Action</div>

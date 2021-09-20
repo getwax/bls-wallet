@@ -20,6 +20,13 @@ body {
     padding-bottom: 12px;
   }
 
+  .compact-quill-heading {
+    display: flex;
+    justify-content: center;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
   .button {
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.02), 0px 4px 6px rgba(0, 0, 0, 0.05);
     border-radius: 5px;
