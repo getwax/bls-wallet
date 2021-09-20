@@ -31,6 +31,8 @@ export default class Popup extends React.Component<Props, State> {
       return (
         <div className="popup">
           <LargeQuillHeading />
+          <div className="button highlight">Main Action</div>
+          <div className="button">Other Action</div>
         </div>
       );
     }

@@ -20,31 +20,23 @@ body {
     padding-bottom: 12px;
   }
 
-  button {
-    padding: 0.35em;
-    border: 1px solid black;
-    border-radius: 3px;
-    background-color: #ccc;
+  .button {
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.02), 0px 4px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    display: flex;
+    justify-content: center;
+    padding: 0.5em;
+    cursor: pointer;
 
-    &:not(:first-child) {
-      margin-left: 0.5em;
+    &.highlight {
+      border: none;
+      background-color: #453898;
+      color: #fff;
     }
 
     &:hover {
-      background-color: #aaa;
-      cursor: pointer;
-    }
-  }
-
-  .pseudo-button {
-    padding: 0.35em;
-
-    &:not(:first-child) {
-      margin-left: 0.5em;
-    }
-
-    &:hover {
-      cursor: pointer;
+      filter: brightness(90%);
     }
   }
 
