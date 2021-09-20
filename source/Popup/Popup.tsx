@@ -1,6 +1,7 @@
 import * as React from 'react';
 import type App from './App';
 import KeyEntryScreen from './components/KeyEntryScreen';
+import LoadingScreen from './components/LoadingScreen';
 
 import './styles.scss';
 
@@ -24,10 +25,14 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
-    return (
-      <div className="popup">
-        <KeyEntryScreen onPrivateKey={() => {}} />
-      </div>
-    );
+    return <div className="popup">{this.renderContent()}</div>;
+  }
+
+  renderContent(): React.ReactNode {
+    if (!this.state.app) {
+      return <LoadingScreen />;
+    }
+
+    return <KeyEntryScreen onPrivateKey={() => {}} />;
   }
 }
