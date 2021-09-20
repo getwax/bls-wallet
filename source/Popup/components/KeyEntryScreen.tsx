@@ -21,10 +21,16 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
 
   render(): React.ReactNode {
     return (
-      <div>
+      <div className="key-entry-screen">
         <LargeQuillHeading />
         <div className="body">
-          <div className="button">Create BLS Key</div>
+          <div className="button highlight">Create BLS Key</div>
+          <div style={{ color: '#ccc' }}>OR</div>
+          <div style={{ flexGrow: 1 }}>Input box</div>
+          <div className="notice">
+            Quill is in Alpha phase of development, please do not to use large
+            sums of money
+          </div>
         </div>
       </div>
     );

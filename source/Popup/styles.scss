@@ -30,13 +30,32 @@ body {
     padding-bottom: 12px;
   }
 
+  .key-entry-screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+
+      > * {
+        display: flex;
+        justify-content: center;
+      }
+    }
+  }
+
   .button {
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.02), 0px 4px 6px rgba(0, 0, 0, 0.05);
     border-radius: 5px;
     border: 1px solid #ccc;
     display: flex;
     justify-content: center;
-    padding: 0.5em;
+    padding: 12px;
     cursor: pointer;
 
     &.highlight {
@@ -54,6 +73,15 @@ body {
     border-top: 1px solid #ebebeb
   }
 
+  .notice {
+    font-size: 14px;
+    line-height: 18px;
+    padding: 12px;
+    background-color: #F2F1F8;
+    border-radius: 5px;
+    color: #453898;
+  }
+
   .heading {
     display: flex;
     justify-content: center;
@@ -63,7 +91,7 @@ body {
   }
 
   .body {
-    padding: 12px 24px;
+    padding: 12px 24px 41px 24px;
   }
 
   h2 {
