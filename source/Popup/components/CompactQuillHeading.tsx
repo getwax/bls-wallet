@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 
-import '../styles.scss';
-
 const CompactQuillHeading = (): React.ReactElement => (
   <div className="compact-quill-heading">
     <img

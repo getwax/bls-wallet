@@ -1,9 +1,14 @@
 import * as React from 'react';
+import Button from './Button';
 
 import LargeQuillHeading from './LargeQuillHeading';
 
 type Props = {
-  onPrivateKey: (privateKey: string) => void;
+  onPrivateKey: (
+    privateKey:
+      | { type: 'paste'; value: string }
+      | { type: 'create'; value?: null },
+  ) => void;
 };
 
 type State = {
@@ -24,13 +29,12 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
       <div className="key-entry-screen">
         <LargeQuillHeading />
         <div className="body">
-          <div
-            className={`button${
-              this.state.pasteText === '' ? ' highlight' : ''
-            }`}
+          <Button
+            onPress={() => this.props.onPrivateKey({ type: 'create' })}
+            highlight={this.state.pasteText === ''}
           >
             Create BLS Key
-          </div>
+          </Button>
           <div style={{ color: '#ccc' }}>OR</div>
           <div style={{ flexGrow: 1, position: 'relative' }}>
             <textarea
@@ -43,10 +47,20 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
               }}
             />
             <div
-              className="button highlight restore-button"
+              className="restore-button"
               style={this.state.pasteText === '' ? { display: 'none' } : {}}
             >
-              Restore
+              <Button
+                onPress={() =>
+                  this.props.onPrivateKey({
+                    type: 'paste',
+                    value: this.state.pasteText,
+                  })
+                }
+                highlight={true}
+              >
+                Restore
+              </Button>
             </div>
           </div>
           <div className="notice">
