@@ -17,7 +17,10 @@ export type AppState = {
     value?: string;
     loadCounter: number;
   };
-  walletNonce?: string;
+  walletState: {
+    nonce?: string;
+    balance?: string;
+  };
 };
 
 type Events = {
@@ -41,6 +44,7 @@ export default class App {
       walletAddress: {
         loadCounter: 0,
       },
+      walletState: {},
     };
 
     this.setupStorage();
@@ -78,27 +82,37 @@ export default class App {
   }
 
   setupBlockListener(): void {
-    const listener = async () => {
-      if (
-        this.wallet &&
-        this.state.privateKey &&
-        this.wallet.privateKey === this.state.privateKey
-      ) {
-        const newNonce = (await this.wallet.Nonce()).toString();
-
-        if (newNonce !== this.state.walletNonce) {
-          this.setState({
-            walletNonce: (await this.wallet.Nonce()).toString(),
-          });
-        }
-      }
-    };
+    const listener = () => this.checkWalletState();
 
     this.provider.on('block', listener);
 
     this.cleanupTasks.push(() => {
       this.provider.off('block', listener);
     });
+  }
+
+  async checkWalletState(): Promise<void> {
+    if (
+      this.wallet &&
+      this.state.privateKey &&
+      this.wallet.privateKey === this.state.privateKey
+    ) {
+      const newWalletState = {
+        nonce: (await this.wallet.Nonce()).toString(),
+        balance: (
+          await this.provider.getBalance(this.wallet.address)
+        ).toString(),
+      };
+
+      if (
+        JSON.stringify(newWalletState) !==
+        JSON.stringify(this.state.walletState)
+      ) {
+        this.setState({
+          walletState: newWalletState,
+        });
+      }
+    }
   }
 
   cleanup(): void {
@@ -139,7 +153,7 @@ export default class App {
 
     // When the wallet address changes, clear the wallet nonce
     if (this.state.walletAddress.value !== oldWalletAddress) {
-      this.state = { ...this.state, walletNonce: undefined };
+      this.state = { ...this.state, walletState: {} };
     }
 
     this.events.emit('state', this.state);
@@ -242,11 +256,7 @@ export default class App {
         },
       });
 
-      if (this.wallet) {
-        this.setState({
-          walletNonce: (await this.wallet.Nonce()).toString(),
-        });
-      }
+      this.checkWalletState();
     } finally {
       this.decrementWalletAddressLoading();
     }

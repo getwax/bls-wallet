@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import * as React from 'react';
 
 import never from '../helpers/never';
@@ -94,10 +95,11 @@ export default class StatusView extends React.Component<Props, State> {
           <td>{this.renderWalletField()}</td>
           <td>
             <span className="nonce">
-              #{this.state.appState.walletNonce ?? ''}
+              #{this.state.appState.walletState.nonce ?? ''}
             </span>
           </td>
         </tr>
+        {this.renderBalanceRow()}
       </table>
     );
   }
@@ -293,6 +295,19 @@ export default class StatusView extends React.Component<Props, State> {
     );
   }
 
+  renderBalanceRow(): React.ReactNode {
+    if (this.state.appState.walletAddress.value === undefined) {
+      return <></>;
+    }
+
+    return (
+      <tr>
+        <td>Balance</td>
+        <td>{formatBalance(this.state.appState.walletState.balance, 'ETH')}</td>
+      </tr>
+    );
+  }
+
   confirmDeleteKey(): void {
     this.pushOverlay({
       type: 'confirm',
@@ -374,4 +389,14 @@ export default class StatusView extends React.Component<Props, State> {
   restoreKey(): void {
     this.pushOverlay({ type: 'restore' });
   }
+}
+
+function formatBalance(balance: string | undefined, currency: string): string {
+  if (balance === undefined) {
+    return '';
+  }
+
+  const microBalance = BigNumber.from(balance).div(BigNumber.from(10).pow(12));
+
+  return `${(microBalance.toNumber() / 1000000).toFixed(3)} ${currency}`;
 }
