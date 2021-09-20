@@ -58,7 +58,7 @@ body {
   .button {
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.02), 0px 4px 6px rgba(0, 0, 0, 0.05);
     border-radius: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid $tone-grey-light;
     display: flex;
     justify-content: center;
     padding: 12px;
@@ -66,7 +66,7 @@ body {
 
     &.highlight {
       border-color: transparent;
-      background-color: #453898;
+      background-color: $primary-base;
       color: #fff;
     }
 
@@ -76,7 +76,7 @@ body {
   }
 
   .section:not(:first-child) {
-    border-top: 1px solid #ebebeb
+    border-top: 1px solid $tone-grey-lightest
   }
 
   .notice {
@@ -85,23 +85,23 @@ body {
     padding: 12px;
     background-color: #F2F1F8;
     border-radius: 5px;
-    color: #453898;
+    color: $primary-base;
   }
 
   textarea {
     width: 100%;
-    border: 2px solid #ebebeb;
+    border: 2px solid $tone-grey-lightest;
     border-radius: 5px;
     padding: 12px;
 
     &::placeholder {
-      color: #ccc;
+      color: $tone-grey-light;
     }
 
-    caret-color: #453898;
+    caret-color: $primary-base;
 
     &:focus {
-      border-color: #B8B2DE;
+      border-color: $primary-light;
     }
   }
 
