@@ -109,4 +109,46 @@ body {
       bottom: 12px;
     }
   }
+
+  .wallet-home-screen {
+    .field-list {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 24px;
+      gap: 6px;
+      color: $tone-grey-mid;
+
+      > * {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .field-label {
+        font-size: 12px;
+        line-height: 16px;
+        width: 58px;
+      }
+
+      .grow {
+        flex-grow: 1;
+      }
+
+      .field-value {
+        background-color: $primary-faded;
+        color: $primary-base;
+        border-radius: 12px;
+        padding: 3px 12px;
+        font-size: 16px;
+        line-height: 19px;
+        text-overflow: ellipsis;
+      }
+
+      .field-trailer {
+        display: flex;
+        width: 64px;
+        justify-content: center;
+      }
+    }
+  }
 }
