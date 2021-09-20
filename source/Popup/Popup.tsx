@@ -1,9 +1,6 @@
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
 import type App from './App';
-import CompactQuillHeading from './components/CompactQuillHeading';
-import LargeQuillHeading from './components/LargeQuillHeading';
-import StatusView from './StatusView';
+import KeyEntryScreen from './components/KeyEntryScreen';
 
 import './styles.scss';
 
@@ -12,7 +9,6 @@ type Props = {
 };
 
 type State = {
-  logoUrl?: string;
   app?: App;
 };
 
@@ -28,40 +24,10 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
-    if (true) {
-      return (
-        <div className="popup">
-          <div className="section">
-            <CompactQuillHeading />
-          </div>
-          <div className="section">
-            <div className="button highlight">Main Action</div>
-            <div className="button">Other Action</div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="popup">
-        <div className="heading">
-          <img
-            src={browser.runtime.getURL('assets/logo.svg')}
-            alt="Quill"
-            width="79"
-            height="46"
-          />
-        </div>
-        <div className="body">{this.renderBody()}</div>
+        <KeyEntryScreen onPrivateKey={() => {}} />
       </div>
     );
-  }
-
-  renderBody(): React.ReactNode {
-    if (this.state.app) {
-      return <StatusView app={this.state.app} />;
-    }
-
-    return <>Loading...</>;
   }
 }
