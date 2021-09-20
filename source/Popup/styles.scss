@@ -31,31 +31,6 @@ body {
     padding-bottom: 12px;
   }
 
-  .key-entry-screen {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-
-    .body {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      height: 100%;
-
-      > * {
-        display: flex;
-        justify-content: center;
-      }
-    }
-
-    .restore-button {
-      position: absolute;
-      width: calc(100% - 24px);
-      bottom: 12px;
-    }
-  }
-
   .button {
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.02), 0px 4px 6px rgba(0, 0, 0, 0.05);
     border-radius: 5px;
@@ -106,43 +81,32 @@ body {
     }
   }
 
-  .heading {
-    display: flex;
-    justify-content: center;
-    padding: 0.5em;
-    text-align: center;
-    font-size: 2em;
-  }
-
   .body {
     padding: 12px 24px 41px 24px;
   }
 
-  h2 {
-    font-size: 25px;
-    text-align: center;
-  }
-  
-  .basic-form {
-    td {
-      height: 2.2em;
-    }
+  .key-entry-screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 
-    td:first-child {
-      text-align: right;
-      padding-right: 1em;
-    }
+    .body {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
 
-    tr:not(:first-child) {
-      td {
-        padding-top: 0.5em;
+      > * {
+        display: flex;
+        justify-content: center;
       }
     }
-  }
 
-  .nonce {
-    font-size: 0.8em;
-    color: rgb(40, 40, 40);
-    margin-left: 1em;
+    .restore-button {
+      position: absolute;
+      width: calc(100% - 24px);
+      bottom: 12px;
+    }
   }
 }
