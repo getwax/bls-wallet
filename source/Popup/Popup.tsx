@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { browser } from 'webextension-polyfill-ts';
 import type App from './App';
 import StatusView from './StatusView';
 
@@ -9,6 +10,7 @@ type Props = {
 };
 
 type State = {
+  logoUrl?: string;
   app?: App;
 };
 
@@ -26,7 +28,14 @@ export default class Popup extends React.Component<Props, State> {
   render(): React.ReactNode {
     return (
       <div className="popup">
-        <div className="heading">Quill 🪶</div>
+        <div className="heading">
+          <img
+            src={browser.runtime.getURL('assets/logo.svg')}
+            alt="Quill"
+            width="79"
+            height="46"
+          />
+        </div>
         <div className="body">{this.renderBody()}</div>
       </div>
     );

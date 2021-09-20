@@ -4,7 +4,7 @@
 
 body {
   color: $black;
-  background-color: $greyWhite;
+  // background-color: $greyWhite;
 }
 
 .popup {
@@ -42,8 +42,8 @@ body {
   }
 
   .heading {
-    background-color: rgb(10, 29, 125);
-    color: white;
+    display: flex;
+    justify-content: center;
     padding: 0.5em;
     text-align: center;
     font-size: 2em;
