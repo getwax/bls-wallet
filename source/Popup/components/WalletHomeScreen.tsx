@@ -2,6 +2,7 @@ import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 
 import CompactQuillHeading from './CompactQuillHeading';
+import CopyIcon from './CopyIcon';
 
 const WalletHomeScreen = (): React.ReactElement => (
   <div className="wallet-home-screen">
@@ -20,7 +21,10 @@ const WalletHomeScreen = (): React.ReactElement => (
             />
           </div>
           <div className="field-label">BLS Key:</div>
-          <div className="field-value grow">(value)</div>
+          <div className="field-value grow">
+            <div className="grow">0x 1234 ... 1234</div>
+            <CopyIcon />
+          </div>
           <div className="field-trailer">
             <img
               src={browser.runtime.getURL('assets/download.svg')}
@@ -58,7 +62,10 @@ const WalletHomeScreen = (): React.ReactElement => (
             />
           </div>
           <div className="field-label">Address:</div>
-          <div className="field-value grow">(value)</div>
+          <div className="field-value grow">
+            <div className="grow">0x 1234 ... 1234</div>
+            <CopyIcon />
+          </div>
           <div className="field-trailer">#86755</div>
         </div>
       </div>

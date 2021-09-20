@@ -135,6 +135,9 @@ body {
       }
 
       .field-value {
+        display: flex;
+        flex-direction: row;
+
         background-color: $primary-faded;
         color: $primary-base;
         border-radius: 12px;
@@ -146,8 +149,12 @@ body {
 
       .field-trailer {
         display: flex;
-        width: 64px;
+        width: 68px;
         justify-content: center;
+
+        img:not(:first-child) {
+          margin-left: 6px;
+        }
       }
     }
   }
