@@ -24,9 +24,25 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
       <div className="key-entry-screen">
         <LargeQuillHeading />
         <div className="body">
-          <div className="button highlight">Create BLS Key</div>
+          <div
+            className={`button${
+              this.state.pasteText === '' ? ' highlight' : ''
+            }`}
+          >
+            Create BLS Key
+          </div>
           <div style={{ color: '#ccc' }}>OR</div>
-          <div style={{ flexGrow: 1 }}>Input box</div>
+          <div style={{ flexGrow: 1 }}>
+            <textarea
+              placeholder="Paste BLS Private Key..."
+              value={this.state.pasteText}
+              onInput={(evt) => {
+                this.setState({
+                  pasteText: (evt.target as HTMLTextAreaElement).value,
+                });
+              }}
+            />
+          </div>
           <div className="notice">
             Quill is in Alpha phase of development, please do not to use large
             sums of money

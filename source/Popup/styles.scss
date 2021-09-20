@@ -59,7 +59,7 @@ body {
     cursor: pointer;
 
     &.highlight {
-      border: none;
+      border-color: transparent;
       background-color: #453898;
       color: #fff;
     }
@@ -80,6 +80,23 @@ body {
     background-color: #F2F1F8;
     border-radius: 5px;
     color: #453898;
+  }
+
+  textarea {
+    width: 100%;
+    border: 2px solid #ebebeb;
+    border-radius: 5px;
+    padding: 12px;
+
+    &::placeholder {
+      color: #ccc;
+    }
+
+    caret-color: #453898;
+
+    &:focus {
+      border-color: #B8B2DE;
+    }
   }
 
   .heading {
