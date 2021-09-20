@@ -47,6 +47,12 @@ body {
         justify-content: center;
       }
     }
+
+    .restore-button {
+      position: absolute;
+      width: calc(100% - 24px);
+      bottom: 12px;
+    }
   }
 
   .button {

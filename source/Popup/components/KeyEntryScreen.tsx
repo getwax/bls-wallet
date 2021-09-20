@@ -32,7 +32,7 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
             Create BLS Key
           </div>
           <div style={{ color: '#ccc' }}>OR</div>
-          <div style={{ flexGrow: 1 }}>
+          <div style={{ flexGrow: 1, position: 'relative' }}>
             <textarea
               placeholder="Paste BLS Private Key..."
               value={this.state.pasteText}
@@ -42,9 +42,15 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
                 });
               }}
             />
+            <div
+              className="button highlight restore-button"
+              style={this.state.pasteText === '' ? { display: 'none' } : {}}
+            >
+              Restore
+            </div>
           </div>
           <div className="notice">
-            Quill is in Alpha phase of development, please do not to use large
+            Quill&apos;s development is in Alpha, please do not to use large
             sums of money
           </div>
         </div>
