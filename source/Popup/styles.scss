@@ -7,7 +7,19 @@ body {
   // background-color: $greyWhite;
 }
 
+#popup-root {
+  min-width: 359px;
+  height: 500px;
+}
+
 .popup {
+  .large-quill-heading {
+    display: flex;
+    justify-content: center;
+    padding-top: 41px;
+    padding-bottom: 12px;
+  }
+
   button {
     padding: 0.35em;
     border: 1px solid black;

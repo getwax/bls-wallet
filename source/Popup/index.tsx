@@ -20,7 +20,7 @@ const appPromise = (async () =>
     browser.storage.local,
   ))();
 
-if (false) {
+if (true) {
   ReactDOM.render(
     <Popup appPromise={appPromise} />,
     document.getElementById('popup-root'),

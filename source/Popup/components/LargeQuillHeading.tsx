@@ -1,11 +1,16 @@
 import * as React from 'react';
+import { browser } from 'webextension-polyfill-ts';
 
 import '../styles.scss';
 
-const LargeQuillHeading = (): React.ReactNode => (
-  <div className="e8_190">
-    <span className="ei8_190_1_513">Quill</span>
-    <div className="ei8_190_1_515" />
+const LargeQuillHeading = (): React.ReactElement => (
+  <div className="large-quill-heading">
+    <img
+      src={browser.runtime.getURL('assets/logo.svg')}
+      alt="Quill"
+      width="80"
+      height="56"
+    />
   </div>
 );
 
