@@ -147,6 +147,12 @@ body {
         text-overflow: ellipsis;
       }
 
+      select.field-value {
+        appearance: none;
+        background-position: right 12px top 50%;
+        background-repeat: no-repeat;
+      }
+
       .field-trailer {
         display: flex;
         width: 68px;

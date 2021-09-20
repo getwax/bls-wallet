@@ -50,7 +50,18 @@ const WalletHomeScreen = (): React.ReactElement => (
             />
           </div>
           <div className="field-label">Network:</div>
-          <div className="field-value">(dropdown)</div>
+          <select
+            className="field-value grow"
+            style={{
+              backgroundImage: `url("${browser.runtime.getURL(
+                'assets/selector-down-arrow.svg',
+              )}")`,
+            }}
+          >
+            <option>Optimism</option>
+            <option>Arbitrum</option>
+          </select>
+          <div className="field-trailer" />
         </div>
         <div>
           <div style={{ width: '17px' }}>
