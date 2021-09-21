@@ -9,6 +9,7 @@ import Notification from './components/Notification';
 import WalletHomeScreen from './components/WalletHomeScreen';
 
 import './styles.scss';
+import OverlayContainer from './components/OverlayContainer';
 
 type Props = {
   appPromise: Promise<App>;
@@ -95,6 +96,7 @@ export default class Popup extends React.Component<Props, State> {
           }}
         />
         <Notification uie={this.uie} />
+        <OverlayContainer uie={this.uie} />
       </>
     );
   }

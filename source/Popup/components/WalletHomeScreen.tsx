@@ -48,7 +48,7 @@ const WalletHomeScreen = (props: {
         })()}
       </div>
     </div>
-    <WalletContent wallet={props.wallet} />
+    <WalletContent uie={props.uie} wallet={props.wallet} />
   </div>
 );
 
@@ -147,6 +147,7 @@ const AddressField = (props: {
 );
 
 const WalletContent = (props: {
+  uie: UiEvents;
   wallet?: { address: string; balance: string };
 }): React.ReactElement => {
   if (!props.wallet) {
@@ -161,7 +162,18 @@ const WalletContent = (props: {
           {formatBalance(props.wallet.balance, 'ETH')}
         </div>
       </div>
-      <Button highlight={true} onPress={() => {}}>
+      <Button
+        highlight={true}
+        onPress={() => {
+          props.uie.emit('overlay', (close) => {
+            return (
+              <>
+                Example overlay <Button onPress={close}>close</Button>
+              </>
+            );
+          });
+        }}
+      >
         Create Transaction
       </Button>
     </div>

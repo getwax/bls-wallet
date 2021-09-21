@@ -50,6 +50,27 @@
     }
   }
 
+  .overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #00000088;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    padding: 24px;
+
+    .content {
+      padding: 36px;
+      background-color: $tone-white;
+      border-radius: 5px;
+    }
+  }
+
   .button {
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.02), 0px 4px 6px rgba(0, 0, 0, 0.05);
     border-radius: 5px;
