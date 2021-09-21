@@ -25,6 +25,21 @@ const WalletHomeScreen = (props: { app: App }): React.ReactElement => (
         <BLSKeyField app={props.app} />
         <NetworkField />
         {(() => {
+          if (props.app.state.walletAddress.loadCounter > 0) {
+            return (
+              <>
+                <div />
+                <Button
+                  highlight={true}
+                  onPress={() => props.app.createWallet()}
+                  loading={true}
+                >
+                  Loading...
+                </Button>
+              </>
+            );
+          }
+
           if (!props.app.state.walletAddress.value) {
             return (
               <>

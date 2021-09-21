@@ -100,6 +100,9 @@
     padding: 12px;
     cursor: pointer;
 
+    transition-property: border-color, filter;
+    transition: all 200ms;
+
     &.highlight {
       border-color: transparent;
       background-color: $primary-base;
@@ -107,7 +110,15 @@
     }
 
     &:hover {
-      filter: brightness(90%);
+      filter: saturate(180%);
+
+      &:not(.highlight) {
+        border-color: $tone-dark;
+      }
+    }
+
+    &.loading {
+      filter: grayscale(50%);
     }
   }
 
