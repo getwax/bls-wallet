@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import Button from './Button';
@@ -6,8 +6,14 @@ import Button from './Button';
 import CompactQuillHeading from './CompactQuillHeading';
 import CopyIcon from './CopyIcon';
 
+export type BlsKey = {
+  public: string;
+  private: string;
+};
+
 const WalletHomeScreen = (props: {
-  wallet?: { address: string; balance: ethers.BigNumber };
+  blsKey: BlsKey;
+  wallet?: { address: string; balance: string; nonce: string };
 }): React.ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
@@ -15,7 +21,7 @@ const WalletHomeScreen = (props: {
     </div>
     <div className="section">
       <div className="field-list">
-        <BLSKeyField />
+        <BLSKeyField blsKey={props.blsKey} />
         <NetworkField />
         {(() => {
           if (!props.wallet) {
@@ -29,7 +35,12 @@ const WalletHomeScreen = (props: {
             );
           }
 
-          return <AddressField />;
+          return (
+            <AddressField
+              address={props.wallet.address}
+              nonce={props.wallet.nonce}
+            />
+          );
         })()}
       </div>
     </div>
@@ -39,7 +50,7 @@ const WalletHomeScreen = (props: {
 
 export default WalletHomeScreen;
 
-const BLSKeyField = (): React.ReactElement => (
+const BLSKeyField = (props: { blsKey: BlsKey }): React.ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
@@ -51,7 +62,7 @@ const BLSKeyField = (): React.ReactElement => (
     </div>
     <div className="field-label">BLS Key:</div>
     <div className="field-value grow">
-      <div className="grow">0x 1234 ... 1234</div>
+      <div className="grow">{formatCompactAddress(props.blsKey.public)}</div>
       <CopyIcon />
     </div>
     <div className="field-trailer">
@@ -97,7 +108,10 @@ const NetworkField = (): React.ReactElement => (
   </div>
 );
 
-const AddressField = (): React.ReactElement => (
+const AddressField = (props: {
+  address: string;
+  nonce: string;
+}): React.ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
@@ -109,19 +123,45 @@ const AddressField = (): React.ReactElement => (
     </div>
     <div className="field-label">Address:</div>
     <div className="field-value grow">
-      <div className="grow">0x 1234 ... 1234</div>
+      <div className="grow">{formatCompactAddress(props.address)}</div>
       <CopyIcon />
     </div>
-    <div className="field-trailer">#86755</div>
+    <div className="field-trailer">#{props.nonce}</div>
   </div>
 );
 
 const WalletContent = (props: {
-  wallet?: { address: string; balance: ethers.BigNumber };
+  wallet?: { address: string; balance: string };
 }): React.ReactElement => {
   if (!props.wallet) {
     return <></>;
   }
 
-  return <div className="section">Wallet content</div>;
+  return (
+    <div className="section wallet-content">
+      <div className="balance">
+        <div className="label">Balance:</div>
+        <div className="value">
+          {formatBalance(props.wallet.balance, 'ETH')}
+        </div>
+      </div>
+      <Button highlight={true} onPress={() => {}}>
+        Create Transaction
+      </Button>
+    </div>
+  );
 };
+
+function formatBalance(balance: string | undefined, currency: string): string {
+  if (balance === undefined) {
+    return '';
+  }
+
+  const microBalance = BigNumber.from(balance).div(BigNumber.from(10).pow(12));
+
+  return `${(microBalance.toNumber() / 1000000).toFixed(3)} ${currency}`;
+}
+
+function formatCompactAddress(address: string): string {
+  return `0x ${address.slice(2, 6)} ... ${address.slice(-4)}`;
+}

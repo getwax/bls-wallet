@@ -69,7 +69,18 @@ export default class Popup extends React.Component<Props, State> {
 
     return (
       <WalletHomeScreen
-        wallet={{ address: 'address', balance: ethers.BigNumber.from(123) }}
+        blsKey={{
+          public:
+            '0x1234123412341234123412341234123412341234123412341234123412341234',
+          private:
+            '0x1234123412341234123412341234123412341234123412341234123412341234',
+        }}
+        wallet={{
+          address:
+            '0x1234123412341234123412341234123412341234123412341234123412341234',
+          balance: ethers.utils.parseEther('2.035').toString(),
+          nonce: '86755',
+        }}
       />
     );
   }

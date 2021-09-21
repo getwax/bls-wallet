@@ -165,5 +165,33 @@ body {
         }
       }
     }
+
+    .wallet-content {
+      padding: 12px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .balance {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        > * {
+          justify-content: center;
+          text-align: center;
+        }
+
+        .label {
+          color: $tone-grey-mid;
+        }
+
+        .value {
+          font-size: 36px;
+          line-height: 42px;
+          font-weight: bold;
+        }
+      }
+    }
   }
 }
