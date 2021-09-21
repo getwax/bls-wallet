@@ -83,10 +83,12 @@ const BLSKeyField = (props: {
       <KeyIcon
         src={browser.runtime.getURL('assets/download.svg')}
         text="Backup private key"
+        onAction={() => NotImplemented(props.uie)}
       />
       <KeyIcon
         src={browser.runtime.getURL('assets/trashcan.svg')}
         text="Delete BLS key"
+        onAction={() => NotImplemented(props.uie)}
       />
     </div>
   </div>
@@ -170,9 +172,19 @@ const WalletContent = (props: {
   );
 };
 
-const KeyIcon = (props: { src: string; text: string }): React.ReactElement => (
+const KeyIcon = (props: {
+  src: string;
+  text: string;
+  onAction: () => void;
+}): React.ReactElement => (
   <div className="key-icon" style={{ width: '22px', height: '22px' }}>
-    <img src={props.src} alt={props.text} width="22" height="22" />
+    <img
+      src={props.src}
+      alt={props.text}
+      width="22"
+      height="22"
+      {...defineAction(props.onAction)}
+    />
     <div className="info-box">
       <Grow />
       <div className="content">{props.text}</div>
