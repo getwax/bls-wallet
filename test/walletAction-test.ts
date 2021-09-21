@@ -18,7 +18,17 @@ describe('WalletActions', async function () {
   let fx: Fixture;
   let th: TokenHelper;
   beforeEach(async function() {
-    fx = await Fixture.create();
+    if (network.name === "rinkarby") {
+      fx = await Fixture.create(
+        Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
+        false,
+        '0x0355b583379bE75bF8b88aBE5A2124c8F65242f2',
+        '0x266422dc7ecfeFcEDad5ecbd7B97B4c079d62DC2'
+      );
+    }
+    else {
+      fx = await Fixture.create();
+    }
   });
 
   it('should register new wallet', async function () {

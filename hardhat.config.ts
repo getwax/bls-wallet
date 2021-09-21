@@ -91,9 +91,9 @@ const config: HardhatUserConfig = {
       gasPrice: 15000000,
       ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
     }
-  // },
-  // mocha: {
-  //   timeout: 120000
+  },
+  mocha: {
+    timeout: 120000
   }    
 };
 

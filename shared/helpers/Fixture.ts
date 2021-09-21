@@ -104,7 +104,7 @@ export default class Fixture {
       verificationGateway = await VerificationGateway.deploy();
       await verificationGateway.deployed();
       if (initialized) {
-        await verificationGateway.initialize(ethers.constants.AddressZero);
+        await (await verificationGateway.initialize(ethers.constants.AddressZero)).wait();
       }
     }
 
@@ -116,7 +116,7 @@ export default class Fixture {
     else {
       blsExpander = await BLSExpander.deploy(); 
       await blsExpander.deployed();
-      await blsExpander.initialize(verificationGateway.address);
+      await (await blsExpander.initialize(verificationGateway.address)).wait();
     }
 
     let encodedCreate = utils.defaultAbiCoder.encode(
