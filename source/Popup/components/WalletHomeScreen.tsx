@@ -61,7 +61,10 @@ const BLSKeyField = (props: { blsKey: BlsKey }): React.ReactElement => (
       />
     </div>
     <div className="field-label">BLS Key:</div>
-    <div className="field-value grow">
+    <div
+      className="field-value grow"
+      {...defineCopyAction(props.blsKey.public)}
+    >
       <div className="grow">{formatCompactAddress(props.blsKey.public)}</div>
       <CopyIcon />
     </div>
@@ -122,7 +125,7 @@ const AddressField = (props: {
       />
     </div>
     <div className="field-label">Address:</div>
-    <div className="field-value grow">
+    <div className="field-value grow" {...defineCopyAction(props.address)}>
       <div className="grow">{formatCompactAddress(props.address)}</div>
       <CopyIcon />
     </div>
@@ -164,4 +167,19 @@ function formatBalance(balance: string | undefined, currency: string): string {
 
 function formatCompactAddress(address: string): string {
   return `0x ${address.slice(2, 6)} ... ${address.slice(-4)}`;
+}
+
+function defineAction(handler: () => void) {
+  return {
+    onClick: handler,
+    onKeyDown: (evt: { code: string }) => {
+      if (evt.code === 'Enter') {
+        handler();
+      }
+    },
+  };
+}
+
+function defineCopyAction(value: string) {
+  return defineAction(() => navigator.clipboard.writeText(value));
 }
