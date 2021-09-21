@@ -1,3 +1,4 @@
+import { BigNumber } from 'ethers';
 import * as React from 'react';
 
 import never from '../helpers/never';
@@ -83,12 +84,22 @@ export default class StatusView extends React.Component<Props, State> {
       <table className="basic-form">
         <tr>
           <td>BLS Key</td>
-          <td>{this.renderKeyField()}</td>
+          {this.renderKeyField()}
+        </tr>
+        <tr>
+          <td>Network</td>
+          <td>Optimism</td>
         </tr>
         <tr>
           <td>BLS Wallet</td>
           <td>{this.renderWalletField()}</td>
+          <td>
+            <span className="nonce">
+              #{this.state.appState.walletState.nonce ?? ''}
+            </span>
+          </td>
         </tr>
+        {this.renderBalanceRow()}
       </table>
     );
   }
@@ -215,7 +226,7 @@ export default class StatusView extends React.Component<Props, State> {
 
     if (publicKey === undefined) {
       return (
-        <>
+        <td>
           <button
             type="button"
             onClick={() => this.props.app.createPrivateKey()}
@@ -229,42 +240,44 @@ export default class StatusView extends React.Component<Props, State> {
           >
             ⬆️
           </span>
-        </>
+        </td>
       );
     }
 
     return (
       <>
-        <span>
+        <td>
           {publicKey.slice(0, 6)}...{publicKey.slice(-4)}
-        </span>
-        <span
-          className="pseudo-button"
-          onClick={() => this.displayPrivateKey()}
-          onKeyDown={(evt) => evt.key === 'Enter' && this.displayPrivateKey()}
-        >
-          ⬇️
-        </span>
-        <span
-          className="pseudo-button"
-          onClick={() => this.confirmDeleteKey()}
-          onKeyDown={(evt) => evt.key === 'Enter' && this.confirmDeleteKey()}
-        >
-          ❌
-        </span>
+        </td>
+        <td>
+          <span
+            className="pseudo-button"
+            onClick={() => this.displayPrivateKey()}
+            onKeyDown={(evt) => evt.key === 'Enter' && this.displayPrivateKey()}
+          >
+            ⬇️
+          </span>
+          <span
+            className="pseudo-button"
+            onClick={() => this.confirmDeleteKey()}
+            onKeyDown={(evt) => evt.key === 'Enter' && this.confirmDeleteKey()}
+          >
+            ❌
+          </span>
+        </td>
       </>
     );
   }
 
   renderWalletField(): React.ReactNode {
-    const address = this.state.appState.walletAddress;
+    const address = this.state.appState.walletAddress.value;
 
     if (address === undefined) {
       if (this.state.appState.privateKey === undefined) {
         return <>&lt;none&gt;</>;
       }
 
-      if (this.state.appState.walletAddressLoadCount > 0) {
+      if (this.state.appState.walletAddress.loadCounter > 0) {
         return <>Loading...</>;
       }
 
@@ -279,6 +292,19 @@ export default class StatusView extends React.Component<Props, State> {
       <span>
         {address.slice(0, 6)}...{address.slice(-4)}
       </span>
+    );
+  }
+
+  renderBalanceRow(): React.ReactNode {
+    if (this.state.appState.walletAddress.value === undefined) {
+      return <></>;
+    }
+
+    return (
+      <tr>
+        <td>Balance</td>
+        <td>{formatBalance(this.state.appState.walletState.balance, 'ETH')}</td>
+      </tr>
     );
   }
 
@@ -363,4 +389,14 @@ export default class StatusView extends React.Component<Props, State> {
   restoreKey(): void {
     this.pushOverlay({ type: 'restore' });
   }
+}
+
+function formatBalance(balance: string | undefined, currency: string): string {
+  if (balance === undefined) {
+    return '';
+  }
+
+  const microBalance = BigNumber.from(balance).div(BigNumber.from(10).pow(12));
+
+  return `${(microBalance.toNumber() / 1000000).toFixed(3)} ${currency}`;
 }
