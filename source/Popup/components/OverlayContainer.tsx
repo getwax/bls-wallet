@@ -30,6 +30,7 @@ export default class OverlayContainer extends React.Component<Props, State> {
 
   onOverlay = async (overlay: Overlay): Promise<void> => {
     const overlayRender = overlay(close);
+    let isClosed = false;
 
     this.setTarget({
       overlayRenders: [...this.targetState.overlayRenders, overlayRender],
@@ -43,6 +44,12 @@ export default class OverlayContainer extends React.Component<Props, State> {
     const self = this;
 
     async function close() {
+      if (isClosed) {
+        return;
+      }
+
+      isClosed = true;
+
       self.setTarget({ activeCount: self.targetState.activeCount - 1 });
 
       await delay(500);
