@@ -76,7 +76,7 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   renderContent(): React.ReactNode {
-    if (!this.state.appState) {
+    if (!this.state.app || !this.state.appState) {
       return <LoadingScreen />;
     }
 
@@ -84,25 +84,6 @@ export default class Popup extends React.Component<Props, State> {
       return <KeyEntryScreen onPrivateKey={() => {}} />;
     }
 
-    let wallet: undefined | { address: string; balance: string; nonce: string };
-
-    if (this.state.appState.walletAddress.value !== undefined) {
-      wallet = {
-        address: this.state.appState.walletAddress.value,
-        balance: this.state.appState.walletState.balance ?? '',
-        nonce: this.state.appState.walletState.nonce ?? '',
-      };
-    }
-
-    return (
-      <WalletHomeScreen
-        uie={this.uie}
-        blsKey={{
-          public: this.state.app?.PublicKey()!,
-          private: this.state.appState.privateKey,
-        }}
-        wallet={wallet}
-      />
-    );
+    return <WalletHomeScreen app={this.state.app} uie={this.uie} />;
   }
 }

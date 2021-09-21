@@ -1,6 +1,8 @@
 import { BigNumber } from 'ethers';
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
+import assertExists from '../../helpers/assertExists';
+import App from '../App';
 import UiEvents from '../UiEvents';
 import Button from './Button';
 
@@ -15,9 +17,8 @@ export type BlsKey = {
 };
 
 const WalletHomeScreen = (props: {
+  app: App;
   uie: UiEvents;
-  blsKey: BlsKey;
-  wallet?: { address: string; balance: string; nonce: string };
 }): React.ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
@@ -25,14 +26,23 @@ const WalletHomeScreen = (props: {
     </div>
     <div className="section">
       <div className="field-list">
-        <BLSKeyField uie={props.uie} blsKey={props.blsKey} />
+        <BLSKeyField
+          uie={props.uie}
+          blsKey={{
+            public: assertExists(props.app.PublicKey()),
+            private: assertExists(props.app.state.privateKey),
+          }}
+        />
         <NetworkField />
         {(() => {
-          if (!props.wallet) {
+          if (!props.app.state.walletAddress.value) {
             return (
               <>
                 <div />
-                <Button highlight={true} onPress={() => {}}>
+                <Button
+                  highlight={true}
+                  onPress={() => props.app.createWallet()}
+                >
                   Create BLS Wallet
                 </Button>
               </>
@@ -42,14 +52,14 @@ const WalletHomeScreen = (props: {
           return (
             <AddressField
               uie={props.uie}
-              address={props.wallet.address}
-              nonce={props.wallet.nonce}
+              address={props.app.state.walletAddress.value}
+              nonce={props.app.state.walletState.nonce}
             />
           );
         })()}
       </div>
     </div>
-    <WalletContent uie={props.uie} wallet={props.wallet} />
+    <WalletContent uie={props.uie} app={props.app} />
   </div>
 );
 
@@ -135,7 +145,7 @@ const NetworkField = (): React.ReactElement => (
 const AddressField = (props: {
   uie: UiEvents;
   address: string;
-  nonce: string;
+  nonce?: string;
 }): React.ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
@@ -162,10 +172,10 @@ const AddressField = (props: {
 );
 
 const WalletContent = (props: {
+  app: App;
   uie: UiEvents;
-  wallet?: { address: string; balance: string };
 }): React.ReactElement => {
-  if (!props.wallet) {
+  if (!props.app.state.walletAddress.value) {
     return <></>;
   }
 
@@ -174,7 +184,7 @@ const WalletContent = (props: {
       <div className="balance">
         <div className="label">Balance:</div>
         <div className="value">
-          {formatBalance(props.wallet.balance, 'ETH')}
+          {formatBalance(props.app.state.walletState.balance, 'ETH')}
         </div>
       </div>
       <Button highlight={true} onPress={() => NotImplemented(props.uie)}>
