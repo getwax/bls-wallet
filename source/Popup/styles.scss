@@ -193,6 +193,17 @@
           }
         }
 
+        .info-arrow {
+          display: none;
+          position: relative;
+          top: -34px;
+          right: 5px;
+          background-color: $tone-dark;
+          height: 11px;
+          width: 20px;
+          clip-path: polygon(0 0, 100% 0, 50% 100%);
+        }
+
         &:hover {
           img {
             filter: brightness(50%);
@@ -200,6 +211,10 @@
 
           .info-box {
             display: flex;
+          }
+
+          .info-arrow {
+            display: block;
           }
         }
       }

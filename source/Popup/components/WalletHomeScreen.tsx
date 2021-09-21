@@ -159,6 +159,7 @@ const KeyIcon = (props: { src: string; text: string }): React.ReactElement => (
       <Grow />
       <div className="content">{props.text}</div>
     </div>
+    <div className="info-arrow" />
   </div>
 );
 
