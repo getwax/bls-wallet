@@ -1,3 +1,4 @@
+import { ethers } from 'ethers';
 import * as React from 'react';
 import type App from './App';
 import { AppState } from './App';
@@ -66,6 +67,10 @@ export default class Popup extends React.Component<Props, State> {
       return <KeyEntryScreen onPrivateKey={() => {}} />;
     }
 
-    return <WalletHomeScreen />;
+    return (
+      <WalletHomeScreen
+        wallet={{ address: 'address', balance: ethers.BigNumber.from(123) }}
+      />
+    );
   }
 }

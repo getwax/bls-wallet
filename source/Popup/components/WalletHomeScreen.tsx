@@ -1,10 +1,14 @@
+import { ethers } from 'ethers';
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
+import Button from './Button';
 
 import CompactQuillHeading from './CompactQuillHeading';
 import CopyIcon from './CopyIcon';
 
-const WalletHomeScreen = (): React.ReactElement => (
+const WalletHomeScreen = (props: {
+  wallet?: { address: string; balance: ethers.BigNumber };
+}): React.ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
       <CompactQuillHeading />
@@ -63,24 +67,46 @@ const WalletHomeScreen = (): React.ReactElement => (
           </select>
           <div className="field-trailer" />
         </div>
-        <div>
-          <div style={{ width: '17px' }}>
-            <img
-              src={browser.runtime.getURL('assets/address.svg')}
-              alt="address"
-              width="14"
-              height="15"
-            />
-          </div>
-          <div className="field-label">Address:</div>
-          <div className="field-value grow">
-            <div className="grow">0x 1234 ... 1234</div>
-            <CopyIcon />
-          </div>
-          <div className="field-trailer">#86755</div>
-        </div>
+        {(() => {
+          if (!props.wallet) {
+            return (
+              <>
+                <div />
+                <Button highlight={true} onPress={() => {}}>
+                  Create BLS Wallet
+                </Button>
+              </>
+            );
+          }
+
+          return (
+            <div>
+              <div style={{ width: '17px' }}>
+                <img
+                  src={browser.runtime.getURL('assets/address.svg')}
+                  alt="address"
+                  width="14"
+                  height="15"
+                />
+              </div>
+              <div className="field-label">Address:</div>
+              <div className="field-value grow">
+                <div className="grow">0x 1234 ... 1234</div>
+                <CopyIcon />
+              </div>
+              <div className="field-trailer">#86755</div>
+            </div>
+          );
+        })()}
       </div>
     </div>
+    {(() => {
+      if (!props.wallet) {
+        return <></>;
+      }
+
+      return <div className="section">Balance and create tx</div>;
+    })()}
   </div>
 );
 
