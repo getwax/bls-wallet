@@ -1,9 +1,9 @@
 import * as React from 'react';
 import delay from '../../helpers/delay';
-import UiEvents from '../UiEvents';
+import App from '../App';
 
 type Props = {
-  uie: UiEvents;
+  app: App;
 };
 
 type State = {
@@ -25,7 +25,7 @@ export default class Notification extends React.Component<Props, State> {
     super(props);
 
     this.state = initialState;
-    this.props.uie.on('notification', this.onNotify);
+    this.props.app.events.on('notification', this.onNotify);
   }
 
   onNotify = async (text: string): Promise<void> => {
@@ -45,7 +45,7 @@ export default class Notification extends React.Component<Props, State> {
   };
 
   componentWillUnmount(): void {
-    this.props.uie.off('notification', this.onNotify);
+    this.props.app.events.off('notification', this.onNotify);
   }
 
   setTarget(updates: Partial<State>): void {

@@ -3,7 +3,6 @@ import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import assertExists from '../../helpers/assertExists';
 import App from '../App';
-import UiEvents from '../UiEvents';
 import Button from './Button';
 
 import CompactQuillHeading from './CompactQuillHeading';
@@ -18,7 +17,6 @@ export type BlsKey = {
 
 const WalletHomeScreen = (props: {
   app: App;
-  uie: UiEvents;
 }): React.ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
@@ -26,13 +24,7 @@ const WalletHomeScreen = (props: {
     </div>
     <div className="section">
       <div className="field-list">
-        <BLSKeyField
-          uie={props.uie}
-          blsKey={{
-            public: assertExists(props.app.PublicKey()),
-            private: assertExists(props.app.state.privateKey),
-          }}
-        />
+        <BLSKeyField app={props.app} />
         <NetworkField />
         {(() => {
           if (!props.app.state.walletAddress.value) {
@@ -51,7 +43,7 @@ const WalletHomeScreen = (props: {
 
           return (
             <AddressField
-              uie={props.uie}
+              app={props.app}
               address={props.app.state.walletAddress.value}
               nonce={props.app.state.walletState.nonce}
             />
@@ -59,17 +51,18 @@ const WalletHomeScreen = (props: {
         })()}
       </div>
     </div>
-    <WalletContent uie={props.uie} app={props.app} />
+    <WalletContent app={props.app} />
   </div>
 );
 
 export default WalletHomeScreen;
 
 const BLSKeyField = (props: {
-  uie: UiEvents;
-  blsKey: BlsKey;
-}): React.ReactElement => (
-  <div>
+  app: App;
+}): React.ReactElement => {
+  const publicKey = assertExists(props.app.PublicKey());
+
+  return <div>
     <div style={{ width: '17px' }}>
       <img
         src={browser.runtime.getURL('assets/key.svg')}
@@ -82,11 +75,11 @@ const BLSKeyField = (props: {
     <div
       className="field-value grow"
       {...defineAction(() => {
-        navigator.clipboard.writeText(props.blsKey.public);
-        props.uie.emit('notification', 'BLS public key copied to clipboard');
+        navigator.clipboard.writeText(publicKey);
+        props.app.events.emit('notification', 'BLS public key copied to clipboard');
       })}
     >
-      <div className="grow">{formatCompactAddress(props.blsKey.public)}</div>
+      <div className="grow">{formatCompactAddress(publicKey)}</div>
       <CopyIcon />
     </div>
     <div className="field-trailer">
@@ -94,12 +87,8 @@ const BLSKeyField = (props: {
         src={browser.runtime.getURL('assets/download.svg')}
         text="Backup private key"
         onAction={() =>
-          props.uie.emit('overlay', (close) => (
-            <CopyPrivateKeyPrompt
-              uie={props.uie}
-              blsKey={props.blsKey}
-              close={close}
-            />
+          props.app.events.emit('overlay', (close) => (
+            <CopyPrivateKeyPrompt app={props.app} close={close} />
           ))
         }
       />
@@ -107,14 +96,14 @@ const BLSKeyField = (props: {
         src={browser.runtime.getURL('assets/trashcan.svg')}
         text="Delete BLS key"
         onAction={() =>
-          props.uie.emit('overlay', (close) => (
+          props.app.events.emit('overlay', (close) => (
             <DeleteKeyPrompt close={close} />
           ))
         }
       />
     </div>
   </div>
-);
+};
 
 const NetworkField = (): React.ReactElement => (
   <div>
@@ -143,7 +132,7 @@ const NetworkField = (): React.ReactElement => (
 );
 
 const AddressField = (props: {
-  uie: UiEvents;
+  app: App;
   address: string;
   nonce?: string;
 }): React.ReactElement => (
@@ -161,7 +150,7 @@ const AddressField = (props: {
       className="field-value grow"
       {...defineAction(() => {
         navigator.clipboard.writeText(props.address);
-        props.uie.emit('notification', 'Address copied to clipboard');
+        props.app.events.emit('notification', 'Address copied to clipboard');
       })}
     >
       <div className="grow">{formatCompactAddress(props.address)}</div>
@@ -173,7 +162,6 @@ const AddressField = (props: {
 
 const WalletContent = (props: {
   app: App;
-  uie: UiEvents;
 }): React.ReactElement => {
   if (!props.app.state.walletAddress.value) {
     return <></>;
@@ -187,7 +175,7 @@ const WalletContent = (props: {
           {formatBalance(props.app.state.walletState.balance, 'ETH')}
         </div>
       </div>
-      <Button highlight={true} onPress={() => NotImplemented(props.uie)}>
+      <Button highlight={true} onPress={() => NotImplemented(props.app)}>
         Create Transaction
       </Button>
     </div>
@@ -230,8 +218,7 @@ const DeleteKeyPrompt = (props: { close: () => void }): React.ReactElement => (
 );
 
 const CopyPrivateKeyPrompt = (props: {
-  uie: UiEvents;
-  blsKey: BlsKey;
+  app: App;
   close: () => void;
 }): React.ReactElement => (
   <div className="delete-key-prompt">
@@ -243,9 +230,9 @@ const CopyPrivateKeyPrompt = (props: {
     <Button
       highlight={true}
       onPress={() => {
-        navigator.clipboard.writeText(props.blsKey.private);
+        navigator.clipboard.writeText(assertExists(props.app.state.privateKey));
         props.close();
-        props.uie.emit('notification', 'BLS private key copied to clipboard');
+        props.app.events.emit('notification', 'BLS private key copied to clipboard');
       }}
     >
       Copy private key

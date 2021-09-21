@@ -1,9 +1,9 @@
 import * as React from 'react';
 import delay from '../../helpers/delay';
-import UiEvents, { Overlay } from '../UiEvents';
+import App, { Overlay } from '../App';
 
 type Props = {
-  uie: UiEvents;
+  app: App;
 };
 
 type State = {
@@ -25,7 +25,7 @@ export default class OverlayContainer extends React.Component<Props, State> {
     super(props);
 
     this.state = initialState;
-    this.props.uie.on('overlay', this.onOverlay);
+    this.props.app.events.on('overlay', this.onOverlay);
   }
 
   onOverlay = async (overlay: Overlay): Promise<void> => {
@@ -64,7 +64,7 @@ export default class OverlayContainer extends React.Component<Props, State> {
   };
 
   componentWillUnmount(): void {
-    this.props.uie.off('overlay', this.onOverlay);
+    this.props.app.events.off('overlay', this.onOverlay);
   }
 
   setTarget(updates: Partial<State>): void {

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import type App from './App';
 import { AppState } from './App';
-import UiEvents from './UiEvents';
 import KeyEntryScreen from './components/KeyEntryScreen';
 import LoadingScreen from './components/LoadingScreen';
 import Notification from './components/Notification';
@@ -17,11 +16,9 @@ type Props = {
 type State = {
   app?: App;
   appState?: AppState;
-  notification?: string;
 };
 
 export default class Popup extends React.Component<Props, State> {
-  uie = UiEvents();
   cleanupTasks: (() => void)[] = [];
 
   constructor(props: Props) {
@@ -33,19 +30,12 @@ export default class Popup extends React.Component<Props, State> {
       this.setState({ app });
 
       app.events.on('state', appStateListener);
-
       this.cleanupTasks.push(() => app.events.off('state', appStateListener));
     });
 
     const appStateListener = (appState: AppState) => {
       this.setState({ appState });
     };
-
-    this.uie.on('notification', (text) => {
-      this.setState({
-        notification: text,
-      });
-    });
   }
 
   componentWillUnmount(): void {
@@ -65,25 +55,25 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
+    if (!this.state.app) {
+      return <LoadingScreen />;
+    }
+
     return (
       <div className="popup">
-        {this.renderContent()}
+        {this.renderContent(this.state.app)}
 
-        <Notification uie={this.uie} />
-        <OverlayContainer uie={this.uie} />
+        <Notification app={this.state.app} />
+        <OverlayContainer app={this.state.app} />
       </div>
     );
   }
 
-  renderContent(): React.ReactNode {
-    if (!this.state.app || !this.state.appState) {
-      return <LoadingScreen />;
-    }
-
-    if (this.state.appState.privateKey === undefined) {
+  renderContent(app: App): React.ReactNode {
+    if (app.state.privateKey === undefined) {
       return <KeyEntryScreen onPrivateKey={() => {}} />;
     }
 
-    return <WalletHomeScreen app={this.state.app} uie={this.uie} />;
+    return <WalletHomeScreen app={app} />;
   }
 }

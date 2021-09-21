@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 
+import * as React from 'react';
 import { BlsWalletSigner } from 'bls-wallet-signer';
 import type { ethers } from 'ethers';
 import type TypedEventEmitter from 'typed-emitter';
@@ -23,8 +24,12 @@ export type AppState = {
   };
 };
 
+export type Overlay = (close: () => void) => React.ReactElement;
+
 type Events = {
   state: (state: AppState) => void;
+  notification: (text: string) => void;
+  overlay: (overlay: Overlay) => void;
 };
 
 export default class App {
