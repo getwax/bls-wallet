@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import * as React from 'react';
 import type App from './App';
 import { AppState } from './App';
@@ -66,7 +65,14 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
-    return <div className="popup">{this.renderContent()}</div>;
+    return (
+      <div className="popup">
+        {this.renderContent()}
+
+        <Notification uie={this.uie} />
+        <OverlayContainer uie={this.uie} />
+      </div>
+    );
   }
 
   renderContent(): React.ReactNode {
@@ -78,26 +84,25 @@ export default class Popup extends React.Component<Props, State> {
       return <KeyEntryScreen onPrivateKey={() => {}} />;
     }
 
+    let wallet: undefined | { address: string; balance: string; nonce: string };
+
+    if (this.state.appState.walletAddress.value !== undefined) {
+      wallet = {
+        address: this.state.appState.walletAddress.value,
+        balance: this.state.appState.walletState.balance ?? '',
+        nonce: this.state.appState.walletState.nonce ?? '',
+      };
+    }
+
     return (
-      <>
-        <WalletHomeScreen
-          uie={this.uie}
-          blsKey={{
-            public:
-              '0x1234123412341234123412341234123412341234123412341234123412341234',
-            private:
-              '0x1234123412341234123412341234123412341234123412341234123412341234',
-          }}
-          wallet={{
-            address:
-              '0xabcd123412341234123412341234123412341234123412341234123412341234',
-            balance: ethers.utils.parseEther('2.035').toString(),
-            nonce: '86755',
-          }}
-        />
-        <Notification uie={this.uie} />
-        <OverlayContainer uie={this.uie} />
-      </>
+      <WalletHomeScreen
+        uie={this.uie}
+        blsKey={{
+          public: this.state.app?.PublicKey()!,
+          private: this.state.appState.privateKey,
+        }}
+        wallet={wallet}
+      />
     );
   }
 }
