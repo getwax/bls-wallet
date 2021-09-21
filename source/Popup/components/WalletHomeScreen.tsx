@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
-import CommonUI from '../CommonUI';
+import UiEvents from '../UiEvents';
 import Button from './Button';
 
 import CompactQuillHeading from './CompactQuillHeading';
@@ -14,7 +14,7 @@ export type BlsKey = {
 };
 
 const WalletHomeScreen = (props: {
-  ui: CommonUI;
+  uie: UiEvents;
   blsKey: BlsKey;
   wallet?: { address: string; balance: string; nonce: string };
 }): React.ReactElement => (
@@ -24,7 +24,7 @@ const WalletHomeScreen = (props: {
     </div>
     <div className="section">
       <div className="field-list">
-        <BLSKeyField ui={props.ui} blsKey={props.blsKey} />
+        <BLSKeyField uie={props.uie} blsKey={props.blsKey} />
         <NetworkField />
         {(() => {
           if (!props.wallet) {
@@ -40,7 +40,7 @@ const WalletHomeScreen = (props: {
 
           return (
             <AddressField
-              ui={props.ui}
+              uie={props.uie}
               address={props.wallet.address}
               nonce={props.wallet.nonce}
             />
@@ -55,7 +55,7 @@ const WalletHomeScreen = (props: {
 export default WalletHomeScreen;
 
 const BLSKeyField = (props: {
-  ui: CommonUI;
+  uie: UiEvents;
   blsKey: BlsKey;
 }): React.ReactElement => (
   <div>
@@ -72,7 +72,7 @@ const BLSKeyField = (props: {
       className="field-value grow"
       {...defineAction(() => {
         navigator.clipboard.writeText(props.blsKey.public);
-        props.ui.notify('BLS public key copied to clipboard');
+        props.uie.emit('notification', 'BLS public key copied to clipboard');
       })}
     >
       <div className="grow">{formatCompactAddress(props.blsKey.public)}</div>
@@ -118,7 +118,7 @@ const NetworkField = (): React.ReactElement => (
 );
 
 const AddressField = (props: {
-  ui: CommonUI;
+  uie: UiEvents;
   address: string;
   nonce: string;
 }): React.ReactElement => (
@@ -136,7 +136,7 @@ const AddressField = (props: {
       className="field-value grow"
       {...defineAction(() => {
         navigator.clipboard.writeText(props.address);
-        props.ui.notify('Address copied to clipboard');
+        props.uie.emit('notification', 'Address copied to clipboard');
       })}
     >
       <div className="grow">{formatCompactAddress(props.address)}</div>

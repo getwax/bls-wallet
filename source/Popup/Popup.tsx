@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import * as React from 'react';
 import type App from './App';
 import { AppState } from './App';
-import CommonUI from './CommonUI';
+import UiEvents from './UiEvents';
 import KeyEntryScreen from './components/KeyEntryScreen';
 import LoadingScreen from './components/LoadingScreen';
 import Notification from './components/Notification';
@@ -21,7 +21,7 @@ type State = {
 };
 
 export default class Popup extends React.Component<Props, State> {
-  ui = new CommonUI();
+  uie = UiEvents();
   cleanupTasks: (() => void)[] = [];
 
   constructor(props: Props) {
@@ -41,7 +41,7 @@ export default class Popup extends React.Component<Props, State> {
       this.setState({ appState });
     };
 
-    this.ui.events.on('notify', (text) => {
+    this.uie.on('notification', (text) => {
       this.setState({
         notification: text,
       });
@@ -80,7 +80,7 @@ export default class Popup extends React.Component<Props, State> {
     return (
       <>
         <WalletHomeScreen
-          ui={this.ui}
+          uie={this.uie}
           blsKey={{
             public:
               '0x1234123412341234123412341234123412341234123412341234123412341234',
@@ -94,7 +94,7 @@ export default class Popup extends React.Component<Props, State> {
             nonce: '86755',
           }}
         />
-        <Notification ui={this.ui} />
+        <Notification uie={this.uie} />
       </>
     );
   }

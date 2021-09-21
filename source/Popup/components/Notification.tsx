@@ -1,8 +1,8 @@
 import * as React from 'react';
-import CommonUI from '../CommonUI';
+import UiEvents from '../UiEvents';
 
 type Props = {
-  ui: CommonUI;
+  uie: UiEvents;
 };
 
 type State = {
@@ -24,7 +24,7 @@ export default class Notification extends React.Component<Props, State> {
     super(props);
 
     this.state = initialState;
-    this.props.ui.events.on('notify', this.onNotify);
+    this.props.uie.on('notification', this.onNotify);
   }
 
   onNotify = async (text: string): Promise<void> => {
@@ -44,7 +44,7 @@ export default class Notification extends React.Component<Props, State> {
   };
 
   componentWillUnmount(): void {
-    this.props.ui.events.off('notify', this.onNotify);
+    this.props.uie.off('notification', this.onNotify);
   }
 
   setTarget(updates: Partial<State>): void {
