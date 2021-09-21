@@ -49,6 +49,11 @@
     &.active {
       opacity: 1;
     }
+
+    &.error {
+      background-color: $alert-light;
+      color: $alert-base;
+    }
   }
 
   .overlay {

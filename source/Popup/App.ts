@@ -28,7 +28,7 @@ export type Overlay = (close: () => void) => React.ReactElement;
 
 type Events = {
   state: (state: AppState) => void;
-  notification: (text: string) => void;
+  notification: (level: 'info' | 'error', text: string) => void;
   overlay: (overlay: Overlay) => void;
 };
 
@@ -177,11 +177,21 @@ export default class App {
       2 * expectedBytes; // 2 hex characters per byte
 
     if (privateKey.length !== expectedLength) {
-      throw new Error('Incorrect length');
+      this.events.emit(
+        'notification',
+        'error',
+        'Failed to restore private key: incorrect length',
+      );
+      return;
     }
 
-    if (!/0x([0-9a-f])*/i.test(privateKey)) {
-      throw new Error('Incorrect format');
+    if (!/0x([0-9a-f])*$/i.test(privateKey)) {
+      this.events.emit(
+        'notification',
+        'error',
+        'Failed to restore private key: incorrect format',
+      );
+      return;
     }
 
     this.setState({ privateKey });

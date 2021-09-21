@@ -1,14 +1,11 @@
 import * as React from 'react';
+import App from '../App';
 import Button from './Button';
 
 import LargeQuillHeading from './LargeQuillHeading';
 
 type Props = {
-  onPrivateKey: (
-    privateKey:
-      | { type: 'paste'; value: string }
-      | { type: 'create'; value?: null },
-  ) => void;
+  app: App;
 };
 
 type State = {
@@ -30,7 +27,7 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
         <LargeQuillHeading />
         <div className="body">
           <Button
-            onPress={() => this.props.onPrivateKey({ type: 'create' })}
+            onPress={() => this.props.app.createPrivateKey()}
             highlight={this.state.pasteText === ''}
           >
             Create BLS Key
@@ -52,10 +49,7 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
             >
               <Button
                 onPress={() =>
-                  this.props.onPrivateKey({
-                    type: 'paste',
-                    value: this.state.pasteText,
-                  })
+                  this.props.app.loadPrivateKey(this.state.pasteText)
                 }
                 highlight={true}
               >

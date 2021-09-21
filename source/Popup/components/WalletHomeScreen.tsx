@@ -75,6 +75,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
           navigator.clipboard.writeText(publicKey);
           props.app.events.emit(
             'notification',
+            'info',
             'BLS public key copied to clipboard',
           );
         })}
@@ -151,7 +152,11 @@ const AddressField = (props: {
       className="field-value grow"
       {...defineAction(() => {
         navigator.clipboard.writeText(props.address);
-        props.app.events.emit('notification', 'Address copied to clipboard');
+        props.app.events.emit(
+          'notification',
+          'info',
+          'Address copied to clipboard',
+        );
       })}
     >
       <div className="grow">{formatCompactAddress(props.address)}</div>
@@ -242,6 +247,7 @@ const CopyPrivateKeyPrompt = (props: {
         props.close();
         props.app.events.emit(
           'notification',
+          'info',
           'BLS private key copied to clipboard',
         );
       }}

@@ -71,7 +71,7 @@ export default class Popup extends React.Component<Props, State> {
 
   renderContent(app: App): React.ReactNode {
     if (app.state.privateKey === undefined) {
-      return <KeyEntryScreen onPrivateKey={() => {}} />;
+      return <KeyEntryScreen app={app} />;
     }
 
     return <WalletHomeScreen app={app} />;
