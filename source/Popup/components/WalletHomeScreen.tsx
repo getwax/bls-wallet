@@ -7,6 +7,7 @@ import Button from './Button';
 import CompactQuillHeading from './CompactQuillHeading';
 import CopyIcon from './CopyIcon';
 import Grow from './Grow';
+import NotImplemented from './NotImplemented';
 
 export type BlsKey = {
   public: string;
@@ -162,18 +163,7 @@ const WalletContent = (props: {
           {formatBalance(props.wallet.balance, 'ETH')}
         </div>
       </div>
-      <Button
-        highlight={true}
-        onPress={() => {
-          props.uie.emit('overlay', (close) => {
-            return (
-              <>
-                Example overlay <Button onPress={close}>close</Button>
-              </>
-            );
-          });
-        }}
-      >
+      <Button highlight={true} onPress={() => NotImplemented(props.uie)}>
         Create Transaction
       </Button>
     </div>
