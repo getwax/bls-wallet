@@ -170,8 +170,16 @@ body {
         width: 68px;
         justify-content: center;
 
-        img:not(:first-child) {
-          margin-left: 6px;
+        img {
+          cursor: pointer;
+
+          &:not(:first-child) {
+            margin-left: 6px;
+          }
+
+          &:hover {
+            filter: brightness(50%);
+          }
         }
       }
     }
