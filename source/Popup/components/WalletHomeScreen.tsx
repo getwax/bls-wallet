@@ -15,9 +15,7 @@ export type BlsKey = {
   private: string;
 };
 
-const WalletHomeScreen = (props: {
-  app: App;
-}): React.ReactElement => (
+const WalletHomeScreen = (props: { app: App }): React.ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
       <CompactQuillHeading />
@@ -57,52 +55,55 @@ const WalletHomeScreen = (props: {
 
 export default WalletHomeScreen;
 
-const BLSKeyField = (props: {
-  app: App;
-}): React.ReactElement => {
+const BLSKeyField = (props: { app: App }): React.ReactElement => {
   const publicKey = assertExists(props.app.PublicKey());
 
-  return <div>
-    <div style={{ width: '17px' }}>
-      <img
-        src={browser.runtime.getURL('assets/key.svg')}
-        alt="key"
-        width="14"
-        height="15"
-      />
+  return (
+    <div>
+      <div style={{ width: '17px' }}>
+        <img
+          src={browser.runtime.getURL('assets/key.svg')}
+          alt="key"
+          width="14"
+          height="15"
+        />
+      </div>
+      <div className="field-label">BLS Key:</div>
+      <div
+        className="field-value grow"
+        {...defineAction(() => {
+          navigator.clipboard.writeText(publicKey);
+          props.app.events.emit(
+            'notification',
+            'BLS public key copied to clipboard',
+          );
+        })}
+      >
+        <div className="grow">{formatCompactAddress(publicKey)}</div>
+        <CopyIcon />
+      </div>
+      <div className="field-trailer">
+        <KeyIcon
+          src={browser.runtime.getURL('assets/download.svg')}
+          text="Backup private key"
+          onAction={() =>
+            props.app.events.emit('overlay', (close) => (
+              <CopyPrivateKeyPrompt app={props.app} close={close} />
+            ))
+          }
+        />
+        <KeyIcon
+          src={browser.runtime.getURL('assets/trashcan.svg')}
+          text="Delete BLS key"
+          onAction={() =>
+            props.app.events.emit('overlay', (close) => (
+              <DeleteKeyPrompt app={props.app} close={close} />
+            ))
+          }
+        />
+      </div>
     </div>
-    <div className="field-label">BLS Key:</div>
-    <div
-      className="field-value grow"
-      {...defineAction(() => {
-        navigator.clipboard.writeText(publicKey);
-        props.app.events.emit('notification', 'BLS public key copied to clipboard');
-      })}
-    >
-      <div className="grow">{formatCompactAddress(publicKey)}</div>
-      <CopyIcon />
-    </div>
-    <div className="field-trailer">
-      <KeyIcon
-        src={browser.runtime.getURL('assets/download.svg')}
-        text="Backup private key"
-        onAction={() =>
-          props.app.events.emit('overlay', (close) => (
-            <CopyPrivateKeyPrompt app={props.app} close={close} />
-          ))
-        }
-      />
-      <KeyIcon
-        src={browser.runtime.getURL('assets/trashcan.svg')}
-        text="Delete BLS key"
-        onAction={() =>
-          props.app.events.emit('overlay', (close) => (
-            <DeleteKeyPrompt close={close} />
-          ))
-        }
-      />
-    </div>
-  </div>
+  );
 };
 
 const NetworkField = (): React.ReactElement => (
@@ -160,9 +161,7 @@ const AddressField = (props: {
   </div>
 );
 
-const WalletContent = (props: {
-  app: App;
-}): React.ReactElement => {
+const WalletContent = (props: { app: App }): React.ReactElement => {
   if (!props.app.state.walletAddress.value) {
     return <></>;
   }
@@ -203,14 +202,23 @@ const KeyIcon = (props: {
   </div>
 );
 
-const DeleteKeyPrompt = (props: { close: () => void }): React.ReactElement => (
+const DeleteKeyPrompt = (props: {
+  app: App;
+  close: () => void;
+}): React.ReactElement => (
   <div className="delete-key-prompt">
     <div>
       Are you sure that you want to delete this key? You can only restore your
       wallet if you have backed up your private key.
     </div>
     <div />
-    <Button highlight={true} onPress={() => {}}>
+    <Button
+      highlight={true}
+      onPress={() => {
+        props.app.deletePrivateKey();
+        props.close();
+      }}
+    >
       Delete BLS key
     </Button>
     <Button onPress={props.close}>Cancel</Button>
@@ -232,7 +240,10 @@ const CopyPrivateKeyPrompt = (props: {
       onPress={() => {
         navigator.clipboard.writeText(assertExists(props.app.state.privateKey));
         props.close();
-        props.app.events.emit('notification', 'BLS private key copied to clipboard');
+        props.app.events.emit(
+          'notification',
+          'BLS private key copied to clipboard',
+        );
       }}
     >
       Copy private key
