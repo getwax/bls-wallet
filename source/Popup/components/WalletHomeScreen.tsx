@@ -88,7 +88,11 @@ const BLSKeyField = (props: {
       <KeyIcon
         src={browser.runtime.getURL('assets/trashcan.svg')}
         text="Delete BLS key"
-        onAction={() => NotImplemented(props.uie)}
+        onAction={() =>
+          props.uie.emit('overlay', (close) => (
+            <DeleteKeyPrompt close={close} />
+          ))
+        }
       />
     </div>
   </div>
@@ -190,6 +194,20 @@ const KeyIcon = (props: {
       <div className="content">{props.text}</div>
     </div>
     <div className="info-arrow" />
+  </div>
+);
+
+const DeleteKeyPrompt = (props: { close: () => void }): React.ReactElement => (
+  <div className="delete-key-prompt">
+    <div>
+      Are you sure that you want to delete this key? You can only restore your
+      wallet if you have backed up your private key.
+    </div>
+    <div />
+    <Button highlight={true} onPress={() => {}}>
+      Delete BLS key
+    </Button>
+    <Button onPress={props.close}>Cancel</Button>
   </div>
 );
 

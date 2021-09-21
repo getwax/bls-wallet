@@ -10,6 +10,7 @@
 
 .popup {
   font-size: 16px;
+  font-family: Roboto, sans-serif;
   line-height: 19px;
   height: 100%;
   position: relative;
@@ -304,5 +305,11 @@
         }
       }
     }
+  }
+
+  .delete-key-prompt {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 }
