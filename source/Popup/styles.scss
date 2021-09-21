@@ -170,15 +170,39 @@ body {
         width: 68px;
         justify-content: center;
 
-        img {
-          cursor: pointer;
+        :not(:first-child) {
+          margin-left: 6px;
+        }
+      }
 
-          &:not(:first-child) {
-            margin-left: 6px;
+      .key-icon {
+        cursor: pointer;
+        position: relative;
+
+        .info-box {
+          position: absolute;
+          top: -36px;
+          right: 0;
+          width: 359px;
+          display: none;
+          margin: 0;
+          flex-direction: row;
+
+          .content {
+            color: white;
+            background-color: black;
+            border-radius: 5px;
+            padding: 3px 12px;
+          }
+        }
+
+        &:hover {
+          img {
+            filter: brightness(50%);
           }
 
-          &:hover {
-            filter: brightness(50%);
+          .info-box {
+            display: flex;
           }
         }
       }

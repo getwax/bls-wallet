@@ -5,6 +5,7 @@ import Button from './Button';
 
 import CompactQuillHeading from './CompactQuillHeading';
 import CopyIcon from './CopyIcon';
+import Grow from './Grow';
 
 export type BlsKey = {
   public: string;
@@ -69,17 +70,13 @@ const BLSKeyField = (props: { blsKey: BlsKey }): React.ReactElement => (
       <CopyIcon />
     </div>
     <div className="field-trailer">
-      <img
+      <KeyIcon
         src={browser.runtime.getURL('assets/download.svg')}
-        alt="download"
-        width="22"
-        height="22"
+        text="Backup private key"
       />
-      <img
+      <KeyIcon
         src={browser.runtime.getURL('assets/trashcan.svg')}
-        alt="delete"
-        width="22"
-        height="22"
+        text="Delete BLS key"
       />
     </div>
   </div>
@@ -154,6 +151,16 @@ const WalletContent = (props: {
     </div>
   );
 };
+
+const KeyIcon = (props: { src: string; text: string }): React.ReactElement => (
+  <div className="key-icon" style={{ width: '22px', height: '22px' }}>
+    <img src={props.src} alt={props.text} width="22" height="22" />
+    <div className="info-box">
+      <Grow />
+      <div className="content">{props.text}</div>
+    </div>
+  </div>
+);
 
 function formatBalance(balance: string | undefined, currency: string): string {
   if (balance === undefined) {
