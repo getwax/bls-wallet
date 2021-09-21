@@ -2,8 +2,10 @@ import { ethers } from 'ethers';
 import * as React from 'react';
 import type App from './App';
 import { AppState } from './App';
+import CommonUI from './CommonUI';
 import KeyEntryScreen from './components/KeyEntryScreen';
 import LoadingScreen from './components/LoadingScreen';
+import Notification from './components/Notification';
 import WalletHomeScreen from './components/WalletHomeScreen';
 
 import './styles.scss';
@@ -15,9 +17,11 @@ type Props = {
 type State = {
   app?: App;
   appState?: AppState;
+  notification?: string;
 };
 
 export default class Popup extends React.Component<Props, State> {
+  ui = new CommonUI();
   cleanupTasks: (() => void)[] = [];
 
   constructor(props: Props) {
@@ -36,6 +40,12 @@ export default class Popup extends React.Component<Props, State> {
     const appStateListener = (appState: AppState) => {
       this.setState({ appState });
     };
+
+    this.ui.events.on('notify', (text) => {
+      this.setState({
+        notification: text,
+      });
+    });
   }
 
   componentWillUnmount(): void {
@@ -68,20 +78,24 @@ export default class Popup extends React.Component<Props, State> {
     }
 
     return (
-      <WalletHomeScreen
-        blsKey={{
-          public:
-            '0x1234123412341234123412341234123412341234123412341234123412341234',
-          private:
-            '0x1234123412341234123412341234123412341234123412341234123412341234',
-        }}
-        wallet={{
-          address:
-            '0xabcd123412341234123412341234123412341234123412341234123412341234',
-          balance: ethers.utils.parseEther('2.035').toString(),
-          nonce: '86755',
-        }}
-      />
+      <>
+        <WalletHomeScreen
+          ui={this.ui}
+          blsKey={{
+            public:
+              '0x1234123412341234123412341234123412341234123412341234123412341234',
+            private:
+              '0x1234123412341234123412341234123412341234123412341234123412341234',
+          }}
+          wallet={{
+            address:
+              '0xabcd123412341234123412341234123412341234123412341234123412341234',
+            balance: ethers.utils.parseEther('2.035').toString(),
+            nonce: '86755',
+          }}
+        />
+        <Notification ui={this.ui} />
+      </>
     );
   }
 }

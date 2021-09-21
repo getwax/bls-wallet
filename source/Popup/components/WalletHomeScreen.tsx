@@ -1,6 +1,7 @@
 import { BigNumber } from 'ethers';
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
+import CommonUI from '../CommonUI';
 import Button from './Button';
 
 import CompactQuillHeading from './CompactQuillHeading';
@@ -13,6 +14,7 @@ export type BlsKey = {
 };
 
 const WalletHomeScreen = (props: {
+  ui: CommonUI;
   blsKey: BlsKey;
   wallet?: { address: string; balance: string; nonce: string };
 }): React.ReactElement => (
@@ -22,7 +24,7 @@ const WalletHomeScreen = (props: {
     </div>
     <div className="section">
       <div className="field-list">
-        <BLSKeyField blsKey={props.blsKey} />
+        <BLSKeyField ui={props.ui} blsKey={props.blsKey} />
         <NetworkField />
         {(() => {
           if (!props.wallet) {
@@ -38,6 +40,7 @@ const WalletHomeScreen = (props: {
 
           return (
             <AddressField
+              ui={props.ui}
               address={props.wallet.address}
               nonce={props.wallet.nonce}
             />
@@ -51,7 +54,10 @@ const WalletHomeScreen = (props: {
 
 export default WalletHomeScreen;
 
-const BLSKeyField = (props: { blsKey: BlsKey }): React.ReactElement => (
+const BLSKeyField = (props: {
+  ui: CommonUI;
+  blsKey: BlsKey;
+}): React.ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
@@ -64,7 +70,10 @@ const BLSKeyField = (props: { blsKey: BlsKey }): React.ReactElement => (
     <div className="field-label">BLS Key:</div>
     <div
       className="field-value grow"
-      {...defineCopyAction(props.blsKey.public)}
+      {...defineAction(() => {
+        navigator.clipboard.writeText(props.blsKey.public);
+        props.ui.notify('BLS public key copied to clipboard');
+      })}
     >
       <div className="grow">{formatCompactAddress(props.blsKey.public)}</div>
       <CopyIcon />
@@ -109,6 +118,7 @@ const NetworkField = (): React.ReactElement => (
 );
 
 const AddressField = (props: {
+  ui: CommonUI;
   address: string;
   nonce: string;
 }): React.ReactElement => (
@@ -122,7 +132,13 @@ const AddressField = (props: {
       />
     </div>
     <div className="field-label">Address:</div>
-    <div className="field-value grow" {...defineCopyAction(props.address)}>
+    <div
+      className="field-value grow"
+      {...defineAction(() => {
+        navigator.clipboard.writeText(props.address);
+        props.ui.notify('Address copied to clipboard');
+      })}
+    >
       <div className="grow">{formatCompactAddress(props.address)}</div>
       <CopyIcon />
     </div>
@@ -186,8 +202,4 @@ function defineAction(handler: () => void) {
       }
     },
   };
-}
-
-function defineCopyAction(value: string) {
-  return defineAction(() => navigator.clipboard.writeText(value));
 }

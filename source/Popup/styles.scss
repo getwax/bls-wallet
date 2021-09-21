@@ -12,6 +12,7 @@
   font-size: 16px;
   line-height: 19px;
   height: 100%;
+  position: relative;
 
   .large-quill-heading {
     display: flex;
@@ -25,6 +26,28 @@
     justify-content: center;
     padding-top: 12px;
     padding-bottom: 12px;
+  }
+
+  .notification {
+    position: absolute;
+    bottom: 0;
+    padding: 18px 24px;
+    width: 100%;
+    text-align: center;
+    background-color: $primary-faded;
+    color: $primary-base;
+    display: none;
+    opacity: 0;
+
+    transition: opacity 200ms;
+
+    &.present {
+      display: block;
+    }
+
+    &.active {
+      opacity: 1;
+    }
   }
 
   .button {
