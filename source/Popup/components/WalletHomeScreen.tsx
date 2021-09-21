@@ -15,58 +15,8 @@ const WalletHomeScreen = (props: {
     </div>
     <div className="section">
       <div className="field-list">
-        <div>
-          <div style={{ width: '17px' }}>
-            <img
-              src={browser.runtime.getURL('assets/key.svg')}
-              alt="key"
-              width="14"
-              height="15"
-            />
-          </div>
-          <div className="field-label">BLS Key:</div>
-          <div className="field-value grow">
-            <div className="grow">0x 1234 ... 1234</div>
-            <CopyIcon />
-          </div>
-          <div className="field-trailer">
-            <img
-              src={browser.runtime.getURL('assets/download.svg')}
-              alt="download"
-              width="22"
-              height="22"
-            />
-            <img
-              src={browser.runtime.getURL('assets/trashcan.svg')}
-              alt="delete"
-              width="22"
-              height="22"
-            />
-          </div>
-        </div>
-        <div>
-          <div style={{ width: '17px' }}>
-            <img
-              src={browser.runtime.getURL('assets/network.svg')}
-              alt="network"
-              width="14"
-              height="15"
-            />
-          </div>
-          <div className="field-label">Network:</div>
-          <select
-            className="field-value grow"
-            style={{
-              backgroundImage: `url("${browser.runtime.getURL(
-                'assets/selector-down-arrow.svg',
-              )}")`,
-            }}
-          >
-            <option>Optimism</option>
-            <option>Arbitrum</option>
-          </select>
-          <div className="field-trailer" />
-        </div>
+        <BLSKeyField />
+        <NetworkField />
         {(() => {
           if (!props.wallet) {
             return (
@@ -79,35 +29,99 @@ const WalletHomeScreen = (props: {
             );
           }
 
-          return (
-            <div>
-              <div style={{ width: '17px' }}>
-                <img
-                  src={browser.runtime.getURL('assets/address.svg')}
-                  alt="address"
-                  width="14"
-                  height="15"
-                />
-              </div>
-              <div className="field-label">Address:</div>
-              <div className="field-value grow">
-                <div className="grow">0x 1234 ... 1234</div>
-                <CopyIcon />
-              </div>
-              <div className="field-trailer">#86755</div>
-            </div>
-          );
+          return <AddressField />;
         })()}
       </div>
     </div>
-    {(() => {
-      if (!props.wallet) {
-        return <></>;
-      }
-
-      return <div className="section">Balance and create tx</div>;
-    })()}
+    <WalletContent wallet={props.wallet} />
   </div>
 );
 
 export default WalletHomeScreen;
+
+const BLSKeyField = (): React.ReactElement => (
+  <div>
+    <div style={{ width: '17px' }}>
+      <img
+        src={browser.runtime.getURL('assets/key.svg')}
+        alt="key"
+        width="14"
+        height="15"
+      />
+    </div>
+    <div className="field-label">BLS Key:</div>
+    <div className="field-value grow">
+      <div className="grow">0x 1234 ... 1234</div>
+      <CopyIcon />
+    </div>
+    <div className="field-trailer">
+      <img
+        src={browser.runtime.getURL('assets/download.svg')}
+        alt="download"
+        width="22"
+        height="22"
+      />
+      <img
+        src={browser.runtime.getURL('assets/trashcan.svg')}
+        alt="delete"
+        width="22"
+        height="22"
+      />
+    </div>
+  </div>
+);
+
+const NetworkField = (): React.ReactElement => (
+  <div>
+    <div style={{ width: '17px' }}>
+      <img
+        src={browser.runtime.getURL('assets/network.svg')}
+        alt="network"
+        width="14"
+        height="15"
+      />
+    </div>
+    <div className="field-label">Network:</div>
+    <select
+      className="field-value grow"
+      style={{
+        backgroundImage: `url("${browser.runtime.getURL(
+          'assets/selector-down-arrow.svg',
+        )}")`,
+      }}
+    >
+      <option>Optimism</option>
+      <option>Arbitrum</option>
+    </select>
+    <div className="field-trailer" />
+  </div>
+);
+
+const AddressField = (): React.ReactElement => (
+  <div>
+    <div style={{ width: '17px' }}>
+      <img
+        src={browser.runtime.getURL('assets/address.svg')}
+        alt="address"
+        width="14"
+        height="15"
+      />
+    </div>
+    <div className="field-label">Address:</div>
+    <div className="field-value grow">
+      <div className="grow">0x 1234 ... 1234</div>
+      <CopyIcon />
+    </div>
+    <div className="field-trailer">#86755</div>
+  </div>
+);
+
+const WalletContent = (props: {
+  wallet?: { address: string; balance: ethers.BigNumber };
+}): React.ReactElement => {
+  if (!props.wallet) {
+    return <></>;
+  }
+
+  return <div className="section">Wallet content</div>;
+};
