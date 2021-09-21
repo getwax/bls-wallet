@@ -1,4 +1,5 @@
 import * as React from 'react';
+import delay from '../../helpers/delay';
 import UiEvents from '../UiEvents';
 
 type Props = {
@@ -66,8 +67,4 @@ export default class Notification extends React.Component<Props, State> {
 
     return <div className={classes.join(' ')}>{this.state.text}</div>;
   }
-}
-
-async function delay(ms: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, ms));
 }

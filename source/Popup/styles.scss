@@ -56,9 +56,8 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: #00000088;
+    background-color: #2D2B3988;
 
-    display: flex;
     flex-direction: column;
     justify-content: center;
 
@@ -68,6 +67,19 @@
       padding: 36px;
       background-color: $tone-white;
       border-radius: 5px;
+    }
+
+    &.present {
+      display: flex;
+    }
+
+    display: none;
+
+    opacity: 0;
+    transition: opacity 200ms;
+
+    &.active {
+      opacity: 1;
     }
   }
 

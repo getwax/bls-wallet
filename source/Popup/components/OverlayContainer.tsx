@@ -1,4 +1,5 @@
 import * as React from 'react';
+import delay from '../../helpers/delay';
 import UiEvents, { Overlay } from '../UiEvents';
 
 type Props = {
@@ -6,10 +7,14 @@ type Props = {
 };
 
 type State = {
+  activeCount: number;
+  presentCount: number;
   overlayRenders: React.ReactElement[];
 };
 
 const initialState: State = {
+  activeCount: 0,
+  presentCount: 0,
   overlayRenders: [],
 };
 
@@ -26,20 +31,29 @@ export default class OverlayContainer extends React.Component<Props, State> {
   onOverlay = async (overlay: Overlay): Promise<void> => {
     const overlayRender = overlay(close);
 
+    this.setTarget({
+      overlayRenders: [...this.targetState.overlayRenders, overlayRender],
+      presentCount: this.targetState.presentCount + 1,
+    });
+
+    await delay(0);
+    this.setTarget({ activeCount: this.targetState.activeCount + 1 });
+
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
 
-    function close() {
+    async function close() {
+      self.setTarget({ activeCount: self.targetState.activeCount - 1 });
+
+      await delay(500);
+
       self.setTarget({
         overlayRenders: self.targetState.overlayRenders.filter(
           (oi) => oi !== overlayRender,
         ),
+        presentCount: self.targetState.presentCount - 1,
       });
     }
-
-    this.setTarget({
-      overlayRenders: [...this.targetState.overlayRenders, overlayRender],
-    });
   };
 
   componentWillUnmount(): void {
@@ -59,8 +73,18 @@ export default class OverlayContainer extends React.Component<Props, State> {
       return <></>;
     }
 
+    const classes = ['overlay'];
+
+    if (this.state.activeCount > 0) {
+      classes.push('active');
+    }
+
+    if (this.state.presentCount > 0) {
+      classes.push('present');
+    }
+
     return (
-      <div className="overlay">
+      <div className={classes.join(' ')}>
         <div className="content">{currentRender}</div>
       </div>
     );
