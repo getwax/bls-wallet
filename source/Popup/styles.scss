@@ -75,12 +75,14 @@
     }
 
     display: none;
+    pointer-events: none;
 
     opacity: 0;
     transition: opacity 200ms;
 
     &.active {
       opacity: 1;
+      pointer-events: initial;
     }
   }
 

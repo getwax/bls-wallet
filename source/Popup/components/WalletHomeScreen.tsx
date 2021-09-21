@@ -83,7 +83,15 @@ const BLSKeyField = (props: {
       <KeyIcon
         src={browser.runtime.getURL('assets/download.svg')}
         text="Backup private key"
-        onAction={() => NotImplemented(props.uie)}
+        onAction={() =>
+          props.uie.emit('overlay', (close) => (
+            <CopyPrivateKeyPrompt
+              uie={props.uie}
+              blsKey={props.blsKey}
+              close={close}
+            />
+          ))
+        }
       />
       <KeyIcon
         src={browser.runtime.getURL('assets/trashcan.svg')}
@@ -206,6 +214,31 @@ const DeleteKeyPrompt = (props: { close: () => void }): React.ReactElement => (
     <div />
     <Button highlight={true} onPress={() => {}}>
       Delete BLS key
+    </Button>
+    <Button onPress={props.close}>Cancel</Button>
+  </div>
+);
+
+const CopyPrivateKeyPrompt = (props: {
+  uie: UiEvents;
+  blsKey: BlsKey;
+  close: () => void;
+}): React.ReactElement => (
+  <div className="delete-key-prompt">
+    <div>
+      You should make sure you store your private key somewhere safe. If you
+      lose it, you won’t be able to restore your wallet.
+    </div>
+    <div />
+    <Button
+      highlight={true}
+      onPress={() => {
+        navigator.clipboard.writeText(props.blsKey.private);
+        props.close();
+        props.uie.emit('notification', 'BLS private key copied to clipboard');
+      }}
+    >
+      Copy private key
     </Button>
     <Button onPress={props.close}>Cancel</Button>
   </div>
