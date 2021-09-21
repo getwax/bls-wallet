@@ -135,6 +135,7 @@ body {
       }
 
       .field-value {
+        border: 1px solid transparent;
         display: flex;
         flex-direction: row;
 
@@ -147,6 +148,15 @@ body {
         text-overflow: ellipsis;
 
         cursor: pointer;
+        user-select: none;
+
+        &:hover {
+          border-color: $primary-base;
+        }
+
+        &:active {
+          filter: brightness(90%);
+        }
       }
 
       select.field-value {

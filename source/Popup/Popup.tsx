@@ -77,7 +77,7 @@ export default class Popup extends React.Component<Props, State> {
         }}
         wallet={{
           address:
-            '0x1234123412341234123412341234123412341234123412341234123412341234',
+            '0xabcd123412341234123412341234123412341234123412341234123412341234',
           balance: ethers.utils.parseEther('2.035').toString(),
           nonce: '86755',
         }}
