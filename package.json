@@ -27,10 +27,15 @@
   "dependencies": {
     "@babel/runtime": "^7.14.0",
     "advanced-css-reset": "^1.2.2",
+    "bls-wallet-signer": "^0.3.7",
+    "dotenv-webpack": "^7.0.3",
     "emoji-log": "^1.0.2",
+    "ethers": "^5.4.6",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "sass": "^1.38.0",
+    "typed-emitter": "^1.3.1",
+    "typescript": "^4.4.2",
     "webext-base-css": "^1.3.1",
     "webextension-polyfill-ts": "^0.25.0"
   },
@@ -77,7 +82,6 @@
     "resolve-url-loader": "^3.1.3",
     "sass-loader": "^10.2.0",
     "terser-webpack-plugin": "^4.2.3",
-    "typescript": "4.1.5",
     "webpack": "^4.46.0",
     "webpack-cli": "^4.7.0",
     "webpack-extension-reloader": "^1.1.4",

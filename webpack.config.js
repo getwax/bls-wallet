@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 const path = require('path');
 const webpack = require('webpack');
 const FilemanagerPlugin = require('filemanager-webpack-plugin');
@@ -10,6 +12,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WextManifestWebpackPlugin = require('wext-manifest-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const DotenvWebpackPlugin = require('dotenv-webpack');
 
 const viewsPath = path.join(__dirname, 'views');
 const sourcePath = path.join(__dirname, 'source');
@@ -173,10 +176,13 @@ module.exports = {
     }),
     // plugin to enable browser reloading in development mode
     extensionReloaderPlugin,
+    new DotenvWebpackPlugin({
+      path: `./.env.${requireEnv(process.env.ENV)}`,
+    }),
   ],
 
   optimization: {
-    minimize: true,
+    minimize: nodeEnv !== 'development',
     minimizer: [
       new TerserPlugin({
         parallel: true,
@@ -209,3 +215,11 @@ module.exports = {
     ],
   },
 };
+
+function requireEnv(value) {
+  if (value === undefined) {
+    throw new Error('Missing required environment variable');
+  }
+
+  return value;
+}

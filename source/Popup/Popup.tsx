@@ -1,45 +1,42 @@
 import * as React from 'react';
-import {browser, Tabs} from 'webextension-polyfill-ts';
+import type App from './App';
+import StatusView from './StatusView';
 
 import './styles.scss';
 
-function openWebPage(url: string): Promise<Tabs.Tab> {
-  return browser.tabs.create({url});
-}
-
-const Popup: React.FC = () => {
-  return (
-    <section id="popup">
-      <div className="heading">
-        <h2>BLS Wallet</h2>
-      </div>
-      <button
-        id="options__button"
-        type="button"
-        onClick={(): Promise<Tabs.Tab> => {
-          return openWebPage('options.html');
-        }}
-      >
-        Options Page
-      </button>
-      <div className="links__holder">
-        <ul>
-          <li>
-            <button
-              type="button"
-              onClick={(): Promise<Tabs.Tab> => {
-                return openWebPage(
-                  'https://github.com/jzaki/bls-wallet-extension'
-                );
-              }}
-            >
-              GitHub
-            </button>
-          </li>
-        </ul>
-      </div>
-    </section>
-  );
+type Props = {
+  appPromise: Promise<App>;
 };
 
-export default Popup;
+type State = {
+  app?: App;
+};
+
+export default class Popup extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {};
+
+    this.props.appPromise.then((app) => {
+      this.setState({ app });
+    });
+  }
+
+  render(): React.ReactNode {
+    return (
+      <div className="popup">
+        <div className="heading">Quill 🪶</div>
+        <div className="body">{this.renderBody()}</div>
+      </div>
+    );
+  }
+
+  renderBody(): React.ReactNode {
+    if (this.state.app) {
+      return <StatusView app={this.state.app} />;
+    }
+
+    return <>Loading...</>;
+  }
+}

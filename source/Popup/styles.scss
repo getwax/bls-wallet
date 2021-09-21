@@ -7,14 +7,49 @@ body {
   background-color: $greyWhite;
 }
 
-
-#popup {
+.popup {
   min-width: 350px;
+  max-width: 350px;
   padding: 0 0 1em 0;
+  font-size: 1.5em;
+
+  button {
+    padding: 0.35em;
+    border: 1px solid black;
+    border-radius: 3px;
+    background-color: #ccc;
+
+    &:not(:first-child) {
+      margin-left: 0.5em;
+    }
+
+    &:hover {
+      background-color: #aaa;
+      cursor: pointer;
+    }
+  }
+
+  .pseudo-button {
+    padding: 0.35em;
+
+    &:not(:first-child) {
+      margin-left: 0.5em;
+    }
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
 
   .heading {
-    background-color: rgb(10, 125, 94);
+    background-color: rgb(10, 29, 125);
     color: white;
+    padding: 0.5em;
+    text-align: center;
+    font-size: 2em;
+  }
+
+  .body {
     padding: 1em;
   }
 
@@ -22,37 +57,20 @@ body {
     font-size: 25px;
     text-align: center;
   }
+  
+  .basic-form {
+    td {
+      height: 2.2em;
+    }
 
-  #options__button {
-    width: 50%;
-    background: green;
-    color: white;
-    font-weight: 500;
-    border-radius: 15px;
-    padding: 5px 10px;
-    justify-content: center;
-    margin: 20px auto;
-    cursor: pointer;
-    opacity: 0.8;
-    display: flex;
-  }
+    td:first-child {
+      text-align: right;
+      padding-right: 1em;
+    }
 
-  .links__holder {
-    ul {
-      display: flex;
-      margin-top: 1em;
-      justify-content: space-around;
-
-      li {
-        button {
-          border-radius: 25px;
-          font-size: 20px;
-          font-weight: 600;
-          padding: 10px 17px;
-          background-color: rgba(0, 0, 255, 0.7);
-          color: white;
-          cursor: pointer;
-        }
+    tr:not(:first-child) {
+      td {
+        padding-top: 0.5em;
       }
     }
   }
