@@ -1,4 +1,5 @@
 import * as React from 'react';
+import defineAction from '../../helpers/defineAction';
 
 type Props = {
   content: [string, React.ReactElement][];
@@ -39,7 +40,15 @@ export default class Tabs extends React.Component<Props, State> {
             ];
 
             return (
-              <div key={tabName} className={classes.join(' ')}>
+              <div
+                key={tabName}
+                className={classes.join(' ')}
+                {...defineAction(() =>
+                  this.setState({
+                    selectedTab: tabName,
+                  }),
+                )}
+              >
                 {tabName}
               </div>
             );

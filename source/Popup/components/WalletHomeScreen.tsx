@@ -2,6 +2,7 @@ import { BigNumber } from 'ethers';
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import assertExists from '../../helpers/assertExists';
+import defineAction from '../../helpers/defineAction';
 import App from '../App';
 import Button from './Button';
 
@@ -288,15 +289,4 @@ function formatBalance(balance: string | undefined, currency: string): string {
 
 function formatCompactAddress(address: string): string {
   return `0x ${address.slice(2, 6)} ... ${address.slice(-4)}`;
-}
-
-function defineAction(handler: () => void) {
-  return {
-    onClick: handler,
-    onKeyDown: (evt: { code: string }) => {
-      if (evt.code === 'Enter') {
-        handler();
-      }
-    },
-  };
 }
