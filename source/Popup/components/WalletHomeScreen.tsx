@@ -1,11 +1,12 @@
-import { BigNumber } from 'ethers';
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
+
 import assertExists from '../../helpers/assertExists';
 import defineAction from '../../helpers/defineAction';
 import App from '../App';
+import formatBalance from '../helpers/formatBalance';
+import formatCompactAddress from '../helpers/formatCompactAddress';
 import Button from './Button';
-
 import CompactQuillHeading from './CompactQuillHeading';
 import CopyIcon from './CopyIcon';
 import Grow from './Grow';
@@ -281,17 +282,3 @@ const CopyPrivateKeyPrompt = (props: {
     <Button onPress={props.close}>Cancel</Button>
   </div>
 );
-
-function formatBalance(balance: string | undefined, currency: string): string {
-  if (balance === undefined) {
-    return '';
-  }
-
-  const microBalance = BigNumber.from(balance).div(BigNumber.from(10).pow(12));
-
-  return `${(microBalance.toNumber() / 1000000).toFixed(3)} ${currency}`;
-}
-
-function formatCompactAddress(address: string): string {
-  return `0x ${address.slice(2, 6)} ... ${address.slice(-4)}`;
-}

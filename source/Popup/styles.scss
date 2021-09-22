@@ -319,28 +319,28 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+  }
 
-      .balance {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+  .balance {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 
-        > * {
-          justify-content: center;
-          text-align: center;
-        }
+    > * {
+      justify-content: center;
+      text-align: center;
+    }
 
-        .label {
-          color: $tone-grey-mid;
-        }
+    .label {
+      color: $tone-grey-mid;
+    }
 
-        .value {
-          font-size: 36px;
-          color: $primary-dark;
-          line-height: 42px;
-          font-weight: bold;
-        }
-      }
+    .value {
+      font-size: 36px;
+      color: $primary-dark;
+      line-height: 42px;
+      font-weight: bold;
     }
   }
 
@@ -406,5 +406,9 @@
       overflow-y: auto;
       height: 0;
     }
+  }
+
+  .transaction-tab {
+    padding: 12px 24px;
   }
 }
