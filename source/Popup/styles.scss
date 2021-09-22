@@ -5,7 +5,7 @@
 #popup-root {
   min-width: 359px;
   height: 500px;
-  background-color: $tone-white;
+  background-color: white;
 }
 
 .popup {
@@ -90,7 +90,7 @@
 
     .content {
       padding: 36px;
-      background-color: $tone-white;
+      background-color: white;
       border-radius: 5px;
     }
 
@@ -125,7 +125,7 @@
     &.highlight {
       border-color: transparent;
       background-color: $primary-base;
-      color: $tone-white;
+      color: white;
     }
 
     &:hover {
@@ -279,7 +279,7 @@
           flex-direction: row;
 
           .content {
-            color: $tone-white;
+            color: white;
             background-color: $tone-dark;
             border-radius: 5px;
             padding: 6px 12px;
@@ -365,12 +365,39 @@
     .tab-chooser {
       display: flex;
       flex-direction: row;
+      background-color: $tone-white;
 
       > * {
         flex-grow: 1;
         flex-basis: 1;
         justify-content: center;
         text-align: center;
+
+        padding: 8.5px;
+
+        color: $tone-grey;
+        border-bottom: 2px solid $tone-grey-lightest;
+
+        cursor: pointer;
+      }
+
+      > .selected {
+        background-color: $primary-faded;
+        color: $primary-base;
+        border-bottom: 2px solid $primary-base;
+
+        &:not(:first-child) {
+          border-top-left-radius: 5px;
+        }
+
+        &:not(:last-child) {
+          border-top-right-radius: 5px;
+        }
+      }
+
+      > .needs-right-border {
+        border-right: 1px solid $tone-grey-lightest;
+        border-top-right-radius: 5px;
       }
     }
 

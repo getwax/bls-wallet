@@ -20,6 +20,7 @@ const TransactionsScreen = (): React.ReactElement => (
         ['B', <>Tab B</>],
         ['C', <>Tab C</>],
       ]}
+      defaultTab="A"
     />
   </div>
 );

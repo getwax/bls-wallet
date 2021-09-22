@@ -24,9 +24,26 @@ export default class Tabs extends React.Component<Props, State> {
     return (
       <div className="tabs-container">
         <div className="tab-chooser">
-          {this.props.content.map(([tabName]) => (
-            <div key={tabName}>{tabName}</div>
-          ))}
+          {this.props.content.map(([tabName], i) => {
+            const selected = tabName === this.state.selectedTab;
+            const notLast = i < this.props.content.length - 1;
+            const nextSelected =
+              notLast &&
+              this.props.content[i + 1][0] === this.state.selectedTab;
+
+            const needsRightBorder = notLast && !selected && !nextSelected;
+
+            const classes = [
+              ...(selected ? ['selected'] : []),
+              ...(needsRightBorder ? ['needs-right-border'] : []),
+            ];
+
+            return (
+              <div key={tabName} className={classes.join(' ')}>
+                {tabName}
+              </div>
+            );
+          })}
         </div>
         <div className="selected-content">{selectedContent}</div>
       </div>
