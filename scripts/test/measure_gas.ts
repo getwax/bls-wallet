@@ -1,7 +1,7 @@
 import { BigNumber } from "ethers";
 import blsKeyHash from "../../shared/helpers/blsKeyHash";
 import dataPayload from "../../shared/helpers/dataPayload";
-
+import getDeployedAddresses, { DeployedAddresses } from "../../shared/helpers/getDeployedAddresses";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
 
