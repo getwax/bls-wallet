@@ -194,7 +194,10 @@ const WalletContent = (props: { app: App }): React.ReactElement => {
           {formatBalance(props.app.state.walletState.balance, 'ETH')}
         </div>
       </div>
-      <Button highlight={true} onPress={() => NotImplemented(props.app)}>
+      <Button
+        highlight={true}
+        onPress={() => props.app.events.emit('screen', <>Not implemented</>)}
+      >
         Create Transaction
       </Button>
     </div>

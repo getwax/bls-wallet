@@ -43,10 +43,10 @@ export default class ScreenContainer extends React.Component<Props, State> {
   }
 
   back(): void {
-    const newScreens = this.state.screens.slice();
+    const newScreens = this.targetState.screens.slice();
     newScreens.pop();
 
-    this.setState({
+    this.setTarget({
       screens: newScreens,
     });
   }
