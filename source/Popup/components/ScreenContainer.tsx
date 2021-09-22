@@ -14,7 +14,7 @@ type State = {
 };
 
 const initialState: State = {
-  screens: overrideScreenEnabled ? [<OverrideScreen key={1} />] : [],
+  screens: [],
 };
 
 export default class ScreenContainer extends React.Component<Props, State> {
@@ -24,6 +24,11 @@ export default class ScreenContainer extends React.Component<Props, State> {
     super(props);
 
     this.state = initialState;
+
+    if (overrideScreenEnabled) {
+      this.state.screens.push(<OverrideScreen app={props.app} key={1} />);
+    }
+
     this.props.app.events.on('screen', this.onScreen);
   }
 

@@ -1,26 +1,18 @@
 import * as React from 'react';
-import Range from '../../helpers/Range';
+
+import App from '../App';
 import CompactQuillHeading from './CompactQuillHeading';
 import Tabs from './Tabs';
+import TransactionTab from './TransactionTab';
 
-const TransactionsScreen = (): React.ReactElement => (
+const TransactionsScreen = (props: { app: App }): React.ReactElement => (
   <div className="transactions-screen">
     <CompactQuillHeading />
     <Tabs
       content={[
-        [
-          'A',
-          <>
-            {Range(100).map((i) => (
-              <div key={i}>{i}</div>
-            ))}
-            Tab A
-          </>,
-        ],
-        ['B', <>Tab B</>],
-        ['C', <>Tab C</>],
+        ['Transaction', <TransactionTab app={props.app} key={1} />],
+        ['Outbox', <>Not implemented</>],
       ]}
-      defaultTab="A"
     />
   </div>
 );

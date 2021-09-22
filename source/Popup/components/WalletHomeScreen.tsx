@@ -197,7 +197,12 @@ const WalletContent = (props: { app: App }): React.ReactElement => {
       </div>
       <Button
         highlight={true}
-        onPress={() => props.app.events.emit('screen', <TransactionsScreen />)}
+        onPress={() =>
+          props.app.events.emit(
+            'screen',
+            <TransactionsScreen app={props.app} />,
+          )
+        }
       >
         Create Transaction
       </Button>
