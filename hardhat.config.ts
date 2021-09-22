@@ -55,6 +55,17 @@ const config: HardhatUserConfig = {
       ],
       gasPrice: 0
     },
+    arb1: { //chainId: 42161
+      url: `https://arb1.arbitrum.io/rpc`,
+      accounts: [
+        `0x${process.env.PRIVATE_KEY_AGG_ARB1}`,
+        `0x${process.env.PRIVATE_KEY_002}`,
+        `0x${process.env.PRIVATE_KEY_003}`,
+        `0x${process.env.PRIVATE_KEY_004}`,
+        `0x${process.env.PRIVATE_KEY_005}`
+      ],
+      gasPrice: 700000000,
+    },
     rinkarby: { //chainId: 421611
       url: `https://rinkeby.arbitrum.io/rpc`,
       accounts: [
@@ -64,7 +75,7 @@ const config: HardhatUserConfig = {
         `0x${process.env.PRIVATE_KEY_004}`,
         `0x${process.env.PRIVATE_KEY_005}`
       ],
-      gasPrice: 287938372,
+      gasPrice: 1408857682, //287938372,
     },
     optimistic: {
       url: `http://localhost:8545`,
