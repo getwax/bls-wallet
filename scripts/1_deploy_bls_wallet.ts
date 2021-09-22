@@ -14,6 +14,7 @@ async function main() {
   let deployerAddress = await signer.getAddress();
   console.log(`Deployer account address: ${deployerAddress}`);
 
+
   // setup erc20 token
   const PayToken = await ethers.getContractFactory("MockERC20");
   let payToken = await PayToken.deploy(
@@ -26,21 +27,26 @@ async function main() {
   
   // deploy bls wallet with token address
   const VerificationGateway = await ethers.getContractFactory("VerificationGateway");
-  verificationGateway = await VerificationGateway.deploy();
+  let override = {
+    // gasLimit: 50000000
+  }
+  verificationGateway = await VerificationGateway.deploy(override);
   await verificationGateway.deployed();
-  await verificationGateway.initialize(
+  console.log(`deployed verificationGateway: ${verificationGateway.address}`);
+  await (await verificationGateway.initialize(
     payToken.address
-  );
-  console.log(`verificationGateway: ${verificationGateway.address}`);
+  )).wait();
+  console.log(`verificationGateway initialised`);
 
   // deploy bls wallet with token address
   const BLSExpander = await ethers.getContractFactory("BLSExpander");
   blsExpander = await BLSExpander.deploy();
   await blsExpander.deployed();
-  await blsExpander.initialize(
+  console.log(`deployed blsExpander: ${blsExpander.address}`);
+  await (await blsExpander.initialize(
     verificationGateway.address
-  );
-  console.log(`blsExpander: ${blsExpander.address}`);
+  )).wait();
+  console.log(`blsExpander initialised`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

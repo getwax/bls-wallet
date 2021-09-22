@@ -6,6 +6,8 @@ import blsSignFunction from "../../shared/helpers/blsSignFunction";
 import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
 import { BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
 
+import { ethers } from "hardhat";
+
 let config: DeployedAddresses;
 
 let ethToken: Contract;
@@ -65,7 +67,21 @@ async function main() {
 
 function addressesForNetwork(networkName: string): DeployedAddresses {
   let c: DeployedAddresses;
-  if (network.name === `optimistic`) {
+  if (network.name === `rinkarby`) {
+    c = {
+      ethAddress:undefined,
+      rewardAddress: process.env.RINKARBY_REWARD_CONTRACT_ADDRESS,
+      vgAddress:process.env.RINKARBY_VERIFICATION_GATEWAY_ADDRESS,
+      expanderAddress: process.env.RINKARBY_BLS_EXPANDER_ADDRESS,
+      tokenAddress: undefined,
+      blsAddresses: [
+        '0xB006321626aF3789c152E11Abf6054C33B1ba718',
+        '0xF3694cd3d984d184E11673d422E7A75F5106ee0b',
+        '0x9Ae1D3cEA9F25F8846400f31dE6e6eE0E781b72F'
+      ]
+    };
+  }
+  else if (network.name === `optimistic`) {
     c = {
       ethAddress:undefined,
       rewardAddress: process.env.LOCAL_REWARD_CONTRACT_ADDRESS,

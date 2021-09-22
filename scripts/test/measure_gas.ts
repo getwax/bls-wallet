@@ -13,11 +13,11 @@ let th: TokenHelper;
 async function main() {
   await logGasForTransfers();
   console.log();
-  await logGasForCreateMany();
+  // await logGasForCreateMany();
 }
 
 async function logGasForTransfers() {
-  let transferCounts = [12,13,14,15,16];
+  let transferCounts = [29, 30, 31];
   console.log("Batch transfers for: ", transferCounts);
   for (let i=0; i<transferCounts.length; i++) {
     let transferCount = transferCounts[i];
@@ -25,7 +25,8 @@ async function logGasForTransfers() {
       transferCount: transferCount,
       estimate: -1,
       limit: -1,
-      used: -1
+      used: -1,
+      txHash: -1
     }
   
     fx = await Fixture.create(1);
@@ -47,6 +48,7 @@ async function logGasForTransfers() {
       let dataToSign = dataPayload(
         fx.chainId,
         nonce++,
+        BigNumber.from(0),
         BigNumber.from(0),
         th.testToken.address,
         encodedFunctions[i]
@@ -81,6 +83,7 @@ async function logGasForTransfers() {
       gasResults.limit = (response.gasLimit as BigNumber).toNumber();
       let receipt = await response.wait();
       gasResults.used = (receipt.gasUsed as BigNumber).toNumber();
+      gasResults.txHash = receipt.transactionHash;
     }
     catch(e) {
       console.log("err");
@@ -103,8 +106,10 @@ async function logGasForCreateMany() {
   
     fx = await Fixture.create(walletCount);
 
-    let dataToSign = fx.dataPayload(
+    let dataToSign = dataPayload(
+      fx.chainId,
       0,
+      BigNumber.from(0),
       BigNumber.from(0),
       fx.verificationGateway.address,
       fx.encodedCreate

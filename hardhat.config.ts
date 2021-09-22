@@ -55,6 +55,28 @@ const config: HardhatUserConfig = {
       ],
       gasPrice: 0
     },
+    arb1: { //chainId: 42161
+      url: `https://arb1.arbitrum.io/rpc`,
+      accounts: [
+        `0x${process.env.PRIVATE_KEY_AGG_ARB1}`,
+        `0x${process.env.PRIVATE_KEY_002}`,
+        `0x${process.env.PRIVATE_KEY_003}`,
+        `0x${process.env.PRIVATE_KEY_004}`,
+        `0x${process.env.PRIVATE_KEY_005}`
+      ],
+      gasPrice: 700000000,
+    },
+    rinkarby: { //chainId: 421611
+      url: `https://rinkeby.arbitrum.io/rpc`,
+      accounts: [
+        `0x${process.env.PRIVATE_KEY_AGG_RINKARBY}`,
+        `0x${process.env.PRIVATE_KEY_002}`,
+        `0x${process.env.PRIVATE_KEY_003}`,
+        `0x${process.env.PRIVATE_KEY_004}`,
+        `0x${process.env.PRIVATE_KEY_005}`
+      ],
+      gasPrice: 1408857682, //287938372,
+    },
     optimistic: {
       url: `http://localhost:8545`,
       accounts: [
@@ -80,7 +102,10 @@ const config: HardhatUserConfig = {
       gasPrice: 15000000,
       ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
     }
-  }
+  },
+  mocha: {
+    timeout: 120000
+  }    
 };
 
 export default config;
