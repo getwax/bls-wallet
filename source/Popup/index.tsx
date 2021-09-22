@@ -9,6 +9,8 @@ import App from './App';
 import { AGGREGATOR_URL, CHAIN_ID, CHAIN_RPC_URL } from '../env';
 import Popup from './Popup';
 
+import './styles.scss';
+
 const appPromise = (async () =>
   new App(
     await initBlsWalletSigner({ chainId: CHAIN_ID }),
