@@ -1,13 +1,13 @@
 import * as React from 'react';
+
 import type App from './App';
 import { AppState } from './App';
-import KeyEntryScreen from './components/KeyEntryScreen';
 import LoadingScreen from './components/LoadingScreen';
 import Notification from './components/Notification';
-import WalletHomeScreen from './components/WalletHomeScreen';
+import OverlayContainer from './components/OverlayContainer';
+import ScreenContainer from './components/ScreenContainer';
 
 import './styles.scss';
-import OverlayContainer from './components/OverlayContainer';
 
 type Props = {
   appPromise: Promise<App>;
@@ -65,19 +65,10 @@ export default class Popup extends React.Component<Props, State> {
 
     return (
       <div className="popup">
-        {this.renderContent(this.state.app)}
-
+        <ScreenContainer app={this.state.app} />
         <Notification app={this.state.app} />
         <OverlayContainer app={this.state.app} />
       </div>
     );
-  }
-
-  renderContent(app: App): React.ReactNode {
-    if (app.state.privateKey === undefined) {
-      return <KeyEntryScreen app={app} />;
-    }
-
-    return <WalletHomeScreen app={app} />;
   }
 }

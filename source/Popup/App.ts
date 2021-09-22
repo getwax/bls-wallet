@@ -30,6 +30,7 @@ type Events = {
   state(state: AppState): void;
   notification(level: 'info' | 'error', text: string): void;
   overlay(overlay: Overlay): void;
+  screen(screen: React.ReactElement): void;
 };
 
 export default class App {

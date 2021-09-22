@@ -15,6 +15,25 @@
   height: 100%;
   position: relative;
 
+  .screen {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+
+    .back-container {
+      position: absolute;
+      top: 16.5px;
+      left: 24px;
+
+      .button {
+        padding: 6px 12px;
+      }
+    }
+  }
+
   .large-quill-heading {
     display: flex;
     justify-content: center;
