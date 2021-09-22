@@ -3,7 +3,7 @@ import * as React from 'react';
 import type App from './App';
 import { AppState } from './App';
 import LoadingScreen from './components/LoadingScreen';
-import Notification from './components/Notification';
+import NotificationContainer from './components/NotificationContainer';
 import OverlayContainer from './components/OverlayContainer';
 import ScreenContainer from './components/ScreenContainer';
 
@@ -66,7 +66,7 @@ export default class Popup extends React.Component<Props, State> {
     return (
       <div className="popup">
         <ScreenContainer app={this.state.app} />
-        <Notification app={this.state.app} />
+        <NotificationContainer app={this.state.app} />
         <OverlayContainer app={this.state.app} />
       </div>
     );

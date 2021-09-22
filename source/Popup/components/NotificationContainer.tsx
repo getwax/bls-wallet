@@ -22,7 +22,10 @@ const initialState: State = {
   text: '',
 };
 
-export default class Notification extends React.Component<Props, State> {
+export default class NotificationContainer extends React.Component<
+  Props,
+  State
+> {
   targetState = initialState;
 
   constructor(props: Props) {
