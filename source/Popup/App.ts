@@ -27,9 +27,9 @@ export type AppState = {
 export type Overlay = (close: () => void) => React.ReactElement;
 
 type Events = {
-  state: (state: AppState) => void;
-  notification: (level: 'info' | 'error', text: string) => void;
-  overlay: (overlay: Overlay) => void;
+  state(state: AppState): void;
+  notification(level: 'info' | 'error', text: string): void;
+  overlay(overlay: Overlay): void;
 };
 
 export default class App {
