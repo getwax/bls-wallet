@@ -3,6 +3,7 @@ import * as React from 'react';
 import App from '../App';
 import Button from './Button';
 import DefaultScreen from './DefaultScreen';
+import OverrideScreen, { overrideScreenEnabled } from './OverrideScreen';
 
 type Props = {
   app: App;
@@ -13,7 +14,7 @@ type State = {
 };
 
 const initialState: State = {
-  screens: [],
+  screens: overrideScreenEnabled ? [<OverrideScreen key={1} />] : [],
 };
 
 export default class ScreenContainer extends React.Component<Props, State> {

@@ -8,7 +8,7 @@ import Button from './Button';
 import CompactQuillHeading from './CompactQuillHeading';
 import CopyIcon from './CopyIcon';
 import Grow from './Grow';
-import NotImplemented from './NotImplemented';
+import TransactionsScreen from './TransactionsScreen';
 
 export type BlsKey = {
   public: string;
@@ -196,7 +196,7 @@ const WalletContent = (props: { app: App }): React.ReactElement => {
       </div>
       <Button
         highlight={true}
-        onPress={() => props.app.events.emit('screen', <>Not implemented</>)}
+        onPress={() => props.app.events.emit('screen', <TransactionsScreen />)}
       >
         Create Transaction
       </Button>

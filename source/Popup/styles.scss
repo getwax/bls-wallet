@@ -349,4 +349,35 @@
     flex-direction: column;
     gap: 12px;
   }
+
+  .transactions-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tabs-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    .tab-chooser {
+      display: flex;
+      flex-direction: row;
+
+      > * {
+        flex-grow: 1;
+        flex-basis: 1;
+        justify-content: center;
+        text-align: center;
+      }
+    }
+
+    .selected-content {
+      flex-grow: 1;
+      overflow-y: auto;
+      height: 0;
+    }
+  }
 }
