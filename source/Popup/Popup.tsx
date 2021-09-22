@@ -56,7 +56,11 @@ export default class Popup extends React.Component<Props, State> {
 
   render(): React.ReactNode {
     if (!this.state.app) {
-      return <LoadingScreen />;
+      return (
+        <div className="popup">
+          <LoadingScreen />
+        </div>
+      );
     }
 
     return (
