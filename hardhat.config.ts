@@ -79,13 +79,11 @@ const config: HardhatUserConfig = {
     },
     optimistic: {
       url: `http://localhost:8545`,
-      accounts: [
-        `0x${process.env.PRIVATE_KEY_AGG}`,
-        `0x${process.env.PRIVATE_KEY_002}`,
-        `0x${process.env.PRIVATE_KEY_003}`,
-        `0x${process.env.PRIVATE_KEY_004}`,
-        `0x${process.env.PRIVATE_KEY_005}`
-      ],
+      accounts: {
+        mnemonic: "test test test test test test test test test test test junk",
+        initialIndex: 2, // After optimism deployer, sequencer
+        count: 5
+      },
       gasPrice: 0,//15000000,
       ovm: true
     },
@@ -98,7 +96,6 @@ const config: HardhatUserConfig = {
         `0x${process.env.PRIVATE_KEY_004}`,
         `0x${process.env.PRIVATE_KEY_005}`
       ],
-      // accounts: { mnemonic: 'test test test test test test test test test test test junk' },
       gasPrice: 15000000,
       ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
     }
