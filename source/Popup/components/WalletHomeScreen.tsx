@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 
+import { CREATE_TX_URL } from '../../env';
 import assertExists from '../../helpers/assertExists';
 import defineAction from '../../helpers/defineAction';
 import App from '../App';
@@ -10,7 +11,6 @@ import Button from './Button';
 import CompactQuillHeading from './CompactQuillHeading';
 import CopyIcon from './CopyIcon';
 import Grow from './Grow';
-import TransactionsScreen from './TransactionsScreen';
 
 export type BlsKey = {
   public: string;
@@ -196,15 +196,7 @@ const WalletContent = (props: { app: App }): React.ReactElement => {
           {formatBalance(props.app.state.walletState.balance, 'ETH')}
         </div>
       </div>
-      <Button
-        highlight={true}
-        onPress={() =>
-          props.app.events.emit(
-            'screen',
-            <TransactionsScreen app={props.app} />,
-          )
-        }
-      >
+      <Button highlight={true} onPress={() => window.open(CREATE_TX_URL)}>
         Create Transaction
       </Button>
     </div>
