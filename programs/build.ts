@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write
 
-import { parseArgs } from "../deps.ts";
+import { dirname, parseArgs } from "../deps.ts";
 
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";
@@ -27,15 +27,15 @@ await Deno.mkdir(buildDir);
 
 await Deno.copyFile(dotEnvPath, `${buildDir}/.env`);
 
-const outputPath = `${repoDir}/build/aggregator.js`;
+for (const f of await allFiles()) {
+  if (!f.endsWith(".ts")) {
+    continue;
+  }
 
-await shell.run(
-  "deno",
-  "bundle",
-  "--unstable",
-  `${repoDir}/programs/aggregator.ts`,
-  outputPath,
-);
+  console.log("Processing", f);
+  await Deno.mkdir(dirname(`${buildDir}/ts/${f}`), { recursive: true });
+  await Deno.copyFile(f, `${buildDir}/ts/${f}`);
+}
 
 const sudoDockerArg = args["sudo-docker"] === true ? ["sudo"] : [];
 
@@ -75,3 +75,15 @@ await shell.run(
 );
 
 console.log("Aggregator build complete");
+
+async function allFiles() {
+  return [
+    ...await shell.Lines("git", "ls-files"),
+    ...await shell.Lines(
+      "git",
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+    ),
+  ];
+}
