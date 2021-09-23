@@ -12,7 +12,17 @@ Deno.chdir(repoDir);
 
 const buildDir = `${repoDir}/build`;
 
-await Deno.remove(buildDir, { recursive: true });
+try {
+  await Deno.remove(buildDir, { recursive: true });
+} catch (error) {
+  if (error.name === "NotFound") {
+    // We don't care that remove failed due to NotFound (why do we need to catch
+    // an exception to handle this normal use case? 🤔)
+  } else {
+    throw error;
+  }
+}
+
 await Deno.mkdir(buildDir);
 
 await Deno.copyFile(dotEnvPath, `${buildDir}/.env`);
