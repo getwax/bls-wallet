@@ -35,6 +35,7 @@ const sampleTransactions: TransactionData[] = [
     nonce: BigNumber.from(123),
     signature: "signature",
     tokenRewardAmount: BigNumber.from(0),
+    ethValue: BigNumber.from(0),
     contractAddress: "contractAddress",
     encodedFunctionData: "encodedFunctionData",
   },
