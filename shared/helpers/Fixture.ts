@@ -185,7 +185,7 @@ export default class Fixture {
 
   async blsSendSigned(txData: TxDataSend, sig: solG1) {
     // can be called by any ecdsa wallet
-    await(await this.verificationGateway.blsSend(
+    await (await this.verificationGateway.blsSend(
       txData.publicKeyHash,
       sig,
       txData.tokenRewardAmount,
