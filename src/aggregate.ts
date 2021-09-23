@@ -10,11 +10,12 @@ export default (txs: TransactionData[]): AggregateTransactionData => {
 
   return {
     transactions: txs.map(tx => ({
-      contractAddress: tx.contractAddress,
-      encodedFunctionData: tx.encodedFunctionData,
+      publicKey: tx.publicKey,
       nonce: tx.nonce,
       tokenRewardAmount: tx.tokenRewardAmount,
-      publicKey: tx.publicKey,
+      ethValue: tx.ethValue,
+      contractAddress: tx.contractAddress,
+      encodedFunctionData: tx.encodedFunctionData,
     })),
     signature: aggregateSignature,
   };

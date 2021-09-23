@@ -24,13 +24,17 @@ import { initBlsWalletSigner } from "bls-wallet-signer";
 
   const signedTransactionData = signer.sign(
     {
+      nonce: ethers.BigNumber.from(0),
+      tokenRewardAmount: ethers.BigNumber.from(10).pow(9),
+      ethValue: ethers.BigNumber.from(0),
       contractAddress: someToken.address,
+
+      // If you don't want to call a function and just send `ethValue` above,
+      // use '0x' to signify an empty byte array here
       encodedFunctionData: someToken.interface.encodeFunctionData(
         "transfer",
         ["0x...some address...", ethers.BigNumber.from(10).pow(18)],
       ),
-      nonce: ethers.BigNumber.from(0),
-      tokenRewardAmount: ethers.BigNumber.from(10).pow(9),
     },
     privateKey,
   );
