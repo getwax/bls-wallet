@@ -9,6 +9,12 @@
   height: 100%;
   position: relative;
 
+  h1 {
+    font-size: 3em;
+    line-height: 1.5em;
+    text-align: center;
+  }
+
   .screen {
     position: absolute;
     top: 0;
@@ -153,6 +159,22 @@
     border: 2px solid $tone-grey-lightest;
     border-radius: 5px;
     padding: 12px;
+
+    &::placeholder {
+      color: $tone-grey-light;
+    }
+
+    caret-color: $primary-base;
+
+    &:focus {
+      border-color: $primary-light;
+    }
+  }
+
+  input[type=text] {
+    border: 2px solid $tone-grey-lightest;
+    border-radius: 5px;
+    padding: 2px;
 
     &::placeholder {
       color: $tone-grey-light;

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import App from '../App';
 
-import Button from './Button';
+import Button from '../../components/Button';
 
 export default function NotImplemented(app: App): void {
   app.events.emit('overlay', (close) => (
