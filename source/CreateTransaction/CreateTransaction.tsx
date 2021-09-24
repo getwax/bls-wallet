@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import './styles.scss';
 
-const Options: React.FC = () => {
+const CreateTransaction: React.FC = () => {
   return (
     <div>
       <form>
@@ -31,4 +31,4 @@ const Options: React.FC = () => {
   );
 };
 
-export default Options;
+export default CreateTransaction;
