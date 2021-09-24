@@ -13,10 +13,11 @@ const samples = (() => {
   const contractAddress = dummy256HexString;
 
   const rawTx: RawTransactionData = {
-    contractAddress,
-    encodedFunctionData: "0x00",
     nonce: BigNumber.from(123),
     tokenRewardAmount: BigNumber.from(0),
+    ethValue: BigNumber.from(0),
+    contractAddress,
+    encodedFunctionData: "0x00",
   };
 
   const privateKey = dummy256HexString;
@@ -42,8 +43,8 @@ describe("index", () => {
     const tx = sign(rawTx, privateKey);
 
     expect(tx.signature).to.equal([
-      "0x177500780b42f245e98229245126c9042e1cdaadc7ada72021ddd43492963a7b26f7a",
-      "a8f971b133e9f61d4197b4fb40fc82f5c239183cba80d6338a64500cb27",
+      "0x1cafe561a44d1c05fce30f2751d498977f69a179d1ab2e0adb1ec64726c8d2bd2e3e7",
+      "e05f784a3d962c6b4ff508f177518bc7d63f86accfabe10272de552a3e2",
     ].join(""));
 
     expect(verify(tx)).to.equal(true);
@@ -52,7 +53,7 @@ describe("index", () => {
       ...sign(rawTx, otherPrivateKey),
       publicKey: tx.publicKey, // Pretend this is the public key
     };
-    
+
     expect(verify(txBadSig)).to.equal(false);
 
     const txBadMessage = {
@@ -78,8 +79,8 @@ describe("index", () => {
     const aggregateTx = aggregate([tx, tx]);
 
     expect(aggregateTx.signature).to.equal([
-      "0x2cc0b05e8200cf564042735d15e2cc98181e730203530300022aafdd1ceb905830430",
-      "28617145dca56a00bf0693710e24683616ff4a42bc3cca7d587b36ff91f",
+      "0x272bb5add2990283a24f35f10affa52282be6b175501d1fd2af10439fbecfa3a2d982",
+      "e5069ef118bd0a5ef60fdbb98e90322577dbc8be6b5dd1eef148ff0b03d",
     ].join(""));
 
     expect(verifyAggregate(aggregateTx)).to.equal(true);
