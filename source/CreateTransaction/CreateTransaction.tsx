@@ -3,7 +3,11 @@ import * as React from 'react';
 import './styles.scss';
 
 const CreateTransaction: React.FC = () => {
-  return <div>create transaction page</div>;
+  return (
+    <div>
+      Amount: <input />
+    </div>
+  );
 };
 
 export default CreateTransaction;
