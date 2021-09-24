@@ -27,6 +27,7 @@ export default function TxHandler(
       ...dto,
       nonce: BigNumber.from(dto.nonce),
       tokenRewardAmount: BigNumber.from(dto.tokenRewardAmount),
+      ethValue: BigNumber.from(dto.ethValue),
     };
 
     return await fn(ctx, tx);

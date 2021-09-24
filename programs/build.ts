@@ -1,10 +1,10 @@
 #!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write
 
-import { parseArgs } from "../deps.ts";
+import { dirname, parseArgs } from "../deps.ts";
 
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";
-import dotEnvPath from "../src/helpers/dotEnvPath.ts";
+import dotEnvPath, { envName } from "../src/helpers/dotEnvPath.ts";
 
 const args = parseArgs(Deno.args);
 
@@ -12,20 +12,46 @@ Deno.chdir(repoDir);
 
 const buildDir = `${repoDir}/build`;
 
-await Deno.remove(buildDir, { recursive: true });
+const commitShort = (await shell.Line("git", "rev-parse", "HEAD")).slice(0, 7);
+
+const isDirty = (await shell.Lines("git", "status", "--porcelain")).length > 0;
+
+const envHashShort = (await shell.Line("shasum", "-a", "256", dotEnvPath))
+  .slice(0, 7);
+
+const buildName = [
+  "git",
+  commitShort,
+  ...(isDirty ? ["dirty"] : []),
+  "env",
+  envName,
+  envHashShort,
+].join("-");
+
+try {
+  await Deno.remove(buildDir, { recursive: true });
+} catch (error) {
+  if (error.name === "NotFound") {
+    // We don't care that remove failed due to NotFound (why do we need to catch
+    // an exception to handle this normal use case? 🤔)
+  } else {
+    throw error;
+  }
+}
+
 await Deno.mkdir(buildDir);
 
 await Deno.copyFile(dotEnvPath, `${buildDir}/.env`);
 
-const outputPath = `${repoDir}/build/aggregator.js`;
+for (const f of await allFiles()) {
+  if (!f.endsWith(".ts")) {
+    continue;
+  }
 
-await shell.run(
-  "deno",
-  "bundle",
-  "--unstable",
-  `${repoDir}/programs/aggregator.ts`,
-  outputPath,
-);
+  console.log("Processing", f);
+  await Deno.mkdir(dirname(`${buildDir}/ts/${f}`), { recursive: true });
+  await Deno.copyFile(f, `${buildDir}/ts/${f}`);
+}
 
 const sudoDockerArg = args["sudo-docker"] === true ? ["sudo"] : [];
 
@@ -35,16 +61,18 @@ await shell.run(
   "build",
   repoDir,
   "-t",
-  "aggregator",
+  `aggregator:${buildName}`,
 );
+
+const dockerImageName = `aggregator-${buildName}-docker-image`;
 
 await shell.run(
   ...sudoDockerArg,
   "docker",
   "save",
   "--output",
-  `${repoDir}/build/docker-image.tar`,
-  "aggregator:latest",
+  `${repoDir}/build/${dockerImageName}.tar`,
+  `aggregator:${buildName}`,
 );
 
 if (sudoDockerArg.length > 0) {
@@ -55,13 +83,25 @@ if (sudoDockerArg.length > 0) {
     "sudo",
     "chown",
     username,
-    `${repoDir}/build/docker-image.tar`,
+    `${repoDir}/build/${dockerImageName}.tar`,
   );
 }
 
 await shell.run(
   "gzip",
-  `${repoDir}/build/docker-image.tar`,
+  `${repoDir}/build/${dockerImageName}.tar`,
 );
 
 console.log("Aggregator build complete");
+
+async function allFiles() {
+  return [
+    ...await shell.Lines("git", "ls-files"),
+    ...await shell.Lines(
+      "git",
+      "ls-files",
+      "--others",
+      "--exclude-standard",
+    ),
+  ];
+}

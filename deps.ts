@@ -1,6 +1,7 @@
 export { delay } from "https://deno.land/std@0.103.0/async/delay.ts";
 export { parse as parseArgs } from "https://deno.land/std@0.103.0/flags/mod.ts";
 export { exists } from "https://deno.land/std@0.103.0/fs/mod.ts";
+export { dirname } from "https://deno.land/std@0.103.0/path/mod.ts";
 
 import { config as dotEnvConfig } from "https://deno.land/x/dotenv@v2.0.0/mod.ts";
 export { dotEnvConfig };
@@ -30,12 +31,12 @@ export {
 import { ethers } from "https://esm.sh/ethers@5.4.4";
 export const keccak256 = ethers.utils.keccak256;
 
-export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.3.5";
+export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.4.0";
 
 export type {
   BlsWalletSigner,
   TransactionData,
-} from "https://esm.sh/bls-wallet-signer@0.3.5";
+} from "https://esm.sh/bls-wallet-signer@0.4.0";
 
 // Database dependencies
 export {

@@ -206,7 +206,7 @@ export default class Fixture {
       const filteredTxs = txs.filter(isNotNil);
 
       if (filteredTxs.length > 0) {
-        await this.walletService.sendTxs(txs.filter(isNotNil));
+        await this.walletService.sendTxs(filteredTxs);
       }
 
       wallets.push(wallet);

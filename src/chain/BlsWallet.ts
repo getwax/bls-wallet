@@ -74,6 +74,7 @@ export default class BlsWallet {
         ),
         nonce: BigNumber.from(0),
         tokenRewardAmount: BigNumber.from(0),
+        ethValue: BigNumber.from(0),
       },
       privateKey,
     );
@@ -132,6 +133,7 @@ export default class BlsWallet {
       splitHex256(tx.publicKey),
       splitHex256(tx.signature),
       tx.tokenRewardAmount,
+      tx.ethValue,
       tx.contractAddress,
       tx.encodedFunctionData.slice(0, 10),
       `0x${tx.encodedFunctionData.slice(10)}`,
@@ -199,12 +201,14 @@ export default class BlsWallet {
     method,
     args,
     tokenRewardAmount = BigNumber.from(0),
+    ethValue = BigNumber.from(0),
     nonce,
   }: {
     contract: ethers.Contract;
     method: string;
     args: string[];
     tokenRewardAmount?: BigNumber;
+    ethValue?: BigNumber;
     nonce: BigNumber;
   }): TransactionData {
     return this.blsWalletSigner.sign(
@@ -216,6 +220,7 @@ export default class BlsWallet {
         ),
         nonce,
         tokenRewardAmount,
+        ethValue,
       },
       this.privateKey,
     );

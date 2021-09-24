@@ -1,12 +1,14 @@
-FROM denoland/deno:1.13.0
+FROM denoland/deno:1.14.1
 
 ADD build /app
 WORKDIR /app
+
+RUN deno cache --unstable ts/programs/aggregator.ts
 
 CMD [ \
   "deno", \
   "run", \
   "--unstable", \
   "-A", \
-  "aggregator.js" \
+  "ts/programs/aggregator.ts" \
 ]

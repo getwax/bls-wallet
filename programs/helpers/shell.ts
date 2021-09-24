@@ -3,7 +3,7 @@ export async function run(...cmd: string[]): Promise<void> {
 
   const unloadListener = () => {
     console.log("Sending SIGINT to", cmd);
-    process.kill(Deno.Signal.SIGINT);
+    process.kill("SIGINT");
   };
 
   globalThis.addEventListener("unload", unloadListener);

@@ -129,6 +129,7 @@ export function parseTransactionDataDto(
     field(txData, "signature", parseHex({ bytes: 64 })),
     field(txData, "nonce", parseHex()),
     field(txData, "tokenRewardAmount", parseHex()),
+    field(txData, "ethValue", parseHex()),
     field(txData, "contractAddress", parseHex({ bytes: 20 })),
     field(txData, "encodedFunctionData", parseHex()),
   );
@@ -142,6 +143,7 @@ export function parseTransactionDataDto(
     signature,
     nonce,
     tokenRewardAmount,
+    ethValue,
     contractAddress,
     encodedFunctionData,
   ] = result.success;
@@ -152,6 +154,7 @@ export function parseTransactionDataDto(
       signature,
       nonce,
       tokenRewardAmount,
+      ethValue,
       contractAddress,
       encodedFunctionData,
     },

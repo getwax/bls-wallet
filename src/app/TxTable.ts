@@ -25,6 +25,7 @@ type RawTxTableRow = {
   signature: string;
   nonce: number;
   tokenRewardAmount: string;
+  ethValue: string;
   contractAddress: string;
   encodedFunctionData: string;
 };
@@ -35,6 +36,7 @@ const txOptions: TableOptions = {
   signature: { type: DataType.VarChar, length: 130 },
   nonce: { type: DataType.Integer },
   tokenRewardAmount: { type: DataType.VarChar, length: 66 },
+  ethValue: { type: DataType.VarChar, length: 66 },
   contractAddress: { type: DataType.VarChar, length: 42 },
   encodedFunctionData: { type: DataType.VarChar },
 };
@@ -53,6 +55,7 @@ function toRawRow(row: TxTableRow): RawTxTableRow {
     nonce: row.nonce.toNumber(),
 
     tokenRewardAmount: row.tokenRewardAmount.toHexString(),
+    ethValue: row.ethValue.toHexString(),
   };
 }
 
@@ -61,6 +64,7 @@ function fromRawRow(row: RawTxTableRow): TxTableRow {
     ...row,
     nonce: BigNumber.from(row.nonce),
     tokenRewardAmount: BigNumber.from(row.tokenRewardAmount),
+    ethValue: BigNumber.from(row.ethValue),
   };
 }
 

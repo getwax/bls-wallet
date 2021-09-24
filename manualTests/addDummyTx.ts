@@ -18,6 +18,7 @@ const tx = {
   nonce: BigNumber.from(1),
   signature: dummyHex(64),
   tokenRewardAmount: BigNumber.from(123),
+  ethValue: BigNumber.from(0),
   contractAddress: dummyHex(20),
   encodedFunctionData: dummyHex(11),
 };

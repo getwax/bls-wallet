@@ -83,12 +83,18 @@ export default class WalletService {
       .verificationGateway
       .checkSig(
         tx.nonce,
-        BigNumber.from(tx.tokenRewardAmount),
-        keccak256(tx.publicKey),
+        {
+          publicKeyHash: keccak256(tx.publicKey),
+          tokenRewardAmount: tx.tokenRewardAmount,
+          ethValue: BigNumber.from(0),
+          contractAddress: tx.contractAddress,
+          methodId: tx.encodedFunctionData === "0x"
+            ? "0x000000"
+            : tx.encodedFunctionData.slice(0, 10),
+          encodedParams: `0x${tx.encodedFunctionData.slice(10)}`,
+        },
         splitHex256(tx.signature),
-        tx.contractAddress,
-        tx.encodedFunctionData.slice(0, 10),
-        `0x${tx.encodedFunctionData.slice(10)}`,
+        tx.encodedFunctionData === "0x",
       );
 
     const failures: TransactionFailure[] = [];
@@ -129,8 +135,9 @@ export default class WalletService {
       txs.map((tx) => ({
         publicKeyHash: keccak256(tx.publicKey),
         tokenRewardAmount: tx.tokenRewardAmount,
+        ethValue: BigNumber.from(0),
         contractAddress: tx.contractAddress,
-        methodID: tx.encodedFunctionData.slice(0, 10),
+        methodId: tx.encodedFunctionData.slice(0, 10),
         encodedParams: `0x${tx.encodedFunctionData.slice(10)}`,
       })),
       { nonce: this.NextNonce() },
@@ -203,6 +210,7 @@ export default class WalletService {
         ethers.utils.keccak256(tx.publicKey),
         splitHex256(tx.signature),
         BigNumber.from(tx.tokenRewardAmount),
+        BigNumber.from(0),
         tx.contractAddress,
         tx.encodedFunctionData.slice(0, 10),
         `0x${tx.encodedFunctionData.slice(10)}`,
@@ -235,6 +243,7 @@ export default class WalletService {
       splitHex256(tx.publicKey),
       splitHex256(tx.signature),
       tx.tokenRewardAmount,
+      BigNumber.from(0),
       tx.contractAddress,
       tx.encodedFunctionData.slice(0, 10),
       `0x${tx.encodedFunctionData.slice(10)}`,
