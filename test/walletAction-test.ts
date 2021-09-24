@@ -14,7 +14,15 @@ import { BigNumber } from "ethers";
 import blsKeyHash from "../shared/helpers/blsKeyHash";
 import blsSignFunction from "../shared/helpers/blsSignFunction";
 
-describe('WalletActions', async function () {
+describe.only('WalletActions', async function () {
+  this.beforeAll(async function () {
+    let BNPairingPrecompileCostEstimator = await ethers.getContractFactory("BNPairingPrecompileCostEstimator");
+    let bnPairingPrecompileCostEstimator = await BNPairingPrecompileCostEstimator.deploy();
+    await bnPairingPrecompileCostEstimator.deployed();
+    await (await bnPairingPrecompileCostEstimator.run()).wait();
+    console.log(bnPairingPrecompileCostEstimator.address);
+  });
+
   let fx: Fixture;
   let th: TokenHelper;
   beforeEach(async function() {
@@ -22,6 +30,7 @@ describe('WalletActions', async function () {
       fx = await Fixture.create(
         Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
         false,
+        '',
         '0x0355b583379bE75bF8b88aBE5A2124c8F65242f2',
         '0x266422dc7ecfeFcEDad5ecbd7B97B4c079d62DC2'
       );
@@ -31,7 +40,7 @@ describe('WalletActions', async function () {
     }
   });
 
-  it('should register new wallet', async function () {
+  it.only('should register new wallet', async function () {
     let blsSigner = fx.blsSigners[0];  
     let walletAddress = await fx.createBLSWallet(blsSigner);
 

@@ -211,23 +211,25 @@ contract VerificationGateway is Initializable
         bytes calldata encodedParams
     ) public {
         bytes32 publicKeyHash = callingPublicKeyHash;
-
-        (bool checkResult, bool callSuccess) = blsLib.verifySingle(
-            signature,
-            blsKeysFromHash[publicKeyHash],
-            messagePoint(
-                walletFromHash[publicKeyHash].nonce(),
-                tokenRewardAmount,
-                ethValue,
-                contractAddress,
-                keccak256(abi.encodePacked(
-                    methodId,
-                    encodedParams
-                )),
-                false
+        (bool callSuccess, bytes memory checkResult) = address(blsLib).call(
+            abi.encodeWithSignature(
+                "verifySingle(uint256[2],uint256[4],uint256[2])",
+                signature,
+                blsKeysFromHash[publicKeyHash],
+                messagePoint(
+                    walletFromHash[publicKeyHash].nonce(),
+                    tokenRewardAmount,
+                    ethValue,
+                    contractAddress,
+                    keccak256(abi.encodePacked(
+                        methodId,
+                        encodedParams
+                    )),
+                    false
+                )
             )
         );
-        require(callSuccess && checkResult, "VerificationGateway: sig not verified with nonce+data");
+        require(callSuccess && uint8(checkResult[31])), "VerificationGateway: sig not verified with nonce+data");
 
         if (tokenRewardAmount > 0) {
             bool success = walletFromHash[publicKeyHash].payTokenAmount(

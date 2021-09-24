@@ -3,14 +3,14 @@ const utils = ethers.utils;
 
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
 
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
-import { solG1 } from "../lib/hubble-bls/src/mcl"
+import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
+import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
 import createBLSWallet from "./createBLSWallet";
 import blsSignFunction from "./blsSignFunction";
 import blsKeyHash from "./blsKeyHash";
-import { send } from "process";
+import { exit, send } from "process";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
@@ -73,6 +73,7 @@ export default class Fixture {
   static async create(
     blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
     initialized: boolean=true,
+    blsAddress: string=undefined,
     vgAddress: string=undefined,
     expanderAddress: string=undefined,
     secretNumbers: number[]=undefined
@@ -93,6 +94,16 @@ export default class Fixture {
       }
       blsSigners[i] = blsSignerFactory.getSigner(DOMAIN, "0x"+secretNumber.toString(16));
     }
+    
+    let BLS = await ethers.getContractFactory("BLSOpen");
+    let bls;
+    if (blsAddress) {
+      bls = BLS.attach(blsAddress);
+    }
+    else {
+      bls = await BLS.deploy();
+      await bls.deployed();
+    }
 
     // deploy Verification Gateway
     let VerificationGateway = await ethers.getContractFactory("VerificationGateway");
@@ -104,7 +115,10 @@ export default class Fixture {
       verificationGateway = await VerificationGateway.deploy();
       await verificationGateway.deployed();
       if (initialized) {
-        await (await verificationGateway.initialize(ethers.constants.AddressZero)).wait();
+        await (await verificationGateway.initialize(
+          bls.address,
+          ethers.constants.AddressZero
+        )).wait();
       }
     }
 
