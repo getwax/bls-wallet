@@ -5,7 +5,7 @@
 #popup-root {
   min-width: 359px;
   height: 500px;
-  background-color: $tone-white;
+  background-color: white;
 }
 
 .popup {
@@ -14,6 +14,25 @@
   line-height: 19px;
   height: 100%;
   position: relative;
+
+  .screen {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+
+    .back-container {
+      position: absolute;
+      top: 16.5px;
+      left: 24px;
+
+      .button {
+        padding: 6px 12px;
+      }
+    }
+  }
 
   .large-quill-heading {
     display: flex;
@@ -71,7 +90,7 @@
 
     .content {
       padding: 36px;
-      background-color: $tone-white;
+      background-color: white;
       border-radius: 5px;
     }
 
@@ -95,25 +114,25 @@
     box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.02), 0px 4px 6px rgba(0, 0, 0, 0.05);
     border-radius: 5px;
     border: 1px solid $tone-grey-light;
+    background-color: $tone-white;
     display: flex;
     justify-content: center;
     padding: 12px;
     cursor: pointer;
+    user-select: none;
 
-    transition-property: border-color, filter;
-    transition: all 200ms;
+    &:active {
+      filter: brightness(97%);
+    }
 
     &.highlight {
       border-color: transparent;
       background-color: $primary-base;
-      color: $tone-white;
-    }
+      color: white;
 
-    &:hover {
-      filter: saturate(180%);
-
-      &:not(.highlight) {
-        border-color: $tone-dark;
+      &:active {
+        filter: none;
+        background-color: $primary-base-btn-active;
       }
     }
 
@@ -221,12 +240,8 @@
         cursor: pointer;
         user-select: none;
 
-        &:hover {
-          border-color: $primary-base;
-        }
-
         &:active {
-          filter: brightness(90%);
+          filter: brightness(97%);
         }
       }
 
@@ -260,7 +275,7 @@
           flex-direction: row;
 
           .content {
-            color: $tone-white;
+            color: white;
             background-color: $tone-dark;
             border-radius: 5px;
             padding: 6px 12px;
@@ -280,16 +295,20 @@
         }
 
         &:hover {
-          img {
-            filter: brightness(50%);
-          }
-
           .info-box {
             display: flex;
           }
 
           .info-arrow {
             display: block;
+          }
+        }
+
+        &:active {
+          img {
+            filter: brightness(97%);
+            border-radius: 100%;
+            background-color: white;
           }
         }
       }
@@ -300,28 +319,28 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+  }
 
-      .balance {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+  .balance {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 
-        > * {
-          justify-content: center;
-          text-align: center;
-        }
+    > * {
+      justify-content: center;
+      text-align: center;
+    }
 
-        .label {
-          color: $tone-grey-mid;
-        }
+    .label {
+      color: $tone-grey-mid;
+    }
 
-        .value {
-          font-size: 36px;
-          color: $primary-dark;
-          line-height: 42px;
-          font-weight: bold;
-        }
-      }
+    .value {
+      font-size: 36px;
+      color: $primary-dark;
+      line-height: 42px;
+      font-weight: bold;
     }
   }
 
@@ -329,5 +348,67 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+  }
+
+  .transactions-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tabs-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    .tab-chooser {
+      display: flex;
+      flex-direction: row;
+      background-color: $tone-white;
+
+      > * {
+        flex-grow: 1;
+        flex-basis: 0;
+        justify-content: center;
+        text-align: center;
+
+        padding: 8.5px;
+
+        color: $tone-grey;
+        border-bottom: 2px solid $tone-grey-lightest;
+
+        cursor: pointer;
+      }
+
+      > .selected {
+        background-color: $primary-faded;
+        color: $primary-base;
+        border-bottom: 2px solid $primary-base;
+
+        &:not(:first-child) {
+          border-top-left-radius: 5px;
+        }
+
+        &:not(:last-child) {
+          border-top-right-radius: 5px;
+        }
+      }
+
+      > .needs-right-border {
+        border-right: 1px solid $tone-grey-lightest;
+        border-top-right-radius: 5px;
+      }
+    }
+
+    .selected-content {
+      flex-grow: 1;
+      overflow-y: auto;
+      height: 0;
+    }
+  }
+
+  .transaction-tab {
+    padding: 12px 24px;
   }
 }

@@ -11,6 +11,7 @@
     "sourceType": "module"
   },
   "rules": {
+    "consistent-return": "off",
     "no-console": "off",
     "no-extend-native": "off",
     "no-constant-condition": "off",
