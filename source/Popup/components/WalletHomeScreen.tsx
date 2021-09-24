@@ -196,7 +196,14 @@ const WalletContent = (props: { app: App }): React.ReactElement => {
           {formatBalance(props.app.state.walletState.balance, 'ETH')}
         </div>
       </div>
-      <Button highlight={true} onPress={() => window.open(CREATE_TX_URL)}>
+      <Button
+        highlight={true}
+        onPress={() => {
+          browser.tabs.create({
+            url: CREATE_TX_URL || 'createTransaction.html',
+          });
+        }}
+      >
         Create Transaction
       </Button>
     </div>
