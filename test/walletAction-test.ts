@@ -5,7 +5,7 @@ import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
-import Fixture from "../shared/helpers/Fixture";
+import Fixture, { TxDataSend } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 import dataPayload from "../shared/helpers/dataPayload";
 

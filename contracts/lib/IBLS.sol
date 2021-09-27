@@ -13,7 +13,7 @@ interface IBLS {
         uint256[2] memory signature,
         uint256[4][] memory pubkeys,
         uint256[2][] memory messages
-    ) external view returns (bool checkResult, bool callSuccess);
+    ) external view returns (bool);
 
     function hashToPoint(
         bytes32 domain,

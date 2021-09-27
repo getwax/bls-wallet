@@ -40,11 +40,95 @@ contract VerificationGateway is Initializable
 
     struct TxData {
         bytes32 publicKeyHash;
+        uint256 nonce;
         uint256 tokenRewardAmount;
         uint256 ethValue;
         address contractAddress;
         bytes4 methodId; //bytes4(keccak256(bytes(fnSig))
         bytes encodedParams;
+    }
+
+    /** 
+    Base function for verifying and actioning BLS-signed transactions.
+    Creates a new bls wallet if a transaction's first time.
+    Can be called with a single transaction.
+    @param publicKeys the public bls key for first-time transactions, can be 0
+    @param signature aggregated bls signature of all transactions
+    @param txs data required for a BLSWallet to make a transaction
+    */
+    function actionCalls(
+        address rewardAddress,
+        uint256[4][] calldata publicKeys,
+        uint256[2] calldata signature,
+        TxData[] calldata txs
+    ) public {
+        createNewWallets(publicKeys, txs);
+
+        bool[] memory sends = new bool[](txs.length);
+        uint256[] memory deprecatedNonces = new uint256[](txs.length);
+        verifySignatures(signature, txs, deprecatedNonces, sends);
+
+        BLSWallet wallet;
+        // attempt payment and actions
+        for (uint256 i = 0; i<txs.length; i++) {
+            // construct params for signature verification
+            // publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
+            wallet = walletFromHash[txs[i].publicKeyHash];
+
+            // if the wallet nonce for the tx matches the current wallet's nonce,
+            // action the transaction after payment. This won't be the case if 
+            // a previous tx in txs for the wallet has failed to pay.
+            if (txs[i].nonce == wallet.nonce()) {
+                bool paymentPending = txs[i].tokenRewardAmount > 0;
+                if (paymentPending) {
+                    // on payment success, paymentPending is false
+                    paymentPending = !wallet.payTokenAmount(
+                        paymentToken,
+                        rewardAddress,
+                        txs[i].tokenRewardAmount
+                    );
+                }
+
+                if (paymentPending == false) {
+                    // execute transaction (increments nonce)
+                    wallet.action(
+                        txs[i].ethValue,
+                        txs[i].contractAddress,
+                        txs[i].methodId,
+                        txs[i].encodedParams
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+    Create a new wallet if one doesn't exist for the given bls key hash and public key.
+    @param publicKeys a public key can be 0 if the hash (and wallet) exist
+    @param txs contains public key hashes that should equal the corresponding public key if given.
+     */
+    function createNewWallets(
+        uint256[4][] calldata publicKeys,
+        TxData[] calldata txs
+    ) internal {
+        for (uint i=0; i<txs.length; i++) {
+            bytes32 publicKeyHash = txs[i].publicKeyHash;
+            // publicKeyHash corresponds to given public key (false if 0)
+            // and wallet at publicKeyHash doesn't exist
+            if (
+                (publicKeyHash == keccak256(abi.encodePacked(publicKeys[i]))) &&
+                (address(walletFromHash[txs[i].publicKeyHash]) == address(0))
+            ) {
+                blsKeysFromHash[publicKeyHash] = publicKeys[i];
+                walletFromHash[publicKeyHash] = new BLSWallet();
+                walletFromHash[publicKeyHash].initialize(publicKeyHash);
+                emit WalletCreated(
+                    address(walletFromHash[publicKeyHash]),
+                    publicKeyHash,
+                    publicKeys[i]
+                );
+            }
+        }
     }
 
     function checkSig(
@@ -102,12 +186,12 @@ contract VerificationGateway is Initializable
             );
         }
 
-        (bool checkResult, bool callSuccess) = blsLib.verifyMultiple(
-            signature,
-            publicKeys,
-            messages
-        );
-        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+        // (bool checkResult, bool callSuccess) = blsLib.verifyMultiple(
+        //     signature,
+        //     publicKeys,
+        //     messages
+        // );
+        // require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
 
         // create wallet
         bytes32 publicKeyHash;
@@ -295,6 +379,7 @@ contract VerificationGateway is Initializable
     }
 
     /**
+    Requires wallet contracts to exist.
     @param signature aggregated signature
     @param txs transaction data to be processed
     @param txNonces wallet nonce per tx in txs
@@ -313,7 +398,7 @@ contract VerificationGateway is Initializable
             // construct params for signature verification
             publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
             messages[i] = messagePoint(
-                txNonces[i],
+                txs[i].nonce,
                 txs[i].tokenRewardAmount,
                 txs[i].ethValue,
                 txs[i].contractAddress,
@@ -325,13 +410,13 @@ contract VerificationGateway is Initializable
             );
         }
 
-        (bool checkResult, bool callSuccess) = blsLib.verifyMultiple(
+        bool verified = blsLib.verifyMultiple(
             signature,
             publicKeys,
             messages
         );
 
-        require(callSuccess && checkResult, "VerificationGateway: All sigs not verified");
+        require(verified, "VerificationGateway: All sigs not verified");
     }
 
     /**
@@ -350,7 +435,7 @@ contract VerificationGateway is Initializable
 
         uint256[] memory txNonces = noncesForTxs(txs);
         bool[] memory sends = new bool[](txs.length);
-        verifySignatures(signature, txs, txNonces, sends);
+        // verifySignatures(signature, txs, txNonces, sends);
 
         // attempt payment and actions
         for (uint256 i = 0; i<txs.length; i++) {
