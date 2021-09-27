@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.12;
 
-import {
-    BNPairingPrecompileCostEstimator
-} from "./hubble-contracts/contracts/libs/BNPairingPrecompileCostEstimator.sol";
-
 import { BLS } from "./hubble-contracts/contracts/libs/BLS.sol";
 
 library BLSOpen {
@@ -12,16 +8,26 @@ library BLSOpen {
         uint256[2] memory signature,
         uint256[4] memory pubkey,
         uint256[2] memory message
-    ) external view returns (bool, uint256) {
-        uint256 gasCost = BNPairingPrecompileCostEstimator(0x5FbDB2315678afecb367f032d93F642f64180aa3).getGasCost(2);
+    ) external view returns (bool) {
+        uint256[4][] memory pubkeys = new uint256[4][](1);
+        uint256[2][] memory messages = new uint256[2][](1);
+        pubkeys[0] = pubkey;
+        messages[0] = message;
 
-        // NB: (result, success) opposite of `call` convention (success, result).
-        (bool verified, bool callSuccess) = BLS.verifySingle(
+        (bool verified, bool callSuccess) =  BLS.verifyMultiple(
             signature,
-            pubkey,
-            message
+            pubkeys,
+            messages
         );
-        return (callSuccess && verified, gasCost);
+        return callSuccess && verified;
+
+        // // NB: (result, success) opposite of `call` convention (success, result).
+        // (bool verified, bool callSuccess) = BLS.verifySingle(
+        //     signature,
+        //     pubkey,
+        //     message
+        // );
+        // return callSuccess && verified;
     }
 
     function verifyMultiple(
