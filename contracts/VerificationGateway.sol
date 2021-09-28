@@ -38,6 +38,12 @@ contract VerificationGateway is Initializable
         uint256[BLS_LEN] publicKey
     );
 
+    event WalletActioned(
+        address indexed wallet,
+        uint256 nonce,
+        bool result
+    );
+
     struct TxData {
         bytes32 publicKeyHash;
         uint256 nonce;
@@ -125,12 +131,11 @@ contract VerificationGateway is Initializable
     Requires wallet contracts to exist.
     @param signature aggregated signature
     @param txs transaction data to be processed
-    @param txNonces wallet nonce per tx in txs
+    @param sendOnlys whether the transaction was explicitly just the sending of ETH
     */
     function verifySignatures(
         uint256[2] calldata signature,
         TxData[] calldata txs,
-        uint256[] memory txNonces,
         bool[] memory sendOnlys
     ) public view {
         uint256 txCount = txs.length;
@@ -184,8 +189,7 @@ contract VerificationGateway is Initializable
         createNewWallets(publicKeys, txs);
 
         bool[] memory sends = new bool[](txs.length);
-        uint256[] memory deprecatedNonces = new uint256[](txs.length);
-        verifySignatures(signature, txs, deprecatedNonces, sends);
+        verifySignatures(signature, txs, sends);
 
         BLSWallet wallet;
         // attempt payment and actions
@@ -210,11 +214,16 @@ contract VerificationGateway is Initializable
 
                 if (paymentPending == false) {
                     // execute transaction (increments nonce)
-                    wallet.action(
+                    bool success = wallet.action(
                         txs[i].ethValue,
                         txs[i].contractAddress,
                         txs[i].methodId,
                         txs[i].encodedParams
+                    );
+                    emit WalletActioned(
+                        address(wallet),
+                        wallet.nonce(),
+                        success
                     );
                 }
             }
