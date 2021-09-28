@@ -10,7 +10,9 @@ export default async function createBLSWallet(
   chainId: number,
   verificationGateway: Contract,
   blsSigner: BlsSignerInterface,
-  reward: BigNumber = BigNumber.from(0),
+  rewardRecipient: string,
+  rewardTokenAddress: string,
+  rewardTokenAmount: BigNumber = BigNumber.from(0),
   ethValue: BigNumber = BigNumber.from(0)
 ): Promise<string> {
   const blsPubKeyHash = blsKeyHash(blsSigner);
@@ -31,7 +33,8 @@ export default async function createBLSWallet(
   const dataToSign = await dataPayload(
     chainId,
     0, // initial nonce
-    reward,
+    rewardTokenAddress,
+    rewardTokenAmount,
     ethValue,
     verificationGateway.address,
     encodedFunction,
@@ -54,14 +57,15 @@ export default async function createBLSWallet(
   let data: TxDataCallNew = {
     publicKeyHash: blsKeyHash(blsSigner),
     nonce: BigNumber.from(0),
-    tokenRewardAmount: reward,
+    rewardTokenAddress: rewardTokenAddress,
+    rewardTokenAmount: rewardTokenAmount,
     ethValue: ethValue,
     contractAddress: verificationGateway.address,
     methodId: encodedFunction.substring(0, 10),
     encodedParams: "0x" + encodedFunction.substr(10)
   }
   await (await verificationGateway.actionCalls(
-    '0x0000000000000000000000000000000000000000',
+    rewardRecipient,
     [blsSigner.pubkey],
     signature,
     [data]
@@ -73,7 +77,8 @@ export default async function createBLSWallet(
 type TxDataCallNew = {
   publicKeyHash: any;
   nonce: BigNumber;
-  tokenRewardAmount: BigNumber;
+  rewardTokenAddress: string;
+  rewardTokenAmount: BigNumber;
   ethValue: BigNumber;
   contractAddress: string;
   methodId: string;

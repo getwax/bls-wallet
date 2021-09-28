@@ -16,6 +16,7 @@ const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
 
 const zeroBLSPubKey = [0, 0, 0, 0].map(BigNumber.from);
+export const zeroAddress = "0x"+"0".repeat(40);
 
 export type FullTxData = {
   blsSigner: BlsSignerInterface,
@@ -227,12 +228,15 @@ export default class Fixture {
 
   async createBLSWallet(
     blsSigner: BlsSignerInterface,
+    rewardAddress: string = zeroAddress,
     reward: BigNumber = BigNumber.from(0)
   ): Promise<any> {
     return await createBLSWallet(
       this.chainId,
       this.verificationGateway,
       blsSigner,
+      this.addresses[0],
+      rewardAddress,
       reward
     );
   }
@@ -241,12 +245,16 @@ export default class Fixture {
    * Creates new BLS contract wallets from blsSigners
    * @returns array of wallet addresses 
    */
-  async createBLSWallets(reward: BigNumber = BigNumber.from(0)): Promise<string[]> {
+  async createBLSWallets(
+    rewardAddress: string = zeroAddress,
+    reward: BigNumber = BigNumber.from(0)
+    ): Promise<string[]> {
     const length = this.blsSigners.length;
     let blsWalletAddresses = new Array<string>(length);
     for (let i = 0; i<length; i++) {
       blsWalletAddresses[i] = await this.createBLSWallet(
         this.blsSigners[i],
+        rewardAddress,
         reward
       );
     }

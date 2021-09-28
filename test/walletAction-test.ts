@@ -5,7 +5,7 @@ import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
-import Fixture, { TxDataSend } from "../shared/helpers/Fixture";
+import Fixture, { TxDataSend, zeroAddress } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 import dataPayload from "../shared/helpers/dataPayload";
 
@@ -164,6 +164,7 @@ describe.only('WalletActions', async function () {
     let dataToSign = dataPayload(
       fx.chainId,
       0,
+      zeroAddress,
       BigNumber.from(0),
       BigNumber.from(0),
       fx.verificationGateway.address,
@@ -229,6 +230,7 @@ describe.only('WalletActions', async function () {
       let dataToSign = dataPayload(
         fx.chainId,
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
+        zeroAddress,
         BigNumber.from(0),
         BigNumber.from(0),
         th.testToken.address,
@@ -267,7 +269,7 @@ describe.only('WalletActions', async function () {
     }
   });
 
-  it("should airdrop", async function() {
+  it.only("should airdrop", async function() {
     th = new TokenHelper(fx);
 
     let blsWalletAddresses = await fx.createBLSWallets();
@@ -295,6 +297,7 @@ describe.only('WalletActions', async function () {
       let dataToSign = dataPayload(
         fx.chainId,
         nonce++,
+        zeroAddress,
         reward,
         BigNumber.from(0),
         testToken.address,
@@ -308,6 +311,7 @@ describe.only('WalletActions', async function () {
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
       blsKeyHash(fx.blsSigners[0]),
       aggSignature,
+      zeroAddress,
       Array(signatures.length).fill(0),
       testToken.address,
       testToken.interface.getSighash("transfer"),

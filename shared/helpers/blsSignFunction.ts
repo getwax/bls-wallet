@@ -5,7 +5,7 @@ import dataPayload from "./dataPayload";
 import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 import { solG1 } from "../lib/hubble-bls/src/mcl"
 
-import Fixture, { FullTxData, TxDataCall, TxDataSend } from "./Fixture";
+import Fixture, { FullTxData, TxDataCall, TxDataSend, zeroAddress } from "./Fixture";
 
 export default function blsSignFunction(
   fullTxData:FullTxData,
@@ -28,6 +28,7 @@ export default function blsSignFunction(
   let dataToSign = dataPayload(
     fullTxData.chainId,
     fullTxData.nonce,
+    zeroAddress,
     fullTxData.reward,
     fullTxData.ethValue,
     address,

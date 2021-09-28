@@ -1,9 +1,7 @@
 require('dotenv').config();
 import { HardhatUserConfig, NetworkUserConfig } from "hardhat/types";
 
-import '@eth-optimism/hardhat-ovm';
-// import '@eth-optimism/plugins/hardhat/compiler'
-// import '@eth-optimism/plugins/hardhat/ethers'
+// import '@eth-optimism/hardhat-ovm';
 
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
@@ -24,7 +22,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.0",
+        version: "0.8.8",
         settings: {
           optimizer: {
             enabled: true,
@@ -86,31 +84,31 @@ const config: HardhatUserConfig = {
       ],
       gasPrice: 1408857682, //287938372,
     },
-    optimistic: {
-      url: `http://localhost:8545`,
-      accounts: [
-        `0x${process.env.PRIVATE_KEY_AGG}`,
-        `0x${process.env.PRIVATE_KEY_002}`,
-        `0x${process.env.PRIVATE_KEY_003}`,
-        `0x${process.env.PRIVATE_KEY_004}`,
-        `0x${process.env.PRIVATE_KEY_005}`
-      ],
-      gasPrice: 0,//15000000,
-      ovm: true
-    },
-    optimisticKovan: {
-      url: 'https://kovan.optimism.io',
-      accounts: [
-        `0x${process.env.PRIVATE_KEY_AGG_OKOV}`,
-        `0x${process.env.PRIVATE_KEY_002}`,
-        `0x${process.env.PRIVATE_KEY_003}`,
-        `0x${process.env.PRIVATE_KEY_004}`,
-        `0x${process.env.PRIVATE_KEY_005}`
-      ],
-      // accounts: { mnemonic: 'test test test test test test test test test test test junk' },
-      gasPrice: 15000000,
-      ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
-    }
+    // optimistic: {
+    //   url: `http://localhost:8545`,
+    //   accounts: [
+    //     `0x${process.env.PRIVATE_KEY_AGG}`,
+    //     `0x${process.env.PRIVATE_KEY_002}`,
+    //     `0x${process.env.PRIVATE_KEY_003}`,
+    //     `0x${process.env.PRIVATE_KEY_004}`,
+    //     `0x${process.env.PRIVATE_KEY_005}`
+    //   ],
+    //   gasPrice: 0,//15000000,
+    //   ovm: true
+    // },
+    // optimisticKovan: {
+    //   url: 'https://kovan.optimism.io',
+    //   accounts: [
+    //     `0x${process.env.PRIVATE_KEY_AGG_OKOV}`,
+    //     `0x${process.env.PRIVATE_KEY_002}`,
+    //     `0x${process.env.PRIVATE_KEY_003}`,
+    //     `0x${process.env.PRIVATE_KEY_004}`,
+    //     `0x${process.env.PRIVATE_KEY_005}`
+    //   ],
+    //   // accounts: { mnemonic: 'test test test test test test test test test test test junk' },
+    //   gasPrice: 15000000,
+    //   ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
+    // }
   },
   mocha: {
     timeout: 120000
