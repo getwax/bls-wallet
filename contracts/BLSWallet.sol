@@ -28,17 +28,6 @@ contract BLSWallet is Initializable
     receive() external payable {}
     fallback() external payable {}
 
-    function sendEther(
-        address payable recipient,
-        uint256 ethValue
-    ) onlyGateway public payable returns (
-        bool success,
-        bytes memory
-    ) {
-        (success, ) = recipient.call{value: ethValue}("");
-        require(success, "recipient couldn't receive Ether");
-    }
-
     function payTokenAmount(
         IERC20 token,
         address recipient,
@@ -57,7 +46,7 @@ contract BLSWallet is Initializable
     function action(
         uint256 ethValue,
         address contractAddress,
-        bytes memory encodedFunction
+        bytes calldata encodedFunction
     ) public payable onlyGateway returns (bool success) {
         if (ethValue > 0) {
             (success, ) = payable(contractAddress).call{value: ethValue}(encodedFunction);

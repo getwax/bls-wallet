@@ -49,7 +49,7 @@ For a smart contract wallet to perform an action, the signed message must contai
 - the hash of the bls public key that signed the message (the full public key is mapped in the Verification Gateway)
 - nonce of the smart contract wallet
 - address of the smart contract for the wallet to call
-- methodID of the function to call
+- methodId of the function to call
 - ABIencoded parameters for the function
 - amount to transfer
 

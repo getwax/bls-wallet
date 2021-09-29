@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
+import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 
 const { utils } = ethers;
 

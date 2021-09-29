@@ -27,7 +27,7 @@ contract VerificationGateway is Initializable
     @param bls verified bls library contract address
     @param token default payment token
      */
-    function initialize(IBLS bls, IERC20 token) public initializer {
+    function initialize(IBLS bls, IERC20 token) external initializer {
         blsLib = bls;
         paymentToken = token;
     }
@@ -54,85 +54,14 @@ contract VerificationGateway is Initializable
         bytes encodedFunction;
     }
 
-    function checkSig(
-        uint256 signedNonce,
-        TxData calldata txData,
-        uint256[2] calldata signature,
-        bool sendOnly
-    ) external view
-    returns (
-        bool result,
-        uint256 nextNonce
-    ) {
-        uint256[2] memory msgPoint = messagePoint(
-            signedNonce,
-            txData.rewardTokenAddress,
-            txData.rewardTokenAmount,
-            txData.ethValue,
-            txData.contractAddress,
-            keccak256(txData.encodedFunction),
-            sendOnly
-        );
-        (bool checkResult, bool callSuccess) = blsLib.verifySingle(
-            signature,
-            blsKeysFromHash[txData.publicKeyHash],
-            msgPoint
-        );
-        
-        result = callSuccess && checkResult;
-        nextNonce = walletFromHash[txData.publicKeyHash].nonce();
-    }
-
-    function blsSend(
-        address payable rewardRecipient,
-        bytes32 callingPublicKeyHash,
-        uint256[2] calldata signature,
-        IERC20 rewardTokenAddress,
-        uint256 rewardTokenAmount,
-        uint256 ethValue,
-        address payable recipient
-    ) public {
-        bytes32 publicKeyHash = callingPublicKeyHash;
-
-        (bool checkResult, bool callSuccess) = blsLib.verifySingle(
-            signature,
-            blsKeysFromHash[publicKeyHash],
-            messagePoint(
-                walletFromHash[publicKeyHash].nonce(),
-                rewardTokenAddress,
-                rewardTokenAmount,
-                ethValue,
-                recipient,
-                0, //NA
-                true
-            )
-        );
-        require(callSuccess && checkResult, "VerificationGateway: sig not verified with nonce+data");
-
-        if (rewardTokenAmount > 0) {
-            bool paidReward = walletFromHash[publicKeyHash].payTokenAmount(
-                rewardTokenAddress,
-                rewardRecipient,
-                rewardTokenAmount
-            );
-            require(paidReward, "VerificationGateway: Could not pay nominated reward");
-        }
-        (bool sentEther, ) = walletFromHash[publicKeyHash].sendEther(
-            recipient,
-            ethValue
-        );
-    }
-
     /**
     Requires wallet contracts to exist.
     @param signature aggregated signature
     @param txs transaction data to be processed
-    @param sendOnlys whether the transaction was explicitly just the sending of ETH
     */
     function verifySignatures(
         uint256[2] calldata signature,
-        TxData[] calldata txs,
-        bool[] memory sendOnlys
+        TxData[] calldata txs
     ) public view {
         uint256 txCount = txs.length;
         uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
@@ -141,16 +70,8 @@ contract VerificationGateway is Initializable
         for (uint256 i = 0; i<txCount; i++) {
             // construct params for signature verification
             publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
-            messages[i] = messagePoint(
-                txs[i].nonce,
-                txs[i].rewardTokenAddress,
-                txs[i].rewardTokenAmount,
-                txs[i].ethValue,
-                txs[i].contractAddress,
-                keccak256(txs[i].encodedFunction),
-                sendOnlys[i]
-            );
-        }
+            messages[i] = messagePoint(txs[i]);
+  }
 
         bool verified = blsLib.verifyMultiple(
             signature,
@@ -159,6 +80,18 @@ contract VerificationGateway is Initializable
         );
 
         require(verified, "VerificationGateway: All sigs not verified");
+    }
+
+    function testSend(
+        bytes32 publicKeyHash,
+        address payable recipient,
+        uint256 ethValue
+    ) public payable {
+        walletFromHash[publicKeyHash].action(
+            ethValue,
+            recipient,
+            ""
+        );
     }
 
     function walletCrossCheck(bytes32 hash) public payable {
@@ -178,11 +111,10 @@ contract VerificationGateway is Initializable
         uint256[4][] calldata publicKeys,
         uint256[2] calldata signature,
         TxData[] calldata txs
-    ) public {
+    ) external {
         createNewWallets(publicKeys, txs);
 
-        bool[] memory sends = new bool[](txs.length);
-        verifySignatures(signature, txs, sends);
+        verifySignatures(signature, txs);
 
         BLSWallet wallet;
         // attempt payment and actions
@@ -254,28 +186,24 @@ contract VerificationGateway is Initializable
 
     bytes32 immutable SEND_ONLY = 0x53454e445f4f4e4c590000000000000000000000000000000000000000000000;
     function messagePoint(
-        uint256 nonce,
-        IERC20 rewardTokenAddress,
-        uint256 rewardTokenAmount,
-        uint256 ethValue,
-        address contractAddress,
-        bytes32 encodedFunctionHash,
-        bool sendOnly
+        TxData calldata txData
     ) internal view returns (uint256[2] memory) {
         uint256 chainId;
         assembly {
             chainId := chainid()
         }
+
+        bool isSend = txData.encodedFunction.length == 0;
         return blsLib.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(
                 chainId, //block.chainid,
-                nonce,
-                rewardTokenAddress,
-                rewardTokenAmount,
-                ethValue,
-                contractAddress,
-                sendOnly ? SEND_ONLY : encodedFunctionHash
+                txData.nonce,
+                txData.rewardTokenAddress,
+                txData.rewardTokenAmount,
+                txData.ethValue,
+                txData.contractAddress,
+                isSend ? SEND_ONLY : keccak256(txData.encodedFunction)
             )
         );
     }

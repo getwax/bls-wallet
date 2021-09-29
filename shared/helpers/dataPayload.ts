@@ -24,7 +24,7 @@ export default function dataPayload(
   encodedFunction: string,
 ) {
   let encodedFunctionHash = SEND_ONLY;
-  if (encodedFunction !== "") {
+  if (encodedFunction !== "0x") {
     encodedFunctionHash = utils.solidityKeccak256(
       ["bytes"],
       [encodedFunction]

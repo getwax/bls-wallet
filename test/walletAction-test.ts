@@ -5,7 +5,7 @@ import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
-import Fixture, { TxDataSend, zeroAddress } from "../shared/helpers/Fixture";
+import Fixture, { FullTxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 import dataPayload from "../shared/helpers/dataPayload";
 
@@ -40,7 +40,7 @@ describe.only('WalletActions', async function () {
     }
   });
 
-  it.only('should register new wallet', async function () {
+  it('should register new wallet', async function () {
     let blsSigner = fx.blsSigners[0];  
     let walletAddress = await fx.createBLSWallet(blsSigner);
 
@@ -75,7 +75,7 @@ describe.only('WalletActions', async function () {
     let senderBlsSigner = fx.blsSigners[0];
     let receiverBlsSigner = fx.blsSigners[1];
     let senderAddress = await fx.createBLSWallet(senderBlsSigner);
-    let receiverAddress = await fx.createBLSWallet(receiverBlsSigner);
+    let receiverAddress:string = await fx.createBLSWallet(receiverBlsSigner);
     let ethToTransfer = utils.parseEther("0.001");
     await fx.signers[0].sendTransaction({
       to: senderAddress,
@@ -85,16 +85,22 @@ describe.only('WalletActions', async function () {
     expect(await fx.provider.getBalance(senderAddress)).to.equal(ethToTransfer);
     expect(await fx.provider.getBalance(receiverAddress)).to.equal(0);
 
-    await fx.gatewaySend({
+    let ethSend_FullTxData:FullTxData = {
       blsSigner: senderBlsSigner,
       chainId: fx.chainId,
       nonce: 1,
-      reward: BigNumber.from(0),
+      rewardRecipient: ethers.constants.AddressZero,
+      rewardAmount: BigNumber.from(0),
       ethValue: ethToTransfer,
-      contract: fx.verificationGateway, // ignored
+      contract: receiverAddress,
       functionName: "",
       params: []
-    }, receiverAddress);
+      // contract: fx.verificationGateway,
+      // functionName: "walletCrossCheck",
+      // params: [blsKeyHash(senderBlsSigner)]
+    };
+
+    await fx.gatewayCallFull(ethSend_FullTxData);
 
     expect(await fx.provider.getBalance(senderAddress)).to.equal(0);
     expect(await fx.provider.getBalance(receiverAddress)).to.equal(ethToTransfer);
@@ -121,7 +127,8 @@ describe.only('WalletActions', async function () {
       blsSigner: senderBlsSigner,
       chainId: fx.chainId,
       nonce: 1,
-      reward: BigNumber.from(0),
+      rewardRecipient: ethers.constants.AddressZero,
+      rewardAmount: BigNumber.from(0),
       ethValue: ethToTransfer,
       contract: mockAuction,
       functionName: "buyItNow",
@@ -142,7 +149,8 @@ describe.only('WalletActions', async function () {
       blsSigner: blsSigner,
       chainId: fx.chainId,
       nonce: 0,
-      reward: BigNumber.from(0),
+      rewardRecipient: ethers.constants.AddressZero,
+      rewardAmount: BigNumber.from(0),
       ethValue: BigNumber.from(0),
       contract: fx.verificationGateway,
       functionName: "walletCrossCheck",
@@ -164,7 +172,7 @@ describe.only('WalletActions', async function () {
     let dataToSign = dataPayload(
       fx.chainId,
       0,
-      zeroAddress,
+      ethers.constants.AddressZero,
       BigNumber.from(0),
       BigNumber.from(0),
       fx.verificationGateway.address,
@@ -230,7 +238,7 @@ describe.only('WalletActions', async function () {
       let dataToSign = dataPayload(
         fx.chainId,
         await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
-        zeroAddress,
+        ethers.constants.AddressZero,
         BigNumber.from(0),
         BigNumber.from(0),
         th.testToken.address,
@@ -269,7 +277,7 @@ describe.only('WalletActions', async function () {
     }
   });
 
-  it.only("should airdrop", async function() {
+  it("should airdrop", async function() {
     th = new TokenHelper(fx);
 
     let blsWalletAddresses = await fx.createBLSWallets();
@@ -297,7 +305,7 @@ describe.only('WalletActions', async function () {
       let dataToSign = dataPayload(
         fx.chainId,
         nonce++,
-        zeroAddress,
+        ethers.constants.AddressZero,
         reward,
         BigNumber.from(0),
         testToken.address,
@@ -311,7 +319,7 @@ describe.only('WalletActions', async function () {
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
       blsKeyHash(fx.blsSigners[0]),
       aggSignature,
-      zeroAddress,
+      ethers.constants.AddressZero,
       Array(signatures.length).fill(0),
       testToken.address,
       testToken.interface.getSighash("transfer"),

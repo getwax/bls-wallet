@@ -5,6 +5,7 @@ import blsKeyHash from "./blsKeyHash";
 import dataPayload from "./dataPayload";
 
 import { BigNumber, Contract } from "ethers";
+import { TxData } from "./Fixture";
 
 export default async function createBLSWallet(
   chainId: number,
@@ -54,7 +55,7 @@ export default async function createBLSWallet(
   // )).wait();
   // can be called by any ecdsa wallet
 
-  let data: TxDataCallNew = {
+  let data: TxData = {
     publicKeyHash: blsKeyHash(blsSigner),
     nonce: BigNumber.from(0),
     rewardTokenAddress: rewardTokenAddress,
@@ -70,15 +71,6 @@ export default async function createBLSWallet(
     [data]
   )).wait();
 
-  return await verificationGateway.walletFromHash(blsPubKeyHash);
+  return (await verificationGateway.walletFromHash(blsPubKeyHash)) as string;
 }
 
-type TxDataCallNew = {
-  publicKeyHash: any;
-  nonce: BigNumber;
-  rewardTokenAddress: string;
-  rewardTokenAmount: BigNumber;
-  ethValue: BigNumber;
-  contractAddress: string;
-  encodedFunction: string;
-}
