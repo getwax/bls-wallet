@@ -51,8 +51,7 @@ contract VerificationGateway is Initializable
         uint256 rewardTokenAmount;
         uint256 ethValue;
         address contractAddress;
-        bytes4 methodId; //bytes4(keccak256(bytes(fnSig))
-        bytes encodedParams;
+        bytes encodedFunction;
     }
 
     function checkSig(
@@ -71,10 +70,7 @@ contract VerificationGateway is Initializable
             txData.rewardTokenAmount,
             txData.ethValue,
             txData.contractAddress,
-            keccak256(abi.encodePacked(
-                txData.methodId,
-                txData.encodedParams
-            )),
+            keccak256(txData.encodedFunction),
             sendOnly
         );
         (bool checkResult, bool callSuccess) = blsLib.verifySingle(
@@ -151,10 +147,7 @@ contract VerificationGateway is Initializable
                 txs[i].rewardTokenAmount,
                 txs[i].ethValue,
                 txs[i].contractAddress,
-                keccak256(abi.encodePacked(
-                    txs[i].methodId,
-                    txs[i].encodedParams
-                )),
+                keccak256(txs[i].encodedFunction),
                 sendOnlys[i]
             );
         }
@@ -217,8 +210,7 @@ contract VerificationGateway is Initializable
                     bool success = wallet.action(
                         txs[i].ethValue,
                         txs[i].contractAddress,
-                        txs[i].methodId,
-                        txs[i].encodedParams
+                        txs[i].encodedFunction
                     );
                     emit WalletActioned(
                         address(wallet),

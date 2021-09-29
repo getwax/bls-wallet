@@ -88,8 +88,7 @@ contract BLSExpander is Initializable {
             txs[i].rewardTokenAmount = rewardTokenAmounts[i];
             txs[i].ethValue = 0;
             txs[i].contractAddress = contractAddress;
-            txs[i].methodId = methodId;
-            txs[i].encodedParams = encodedParamSets[i];
+            txs[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
         }
 
         verificationGateway.actionCalls(

@@ -54,16 +54,11 @@ contract BLSWallet is Initializable
         (success, ) = address(token).call(transferFn);
     }
 
-    /**
-    @dev The methodID called is `require`d to succeed. This may change in the future.
-     */
     function action(
         uint256 ethValue,
         address contractAddress,
-        bytes4 methodID,
-        bytes memory encodedParams
+        bytes memory encodedFunction
     ) public payable onlyGateway returns (bool success) {
-        bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
         if (ethValue > 0) {
             (success, ) = payable(contractAddress).call{value: ethValue}(encodedFunction);
         }

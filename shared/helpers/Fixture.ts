@@ -34,8 +34,7 @@ export type TxDataCall = {
   tokenRewardAmount: BigNumber;
   ethValue: BigNumber;
   contractAddress: string;
-  methodId: string;
-  encodedParams: string;
+  encodedFunction: string;
 }
 export type TxDataSend = {
   publicKeyHash: any;
@@ -186,8 +185,7 @@ export default class Fixture {
         tokenRewardAmount: fullTxData.reward,
         ethValue: fullTxData.ethValue,
         contractAddress: fullTxData.contract.address,
-        methodId: (encodedFunction!="")?encodedFunction.substring(0,10):"0x00000000",
-        encodedParams: (encodedFunction!="")?'0x'+encodedFunction.substr(10):"0x00"
+        encodedFunction: encodedFunction
       } as TxDataCall;
     }
   }
@@ -221,8 +219,7 @@ export default class Fixture {
       txData.tokenRewardAmount,
       txData.ethValue,
       txData.contractAddress,
-      txData.methodId,
-      txData.encodedParams
+      txData.encodedFunction
     )).wait();
   }
 

@@ -61,8 +61,7 @@ export default async function createBLSWallet(
     rewardTokenAmount: rewardTokenAmount,
     ethValue: ethValue,
     contractAddress: verificationGateway.address,
-    methodId: encodedFunction.substring(0, 10),
-    encodedParams: "0x" + encodedFunction.substr(10)
+    encodedFunction: encodedFunction
   }
   await (await verificationGateway.actionCalls(
     rewardRecipient,
@@ -81,6 +80,5 @@ type TxDataCallNew = {
   rewardTokenAmount: BigNumber;
   ethValue: BigNumber;
   contractAddress: string;
-  methodId: string;
-  encodedParams: string;
+  encodedFunction: string;
 }
