@@ -71,7 +71,7 @@ contract VerificationGateway is Initializable
             // construct params for signature verification
             publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
             messages[i] = messagePoint(txs[i]);
-  }
+        }
 
         bool verified = blsLib.verifyMultiple(
             signature,
@@ -82,18 +82,9 @@ contract VerificationGateway is Initializable
         require(verified, "VerificationGateway: All sigs not verified");
     }
 
-    function testSend(
-        bytes32 publicKeyHash,
-        address payable recipient,
-        uint256 ethValue
-    ) public payable {
-        walletFromHash[publicKeyHash].action(
-            ethValue,
-            recipient,
-            ""
-        );
-    }
-
+    /** 
+    Useful no-op function to call when calling a wallet for the first time.
+     */
     function walletCrossCheck(bytes32 hash) public payable {
         require(msg.sender == address(walletFromHash[hash]));
     }
@@ -206,14 +197,6 @@ contract VerificationGateway is Initializable
                 isSend ? SEND_ONLY : keccak256(txData.encodedFunction)
             )
         );
-    }
-
-    function pointsMatch(
-        uint256[2] calldata a,
-        uint256[2] memory b
-    ) internal pure returns (bool result) {
-        result = (a[0] == b[0]);
-        result = result && (a[1] == b[1]);
     }
 
 }
