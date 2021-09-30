@@ -5,12 +5,15 @@ import blsKeyHash from "./blsKeyHash";
 import dataPayload from "./dataPayload";
 
 import { BigNumber, Contract } from "ethers";
+import { TxData } from "./Fixture";
 
 export default async function createBLSWallet(
   chainId: number,
   verificationGateway: Contract,
   blsSigner: BlsSignerInterface,
-  reward: BigNumber = BigNumber.from(0),
+  rewardRecipient: string,
+  rewardTokenAddress: string,
+  rewardTokenAmount: BigNumber = BigNumber.from(0),
   ethValue: BigNumber = BigNumber.from(0)
 ): Promise<string> {
   const blsPubKeyHash = blsKeyHash(blsSigner);
@@ -31,7 +34,8 @@ export default async function createBLSWallet(
   const dataToSign = await dataPayload(
     chainId,
     0, // initial nonce
-    reward,
+    rewardTokenAddress,
+    rewardTokenAmount,
     ethValue,
     verificationGateway.address,
     encodedFunction,
@@ -39,16 +43,34 @@ export default async function createBLSWallet(
 
   const signature = blsSigner.sign(dataToSign);
 
+  // // can be called by any ecdsa wallet
+  // await (await verificationGateway.blsCallCreate(
+  //   blsSigner.pubkey,
+  //   signature,
+  //   reward,
+  //   ethValue,
+  //   verificationGateway.address,
+  //   encodedFunction.substring(0, 10),
+  //   "0x" + encodedFunction.substr(10),
+  // )).wait();
   // can be called by any ecdsa wallet
-  await (await verificationGateway.blsCallCreate(
-    blsSigner.pubkey,
+
+  let data: TxData = {
+    publicKeyHash: blsKeyHash(blsSigner),
+    nonce: BigNumber.from(0),
+    rewardTokenAddress: rewardTokenAddress,
+    rewardTokenAmount: rewardTokenAmount,
+    ethValue: ethValue,
+    contractAddress: verificationGateway.address,
+    encodedFunction: encodedFunction
+  }
+  await (await verificationGateway.actionCalls(
+    rewardRecipient,
+    [blsSigner.pubkey],
     signature,
-    reward,
-    ethValue,
-    verificationGateway.address,
-    encodedFunction.substring(0, 10),
-    "0x" + encodedFunction.substr(10),
+    [data]
   )).wait();
 
-  return await verificationGateway.walletFromHash(blsPubKeyHash);
+  return (await verificationGateway.walletFromHash(blsPubKeyHash)) as string;
 }
+

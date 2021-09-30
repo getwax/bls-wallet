@@ -17,13 +17,14 @@ const SEND_ONLY: string = "0x53454e445f4f4e4c59000000000000000000000000000000000
 export default function dataPayload(
   chainId: number,
   nonce: number,
-  reward: BigNumber,
+  rewardTokenAddress: string,
+  rewardTokenAmount: BigNumber,
   ethValue: BigNumber,
   contractAddress: string,
   encodedFunction: string,
 ) {
   let encodedFunctionHash = SEND_ONLY;
-  if (encodedFunction !== "") {
+  if (encodedFunction !== "0x") {
     encodedFunctionHash = utils.solidityKeccak256(
       ["bytes"],
       [encodedFunction]
@@ -31,11 +32,12 @@ export default function dataPayload(
   }
 
   return utils.solidityPack(
-    ["uint256", "uint256", "uint256", "uint256", "address", "bytes32"],
+    ["uint256", "uint256", "address", "uint256", "uint256", "address", "bytes32"],
     [
       chainId,
       nonce,
-      reward,
+      rewardTokenAddress,
+      rewardTokenAmount,
       ethValue,
       contractAddress.toString(),
       encodedFunctionHash

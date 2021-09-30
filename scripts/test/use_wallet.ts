@@ -19,6 +19,7 @@ let blsWallets: Contract[];
 interface DeployedAddresses {
   ethAddress: string|undefined;
   rewardAddress: string|undefined;
+  blsAddress: string|undefined;
   vgAddress: string|undefined;
   expanderAddress: string|undefined;
   tokenAddress: string|undefined;
@@ -71,6 +72,7 @@ function addressesForNetwork(networkName: string): DeployedAddresses {
     c = {
       ethAddress:undefined,
       rewardAddress: process.env.RINKARBY_REWARD_CONTRACT_ADDRESS,
+      blsAddress: process.env.RINKARBY_BLS_LIBRARY_ADDRESS,
       vgAddress:process.env.RINKARBY_VERIFICATION_GATEWAY_ADDRESS,
       expanderAddress: process.env.RINKARBY_BLS_EXPANDER_ADDRESS,
       tokenAddress: undefined,
@@ -85,6 +87,7 @@ function addressesForNetwork(networkName: string): DeployedAddresses {
     c = {
       ethAddress:undefined,
       rewardAddress: process.env.LOCAL_REWARD_CONTRACT_ADDRESS,
+      blsAddress: process.env.LOCAL_BLS_LIBRARY_ADDRESS,
       vgAddress:process.env.LOCAL_VERIFICATION_GATEWAY_ADDRESS,
       expanderAddress: process.env.LOCAL_BLS_EXPANDER_ADDRESS,
       tokenAddress: undefined,
@@ -98,9 +101,10 @@ function addressesForNetwork(networkName: string): DeployedAddresses {
   else if (network.name === `optimisticKovan`) {
     c = {
       ethAddress: process.env.OKOVAN_ETH_CONTRACT_ADDRESS,
+      rewardAddress: process.env.OKOVAN_REWARD_CONTRACT_ADDRESS,
+      blsAddress: process.env.OKOVAN_BLS_LIBRARY_ADDRESS,
       vgAddress: process.env.OKOVAN_VERIFICATION_GATEWAY_ADDRESS,
       expanderAddress: process.env.OKOVAN_BLS_EXPANDER_ADDRESS,
-      rewardAddress: process.env.OKOVAN_REWARD_CONTRACT_ADDRESS,
       tokenAddress: process.env.OKOVAN_ERC20_CONTRACT_ADDRESS,
       blsAddresses: [
         '0xEc76AE8adEFc6462986A673Feff40b2Cdd56B3BC',
@@ -119,6 +123,7 @@ async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
   let fx = await Fixture.create(
     blsSecretNumbers.length,
     true,
+    config.blsAddress,
     config.vgAddress,
     config.expanderAddress,
     blsSecretNumbers

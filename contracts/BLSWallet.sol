@@ -1,10 +1,10 @@
-//SPDX-License-Identifier: MIT
-pragma solidity >=0.7.0 <0.9.0;
+//SPDX-License-Identifier: Unlicense
+pragma solidity >=0.8.0 <0.9.0;
 pragma abicoder v2;
 
 
 //To avoid constructor params having forbidden evm bytecodes on Optimism
-import "@openzeppelin/contracts/proxy/Initializable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import "./lib/IERC20.sol";
 import "hardhat/console.sol";
@@ -28,17 +28,6 @@ contract BLSWallet is Initializable
     receive() external payable {}
     fallback() external payable {}
 
-    function sendEther(
-        address payable recipient,
-        uint256 ethValue
-    ) onlyGateway public payable returns (
-        bool success,
-        bytes memory
-    ) {
-        (success, ) = recipient.call{value: ethValue}("");
-        require(success, "recipient couldn't receive Ether");
-    }
-
     function payTokenAmount(
         IERC20 token,
         address recipient,
@@ -54,16 +43,11 @@ contract BLSWallet is Initializable
         (success, ) = address(token).call(transferFn);
     }
 
-    /**
-    @dev The methodID called is `require`d to succeed. This may change in the future.
-     */
     function action(
         uint256 ethValue,
         address contractAddress,
-        bytes4 methodID,
-        bytes memory encodedParams
+        bytes calldata encodedFunction
     ) public payable onlyGateway returns (bool success) {
-        bytes memory encodedFunction = abi.encodePacked(methodID, encodedParams);
         if (ethValue > 0) {
             (success, ) = payable(contractAddress).call{value: ethValue}(encodedFunction);
         }

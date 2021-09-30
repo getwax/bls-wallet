@@ -3,14 +3,14 @@ const utils = ethers.utils;
 
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
 
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
-import { solG1 } from "../lib/hubble-bls/src/mcl"
+import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
+import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
 import { keccak256, arrayify, Interface, Fragment, ParamType } from "ethers/lib/utils";
 
 import createBLSWallet from "./createBLSWallet";
 import blsSignFunction from "./blsSignFunction";
 import blsKeyHash from "./blsKeyHash";
-import { send } from "process";
+import { exit, send } from "process";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
@@ -21,26 +21,22 @@ export type FullTxData = {
   blsSigner: BlsSignerInterface,
   chainId: number,
   nonce: number,
-  reward: BigNumber,
+  rewardRecipient: string,
+  rewardAmount: BigNumber,
   ethValue: BigNumber,
-  contract: Contract,
-  functionName: string,
+  contract: Contract|string, // Contract for calls, address string for sending ETH
+  functionName: string, // empty string for sending ETH
   params: any[]
 }
 
-export type TxDataCall = {
+export type TxData = {
   publicKeyHash: any;
-  tokenRewardAmount: BigNumber;
+  nonce: BigNumber;
+  rewardTokenAddress: string;
+  rewardTokenAmount: BigNumber;
   ethValue: BigNumber;
   contractAddress: string;
-  methodId: string;
-  encodedParams: string;
-}
-export type TxDataSend = {
-  publicKeyHash: any;
-  tokenRewardAmount: BigNumber;
-  recipientAddress: string;
-  ethValue: BigNumber;
+  encodedFunction: string;
 }
 
 export default class Fixture {
@@ -73,6 +69,7 @@ export default class Fixture {
   static async create(
     blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
     initialized: boolean=true,
+    blsAddress: string=undefined,
     vgAddress: string=undefined,
     expanderAddress: string=undefined,
     secretNumbers: number[]=undefined
@@ -93,6 +90,16 @@ export default class Fixture {
       }
       blsSigners[i] = blsSignerFactory.getSigner(DOMAIN, "0x"+secretNumber.toString(16));
     }
+    
+    let BLS = await ethers.getContractFactory("BLSOpen");
+    let bls;
+    if (blsAddress) {
+      bls = BLS.attach(blsAddress);
+    }
+    else {
+      bls = await BLS.deploy();
+      await bls.deployed();
+    }
 
     // deploy Verification Gateway
     let VerificationGateway = await ethers.getContractFactory("VerificationGateway");
@@ -104,7 +111,10 @@ export default class Fixture {
       verificationGateway = await VerificationGateway.deploy();
       await verificationGateway.deployed();
       if (initialized) {
-        await (await verificationGateway.initialize(ethers.constants.AddressZero)).wait();
+        await (await verificationGateway.initialize(
+          bls.address,
+          ethers.constants.AddressZero
+        )).wait();
       }
     }
 
@@ -142,83 +152,52 @@ export default class Fixture {
     );
   }
 
-  // static blsKeyHash(blsSigner: BlsSignerInterface) {
-  //   return keccak256(utils.solidityPack(
-  //     ["uint256[4]"],
-  //     [blsSigner.pubkey]
-  //   ));
-  // }
-
-  static txDataFromFull(fullTxData: FullTxData): TxDataCall|TxDataSend {
-    let sendOnly = (fullTxData.functionName === "");
-
-    if (sendOnly) {
-      return {
-        publicKeyHash: blsKeyHash(fullTxData.blsSigner),
-        tokenRewardAmount: fullTxData.reward,
-        ethValue: fullTxData.ethValue,
-        recipientAddress: fullTxData.contract.address
-      } as TxDataSend;
-    }
-    else {
-      let encodedFunction = fullTxData.contract.interface.encodeFunctionData(
-        fullTxData.functionName,
-        fullTxData.params
-      );
-
-      return {
-        publicKeyHash: blsKeyHash(fullTxData.blsSigner),
-        tokenRewardAmount: fullTxData.reward,
-        ethValue: fullTxData.ethValue,
-        contractAddress: fullTxData.contract.address,
-        methodId: (encodedFunction!="")?encodedFunction.substring(0,10):"0x00000000",
-        encodedParams: (encodedFunction!="")?'0x'+encodedFunction.substr(10):"0x00"
-      } as TxDataCall;
-    }
-  }
-
-  async gatewaySend(txDataFull: FullTxData, address: string) {
-    txDataFull.functionName = "";
-    let [txData, sig] = blsSignFunction(txDataFull, address);
-    await this.blsSendSigned(txData as TxDataSend, sig);
-  }
-
-  async blsSendSigned(txData: TxDataSend, sig: solG1) {
-    // can be called by any ecdsa wallet
-    await (await this.verificationGateway.blsSend(
-      txData.publicKeyHash,
-      sig,
-      txData.tokenRewardAmount,
-      txData.ethValue,
-      txData.recipientAddress
-    )).wait();
-  }
   async gatewayCallFull(txDataFull: FullTxData) {
     let [txData, sig] = blsSignFunction(txDataFull);
-    await this.blsCallSigned(txData as TxDataCall, sig);
-  }
 
-  async blsCallSigned(txData: TxDataCall, sig: solG1) {
-    // can be called by any ecdsa wallet
-    await(await this.verificationGateway.blsCall(
-      txData.publicKeyHash,
+    await(await this.verificationGateway.actionCalls(
+      this.addresses[0],
+      [txDataFull.blsSigner.pubkey],
       sig,
-      txData.tokenRewardAmount,
-      txData.ethValue,
-      txData.contractAddress,
-      txData.methodId,
-      txData.encodedParams
+      [txData]
     )).wait();
   }
 
   async createBLSWallet(
     blsSigner: BlsSignerInterface,
+    rewardAddress: string = ethers.constants.AddressZero,
     reward: BigNumber = BigNumber.from(0)
   ): Promise<any> {
+    const blsPubKeyHash = blsKeyHash(blsSigner);
+
+    const existingAddress: string = await this.verificationGateway.walletFromHash(
+      blsPubKeyHash,
+    );
+  
+    if (existingAddress !== ethers.constants.AddressZero) {
+      return existingAddress;
+    }
+  
+    await this.gatewayCallFull({
+      blsSigner: blsSigner,
+      chainId: this.chainId,
+      nonce: 0,
+      rewardRecipient: rewardAddress,
+      rewardAmount: reward,
+      ethValue: BigNumber.from(0),
+      contract: this.verificationGateway,
+      functionName: "walletCrossCheck",
+      params: [blsPubKeyHash]
+    });
+
+    return (await this.verificationGateway.walletFromHash(blsPubKeyHash)) as string;
+
     return await createBLSWallet(
       this.chainId,
       this.verificationGateway,
       blsSigner,
+      this.addresses[0],
+      rewardAddress,
       reward
     );
   }
@@ -227,12 +206,16 @@ export default class Fixture {
    * Creates new BLS contract wallets from blsSigners
    * @returns array of wallet addresses 
    */
-  async createBLSWallets(reward: BigNumber = BigNumber.from(0)): Promise<string[]> {
+  async createBLSWallets(
+    rewardAddress: string = ethers.constants.AddressZero,
+    reward: BigNumber = BigNumber.from(0)
+    ): Promise<string[]> {
     const length = this.blsSigners.length;
     let blsWalletAddresses = new Array<string>(length);
     for (let i = 0; i<length; i++) {
       blsWalletAddresses[i] = await this.createBLSWallet(
         this.blsSigners[i],
+        rewardAddress,
         reward
       );
     }
