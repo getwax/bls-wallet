@@ -91,3 +91,5 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 ## Deploy scripts
 Specify network - `npx hardhat run scripts/<#_script.ts> --network optimism`
 
+# License
+MIT
