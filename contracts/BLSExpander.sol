@@ -72,6 +72,7 @@ contract BLSExpander is Initializable {
     function blsCallMultiSameCallerContractFunction(
         // address rewardRecipient,
         bytes32 publicKeyHash,
+        uint256 startNonce,
         uint256[2] memory signature,
         IERC20 rewardTokenAddress,
         uint256[] calldata rewardTokenAmounts,
@@ -83,7 +84,7 @@ contract BLSExpander is Initializable {
         VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
         for (uint256 i=0; i<length; i++) {
             txs[i].publicKeyHash = publicKeyHash;
-            txs[i].nonce = i+1;
+            txs[i].nonce = startNonce+i;
             txs[i].rewardTokenAddress = rewardTokenAddress;
             txs[i].rewardTokenAmount = rewardTokenAmounts[i];
             txs[i].ethValue = 0;

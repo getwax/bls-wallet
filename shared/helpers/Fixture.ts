@@ -60,8 +60,6 @@ export default class Fixture {
     public BLSExpander: ContractFactory,
     public blsExpander: Contract,
 
-    public encodedCreate: string,
-
     public BLSWallet: ContractFactory,
   ) {}
 
@@ -90,30 +88,29 @@ export default class Fixture {
       }
       blsSigners[i] = blsSignerFactory.getSigner(DOMAIN, "0x"+secretNumber.toString(16));
     }
-    
-    let BLS = await ethers.getContractFactory("BLSOpen");
-    let bls;
-    if (blsAddress) {
-      bls = BLS.attach(blsAddress);
-    }
-    else {
-      bls = await BLS.deploy();
-      await bls.deployed();
-    }
 
     // deploy Verification Gateway
     let VerificationGateway = await ethers.getContractFactory("VerificationGateway");
     let verificationGateway;
     if (vgAddress) {
       verificationGateway = VerificationGateway.attach(vgAddress);
+      console.log("Attached to VG. blsLib:", await verificationGateway.blsLib());
     }
     else {
+      let BLS = await ethers.getContractFactory("BLSOpen");
+      let bls;
+      if (blsAddress) {
+        bls = BLS.attach(blsAddress);
+      }
+      else {
+        bls = await BLS.deploy();
+        await bls.deployed();
+      }
       verificationGateway = await VerificationGateway.deploy();
       await verificationGateway.deployed();
       if (initialized) {
         await (await verificationGateway.initialize(
-          bls.address,
-          ethers.constants.AddressZero
+          bls.address
         )).wait();
       }
     }
@@ -129,11 +126,6 @@ export default class Fixture {
       await (await blsExpander.initialize(verificationGateway.address)).wait();
     }
 
-    let encodedCreate = utils.defaultAbiCoder.encode(
-      ["string"],
-      ["Create BLS Wallet."]
-    );
-
     let BLSWallet = await ethers.getContractFactory("BLSWallet");
   
     return new Fixture(
@@ -147,7 +139,6 @@ export default class Fixture {
       verificationGateway,
       BLSExpander,
       blsExpander,
-      encodedCreate,
       BLSWallet
     );
   }
@@ -173,11 +164,10 @@ export default class Fixture {
     const existingAddress: string = await this.verificationGateway.walletFromHash(
       blsPubKeyHash,
     );
-  
     if (existingAddress !== ethers.constants.AddressZero) {
       return existingAddress;
     }
-  
+
     await this.gatewayCallFull({
       blsSigner: blsSigner,
       chainId: this.chainId,
@@ -191,15 +181,6 @@ export default class Fixture {
     });
 
     return (await this.verificationGateway.walletFromHash(blsPubKeyHash)) as string;
-
-    return await createBLSWallet(
-      this.chainId,
-      this.verificationGateway,
-      blsSigner,
-      this.addresses[0],
-      rewardAddress,
-      reward
-    );
   }
 
   /**

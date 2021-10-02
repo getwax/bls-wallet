@@ -18,7 +18,7 @@ export default class TokenHelper {
   }
 
   /// @dev Contract deployed by first ethers signer, has initial supply
-  static async deployTestToken(balanceAddress:string=null): Promise<Contract> {
+  static async deployTestToken(balanceAddress:string=undefined): Promise<Contract> {
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     let mockERC20 = await MockERC20.deploy(
       "AnyToken",

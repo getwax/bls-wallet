@@ -51,6 +51,9 @@ const config: HardhatUserConfig = {
     ]
   },
   networks: {
+    hardhat: {
+      initialBaseFeePerGas: 0, // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
+    },
     gethDev: {
       url: `http://localhost:8545`,
       accounts: [

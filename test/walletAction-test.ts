@@ -14,26 +14,29 @@ import { BigNumber } from "ethers";
 import blsKeyHash from "../shared/helpers/blsKeyHash";
 import blsSignFunction from "../shared/helpers/blsSignFunction";
 import { formatUnits, parseEther } from "@ethersproject/units";
+import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
+import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
+import { exit } from "process";
 
 describe.only('WalletActions', async function () {
   this.beforeAll(async function () {
-    let BNPairingPrecompileCostEstimator = await ethers.getContractFactory("BNPairingPrecompileCostEstimator");
-    let bnPairingPrecompileCostEstimator = await BNPairingPrecompileCostEstimator.deploy();
-    await bnPairingPrecompileCostEstimator.deployed();
-    await (await bnPairingPrecompileCostEstimator.run()).wait();
-    console.log(bnPairingPrecompileCostEstimator.address);
+    if (network.name !== "rinkarby") {
+      console.log("PCE:", await deployAndRunPrecompileCostEstimator());
+    }
   });
 
   let fx: Fixture;
   let th: TokenHelper;
   beforeEach(async function() {
     if (network.name === "rinkarby") {
+      let config = getDeployedAddresses(network.name);
+
       fx = await Fixture.create(
         Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
         false,
-        '',
-        '0x0355b583379bE75bF8b88aBE5A2124c8F65242f2',
-        '0x266422dc7ecfeFcEDad5ecbd7B97B4c079d62DC2'
+        config.blsLibAddress,
+        config.vgAddress,
+        config.expanderAddress
       );
     }
     else {
@@ -60,7 +63,7 @@ describe.only('WalletActions', async function () {
 
     let walletBalanceBefore = await fx.provider.getBalance(walletAddress);
 
-    let ethToTransfer = utils.parseEther("0.001");
+    let ethToTransfer = utils.parseEther("0.0001");
 
     await fx.signers[0].sendTransaction({
       to: walletAddress,
@@ -71,20 +74,20 @@ describe.only('WalletActions', async function () {
     expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
   });
 
-  it('should send ETH (send only)', async function() {
+  it('should send ETH (empty call)', async function() {
     // send money to sender bls wallet
     let senderBlsSigner = fx.blsSigners[0];
     let receiverBlsSigner = fx.blsSigners[1];
     let senderAddress = await fx.createBLSWallet(senderBlsSigner);
     let receiverAddress:string = await fx.createBLSWallet(receiverBlsSigner);
-    let ethToTransfer = utils.parseEther("0.001");
+    let ethToTransfer = utils.parseEther("0.0001");
     await fx.signers[0].sendTransaction({
       to: senderAddress,
       value: ethToTransfer
     });
 
-    expect(await fx.provider.getBalance(senderAddress)).to.equal(ethToTransfer);
-    expect(await fx.provider.getBalance(receiverAddress)).to.equal(0);
+    let senderBalanceBefore = await fx.provider.getBalance(senderAddress);
+    let receiverBalanceBefore = await fx.provider.getBalance(receiverAddress);
 
     let ethSend_FullTxData:FullTxData = {
       blsSigner: senderBlsSigner,
@@ -103,8 +106,11 @@ describe.only('WalletActions', async function () {
 
     await fx.gatewayCallFull(ethSend_FullTxData);
 
-    expect(await fx.provider.getBalance(senderAddress)).to.equal(0);
-    expect(await fx.provider.getBalance(receiverAddress)).to.equal(ethToTransfer);
+    let senderBalanceAfter = await fx.provider.getBalance(senderAddress);
+    let receiverBalanceAfter = await fx.provider.getBalance(receiverAddress);
+
+    expect(senderBalanceBefore.sub(senderBalanceAfter)).to.equal(ethToTransfer);
+    expect(receiverBalanceAfter.sub(receiverBalanceBefore)).to.equal(ethToTransfer);
   })
 
   it('should send ETH with function call', async function() {
@@ -142,14 +148,13 @@ describe.only('WalletActions', async function () {
 
   it('should check signature', async function () {
     let blsSigner = fx.blsSigners[0];
-    await fx.createBLSWallet(blsSigner);
-
-    const blsPubKeyHash = blsKeyHash(blsSigner);
+    let blsWallet = fx.BLSWallet.attach(await fx.createBLSWallet(blsSigner));
+    let walletNonce = ((await blsWallet.nonce()) as BigNumber).toNumber();
 
     let [txData, signature] = blsSignFunction({
       blsSigner: blsSigner,
       chainId: fx.chainId,
-      nonce: 0,
+      nonce: walletNonce,
       rewardRecipient: ethers.constants.AddressZero,
       rewardAmount: BigNumber.from(0),
       ethValue: BigNumber.from(0),
@@ -181,7 +186,6 @@ describe.only('WalletActions', async function () {
       let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(th.userStartAmount);
     }
-
     // bls transfer each wallet's balance to first wallet
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       await th.transferFrom(
@@ -216,7 +220,8 @@ describe.only('WalletActions', async function () {
 
     let signatures: any[] = new Array(blsWalletAddresses.length);
     let encodedParams: string[] = new Array(blsWalletAddresses.length);
-    let nonce = await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce();
+    let startNonce = await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce();
+    let nonce = startNonce;
     let reward = BigNumber.from(0);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       // encode transfer of start amount to each wallet
@@ -242,6 +247,7 @@ describe.only('WalletActions', async function () {
 
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
       blsKeyHash(fx.blsSigners[0]),
+      startNonce,
       aggSignature,
       ethers.constants.AddressZero,
       Array(signatures.length).fill(0),

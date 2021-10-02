@@ -23,10 +23,9 @@ describe('TokenPayments', async function () {
   let blsWalletAddresses: string[];
 
   beforeEach(async function() {
-    fx = await Fixture.create(7, false);
+    fx = await Fixture.create(7);
     th = new TokenHelper(fx);
     blsWalletAddresses = await th.walletTokenSetup();
-    await fx.verificationGateway.initialize(th.testToken.address);
   });
 
   // it("should reward tx submitter (single call)", async function() {

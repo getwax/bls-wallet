@@ -21,7 +21,6 @@ export default async function createBLSWallet(
   const existingAddress: string = await verificationGateway.walletFromHash(
     blsPubKeyHash,
   );
-
   if (existingAddress !== ethers.constants.AddressZero) {
     return existingAddress;
   }
@@ -42,18 +41,6 @@ export default async function createBLSWallet(
   );
 
   const signature = blsSigner.sign(dataToSign);
-
-  // // can be called by any ecdsa wallet
-  // await (await verificationGateway.blsCallCreate(
-  //   blsSigner.pubkey,
-  //   signature,
-  //   reward,
-  //   ethValue,
-  //   verificationGateway.address,
-  //   encodedFunction.substring(0, 10),
-  //   "0x" + encodedFunction.substr(10),
-  // )).wait();
-  // can be called by any ecdsa wallet
 
   let data: TxData = {
     publicKeyHash: blsKeyHash(blsSigner),

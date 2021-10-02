@@ -20,16 +20,13 @@ contract VerificationGateway is Initializable
     mapping (bytes32 => uint256[BLS_LEN]) blsKeysFromHash;
     mapping (bytes32 => BLSWallet) public walletFromHash;
 
-    IERC20 public paymentToken;
-    IBLS blsLib;
+    IBLS public blsLib;
 
     /**
     @param bls verified bls library contract address
-    @param token default payment token
      */
-    function initialize(IBLS bls, IERC20 token) external initializer {
+    function initialize(IBLS bls) external initializer {
         blsLib = bls;
-        paymentToken = token;
     }
 
     event WalletCreated(
