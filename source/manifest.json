@@ -67,6 +67,7 @@
   }],
 
   "web_accessible_resources": [
-    "/assets/*"
+    "/assets/*",
+    "/js/pageContentScript.bundle.js"
   ]
 }

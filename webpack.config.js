@@ -28,6 +28,7 @@ const extensionReloaderPlugin =
         entries: {
           // TODO: reload manifest on update
           contentScript: 'contentScript',
+          pageContentScript: 'pageContentScript',
           background: 'background',
           extensionPage: ['popup', 'createTransaction'],
         },
@@ -64,6 +65,7 @@ module.exports = {
     manifest: path.join(sourcePath, 'manifest.json'),
     background: path.join(sourcePath, 'Background', 'index.ts'),
     contentScript: path.join(sourcePath, 'ContentScript', 'index.ts'),
+    pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
     createTransaction: path.join(sourcePath, 'createTransaction', 'index.tsx'),
   },
