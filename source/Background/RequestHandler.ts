@@ -42,7 +42,7 @@ export default function RequestHandler(): (
         }
 
         browser.windows.create({
-          url: browser.runtime.getURL('confirm.html'),
+          url: browser.runtime.getURL('confirm.html?promptText=test'),
           type: 'popup',
           width: popupWidth,
           height: 500,

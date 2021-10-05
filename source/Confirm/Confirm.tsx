@@ -42,7 +42,10 @@ export default class Popup extends React.Component<Props, State> {
           <CompactQuillHeading />
         </div>
         <div className="section prompt">
-          <div>Lorem ipsum</div>
+          <div>
+            {new URL(window.location.href).searchParams.get('promptText') ??
+              '(promptText not set)'}
+          </div>
           <div />
           <Button highlight={true} onPress={() => {}}>
             Yes
