@@ -1,9 +1,10 @@
 import { browser } from 'webextension-polyfill-ts';
 import { PostMessageTransportServer } from '../common/postMessaging';
+import RequestHandler from './RequestHandler';
 
-PostMessageTransportServer('quill-extension', async () => {
-  return 'test';
-});
+const requestHandler = RequestHandler();
+
+PostMessageTransportServer('quill-extension', requestHandler);
 
 const pageContentScriptTag = document.createElement('script');
 
