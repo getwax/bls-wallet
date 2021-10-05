@@ -59,7 +59,7 @@ export function PostMessageTransportServer(
       return;
     }
 
-    const { messageId } = evt.data.messageId;
+    const { messageId } = evt.data;
 
     let replied = false;
 

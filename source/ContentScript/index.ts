@@ -1,11 +1,8 @@
 import { browser } from 'webextension-polyfill-ts';
+import { PostMessageTransportServer } from '../common/postMessaging';
 
-console.log('helloworld from content script');
-
-window.addEventListener('message', (...args) => {
-  console.log('window message event captured by quill content script', {
-    args,
-  });
+PostMessageTransportServer('quill-extension', async () => {
+  return 'test';
 });
 
 const pageContentScriptTag = document.createElement('script');
