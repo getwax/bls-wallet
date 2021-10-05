@@ -7,8 +7,6 @@ import NotificationContainer from './components/NotificationContainer';
 import OverlayContainer from './components/OverlayContainer';
 import ScreenContainer from './components/ScreenContainer';
 
-import './styles.scss';
-
 type Props = {
   appPromise: Promise<App>;
 };

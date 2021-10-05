@@ -8,7 +8,7 @@ import App from '../App';
 import formatBalance from '../helpers/formatBalance';
 import formatCompactAddress from '../helpers/formatCompactAddress';
 import Button from '../../components/Button';
-import CompactQuillHeading from './CompactQuillHeading';
+import CompactQuillHeading from '../../components/CompactQuillHeading';
 import CopyIcon from './CopyIcon';
 import Grow from './Grow';
 

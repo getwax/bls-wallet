@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import App from '../App';
-import CompactQuillHeading from './CompactQuillHeading';
+import CompactQuillHeading from '../../components/CompactQuillHeading';
 import Tabs from './Tabs';
 import TransactionTab from './TransactionTab';
 
