@@ -30,7 +30,7 @@ const extensionReloaderPlugin =
           contentScript: 'contentScript',
           pageContentScript: 'pageContentScript',
           background: 'background',
-          extensionPage: ['popup', 'createTransaction'],
+          extensionPage: ['popup', 'createTransaction', 'confirm'],
         },
       })
     : () => {
@@ -68,6 +68,7 @@ module.exports = {
     pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
     createTransaction: path.join(sourcePath, 'createTransaction', 'index.tsx'),
+    confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
   },
 
   output: {
@@ -169,6 +170,13 @@ module.exports = {
       chunks: ['createTransaction'],
       hash: true,
       filename: 'createTransaction.html',
+    }),
+    new HtmlWebpackPlugin({
+      template: path.join(viewsPath, 'confirm.html'),
+      inject: 'body',
+      chunks: ['confirm'],
+      hash: true,
+      filename: 'confirm.html',
     }),
     // write css file(s) to build folder
     new MiniCssExtractPlugin({filename: 'css/[name].css'}),

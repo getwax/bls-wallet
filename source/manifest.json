@@ -16,6 +16,7 @@
   "permissions": [
     "activeTab",
     "storage",
+    "tabs",
     "http://*/*",
     "https://*/*"
   ],
@@ -68,6 +69,7 @@
 
   "web_accessible_resources": [
     "/assets/*",
-    "/js/pageContentScript.bundle.js"
+    "/js/pageContentScript.bundle.js",
+    "/confirm.html"
   ]
 }

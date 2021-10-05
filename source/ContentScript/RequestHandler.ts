@@ -1,3 +1,4 @@
+import { browser } from 'webextension-polyfill-ts';
 import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
 import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
@@ -16,6 +17,8 @@ export default function RequestHandler(): (
         if (!Array.isArray(value) || value.length < 1) {
           throw new Error('Expected array with at least one element');
         }
+
+        browser.runtime.sendMessage(undefined, 'confirm-demo');
 
         return [
           validateOptionalStringRecord([
