@@ -1,7 +1,7 @@
 import RpcMap from '../common/RpcMap';
 
 const notImplemented = {
-  validate: (_params: unknown): _params is never => {
+  validate: (_params: unknown) => {
     throw new Error('Not implemented');
   },
   handle: async () => {
@@ -14,16 +14,29 @@ export default function RequestHandler(): (
 ) => Promise<unknown> {
   const handlerMap: {
     [M in keyof RpcMap]: {
-      validate: (params: unknown) => params is RpcMap[M]['params'];
+      validate: (params: unknown) => RpcMap[M]['params'];
       handle: (...params: RpcMap[M]['params']) => Promise<RpcMap[M]['result']>;
     };
   } = {
     eth_sendTransaction: notImplemented,
     add: {
-      validate: (params): params is [number, number] =>
-        Array.isArray(params) &&
-        typeof params[0] === 'number' &&
-        typeof params[1] === 'number',
+      validate: (params) => {
+        if (!Array.isArray(params)) {
+          throw new Error('Expected array');
+        }
+
+        if (params.length !== 2) {
+          throw new Error('Expected two elements');
+        }
+
+        const [a, b] = params;
+
+        if (typeof a !== 'number' || typeof b !== 'number') {
+          throw new Error('Expected numbers');
+        }
+
+        return [a, b];
+      },
       handle: async (a, b) => a + b,
     },
   };
@@ -53,15 +66,11 @@ export default function RequestHandler(): (
 
     const validMethod = method as keyof typeof handlerMap;
 
-    const valid = handlerMap[validMethod].validate(requestRecord.params);
-
-    if (!valid) {
-      throw new Error('Params not valid');
-    }
+    const validParams = handlerMap[validMethod].validate(requestRecord.params);
 
     return await handlerMap[validMethod].handle(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...(requestRecord.params as any),
+      ...(validParams as any),
     );
   };
 }
