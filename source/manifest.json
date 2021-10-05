@@ -11,7 +11,7 @@
   },
   "description": "Web extension for managing a BLS wallet",
   "homepage_url": "https://blswallet.org",
-  "short_name": "Sample Name",
+  "short_name": "Quill",
 
   "permissions": [
     "activeTab",

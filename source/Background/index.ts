@@ -1,17 +1,13 @@
 import 'emoji-log';
 import { browser } from 'webextension-polyfill-ts';
 
-browser.runtime.onMessage.addListener(async (request, sender) => {
-  console.log(`Message from the content script:`, request, 'from', sender);
+import getPropOrUndefined from '../helpers/getPropOrUndefined';
+import RequestHandler from './RequestHandler';
 
-  if (request === 'confirm-demo') {
-    browser.windows.create({
-      url: browser.runtime.getURL('confirm.html'),
-      type: 'popup',
-      width: 359,
-      height: 500,
-    });
+const requestHandler = RequestHandler();
+
+browser.runtime.onMessage.addListener(async (request, _sender) => {
+  if (getPropOrUndefined(request, 'target') === 'quill-extension') {
+    return requestHandler(...request.args);
   }
-
-  return 'placeholder response';
 });
