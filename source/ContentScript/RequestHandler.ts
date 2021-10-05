@@ -1,13 +1,6 @@
+import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
-
-const notImplemented = {
-  validate: (_params: unknown) => {
-    throw new Error('Not implemented');
-  },
-  handle: async () => {
-    throw new Error('Not implemented');
-  },
-};
+import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
 
 export default function RequestHandler(): (
   ...args: unknown[]
@@ -18,7 +11,29 @@ export default function RequestHandler(): (
       handle: (...params: RpcMap[M]['params']) => Promise<RpcMap[M]['result']>;
     };
   } = {
-    eth_sendTransaction: notImplemented,
+    eth_sendTransaction: {
+      validate: (value: unknown) => {
+        if (!Array.isArray(value) || value.length < 1) {
+          throw new Error('Expected array with at least one element');
+        }
+
+        return [
+          validateOptionalStringRecord([
+            'nonce',
+            'gasPrice',
+            'gas',
+            'to',
+            'from',
+            'value',
+            'data',
+            'chainId',
+          ] as const)(value[0]),
+        ];
+      },
+      handle: () => {
+        throw new Error('Not implemented');
+      },
+    },
     add: {
       validate: (params) => {
         if (!Array.isArray(params)) {
@@ -66,7 +81,9 @@ export default function RequestHandler(): (
 
     const validMethod = method as keyof typeof handlerMap;
 
-    const validParams = handlerMap[validMethod].validate(requestRecord.params);
+    const validParams = addErrorContext(`${method} params`, () =>
+      handlerMap[validMethod].validate(requestRecord.params),
+    )();
 
     return await handlerMap[validMethod].handle(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
