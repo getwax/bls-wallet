@@ -9,8 +9,7 @@ import { browser } from 'webextension-polyfill-ts';
 import type AggregatorClient from '../AggregatorClient';
 import BlsWallet from '../chain/BlsWallet';
 import { PRIVATE_KEY_STORAGE_KEY } from '../env';
-import assert from '../helpers/assert';
-import Range from '../helpers/Range';
+import generateRandomHex from '../helpers/generateRandomHex';
 
 export type AppState = {
   privateKey?: string;
@@ -295,17 +294,4 @@ export default class App {
       },
     });
   }
-}
-
-function generateRandomHex(bits: number) {
-  const bytes = bits / 8;
-  assert(bytes === Math.round(bytes));
-
-  const hexBytes = Range(bytes).map(() =>
-    Math.floor(256 * Math.random())
-      .toString(16)
-      .padStart(2, '0'),
-  );
-
-  return `0x${hexBytes.join('')}`;
 }
