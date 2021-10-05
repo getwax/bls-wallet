@@ -13,7 +13,12 @@ export function PostMessageTransportClient(target: string): TransportClient {
       }, ackDelayMax);
 
       function messageListener(evt: MessageEvent) {
-        if (evt.data.messageId !== messageId) {
+        if (
+          // Ignore messages without our id
+          evt.data.messageId !== messageId ||
+          // The message we send out has our id, also ignore that
+          evt.data.target === target
+        ) {
           return;
         }
 
