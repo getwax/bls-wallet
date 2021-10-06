@@ -1,7 +1,7 @@
-import { browser } from 'webextension-polyfill-ts';
 import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
 import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
+import promptUser from './promptUser';
 
 export default function RequestHandler(): (
   ...args: unknown[]
@@ -32,21 +32,8 @@ export default function RequestHandler(): (
         ];
       },
       handle: async () => {
-        const lastWin = await browser.windows.getLastFocused();
-
-        const popupWidth = 359;
-        let left: number | undefined;
-
-        if (lastWin.width !== undefined && lastWin.left !== undefined) {
-          left = lastWin.left + lastWin.width - popupWidth - 20;
-        }
-
-        browser.windows.create({
-          url: browser.runtime.getURL('confirm.html?promptText=test'),
-          type: 'popup',
-          width: popupWidth,
-          height: 500,
-          left,
+        const promptResult = await promptUser({
+          promptText: 'Allow eth_sendTransaction?',
         });
 
         throw new Error('Not implemented');
