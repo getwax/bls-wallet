@@ -13,7 +13,7 @@ const pageEvents = new EventEmitter() as PageEvents;
 
 ReactDOM.render(
   <Page events={pageEvents}>
-    <CreateTransaction />
+    <CreateTransaction events={pageEvents} />
   </Page>,
   document.getElementById('create-transaction-root'),
 );
