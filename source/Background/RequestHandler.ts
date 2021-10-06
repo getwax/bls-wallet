@@ -80,7 +80,11 @@ export default function RequestHandler(
         const failures = await app.aggregatorClient.addTransaction(txData);
 
         if (failures.length > 0) {
-          throw new Error(`Failures from aggregator: ${failures.join(', ')}`);
+          throw new Error(
+            `Failures from aggregator: ${failures
+              .map((f) => f.description)
+              .join(', ')}`,
+          );
         }
 
         return 'Sent! (TODO: transaction receipt)';
