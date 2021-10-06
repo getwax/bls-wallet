@@ -86,12 +86,10 @@ export default class WalletService {
         {
           publicKeyHash: keccak256(tx.publicKey),
           tokenRewardAmount: tx.tokenRewardAmount,
-          ethValue: BigNumber.from(0),
+          ethValue: tx.ethValue,
           contractAddress: tx.contractAddress,
-          methodId: tx.encodedFunctionData === "0x"
-            ? "0x00000000"
-            : tx.encodedFunctionData.slice(0, 10),
-          encodedParams: `0x${tx.encodedFunctionData.slice(10)}`,
+          methodId: getMethodId(tx.encodedFunctionData),
+          encodedParams: getEncodedParams(tx.encodedFunctionData),
         },
         splitHex256(tx.signature),
         tx.encodedFunctionData === "0x",
@@ -135,10 +133,10 @@ export default class WalletService {
       txs.map((tx) => ({
         publicKeyHash: keccak256(tx.publicKey),
         tokenRewardAmount: tx.tokenRewardAmount,
-        ethValue: BigNumber.from(0),
+        ethValue: tx.ethValue,
         contractAddress: tx.contractAddress,
-        methodId: tx.encodedFunctionData.slice(0, 10),
-        encodedParams: `0x${tx.encodedFunctionData.slice(10)}`,
+        methodId: getMethodId(tx.encodedFunctionData),
+        encodedParams: getEncodedParams(tx.encodedFunctionData),
       })),
       { nonce: this.NextNonce() },
     ];
@@ -303,4 +301,14 @@ export default class WalletService {
 
     return aggregatorSigner;
   }
+}
+
+function getMethodId(encodedFunctionData: string) {
+  return encodedFunctionData === "0x"
+    ? "0x00000000"
+    : encodedFunctionData.slice(0, 10);
+}
+
+function getEncodedParams(encodedFunctionData: string) {
+  return `0x${encodedFunctionData.slice(10)}`;
 }
