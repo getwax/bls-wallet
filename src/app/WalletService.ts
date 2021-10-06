@@ -89,7 +89,7 @@ export default class WalletService {
           ethValue: BigNumber.from(0),
           contractAddress: tx.contractAddress,
           methodId: tx.encodedFunctionData === "0x"
-            ? "0x000000"
+            ? "0x00000000"
             : tx.encodedFunctionData.slice(0, 10),
           encodedParams: `0x${tx.encodedFunctionData.slice(10)}`,
         },
