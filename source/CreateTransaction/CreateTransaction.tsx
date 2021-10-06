@@ -1,8 +1,6 @@
 import * as React from 'react';
 import Button from '../components/Button';
 
-import './styles.scss';
-
 const CreateTransaction: React.FC = () => {
   return (
     <div className="create-transaction">
