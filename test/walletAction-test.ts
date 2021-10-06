@@ -16,9 +16,8 @@ import blsSignFunction from "../shared/helpers/blsSignFunction";
 import { formatUnits, parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
-import { exit } from "process";
 
-describe.only('WalletActions', async function () {
+describe('WalletActions', async function () {
   this.beforeAll(async function () {
     if (network.name !== "rinkarby") {
       console.log("PCE:", await deployAndRunPrecompileCostEstimator());

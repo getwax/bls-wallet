@@ -172,7 +172,6 @@ contract VerificationGateway is Initializable
     }
 
 
-    bytes32 immutable SEND_ONLY = 0x53454e445f4f4e4c590000000000000000000000000000000000000000000000;
     function messagePoint(
         TxData calldata txData
     ) internal view returns (uint256[2] memory) {
@@ -181,7 +180,6 @@ contract VerificationGateway is Initializable
             chainId := chainid()
         }
 
-        bool isSend = txData.encodedFunction.length == 0;
         return blsLib.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(
@@ -191,7 +189,7 @@ contract VerificationGateway is Initializable
                 txData.rewardTokenAmount,
                 txData.ethValue,
                 txData.contractAddress,
-                isSend ? SEND_ONLY : keccak256(txData.encodedFunction)
+                keccak256(txData.encodedFunction)
             )
         );
     }
