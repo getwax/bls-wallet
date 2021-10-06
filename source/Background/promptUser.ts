@@ -25,8 +25,8 @@ export default function promptUser(opt: {
       const popup = await browser.windows.create({
         url: browser.runtime.getURL(
           `confirm.html?promptText=${opt.promptText}&id=${id}&buttons=${(
-            opt.buttons ?? []
-          ).join(',')}}`,
+            opt.buttons ?? ['Yes', 'No']
+          ).join(',')}`,
         ),
         type: 'popup',
         width: popupWidth,

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { browser } from 'webextension-polyfill-ts';
 import TaskQueue from '../common/TaskQueue';
 import Button from '../components/Button';
 import CompactQuillHeading from '../components/CompactQuillHeading';
@@ -25,23 +26,44 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
+    const params = new URL(window.location.href).searchParams;
+    const id = params.get('id');
+    const promptText = params.get('promptText') ?? '(promptText not set)';
+    const buttons = parseButtons(params.get('buttons'));
+
     return (
       <div className="confirm">
         <div className="section">
           <CompactQuillHeading />
         </div>
         <div className="section prompt">
-          <div>
-            {new URL(window.location.href).searchParams.get('promptText') ??
-              '(promptText not set)'}
-          </div>
+          <div>{promptText}</div>
           <div />
-          <Button highlight={true} onPress={() => {}}>
-            Yes
-          </Button>
-          <Button onPress={() => {}}>No</Button>
+          {buttons.map((btnText, i) => (
+            <Button
+              highlight={i === 0}
+              onPress={() => {
+                browser.runtime.sendMessage(undefined, { id, result: btnText });
+              }}
+              key={btnText}
+            >
+              {btnText}
+            </Button>
+          ))}
         </div>
       </div>
     );
   }
+}
+
+function parseButtons(buttonsStr: string | null): string[] {
+  if (buttonsStr === null) {
+    return ['(buttons not set)'];
+  }
+
+  if (buttonsStr === '') {
+    return [];
+  }
+
+  return buttonsStr.split(',');
 }

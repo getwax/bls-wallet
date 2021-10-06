@@ -36,7 +36,11 @@ export default function RequestHandler(): (
           promptText: 'Allow eth_sendTransaction?',
         });
 
-        throw new Error('Not implemented');
+        if (promptResult !== 'Yes') {
+          throw new Error('Denied by user');
+        }
+
+        return 'todo';
       },
     },
     add: {
