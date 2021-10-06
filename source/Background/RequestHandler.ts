@@ -1,3 +1,6 @@
+import { BigNumber } from 'ethers';
+
+import App from '../App';
 import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
 import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
@@ -5,9 +8,9 @@ import formatBalance from '../Popup/helpers/formatBalance';
 import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 import promptUser from './promptUser';
 
-export default function RequestHandler(): (
-  ...args: unknown[]
-) => Promise<unknown> {
+export default function RequestHandler(
+  app: App,
+): (...args: unknown[]) => Promise<unknown> {
   const handlerMap: {
     [M in keyof RpcMap]: {
       validate: (params: unknown) => RpcMap[M]['params'];
@@ -48,6 +51,10 @@ export default function RequestHandler(): (
           throw new Error('Not implemented: "value" field missing');
         }
 
+        if (app.wallet === undefined) {
+          throw new Error('No wallet available');
+        }
+
         const promptResult = await promptUser({
           promptText: `Send ${formatBalance(
             tx.value,
@@ -59,7 +66,24 @@ export default function RequestHandler(): (
           throw new Error('Denied by user');
         }
 
-        return 'todo';
+        const txData = app.wallet.blsWalletSigner.sign(
+          {
+            nonce: await app.wallet.Nonce(),
+            tokenRewardAmount: BigNumber.from(0),
+            ethValue: BigNumber.from(tx.value),
+            contractAddress: tx.to,
+            encodedFunctionData: '0x',
+          },
+          app.wallet.privateKey,
+        );
+
+        const failures = await app.aggregatorClient.addTransaction(txData);
+
+        if (failures.length > 0) {
+          throw new Error(`Failures from aggregator: ${failures.join(', ')}`);
+        }
+
+        return 'Sent! (TODO: transaction receipt)';
       },
     },
     add: {

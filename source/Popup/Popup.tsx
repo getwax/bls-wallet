@@ -1,8 +1,8 @@
 import * as React from 'react';
 import TaskQueue from '../common/TaskQueue';
 
-import type App from './App';
-import { AppState } from './App';
+import type App from '../App';
+import { AppState } from '../App';
 import LoadingScreen from './components/LoadingScreen';
 import Page from '../components/Page';
 import KeyEntryScreen from './components/KeyEntryScreen';

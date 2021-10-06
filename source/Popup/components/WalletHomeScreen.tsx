@@ -4,7 +4,7 @@ import { browser } from 'webextension-polyfill-ts';
 import { CREATE_TX_URL } from '../../env';
 import assertExists from '../../helpers/assertExists';
 import defineAction from '../../helpers/defineAction';
-import App from '../App';
+import App from '../../App';
 import formatBalance from '../helpers/formatBalance';
 import formatCompactAddress from '../helpers/formatCompactAddress';
 import Button from '../../components/Button';

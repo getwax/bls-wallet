@@ -5,12 +5,12 @@ import type { ethers } from 'ethers';
 import type TypedEventEmitter from 'typed-emitter';
 
 import { browser } from 'webextension-polyfill-ts';
-import type AggregatorClient from '../AggregatorClient';
-import BlsWallet from '../chain/BlsWallet';
-import { PRIVATE_KEY_STORAGE_KEY } from '../env';
-import generateRandomHex from '../helpers/generateRandomHex';
-import TaskQueue from '../common/TaskQueue';
-import { PageEvents } from '../components/Page';
+import type AggregatorClient from './AggregatorClient';
+import BlsWallet from './chain/BlsWallet';
+import { PRIVATE_KEY_STORAGE_KEY } from './env';
+import generateRandomHex from './helpers/generateRandomHex';
+import TaskQueue from './common/TaskQueue';
+import { PageEvents } from './components/Page';
 
 export type AppState = {
   privateKey?: string;
