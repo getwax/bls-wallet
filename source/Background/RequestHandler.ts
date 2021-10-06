@@ -1,6 +1,8 @@
 import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
 import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
+import formatBalance from '../Popup/helpers/formatBalance';
+import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 import promptUser from './promptUser';
 
 export default function RequestHandler(): (
@@ -31,9 +33,26 @@ export default function RequestHandler(): (
           ] as const)(value[0]),
         ];
       },
-      handle: async () => {
+      handle: async (tx) => {
+        if (tx.to === undefined) {
+          throw new Error(
+            'Not implemented: "to" field missing (can be used for contract creation)',
+          );
+        }
+
+        if (!/^0x[0-9a-f]*$/i.test(tx.to) || tx.to.length !== 42) {
+          throw new Error('"to" field is not a valid address');
+        }
+
+        if (tx.value === undefined) {
+          throw new Error('Not implemented: "value" field missing');
+        }
+
         const promptResult = await promptUser({
-          promptText: 'Allow eth_sendTransaction?',
+          promptText: `Send ${formatBalance(
+            tx.value,
+            'ETH',
+          )} to ${formatCompactAddress(tx.to)}?`,
         });
 
         if (promptResult !== 'Yes') {
