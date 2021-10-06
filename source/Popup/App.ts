@@ -10,6 +10,7 @@ import type AggregatorClient from '../AggregatorClient';
 import BlsWallet from '../chain/BlsWallet';
 import { PRIVATE_KEY_STORAGE_KEY } from '../env';
 import generateRandomHex from '../helpers/generateRandomHex';
+import TaskQueue from '../common/TaskQueue';
 
 export type AppState = {
   privateKey?: string;
@@ -34,7 +35,7 @@ type Events = {
 
 export default class App {
   events = new EventEmitter() as TypedEventEmitter<Events>;
-  cleanupTasks: (() => void)[] = [];
+  cleanupTasks = new TaskQueue();
   wallet?: BlsWallet;
 
   state: AppState;
@@ -121,19 +122,7 @@ export default class App {
   }
 
   cleanup(): void {
-    while (true) {
-      const task = this.cleanupTasks.shift();
-
-      if (task === undefined) {
-        break;
-      }
-
-      try {
-        task();
-      } catch (error) {
-        console.error(error);
-      }
-    }
+    this.cleanupTasks.run();
   }
 
   setState(updates: Partial<AppState>): void {

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import TaskQueue from '../common/TaskQueue';
 import Button from '../components/Button';
 import CompactQuillHeading from '../components/CompactQuillHeading';
 
@@ -11,7 +12,7 @@ type State = {
 };
 
 export default class Popup extends React.Component<Props, State> {
-  cleanupTasks: (() => void)[] = [];
+  cleanupTasks = new TaskQueue();
 
   constructor(props: Props) {
     super(props);
@@ -20,19 +21,7 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   componentWillUnmount(): void {
-    while (true) {
-      const task = this.cleanupTasks.shift();
-
-      if (task === undefined) {
-        break;
-      }
-
-      try {
-        task();
-      } catch (error) {
-        console.error(error);
-      }
-    }
+    this.cleanupTasks.run();
   }
 
   render(): React.ReactNode {
