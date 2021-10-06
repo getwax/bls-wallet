@@ -1,9 +1,9 @@
 import * as React from 'react';
-import delay from '../../helpers/delay';
-import App, { Overlay } from '../App';
+import delay from '../helpers/delay';
+import type { PageEvents, PageOverlay } from './Page';
 
 type Props = {
-  app: App;
+  events: PageEvents;
 };
 
 type State = {
@@ -25,10 +25,10 @@ export default class OverlayContainer extends React.Component<Props, State> {
     super(props);
 
     this.state = initialState;
-    this.props.app.events.on('overlay', this.onOverlay);
+    this.props.events.on('overlay', this.onOverlay);
   }
 
-  onOverlay = async (overlay: Overlay): Promise<void> => {
+  onOverlay = async (overlay: PageOverlay): Promise<void> => {
     const overlayRender = overlay(close);
     let isClosed = false;
 
@@ -64,7 +64,7 @@ export default class OverlayContainer extends React.Component<Props, State> {
   };
 
   componentWillUnmount(): void {
-    this.props.app.events.off('overlay', this.onOverlay);
+    this.props.events.off('overlay', this.onOverlay);
   }
 
   setTarget(updates: Partial<State>): void {

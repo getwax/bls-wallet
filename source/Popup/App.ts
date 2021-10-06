@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 
-import * as React from 'react';
 import { BlsWalletSigner } from 'bls-wallet-signer';
 import type { ethers } from 'ethers';
 import type TypedEventEmitter from 'typed-emitter';
@@ -11,6 +10,7 @@ import BlsWallet from '../chain/BlsWallet';
 import { PRIVATE_KEY_STORAGE_KEY } from '../env';
 import generateRandomHex from '../helpers/generateRandomHex';
 import TaskQueue from '../common/TaskQueue';
+import { PageEvents } from '../components/Page';
 
 export type AppState = {
   privateKey?: string;
@@ -24,17 +24,13 @@ export type AppState = {
   };
 };
 
-export type Overlay = (close: () => void) => React.ReactElement;
-
 type Events = {
   state(state: AppState): void;
-  notification(level: 'info' | 'error', text: string): void;
-  overlay(overlay: Overlay): void;
-  screen(screen: React.ReactElement): void;
 };
 
 export default class App {
   events = new EventEmitter() as TypedEventEmitter<Events>;
+  pageEvents = new EventEmitter() as PageEvents;
   cleanupTasks = new TaskQueue();
   wallet?: BlsWallet;
 
@@ -166,7 +162,7 @@ export default class App {
       2 * expectedBytes; // 2 hex characters per byte
 
     if (privateKey.length !== expectedLength) {
-      this.events.emit(
+      this.pageEvents.emit(
         'notification',
         'error',
         'Failed to restore private key: incorrect length',
@@ -175,7 +171,7 @@ export default class App {
     }
 
     if (!/0x([0-9a-f])*$/i.test(privateKey)) {
-      this.events.emit(
+      this.pageEvents.emit(
         'notification',
         'error',
         'Failed to restore private key: incorrect format',

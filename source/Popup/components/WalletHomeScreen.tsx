@@ -90,7 +90,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
         className="field-value grow"
         {...defineAction(() => {
           navigator.clipboard.writeText(publicKey);
-          props.app.events.emit(
+          props.app.pageEvents.emit(
             'notification',
             'info',
             'BLS public key copied to clipboard',
@@ -105,7 +105,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
           src={browser.runtime.getURL('assets/download.svg')}
           text="Backup private key"
           onAction={() =>
-            props.app.events.emit('overlay', (close) => (
+            props.app.pageEvents.emit('overlay', (close) => (
               <CopyPrivateKeyPrompt app={props.app} close={close} />
             ))
           }
@@ -114,7 +114,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
           src={browser.runtime.getURL('assets/trashcan.svg')}
           text="Delete BLS key"
           onAction={() =>
-            props.app.events.emit('overlay', (close) => (
+            props.app.pageEvents.emit('overlay', (close) => (
               <DeleteKeyPrompt app={props.app} close={close} />
             ))
           }
@@ -169,7 +169,7 @@ const AddressField = (props: {
       className="field-value grow"
       {...defineAction(() => {
         navigator.clipboard.writeText(props.address);
-        props.app.events.emit(
+        props.app.pageEvents.emit(
           'notification',
           'info',
           'Address copied to clipboard',
@@ -269,7 +269,7 @@ const CopyPrivateKeyPrompt = (props: {
       onPress={() => {
         navigator.clipboard.writeText(assertExists(props.app.state.privateKey));
         props.close();
-        props.app.events.emit(
+        props.app.pageEvents.emit(
           'notification',
           'info',
           'BLS private key copied to clipboard',

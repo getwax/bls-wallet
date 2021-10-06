@@ -1,9 +1,10 @@
 import * as React from 'react';
-import delay from '../../helpers/delay';
-import App from '../App';
+
+import delay from '../helpers/delay';
+import type { PageEvents } from './Page';
 
 type Props = {
-  app: App;
+  events: PageEvents;
 };
 
 type Level = 'info' | 'error';
@@ -32,7 +33,7 @@ export default class NotificationContainer extends React.Component<
     super(props);
 
     this.state = initialState;
-    this.props.app.events.on('notification', this.onNotify);
+    this.props.events.on('notification', this.onNotify);
   }
 
   onNotify = async (level: 'info' | 'error', text: string): Promise<void> => {
@@ -53,7 +54,7 @@ export default class NotificationContainer extends React.Component<
   };
 
   componentWillUnmount(): void {
-    this.props.app.events.off('notification', this.onNotify);
+    this.props.events.off('notification', this.onNotify);
   }
 
   setTarget(updates: Partial<State>): void {
