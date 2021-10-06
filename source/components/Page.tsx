@@ -17,7 +17,6 @@ export type PageEvents = TypedEventEmitter<PageEventMap>;
 
 type Props = {
   classes?: string[];
-  home: React.ReactElement;
   events: PageEvents;
 };
 
@@ -30,7 +29,9 @@ export default class Page extends React.Component<Props, State> {
 
     return (
       <div className={classes.join(' ')}>
-        <ScreenContainer home={this.props.home} events={this.props.events} />
+        <ScreenContainer events={this.props.events}>
+          {this.props.children}
+        </ScreenContainer>
         <NotificationContainer events={this.props.events} />
         <OverlayContainer events={this.props.events} />
       </div>

@@ -4,8 +4,9 @@ import TaskQueue from '../common/TaskQueue';
 import type App from './App';
 import { AppState } from './App';
 import LoadingScreen from './components/LoadingScreen';
-import DefaultScreen from './components/DefaultScreen';
 import Page from '../components/Page';
+import KeyEntryScreen from './components/KeyEntryScreen';
+import WalletHomeScreen from './components/WalletHomeScreen';
 
 type Props = {
   appPromise: Promise<App>;
@@ -50,11 +51,15 @@ export default class Popup extends React.Component<Props, State> {
     }
 
     return (
-      <Page
-        classes={['popup']}
-        home={<DefaultScreen app={this.state.app} />}
-        events={this.state.app.pageEvents}
-      />
+      <Page classes={['popup']} events={this.state.app.pageEvents}>
+        {(() => {
+          if (this.state.app.state.privateKey === undefined) {
+            return <KeyEntryScreen app={this.state.app} />;
+          }
+
+          return <WalletHomeScreen app={this.state.app} />;
+        })()}
+      </Page>
     );
   }
 }

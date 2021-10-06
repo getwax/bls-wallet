@@ -8,7 +8,6 @@ import OverrideScreen, {
 import type { PageEvents } from './Page';
 
 type Props = {
-  home: React.ReactElement;
   events: PageEvents;
 };
 
@@ -61,7 +60,8 @@ export default class ScreenContainer extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
-    const currentScreen = this.state.screens.slice(-1)[0] ?? this.props.home;
+    const currentScreen =
+      this.state.screens.slice(-1)[0] ?? this.props.children;
 
     return (
       <div className="screen">
