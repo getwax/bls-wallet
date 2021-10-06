@@ -4,10 +4,8 @@ import TaskQueue from '../common/TaskQueue';
 import type App from './App';
 import { AppState } from './App';
 import LoadingScreen from './components/LoadingScreen';
-import NotificationContainer from '../components/NotificationContainer';
-import OverlayContainer from '../components/OverlayContainer';
-import ScreenContainer from '../components/ScreenContainer';
 import DefaultScreen from './components/DefaultScreen';
+import Page from '../components/Page';
 
 type Props = {
   appPromise: Promise<App>;
@@ -52,14 +50,11 @@ export default class Popup extends React.Component<Props, State> {
     }
 
     return (
-      <div className="popup">
-        <ScreenContainer
-          home={<DefaultScreen app={this.state.app} />}
-          events={this.state.app.pageEvents}
-        />
-        <NotificationContainer events={this.state.app.pageEvents} />
-        <OverlayContainer events={this.state.app.pageEvents} />
-      </div>
+      <Page
+        classes={['popup']}
+        home={<DefaultScreen app={this.state.app} />}
+        events={this.state.app.pageEvents}
+      />
     );
   }
 }

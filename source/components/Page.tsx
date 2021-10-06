@@ -16,6 +16,7 @@ export type PageEventMap = {
 export type PageEvents = TypedEventEmitter<PageEventMap>;
 
 type Props = {
+  classes?: string[];
   home: React.ReactElement;
   events: PageEvents;
 };
@@ -23,10 +24,12 @@ type Props = {
 // eslint-disable-next-line @typescript-eslint/ban-types
 type State = {};
 
-export default class Popup extends React.Component<Props, State> {
+export default class Page extends React.Component<Props, State> {
   render(): React.ReactNode {
+    const classes = ['page', ...(this.props.classes ?? [])];
+
     return (
-      <div className="page">
+      <div className={classes.join(' ')}>
         <ScreenContainer home={this.props.home} events={this.props.events} />
         <NotificationContainer events={this.props.events} />
         <OverlayContainer events={this.props.events} />
