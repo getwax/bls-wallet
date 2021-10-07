@@ -11,6 +11,7 @@ import TxTable, { TxTableRow } from "./TxTable.ts";
 import WalletService, { TxCheckResult } from "./WalletService.ts";
 import AppEvent from "./AppEvent.ts";
 import nil from "../helpers/nil.ts";
+import VirtualBalanceTable from "./VirtualBalanceTable.ts";
 
 export default class TxService {
   static defaultConfig = {
@@ -283,10 +284,11 @@ export default class TxService {
       return [{
         type: "insufficient-reward",
         description: [
-          `${BigNumber.from(newTx.tokenRewardAmount)} is an`,
-          "insufficient reward because there is already a tx with this nonce",
-          "with a reward of",
-          BigNumber.from(existingTx.tokenRewardAmount),
+          `${BigNumber.from(newTx.rewardTokenAmount)} of`,
+          `${newTx.rewardTokenAddress} is an insufficient reward because there`,
+          "is already a tx with this nonce with reward",
+          `${BigNumber.from(existingTx.rewardTokenAmount)} of`,
+          existingTx.rewardTokenAddress,
         ].join(" "),
       }];
     }
@@ -424,15 +426,26 @@ export default class TxService {
   }
 
   isRewardBetter(left: TransactionData, right: TransactionData) {
-    const leftReward = BigNumber.from(left.tokenRewardAmount);
-    const rightReward = BigNumber.from(right.tokenRewardAmount);
+    if (left.rewardTokenAddress !== right.rewardTokenAddress) {
+      // Assume the reward is not better if it's a different token 🤷‍♂️
+      // (Sorting with isRewardBetter would probably be a bad idea)
+      return false;
+    }
+
+    const leftReward = BigNumber.from(left.rewardTokenAmount);
+    const rightReward = BigNumber.from(right.rewardTokenAmount);
 
     return leftReward.gt(rightReward);
   }
 
   pickBestReward(txs: TransactionData[]) {
+    // 'Best' is probably over-promising a bit. Since rewards can be in
+    // different tokens, isRewardBetter resorts to defaulting to false if they
+    // don't match. The result here is that we pick the highest reward amount
+    // for the first token that we see.
+
     return txs.reduce((left, right) =>
-      this.isRewardBetter(left, right) ? left : right
+      this.isRewardBetter(right, left) ? right : left
     );
   }
 
@@ -444,13 +457,8 @@ export default class TxService {
         this.config.txQueryLimit,
       );
 
-      const publicKeys = PublicKeys(priorityTxs);
-
-      const rewardBalances = Object.fromEntries(
-        await Promise.all(publicKeys.map(async (pk) => [
-          pk,
-          await this.walletService.getRewardBalanceOf(pk),
-        ])),
+      const rewardBalances = new VirtualBalanceTable(
+        (owner, token) => this.walletService.getBalanceOf(owner, token),
       );
 
       const batchTxs: TxTableRow[] = [];
@@ -462,11 +470,14 @@ export default class TxService {
           continue;
         }
 
-        if (rewardBalances[tx.publicKey].gte(tx.tokenRewardAmount)) {
-          batchTxs.push(tx);
+        const withdrawSuccess = await rewardBalances.tryWithdraw(
+          tx.publicKey,
+          tx.rewardTokenAddress,
+          tx.rewardTokenAmount,
+        );
 
-          rewardBalances[tx.publicKey] = rewardBalances[tx.publicKey]
-            .sub(tx.tokenRewardAmount);
+        if (withdrawSuccess) {
+          batchTxs.push(tx);
         } else {
           insufficientRewardTxs.push(tx);
           gappedPublicKeys.push(tx.publicKey);

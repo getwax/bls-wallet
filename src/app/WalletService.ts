@@ -34,7 +34,6 @@ const addressStringLength = 42;
 const publicKeyStringLength = 258;
 
 export default class WalletService {
-  rewardErc20: Contract;
   verificationGateway: Contract;
 
   constructor(
@@ -43,12 +42,6 @@ export default class WalletService {
     public blsWalletSigner: BlsWalletSigner,
     public nextNonce: number,
   ) {
-    this.rewardErc20 = new Contract(
-      env.REWARD_TOKEN_ADDRESS,
-      ovmContractABIs.MockERC20.abi,
-      this.aggregatorSigner,
-    );
-
     this.verificationGateway = new Contract(
       env.VERIFICATION_GATEWAY_ADDRESS,
       ovmContractABIs.VerificationGateway.abi,
@@ -79,21 +72,7 @@ export default class WalletService {
   }
 
   async checkTx(tx: TransactionData): Promise<TxCheckResult> {
-    const [signedCorrectly, nextNonce]: [boolean, BigNumber] = await this
-      .verificationGateway
-      .checkSig(
-        tx.nonce,
-        {
-          publicKeyHash: keccak256(tx.publicKey),
-          tokenRewardAmount: tx.tokenRewardAmount,
-          ethValue: tx.ethValue,
-          contractAddress: tx.contractAddress,
-          methodId: getMethodId(tx.encodedFunctionData),
-          encodedParams: getEncodedParams(tx.encodedFunctionData),
-        },
-        splitHex256(tx.signature),
-        tx.encodedFunctionData === "0x",
-      );
+    const signedCorrectly = this.blsWalletSigner.verify(tx);
 
     const failures: TransactionFailure[] = [];
 
@@ -103,6 +82,11 @@ export default class WalletService {
         description: "invalid signature",
       });
     }
+
+    const nextNonce = await BlsWallet.Nonce(
+      tx.publicKey,
+      this.aggregatorSigner,
+    );
 
     if (BigNumber.from(tx.nonce).lt(nextNonce)) {
       failures.push({
@@ -127,16 +111,23 @@ export default class WalletService {
 
     const aggregateTx = this.blsWalletSigner.aggregate(txs);
 
-    const blsCallManyArgs = [
+    const actionCallsArgs = [
       this.aggregatorSigner.address,
+
+      // Enhancement: Public keys here are not used for wallets that already
+      // exist. In future, in combination with BLSExpander, passing zeros may
+      // be preferred to reduce the amount of call data.
+      txs.map((tx) => splitHex256(tx.publicKey)),
+
       splitHex256(aggregateTx.signature),
       txs.map((tx) => ({
         publicKeyHash: keccak256(tx.publicKey),
-        tokenRewardAmount: tx.tokenRewardAmount,
+        nonce: tx.nonce,
+        rewardTokenAddress: tx.rewardTokenAddress,
+        rewardTokenAmount: tx.rewardTokenAmount,
         ethValue: tx.ethValue,
         contractAddress: tx.contractAddress,
-        methodId: getMethodId(tx.encodedFunctionData),
-        encodedParams: getEncodedParams(tx.encodedFunctionData),
+        encodedFunction: tx.encodedFunction,
       })),
       { nonce: this.NextNonce() },
     ];
@@ -145,8 +136,8 @@ export default class WalletService {
       let txResponse: ethers.providers.TransactionResponse;
 
       try {
-        txResponse = await this.verificationGateway.blsCallMany(
-          ...blsCallManyArgs,
+        txResponse = await this.verificationGateway.actionCalls(
+          ...actionCallsArgs,
         );
       } catch (error) {
         // Distinguish this error because it means something bigger is wrong
@@ -200,24 +191,6 @@ export default class WalletService {
     throw new Error("Expected return or throw from attempt loop");
   }
 
-  async sendTx(
-    tx: TransactionData,
-  ): Promise<ethers.providers.TransactionReceipt> {
-    const txResponse = await this
-      .verificationGateway.blsCall(
-        ethers.utils.keccak256(tx.publicKey),
-        splitHex256(tx.signature),
-        BigNumber.from(tx.tokenRewardAmount),
-        BigNumber.from(0),
-        tx.contractAddress,
-        tx.encodedFunctionData.slice(0, 10),
-        `0x${tx.encodedFunctionData.slice(10)}`,
-        { nonce: this.NextNonce() },
-      );
-
-    return await txResponse.wait();
-  }
-
   async createWallet(
     tx: TransactionData,
   ): Promise<CreateWalletResult> {
@@ -237,15 +210,7 @@ export default class WalletService {
       return { address: nil, failures };
     }
 
-    await (await this.verificationGateway.blsCallCreate(
-      splitHex256(tx.publicKey),
-      splitHex256(tx.signature),
-      tx.tokenRewardAmount,
-      BigNumber.from(0),
-      tx.contractAddress,
-      tx.encodedFunctionData.slice(0, 10),
-      `0x${tx.encodedFunctionData.slice(10)}`,
-    )).wait();
+    await this.sendTxs([tx], Infinity, 300);
 
     const address = await this.verificationGateway.walletFromHash(
       keccak256(tx.publicKey),
@@ -254,9 +219,19 @@ export default class WalletService {
     return { address, failures };
   }
 
-  async getRewardBalanceOf(addressOrPublicKey: string): Promise<BigNumber> {
-    const address = await this.WalletAddress(addressOrPublicKey);
-    return await this.rewardErc20.balanceOf(address);
+  async getBalanceOf(
+    ownerAddressOrPublicKey: string,
+    tokenAddress: string,
+  ): Promise<BigNumber> {
+    const address = await this.WalletAddress(ownerAddressOrPublicKey);
+
+    const token = new ethers.Contract(
+      tokenAddress,
+      ovmContractABIs.IERC20.abi,
+      this.aggregatorSigner.provider,
+    );
+
+    return await token.balanceOf(address);
   }
 
   async WalletAddress(addressOrPublicKey: string): Promise<string> {
@@ -301,14 +276,4 @@ export default class WalletService {
 
     return aggregatorSigner;
   }
-}
-
-function getMethodId(encodedFunctionData: string) {
-  return encodedFunctionData === "0x"
-    ? "0x00000000"
-    : encodedFunctionData.slice(0, 10);
-}
-
-function getEncodedParams(encodedFunctionData: string) {
-  return `0x${encodedFunctionData.slice(10)}`;
 }

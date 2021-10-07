@@ -1,4 +1,4 @@
-import { ethers, Router } from "../../deps.ts";
+import { Router } from "../../deps.ts";
 
 import AdminService from "./AdminService.ts";
 
@@ -20,13 +20,6 @@ export default function AdminRouter(adminService: AdminService) {
   router.get("sendBatch", async (ctx) => {
     await adminService.sendBatch();
     ctx.response.body = "Sent batch of transactions";
-  });
-
-  router.get("aggregatorBalance", async (ctx) => {
-    ctx.response.body = ethers.utils.formatUnits(
-      (await adminService.getAggregatorBalance()).toString(),
-      18,
-    );
   });
 
   return router;

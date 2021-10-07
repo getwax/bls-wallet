@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { BigNumber } from "../deps.ts";
+import { BigNumber, TransactionData } from "../deps.ts";
 import Client from "../src/app/Client.ts";
 import * as env from "../src/env.ts";
 import Range from "../src/helpers/Range.ts";
@@ -13,14 +13,15 @@ function dummyHex(length: number) {
   }`;
 }
 
-const tx = {
+const tx: TransactionData = {
   publicKey: dummyHex(128),
   nonce: BigNumber.from(1),
   signature: dummyHex(64),
-  tokenRewardAmount: BigNumber.from(123),
+  rewardTokenAddress: dummyHex(20),
+  rewardTokenAmount: BigNumber.from(123),
   ethValue: BigNumber.from(0),
   contractAddress: dummyHex(20),
-  encodedFunctionData: dummyHex(11),
+  encodedFunction: dummyHex(11),
 };
 
 console.log("sending", tx);

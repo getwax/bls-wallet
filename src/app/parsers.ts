@@ -128,10 +128,11 @@ export function parseTransactionDataDto(
     field(txData, "publicKey", parseHex({ bytes: 128 })),
     field(txData, "signature", parseHex({ bytes: 64 })),
     field(txData, "nonce", parseHex()),
-    field(txData, "tokenRewardAmount", parseHex()),
+    field(txData, "rewardTokenAddress", parseHex({ bytes: 20 })),
+    field(txData, "rewardTokenAmount", parseHex()),
     field(txData, "ethValue", parseHex()),
     field(txData, "contractAddress", parseHex({ bytes: 20 })),
-    field(txData, "encodedFunctionData", parseHex()),
+    field(txData, "encodedFunction", parseHex()),
   );
 
   if ("failures" in result) {
@@ -142,10 +143,11 @@ export function parseTransactionDataDto(
     publicKey,
     signature,
     nonce,
-    tokenRewardAmount,
+    rewardTokenAddress,
+    rewardTokenAmount,
     ethValue,
     contractAddress,
-    encodedFunctionData,
+    encodedFunction,
   ] = result.success;
 
   return {
@@ -153,10 +155,11 @@ export function parseTransactionDataDto(
       publicKey,
       signature,
       nonce,
-      tokenRewardAmount,
+      rewardTokenAddress,
+      rewardTokenAmount,
       ethValue,
       contractAddress,
-      encodedFunctionData,
+      encodedFunction,
     },
   };
 }

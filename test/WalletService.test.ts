@@ -15,7 +15,7 @@ Fixture.test("WalletService sends single tx", async (fx) => {
     nonce: await wallet.Nonce(),
   });
 
-  await fx.walletService.sendTx(tx);
+  await fx.walletService.sendTxs([tx]);
 
   const balance: BigNumber = await fx.testErc20.balanceOf(wallet.address);
 
@@ -32,7 +32,7 @@ Fixture.test("WalletService sends single transfer tx", async (fx) => {
     nonce: await wallets[0].Nonce(),
   });
 
-  await fx.walletService.sendTx(tx);
+  await fx.walletService.sendTxs([tx]);
 
   const balances: BigNumber[] = await Promise.all(wallets.map(
     (w) => fx.testErc20.balanceOf(w.address),
@@ -50,11 +50,11 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "3"],
-      tokenRewardAmount: BigNumber.from(8),
+      rewardTokenAmount: BigNumber.from(8),
       nonce: await wallet.Nonce(),
     });
 
-    await fx.walletService.sendTx(tx);
+    await fx.walletService.sendTxs([tx]);
 
     assertEquals(
       (await fx.testErc20.balanceOf(wallet.address)).toNumber(),
@@ -62,8 +62,7 @@ Fixture.test(
     );
 
     assertEquals(
-      (await fx.walletService.rewardErc20.balanceOf(wallet.address))
-        .toNumber(),
+      (await fx.rewardErc20.balanceOf(wallet.address)).toNumber(),
       1000 - 8,
     );
   },
@@ -174,14 +173,14 @@ Fixture.test(
         contract: fx.testErc20.contract,
         method: "mint",
         args: [wallet.address, "3"],
-        tokenRewardAmount: BigNumber.from(8),
+        rewardTokenAmount: BigNumber.from(8),
         nonce: walletNonce,
       }),
       wallet.sign({
         contract: fx.testErc20.contract,
         method: "mint",
         args: [wallet.address, "5"],
-        tokenRewardAmount: BigNumber.from(13),
+        rewardTokenAmount: BigNumber.from(13),
         nonce: walletNonce.add(1),
       }),
     ]);
@@ -192,8 +191,7 @@ Fixture.test(
     );
 
     assertEquals(
-      (await fx.walletService.rewardErc20.balanceOf(wallet.address))
-        .toNumber(),
+      (await fx.rewardErc20.balanceOf(wallet.address)).toNumber(),
       1000 - 21,
     );
   },

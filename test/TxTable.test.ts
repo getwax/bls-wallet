@@ -1,4 +1,4 @@
-import { assertEquals, BigNumber, TransactionData } from "./deps.ts";
+import { assertEquals, BigNumber, ethers, TransactionData } from "./deps.ts";
 
 import TxTable from "../src/app/TxTable.ts";
 import createQueryClient from "../src/app/createQueryClient.ts";
@@ -34,10 +34,11 @@ const sampleTransactions: TransactionData[] = [
     publicKey: "publicKey",
     nonce: BigNumber.from(123),
     signature: "signature",
-    tokenRewardAmount: BigNumber.from(0),
+    rewardTokenAddress: ethers.constants.AddressZero,
+    rewardTokenAmount: BigNumber.from(0),
     ethValue: BigNumber.from(0),
     contractAddress: "contractAddress",
-    encodedFunctionData: "encodedFunctionData",
+    encodedFunction: "encodedFunctionData",
   },
 ];
 
