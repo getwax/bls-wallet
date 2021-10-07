@@ -2,10 +2,11 @@ import { BigNumber } from "@ethersproject/bignumber";
 
 export type RawTransactionData = {
   nonce: BigNumber;
-  tokenRewardAmount: BigNumber;
+  rewardTokenAddress: string;
+  rewardTokenAmount: BigNumber;
   ethValue: BigNumber;
   contractAddress: string;
-  encodedFunctionData: string;
+  encodedFunction: string;
 };
 
 export type TransactionData = RawTransactionData & {
@@ -17,10 +18,11 @@ export type AggregateTransactionData = {
   transactions: {
     publicKey: string;
     nonce: BigNumber;
-    tokenRewardAmount: BigNumber;
+    rewardTokenAddress: string;
+    rewardTokenAmount: BigNumber;
     ethValue: BigNumber;
     contractAddress: string;
-    encodedFunctionData: string;
+    encodedFunction: string;
   }[],
   signature: string,
 };
