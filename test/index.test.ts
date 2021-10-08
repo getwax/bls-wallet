@@ -14,10 +14,11 @@ const samples = (() => {
 
   const rawTx: RawTransactionData = {
     nonce: BigNumber.from(123),
-    tokenRewardAmount: BigNumber.from(0),
+    rewardTokenAddress: "0x00",
+    rewardTokenAmount: BigNumber.from(0),
     ethValue: BigNumber.from(0),
     contractAddress,
-    encodedFunctionData: "0x00",
+    encodedFunction: "0x00",
   };
 
   const privateKey = dummy256HexString;
@@ -43,8 +44,8 @@ describe("index", () => {
     const tx = sign(rawTx, privateKey);
 
     expect(tx.signature).to.equal([
-      "0x1cafe561a44d1c05fce30f2751d498977f69a179d1ab2e0adb1ec64726c8d2bd2e3e7",
-      "e05f784a3d962c6b4ff508f177518bc7d63f86accfabe10272de552a3e2",
+      "0x1fa9f87b5a23bf50508381109729aa9738dd68b44fd34143e5fc49fd35f812841470d",
+      "edaf87aa073099d3fcff212f02bb2295f62756624daa996173270fa0b15",
     ].join(""));
 
     expect(verify(tx)).to.equal(true);
@@ -60,7 +61,7 @@ describe("index", () => {
       ...tx,
 
       // Pretend the client signed that they pay the aggregator a million tokens
-      tokenRewardAmount: weiPerToken.mul(1000000),
+      rewardTokenAmount: weiPerToken.mul(1000000),
     }
 
     expect(verify(txBadMessage)).to.equal(false);
@@ -79,8 +80,8 @@ describe("index", () => {
     const aggregateTx = aggregate([tx, tx]);
 
     expect(aggregateTx.signature).to.equal([
-      "0x272bb5add2990283a24f35f10affa52282be6b175501d1fd2af10439fbecfa3a2d982",
-      "e5069ef118bd0a5ef60fdbb98e90322577dbc8be6b5dd1eef148ff0b03d",
+      "0x011e6a5d683219dd2644e6a4edb5da2bf5c40ac061c77295a093bfc24a7192501c5c4",
+      "3331cdd91996a4b5b039ea57430191bb870419a58d1e88125ebafc6ddd8",
     ].join(""));
 
     expect(verifyAggregate(aggregateTx)).to.equal(true);
@@ -94,7 +95,7 @@ describe("index", () => {
 
           // Pretend this client signed that they pay the aggregator a million
           // tokens
-          tokenRewardAmount: weiPerToken.mul(1000000),
+          rewardTokenAmount: weiPerToken.mul(1000000),
         }
       ],
     }
