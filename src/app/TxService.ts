@@ -470,13 +470,17 @@ export default class TxService {
           continue;
         }
 
-        const withdrawSuccess = await rewardBalances.tryWithdraw(
-          tx.publicKey,
-          tx.rewardTokenAddress,
-          tx.rewardTokenAmount,
-        );
+        let txOk = true;
 
-        if (withdrawSuccess) {
+        if (!tx.rewardTokenAmount.eq(0)) {
+          txOk &&= await rewardBalances.tryWithdraw(
+            tx.publicKey,
+            tx.rewardTokenAddress,
+            tx.rewardTokenAmount,
+          );
+        }
+
+        if (txOk) {
           batchTxs.push(tx);
         } else {
           insufficientRewardTxs.push(tx);
