@@ -31,6 +31,8 @@ export default class Mutex {
     return new Promise<Lock>((resolve) => this.#queue.push(resolve));
   }
 
+  // Enhancement: add lockForTask(task: () => void)
+
   isLocked() {
     return this.#currentLock !== nil;
   }

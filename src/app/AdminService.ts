@@ -19,12 +19,6 @@ export default class AdminService {
     await this.walletService.sendTxs(txs);
   }
 
-  async getAggregatorBalance() {
-    return await this.walletService.getRewardBalanceOf(
-      this.walletService.aggregatorSigner.address,
-    );
-  }
-
   async txCount() {
     return await this.readyTxTable.count();
   }

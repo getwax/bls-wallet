@@ -68,12 +68,10 @@ export default class BlsWallet {
     return blsWalletSigner.sign(
       {
         contractAddress: verificationGateway.address,
-        encodedFunctionData: verificationGateway.interface.encodeFunctionData(
-          "walletCrossCheck",
-          [blsWalletSigner.getPublicKeyHash(privateKey)],
-        ),
+        encodedFunction: "0x",
         nonce: BigNumber.from(0),
-        tokenRewardAmount: BigNumber.from(0),
+        rewardTokenAddress: ethers.constants.AddressZero,
+        rewardTokenAmount: BigNumber.from(0),
         ethValue: BigNumber.from(0),
       },
       privateKey,
@@ -85,7 +83,6 @@ export default class BlsWallet {
     signerOrProvider: SignerOrProvider,
   ): Promise<{ failures: string[] }> {
     const blsWalletSigner = await this.#BlsWalletSigner(signerOrProvider);
-    const verificationGateway = this.#VerificationGateway(signerOrProvider);
 
     const failures: string[] = [];
 
@@ -93,18 +90,8 @@ export default class BlsWallet {
       failures.push("invalid signature");
     }
 
-    const expectedEncodedFunctionData = verificationGateway.interface
-      .encodeFunctionData(
-        "walletCrossCheck",
-        [keccak256(tx.publicKey)],
-      );
-
-    if (tx.encodedFunctionData !== expectedEncodedFunctionData) {
+    if (tx.encodedFunction !== "0x") {
       failures.push("encoded function data mismatch");
-    }
-
-    if (tx.contractAddress !== verificationGateway.address) {
-      failures.push("contract address mismatch");
     }
 
     return { failures };
@@ -129,14 +116,19 @@ export default class BlsWallet {
 
     const tx = await BlsWallet.signCreation(privateKey, parent);
 
-    await (await this.#VerificationGateway(parent).blsCallCreate(
-      splitHex256(tx.publicKey),
+    await (await this.#VerificationGateway(parent).actionCalls(
+      ethers.constants.AddressZero,
+      [splitHex256(tx.publicKey)],
       splitHex256(tx.signature),
-      tx.tokenRewardAmount,
-      tx.ethValue,
-      tx.contractAddress,
-      tx.encodedFunctionData.slice(0, 10),
-      `0x${tx.encodedFunctionData.slice(10)}`,
+      [{
+        publicKeyHash: keccak256(tx.publicKey),
+        nonce: tx.nonce,
+        rewardTokenAddress: tx.rewardTokenAddress,
+        rewardTokenAmount: tx.rewardTokenAmount,
+        ethValue: tx.ethValue,
+        contractAddress: tx.contractAddress,
+        encodedFunction: tx.encodedFunction,
+      }],
     )).wait();
 
     wallet = await BlsWallet.connect(privateKey, parent.provider);
@@ -192,6 +184,26 @@ export default class BlsWallet {
     return await this.walletContract.nonce();
   }
 
+  static async Nonce(
+    publicKey: string,
+    signerOrProvider: SignerOrProvider,
+  ): Promise<BigNumber> {
+    const verificationGateway = await this.#VerificationGateway(
+      signerOrProvider,
+    );
+
+    const publicKeyHash = keccak256(publicKey);
+    const contractAddress = verificationGateway.walletFromHash(publicKeyHash);
+
+    const walletContract = new ethers.Contract(
+      contractAddress,
+      ovmContractABIs.BLSWallet.abi,
+      signerOrProvider,
+    );
+
+    return walletContract.nonce();
+  }
+
   /**
    * Sign a transaction, producing a `TransactionData` object suitable for use
    * with an aggregator.
@@ -200,26 +212,29 @@ export default class BlsWallet {
     contract,
     method,
     args,
-    tokenRewardAmount = BigNumber.from(0),
+    rewardTokenAddress = ethers.constants.AddressZero,
+    rewardTokenAmount = BigNumber.from(0),
     ethValue = BigNumber.from(0),
     nonce,
   }: {
     contract: ethers.Contract;
     method: string;
     args: string[];
-    tokenRewardAmount?: BigNumber;
+    rewardTokenAddress?: string;
+    rewardTokenAmount?: BigNumber;
     ethValue?: BigNumber;
     nonce: BigNumber;
   }): TransactionData {
     return this.blsWalletSigner.sign(
       {
         contractAddress: contract.address,
-        encodedFunctionData: contract.interface.encodeFunctionData(
+        encodedFunction: contract.interface.encodeFunctionData(
           method,
           args,
         ),
         nonce,
-        tokenRewardAmount,
+        rewardTokenAddress,
+        rewardTokenAmount,
         ethValue,
       },
       this.privateKey,

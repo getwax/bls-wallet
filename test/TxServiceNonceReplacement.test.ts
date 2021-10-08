@@ -49,14 +49,14 @@ Fixture.test(
     const [wallet] = await fx.setupWallets(1);
     let walletNonce = await wallet.Nonce();
 
-    await fx.walletService.sendTx(
+    await fx.walletService.sendTxs([
       wallet.sign({
-        contract: fx.walletService.rewardErc20,
+        contract: fx.rewardErc20.contract,
         method: "mint",
         args: [wallet.address, "1"],
         nonce: walletNonce,
       }),
-    );
+    ]);
 
     walletNonce = walletNonce.add(1);
 
@@ -79,7 +79,8 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "5"],
-      tokenRewardAmount: BigNumber.from(1),
+      rewardTokenAddress: fx.rewardErc20.contract.address,
+      rewardTokenAmount: BigNumber.from(1),
       nonce: walletNonce,
     });
 
@@ -107,7 +108,8 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "3"],
-      tokenRewardAmount: BigNumber.from(2),
+      rewardTokenAddress: fx.rewardErc20.contract.address,
+      rewardTokenAmount: BigNumber.from(2),
       nonce: walletNonce,
     });
 
@@ -125,7 +127,8 @@ Fixture.test(
       args: [wallet.address, "5"],
       // because the previous tx isn't on chain, the default nonce offset of
       // zero should conflict
-      tokenRewardAmount: BigNumber.from(1),
+      rewardTokenAddress: fx.rewardErc20.contract.address,
+      rewardTokenAmount: BigNumber.from(1),
       nonce: walletNonce,
     });
 
@@ -196,7 +199,8 @@ function reinsertionTest(extraTxs: number) {
         contract: fx.testErc20.contract,
         method: "mint",
         args: [w1.address, "11"],
-        tokenRewardAmount: BigNumber.from(1),
+        rewardTokenAddress: fx.rewardErc20.contract.address,
+        rewardTokenAmount: BigNumber.from(1),
         nonce: w1Nonce.add(1),
       });
 

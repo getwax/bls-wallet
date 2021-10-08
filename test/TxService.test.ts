@@ -329,7 +329,8 @@ function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
           method: "mint",
           args: [wallet.address, "3"],
           nonce: walletNonce.add(1),
-          tokenRewardAmount: BigNumber.from(i === 1 ? 1 : 0),
+          rewardTokenAddress: fx.rewardErc20.contract.address,
+          rewardTokenAmount: BigNumber.from(i === 1 ? 1 : 0),
         });
 
         const failures = await txService.add(futureTx);

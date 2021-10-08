@@ -24,10 +24,11 @@ type RawTxTableRow = {
   publicKey: string;
   signature: string;
   nonce: number;
-  tokenRewardAmount: string;
+  rewardTokenAddress: string;
+  rewardTokenAmount: string;
   ethValue: string;
   contractAddress: string;
-  encodedFunctionData: string;
+  encodedFunction: string;
 };
 
 const txOptions: TableOptions = {
@@ -35,10 +36,11 @@ const txOptions: TableOptions = {
   publicKey: { type: DataType.VarChar, length: 258 },
   signature: { type: DataType.VarChar, length: 130 },
   nonce: { type: DataType.Integer },
-  tokenRewardAmount: { type: DataType.VarChar, length: 66 },
+  rewardTokenAddress: { type: DataType.VarChar, length: 42 },
+  rewardTokenAmount: { type: DataType.VarChar, length: 66 },
   ethValue: { type: DataType.VarChar, length: 66 },
   contractAddress: { type: DataType.VarChar, length: 42 },
-  encodedFunctionData: { type: DataType.VarChar },
+  encodedFunction: { type: DataType.VarChar },
 };
 
 export type TxTableRow = TransactionData & { txId?: number };
@@ -54,7 +56,7 @@ function toRawRow(row: TxTableRow): RawTxTableRow {
     // - https://github.com/jzaki/bls-wallet-aggregator/issues/36
     nonce: row.nonce.toNumber(),
 
-    tokenRewardAmount: row.tokenRewardAmount.toHexString(),
+    rewardTokenAmount: row.rewardTokenAmount.toHexString(),
     ethValue: row.ethValue.toHexString(),
   };
 }
@@ -63,7 +65,7 @@ function fromRawRow(row: RawTxTableRow): TxTableRow {
   return {
     ...row,
     nonce: BigNumber.from(row.nonce),
-    tokenRewardAmount: BigNumber.from(row.tokenRewardAmount),
+    rewardTokenAmount: BigNumber.from(row.rewardTokenAmount),
     ethValue: BigNumber.from(row.ethValue),
   };
 }

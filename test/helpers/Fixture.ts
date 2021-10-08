@@ -26,6 +26,7 @@ export default class Fixture {
     Deno.test({
       name,
       sanitizeOps: false,
+      sanitizeResources: false,
       fn: async () => {
         const fx = await Fixture.create(name);
 
@@ -45,7 +46,7 @@ export default class Fixture {
 
     const walletService = await WalletService.create(
       (evt) => fx.emit(evt),
-      rng.seed("aggregatorSigner").address(),
+      env.PRIVATE_KEY_AGG,
     );
 
     const chainId =
@@ -79,6 +80,7 @@ export default class Fixture {
   clock = new TestClock();
 
   testErc20: MockErc20;
+  rewardErc20: MockErc20;
   adminWallet: ethers.Wallet;
 
   private constructor(
@@ -92,9 +94,14 @@ export default class Fixture {
       this.walletService.aggregatorSigner,
     );
 
+    this.rewardErc20 = new MockErc20(
+      env.REWARD_TOKEN_ADDRESS,
+      this.walletService.aggregatorSigner,
+    );
+
     this.adminWallet = AdminWallet(
       this.walletService.aggregatorSigner.provider,
-      this.rng.seed("admin-wallet").address(),
+      env.PRIVATE_KEY_ADMIN,
     );
   }
 
@@ -155,14 +162,7 @@ export default class Fixture {
    */
   async setupWallets(count: number, ...extraSeeds: string[]) {
     const wallets = [];
-
-    const tokens = [
-      this.testErc20,
-      new MockErc20(
-        this.walletService.rewardErc20.address,
-        this.walletService.aggregatorSigner.provider,
-      ),
-    ];
+    const tokens = [this.testErc20, this.rewardErc20];
 
     // Unfortunately attempting to parallelize these causes duplicate nonce
     // issues. This might be mitigated by collecting `TransactionResponse`s in a
