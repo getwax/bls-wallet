@@ -143,8 +143,8 @@ const NetworkField = (): React.ReactElement => (
         )}")`,
       }}
     >
-      <option>Optimism</option>
       <option>Arbitrum</option>
+      <option disabled>Optimism</option>
     </select>
     <div className="field-trailer" />
   </div>
