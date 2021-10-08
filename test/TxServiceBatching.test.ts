@@ -188,6 +188,7 @@ Fixture.test(
         contract: fx.testErc20.contract,
         method: "mint",
         args: [wallet.address, "1"],
+        rewardTokenAddress: fx.rewardErc20.contract.address,
         rewardTokenAmount: BigNumber.from(
           [
             800, // First tx will work because 800 <= 1000

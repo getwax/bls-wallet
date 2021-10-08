@@ -50,6 +50,7 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "3"],
+      rewardTokenAddress: fx.rewardErc20.contract.address,
       rewardTokenAmount: BigNumber.from(8),
       nonce: await wallet.Nonce(),
     });
@@ -173,6 +174,7 @@ Fixture.test(
         contract: fx.testErc20.contract,
         method: "mint",
         args: [wallet.address, "3"],
+        rewardTokenAddress: fx.rewardErc20.contract.address,
         rewardTokenAmount: BigNumber.from(8),
         nonce: walletNonce,
       }),
@@ -180,6 +182,7 @@ Fixture.test(
         contract: fx.testErc20.contract,
         method: "mint",
         args: [wallet.address, "5"],
+        rewardTokenAddress: fx.rewardErc20.contract.address,
         rewardTokenAmount: BigNumber.from(13),
         nonce: walletNonce.add(1),
       }),
