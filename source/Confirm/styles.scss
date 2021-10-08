@@ -1,0 +1,10 @@
+@import "../styles/quill";
+
+.quill {
+  .prompt {
+    padding: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}

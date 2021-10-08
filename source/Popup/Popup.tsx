@@ -1,13 +1,12 @@
 import * as React from 'react';
+import TaskQueue from '../common/TaskQueue';
 
-import type App from './App';
-import { AppState } from './App';
+import type App from '../App';
+import { AppState } from '../App';
 import LoadingScreen from './components/LoadingScreen';
-import NotificationContainer from './components/NotificationContainer';
-import OverlayContainer from './components/OverlayContainer';
-import ScreenContainer from './components/ScreenContainer';
-
-import './styles.scss';
+import Page from '../components/Page';
+import KeyEntryScreen from './components/KeyEntryScreen';
+import WalletHomeScreen from './components/WalletHomeScreen';
 
 type Props = {
   appPromise: Promise<App>;
@@ -19,7 +18,7 @@ type State = {
 };
 
 export default class Popup extends React.Component<Props, State> {
-  cleanupTasks: (() => void)[] = [];
+  cleanupTasks = new TaskQueue();
 
   constructor(props: Props) {
     super(props);
@@ -39,19 +38,7 @@ export default class Popup extends React.Component<Props, State> {
   }
 
   componentWillUnmount(): void {
-    while (true) {
-      const task = this.cleanupTasks.shift();
-
-      if (task === undefined) {
-        break;
-      }
-
-      try {
-        task();
-      } catch (error) {
-        console.error(error);
-      }
-    }
+    this.cleanupTasks.run();
   }
 
   render(): React.ReactNode {
@@ -64,11 +51,15 @@ export default class Popup extends React.Component<Props, State> {
     }
 
     return (
-      <div className="popup">
-        <ScreenContainer app={this.state.app} />
-        <NotificationContainer app={this.state.app} />
-        <OverlayContainer app={this.state.app} />
-      </div>
+      <Page classes={['popup']} events={this.state.app.pageEvents}>
+        {(() => {
+          if (this.state.app.state.privateKey === undefined) {
+            return <KeyEntryScreen app={this.state.app} />;
+          }
+
+          return <WalletHomeScreen app={this.state.app} />;
+        })()}
+      </Page>
     );
   }
 }

@@ -13,6 +13,7 @@
   "rules": {
     "consistent-return": "off",
     "no-console": "off",
+    "no-continue": "off",
     "no-extend-native": "off",
     "no-constant-condition": "off",
     "no-return-await": "off",

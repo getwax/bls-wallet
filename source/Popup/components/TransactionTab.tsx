@@ -1,5 +1,5 @@
 import * as React from 'react';
-import App from '../App';
+import App from '../../App';
 import formatBalance from '../helpers/formatBalance';
 
 type Props = {

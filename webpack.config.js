@@ -28,8 +28,9 @@ const extensionReloaderPlugin =
         entries: {
           // TODO: reload manifest on update
           contentScript: 'contentScript',
+          pageContentScript: 'pageContentScript',
           background: 'background',
-          extensionPage: ['popup', 'options'],
+          extensionPage: ['popup', 'createTransaction', 'confirm'],
         },
       })
     : () => {
@@ -64,8 +65,10 @@ module.exports = {
     manifest: path.join(sourcePath, 'manifest.json'),
     background: path.join(sourcePath, 'Background', 'index.ts'),
     contentScript: path.join(sourcePath, 'ContentScript', 'index.ts'),
+    pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
-    options: path.join(sourcePath, 'Options', 'index.tsx'),
+    createTransaction: path.join(sourcePath, 'createTransaction', 'index.tsx'),
+    confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
   },
 
   output: {
@@ -162,11 +165,18 @@ module.exports = {
       filename: 'popup.html',
     }),
     new HtmlWebpackPlugin({
-      template: path.join(viewsPath, 'options.html'),
+      template: path.join(viewsPath, 'createTransaction.html'),
       inject: 'body',
-      chunks: ['options'],
+      chunks: ['createTransaction'],
       hash: true,
-      filename: 'options.html',
+      filename: 'createTransaction.html',
+    }),
+    new HtmlWebpackPlugin({
+      template: path.join(viewsPath, 'confirm.html'),
+      inject: 'body',
+      chunks: ['confirm'],
+      hash: true,
+      filename: 'confirm.html',
     }),
     // write css file(s) to build folder
     new MiniCssExtractPlugin({filename: 'css/[name].css'}),

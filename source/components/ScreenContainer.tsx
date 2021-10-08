@@ -1,12 +1,14 @@
 import * as React from 'react';
 
-import App from '../App';
 import Button from './Button';
-import DefaultScreen from './DefaultScreen';
-import OverrideScreen, { overrideScreenEnabled } from './OverrideScreen';
+// import DefaultScreen from '../Popup/components/DefaultScreen';
+import OverrideScreen, {
+  overrideScreenEnabled,
+} from '../Popup/components/OverrideScreen';
+import type { PageEvents } from './Page';
 
 type Props = {
-  app: App;
+  events: PageEvents;
 };
 
 type State = {
@@ -26,10 +28,10 @@ export default class ScreenContainer extends React.Component<Props, State> {
     this.state = initialState;
 
     if (overrideScreenEnabled) {
-      this.state.screens.push(<OverrideScreen app={props.app} key={1} />);
+      this.state.screens.push(<OverrideScreen key={1} />);
     }
 
-    this.props.app.events.on('screen', this.onScreen);
+    this.props.events.on('screen', this.onScreen);
   }
 
   onScreen = async (screen: React.ReactElement): Promise<void> => {
@@ -39,7 +41,7 @@ export default class ScreenContainer extends React.Component<Props, State> {
   };
 
   componentWillUnmount(): void {
-    this.props.app.events.off('screen', this.onScreen);
+    this.props.events.off('screen', this.onScreen);
   }
 
   setTarget(updates: Partial<State>): void {
@@ -58,9 +60,8 @@ export default class ScreenContainer extends React.Component<Props, State> {
   }
 
   render(): React.ReactNode {
-    const currentScreen = this.state.screens.slice(-1)[0] ?? (
-      <DefaultScreen app={this.props.app} />
-    );
+    const currentScreen =
+      this.state.screens.slice(-1)[0] ?? this.props.children;
 
     return (
       <div className="screen">
