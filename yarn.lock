@@ -2477,10 +2477,10 @@ bl@^4.0.3:
     inherits "^2.0.4"
     readable-stream "^3.4.0"
 
-bls-wallet-signer@^0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/bls-wallet-signer/-/bls-wallet-signer-0.4.0.tgz#4fac40db3b571f12432c17f5ee096a042dea71e4"
-  integrity sha512-9BBDRiM3zgyyGj9jMVwsvuHpLeDg1YZZye7gaqDM6JmaWJwTcIjSpVL5rgv+fbMfI0ANMptvT87bJmuskgDlCw==
+bls-wallet-signer@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/bls-wallet-signer/-/bls-wallet-signer-0.5.0.tgz#d7ff196a4ca46dad052fa4a7abd2b301300ef010"
+  integrity sha512-86zDFU9Du9arI6nf3PWpFPCWStf8YhzpDBbWKdqvWfOUTw+j78n/zDsYDE27dREbZH93v7oG4tE7FDYP2rnF3g==
   dependencies:
     "@ethersproject/abi" "^5.4.0"
     "@ethersproject/bignumber" "^5.4.1"

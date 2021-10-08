@@ -95,7 +95,7 @@ function toDto(tx: TransactionData): TransactionDataDTO {
   return {
     ...tx,
     nonce: tx.nonce.toHexString(),
-    tokenRewardAmount: tx.tokenRewardAmount.toHexString(),
+    rewardTokenAmount: tx.rewardTokenAmount.toHexString(),
     ethValue: tx.ethValue.toHexString(),
   };
 }
