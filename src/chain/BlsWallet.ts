@@ -120,7 +120,7 @@ export default class BlsWallet {
       ethers.constants.AddressZero,
       [splitHex256(tx.publicKey)],
       splitHex256(tx.signature),
-      {
+      [{
         publicKeyHash: keccak256(tx.publicKey),
         nonce: tx.nonce,
         rewardTokenAddress: tx.rewardTokenAddress,
@@ -128,7 +128,7 @@ export default class BlsWallet {
         ethValue: tx.ethValue,
         contractAddress: tx.contractAddress,
         encodedFunction: tx.encodedFunction,
-      },
+      }],
     )).wait();
 
     wallet = await BlsWallet.connect(privateKey, parent.provider);

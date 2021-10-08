@@ -26,6 +26,7 @@ export default class Fixture {
     Deno.test({
       name,
       sanitizeOps: false,
+      sanitizeResources: false,
       fn: async () => {
         const fx = await Fixture.create(name);
 
@@ -45,7 +46,7 @@ export default class Fixture {
 
     const walletService = await WalletService.create(
       (evt) => fx.emit(evt),
-      rng.seed("aggregatorSigner").address(),
+      env.PRIVATE_KEY_AGG,
     );
 
     const chainId =
@@ -100,7 +101,7 @@ export default class Fixture {
 
     this.adminWallet = AdminWallet(
       this.walletService.aggregatorSigner.provider,
-      this.rng.seed("admin-wallet").address(),
+      env.PRIVATE_KEY_ADMIN,
     );
   }
 
