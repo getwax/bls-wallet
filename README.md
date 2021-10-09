@@ -103,7 +103,62 @@ NB each test must use unique address(es). (+ init code)
 
 ## Development
 
-VSCode + Deno extension
+### Environment
+
+This project is written in TypeScript targeting Deno. To get your tools to
+interpret the code correctly you'll need deno-specific tooling - if you're using
+VS Code then you should get the
+[Deno Extension](https://marketplace.visualstudio.com/items?itemName=denoland.vscode-deno).
+
+### Programs
+
+The main entry point is located at `./programs/aggregator.ts`, but there are
+other useful utilities in there that call into `src`, such as
+`./programs/showTables.ts`. Everything in `src` is library-style code - it
+provides functions, classes, constants etc, but doesn't do anything on its own
+if you run it directly.
+
+### Testing
+
+Tests are defined in `test`. Running them directly is a bit verbose because of
+the deno flags you need:
+
+```sh
+deno test -j --allow-net --allow-env --allow-read --unstable -- --env local
+```
+
+Instead, `./programs/premerge.ts` may be more useful for you. It'll make sure
+all TypeScript compiles correctly before running anything (in deno it's easy to
+have broken TypeScript lying around because it only compiles the sources that
+are actually imported whenever you run something). There's also a bunch of other
+checking going on. As the name suggests, it's a good idea to make sure this
+script completes successfully before merging into main.
+
+### Notable Components
+
+- **src/chain**: Should contain all of the contract interactions, exposing more
+  suitable abstractions to the rest of the code. There's still some contract
+  interaction in `WalletService` and in tests though.
+- **`BlsWallet`**: Models a BLS smart contract wallet (see
+  [BLSWallet.sol](https://github.com/jzaki/bls-wallet-contracts/blob/main/contracts/BLSWallet.sol)).
+- **`app.ts`**: Runs the app (the aggregator), requiring only a definition of
+  what to do with the events (invoked with `console.log` by
+  `programs/aggregator.ts`).
+- **`WalletService`**: Responsible for submitting aggregations (aka batches)
+  once they have been formed. This was where all the contract interaction was
+  before `src/chain`. Probably needs a rename and some rethinking.
+- **`TxService`**: Keeps track of all stored transactions, as well as accepting
+  (or rejecting) them and sending off batches to `WalletService`.
+- **`TxTable`**: Abstraction layer over postgres transaction tables, exposing
+  typed functions instead of queries. Handles conversions to and from the field
+  types supported by postgres so that other code can has a uniform js-friendly
+  interface
+  ([`TransactionData`](https://github.com/jzaki/bls-wallet-signer/blob/673e2ae/src/types.ts#L12)).
+- **`Client`**: Provides an abstraction over the external HTTP interface so that
+  programs talking to the aggregator can do so via regular js functions with
+  types instead of dealing with raw HTTP. (This should maybe find its way into a
+  separate library - at the moment bls-wallet-extension uses this via ad hoc
+  copy+paste.)
 
 ## System Diagram
 
