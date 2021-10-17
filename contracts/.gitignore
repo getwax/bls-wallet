@@ -1,0 +1,15 @@
+.envrc
+.env*
+!.env.example
+node_modules
+
+#Hardhat files
+artifacts
+cache
+
+#Optimism files
+artifacts-ovm
+cache-ovm
+
+#editor files
+.vscode
