@@ -1,0 +1,7 @@
+*
+!/dist/src/**/*
+!/dist/deps/**/*
+!/src/**/*
+!/deps/**/*
+!/package.json
+!/README.md
