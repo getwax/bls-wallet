@@ -1,0 +1,13 @@
+@import "../styles/quill";
+
+#create-transaction-root {
+  height: 100vh;
+}
+
+.create-transaction {
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+}

@@ -1,0 +1,35 @@
+$primary-dark: #2d2b39;
+$primary-base-btn-active: hsl(248, 46%, 35%);
+$primary-base: #453898;
+$primary-light: #b8b2de;
+$primary-faded: #f2f1f8;
+
+$tone-grey: #555555;
+$tone-grey-mid: #8b8b8b;
+$tone-grey-light: #cccccc;
+$tone-grey-lightest: #ebebeb;
+$tone-white: #fafafa;
+$tone-dark: #353535;
+
+$alert-dark: #57112A;
+$alert-base: #cb5c7e;
+$alert-light: #f8e6ef;
+
+// fonts
+$nunito: "Nunito", sans-serif;
+
+// font weights
+$thin: 100;
+$exlight: 200;
+$light: 300;
+$regular: 400;
+$medium: 500;
+$semibold: 600;
+$bold: 700;
+$exbold: 800;
+$exblack: 900;
+
+// other variables
+.d-none {
+  display: none !important;
+}

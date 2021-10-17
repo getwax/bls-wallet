@@ -1,0 +1,58 @@
+{
+  "extends": [
+    "@abhijithvijayan/eslint-config/typescript",
+    "@abhijithvijayan/eslint-config/node",
+    "@abhijithvijayan/eslint-config/react"
+  ],
+  "parserOptions": {
+    "project": [
+      "./tsconfig.json"
+    ],
+    "sourceType": "module"
+  },
+  "rules": {
+    "consistent-return": "off",
+    "no-console": "off",
+    "no-continue": "off",
+    "no-extend-native": "off",
+    "no-constant-condition": "off",
+    "no-return-await": "off",
+    "react/jsx-props-no-spreading": "off",
+    "react/no-set-state": "off",
+    "react/destructuring-assignment": "off",
+    "jsx-a11y/label-has-associated-control": "off",
+    "class-methods-use-this": "off",
+    "max-classes-per-file": "off",
+    "no-param-reassign": "off",
+    "node/no-missing-import": "off",
+    "node/no-unpublished-import": "off",
+    "node/no-unsupported-features/es-syntax": ["error", {
+      "ignores": ["modules"]
+    }],
+    "prettier/prettier": [
+      "error",
+      {
+        "bracketSpacing": true,
+        "jsxBracketSameLine": false,
+        "printWidth": 80,
+        "semi": true,
+        "singleQuote": true,
+        "tabWidth": 2,
+        "trailingComma": "all",
+        "useTabs": false,
+        "proseWrap": "always"
+      }
+    ],
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-use-before-define": "off",
+    "@typescript-eslint/lines-between-class-members": "off"
+  },
+  "env": {
+    "webextensions": true
+  },
+  "settings": {
+    "node": {
+      "tryExtensions": [".tsx"] // append tsx to the list as well
+    }
+  }
+}

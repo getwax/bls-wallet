@@ -1,0 +1,7 @@
+{
+  "deno.enable": false,
+  "editor.rulers": [80],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}

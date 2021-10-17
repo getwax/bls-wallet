@@ -1,0 +1,158 @@
+@import "../styles/quill";
+
+#popup-root {
+  min-width: 359px;
+  height: 500px;
+  background-color: white;
+}
+
+.quill {
+  .popup {
+    .key-entry-screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+  
+      .body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        height: 100%;
+  
+        > * {
+          display: flex;
+          justify-content: center;
+        }
+      }
+  
+      .restore-button {
+        position: absolute;
+        width: calc(100% - 24px);
+        bottom: 12px;
+      }
+    }
+  
+    .wallet-home-screen {
+      .field-list {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 24px;
+        gap: 6px;
+        color: $tone-grey-mid;
+  
+        > * {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+        }
+  
+        .field-label {
+          font-size: 12px;
+          line-height: 16px;
+          width: 58px;
+        }
+  
+        .grow {
+          flex-grow: 1;
+        }
+  
+        .field-value {
+          border: 1px solid transparent;
+          display: flex;
+          flex-direction: row;
+  
+          background-color: $primary-faded;
+          color: $primary-base;
+          border-radius: 12px;
+          padding: 3px 12px;
+          font-size: 16px;
+          line-height: 19px;
+          text-overflow: ellipsis;
+  
+          cursor: pointer;
+          user-select: none;
+  
+          &:active {
+            filter: brightness(97%);
+          }
+        }
+  
+        select.field-value {
+          appearance: none;
+          background-position: right 12px top 50%;
+          background-repeat: no-repeat;
+        }
+  
+        .field-trailer {
+          display: flex;
+          width: 68px;
+          justify-content: center;
+  
+          :not(:first-child) {
+            margin-left: 6px;
+          }
+        }
+  
+        .key-icon {
+          cursor: pointer;
+          position: relative;
+  
+          .info-box {
+            position: absolute;
+            top: -42px;
+            right: -12px;
+            width: 359px;
+            display: none;
+            margin: 0;
+            flex-direction: row;
+  
+            .content {
+              color: white;
+              background-color: $tone-dark;
+              border-radius: 5px;
+              padding: 6px 12px;
+              font-size: 12px;
+            }
+          }
+  
+          .info-arrow {
+            display: none;
+            position: relative;
+            top: -34px;
+            right: 5px;
+            background-color: $tone-dark;
+            height: 11px;
+            width: 20px;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+          }
+  
+          &:hover {
+            .info-box {
+              display: flex;
+            }
+  
+            .info-arrow {
+              display: block;
+            }
+          }
+  
+          &:active {
+            img {
+              filter: brightness(97%);
+              border-radius: 100%;
+              background-color: white;
+            }
+          }
+        }
+      }
+  
+      .wallet-content {
+        padding: 12px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+  }
+}
