@@ -48,8 +48,10 @@ describe('WalletActions', async function () {
     let walletAddress = await fx.createBLSWallet(blsSigner);
 
     let blsWallet = fx.BLSWallet.attach(walletAddress);
-    expect(await blsWallet.publicKeyHash())
-      .to.equal(blsKeyHash(blsSigner));
+    
+    await Promise.all(blsSigner.pubkey.map(async (keyPart, i) => 
+      expect(await blsWallet.publicKey(i))
+    .to.equal(keyPart)));
 
     // Check revert when adding same wallet twice
     // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
@@ -157,6 +159,7 @@ describe('WalletActions', async function () {
     });
 
     await fx.verificationGateway.callStatic.verifySignatures(
+      [blsSigner.pubkey],
       signature,
       [txData]
     );
@@ -164,6 +167,7 @@ describe('WalletActions', async function () {
     txData.ethValue = parseEther("1");
     await expectRevert.unspecified(
       fx.verificationGateway.callStatic.verifySignatures(
+        [blsSigner.pubkey],
         signature,
         [txData]
       )
@@ -237,7 +241,7 @@ describe('WalletActions', async function () {
     let aggSignature = aggregate(signatures);
 
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-      blsKeyHash(fx.blsSigners[0]),
+      fx.blsSigners[0].pubkey,
       startNonce,
       aggSignature,
       ethers.constants.AddressZero,
@@ -318,6 +322,7 @@ describe('WalletActions', async function () {
       rewardRecipient,
       rewardTokenAddress,
       rewardAmountRequired,
+      [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
       aggSignature,
       [txData1, txData2]
     );
@@ -328,6 +333,7 @@ describe('WalletActions', async function () {
       rewardRecipient,
       rewardTokenAddress,
       rewardAmountToSend.add(1), //require more than amount sent
+      [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
       aggSignature,
       [txData1, txData2]
     ));
@@ -338,6 +344,7 @@ describe('WalletActions', async function () {
       rewardRecipient,
       rewardTokenAddress,
       rewardAmountRequired,
+      [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
       aggSignature,
       [txData1, txData2]
     )).wait();

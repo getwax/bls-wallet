@@ -3,7 +3,7 @@ import { BigNumber, Contract, BaseContract, utils } from "ethers";
 import dataPayload from "./dataPayload";
 
 import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
-import { solG1 } from "../lib/hubble-bls/src/mcl"
+import { solG1, solG2 } from "../lib/hubble-bls/src/mcl"
 
 import Fixture, { FullTxData, TxData } from "./Fixture";
 import blsKeyHash from "./blsKeyHash";
@@ -25,7 +25,7 @@ export default function blsSignFunction(
   }
 
   let txData:TxData = {
-    publicKeyHash: blsKeyHash(fullTxData.blsSigner),
+    publicKeySender: fullTxData.blsSigner.pubkey,
     nonce: BigNumber.from(fullTxData.nonce),
     ethValue: fullTxData.ethValue,
     contractAddress: address,
