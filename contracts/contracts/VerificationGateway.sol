@@ -160,15 +160,10 @@ contract VerificationGateway is Initializable
     function messagePoint(
         TxData calldata txData
     ) internal view returns (uint256[2] memory) {
-        uint256 chainId;
-        assembly {
-            chainId := chainid()
-        }
-
         return blsLib.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(
-                chainId, //block.chainid,
+                block.chainid,
                 txData.nonce,
                 txData.ethValue,
                 txData.contractAddress,
