@@ -1,0 +1,19 @@
+{
+  "name": "bls-wallet-client",
+  "version": "0.1.0",
+  "description": "Client library for BLS wallet interactions",
+  "main": "dist/src/index.js",
+  "repository": "https://github.com/jzaki/bls-wallet/tree/main/client",
+  "author": "Andrew Morris",
+  "license": "MIT",
+  "private": false,
+  "peerDependencies": {
+    "ethers": "^5.4.7"
+  },
+  "dependencies": {
+    "bls-wallet-signer": "^0.5.0"
+  },
+  "devDependencies": {
+    "ethers": "^5.4.7"
+  }
+}
