@@ -7,6 +7,7 @@ import {
 
 import VerificationGateway from './VerificationGateway';
 import assert from './helpers/assert';
+import BlsWalletAbi from './contractAbis/BlsWalletAbi';
 
 const BigNumber = ethers.BigNumber;
 type BigNumber = ethers.BigNumber;
@@ -193,7 +194,7 @@ export default class BlsWallet {
 
     const walletContract = new ethers.Contract(
       contractAddress,
-      [],
+      BlsWalletAbi,
       provider,
     );
 
