@@ -27,8 +27,6 @@ export default function blsSignFunction(
   let txData:TxData = {
     publicKeyHash: blsKeyHash(fullTxData.blsSigner),
     nonce: BigNumber.from(fullTxData.nonce),
-    rewardTokenAddress: fullTxData.rewardRecipient,
-    rewardTokenAmount: fullTxData.rewardAmount,
     ethValue: fullTxData.ethValue,
     contractAddress: address,
     encodedFunction: encodedFunction
@@ -37,8 +35,6 @@ export default function blsSignFunction(
   let dataToSign = dataPayload(
     fullTxData.chainId,
     fullTxData.nonce,
-    fullTxData.rewardRecipient,
-    fullTxData.rewardAmount,
     fullTxData.ethValue,
     address,
     encodedFunction

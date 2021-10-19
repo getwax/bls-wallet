@@ -24,8 +24,10 @@ Note: each of these savings is proportional to the number of transactions submit
   - receive contract wallet address
 3. Create contract wallet with existing ECDSA keypair
 
+Note: Depending on the network being used, the address of the deployed PrecompileCostEstimator will need to be set [here](https://github.com/jzaki/bls-wallet/blob/main/contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol#L42). #15 will resolve this.
+
 ## See it in action
-COMING SOON - demo web wallet
+See `extension`
 
 # Components
 

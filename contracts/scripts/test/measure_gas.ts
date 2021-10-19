@@ -64,8 +64,6 @@ async function logGasForTransfers() {
       let dataToSign = dataPayload(
         fx.chainId,
         nonce++,
-        AddressZero,
-        BigNumber.from(0),
         BigNumber.from(0),
         th.testToken.address,
         encodedFunctions[i]

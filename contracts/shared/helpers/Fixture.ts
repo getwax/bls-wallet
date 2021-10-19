@@ -21,8 +21,6 @@ export type FullTxData = {
   blsSigner: BlsSignerInterface,
   chainId: number,
   nonce: number,
-  rewardRecipient: string,
-  rewardAmount: BigNumber,
   ethValue: BigNumber,
   contract: Contract|string, // Contract for calls, address string for sending ETH
   functionName: string, // empty string for sending ETH
@@ -32,8 +30,6 @@ export type FullTxData = {
 export type TxData = {
   publicKeyHash: any;
   nonce: BigNumber;
-  rewardTokenAddress: string;
-  rewardTokenAmount: BigNumber;
   ethValue: BigNumber;
   contractAddress: string;
   encodedFunction: string;
@@ -147,7 +143,6 @@ export default class Fixture {
     let [txData, sig] = blsSignFunction(txDataFull);
 
     await(await this.verificationGateway.actionCalls(
-      this.addresses[0],
       [txDataFull.blsSigner.pubkey],
       sig,
       [txData]
@@ -172,8 +167,6 @@ export default class Fixture {
       blsSigner: blsSigner,
       chainId: this.chainId,
       nonce: 0,
-      rewardRecipient: rewardAddress,
-      rewardAmount: reward,
       ethValue: BigNumber.from(0),
       contract: this.verificationGateway,
       functionName: "walletCrossCheck",
