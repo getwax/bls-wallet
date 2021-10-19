@@ -7,6 +7,8 @@
 Exposes typed functions for interacting with the Aggregator's HTTP api.
 
 ```ts
+import { Aggregator } from 'bls-wallet-clients';
+
 const aggregator = new Aggregator('https://rinkarby.blswallet.org');
 
 await aggregator.addTransaction(...);
@@ -19,6 +21,8 @@ produce `TransactionData`, that can be used with
 `aggregator.addTransaction(...)`.
 
 ```ts
+import { BlsWallet } from 'bls-wallet-clients';
+
 const wallet = await BlsWallet.connectOrCreate(
   privateKey,
   verificationGatewayAddress,
@@ -41,6 +45,7 @@ Wraps an `ethers.Contract` with a typed interface for `VerificationGateway`.
 Allows sending transactions without relying on an aggregator.
 
 ```ts
+import { VerificationGateway } from 'bls-wallet-clients';
 import { initBlsWalletSigner } from 'bls-wallet-signer';
 
 const blsWalletSigner = await initBlsWalletSigner({
