@@ -28,21 +28,6 @@ contract BLSWallet is Initializable
     receive() external payable {}
     fallback() external payable {}
 
-    function payTokenAmount(
-        IERC20 token,
-        address recipient,
-        uint256 amount
-    ) public onlyGateway returns (
-        bool success
-    ) {
-        bytes memory transferFn = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            recipient,
-            amount
-        );
-        (success, ) = address(token).call(transferFn);
-    }
-
     function action(
         uint256 ethValue,
         address contractAddress,
@@ -56,10 +41,6 @@ contract BLSWallet is Initializable
         }
         nonce++;
     }
-
-    //TODO: reset admin (via bls key)
-
-    //TODO: social recovery
 
     modifier onlyGateway() {
         require(msg.sender == gateway);

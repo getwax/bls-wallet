@@ -74,8 +74,8 @@ contract BLSExpander is Initializable {
         bytes32 publicKeyHash,
         uint256 startNonce,
         uint256[2] memory signature,
-        IERC20 rewardTokenAddress,
-        uint256[] calldata rewardTokenAmounts,
+        IERC20 ,
+        uint256[] calldata ,
         address contractAddress,
         bytes4 methodId,
         bytes[] calldata encodedParamSets
@@ -85,15 +85,15 @@ contract BLSExpander is Initializable {
         for (uint256 i=0; i<length; i++) {
             txs[i].publicKeyHash = publicKeyHash;
             txs[i].nonce = startNonce+i;
-            txs[i].rewardTokenAddress = rewardTokenAddress;
-            txs[i].rewardTokenAmount = rewardTokenAmounts[i];
+            // txs[i].rewardTokenAddress = rewardTokenAddress;
+            // txs[i].rewardTokenAmount = rewardTokenAmounts[i];
             txs[i].ethValue = 0;
             txs[i].contractAddress = contractAddress;
             txs[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
         }
 
         verificationGateway.actionCalls(
-            payable(msg.sender),
+            // payable(msg.sender),
             new uint256[4][](txs.length),
             signature,
             txs

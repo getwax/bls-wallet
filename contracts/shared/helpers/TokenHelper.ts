@@ -78,8 +78,6 @@ export default class TokenHelper {
       blsSigner: sender,
       chainId: this.fx.chainId,
       nonce: nonce,
-      rewardRecipient: ethers.constants.AddressZero,
-      rewardAmount: reward,
       ethValue: BigNumber.from(0),
       contract: this.testToken,
       functionName: "transfer",

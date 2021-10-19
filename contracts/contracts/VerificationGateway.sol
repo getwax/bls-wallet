@@ -44,8 +44,6 @@ contract VerificationGateway is Initializable
     struct TxData {
         bytes32 publicKeyHash;
         uint256 nonce;
-        IERC20 rewardTokenAddress;
-        uint256 rewardTokenAmount;
         uint256 ethValue;
         address contractAddress;
         bytes encodedFunction;
@@ -95,7 +93,6 @@ contract VerificationGateway is Initializable
     @param txs data required for a BLSWallet to make a transaction
     */
     function actionCalls(
-        address payable rewardRecipient,
         uint256[4][] calldata publicKeys,
         uint256[2] calldata signature,
         TxData[] calldata txs
@@ -115,29 +112,17 @@ contract VerificationGateway is Initializable
             // action the transaction after payment. This won't be the case if 
             // a previous tx in txs for the wallet has failed to pay.
             if (txs[i].nonce == wallet.nonce()) {
-                bool paymentPending = txs[i].rewardTokenAmount > 0;
-                if (paymentPending) {
-                    // on payment success, paymentPending is false
-                    paymentPending = !wallet.payTokenAmount(
-                        txs[i].rewardTokenAddress,
-                        rewardRecipient,
-                        txs[i].rewardTokenAmount
-                    );
-                }
-
-                if (paymentPending == false) {
-                    // execute transaction (increments nonce)
-                    bool success = wallet.action(
-                        txs[i].ethValue,
-                        txs[i].contractAddress,
-                        txs[i].encodedFunction
-                    );
-                    emit WalletActioned(
-                        address(wallet),
-                        wallet.nonce(),
-                        success
-                    );
-                }
+                // execute transaction (increments nonce)
+                bool success = wallet.action(
+                    txs[i].ethValue,
+                    txs[i].contractAddress,
+                    txs[i].encodedFunction
+                );
+                emit WalletActioned(
+                    address(wallet),
+                    wallet.nonce(),
+                    success
+                );
             }
         }
     }
@@ -185,8 +170,6 @@ contract VerificationGateway is Initializable
             abi.encodePacked(
                 chainId, //block.chainid,
                 txData.nonce,
-                txData.rewardTokenAddress,
-                txData.rewardTokenAmount,
                 txData.ethValue,
                 txData.contractAddress,
                 keccak256(txData.encodedFunction)

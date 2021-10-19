@@ -33,8 +33,6 @@ export default async function createBLSWallet(
   const dataToSign = await dataPayload(
     chainId,
     0, // initial nonce
-    rewardTokenAddress,
-    rewardTokenAmount,
     ethValue,
     verificationGateway.address,
     encodedFunction,
@@ -45,14 +43,11 @@ export default async function createBLSWallet(
   let data: TxData = {
     publicKeyHash: blsKeyHash(blsSigner),
     nonce: BigNumber.from(0),
-    rewardTokenAddress: rewardTokenAddress,
-    rewardTokenAmount: rewardTokenAmount,
     ethValue: ethValue,
     contractAddress: verificationGateway.address,
     encodedFunction: encodedFunction
   }
   await (await verificationGateway.actionCalls(
-    rewardRecipient,
     [blsSigner.pubkey],
     signature,
     [data]
