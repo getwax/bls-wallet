@@ -254,5 +254,96 @@ describe('WalletActions', async function () {
 
   });
 
+
+  it('should check token reward', async function() {
+    // Construct 2 transactions:
+    //  - one sending ETH to between wallet 1 and wallet 2 
+    //  - one sending tokens from rewarderAddress to rewardRecipient
+    // Use blsCallMultiCheckRewardIncrease function to check reward amount
+
+    // prepare bls signers, wallets, eth and token balances
+    let rewarderBlsSigner = fx.blsSigners[0];
+    let rewarderAddress = await fx.createBLSWallet(rewarderBlsSigner);
+    let wallet1Address:string = await fx.createBLSWallet(fx.blsSigners[1]);
+    let wallet2Address:string = await fx.createBLSWallet(fx.blsSigners[2]);
+    let ethToTransfer = utils.parseEther("0.0001");
+    await fx.signers[0].sendTransaction({
+      to: wallet1Address,
+      value: ethToTransfer
+    });
+    th = new TokenHelper(fx);
+    let testToken = await TokenHelper.deployTestToken();
+    await(await testToken.connect(fx.signers[0]).transfer(
+      rewarderAddress,
+      th.userStartAmount
+    )).wait();
+
+    // prepare and sign eth transfer tx (from wallet 1 to 2)
+    let [txData1, sig1] = blsSignFunction({
+      blsSigner: fx.blsSigners[1],
+      chainId: fx.chainId,
+      nonce: 1,
+      ethValue: ethToTransfer,
+      contract: wallet2Address,
+      functionName: "",
+      params: []
+    });
+
+    // prepare and sign token transfer tx (reward)
+    let rewardRecipient = "0x1234567890abcdef12341234567890abcdef1234";
+    let rewardTokenAddress = testToken.address;
+    let rewardAmountRequired = th.userStartAmount.div(4); // arbitrary reward amount
+    let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward
+        
+    let functionName = "transfer";
+    let params = [rewardRecipient, rewardAmountToSend];
+    let [txData2, sig2] = blsSignFunction({
+      blsSigner: rewarderBlsSigner,
+      chainId: fx.chainId,
+      nonce: 1,
+      ethValue: BigNumber.from(0),
+      contract: testToken,
+      functionName: functionName, 
+      params: params
+    });
+
+    let aggSignature = aggregate([sig1, sig2]);
+    let encodedFunction = testToken.interface.encodeFunctionData(
+      functionName,
+      params
+    );
+
+    // callStatic to return correct increase
+    let rewardIncrease = await fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
+      rewardRecipient,
+      rewardTokenAddress,
+      rewardAmountRequired,
+      aggSignature,
+      [txData1, txData2]
+    );
+    expect(rewardIncrease).to.equal(rewardAmountToSend);
+
+    // exception when required more than rewarded
+    await expectRevert.unspecified(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
+      rewardRecipient,
+      rewardTokenAddress,
+      rewardAmountToSend.add(1), //require more than amount sent
+      aggSignature,
+      [txData1, txData2]
+    ));
+
+    // rewardRecipient balance increased after actioning transfer
+    let balanceBefore = await testToken.balanceOf(rewardRecipient);
+    await (await fx.blsExpander.blsCallMultiCheckRewardIncrease(
+      rewardRecipient,
+      rewardTokenAddress,
+      rewardAmountRequired,
+      aggSignature,
+      [txData1, txData2]
+    )).wait();
+    let balanceAfter = await testToken.balanceOf(rewardRecipient);
+    expect(balanceAfter.sub(balanceBefore)).to.equal(rewardAmountToSend);
+  })
+
 });
 
