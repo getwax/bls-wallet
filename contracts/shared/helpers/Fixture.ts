@@ -1,3 +1,4 @@
+import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
@@ -28,7 +29,7 @@ export type FullTxData = {
 }
 
 export type TxData = {
-  publicKeyHash: any;
+  publicKeySender: any;
   nonce: BigNumber;
   ethValue: BigNumber;
   contractAddress: string;

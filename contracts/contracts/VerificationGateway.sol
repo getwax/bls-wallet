@@ -14,10 +14,9 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 contract VerificationGateway is Initializable
 {
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
-    uint256 constant BLS_LEN = 4;
+    uint8 constant BLS_LEN = 4;
     // uint256[BLS_LEN] ZERO_BLS_SIG = [uint256(0), uint256(0), uint256(0), uint256(0)];
 
-    mapping (bytes32 => uint256[BLS_LEN]) blsKeysFromHash;
     mapping (bytes32 => BLSWallet) public walletFromHash;
 
     IBLS public blsLib;
@@ -31,7 +30,6 @@ contract VerificationGateway is Initializable
 
     event WalletCreated(
         address indexed wallet,
-        bytes32 indexed publicKeyHash,
         uint256[BLS_LEN] publicKey
     );
 
@@ -42,7 +40,6 @@ contract VerificationGateway is Initializable
     );
 
     struct TxData {
-        bytes32 publicKeyHash;
         uint256 nonce;
         uint256 ethValue;
         address contractAddress;
@@ -51,20 +48,20 @@ contract VerificationGateway is Initializable
 
     /**
     Requires wallet contracts to exist.
+    @param publicKeys bls keys to be verified
     @param signature aggregated signature
     @param txs transaction data to be processed
     */
     function verifySignatures(
+        uint256[BLS_LEN][] calldata publicKeys,
         uint256[2] calldata signature,
         TxData[] calldata txs
     ) public view {
         uint256 txCount = txs.length;
-        uint256[BLS_LEN][] memory publicKeys = new uint256[BLS_LEN][](txCount);
         uint256[2][] memory messages = new uint256[2][](txCount);
 
         for (uint256 i = 0; i<txCount; i++) {
             // construct params for signature verification
-            publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
             messages[i] = messagePoint(txs[i]);
         }
 
@@ -88,31 +85,32 @@ contract VerificationGateway is Initializable
     Base function for verifying and actioning BLS-signed transactions.
     Creates a new bls wallet if a transaction's first time.
     Can be called with a single transaction.
-    @param publicKeys the public bls key for first-time transactions, can be 0
+    @param publicKeys the corresponding public bls keys for transactions
     @param signature aggregated bls signature of all transactions
     @param txs data required for a BLSWallet to make a transaction
     */
     function actionCalls(
-        uint256[4][] calldata publicKeys,
+        uint256[BLS_LEN][] calldata publicKeys,
         uint256[2] calldata signature,
         TxData[] calldata txs
     ) external {
-        createNewWallets(publicKeys, txs);
+        // revert if signatures not verified
+        verifySignatures(publicKeys, signature, txs);
 
-        verifySignatures(signature, txs);
-
+        bytes32 publicKeyHash;
         BLSWallet wallet;
-        // attempt payment and actions
+        // check nonce then perform action
         for (uint256 i = 0; i<txs.length; i++) {
-            // construct params for signature verification
-            // publicKeys[i] = blsKeysFromHash[txs[i].publicKeyHash];
-            wallet = walletFromHash[txs[i].publicKeyHash];
 
-            // if the wallet nonce for the tx matches the current wallet's nonce,
-            // action the transaction after payment. This won't be the case if 
-            // a previous tx in txs for the wallet has failed to pay.
+            // create wallet if it doesn't exist
+            createNewWallet(publicKeys[i]);
+
+            // construct params for signature verification
+            publicKeyHash = keccak256(abi.encodePacked(publicKeys[i]));
+            wallet = walletFromHash[publicKeyHash];
+
             if (txs[i].nonce == wallet.nonce()) {
-                // execute transaction (increments nonce)
+                // action transaction (increments nonce)
                 bool success = wallet.action(
                     txs[i].ethValue,
                     txs[i].contractAddress,
@@ -128,34 +126,22 @@ contract VerificationGateway is Initializable
     }
 
     /**
-    Create a new wallet if one doesn't exist for the given bls key hash and public key.
-    @param publicKeys a public key can be 0 if the hash (and wallet) exist
-    @param txs contains public key hashes that should equal the corresponding public key if given.
+    Create a new wallet if one doesn't exist for the given bls public key.
      */
-    function createNewWallets(
-        uint256[4][] calldata publicKeys,
-        TxData[] calldata txs
-    ) internal {
-        for (uint i=0; i<txs.length; i++) {
-            bytes32 publicKeyHash = txs[i].publicKeyHash;
-            // publicKeyHash corresponds to given public key (false if 0)
-            // and wallet at publicKeyHash doesn't exist
-            if (
-                (publicKeyHash == keccak256(abi.encodePacked(publicKeys[i]))) &&
-                (address(walletFromHash[txs[i].publicKeyHash]) == address(0))
-            ) {
-                blsKeysFromHash[publicKeyHash] = publicKeys[i];
-                walletFromHash[publicKeyHash] = new BLSWallet();
-                walletFromHash[publicKeyHash].initialize(publicKeyHash);
-                emit WalletCreated(
-                    address(walletFromHash[publicKeyHash]),
-                    publicKeyHash,
-                    publicKeys[i]
-                );
-            }
+    function createNewWallet(uint256[BLS_LEN] calldata publicKey)
+        private // consider making external and VG stateless
+    {
+        bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
+        // wallet at publicKeyHash doesn't exist
+        if (address(walletFromHash[publicKeyHash]) == address(0)) {
+            // blsKeysFromHash[publicKeyHash] = publicKey;
+            walletFromHash[publicKeyHash] = new BLSWallet(publicKey);
+            emit WalletCreated(
+                address(walletFromHash[publicKeyHash]),
+                publicKey
+            );
         }
     }
-
 
     function messagePoint(
         TxData calldata txData

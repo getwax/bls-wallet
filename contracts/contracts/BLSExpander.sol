@@ -19,20 +19,21 @@ contract BLSExpander is Initializable {
         address rewardRecipient,
         IERC20 tokenRewardAddress,
         uint256 tokenRewardAmount,
+        uint256[4][] calldata publicKeys,
         uint256[2] memory signature,
         VerificationGateway.TxData[] calldata txs
     ) external returns (uint256 balanceIncrease) {
         uint256 balanceBefore = tokenRewardAddress.balanceOf(rewardRecipient);
 
         verificationGateway.actionCalls(
-            new uint256[4][](txs.length),
+            publicKeys,
             signature,
             txs
         );
 
         uint256 balanceAfter = tokenRewardAddress.balanceOf(rewardRecipient);
-        balanceIncrease = balanceAfter-balanceBefore;
-        require(balanceIncrease >= tokenRewardAmount, "insufficientReward");
+        balanceIncrease = balanceAfter - balanceBefore;
+        require(balanceIncrease >= tokenRewardAmount, "BLSExpaner: Insufficient reward");
     }
 
 
@@ -92,9 +93,9 @@ contract BLSExpander is Initializable {
 
     // eg airdrop
     function blsCallMultiSameCallerContractFunction(
-        bytes32 publicKeyHash,
+        uint256[4] calldata publicKey,
         uint256 startNonce,
-        uint256[2] memory signature,
+        uint256[2] calldata signature,
         IERC20 ,
         uint256[] calldata ,
         address contractAddress,
@@ -102,9 +103,10 @@ contract BLSExpander is Initializable {
         bytes[] calldata encodedParamSets
     ) external {
         uint256 length = encodedParamSets.length;
+        uint256[4][] memory publicKeys = new uint256[4][](length);
         VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
         for (uint256 i=0; i<length; i++) {
-            txs[i].publicKeyHash = publicKeyHash;
+            publicKeys[i] = publicKey;
             txs[i].nonce = startNonce+i;
             txs[i].ethValue = 0;
             txs[i].contractAddress = contractAddress;
@@ -112,7 +114,7 @@ contract BLSExpander is Initializable {
         }
 
         verificationGateway.actionCalls(
-            new uint256[4][](txs.length),
+            publicKeys,
             signature,
             txs
         );
