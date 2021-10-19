@@ -9,13 +9,12 @@ type Provider = ethers.providers.Provider;
 
 export default class VerificationGateway {
   static abi = VerificationGatewayAbi;
-  static address = "0x216b5cA8aB30ce0f4Ba05C4Dbc92E0194a48850c";
 
   #contract: ethers.Contract;
 
   constructor(
+    public address: string,
     signerOrProvider: Signer | Provider | undefined = undefined,
-    address = VerificationGateway.address,
   ) {
     this.#contract = new ethers.Contract(
       address,
@@ -50,5 +49,17 @@ export default class VerificationGateway {
 
       overrides,
     );
+  }
+
+  async walletFromHash(publicKeyHash: string): Promise<string | undefined> {
+    const address: string = await this.#contract.walletFromHash(
+      publicKeyHash,
+    );
+
+    if (address === ethers.constants.AddressZero) {
+      return undefined;
+    }
+
+    return address;
   }
 }
