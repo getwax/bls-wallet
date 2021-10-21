@@ -1,3 +1,5 @@
+import 'source-map-support/register';
+
 import { BigNumber } from "@ethersproject/bignumber";
 import { arrayify } from "@ethersproject/bytes";
 import { keccak256 } from "@ethersproject/keccak256";
