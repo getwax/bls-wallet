@@ -144,7 +144,6 @@ export default class BlsWallet {
 
     await (
       await verificationGateway.actionCalls(
-        ethers.constants.AddressZero,
         blsWalletSigner.aggregate([tx]),
       )
     ).wait();
