@@ -16,8 +16,6 @@ const samples = (() => {
 
   const rawTx: RawTransactionData = {
     nonce: BigNumber.from(123),
-    rewardTokenAddress: "0x00",
-    rewardTokenAmount: BigNumber.from(0),
     ethValue: BigNumber.from(0),
     contractAddress,
     encodedFunction: "0x00",
@@ -46,8 +44,8 @@ describe("index", () => {
     const tx = sign(rawTx, privateKey);
 
     expect(tx.signature).to.equal([
-      "0x1fa9f87b5a23bf50508381109729aa9738dd68b44fd34143e5fc49fd35f812841470d",
-      "edaf87aa073099d3fcff212f02bb2295f62756624daa996173270fa0b15",
+      "0x177500780b42f245e98229245126c9042e1cdaadc7ada72021ddd43492963a7b26f7a",
+      "a8f971b133e9f61d4197b4fb40fc82f5c239183cba80d6338a64500cb27",
     ].join(""));
 
     expect(verify(tx)).to.equal(true);
@@ -62,8 +60,8 @@ describe("index", () => {
     const txBadMessage = {
       ...tx,
 
-      // Pretend the client signed that they pay the aggregator a million tokens
-      rewardTokenAmount: weiPerToken.mul(1000000),
+      // Pretend the client signed to pay a million tokens
+      ethValue: weiPerToken.mul(1000000),
     }
 
     expect(verify(txBadMessage)).to.equal(false);
@@ -82,8 +80,8 @@ describe("index", () => {
     const aggregateTx = aggregate([tx, tx]);
 
     expect(aggregateTx.signature).to.equal([
-      "0x011e6a5d683219dd2644e6a4edb5da2bf5c40ac061c77295a093bfc24a7192501c5c4",
-      "3331cdd91996a4b5b039ea57430191bb870419a58d1e88125ebafc6ddd8",
+      "0x2cc0b05e8200cf564042735d15e2cc98181e730203530300022aafdd1ceb905830430",
+      "28617145dca56a00bf0693710e24683616ff4a42bc3cca7d587b36ff91f",
     ].join(""));
 
     expect(verifyAggregate(aggregateTx)).to.equal(true);
@@ -95,9 +93,8 @@ describe("index", () => {
         {
           ...aggregateTx.transactions[1],
 
-          // Pretend this client signed that they pay the aggregator a million
-          // tokens
-          rewardTokenAmount: weiPerToken.mul(1000000),
+          // Pretend this client signed to pay a million tokens
+          ethValue: weiPerToken.mul(1000000),
         }
       ],
     }
