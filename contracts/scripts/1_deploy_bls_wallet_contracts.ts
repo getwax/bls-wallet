@@ -1,15 +1,27 @@
 require('dotenv').config();
 
 import { Contract } from "ethers";
-import { ethers } from "hardhat";
+import { ethers, network } from "hardhat";
+import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 
 const utils = ethers.utils;
 
 import Fixture from "../shared/helpers/Fixture";
 
 async function main() {
+  let fx: Fixture;
+  if (network.name == "rinkarby") {
+    let addresses = getDeployedAddresses(network.name);
 
-  let fx: Fixture = await Fixture.create();
+    fx = await Fixture.create(
+      Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
+      true,
+      addresses.blsLibAddress
+    );
+  }
+  else {
+    fx = await Fixture.create();
+  }
   console.log(`Deployer account address: ${fx.addresses[0]}`);
 
   console.log(`verificationGateway: ${fx.verificationGateway.address}`);
