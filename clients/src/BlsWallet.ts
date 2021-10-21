@@ -248,16 +248,12 @@ export default class BlsWallet {
     contract,
     method,
     args,
-    rewardTokenAddress = ethers.constants.AddressZero,
-    rewardTokenAmount = BigNumber.from(0),
     ethValue = BigNumber.from(0),
     nonce,
   }: {
     contract: ethers.Contract;
     method: string;
     args: string[];
-    rewardTokenAddress?: string;
-    rewardTokenAmount?: BigNumber;
     ethValue?: BigNumber;
     nonce: BigNumber;
   }): TransactionData {
