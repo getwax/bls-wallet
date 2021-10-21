@@ -1,9 +1,7 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { ethers, parseArgs } from "../deps.ts";
+import { AggregatorClient, BlsWallet, ethers, parseArgs } from "../deps.ts";
 
-import Client from "../src/app/Client.ts";
-import BlsWallet from "../src/chain/BlsWallet.ts";
 import assert from "../src/helpers/assert.ts";
 import nil from "../src/helpers/nil.ts";
 import Rng from "../src/helpers/Rng.ts";
@@ -11,7 +9,7 @@ import * as env from "../test/env.ts";
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
-const client = new Client(env.ORIGIN);
+const client = new AggregatorClient(env.ORIGIN);
 
 const rng = Rng.root.seed("test-wallet");
 
@@ -27,14 +25,22 @@ if (!seed) {
 
 const privateKey = rng.seed(`${seed}`).address();
 
-const wallet = await BlsWallet.connect(privateKey, provider);
+const wallet = await BlsWallet.connect(
+  privateKey,
+  env.VERIFICATION_GATEWAY_ADDRESS,
+  provider,
+);
 
 if (wallet !== nil) {
   console.log(`Already exists, address: ${wallet.address}`);
   Deno.exit(0);
 }
 
-const tx = await BlsWallet.signCreation(privateKey, provider);
+const tx = await BlsWallet.signCreation(
+  privateKey,
+  env.VERIFICATION_GATEWAY_ADDRESS,
+  provider,
+);
 
 console.log("Sending creation tx to aggregator");
 

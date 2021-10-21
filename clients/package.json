@@ -1,6 +1,6 @@
 {
   "name": "bls-wallet-clients",
-  "version": "0.2.0",
+  "version": "0.2.0-rc.4",
   "description": "Client libraries for interacting with BLS Wallet components",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -12,13 +12,8 @@
     "build": "tsc",
     "watch": "tsc -w"
   },
-  "peerDependencies": {
-    "ethers": "^5.4.7"
-  },
   "dependencies": {
-    "bls-wallet-signer": "../signer/bls-wallet-signer-v0.6.0.tgz"
-  },
-  "devDependencies": {
-    "ethers": "^5.4.7"
+    "bls-wallet-signer": "0.6.0-rc.1",
+    "ethers": "5.4.7"
   }
 }

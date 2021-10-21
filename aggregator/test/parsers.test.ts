@@ -12,7 +12,6 @@ Deno.test("parseTransactionDataDto reports missing fields for undefined", () => 
         "field publicKey: not provided",
         "field signature: not provided",
         "field nonce: not provided",
-        "field tokenRewardAmount: not provided",
         "field ethValue: not provided",
         "field contractAddress: not provided",
         "field encodedFunctionData: not provided",
@@ -33,10 +32,6 @@ Deno.test("parseTransactionDataDto accepts dummy values", () => {
     "signature": [
       "0x000102030405060708091011121314151617181920212223242526272829303132333",
       "43536373839404142434445464748495051525354555657585960616263",
-    ].join(""),
-    "rewardTokenAddress": "0x0001020304050607080910111213141516171819",
-    "rewardTokenAmount": [
-      "0x0001020304050607080910111213141516171819202122232425262728293031",
     ].join(""),
     "ethValue": "0x00",
     "contractAddress": "0x0001020304050607080910111213141516171819",

@@ -1,11 +1,15 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { BigNumber, delay, ethers } from "../deps.ts";
+import {
+  AggregatorClient,
+  BigNumber,
+  BlsWallet,
+  delay,
+  ethers,
+} from "../deps.ts";
 
 import * as env from "../test/env.ts";
-import Client from "../src/app/Client.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
-import BlsWallet from "../src/chain/BlsWallet.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 
@@ -30,7 +34,7 @@ const adminWallet = AdminWallet(provider);
 
 const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
 
-const client = new Client(env.ORIGIN);
+const client = new AggregatorClient(env.ORIGIN);
 
 log("Connecting/creating test wallets...");
 
