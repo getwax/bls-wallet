@@ -12,10 +12,13 @@ import TxTable from "./TxTable.ts";
 import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
+import getNetworkConfig from "../helpers/getNetworkConfig.ts";
 import AppEvent from "./AppEvent.ts";
 import WalletRouter from "./WalletRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
+  const { addresses } = await getNetworkConfig();
+  
   const clock = Clock.create();
 
   const queryClient = createQueryClient(emit);
@@ -29,7 +32,11 @@ export default async function app(emit: (evt: AppEvent) => void) {
     env.FUTURE_TX_TABLE_NAME,
   );
 
-  const walletService = await WalletService.create(emit, env.PRIVATE_KEY_AGG);
+  const walletService = await WalletService.create(
+    emit,
+    addresses.verificationGateway,
+    env.PRIVATE_KEY_AGG
+  );
 
   const txService = new TxService(
     emit,

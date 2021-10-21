@@ -9,7 +9,7 @@ import TokenHelper from "../shared/helpers/TokenHelper";
 import { BigNumber } from "ethers";
 import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
+// import splitHex256 from "../shared/helpers/splitHex256";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import { solidityPack } from "ethers/lib/utils";
 const utils = ethers.utils;
@@ -41,15 +41,7 @@ describe("WalletActions", async function () {
   let th: TokenHelper;
   beforeEach(async function () {
     if (network.name === "rinkarby") {
-      const config = getDeployedAddresses(network.name);
-
-      fx = await Fixture.create(
-        Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
-        false,
-        config.blsLibAddress,
-        config.vgAddress,
-        config.expanderAddress,
-      );
+      fx = await Fixture.create(Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     } else {
       fx = await Fixture.create();
     }

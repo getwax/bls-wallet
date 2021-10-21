@@ -2,7 +2,6 @@ import { assertEquals, BigNumber, BlsWallet } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
-import * as env from "./env.ts";
 
 Fixture.test("WalletService sends single tx", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
@@ -173,7 +172,7 @@ Fixture.test(
 Fixture.test("WalletService can create a wallet", async (fx) => {
   const tx = await BlsWallet.signCreation(
     fx.rng.seed("aggregator-free-wallet").address(),
-    env.VERIFICATION_GATEWAY_ADDRESS,
+    fx.networkConfig.addresses.verificationGateway,
     fx.adminWallet.provider,
   );
 

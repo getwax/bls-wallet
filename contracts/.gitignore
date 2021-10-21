@@ -5,6 +5,7 @@ node_modules
 coverage
 coverage.json
 /typechain
+networks/local.json
 
 #Hardhat files
 artifacts

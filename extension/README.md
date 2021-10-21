@@ -77,13 +77,10 @@ Interaction with web3 applications can be slow, costly, and risky.
 
 ## Development
 
-Copy `.env.example` to `.env.local`, updating values as needed.
-
-The 'local' in `.env.local` is your environment name. You need to supply this
-to webpack by prefixing webpack-related commands with `ENV=local`.
+Copy `.env.example` to `.env`, updating values as needed.
 
 To run the dev server:
 
 ```sh
-ENV=local yarn run dev:chrome # or dev:firefox etc, see scripts in package.json
+yarn run dev:chrome # or dev:firefox etc, see scripts in package.json
 ```

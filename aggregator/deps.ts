@@ -41,8 +41,15 @@ export type {
 export {
   Aggregator as AggregatorClient,
   BlsWallet,
+  getConfig,
+  NetworkConfig,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.2.2";
+/**
+ * TODO (merge-ok) Switch back to esm.sh when HKT import resolves correctly.
+ * error: Import 'https://cdn.esm.sh/v58/fp-ts@2.11.5/lib/HKT/HKT.d.ts' failed: 404 Not Found
+ *  at https://cdn.esm.sh/v58/bls-wallet-clients@0.2.5-rc.1/deno/bls-wallet-clients.js:2:34
+ */
+} from "https://cdn.skypack.dev/bls-wallet-clients@0.2.5-rc.1?dts";
 
 // Database dependencies
 export {

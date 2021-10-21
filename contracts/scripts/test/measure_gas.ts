@@ -1,13 +1,10 @@
 /* eslint-disable no-process-exit */
 
 import { BigNumber } from "ethers";
+import { solidityPack } from "ethers/lib/utils";
 import { Bundle } from "../../clients/src";
-import getDeployedAddresses from "../../shared/helpers/getDeployedAddresses";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
-
-import { network } from "hardhat";
-import { solidityPack } from "ethers/lib/utils";
 
 let fx: Fixture;
 let th: TokenHelper;
@@ -31,16 +28,8 @@ async function logGasForTransfers() {
       txHash: -1,
     };
 
-    const config = getDeployedAddresses(network.name);
+    fx = await Fixture.create(1);
 
-    fx = await Fixture.create(
-      1,
-      false,
-      config.blsLibAddress,
-      config.vgAddress,
-      config.expanderAddress,
-      [+process.env.BLS_SECRET_NUM_1],
-    );
     th = new TokenHelper(fx);
     const blsWallets = await th.walletTokenSetup();
 

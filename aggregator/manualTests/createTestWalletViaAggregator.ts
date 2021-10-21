@@ -3,6 +3,7 @@
 import { AggregatorClient, BlsWallet, ethers, parseArgs } from "../deps.ts";
 
 import assert from "../src/helpers/assert.ts";
+import getNetworkConfig from "../src/helpers/networkConfig.ts";
 import nil from "../src/helpers/nil.ts";
 import Rng from "../src/helpers/Rng.ts";
 import * as env from "../test/env.ts";
@@ -25,9 +26,11 @@ if (!seed) {
 
 const privateKey = rng.seed(`${seed}`).address();
 
+const { addresses } = await getNetworkConfig();
+
 const wallet = await BlsWallet.connect(
   privateKey,
-  env.VERIFICATION_GATEWAY_ADDRESS,
+  addresses.verificationGateway,
   provider,
 );
 
@@ -38,7 +41,7 @@ if (wallet !== nil) {
 
 const tx = await BlsWallet.signCreation(
   privateKey,
-  env.VERIFICATION_GATEWAY_ADDRESS,
+  addresses.verificationGateway,
   provider,
 );
 

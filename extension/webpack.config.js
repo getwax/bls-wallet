@@ -1,6 +1,7 @@
 /* eslint-disable */
 
 const path = require('path');
+const fs = require("fs");
 const webpack = require('webpack');
 const FilemanagerPlugin = require('filemanager-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -48,6 +49,8 @@ const getExtensionFileType = (browser) => {
 
   return 'zip';
 };
+
+const networkConfigPath = process.env.NETWORK_CONFIG_PATH ?? path.join(__dirname, "..", "contracts", "networks", "local.json");
 
 module.exports = {
   devtool: false, // https://github.com/webpack/webpack/issues/1194#issuecomment-560382342
@@ -144,7 +147,11 @@ module.exports = {
     new webpack.SourceMapDevToolPlugin({filename: false}),
     new ForkTsCheckerWebpackPlugin(),
     // environmental variables
-    new webpack.EnvironmentPlugin(['NODE_ENV', 'TARGET_BROWSER']),
+    new webpack.EnvironmentPlugin({
+      NODE_ENV: undefined,
+      TARGET_BROWSER: undefined,
+      NETWORK_CONFIG: fs.readFileSync(networkConfigPath, 'utf8'),
+    }),
     // delete previous build files
     new CleanWebpackPlugin({
       cleanOnceBeforeBuildPatterns: [
@@ -187,7 +194,11 @@ module.exports = {
     // plugin to enable browser reloading in development mode
     extensionReloaderPlugin,
     new DotenvWebpackPlugin({
-      path: `./.env.${requireEnv(process.env.ENV)}`,
+      path: `./.env${
+        process.env.ENV === undefined ?
+        '' :
+        `.${process.env.ENV}`
+      }`,
     }),
   ],
 

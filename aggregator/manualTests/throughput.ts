@@ -12,6 +12,7 @@ import * as env from "../test/env.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
+import getNetworkConfig from "../src/helpers/networkConfig.ts";
 
 const logStartTime = Date.now();
 
@@ -29,10 +30,12 @@ const leadTarget = env.MAX_AGGREGATION_SIZE * env.MAX_UNCONFIRMED_AGGREGATIONS;
 const pollingInterval = 400;
 const sendWalletCount = 50;
 
+const { addresses } = await getNetworkConfig();
+
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 const adminWallet = AdminWallet(provider);
 
-const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
+const testErc20 = new MockErc20(addresses.testToken, provider);
 
 const client = new AggregatorClient(env.ORIGIN);
 
@@ -47,7 +50,7 @@ log("Checking/minting test tokens...");
 
 for (const wallet of sendWallets) {
   const testErc20 = new MockErc20(
-    env.TEST_TOKEN_ADDRESS,
+    addresses.testToken,
     adminWallet,
   );
 

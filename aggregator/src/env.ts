@@ -11,18 +11,9 @@ export const PORT = requireIntEnv("PORT");
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
 
+export const NETWORK_CONFIG_PATH = requireEnv("NETWORK_CONFIG_PATH");
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
 export const PRIVATE_KEY_ADMIN = requireEnv("PRIVATE_KEY_ADMIN");
-
-export const DEPLOYER_ADDRESS = requireEnv("DEPLOYER_ADDRESS");
-
-export const VERIFICATION_GATEWAY_ADDRESS = requireEnv(
-  "VERIFICATION_GATEWAY_ADDRESS",
-);
-
-export const BLS_EXPANDER_ADDRESS = requireEnv("BLS_EXPANDER_ADDRESS");
-
-export const REWARD_TOKEN_ADDRESS = requireEnv("REWARD_TOKEN_ADDRESS");
 
 export const PG = {
   HOST: requireEnv("PG_HOST"),

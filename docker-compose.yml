@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+
+  postgres:
+    container_name: postgres
+    image: 'postgres:latest'
+
+    ports:
+      - 5432:5432
+
+    environment:
+      POSTGRES_USER: bls
+      POSTGRES_PASSWORD: generate-a-strong-password
+      POSTGRES_DB: bls_aggregator
+    
+    volumes:
+      - ./.data/postgres/:/var/lib/postgresql/data/
+
+  # Not currently used, but could be helpful in the future
+  geth:
+    container_name: geth
+    image: ethereum/client-go:stable
+    ports:
+        - "8545:8545"
+    volumes:
+        - "./.data/geth/dev-chain:/dev-chain"
+    command: >
+      --datadir dev-chain/
+      --http
+      --http.addr=0.0.0.0
+      --http.vhosts='*'
+      --dev
+      --dev.period=14
