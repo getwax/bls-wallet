@@ -16,7 +16,7 @@
     "ethers": "^5.4.7"
   },
   "dependencies": {
-    "bls-wallet-signer": "^0.5.0"
+    "bls-wallet-signer": "../signer/bls-wallet-signer-v0.6.0.tgz"
   },
   "devDependencies": {
     "ethers": "^5.4.7"

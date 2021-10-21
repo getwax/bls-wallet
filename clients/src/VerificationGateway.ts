@@ -40,8 +40,6 @@ export default class VerificationGateway {
       aggregateTx.transactions.map((tx) => ({
         publicKeyHash: ethers.utils.keccak256(tx.publicKey),
         nonce: tx.nonce,
-        rewardTokenAddress: tx.rewardTokenAddress,
-        rewardTokenAmount: tx.rewardTokenAmount,
         ethValue: tx.ethValue,
         contractAddress: tx.contractAddress,
         encodedFunction: tx.encodedFunction,
