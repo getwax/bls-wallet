@@ -1,19 +1,19 @@
 import 'emoji-log';
 import { browser } from 'webextension-polyfill-ts';
+import { Aggregator } from 'bls-wallet-clients';
 import { initBlsWalletSigner } from 'bls-wallet-signer';
 import { ethers } from 'ethers';
 
 import App from '../App';
 import getPropOrUndefined from '../helpers/getPropOrUndefined';
 import RequestHandler from './RequestHandler';
-import AggregatorClient from '../AggregatorClient';
 
 import { AGGREGATOR_URL, CHAIN_ID, CHAIN_RPC_URL } from '../env';
 
 (async () => {
   const app = new App(
     await initBlsWalletSigner({ chainId: CHAIN_ID }),
-    new AggregatorClient(AGGREGATOR_URL),
+    new Aggregator(AGGREGATOR_URL),
     new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL),
     browser.storage.local,
   );

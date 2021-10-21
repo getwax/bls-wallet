@@ -27,7 +27,8 @@
   "dependencies": {
     "@babel/runtime": "^7.14.0",
     "advanced-css-reset": "^1.2.2",
-    "bls-wallet-signer": "^0.5.0",
+    "bls-wallet-clients": "../clients/bls-wallet-clients-v0.2.0.tgz",
+    "bls-wallet-signer": "../signer/bls-wallet-signer-v0.6.0.tgz",
     "dotenv-webpack": "^7.0.3",
     "emoji-log": "^1.0.2",
     "ethers": "^5.4.6",

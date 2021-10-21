@@ -1,4 +1,4 @@
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 
 import App from '../App';
 import addErrorContext from '../common/addErrorContext';
@@ -69,8 +69,6 @@ export default function RequestHandler(
         const txData = app.wallet.blsWalletSigner.sign(
           {
             nonce: await app.wallet.Nonce(),
-            rewardTokenAddress: ethers.constants.AddressZero,
-            rewardTokenAmount: BigNumber.from(0),
             ethValue: BigNumber.from(tx.value),
             contractAddress: tx.to,
             encodedFunction: '0x',
@@ -78,7 +76,7 @@ export default function RequestHandler(
           app.wallet.privateKey,
         );
 
-        const failures = await app.aggregatorClient.addTransaction(txData);
+        const failures = await app.aggregator.addTransaction(txData);
 
         if (failures.length > 0) {
           throw new Error(
