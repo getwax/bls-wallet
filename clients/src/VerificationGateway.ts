@@ -24,27 +24,18 @@ export default class VerificationGateway {
   }
 
   async actionCalls(
-    rewardRecipient: string,
     aggregateTx: AggregateTransactionData,
     overrides: ethers.Overrides = {},
   ): Promise<ethers.providers.TransactionResponse> {
     return await this.#contract.actionCalls(
-      rewardRecipient,
-
-      // Enhancement: Public keys here are not used for wallets that already
-      // exist. In future, in combination with BLSExpander, passing zeros may
-      // be preferred to reduce the amount of call data.
       aggregateTx.transactions.map((tx) => splitHex256(tx.publicKey)),
-
       splitHex256(aggregateTx.signature),
       aggregateTx.transactions.map((tx) => ({
-        publicKeyHash: ethers.utils.keccak256(tx.publicKey),
         nonce: tx.nonce,
         ethValue: tx.ethValue,
         contractAddress: tx.contractAddress,
         encodedFunction: tx.encodedFunction,
       })),
-
       overrides,
     );
   }
