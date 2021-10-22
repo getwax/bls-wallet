@@ -340,8 +340,6 @@ export default class TxService {
     await Promise.all(promises);
   }
 
-  // Note: Currently unused. It may become useful when rewards are reintroduced,
-  // otherwise consider deletion.
   async removeFromReady(txs: TxTableRow[]) {
     this.readyTxTable.remove(...txs);
 
@@ -355,8 +353,6 @@ export default class TxService {
     );
   }
 
-  // Note: Currently unused. It may become useful when rewards are reintroduced,
-  // otherwise consider deletion.
   async demoteNoLongerReadyTxs(
     /** Public key this operation applies to */
     publicKey: string,
@@ -487,6 +483,8 @@ export default class TxService {
           }
         })();
       }
+
+      await this.removeFromReady(batchTxs);
     });
 
     this.batchesInProgress--;

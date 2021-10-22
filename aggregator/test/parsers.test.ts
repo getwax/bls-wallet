@@ -14,7 +14,7 @@ Deno.test("parseTransactionDataDto reports missing fields for undefined", () => 
         "field nonce: not provided",
         "field ethValue: not provided",
         "field contractAddress: not provided",
-        "field encodedFunctionData: not provided",
+        "field encodedFunction: not provided",
       ],
     },
   );

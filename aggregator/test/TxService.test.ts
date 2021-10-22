@@ -25,21 +25,22 @@ Fixture.test("adds valid transaction", async (fx) => {
 
 Fixture.test("rejects transaction with invalid signature", async (fx) => {
   const txService = await fx.createTxService();
-  const [wallet] = await fx.setupWallets(1);
+  const [wallet, otherWallet] = await fx.setupWallets(2);
 
-  const tx = wallet.sign({
+  const signParams = {
     contract: fx.testErc20.contract,
     method: "mint",
     args: [wallet.address, "3"],
     nonce: await wallet.Nonce(),
-  });
+  };
+
+  const tx = wallet.sign(signParams);
+  const otherTx = otherWallet.sign(signParams);
 
   // Make the signature invalid
-  tx.signature = [
-    "0x",
-    tx.signature[2] === "0" ? "1" : "0",
-    tx.signature.slice(3),
-  ].join("");
+  // Note: Bug in bls prevents just corrupting the signature (see other invalid
+  // sig test)
+  tx.signature = otherTx.signature;
 
   assertEquals(await txService.readyTxTable.count(), 0n);
 
@@ -74,21 +75,24 @@ Fixture.test(
   "rejects transaction with invalid signature and nonce from the past",
   async (fx) => {
     const txService = await fx.createTxService();
-    const [wallet] = await fx.setupWallets(1);
+    const [wallet, otherWallet] = await fx.setupWallets(2);
 
-    const tx = wallet.sign({
+    const signParams = {
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "3"],
       nonce: (await wallet.Nonce()).sub(1),
-    });
+    };
 
-    // Make the signature invalid
-    tx.signature = [
-      "0x",
-      tx.signature[2] === "0" ? "1" : "0",
-      tx.signature.slice(3),
-    ].join("");
+    const tx = wallet.sign(signParams);
+    const otherTx = otherWallet.sign(signParams);
+
+    // Use signature from otherTx to make it invalid
+    // Note: It would be faster to corrupt the existing signature than set up
+    // another wallet, but there is a bug in hubbleBls that throws instead of
+    // returning false when you do that:
+    // https://github.com/thehubbleproject/hubble-bls/pull/20
+    tx.signature = otherTx.signature;
 
     assertEquals(await txService.readyTxTable.count(), 0n);
 
