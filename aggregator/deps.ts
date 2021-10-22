@@ -42,7 +42,7 @@ export {
   Aggregator as AggregatorClient,
   BlsWallet,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.2.0-rc.4";
+} from "https://esm.sh/bls-wallet-clients@0.2.0-rc.5";
 
 // Database dependencies
 export {

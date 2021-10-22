@@ -1,3 +1,9 @@
-export { default as Aggregator } from './Aggregator';
-export { default as BlsWallet } from './BlsWallet';
-export { default as VerificationGateway } from './VerificationGateway';
+import Aggregator from './Aggregator';
+import BlsWallet from './BlsWallet';
+import VerificationGateway from './VerificationGateway';
+
+export {
+  Aggregator,
+  BlsWallet,
+  VerificationGateway,
+};
