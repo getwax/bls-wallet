@@ -233,7 +233,7 @@ export default class BlsWallet {
 
     const walletContract = new ethers.Contract(
       contractAddress,
-      [],
+      BlsWalletAbi,
       signerOrProvider,
     );
 
