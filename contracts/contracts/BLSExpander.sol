@@ -16,14 +16,13 @@ contract BLSExpander is Initializable {
 
     // eg approve and transfers of a token contract
     function blsCallMultiCheckRewardIncrease(
-        address rewardRecipient,
         IERC20 tokenRewardAddress,
         uint256 tokenRewardAmount,
         uint256[4][] calldata publicKeys,
         uint256[2] memory signature,
         VerificationGateway.TxData[] calldata txs
     ) external returns (uint256 balanceIncrease) {
-        uint256 balanceBefore = tokenRewardAddress.balanceOf(rewardRecipient);
+        uint256 balanceBefore = tokenRewardAddress.balanceOf(tx.origin);
 
         verificationGateway.actionCalls(
             publicKeys,
@@ -31,9 +30,9 @@ contract BLSExpander is Initializable {
             txs
         );
 
-        uint256 balanceAfter = tokenRewardAddress.balanceOf(rewardRecipient);
+        uint256 balanceAfter = tokenRewardAddress.balanceOf(tx.origin);
         balanceIncrease = balanceAfter - balanceBefore;
-        require(balanceIncrease >= tokenRewardAmount, "BLSExpaner: Insufficient reward");
+        require(balanceIncrease >= tokenRewardAmount, "BLSExpander: Insufficient reward");
     }
 
 

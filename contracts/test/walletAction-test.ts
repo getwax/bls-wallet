@@ -258,7 +258,6 @@ describe('WalletActions', async function () {
 
   });
 
-
   it('should check token reward', async function() {
     // Construct 2 transactions:
     //  - one sending ETH to between wallet 1 and wallet 2 
@@ -293,33 +292,34 @@ describe('WalletActions', async function () {
       params: []
     });
 
-    // prepare and sign token transfer tx (reward)
-    let rewardRecipient = "0x1234567890abcdef12341234567890abcdef1234";
+    // prepare and sign token transfer to origin tx (reward)
     let rewardTokenAddress = testToken.address;
     let rewardAmountRequired = th.userStartAmount.div(4); // arbitrary reward amount
-    let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward
-        
-    let functionName = "transfer";
-    let params = [rewardRecipient, rewardAmountToSend];
+    let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward    
+
+    let blsWallet = fx.BLSWallet.attach(rewarderAddress);
+    let functionName = "transferToOrigin";
+    let params = [rewardAmountToSend, testToken.address];
     let [txData2, sig2] = blsSignFunction({
       blsSigner: rewarderBlsSigner,
       chainId: fx.chainId,
       nonce: 1,
       ethValue: BigNumber.from(0),
-      contract: testToken,
+      contract: blsWallet,
       functionName: functionName, 
       params: params
     });
 
-    let aggSignature = aggregate([sig1, sig2]);
-    let encodedFunction = testToken.interface.encodeFunctionData(
-      functionName,
-      params
+    // shouldn't be able to directly call transferToOrigin
+    expectRevert.unspecified(
+      blsWallet.transferToOrigin(rewardAmountToSend, testToken.address),
+      "BLSWallet: only callable from this"
     );
+
+    let aggSignature = aggregate([sig1, sig2]);
 
     // callStatic to return correct increase
     let rewardIncrease = await fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
-      rewardRecipient,
       rewardTokenAddress,
       rewardAmountRequired,
       [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
@@ -330,7 +330,6 @@ describe('WalletActions', async function () {
 
     // exception when required more than rewarded
     await expectRevert.unspecified(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
-      rewardRecipient,
       rewardTokenAddress,
       rewardAmountToSend.add(1), //require more than amount sent
       [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
@@ -339,16 +338,15 @@ describe('WalletActions', async function () {
     ));
 
     // rewardRecipient balance increased after actioning transfer
-    let balanceBefore = await testToken.balanceOf(rewardRecipient);
+    let balanceBefore = await testToken.balanceOf(fx.addresses[0]);
     await (await fx.blsExpander.blsCallMultiCheckRewardIncrease(
-      rewardRecipient,
       rewardTokenAddress,
       rewardAmountRequired,
       [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
       aggSignature,
       [txData1, txData2]
     )).wait();
-    let balanceAfter = await testToken.balanceOf(rewardRecipient);
+    let balanceAfter = await testToken.balanceOf(fx.addresses[0]);
     expect(balanceAfter.sub(balanceBefore)).to.equal(rewardAmountToSend);
   })
 
