@@ -1,5 +1,6 @@
 import { BigNumber, ethers } from "../../deps.ts";
-import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
+
+import MockERC20Abi from "../../contractAbis/MockERC20Abi.ts";
 
 export default class MockErc20 {
   contract: ethers.Contract;
@@ -10,7 +11,7 @@ export default class MockErc20 {
   ) {
     this.contract = new ethers.Contract(
       address,
-      ovmContractABIs.MockERC20.abi,
+      MockERC20Abi,
       provider,
     );
   }

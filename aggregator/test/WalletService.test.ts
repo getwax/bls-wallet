@@ -1,8 +1,8 @@
-import { assertEquals, BigNumber } from "./deps.ts";
+import { assertEquals, BigNumber, BlsWallet } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
-import BlsWallet from "../src/chain/BlsWallet.ts";
+import * as env from "./env.ts";
 
 Fixture.test("WalletService sends single tx", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
@@ -40,34 +40,6 @@ Fixture.test("WalletService sends single transfer tx", async (fx) => {
 
   assertEquals(balances.map((b) => b.toNumber()), [999, 1001]);
 });
-
-Fixture.test(
-  "WalletService sends single transaction with token reward",
-  async (fx) => {
-    const [wallet] = await fx.setupWallets(1);
-
-    const tx = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      rewardTokenAddress: fx.rewardErc20.contract.address,
-      rewardTokenAmount: BigNumber.from(8),
-      nonce: await wallet.Nonce(),
-    });
-
-    await fx.walletService.sendTxs([tx]);
-
-    assertEquals(
-      (await fx.testErc20.balanceOf(wallet.address)).toNumber(),
-      1003,
-    );
-
-    assertEquals(
-      (await fx.rewardErc20.balanceOf(wallet.address)).toNumber(),
-      1000 - 8,
-    );
-  },
-);
 
 Fixture.test("WalletService sends aggregate transaction", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
@@ -163,43 +135,6 @@ Fixture.test(
   },
 );
 
-Fixture.test(
-  "WalletService sends aggregate transaction with token rewards",
-  async (fx) => {
-    const [wallet] = await fx.setupWallets(1);
-    const walletNonce = await wallet.Nonce();
-
-    await fx.walletService.sendTxs([
-      wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "3"],
-        rewardTokenAddress: fx.rewardErc20.contract.address,
-        rewardTokenAmount: BigNumber.from(8),
-        nonce: walletNonce,
-      }),
-      wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "5"],
-        rewardTokenAddress: fx.rewardErc20.contract.address,
-        rewardTokenAmount: BigNumber.from(13),
-        nonce: walletNonce.add(1),
-      }),
-    ]);
-
-    assertEquals(
-      (await fx.testErc20.balanceOf(wallet.address)).toNumber(),
-      1008,
-    );
-
-    assertEquals(
-      (await fx.rewardErc20.balanceOf(wallet.address)).toNumber(),
-      1000 - 21,
-    );
-  },
-);
-
 // FIXME (merge-ok): This test is flaky but I think it's just the optimism dev
 // environment being weird - it seems to reject txs based on confirmed state
 // only sometimes. This causes tx2,tx3 to fail because it says tx3 will fail the
@@ -238,6 +173,7 @@ Fixture.test(
 Fixture.test("WalletService can create a wallet", async (fx) => {
   const tx = await BlsWallet.signCreation(
     fx.rng.seed("aggregator-free-wallet").address(),
+    env.VERIFICATION_GATEWAY_ADDRESS,
     fx.adminWallet.provider,
   );
 

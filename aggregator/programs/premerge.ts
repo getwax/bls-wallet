@@ -69,7 +69,11 @@ function Checks(): Check[] {
       await shell.run(
         "deno",
         "test",
-        "-j",
+        // Note: Tests currently need to be serial because we rely on fixed
+        // accounts with funds to fuel transactions. Those accounts then can't
+        // be used in parallel because the nonces on the txs won't be in sync.
+        // "-j",
+        "--fail-fast=3",
         "--allow-net",
         "--allow-env",
         "--allow-read",

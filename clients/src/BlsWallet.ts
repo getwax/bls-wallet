@@ -82,8 +82,6 @@ export default class BlsWallet {
         contractAddress: verificationGateway.address,
         encodedFunction: '0x',
         nonce: BigNumber.from(0),
-        rewardTokenAddress: ethers.constants.AddressZero,
-        rewardTokenAmount: BigNumber.from(0),
         ethValue: BigNumber.from(0),
       },
       privateKey,
@@ -146,7 +144,6 @@ export default class BlsWallet {
 
     await (
       await verificationGateway.actionCalls(
-        ethers.constants.AddressZero,
         blsWalletSigner.aggregate([tx]),
       )
     ).wait();
@@ -236,7 +233,7 @@ export default class BlsWallet {
 
     const walletContract = new ethers.Contract(
       contractAddress,
-      [],
+      BlsWalletAbi,
       signerOrProvider,
     );
 
@@ -251,16 +248,12 @@ export default class BlsWallet {
     contract,
     method,
     args,
-    rewardTokenAddress = ethers.constants.AddressZero,
-    rewardTokenAmount = BigNumber.from(0),
     ethValue = BigNumber.from(0),
     nonce,
   }: {
     contract: ethers.Contract;
     method: string;
     args: string[];
-    rewardTokenAddress?: string;
-    rewardTokenAmount?: BigNumber;
     ethValue?: BigNumber;
     nonce: BigNumber;
   }): TransactionData {
@@ -269,8 +262,6 @@ export default class BlsWallet {
         contractAddress: contract.address,
         encodedFunction: contract.interface.encodeFunctionData(method, args),
         nonce,
-        rewardTokenAddress,
-        rewardTokenAmount,
         ethValue,
       },
       this.privateKey,

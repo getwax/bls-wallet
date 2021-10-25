@@ -1,24 +1,23 @@
 import {
   BigNumber,
+  BlsWallet,
   BlsWalletSigner,
-  Contract,
   delay,
   ethers,
   initBlsWalletSigner,
   keccak256,
   TransactionData,
+  VerificationGateway,
   Wallet,
 } from "../../deps.ts";
 
 import * as env from "../env.ts";
-import * as ovmContractABIs from "../../ovmContractABIs/index.ts";
 import TransactionFailure from "./TransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import { TxTableRow } from "./TxTable.ts";
-import splitHex256 from "../helpers/splitHex256.ts";
-import BlsWallet from "../chain/BlsWallet.ts";
 import nil from "../helpers/nil.ts";
+import IERC20Abi from "../../contractAbis/IERC20Abi.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -34,7 +33,7 @@ const addressStringLength = 42;
 const publicKeyStringLength = 258;
 
 export default class WalletService {
-  verificationGateway: Contract;
+  verificationGateway: VerificationGateway;
 
   constructor(
     public emit: (evt: AppEvent) => void,
@@ -42,9 +41,8 @@ export default class WalletService {
     public blsWalletSigner: BlsWalletSigner,
     public nextNonce: number,
   ) {
-    this.verificationGateway = new Contract(
+    this.verificationGateway = new VerificationGateway(
       env.VERIFICATION_GATEWAY_ADDRESS,
-      ovmContractABIs.VerificationGateway.abi,
       this.aggregatorSigner,
     );
   }
@@ -85,6 +83,7 @@ export default class WalletService {
 
     const nextNonce = await BlsWallet.Nonce(
       tx.publicKey,
+      env.VERIFICATION_GATEWAY_ADDRESS,
       this.aggregatorSigner,
     );
 
@@ -111,24 +110,8 @@ export default class WalletService {
 
     const aggregateTx = this.blsWalletSigner.aggregate(txs);
 
-    const actionCallsArgs = [
-      this.aggregatorSigner.address,
-
-      // Enhancement: Public keys here are not used for wallets that already
-      // exist. In future, in combination with BLSExpander, passing zeros may
-      // be preferred to reduce the amount of call data.
-      txs.map((tx) => splitHex256(tx.publicKey)),
-
-      splitHex256(aggregateTx.signature),
-      txs.map((tx) => ({
-        publicKeyHash: keccak256(tx.publicKey),
-        nonce: tx.nonce,
-        rewardTokenAddress: tx.rewardTokenAddress,
-        rewardTokenAmount: tx.rewardTokenAmount,
-        ethValue: tx.ethValue,
-        contractAddress: tx.contractAddress,
-        encodedFunction: tx.encodedFunction,
-      })),
+    const actionCallsArgs: Parameters<VerificationGateway["actionCalls"]> = [
+      aggregateTx,
       { nonce: this.NextNonce() },
     ];
 
@@ -227,7 +210,7 @@ export default class WalletService {
 
     const token = new ethers.Contract(
       tokenAddress,
-      ovmContractABIs.IERC20.abi,
+      IERC20Abi,
       this.aggregatorSigner.provider,
     );
 
@@ -246,12 +229,12 @@ export default class WalletService {
 
     const publicKey = addressOrPublicKey;
 
-    const address: string = await this.verificationGateway.walletFromHash(
+    const address = await this.verificationGateway.walletFromHash(
       ethers.utils.keccak256(publicKey),
     );
 
     assert(
-      address !== ethers.constants.AddressZero,
+      address !== undefined,
       "Wallet does not exist",
     );
 

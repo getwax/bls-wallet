@@ -34,12 +34,6 @@ export default [
         "type": "address"
       },
       {
-        "indexed": true,
-        "internalType": "bytes32",
-        "name": "publicKeyHash",
-        "type": "bytes32"
-      },
-      {
         "indexed": false,
         "internalType": "uint256[4]",
         "name": "publicKey",
@@ -51,11 +45,6 @@ export default [
   },
   {
     "inputs": [
-      {
-        "internalType": "address payable",
-        "name": "rewardRecipient",
-        "type": "address"
-      },
       {
         "internalType": "uint256[4][]",
         "name": "publicKeys",
@@ -69,23 +58,8 @@ export default [
       {
         "components": [
           {
-            "internalType": "bytes32",
-            "name": "publicKeyHash",
-            "type": "bytes32"
-          },
-          {
             "internalType": "uint256",
             "name": "nonce",
-            "type": "uint256"
-          },
-          {
-            "internalType": "contract IERC20",
-            "name": "rewardTokenAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rewardTokenAmount",
             "type": "uint256"
           },
           {
@@ -143,6 +117,11 @@ export default [
   {
     "inputs": [
       {
+        "internalType": "uint256[4][]",
+        "name": "publicKeys",
+        "type": "uint256[4][]"
+      },
+      {
         "internalType": "uint256[2]",
         "name": "signature",
         "type": "uint256[2]"
@@ -150,23 +129,8 @@ export default [
       {
         "components": [
           {
-            "internalType": "bytes32",
-            "name": "publicKeyHash",
-            "type": "bytes32"
-          },
-          {
             "internalType": "uint256",
             "name": "nonce",
-            "type": "uint256"
-          },
-          {
-            "internalType": "contract IERC20",
-            "name": "rewardTokenAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "rewardTokenAmount",
             "type": "uint256"
           },
           {

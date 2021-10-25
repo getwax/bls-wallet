@@ -8,12 +8,10 @@ export default (
   rawTxData: RawTransactionData,
 ): string => {
   return solidityPack(
-    ["uint256", "uint256", "address", "uint256", "uint256", "address", "bytes32"],
+    ["uint256", "uint256", "uint256", "address", "bytes32"],
     [
       chainId,
       rawTxData.nonce,
-      rawTxData.rewardTokenAddress,
-      rawTxData.rewardTokenAmount,
       rawTxData.ethValue,
       rawTxData.contractAddress,
       keccak256(rawTxData.encodedFunction),

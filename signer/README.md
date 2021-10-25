@@ -25,14 +25,6 @@ import { initBlsWalletSigner } from "bls-wallet-signer";
   const signedTransactionData = signer.sign(
     {
       nonce: ethers.BigNumber.from(0),
-
-      // This is a reward that goes to the aggregator for performing aggregation
-      // and paying your transaction fee. It doesn't need to be the same token
-      // as the one we're transferring. It may be any token, subject only to
-      // whatever acceptance criteria the aggregator may define.
-      rewardTokenAddress: someToken.address,
-      rewardTokenAmount: ethers.BigNumber.from(10).pow(9),
-
       ethValue: ethers.BigNumber.from(0),
       contractAddress: someToken.address,
 

@@ -1,4 +1,4 @@
-import { BigNumber, ethers, TransactionData } from "../../deps.ts";
+import { BigNumber, BlsWallet, ethers, TransactionData } from "../../deps.ts";
 
 import testRng from "./testRng.ts";
 import WalletService from "../../src/app/WalletService.ts";
@@ -13,7 +13,6 @@ import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 import MockErc20 from "./MockErc20.ts";
 import nil, { isNotNil } from "../../src/helpers/nil.ts";
-import BlsWallet from "../../src/chain/BlsWallet.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -171,6 +170,7 @@ export default class Fixture {
     for (const i of Range(count)) {
       const wallet = await BlsWallet.connectOrCreate(
         this.createBlsPrivateKey(`${i}`, ...extraSeeds),
+        env.VERIFICATION_GATEWAY_ADDRESS,
         this.adminWallet,
       );
 

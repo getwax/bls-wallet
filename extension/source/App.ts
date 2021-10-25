@@ -1,16 +1,17 @@
 import { EventEmitter } from 'events';
 
+import { BlsWallet } from 'bls-wallet-clients';
+import type { Aggregator } from 'bls-wallet-clients';
 import { BlsWalletSigner } from 'bls-wallet-signer';
 import type { ethers } from 'ethers';
 import type TypedEventEmitter from 'typed-emitter';
-
 import { browser } from 'webextension-polyfill-ts';
-import type AggregatorClient from './AggregatorClient';
-import BlsWallet from './chain/BlsWallet';
+
 import { PRIVATE_KEY_STORAGE_KEY } from './env';
 import generateRandomHex from './helpers/generateRandomHex';
 import TaskQueue from './common/TaskQueue';
 import { PageEvents } from './components/Page';
+import * as env from './env';
 
 export type AppState = {
   privateKey?: string;
@@ -38,7 +39,7 @@ export default class App {
 
   constructor(
     public blsWalletSigner: BlsWalletSigner,
-    public aggregatorClient: AggregatorClient,
+    public aggregator: Aggregator,
     public provider: ethers.providers.Provider,
     public storage: typeof browser.storage.local,
   ) {
@@ -207,10 +208,11 @@ export default class App {
     try {
       const creationTx = await BlsWallet.signCreation(
         this.state.privateKey,
+        env.VERIFICATION_GATEWAY_ADDRESS,
         this.provider,
       );
 
-      const createResult = await this.aggregatorClient.createWallet(creationTx);
+      const createResult = await this.aggregator.createWallet(creationTx);
 
       if (createResult.address !== undefined) {
         // The address is in the createResult but we'd rather just check with the
@@ -242,6 +244,7 @@ export default class App {
     try {
       this.wallet = await BlsWallet.connect(
         this.state.privateKey,
+        env.VERIFICATION_GATEWAY_ADDRESS,
         this.provider,
       );
 

@@ -1,5 +1,5 @@
 import TxService from "../src/app/TxService.ts";
-import { assertEquals, BigNumber } from "./deps.ts";
+import { assertEquals } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -25,21 +25,22 @@ Fixture.test("adds valid transaction", async (fx) => {
 
 Fixture.test("rejects transaction with invalid signature", async (fx) => {
   const txService = await fx.createTxService();
-  const [wallet] = await fx.setupWallets(1);
+  const [wallet, otherWallet] = await fx.setupWallets(2);
 
-  const tx = wallet.sign({
+  const signParams = {
     contract: fx.testErc20.contract,
     method: "mint",
     args: [wallet.address, "3"],
     nonce: await wallet.Nonce(),
-  });
+  };
+
+  const tx = wallet.sign(signParams);
+  const otherTx = otherWallet.sign(signParams);
 
   // Make the signature invalid
-  tx.signature = [
-    "0x",
-    tx.signature[2] === "0" ? "1" : "0",
-    tx.signature.slice(3),
-  ].join("");
+  // Note: Bug in bls prevents just corrupting the signature (see other invalid
+  // sig test)
+  tx.signature = otherTx.signature;
 
   assertEquals(await txService.readyTxTable.count(), 0n);
 
@@ -74,21 +75,24 @@ Fixture.test(
   "rejects transaction with invalid signature and nonce from the past",
   async (fx) => {
     const txService = await fx.createTxService();
-    const [wallet] = await fx.setupWallets(1);
+    const [wallet, otherWallet] = await fx.setupWallets(2);
 
-    const tx = wallet.sign({
+    const signParams = {
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "3"],
       nonce: (await wallet.Nonce()).sub(1),
-    });
+    };
 
-    // Make the signature invalid
-    tx.signature = [
-      "0x",
-      tx.signature[2] === "0" ? "1" : "0",
-      tx.signature.slice(3),
-    ].join("");
+    const tx = wallet.sign(signParams);
+    const otherTx = otherWallet.sign(signParams);
+
+    // Use signature from otherTx to make it invalid
+    // Note: It would be faster to corrupt the existing signature than set up
+    // another wallet, but there is a bug in hubbleBls that throws instead of
+    // returning false when you do that:
+    // https://github.com/thehubbleproject/hubble-bls/pull/20
+    tx.signature = otherTx.signature;
 
     assertEquals(await txService.readyTxTable.count(), 0n);
 
@@ -296,82 +300,6 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
 
 fillGapToEnableMultipleFutureTxsTest(3);
 fillGapToEnableMultipleFutureTxsTest(4);
-
-function fillGapToPickFromMultipleFutureTxsTest(futureTxCount: number) {
-  Fixture.test(
-    [
-      "filling the nonce gap picks from multiple eligible future txs",
-      `(futureTxCount: ${futureTxCount})`,
-    ].join(" "),
-    async (fx) => {
-      const txService = await fx.createTxService({
-        ...TxService.defaultConfig,
-        // Small query limit forces multiple batches when processing the
-        // future txs, checking that batching works correctly
-        txQueryLimit: 2,
-      });
-
-      const [wallet] = await fx.setupWallets(1);
-      const walletNonce = await wallet.Nonce();
-
-      assertEquals(await fx.allTxs(txService), {
-        ready: [],
-        future: [],
-      });
-
-      // Add multiple txs in the future with the same nonce
-
-      const futureTxs = [];
-
-      for (const i of Range(futureTxCount)) {
-        const futureTx = wallet.sign({
-          contract: fx.testErc20.contract,
-          method: "mint",
-          args: [wallet.address, "3"],
-          nonce: walletNonce.add(1),
-          rewardTokenAddress: fx.rewardErc20.contract.address,
-          rewardTokenAmount: BigNumber.from(i === 1 ? 1 : 0),
-        });
-
-        const failures = await txService.add(futureTx);
-        assertEquals(failures, []);
-
-        futureTxs.push(futureTx);
-      }
-
-      assertEquals(await fx.allTxs(txService), {
-        ready: [],
-        future: futureTxs,
-      });
-
-      // Add tx, which makes futureTxs ready
-      const tx = wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "3"],
-        nonce: walletNonce,
-      });
-
-      const failures = await txService.add(tx);
-      assertEquals(failures, []);
-
-      assertEquals(await fx.allTxs(txService), {
-        ready: [
-          tx,
-
-          // Only this future tx, which was given a token reward is included
-          futureTxs[1],
-        ],
-
-        // Other future txs have been discarded
-        future: [],
-      });
-    },
-  );
-}
-
-// fillGapToPickFromMultipleFutureTxsTest(3);
-fillGapToPickFromMultipleFutureTxsTest(4);
 
 Fixture.test(
   "filling the nonce gap adds eligible future tx but stops at the next gap",

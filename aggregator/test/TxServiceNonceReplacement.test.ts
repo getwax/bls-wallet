@@ -1,46 +1,8 @@
 import TxService from "../src/app/TxService.ts";
-import { assertEquals, BigNumber } from "./deps.ts";
+import { assertEquals } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
-
-Fixture.test(
-  "reusing a nonce from ready txs fails with insufficient-reward",
-  async (fx) => {
-    const txService = await fx.createTxService();
-    const [wallet] = await fx.setupWallets(1);
-    const walletNonce = await wallet.Nonce();
-
-    const tx = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      nonce: walletNonce,
-    });
-
-    const failures = await txService.add(tx);
-    assertEquals(failures, []);
-
-    const txDuplicateNonce = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "5"],
-      nonce: walletNonce,
-    });
-
-    const failuresDuplicateNonce = await txService.add(txDuplicateNonce);
-
-    assertEquals(
-      failuresDuplicateNonce.map((f) => f.type),
-      ["insufficient-reward"],
-    );
-
-    assertEquals(await fx.allTxs(txService), {
-      ready: [tx],
-      future: [],
-    });
-  },
-);
 
 Fixture.test(
   "reusing a nonce from ready txs with a higher reward replaces the tx",
@@ -79,8 +41,9 @@ Fixture.test(
       contract: fx.testErc20.contract,
       method: "mint",
       args: [wallet.address, "5"],
-      rewardTokenAddress: fx.rewardErc20.contract.address,
-      rewardTokenAmount: BigNumber.from(1),
+      // Reward removed because they need to be introduced in a different way,
+      // however this should still work because TxService considers the new tx
+      // to have a higher reward for now.
       nonce: walletNonce,
     });
 
@@ -89,58 +52,6 @@ Fixture.test(
 
     assertEquals(await fx.allTxs(txService), {
       ready: [txReplacement],
-      future: [],
-    });
-  },
-);
-
-Fixture.test(
-  [
-    "reusing a nonce from ready txs with a lower reward fails with",
-    "insufficient-reward",
-  ].join(" "),
-  async (fx) => {
-    const txService = await fx.createTxService();
-    const [wallet] = await fx.setupWallets(1);
-    const walletNonce = await wallet.Nonce();
-
-    const tx = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      rewardTokenAddress: fx.rewardErc20.contract.address,
-      rewardTokenAmount: BigNumber.from(2),
-      nonce: walletNonce,
-    });
-
-    const failures = await txService.add(tx);
-    assertEquals(failures, []);
-
-    assertEquals(await fx.allTxs(txService), {
-      ready: [tx],
-      future: [],
-    });
-
-    const txReplacement = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "5"],
-      // because the previous tx isn't on chain, the default nonce offset of
-      // zero should conflict
-      rewardTokenAddress: fx.rewardErc20.contract.address,
-      rewardTokenAmount: BigNumber.from(1),
-      nonce: walletNonce,
-    });
-
-    const failuresReplacement = await txService.add(txReplacement);
-
-    assertEquals(
-      failuresReplacement.map((f) => f.type),
-      ["insufficient-reward"],
-    );
-
-    assertEquals(await fx.allTxs(txService), {
-      ready: [tx],
       future: [],
     });
   },
@@ -199,8 +110,6 @@ function reinsertionTest(extraTxs: number) {
         contract: fx.testErc20.contract,
         method: "mint",
         args: [w1.address, "11"],
-        rewardTokenAddress: fx.rewardErc20.contract.address,
-        rewardTokenAmount: BigNumber.from(1),
         nonce: w1Nonce.add(1),
       });
 

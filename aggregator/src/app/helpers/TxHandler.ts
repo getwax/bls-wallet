@@ -26,7 +26,6 @@ export default function TxHandler(
     const tx: TransactionData = {
       ...dto,
       nonce: BigNumber.from(dto.nonce),
-      rewardTokenAmount: BigNumber.from(dto.rewardTokenAmount),
       ethValue: BigNumber.from(dto.ethValue),
     };
 

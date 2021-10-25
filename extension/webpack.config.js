@@ -67,7 +67,7 @@ module.exports = {
     contentScript: path.join(sourcePath, 'ContentScript', 'index.ts'),
     pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
-    createTransaction: path.join(sourcePath, 'createTransaction', 'index.tsx'),
+    createTransaction: path.join(sourcePath, 'CreateTransaction', 'index.tsx'),
     confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
   },
 
