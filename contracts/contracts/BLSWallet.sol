@@ -28,7 +28,7 @@ contract BLSWallet
     receive() external payable {}
     fallback() external payable {}
 
-    function getPublicKey() external returns (uint256[4] memory) {
+    function getPublicKey() external view returns (uint256[4] memory) {
         return publicKey;
     }
 

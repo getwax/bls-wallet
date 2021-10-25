@@ -2,7 +2,7 @@ import { ethers, network } from "hardhat";
 
 import { expect, assert, should } from "chai";
 
-import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+// import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import Fixture from "../shared/helpers/Fixture";
 import { FullTxData, TxData } from "../shared/helpers/Fixture";
@@ -18,6 +18,11 @@ import blsSignFunction from "../shared/helpers/blsSignFunction";
 
 
 describe('TokenPayments', async function () {
+  if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
+    console.log("Skipping non-deployer tests.");
+    return;
+  }
+
   let fx: Fixture;
   let th: TokenHelper;
   let blsWalletAddresses: string[];

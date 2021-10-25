@@ -1,22 +1,42 @@
-require('dotenv').config();
-import { HardhatUserConfig, NetworkUserConfig } from "hardhat/types";
+import * as dotenv from "dotenv";
 
-// import '@eth-optimism/hardhat-ovm';
-
-import "@nomiclabs/hardhat-ethers";
+import { HardhatUserConfig, task } from "hardhat/config";
+import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
+import "@typechain/hardhat";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
 
-import { task } from "hardhat/config";
+dotenv.config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async (args, hre) => {
+task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   const accounts = await hre.ethers.getSigners();
 
   for (const account of accounts) {
     console.log(account.address);
   }
 });
+
+
+// Account used to deploy the deployer contract at the same address on each network
+const deployerAccount = {
+  mnemonic: `${process.env.DEPLOYER_MNEMONIC}`,
+  initialIndex: Number.parseInt(process.env.DEPLOYER_SET_INDEX!),
+  count: 1
+};
+
+// Accounts used for testing and deploying
+const mainAccounts = {
+  mnemonic: `${process.env.MAIN_MNEMONIC}`,
+  count: 5
+}
+
+const accounts = (
+  `${process.env.DEPLOYER_DEPLOYMENT}` === `true`
+  ? deployerAccount : mainAccounts
+);
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -53,66 +73,50 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       initialBaseFeePerGas: 0, // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
+      accounts,
     },
     gethDev: {
       url: `http://localhost:8545`,
-      accounts: [
-        `0x${process.env.PRIVATE_KEY_AGG}`,
-        `0x${process.env.PRIVATE_KEY_002}`,
-        `0x${process.env.PRIVATE_KEY_003}`,
-        `0x${process.env.PRIVATE_KEY_004}`,
-        `0x${process.env.PRIVATE_KEY_005}`
-      ],
+      accounts,
       gasPrice: 0
     },
-    arb1: { //chainId: 42161
-      url: `https://arb1.arbitrum.io/rpc`,
-      accounts: [
-        `0x${process.env.PRIVATE_KEY_AGG_ARB1}`,
-        `0x${process.env.PRIVATE_KEY_002}`,
-        `0x${process.env.PRIVATE_KEY_003}`,
-        `0x${process.env.PRIVATE_KEY_004}`,
-        `0x${process.env.PRIVATE_KEY_005}`
-      ],
-      gasPrice: 700000000,
+    ropsten: {
+      url: process.env.ROPSTEN_URL || "",
+      accounts
     },
-    rinkarby: { //chainId: 421611
-      url: `https://rinkeby.arbitrum.io/rpc`,
-      accounts: [
-        `0x${process.env.PRIVATE_KEY_AGG_RINKARBY}`,
-        `0x${process.env.PRIVATE_KEY_002}`,
-        `0x${process.env.PRIVATE_KEY_003}`,
-        `0x${process.env.PRIVATE_KEY_004}`,
-        `0x${process.env.PRIVATE_KEY_005}`
-      ],
+    arbitrum_testnet: { //chainId: 421611
+      url: process.env.ARBITRUM_TESTNET_URL,
+      accounts,
       gasPrice: 1408857682, //287938372,
     },
-    // optimistic: {
-    //   url: `http://localhost:8545`,
-    //   accounts: {
-    //     mnemonic: "test test test test test test test test test test test junk",
-    //     initialIndex: 2, // After optimism deployer, sequencer
-    //     count: 5
-    //   },
+    arbitrum: { //chainId: 42161
+      url: process.env.ARBITRUM_URL,
+      accounts,
+      gasPrice: 700000000,
+    },
+    // optimistic_local: {
+    //   url: process.env.OPTIMISM_LOCAL_URL,
+    //   accounts,
     //   gasPrice: 0,//15000000,
     //   ovm: true
     // },
-    // optimisticKovan: {
-    //   url: 'https://kovan.optimism.io',
-    //   accounts: [
-    //     `0x${process.env.PRIVATE_KEY_AGG_OKOV}`,
-    //     `0x${process.env.PRIVATE_KEY_002}`,
-    //     `0x${process.env.PRIVATE_KEY_003}`,
-    //     `0x${process.env.PRIVATE_KEY_004}`,
-    //     `0x${process.env.PRIVATE_KEY_005}`
-    //   ],
+    // optimistic_testnet: {
+    //   url: process.env.OPTIMISM_TESTNET_URL,
+    //   accounts,
     //   gasPrice: 15000000,
     //   ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
     // }
   },
+  gasReporter: {
+    enabled: process.env.REPORT_GAS !== undefined,
+    currency: "USD",
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
+  },
   mocha: {
     timeout: 120000
-  }    
+  }
 };
 
 export default config;

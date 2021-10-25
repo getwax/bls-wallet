@@ -18,6 +18,11 @@ import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunP
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 
 describe('WalletActions', async function () {
+  if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
+    console.log("Skipping non-deployer tests.");
+    return;
+  }
+
   this.beforeAll(async function () {
     if (network.name !== "rinkarby") {
       console.log("PCE:", await deployAndRunPrecompileCostEstimator());
@@ -180,7 +185,7 @@ describe('WalletActions', async function () {
 
     // check each wallet has start amount
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
+      let walletBalance = await th.testToken!.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(th.userStartAmount);
     }
     // bls transfer each wallet's balance to first wallet
@@ -197,7 +202,7 @@ describe('WalletActions', async function () {
     // check first wallet full and others empty
     let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
+      let walletBalance = await th.testToken!.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(i==0?totalAmount:0);
     }
   });

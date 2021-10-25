@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
-import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
+import { Wallet, BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
 
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
 import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
@@ -43,7 +43,7 @@ export default class Fixture {
 
   private constructor(
     public chainId: number,
-    public provider,
+    public provider: any,
 
     public signers: Signer[],
     public addresses: string[],
@@ -51,6 +51,7 @@ export default class Fixture {
     public blsSignerFactory: BlsSignerFactory,
     public blsSigners: BlsSignerInterface[],
 
+    // private deployerWallet: Wallet,
     public VerificationGateway: ContractFactory,
     public verificationGateway: Contract,
 
@@ -64,10 +65,10 @@ export default class Fixture {
   static async create(
     blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
     initialized: boolean=true,
-    blsAddress: string=undefined,
-    vgAddress: string=undefined,
-    expanderAddress: string=undefined,
-    secretNumbers: number[]=undefined
+    blsAddress: string|undefined=undefined,
+    vgAddress: string|undefined=undefined,
+    expanderAddress: string|undefined=undefined,
+    secretNumbers: number[]|undefined=undefined
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
     let provider = ethers.provider;

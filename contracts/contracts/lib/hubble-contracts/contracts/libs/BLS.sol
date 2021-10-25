@@ -41,7 +41,7 @@ library BLS {
     // estimator address
     address private constant COST_ESTIMATOR_ADDRESS =
         // 0x85C17E7180879a71EDAE76B43E4a85159a7eA601; // rinkarby
-        0x5FbDB2315678afecb367f032d93F642f64180aa3; // local hardhat test
+        0x6967b7c29E8B0823a11A5A56Dd7b3973Fd7FBc81; // local hardhat test
         //0x079d8077C465BD0BF0FC502aD2B846757e415661; initial
 
     function verifySingle(
