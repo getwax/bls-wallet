@@ -38,14 +38,14 @@ describe('Deployer', async function () {
   });
 
   it('should deploy to caculated address', async function () {
-    let testSalt = "0";
+    let testSalt = BigNumber.from(0);
     const initCodeHash = ethers.utils.solidityKeccak256(
       ["bytes"],
       [Create2Deployer.bytecode]
     );
     let calculatedAddress = ethers.utils.getCreate2Address(
       create2Deployer.address,
-      "0x"+"00".repeat(32),
+      "0x"+testSalt.toHexString().substr(2).padStart(64, "0"),
       initCodeHash
     );
     expect(calculatedAddress).to.equal(
@@ -74,7 +74,8 @@ describe('Deployer', async function () {
   });
 
   it('should fail deployment with same salt', async function () {
-    let testSalt = "1";
+    let testSalt = BigNumber.from(1);
+    // two identical deployment promises, ie, same create2 address
     let deployerPromise1, deployerPromise2 = create2Deployer.deploy(
       testSalt,
       Create2Deployer.bytecode

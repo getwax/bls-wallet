@@ -15,13 +15,14 @@ contract Create2Deployer {
             bytes1(0xff),
             sender,
             salt,
-            keccak256(abi.encodePacked(
-                code
-            ))
+            keccak256(code)
         )))));
     }
 
-    function deploy(uint256 salt, bytes memory code) public {
+    function deploy(
+        uint256 salt,
+        bytes memory code
+    ) public {
         address addr;
         assembly {
             addr := create2(0, add(code, 0x20), mload(code), salt)

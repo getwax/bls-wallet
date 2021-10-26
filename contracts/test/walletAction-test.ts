@@ -24,7 +24,31 @@ describe('WalletActions', async function () {
   }
 
   this.beforeAll(async function () {
-    if (network.name !== "rinkarby") {
+    // deploy the deployer contract for the transient hardhat network
+    if (network.name === "hardhat") {
+      // create deployer wallet
+      let deployerWallet = ethers.Wallet.fromMnemonic(
+        `${process.env.DEPLOYER_MNEMONIC}`,
+        `m/44'/60'/0'/0/${process.env.DEPLOYER_SET_INDEX}`
+      ).connect(ethers.provider);
+      console.log("eaoAddress:", deployerWallet.address);
+
+      // fund deployer wallet address
+      await (await ethers.getSigners())[0].sendTransaction({
+        to: deployerWallet.address,
+        value: utils.parseEther("1")
+      });
+
+      // deploy deployer contract
+      const Create2Deployer = await ethers.getContractFactory(
+        "Create2Deployer",
+        deployerWallet
+      );
+      let create2Deployer = await Create2Deployer.deploy();
+      await create2Deployer.deployed();
+      console.log("create2Deployer:", create2Deployer.address);
+
+      // deploy the precompile contract (via deployer)
       console.log("PCE:", await deployAndRunPrecompileCostEstimator());
     }
   });
