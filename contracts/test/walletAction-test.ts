@@ -16,6 +16,8 @@ import blsSignFunction from "../shared/helpers/blsSignFunction";
 import { formatUnits, parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
+import deployDeployer, { deployerAddress } from "../shared/helpers/deployDeployer";
+import { Create2Deployer } from "../typechain";
 
 describe('WalletActions', async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
@@ -26,26 +28,16 @@ describe('WalletActions', async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
     if (network.name === "hardhat") {
-      // create deployer wallet
-      let deployerWallet = ethers.Wallet.fromMnemonic(
-        `${process.env.DEPLOYER_MNEMONIC}`,
-        `m/44'/60'/0'/0/${process.env.DEPLOYER_SET_INDEX}`
-      ).connect(ethers.provider);
-      console.log("eaoAddress:", deployerWallet.address);
+      let address = deployerAddress();
+      console.log("eaoAddress:", address);
 
       // fund deployer wallet address
       await (await ethers.getSigners())[0].sendTransaction({
-        to: deployerWallet.address,
+        to: address,
         value: utils.parseEther("1")
       });
 
-      // deploy deployer contract
-      const Create2Deployer = await ethers.getContractFactory(
-        "Create2Deployer",
-        deployerWallet
-      );
-      let create2Deployer = await Create2Deployer.deploy();
-      await create2Deployer.deployed();
+      let create2Deployer = await deployDeployer();
       console.log("create2Deployer:", create2Deployer.address);
 
       // deploy the precompile contract (via deployer)

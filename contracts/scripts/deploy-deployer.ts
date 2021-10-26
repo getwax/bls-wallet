@@ -6,6 +6,7 @@ import * as dotenv from "dotenv";
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers, network } from "hardhat";
+import deployDeployer from "../shared/helpers/deployDeployer";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -23,11 +24,7 @@ async function main() {
     nonce: ${await deployer.getTransactionCount()}
   `);
 
-  // We get the contract to deploy
-  const Create2Deployer = await ethers.getContractFactory("Create2Deployer");
-  const create2Deployer = await Create2Deployer.deploy();
-
-  await create2Deployer.deployed();
+  const create2Deployer = await deployDeployer();
   console.log("create2Deployer deployed to:", create2Deployer.address);
 
 }
