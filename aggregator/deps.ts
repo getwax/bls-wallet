@@ -31,18 +31,18 @@ export {
 import { ethers } from "https://esm.sh/ethers@5.4.7";
 export const keccak256 = ethers.utils.keccak256;
 
-export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.6.0";
+export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.6.1";
 
 export type {
   BlsWalletSigner,
   TransactionData,
-} from "https://esm.sh/bls-wallet-signer@0.6.0";
+} from "https://esm.sh/bls-wallet-signer@0.6.1";
 
 export {
   Aggregator as AggregatorClient,
   BlsWallet,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.2.0";
+} from "https://esm.sh/bls-wallet-clients@0.2.2";
 
 // Database dependencies
 export {

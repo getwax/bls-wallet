@@ -148,6 +148,8 @@ export function verifyRaw(
     signature,
     negG2,
   );
+  // call this function to avoid memory leak
+  negG2.destroy();
   return mcl.finalExp(pairings).isOne();
 }
 
@@ -171,6 +173,8 @@ export function verifyMultipleRaw(
       mcl.millerLoop(messages[i], pubkeys[i]),
     );
   }
+  // call this function to avoid memory leak
+  negG2.destroy();
   return mcl.finalExp(accumulator).isOne();
 }
 

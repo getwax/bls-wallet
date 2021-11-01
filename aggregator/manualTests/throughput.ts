@@ -99,7 +99,11 @@ pollingLoop(() => {
       nonce,
     });
 
-    client.addTransaction(tx).then(() => {
+    client.addTransaction(tx).then((failures) => {
+      if (failures.length > 0) {
+        console.log({ failures });
+      }
+
       txsAdded++;
     });
 

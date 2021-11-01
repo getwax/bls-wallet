@@ -123,6 +123,14 @@ export default class WalletService {
           ...actionCallsArgs,
         );
       } catch (error) {
+        if (/\binvalid transaction nonce\b/.test(error.message)) {
+          // This can occur when the nonce is in the future, which can
+          // legitimately occur because the previous nonce is still being
+          // processed. Therefore we don't treat it like other response errors
+          // because it can resolve on its own.
+          return { type: "nonceError" as const, value: error };
+        }
+
         // Distinguish this error because it means something bigger is wrong
         // with the transaction and it's not worth retrying.
         return { type: "responseError" as const, value: error };
@@ -153,7 +161,7 @@ export default class WalletService {
         throw attemptResult.value;
       }
 
-      const waitError = attemptResult.value;
+      const suspectedTransientError = attemptResult.value;
 
       if (i !== maxAttempts - 1) {
         this.emit({
@@ -161,13 +169,13 @@ export default class WalletService {
           data: {
             attemptNumber: i + 1,
             txIds,
-            error: waitError,
+            error: suspectedTransientError,
           },
         });
 
         await delay(retryDelay);
       } else {
-        throw waitError;
+        throw suspectedTransientError;
       }
     }
 
