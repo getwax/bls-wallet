@@ -17,7 +17,6 @@ import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import { TxTableRow } from "./TxTable.ts";
 import nil from "../helpers/nil.ts";
-import IERC20Abi from "../../contractAbis/IERC20Abi.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -28,9 +27,6 @@ export type CreateWalletResult = {
   address?: string;
   failures: TransactionFailure[];
 };
-
-const addressStringLength = 42;
-const publicKeyStringLength = 258;
 
 export default class WalletService {
   verificationGateway: VerificationGateway;
@@ -200,45 +196,6 @@ export default class WalletService {
     );
 
     return { address, failures };
-  }
-
-  async getBalanceOf(
-    ownerAddressOrPublicKey: string,
-    tokenAddress: string,
-  ): Promise<BigNumber> {
-    const address = await this.WalletAddress(ownerAddressOrPublicKey);
-
-    const token = new ethers.Contract(
-      tokenAddress,
-      IERC20Abi,
-      this.aggregatorSigner.provider,
-    );
-
-    return await token.balanceOf(address);
-  }
-
-  async WalletAddress(addressOrPublicKey: string): Promise<string> {
-    if (addressOrPublicKey.length === addressStringLength) {
-      return addressOrPublicKey;
-    }
-
-    assert(
-      addressOrPublicKey.length === publicKeyStringLength,
-      "addressOrPublicKey length matches neither address nor public key",
-    );
-
-    const publicKey = addressOrPublicKey;
-
-    const address = await this.verificationGateway.walletFromHash(
-      ethers.utils.keccak256(publicKey),
-    );
-
-    assert(
-      address !== undefined,
-      "Wallet does not exist",
-    );
-
-    return address;
   }
 
   private static getAggregatorSigner(privateKey: string) {
