@@ -91,7 +91,7 @@ Fixture.test("WalletService sends large aggregate transfer tx", async (fx) => {
   const [sendWallet, recvWallet] = await fx.setupWallets(2);
   const sendWalletNonce = await sendWallet.Nonce();
 
-  const size = 12;
+  const size = 29;
 
   await fx.walletService.sendTxs(
     Range(size).map((i) =>

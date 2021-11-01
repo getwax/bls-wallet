@@ -620,10 +620,10 @@ bech32@1.1.4:
   resolved "https://registry.npmjs.org/bech32/-/bech32-1.1.4.tgz"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
 
-bls-wallet-signer@0.6.1-rc.1:
-  version "0.6.1-rc.1"
-  resolved "https://registry.yarnpkg.com/bls-wallet-signer/-/bls-wallet-signer-0.6.1-rc.1.tgz#b28a1c9989ce907ed50f8005604a1fb662114800"
-  integrity sha512-WHRFj/Tn4MyZ4JON/iLg44sPBkUBOTceyfVx4wrEXcSsKD0p0RR+ZoeMwhQYwKRgxyiHCfc+ADL1dhARNp85Bw==
+bls-wallet-signer@0.6.1:
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/bls-wallet-signer/-/bls-wallet-signer-0.6.1.tgz#aa0fcab90e1da704f94bd4aa78e1619253406a1e"
+  integrity sha512-UQ/aXcUHTYg3Q92riR+Kn/CAdF6F6WjaaMPweLnHHtSZ7rzUM3dN05SJoCbz1iCTEZOtFyay5Xv5+BRMsNXrUQ==
   dependencies:
     "@ethersproject/abi" "^5.4.0"
     "@ethersproject/bignumber" "^5.4.1"
