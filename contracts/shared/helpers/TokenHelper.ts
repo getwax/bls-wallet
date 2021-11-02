@@ -1,11 +1,9 @@
 import { ethers } from "hardhat";
 import { utils } from "ethers";
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
+import { BlsWallet } from "bls-wallet-clients";
 
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
-
-import blsSignFunction from "./blsSignFunction";
-import Fixture, { FullTxData } from "./Fixture";
+import Fixture from "./Fixture";
 
 export default class TokenHelper {
 
@@ -54,7 +52,7 @@ export default class TokenHelper {
     }
   }
 
-  async walletTokenSetup(): Promise<string[]> {
+  async walletTokenSetup(): Promise<BlsWallet[]> {
     let blsWalletAddresses = await this.fx.createBLSWallets();
 
     this.testToken = await TokenHelper.deployTestToken();
@@ -65,24 +63,5 @@ export default class TokenHelper {
     );
 
     return blsWalletAddresses;
-  }
-
-  async transferFrom(
-    nonce: any,
-    reward: BigNumber,
-    sender: BlsSignerInterface,
-    recipient: string,
-    amount: BigNumber
-  ) {
-    let fullTxData: FullTxData = {
-      blsSigner: sender,
-      chainId: this.fx.chainId,
-      nonce: nonce,
-      ethValue: BigNumber.from(0),
-      contract: this.testToken,
-      functionName: "transfer",
-      params: [recipient, amount]
-    }
-    this.fx.gatewayCallFull(fullTxData);
   }
 }
