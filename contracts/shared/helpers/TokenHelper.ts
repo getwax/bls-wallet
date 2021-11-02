@@ -64,4 +64,22 @@ export default class TokenHelper {
 
     return wallets;
   }
+
+  async transferFrom(
+    nonce: BigNumber,
+    sender: BlsWallet,
+    recipient: string,
+    amount: BigNumber,
+  ) {
+    await this.fx.verificationGateway.actionCalls(
+      this.fx.blsWalletSigner.aggregate([
+        sender.sign({
+          contract: this.testToken,
+          method: "transfer",
+          args: [recipient, amount.toHexString()],
+          nonce,
+        }),
+      ]),
+    );
+  }
 }

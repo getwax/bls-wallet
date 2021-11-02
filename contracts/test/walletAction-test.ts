@@ -12,7 +12,7 @@ import { BigNumber } from "ethers";
 import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
-import { BlsWallet } from "bls-wallet-clients";
+import splitHex256 from "../shared/helpers/splitHex256";
 
 describe('WalletActions', async function () {
   this.beforeAll(async function () {
@@ -97,11 +97,10 @@ describe('WalletActions', async function () {
 
   it('should send ETH with function call', async function() {
     // send money to sender bls wallet
-    let senderBlsSigner = fx.blsSigners[0];
-    let senderAddress = await fx.createBLSWallet(senderBlsSigner);
+    let sendWallet = await fx.lazyBlsWallets[0]();
     let ethToTransfer = utils.parseEther("0.001");
     await fx.signers[0].sendTransaction({
-      to: senderAddress,
+      to: sendWallet.address,
       value: ethToTransfer
     });
 
@@ -109,78 +108,88 @@ describe('WalletActions', async function () {
     let mockAuction = await MockAuction.deploy();
     await mockAuction.deployed();
 
-    expect(await fx.provider.getBalance(senderAddress)).to.equal(ethToTransfer);
+    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(ethToTransfer);
     expect(await fx.provider.getBalance(mockAuction.address)).to.equal(0);
 
-    await fx.gatewayCallFull({
-      blsSigner: senderBlsSigner,
-      chainId: fx.chainId,
-      nonce: 1,
-      ethValue: ethToTransfer,
-      contract: mockAuction,
-      functionName: "buyItNow",
-      params: []
-    })
+    await fx.verificationGateway.actionCalls(
+      fx.blsWalletSigner.aggregate([
+        sendWallet.sign({
+          contract: mockAuction,
+          method: "buyItNow",
+          args: [],
+          ethValue: ethToTransfer,
+          nonce: BigNumber.from(1),
+        }),
+      ]),
+    );
 
-    expect(await fx.provider.getBalance(senderAddress)).to.equal(0);
+    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(0);
     expect(await fx.provider.getBalance(mockAuction.address)).to.equal(ethToTransfer);
   })
 
   it('should check signature', async function () {
-    let blsSigner = fx.blsSigners[0];
-    let blsWallet = fx.BLSWallet.attach(await fx.createBLSWallet(blsSigner));
-    let walletNonce = ((await blsWallet.nonce()) as BigNumber).toNumber();
+    const wallet = await fx.lazyBlsWallets[0]();
 
-    let [txData, signature] = blsSignFunction({
-      blsSigner: blsSigner,
-      chainId: fx.chainId,
-      nonce: walletNonce,
-      ethValue: BigNumber.from(0),
+    const tx = wallet.sign({
       contract: fx.vgContract,
-      functionName: "walletCrossCheck",
-      params: [blsKeyHash(blsSigner)]    
+      method: "walletCrossCheck",
+      args: [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
+      nonce: await wallet.Nonce(),
     });
 
     await fx.vgContract.callStatic.verifySignatures(
-      [blsSigner.pubkey],
-      signature,
-      [txData]
+      [fx.blsWalletSigner.getPublicKey(wallet.privateKey)],
+      tx.signature,
+      [
+        {
+          nonce: tx.nonce,
+          ethValue: tx.ethValue,
+          contractAddress: tx.contractAddress,
+          encodedFunction: tx.encodedFunction,
+        },
+      ],
     );
 
-    txData.ethValue = parseEther("1");
+    tx.ethValue = parseEther("1");
     await expectRevert.unspecified(
       fx.vgContract.callStatic.verifySignatures(
-        [blsSigner.pubkey],
-        signature,
-        [txData]
-      )
+        [fx.blsWalletSigner.getPublicKey(wallet.privateKey)],
+        tx.signature,
+        [
+          {
+            nonce: tx.nonce,
+            ethValue: tx.ethValue,
+            contractAddress: tx.contractAddress,
+            encodedFunction: tx.encodedFunction,
+          },
+        ],
+      ),
     );
   });
 
   it("should process individual calls", async function() {
     th = new TokenHelper(fx);
-    let blsWalletAddresses = await th.walletTokenSetup();
+    const wallets = await th.walletTokenSetup();
 
     // check each wallet has start amount
-    for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
+    for (let i = 0; i<wallets.length; i++) {
+      let walletBalance = await th.testToken.balanceOf(wallets[i].address);
       expect(walletBalance).to.equal(th.userStartAmount);
     }
     // bls transfer each wallet's balance to first wallet
-    for (let i = 0; i<blsWalletAddresses.length; i++) {
+    for (let i = 0; i<wallets.length; i++) {
       await th.transferFrom(
-        await fx.BLSWallet.attach(blsWalletAddresses[i]).nonce(),
-        BigNumber.from(0),
-        fx.blsSigners[i],
-        blsWalletAddresses[0],
-        th.userStartAmount
+        await wallets[i].Nonce(),
+        wallets[i],
+        wallets[0].address,
+        th.userStartAmount,
       );
     }
 
     // check first wallet full and others empty
-    let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
-    for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
+    let totalAmount = th.userStartAmount.mul(wallets.length);
+    for (let i = 0; i<wallets.length; i++) {
+      let walletBalance = await th.testToken.balanceOf(wallets[i].address);
       expect(walletBalance).to.equal(i==0?totalAmount:0);
     }
   });
@@ -188,57 +197,42 @@ describe('WalletActions', async function () {
   it("should airdrop", async function() {
     th = new TokenHelper(fx);
 
-    let blsWalletAddresses = await fx.createBLSWallets();
+    const wallets = await fx.createBLSWallets();
     let testToken = await TokenHelper.deployTestToken();
 
     // send all to first address
-    let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
+    let totalAmount = th.userStartAmount.mul(wallets.length);
     await(await testToken.connect(fx.signers[0]).transfer(
-      blsWalletAddresses[0],
+      wallets[0].address,
       totalAmount
     )).wait();
 
-    let signatures: any[] = new Array(blsWalletAddresses.length);
-    let encodedParams: string[] = new Array(blsWalletAddresses.length);
-    let startNonce = await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce();
-    let nonce = startNonce;
-    let reward = BigNumber.from(0);
-    for (let i = 0; i<blsWalletAddresses.length; i++) {
-      // encode transfer of start amount to each wallet
-      let encodedFunction = testToken.interface.encodeFunctionData(
-        "transfer",
-        [blsWalletAddresses[i], th.userStartAmount.toString()]
-      );
-      encodedParams[i] = '0x'+encodedFunction.substr(10);
+    const startNonce = await wallets[0].Nonce();
 
-      let dataToSign = dataPayload(
-        fx.chainId,
-        nonce++,
-        BigNumber.from(0),
-        testToken.address,
-        encodedFunction
-      );
-      signatures[i] = fx.blsSigners[0].sign(dataToSign);
-    }
+    const txs = wallets.map((recvWallet, i) => wallets[0].sign({
+      contract: testToken,
+      method: "transfer",
+      args: [recvWallet.address, th.userStartAmount.toString()],
+      nonce: startNonce.add(i),
+    }));
 
-    let aggSignature = aggregate(signatures);
+    const aggTx = fx.blsWalletSigner.aggregate(txs);
 
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-      fx.blsSigners[0].pubkey,
+      splitHex256(txs[0].publicKey),
       startNonce,
-      aggSignature,
+      splitHex256(aggTx.signature),
       ethers.constants.AddressZero,
-      Array(signatures.length).fill(0),
+      Array(wallets.length).fill(0),
       testToken.address,
       testToken.interface.getSighash("transfer"),
-      encodedParams
+      txs.map(tx => `0x${tx.encodedFunction.slice(10)}`),
     )).wait();
 
-    for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let walletBalance = await testToken.balanceOf(blsWalletAddresses[i]);
+    for (let i = 0; i<wallets.length; i++) {
+      const walletBalance = await testToken.balanceOf(wallets[i].address);
       expect(walletBalance).to.equal(th.userStartAmount);
     }
-
   });
 
   it('should check token reward', async function() {
@@ -248,31 +242,27 @@ describe('WalletActions', async function () {
     // Use blsCallMultiCheckRewardIncrease function to check reward amount
 
     // prepare bls signers, wallets, eth and token balances
-    let rewarderBlsSigner = fx.blsSigners[0];
-    let rewarderAddress = await fx.createBLSWallet(rewarderBlsSigner);
-    let wallet1Address:string = await fx.createBLSWallet(fx.blsSigners[1]);
-    let wallet2Address:string = await fx.createBLSWallet(fx.blsSigners[2]);
+    const rewarder = await fx.lazyBlsWallets[0]();
+    const wallet1 = await fx.lazyBlsWallets[1]();
+    const wallet2 = await fx.lazyBlsWallets[2]();
+
     let ethToTransfer = utils.parseEther("0.0001");
     await fx.signers[0].sendTransaction({
-      to: wallet1Address,
+      to: wallet1.address,
       value: ethToTransfer
     });
     th = new TokenHelper(fx);
     let testToken = await TokenHelper.deployTestToken();
     await(await testToken.connect(fx.signers[0]).transfer(
-      rewarderAddress,
+      rewarder.address,
       th.userStartAmount
     )).wait();
 
     // prepare and sign eth transfer tx (from wallet 1 to 2)
-    let [txData1, sig1] = blsSignFunction({
-      blsSigner: fx.blsSigners[1],
-      chainId: fx.chainId,
-      nonce: 1,
+    const tx1 = wallet1.sign({
+      contract: wallet2.walletContract,
       ethValue: ethToTransfer,
-      contract: wallet2Address,
-      functionName: "",
-      params: []
+      nonce: BigNumber.from(1),
     });
 
     // prepare and sign token transfer to origin tx (reward)
@@ -280,34 +270,33 @@ describe('WalletActions', async function () {
     let rewardAmountRequired = th.userStartAmount.div(4); // arbitrary reward amount
     let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward    
 
-    let blsWallet = fx.BLSWallet.attach(rewarderAddress);
-    let functionName = "transferToOrigin";
-    let params = [rewardAmountToSend, testToken.address];
-    let [txData2, sig2] = blsSignFunction({
-      blsSigner: rewarderBlsSigner,
-      chainId: fx.chainId,
-      nonce: 1,
-      ethValue: BigNumber.from(0),
-      contract: blsWallet,
-      functionName: functionName, 
-      params: params
+    const tx2 = rewarder.sign({
+      contract: rewarder.walletContract,
+      method: "transferToOrigin",
+      args: [rewardAmountToSend.toHexString(), testToken.address],
+      nonce: BigNumber.from(1),
     });
 
     // shouldn't be able to directly call transferToOrigin
     expectRevert.unspecified(
-      blsWallet.transferToOrigin(rewardAmountToSend, testToken.address),
+      rewarder.walletContract.transferToOrigin(rewardAmountToSend, testToken.address),
       "BLSWallet: only callable from this"
     );
 
-    let aggSignature = aggregate([sig1, sig2]);
+    const aggTx = fx.blsWalletSigner.aggregate([tx1, tx2]);
 
     // callStatic to return correct increase
     let rewardIncrease = await fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountRequired,
-      [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
-      aggSignature,
-      [txData1, txData2]
+      aggTx.transactions.map(tx => splitHex256(tx.publicKey)),
+      splitHex256(aggTx.signature),
+      aggTx.transactions.map(tx => ({
+        nonce: tx.nonce,
+        ethValue: tx.ethValue,
+        contractAddress: tx.contractAddress,
+        encodedFunction: tx.encodedFunction,
+      })),
     );
     expect(rewardIncrease).to.equal(rewardAmountToSend);
 
@@ -315,9 +304,14 @@ describe('WalletActions', async function () {
     await expectRevert.unspecified(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountToSend.add(1), //require more than amount sent
-      [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
-      aggSignature,
-      [txData1, txData2]
+      aggTx.transactions.map(tx => splitHex256(tx.publicKey)),
+      splitHex256(aggTx.signature),
+      aggTx.transactions.map(tx => ({
+        nonce: tx.nonce,
+        ethValue: tx.ethValue,
+        contractAddress: tx.contractAddress,
+        encodedFunction: tx.encodedFunction,
+      })),
     ));
 
     // rewardRecipient balance increased after actioning transfer
@@ -325,9 +319,14 @@ describe('WalletActions', async function () {
     await (await fx.blsExpander.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountRequired,
-      [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
-      aggSignature,
-      [txData1, txData2]
+      aggTx.transactions.map(tx => splitHex256(tx.publicKey)),
+      splitHex256(aggTx.signature),
+      aggTx.transactions.map(tx => ({
+        nonce: tx.nonce,
+        ethValue: tx.ethValue,
+        contractAddress: tx.contractAddress,
+        encodedFunction: tx.encodedFunction,
+      })),
     )).wait();
     let balanceAfter = await testToken.balanceOf(fx.addresses[0]);
     expect(balanceAfter.sub(balanceBefore)).to.equal(rewardAmountToSend);

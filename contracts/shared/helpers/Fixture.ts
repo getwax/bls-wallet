@@ -6,6 +6,7 @@ import { initBlsWalletSigner, BlsWalletSigner } from "bls-wallet-signer";
 
 import Range from "./Range";
 import assert from "./assert";
+import { Provider } from "@ethersproject/abstract-provider";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -13,7 +14,7 @@ export default class Fixture {
 
   private constructor(
     public chainId: number,
-    public provider,
+    public provider: Provider,
 
     public signers: Signer[],
     public addresses: string[],
