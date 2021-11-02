@@ -101,7 +101,7 @@ export default class Fixture {
       return () => BlsWallet.connectOrCreate(
         `0x${secretNumber.toString(16)}`,
         verificationGateway.address,
-        {} as Wallet,
+        vgContractFactory.signer as Wallet, // TODO: Signer is sufficient?
       );
     });
   
