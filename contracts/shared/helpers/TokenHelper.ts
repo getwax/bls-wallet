@@ -12,7 +12,7 @@ export default class TokenHelper {
 
   testToken: Contract;
   constructor(public fx: Fixture) { 
-    this.userStartAmount = TokenHelper.initialSupply.div(fx.blsSigners.length);
+    this.userStartAmount = TokenHelper.initialSupply.div(fx.lazyBlsWallets.length);
   }
 
   /// @dev Contract deployed by first ethers signer, has initial supply
@@ -38,30 +38,30 @@ export default class TokenHelper {
   async distributeTokens(
     fromSigner: Signer,
     token: Contract,
-    addresses: string[]
+    wallets: BlsWallet[]
   ) {
-    const length = addresses.length;
+    const length = wallets.length;
     
     // split supply amongst bls wallet addresses
     for (let i = 0; i < length; i++) {
       // first account as aggregator, and holds token supply
       await (await token.connect(fromSigner).transfer(
-        addresses[i],
+        wallets[i].address,
         this.userStartAmount
       )).wait();
     }
   }
 
   async walletTokenSetup(): Promise<BlsWallet[]> {
-    let blsWalletAddresses = await this.fx.createBLSWallets();
+    let wallets = await this.fx.createBLSWallets();
 
     this.testToken = await TokenHelper.deployTestToken();
     await this.distributeTokens(
       this.fx.signers[0],
       this.testToken,
-      blsWalletAddresses
+      wallets,
     );
 
-    return blsWalletAddresses;
+    return wallets;
   }
 }

@@ -2150,7 +2150,7 @@ bls-wallet-clients@^0.2.2:
     bls-wallet-signer "0.6.1"
     ethers "5.4.7"
 
-bls-wallet-signer@0.6.1:
+bls-wallet-signer@0.6.1, bls-wallet-signer@^0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/bls-wallet-signer/-/bls-wallet-signer-0.6.1.tgz#aa0fcab90e1da704f94bd4aa78e1619253406a1e"
   integrity sha512-UQ/aXcUHTYg3Q92riR+Kn/CAdF6F6WjaaMPweLnHHtSZ7rzUM3dN05SJoCbz1iCTEZOtFyay5Xv5+BRMsNXrUQ==
