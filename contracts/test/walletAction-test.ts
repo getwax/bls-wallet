@@ -138,8 +138,8 @@ describe('WalletActions', async function () {
     });
 
     await fx.vgContract.callStatic.verifySignatures(
-      [fx.blsWalletSigner.getPublicKey(wallet.privateKey)],
-      tx.signature,
+      [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
+      splitHex256(tx.signature),
       [
         {
           nonce: tx.nonce,
@@ -153,8 +153,8 @@ describe('WalletActions', async function () {
     tx.ethValue = parseEther("1");
     await expectRevert.unspecified(
       fx.vgContract.callStatic.verifySignatures(
-        [fx.blsWalletSigner.getPublicKey(wallet.privateKey)],
-        tx.signature,
+        [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
+        splitHex256(tx.signature),
         [
           {
             nonce: tx.nonce,
