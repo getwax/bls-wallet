@@ -2,6 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers } from "hardhat";
 import { Signer, Contract, ContractFactory, Wallet } from "ethers";
 import { BlsWallet, VerificationGateway } from "bls-wallet-clients";
+import { initBlsWalletSigner, BlsWalletSigner } from "bls-wallet-signer";
 
 import Range from "./Range";
 import assert from "./assert";
@@ -27,6 +28,7 @@ export default class Fixture {
     public blsExpander: Contract,
 
     public BLSWallet: ContractFactory,
+    public blsWalletSigner: BlsWalletSigner,
   ) {}
 
   /// @dev Contracts deployed by first ethers signer 
@@ -113,7 +115,8 @@ export default class Fixture {
       verificationGateway,
       BLSExpander,
       blsExpander,
-      BLSWallet
+      BLSWallet,
+      await initBlsWalletSigner({ chainId }),
     );
   }
 
