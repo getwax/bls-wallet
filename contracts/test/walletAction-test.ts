@@ -277,9 +277,15 @@ describe('WalletActions', async function () {
       nonce: BigNumber.from(1),
     });
 
+    const rewarderContractWithSigner = new ethers.Contract(
+      rewarder.address,
+      rewarder.walletContract.interface,
+      fx.signers[0],
+    );
+
     // shouldn't be able to directly call transferToOrigin
-    expectRevert.unspecified(
-      rewarder.walletContract.transferToOrigin(rewardAmountToSend, testToken.address),
+    await expectRevert.unspecified(
+      rewarderContractWithSigner.transferToOrigin(rewardAmountToSend, testToken.address),
       "BLSWallet: only callable from this"
     );
 
