@@ -153,12 +153,12 @@ describe('WalletActions', async function () {
       chainId: fx.chainId,
       nonce: walletNonce,
       ethValue: BigNumber.from(0),
-      contract: fx.verificationGateway,
+      contract: fx.vgContract,
       functionName: "walletCrossCheck",
       params: [blsKeyHash(blsSigner)]    
     });
 
-    await fx.verificationGateway.callStatic.verifySignatures(
+    await fx.vgContract.callStatic.verifySignatures(
       [blsSigner.pubkey],
       signature,
       [txData]
@@ -166,7 +166,7 @@ describe('WalletActions', async function () {
 
     txData.ethValue = parseEther("1");
     await expectRevert.unspecified(
-      fx.verificationGateway.callStatic.verifySignatures(
+      fx.vgContract.callStatic.verifySignatures(
         [blsSigner.pubkey],
         signature,
         [txData]
