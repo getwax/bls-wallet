@@ -1,11 +1,7 @@
-import { BigNumber, Contract, ContractFactory } from "ethers";
+import { Contract } from "ethers";
 import { network } from "hardhat";
-import Fixture, { FullTxData } from "../../shared/helpers/Fixture";
+import Fixture from "../../shared/helpers/Fixture";
 import getDeployedAddresses, { DeployedAddresses } from "../../shared/helpers/getDeployedAddresses";
-import blsSignFunction from "../../shared/helpers/blsSignFunction";
-
-import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
-import { BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
 
 import { ethers } from "hardhat";
 
@@ -48,7 +44,7 @@ async function main() {
     +process.env.BLS_SECRET_NUM_3
   ]);
   
-  config.blsAddresses = await fx.createBLSWallets();
+  config.blsAddresses = (await fx.createBLSWallets()).map(wallet => wallet.address);
   console.log(`BlsWallet contract addresses: ${config.blsAddresses}`);
   
   blsWallets = config.blsAddresses.map( a => fx.BLSWallet.attach(a) );
