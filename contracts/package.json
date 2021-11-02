@@ -7,7 +7,8 @@
   "author": "James Zaki",
   "license": "MIT",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.2"
+    "@openzeppelin/contracts": "^4.3.2",
+    "bls-wallet-clients": "^0.2.2"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
