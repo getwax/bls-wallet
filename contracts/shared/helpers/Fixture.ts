@@ -73,7 +73,7 @@ export default class Fixture {
       }
     }
 
-    const verificationGateway = new VerificationGateway(vgContract.address);
+    const verificationGateway = new VerificationGateway(vgContract.address, vgContract.signer);
 
     let BLSExpander = await ethers.getContractFactory("BLSExpander");
     let blsExpander;
