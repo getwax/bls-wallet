@@ -1,10 +1,7 @@
 require('dotenv').config();
 
-import { Contract } from "ethers";
-import { ethers, network } from "hardhat";
+import { network } from "hardhat";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
-
-const utils = ethers.utils;
 
 import Fixture from "../shared/helpers/Fixture";
 
@@ -24,9 +21,8 @@ async function main() {
   }
   console.log(`Deployer account address: ${fx.addresses[0]}`);
 
-  console.log(`verificationGateway: ${fx.verificationGateway.address}`);
+  console.log(`verificationGateway: ${fx.vgContract.address}`);
   console.log(`blsExpander: ${fx.blsExpander.address}`);
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere
