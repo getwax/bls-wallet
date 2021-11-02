@@ -1,21 +1,18 @@
-import { expect, assert } from "chai";
+import { expect } from "chai";
 
-import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+import { expectRevert } from "@openzeppelin/test-helpers";
 
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
-import Fixture, { FullTxData } from "../shared/helpers/Fixture";
+import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
-import dataPayload from "../shared/helpers/dataPayload";
 
-import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber } from "ethers";
-import blsKeyHash from "../shared/helpers/blsKeyHash";
-import blsSignFunction from "../shared/helpers/blsSignFunction";
-import { formatUnits, parseEther } from "@ethersproject/units";
+import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
+import { BlsWallet } from "bls-wallet-clients";
 
 describe('WalletActions', async function () {
   this.beforeAll(async function () {
@@ -44,14 +41,8 @@ describe('WalletActions', async function () {
   });
 
   it('should register new wallet', async function () {
-    let blsSigner = fx.blsSigners[0];  
-    let walletAddress = await fx.createBLSWallet(blsSigner);
-
-    let blsWallet = fx.BLSWallet.attach(walletAddress);
-    
-    await Promise.all(blsSigner.pubkey.map(async (keyPart, i) => 
-      expect(await blsWallet.publicKey(i))
-    .to.equal(keyPart)));
+    const wallet = await fx.lazyBlsWallets[0]();
+    expect(wallet.verificationGateway.address).to.equal(fx.verificationGateway.address);
 
     // Check revert when adding same wallet twice
     // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
@@ -59,54 +50,46 @@ describe('WalletActions', async function () {
   });
 
   it('should receive ETH', async function() {
-    let blsSigner = fx.blsSigners[0];  
-    let walletAddress = await fx.createBLSWallet(blsSigner);
+    const wallet = await fx.lazyBlsWallets[0]();
 
-    let walletBalanceBefore = await fx.provider.getBalance(walletAddress);
+    let walletBalanceBefore = await fx.provider.getBalance(wallet.address);
 
     let ethToTransfer = utils.parseEther("0.0001");
 
     await fx.signers[0].sendTransaction({
-      to: walletAddress,
+      to: wallet.address,
       value: ethToTransfer
     });
 
-    let walletBalanceAfter = await fx.provider.getBalance(walletAddress);
+    let walletBalanceAfter = await fx.provider.getBalance(wallet.address);
     expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
   });
 
   it('should send ETH (empty call)', async function() {
     // send money to sender bls wallet
-    let senderBlsSigner = fx.blsSigners[0];
-    let receiverBlsSigner = fx.blsSigners[1];
-    let senderAddress = await fx.createBLSWallet(senderBlsSigner);
-    let receiverAddress:string = await fx.createBLSWallet(receiverBlsSigner);
+    const sendWallet = await fx.lazyBlsWallets[0]();
+    const recvWallet = await fx.lazyBlsWallets[1]();
     let ethToTransfer = utils.parseEther("0.0001");
     await fx.signers[0].sendTransaction({
-      to: senderAddress,
+      to: sendWallet.address,
       value: ethToTransfer
     });
 
-    let senderBalanceBefore = await fx.provider.getBalance(senderAddress);
-    let receiverBalanceBefore = await fx.provider.getBalance(receiverAddress);
+    let senderBalanceBefore = await fx.provider.getBalance(sendWallet.address);
+    let receiverBalanceBefore = await fx.provider.getBalance(recvWallet.address);
 
-    let ethSend_FullTxData:FullTxData = {
-      blsSigner: senderBlsSigner,
-      chainId: fx.chainId,
-      nonce: 1,
+    const tx = sendWallet.sign({
       ethValue: ethToTransfer,
-      contract: receiverAddress,
-      functionName: "",
-      params: []
-      // contract: fx.verificationGateway,
-      // functionName: "walletCrossCheck",
-      // params: [blsKeyHash(senderBlsSigner)]
-    };
+      nonce: await sendWallet.Nonce(),
+      contract: recvWallet.walletContract,
+    });
 
-    await fx.gatewayCallFull(ethSend_FullTxData);
+    await fx.verificationGateway.actionCalls(
+      fx.blsWalletSigner.aggregate([tx]),
+    );
 
-    let senderBalanceAfter = await fx.provider.getBalance(senderAddress);
-    let receiverBalanceAfter = await fx.provider.getBalance(receiverAddress);
+    let senderBalanceAfter = await fx.provider.getBalance(sendWallet.address);
+    let receiverBalanceAfter = await fx.provider.getBalance(recvWallet.address);
 
     expect(senderBalanceBefore.sub(senderBalanceAfter)).to.equal(ethToTransfer);
     expect(receiverBalanceAfter.sub(receiverBalanceBefore)).to.equal(ethToTransfer);
