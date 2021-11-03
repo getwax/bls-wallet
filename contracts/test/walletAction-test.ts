@@ -17,7 +17,7 @@ import { formatUnits, parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 import deployerContract, { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import { Create2Deployer } from "../typechain";
+
 
 describe('WalletActions', async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
@@ -32,10 +32,11 @@ describe('WalletActions', async function () {
       console.log("eaoAddress:", address);
 
       // fund deployer wallet address
-      await (await ethers.getSigners())[0].sendTransaction({
+      let fundedSigner = (await ethers.getSigners())[0];
+      await (await fundedSigner.sendTransaction({
         to: address,
         value: utils.parseEther("1")
-      });
+      })).wait();
 
       let create2Deployer = await deployerContract();
       console.log("create2Deployer:", create2Deployer.address);
@@ -239,7 +240,7 @@ describe('WalletActions', async function () {
     let signatures: any[] = new Array(blsWalletAddresses.length);
     let encodedParams: string[] = new Array(blsWalletAddresses.length);
     let startNonce = await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce();
-    let nonce = startNonce;
+    let nonce = startNonce.toNumber();
     let reward = BigNumber.from(0);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       // encode transfer of start amount to each wallet

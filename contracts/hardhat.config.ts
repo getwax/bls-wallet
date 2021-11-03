@@ -19,24 +19,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
-
-// Account used to deploy the deployer contract at the same address on each network
-const deployerAccount = {
-  mnemonic: `${process.env.DEPLOYER_MNEMONIC}`,
-  initialIndex: Number.parseInt(process.env.DEPLOYER_SET_INDEX!),
-  count: 1
-};
-
 // Accounts used for testing and deploying
-const mainAccounts = {
+const accounts = {
   mnemonic: `${process.env.MAIN_MNEMONIC}`,
   count: 5
 }
-
-const accounts = (
-  `${process.env.DEPLOYER_DEPLOYMENT}` === `true`
-  ? deployerAccount : mainAccounts
-);
 
 const config: HardhatUserConfig = {
   solidity: {

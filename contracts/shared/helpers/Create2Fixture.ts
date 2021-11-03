@@ -6,15 +6,15 @@ import { Wallet, BigNumber, Contract, ContractFactory } from "ethers";
 import deployerContract from "./deployDeployer";
 import { Create2Deployer } from "../../typechain";
 
-export default class Create2Factory {
+export default class Create2Fixture {
 
   private constructor(
     public deployerWallet?: Wallet
   ) {}
 
   static create(
-  ): Create2Factory {
-    return new Create2Factory(
+  ): Create2Fixture {
+    return new Create2Fixture(
       ethers.Wallet.fromMnemonic(
         `${process.env.DEPLOYER_MNEMONIC}`,
         `m/44'/60'/0'/0/${process.env.DEPLOYER_SET_INDEX}`
@@ -43,7 +43,7 @@ export default class Create2Factory {
     });
   
     // If deployer contract doesn't exist at expected address, deploy it there
-    if (Create2Factory.hasContract(deployerAddress)) {
+    if (Create2Fixture.hasContract(deployerAddress)) {
       await (await Create2Deployer.deploy()).deployed();
     }
   
@@ -68,13 +68,13 @@ export default class Create2Factory {
  * @returns 
  */
   async create2Contract(
-    factory: ContractFactory,
+    contractName: string,
     constructorParamsBytes: string = "0x",
     salt: BigNumber = BigNumber.from(0)
   ): Promise<Contract> {
 
     let create2Deployer = await deployerContract();
-
+    let factory = await ethers.getContractFactory(contractName)
     let initCode = factory.bytecode + constructorParamsBytes.substr(2);
     const initCodeHash = ethers.utils.solidityKeccak256(
       ["bytes"],

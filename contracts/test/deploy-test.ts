@@ -5,39 +5,38 @@ import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
 
 import { BigNumber } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
-import { Create2DeployerInterface } from "../typechain/Create2Deployer";
+import deployerContract, { defaultDeployerAddress, defaultDeployerWallet } from "../shared/helpers/deployDeployer";
+import { Create2Deployer, Create2Deployer__factory } from "../typechain";
+import { ContractFactory } from "@ethersproject/contracts";
 
-describe('Deployer', async function () {
-  if (`${process.env.DEPLOYER_DEPLOYMENT}` !== "true") {
-    console.log("Skipping deployer tests. (DEPLOYER_DEPLOYMENT !== true)");
-    return;
-  }
+dotenv.config();
+
+describe.only('Deployer', async function () {
   let deployerSigner;
   let eoaAddress;
-  let Create2Deployer;
-  let create2Deployer;
+  let Create2Deployer: ContractFactory;
+  let create2Deployer: Create2Deployer;
   this.beforeAll(async function () {
-    deployerSigner = (await ethers.getSigners())[0];
-    eoaAddress = deployerSigner.address;
-    Create2Deployer = await ethers.getContractFactory("Create2Deployer");
+    Create2Deployer = await ethers.getContractFactory(
+      "Create2Deployer",
+      defaultDeployerWallet()
+    );
+  
+    // fund deployer wallet address
+    let fundedSigner = (await ethers.getSigners())[0];
+    await (await fundedSigner.sendTransaction({
+      to: defaultDeployerWallet().address,
+      value: ethers.utils.parseEther("1")
+    })).wait();
 
     //one-time deployment
-    create2Deployer = await Create2Deployer.deploy();
-    await create2Deployer.deployed();
+    create2Deployer = await deployerContract();
   });
 
   beforeEach(async function() {
   });
 
-  it('should calculate EOA deployed address', async function () {
-    let calculatedAddress = ethers.utils.getContractAddress({
-      from: eoaAddress,
-      nonce: BigNumber.from(0)
-    });
-    expect(calculatedAddress).to.equal(create2Deployer.address);
-  });
-
-  it('should deploy to caculated address', async function () {
+  it('should deploy to caculated (create2) address', async function () {
     let testSalt = BigNumber.from(0);
     const initCodeHash = ethers.utils.solidityKeccak256(
       ["bytes"],

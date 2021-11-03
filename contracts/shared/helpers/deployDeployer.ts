@@ -5,6 +5,7 @@ import { ethers } from "hardhat";
 import { Wallet, BigNumber } from "ethers";
 import { Create2Deployer } from "../../typechain";
 
+dotenv.config();
 
 export function defaultDeployerAddress(): string {
   return defaultDeployerWallet().address;
@@ -14,7 +15,7 @@ export function defaultDeployerAddress(): string {
  * 
  * @returns Wallet constructed from DEPLOYER_ env vars
  */
-function defaultDeployerWallet(): Wallet {
+export function defaultDeployerWallet(): Wallet {
   return ethers.Wallet.fromMnemonic(
     `${process.env.DEPLOYER_MNEMONIC}`,
     `m/44'/60'/0'/0/${process.env.DEPLOYER_SET_INDEX}`
@@ -26,10 +27,9 @@ function defaultDeployerWallet(): Wallet {
  * @param deployerWallet EOA to deploy contract, otherwise defaultDeployerWallet
  * @returns create2Deployer Contract at the expected address, deploying one if not yet deployed
  */
-export default async function deployerContract(deployerWallet?: Wallet): Promise<Create2Deployer> {
-  if (deployerWallet === undefined) {
-    deployerWallet = defaultDeployerWallet();
-  }
+export default async function deployerContract(): Promise<Create2Deployer> {
+  let deployerWallet = defaultDeployerWallet();
+
   const Create2Deployer = await ethers.getContractFactory(
     "Create2Deployer",
     deployerWallet
@@ -37,11 +37,14 @@ export default async function deployerContract(deployerWallet?: Wallet): Promise
 
   let deployerAddress = ethers.utils.getContractAddress({
     from: deployerWallet.address,
-    nonce: BigNumber.from(`${process.env.DEPLOYER_SET_INDEX}`)
+    nonce: 0 // expect first tx to have been deployment
   });
 
   // If deployer contract doesn't exist at expected address, deploy it there
   if ((await ethers.provider.getCode(deployerAddress)) ===  "0x") {
+    if (await deployerWallet.getTransactionCount() > 0) {
+      throw("No contract at expected address, and first transaction already used");
+    }
     await (await Create2Deployer.deploy()).deployed();
   }
 

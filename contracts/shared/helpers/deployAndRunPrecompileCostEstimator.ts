@@ -1,12 +1,11 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
-import Create2Factory from "./create2Contract";
+import Create2Fixture from "./Create2Fixture";
 
 export default async function precompileCostEstimator(): Promise<string> {
-  let create2Factory = Create2Factory.create();
-  let bnPairingPrecompileCostEstimator = await create2Factory.create2Contract(
-    await ethers.getContractFactory("BNPairingPrecompileCostEstimator")
-  );
+  let create2Fixture = Create2Fixture.create();
+  let bnPairingPrecompileCostEstimator
+   = await create2Fixture.create2Contract("BNPairingPrecompileCostEstimator");
   await (await bnPairingPrecompileCostEstimator.run()).wait();
   return bnPairingPrecompileCostEstimator.address;
 }
