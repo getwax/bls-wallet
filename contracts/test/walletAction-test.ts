@@ -16,7 +16,7 @@ import blsSignFunction from "../shared/helpers/blsSignFunction";
 import { formatUnits, parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
-import deployDeployer, { deployerAddress } from "../shared/helpers/deployDeployer";
+import deployerContract, { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import { Create2Deployer } from "../typechain";
 
 describe('WalletActions', async function () {
@@ -28,7 +28,7 @@ describe('WalletActions', async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
     if (network.name === "hardhat") {
-      let address = deployerAddress();
+      let address = defaultDeployerAddress();
       console.log("eaoAddress:", address);
 
       // fund deployer wallet address
@@ -37,7 +37,7 @@ describe('WalletActions', async function () {
         value: utils.parseEther("1")
       });
 
-      let create2Deployer = await deployDeployer();
+      let create2Deployer = await deployerContract();
       console.log("create2Deployer:", create2Deployer.address);
 
       // deploy the precompile contract (via deployer)

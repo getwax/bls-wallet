@@ -65,10 +65,10 @@ export default class Fixture {
   static async create(
     blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
     initialized: boolean=true,
-    blsAddress: string|undefined=undefined,
-    vgAddress: string|undefined=undefined,
-    expanderAddress: string|undefined=undefined,
-    secretNumbers: number[]|undefined=undefined
+    blsAddress?: string,
+    vgAddress?: string,
+    expanderAddress?: string,
+    secretNumbers?: number[]
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
     let provider = ethers.provider;
