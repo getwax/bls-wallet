@@ -122,18 +122,29 @@ export default class BlsWallet {
    * Instantiate a `BLSWallet` associated with the provided key.
    *
    * Creates the associated wallet contract if it doesn't exist yet, which is
-   * why a parent wallet is required to create it.
+   * why a signer is required to create it.
    */
   static async connectOrCreate(
     privateKey: string,
     verificationGatewayAddress: string,
-    /** Wallet used to create the new wallet, if needed. */
-    parent: ethers.Wallet,
+    /** Signer used to create the new wallet, if needed. */
+    parent: ethers.Signer,
+    /**
+     * If the parent doesn't have an associated provider, an explicit provider
+     * is required here.
+     */
+    provider?: ethers.providers.Provider,
   ): Promise<BlsWallet> {
+    provider = provider ?? parent.provider;
+
+    if (provider === undefined) {
+      throw new Error('Unable to connect wallet without provider');
+    }
+
     let wallet = await BlsWallet.connect(
       privateKey,
       verificationGatewayAddress,
-      parent.provider,
+      provider,
     );
 
     if (wallet !== undefined) {
@@ -151,7 +162,7 @@ export default class BlsWallet {
       parent,
     );
 
-    const blsWalletSigner = await this.#BlsWalletSigner(parent.provider);
+    const blsWalletSigner = await this.#BlsWalletSigner(provider);
 
     await (
       await verificationGateway.actionCalls(
@@ -162,7 +173,7 @@ export default class BlsWallet {
     wallet = await BlsWallet.connect(
       privateKey,
       verificationGatewayAddress,
-      parent.provider,
+      provider,
     );
 
     assert(wallet !== undefined);
@@ -276,6 +287,19 @@ export default class BlsWallet {
       },
       this.privateKey,
     );
+  }
+
+  signTransferToOrigin({ amount, token, nonce }: {
+    amount: BigNumber,
+    token: ethers.Contract,
+    nonce: BigNumber,
+  }): TransactionData {
+    return this.sign({
+      contract: this.walletContract,
+      method: "transferToOrigin",
+      args: [amount.toHexString(), token.address],
+      nonce,
+    });
   }
 
   static async #BlsWalletSigner(
