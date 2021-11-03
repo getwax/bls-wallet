@@ -270,10 +270,9 @@ describe('WalletActions', async function () {
     let rewardAmountRequired = th.userStartAmount.div(4); // arbitrary reward amount
     let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward    
 
-    const tx2 = rewarder.sign({
-      contract: rewarder.walletContract,
-      method: "transferToOrigin",
-      args: [rewardAmountToSend.toHexString(), testToken.address],
+    const tx2 = rewarder.signTransferToOrigin({
+      token: testToken,
+      amount: rewardAmountToSend,
       nonce: BigNumber.from(1),
     });
 
