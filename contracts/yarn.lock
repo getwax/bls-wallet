@@ -2142,9 +2142,10 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.1.1.tgz#bf313053978b2cd4c444a48795710be05c785702"
   integrity sha512-bLG6PHOCZJKNshTjGRBvET0vTciwQE6zFKOKKXPDJfwFBd4Ac0yBfPZqcGvGJap50l7ktvlpFqc2jGVaUgbJgg==
 
-bls-wallet-clients@../clients/bls-wallet-clients-0.2.3-rc.3.tgz:
-  version "0.2.3-rc.3"
-  resolved "../clients/bls-wallet-clients-0.2.3-rc.3.tgz#c22d28a756f6fd4f45ef7d0b2156502a73583b82"
+bls-wallet-clients@^0.2.3:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.2.3.tgz#cb161062d8b5b26f65d33783cf7cc9bac37dab8e"
+  integrity sha512-FXXWl4GRt2WJ3iLaH1VjeiVTJPPZlw7RcTCCK2BfilYoC7lu/Awe4+H5BGZGJpH8fYYaVh+oIdX5/NoL2SAY3g==
   dependencies:
     bls-wallet-signer "0.6.1"
     ethers "5.4.7"
