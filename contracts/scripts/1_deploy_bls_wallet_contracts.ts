@@ -21,7 +21,7 @@ async function main() {
   }
   console.log(`Deployer account address: ${fx.addresses[0]}`);
 
-  console.log(`verificationGateway: ${fx.vgContract.address}`);
+  console.log(`verificationGateway: ${fx.verificationGateway.address}`);
   console.log(`blsExpander: ${fx.blsExpander.address}`);
 }
 

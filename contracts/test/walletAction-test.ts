@@ -131,13 +131,13 @@ describe('WalletActions', async function () {
     const wallet = await fx.lazyBlsWallets[0]();
 
     const tx = wallet.sign({
-      contract: fx.vgContract,
+      contract: fx.verificationGateway.contract,
       method: "walletCrossCheck",
       args: [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
       nonce: await wallet.Nonce(),
     });
 
-    await fx.vgContract.callStatic.verifySignatures(
+    await fx.verificationGateway.contract.callStatic.verifySignatures(
       [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
       splitHex256(tx.signature),
       [
@@ -152,7 +152,7 @@ describe('WalletActions', async function () {
 
     tx.ethValue = parseEther("1");
     await expectRevert.unspecified(
-      fx.vgContract.callStatic.verifySignatures(
+      fx.verificationGateway.contract.callStatic.verifySignatures(
         [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
         splitHex256(tx.signature),
         [

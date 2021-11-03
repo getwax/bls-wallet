@@ -21,8 +21,6 @@ export default class Fixture {
 
     public lazyBlsWallets: (() => Promise<BlsWallet>)[],
 
-    public vgContractFactory: ContractFactory,
-    public vgContract: Contract,
     public verificationGateway: VerificationGateway,
 
     public BLSExpander: ContractFactory,
@@ -101,7 +99,7 @@ export default class Fixture {
       return () => BlsWallet.connectOrCreate(
         `0x${secretNumber.toString(16)}`,
         verificationGateway.address,
-        vgContractFactory.signer as Wallet,
+        vgContractFactory.signer,
       );
     });
   
@@ -111,8 +109,6 @@ export default class Fixture {
       signers,
       addresses,
       lazyBlsWallets,
-      vgContractFactory,
-      vgContract,
       verificationGateway,
       BLSExpander,
       blsExpander,
