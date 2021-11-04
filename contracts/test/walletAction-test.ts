@@ -1,6 +1,5 @@
 import { expect, assert } from "chai";
-
-import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+import expectRevert from "../shared/helpers/expectRevert";
 
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
@@ -28,18 +27,12 @@ describe('WalletActions', async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
     if (network.name === "hardhat") {
-      let address = defaultDeployerAddress();
-      console.log("eaoAddress:", address);
-
       // fund deployer wallet address
       let fundedSigner = (await ethers.getSigners())[0];
       await (await fundedSigner.sendTransaction({
-        to: address,
+        to: defaultDeployerAddress(),
         value: utils.parseEther("1")
       })).wait();
-
-      let create2Deployer = await deployerContract();
-      console.log("create2Deployer:", create2Deployer.address);
 
       // deploy the precompile contract (via deployer)
       console.log("PCE:", await deployAndRunPrecompileCostEstimator());
@@ -76,7 +69,7 @@ describe('WalletActions', async function () {
     .to.equal(keyPart)));
 
     // Check revert when adding same wallet twice
-    // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
+    // await expectRevert(fx.createBLSWallet(blsSigner));
 
   });
 
@@ -187,7 +180,7 @@ describe('WalletActions', async function () {
     );
 
     txData.ethValue = parseEther("1");
-    await expectRevert.unspecified(
+    await expectRevert(
       fx.verificationGateway.callStatic.verifySignatures(
         [blsSigner.pubkey],
         signature,
@@ -351,7 +344,7 @@ describe('WalletActions', async function () {
     expect(rewardIncrease).to.equal(rewardAmountToSend);
 
     // exception when required more than rewarded
-    await expectRevert.unspecified(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
+    await expectRevert(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
       rewardRecipient,
       rewardTokenAddress,
       rewardAmountToSend.add(1), //require more than amount sent

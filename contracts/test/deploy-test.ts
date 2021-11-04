@@ -1,7 +1,5 @@
-import * as dotenv from "dotenv";
-
 import { expect, assert } from "chai";
-import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+import expectRevert from "../shared/helpers/expectRevert";
 
 import { BigNumber } from "@ethersproject/bignumber";
 import { ethers } from "hardhat";
@@ -9,9 +7,8 @@ import deployerContract, { defaultDeployerAddress, defaultDeployerWallet } from 
 import { Create2Deployer, Create2Deployer__factory } from "../typechain";
 import { ContractFactory } from "@ethersproject/contracts";
 
-dotenv.config();
 
-describe.only('Deployer', async function () {
+describe('Deployer', async function () {
   let deployerSigner;
   let eoaAddress;
   let Create2Deployer: ContractFactory;
@@ -25,7 +22,7 @@ describe.only('Deployer', async function () {
     // fund deployer wallet address
     let fundedSigner = (await ethers.getSigners())[0];
     await (await fundedSigner.sendTransaction({
-      to: defaultDeployerWallet().address,
+      to: defaultDeployerAddress(),
       value: ethers.utils.parseEther("1")
     })).wait();
 
@@ -75,13 +72,15 @@ describe.only('Deployer', async function () {
   it('should fail deployment with same salt', async function () {
     let testSalt = BigNumber.from(1);
     // two identical deployment promises, ie, same create2 address
-    let deployerPromise1, deployerPromise2 = create2Deployer.deploy(
+    await create2Deployer.deploy(
       testSalt,
       Create2Deployer.bytecode
     );
-    
-    await deployerPromise1;
-
-    expectRevert.unspecified(deployerPromise2);
-  })
+    await expectRevert(
+      create2Deployer.deploy(
+        testSalt,
+        Create2Deployer.bytecode
+      )
+    );
+  });
 });
