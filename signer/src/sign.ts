@@ -2,28 +2,24 @@ import * as hubbleBls from "../deps/hubble-bls";
 
 import encodeMessageForSigning from "./encodeMessageForSigning";
 import getPublicKey from "./getPublicKey";
-import { Transaction, TransactionTemplate } from "./types";
+import { RawTransactionData, TransactionData } from "./types";
 
 export default (
   signerFactory: hubbleBls.signer.BlsSignerFactory,
   domain: Uint8Array,
   chainId: number,
 ) => (
-  txTemplate: TransactionTemplate,
+  rawTransactionData: RawTransactionData,
   privateKey: string,
-): Transaction => {
-  const message = encodeMessageForSigning(chainId)(txTemplate);
+): TransactionData => {
+  const message = encodeMessageForSigning(chainId)(rawTransactionData);
   const signer = signerFactory.getSigner(domain, privateKey);
 
   const signature = hubbleBls.mcl.dumpG1(signer.sign(message));
 
   return {
-    subTransactions: [
-      {
-        ...txTemplate,
-        publicKey: getPublicKey(signerFactory, domain)(privateKey),
-      }
-    ],
+    ...rawTransactionData,
+    publicKey: getPublicKey(signerFactory, domain)(privateKey),
     signature,
   }
 };

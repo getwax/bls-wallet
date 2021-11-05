@@ -1,20 +1,20 @@
 import { keccak256 } from "@ethersproject/keccak256";
 import { pack as solidityPack } from "@ethersproject/solidity";
-import { TransactionTemplate } from "./types";
+import { RawTransactionData } from "./types";
 
 export default (
   chainId: number,
 ) => (
-  txTemplate: TransactionTemplate,
+  rawTxData: RawTransactionData,
 ): string => {
   return solidityPack(
     ["uint256", "uint256", "uint256", "address", "bytes32"],
     [
       chainId,
-      txTemplate.nonce,
-      txTemplate.ethValue,
-      txTemplate.contractAddress,
-      keccak256(txTemplate.encodedFunction),
+      rawTxData.nonce,
+      rawTxData.ethValue,
+      rawTxData.contractAddress,
+      keccak256(rawTxData.encodedFunction),
     ]
   );
 }

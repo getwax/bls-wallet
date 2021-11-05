@@ -7,6 +7,7 @@ import getPublicKeyHash from "./getPublicKeyHash";
 import AsyncReturnType from "./helpers/AsyncReturnType";
 import sign from "./sign";
 import verify from "./verify";
+import verifyAggregate from "./verifyAggregate";
 
 export * from "./types";
 
@@ -33,5 +34,6 @@ export async function initBlsWalletSigner({
     getPublicKeyHash: getPublicKeyHash(signerFactory, domain),
     sign: sign(signerFactory, domain, chainId),
     verify: verify(domain, chainId),
+    verifyAggregate: verifyAggregate(domain, chainId),
   };
 }
