@@ -10,6 +10,6 @@ export type TransactionTemplate = {
 export type SubTransaction = TransactionTemplate & { publicKey: string };
 
 export type Transaction = {
-  subTransactions: SubTransaction[],
-  signature: string,
+  subTransactions: SubTransaction[];
+  signature: string;
 };
