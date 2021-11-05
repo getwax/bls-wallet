@@ -7,9 +7,9 @@ export type TransactionTemplate = {
   encodedFunction: string;
 };
 
-export type UnsignedTransaction = TransactionTemplate & { publicKey: string };
+export type SubTransaction = TransactionTemplate & { publicKey: string };
 
-export type TransactionSet = {
-  transactions: UnsignedTransaction[],
+export type Transaction = {
+  subTransactions: SubTransaction[],
   signature: string,
 };

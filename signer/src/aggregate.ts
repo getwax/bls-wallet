@@ -1,15 +1,13 @@
 import * as hubbleBls from "../deps/hubble-bls";
 
-import { TransactionSet } from "./types";
+import { Transaction } from "./types";
 
-export default (txSets: TransactionSet[]): TransactionSet => {
-  const sigsG1 = txSets.map(txSet => hubbleBls.mcl.loadG1(txSet.signature));
+export default (txs: Transaction[]): Transaction => {
+  const sigsG1 = txs.map(tx => hubbleBls.mcl.loadG1(tx.signature));
   const aggSigG1 = hubbleBls.signer.aggregate(sigsG1);
 
-  const aggregateSignature = hubbleBls.mcl.dumpG1(aggSigG1);
-
   return {
-    transactions: txSets.map(txSet => txSet.transactions).flat(),
-    signature: aggregateSignature,
+    subTransactions: txs.map(txSet => txSet.subTransactions).flat(),
+    signature: hubbleBls.mcl.dumpG1(aggSigG1),
   };
 }
