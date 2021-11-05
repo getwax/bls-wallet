@@ -6,6 +6,7 @@ import { keccak256 } from "@ethersproject/keccak256";
 import { expect } from "chai";
 
 import { initBlsWalletSigner, Transaction, TransactionTemplate } from "../src";
+import Range from "./helpers/Range";
 
 const domain = arrayify(keccak256("0xfeedbee5"));
 const weiPerToken = BigNumber.from(10).pow(18);
@@ -104,5 +105,30 @@ describe("index", () => {
     }
 
     expect(verify(tx2BadMessage)).to.equal(false);
+  });
+
+  it("can aggregate transactions which already have multiple subTransactions", async () => {
+    const {
+      sign,
+      aggregate,
+      verify,
+    } = await initBlsWalletSigner({ chainId: 123, domain });
+
+    const { txTemplate, privateKey } = samples;
+
+    const txs = Range(4).map(i => sign(
+      {
+        ...txTemplate,
+        ethValue: BigNumber.from(i),
+      },
+      privateKey,
+    ));
+
+    const aggTx1 = aggregate(txs.slice(0, 2));
+    const aggTx2 = aggregate(txs.slice(2, 4));
+
+    let aggAggTx = aggregate([aggTx1, aggTx2]);
+
+    expect(verify(aggAggTx)).to.equal(true);
   });
 });
