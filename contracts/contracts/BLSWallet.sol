@@ -13,16 +13,21 @@ interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
 }
 
-contract BLSWallet
+contract BLSWallet is Initializable
 {
     address public gateway;
     uint256[4] public publicKey;
     uint256 public nonce;
 
-    constructor(uint256[4] memory blsKey) {
+    constructor() {
         gateway = msg.sender;
-        publicKey = blsKey;
         nonce = 0;
+    }
+
+    function initialize(
+        uint256[4] memory blsKey
+    ) external initializer onlyGateway {
+        publicKey = blsKey;
     }
 
     receive() external payable {}

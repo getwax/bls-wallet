@@ -17,8 +17,6 @@ contract VerificationGateway is Initializable
     uint8 constant BLS_LEN = 4;
     // uint256[BLS_LEN] ZERO_BLS_SIG = [uint256(0), uint256(0), uint256(0), uint256(0)];
 
-    mapping (bytes32 => BLSWallet) public walletFromHash;
-
     IBLS public blsLib;
 
     /**
@@ -74,11 +72,35 @@ contract VerificationGateway is Initializable
         require(verified, "VerificationGateway: All sigs not verified");
     }
 
+    function hasCode(address a) private view returns (bool) {
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { size := extcodesize(a) }
+        return size > 0;
+    }
+
+    /**
+    @param hash BLS public key hash used as salt for create2
+    @return BLSWallet at calculated address (if code exists), otherwise zero address
+     */
+    function walletFromHash(bytes32 hash) public view returns (BLSWallet) {
+        address walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
+            bytes1(0xff),
+            address(this),
+            hash,
+            keccak256(type(BLSWallet).creationCode)
+        )))));
+        if (!hasCode(walletAddress)) {
+            walletAddress = address(0);
+        }
+        return BLSWallet(payable(walletAddress));
+    }
+
     /** 
     Useful no-op function to call when calling a wallet for the first time.
      */
     function walletCrossCheck(bytes32 hash) public payable {
-        require(msg.sender == address(walletFromHash[hash]));
+        require(msg.sender == address(walletFromHash(hash)));
     }
 
     /** 
@@ -107,7 +129,7 @@ contract VerificationGateway is Initializable
 
             // construct params for signature verification
             publicKeyHash = keccak256(abi.encodePacked(publicKeys[i]));
-            wallet = walletFromHash[publicKeyHash];
+            wallet = walletFromHash(publicKeyHash);
 
             if (txs[i].nonce == wallet.nonce()) {
                 // action transaction (increments nonce)
@@ -132,12 +154,14 @@ contract VerificationGateway is Initializable
         private // consider making external and VG stateless
     {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
-        // wallet at publicKeyHash doesn't exist
-        if (address(walletFromHash[publicKeyHash]) == address(0)) {
-            // blsKeysFromHash[publicKeyHash] = publicKey;
-            walletFromHash[publicKeyHash] = new BLSWallet(publicKey);
+        BLSWallet blsWallet = walletFromHash(publicKeyHash);
+
+        // wallet with publicKeyHash doesn't exist at expected create2 address
+        if (address(blsWallet) == address(0)) {
+            blsWallet = new BLSWallet{salt: publicKeyHash}();
+            blsWallet.initialize(publicKey);
             emit WalletCreated(
-                address(walletFromHash[publicKeyHash]),
+                address(blsWallet),
                 publicKey
             );
         }

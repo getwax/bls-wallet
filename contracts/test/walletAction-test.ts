@@ -1,4 +1,4 @@
-import { expect, assert } from "chai";
+import { expect } from "chai";
 import expectRevert from "../shared/helpers/expectRevert";
 
 import { ethers, network } from "hardhat";
@@ -12,10 +12,10 @@ import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber } from "ethers";
 import blsKeyHash from "../shared/helpers/blsKeyHash";
 import blsSignFunction from "../shared/helpers/blsSignFunction";
-import { formatUnits, parseEther } from "@ethersproject/units";
+import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
-import deployerContract, { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
+import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
 
 describe('WalletActions', async function () {
@@ -62,14 +62,23 @@ describe('WalletActions', async function () {
     let blsSigner = fx.blsSigners[0];  
     let walletAddress = await fx.createBLSWallet(blsSigner);
 
+    const BLSWallet = await ethers.getContractFactory("BLSWallet");  
+    
+    let calculatedAddress = ethers.utils.getCreate2Address(
+      fx.verificationGateway.address,
+      blsKeyHash(blsSigner),
+      ethers.utils.solidityKeccak256(
+        ["bytes"],
+        [BLSWallet.bytecode]
+      )
+    );
+    expect(calculatedAddress).to.equal(walletAddress);
+
     let blsWallet = fx.BLSWallet.attach(walletAddress);
     
     await Promise.all(blsSigner.pubkey.map(async (keyPart, i) => 
       expect(await blsWallet.publicKey(i))
     .to.equal(keyPart)));
-
-    // Check revert when adding same wallet twice
-    // await expectRevert(fx.createBLSWallet(blsSigner));
 
   });
 

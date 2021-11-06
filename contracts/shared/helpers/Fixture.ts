@@ -13,7 +13,7 @@ import blsSignFunction from "./blsSignFunction";
 import blsKeyHash from "./blsKeyHash";
 import { exit, send } from "process";
 import Create2Fixture from "./Create2Fixture";
-import { BLSExpander, BLSWallet__factory, VerificationGateway } from "../../typechain";
+import { BLSExpander, BLSWallet, BLSWallet__factory, VerificationGateway } from "../../typechain";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
