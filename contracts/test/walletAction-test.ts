@@ -1,6 +1,5 @@
-import { expect, assert } from "chai";
-
-import { expectEvent, expectRevert } from "@openzeppelin/test-helpers";
+import { expect } from "chai";
+import expectRevert from "../shared/helpers/expectRevert";
 
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
@@ -13,13 +12,29 @@ import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber } from "ethers";
 import blsKeyHash from "../shared/helpers/blsKeyHash";
 import blsSignFunction from "../shared/helpers/blsSignFunction";
-import { formatUnits, parseEther } from "@ethersproject/units";
+import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
+import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
+
 
 describe('WalletActions', async function () {
+  if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
+    console.log("Skipping non-deployer tests.");
+    return;
+  }
+
   this.beforeAll(async function () {
-    if (network.name !== "rinkarby") {
+    // deploy the deployer contract for the transient hardhat network
+    if (network.name === "hardhat") {
+      // fund deployer wallet address
+      let fundedSigner = (await ethers.getSigners())[0];
+      await (await fundedSigner.sendTransaction({
+        to: defaultDeployerAddress(),
+        value: utils.parseEther("1")
+      })).wait();
+
+      // deploy the precompile contract (via deployer)
       console.log("PCE:", await deployAndRunPrecompileCostEstimator());
     }
   });
@@ -47,14 +62,23 @@ describe('WalletActions', async function () {
     let blsSigner = fx.blsSigners[0];  
     let walletAddress = await fx.createBLSWallet(blsSigner);
 
+    const BLSWallet = await ethers.getContractFactory("BLSWallet");  
+    
+    let calculatedAddress = ethers.utils.getCreate2Address(
+      fx.verificationGateway.address,
+      blsKeyHash(blsSigner),
+      ethers.utils.solidityKeccak256(
+        ["bytes"],
+        [BLSWallet.bytecode]
+      )
+    );
+    expect(calculatedAddress).to.equal(walletAddress);
+
     let blsWallet = fx.BLSWallet.attach(walletAddress);
     
     await Promise.all(blsSigner.pubkey.map(async (keyPart, i) => 
       expect(await blsWallet.publicKey(i))
     .to.equal(keyPart)));
-
-    // Check revert when adding same wallet twice
-    // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
 
   });
 
@@ -165,7 +189,7 @@ describe('WalletActions', async function () {
     );
 
     txData.ethValue = parseEther("1");
-    await expectRevert.unspecified(
+    await expectRevert(
       fx.verificationGateway.callStatic.verifySignatures(
         [blsSigner.pubkey],
         signature,
@@ -180,7 +204,7 @@ describe('WalletActions', async function () {
 
     // check each wallet has start amount
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
+      let walletBalance = await th.testToken!.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(th.userStartAmount);
     }
     // bls transfer each wallet's balance to first wallet
@@ -197,7 +221,7 @@ describe('WalletActions', async function () {
     // check first wallet full and others empty
     let totalAmount = th.userStartAmount.mul(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
-      let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[i]);
+      let walletBalance = await th.testToken!.balanceOf(blsWalletAddresses[i]);
       expect(walletBalance).to.equal(i==0?totalAmount:0);
     }
   });
@@ -218,7 +242,7 @@ describe('WalletActions', async function () {
     let signatures: any[] = new Array(blsWalletAddresses.length);
     let encodedParams: string[] = new Array(blsWalletAddresses.length);
     let startNonce = await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce();
-    let nonce = startNonce;
+    let nonce = startNonce.toNumber();
     let reward = BigNumber.from(0);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       // encode transfer of start amount to each wallet
@@ -311,7 +335,7 @@ describe('WalletActions', async function () {
     });
 
     // shouldn't be able to directly call transferToOrigin
-    expectRevert.unspecified(
+    expectRevert(
       blsWallet.transferToOrigin(rewardAmountToSend, testToken.address),
       "BLSWallet: only callable from this"
     );
@@ -329,7 +353,7 @@ describe('WalletActions', async function () {
     expect(rewardIncrease).to.equal(rewardAmountToSend);
 
     // exception when required more than rewarded
-    await expectRevert.unspecified(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
+    await expectRevert(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountToSend.add(1), //require more than amount sent
       [fx.blsSigners[1].pubkey, rewarderBlsSigner.pubkey],
