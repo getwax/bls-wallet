@@ -51,15 +51,27 @@ export default function RequestHandler(
           throw new Error('Not implemented: "value" field missing');
         }
 
+        if (tx.data === undefined) {
+          throw new Error('Not implemented: "function data" field missing');
+        }
+
         if (app.wallet === undefined) {
           throw new Error('No wallet available');
         }
 
+        let promptText: string;
+        if (tx.data === '0x') {
+          promptText = `ETH Transfer 
+          ${formatBalance(tx.value, 'ETH')} 
+          to ${formatCompactAddress(tx.to)}`;
+        } else {
+          promptText = `Contract Interaction ${formatCompactAddress(tx.to)} 
+          value ${formatBalance(tx.value, 'ETH')} 
+          data  ${tx.data}`;
+        }
+
         const promptResult = await promptUser({
-          promptText: `Send ${formatBalance(
-            tx.value,
-            'ETH',
-          )} to ${formatCompactAddress(tx.to)}?`,
+          promptText,
         });
 
         if (promptResult !== 'Yes') {
@@ -71,7 +83,7 @@ export default function RequestHandler(
             nonce: await app.wallet.Nonce(),
             ethValue: BigNumber.from(tx.value),
             contractAddress: tx.to,
-            encodedFunction: '0x',
+            encodedFunction: tx.data,
           },
           app.wallet.privateKey,
         );

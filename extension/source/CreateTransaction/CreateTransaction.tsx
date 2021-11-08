@@ -10,6 +10,7 @@ type Props = { events: PageEvents };
 export default class CreateTransaction extends React.Component<Props> {
   amountRef?: HTMLInputElement;
   recipientRef?: HTMLInputElement;
+  dataRef?: HTMLInputElement;
 
   render(): React.ReactElement {
     return (
@@ -29,10 +30,18 @@ export default class CreateTransaction extends React.Component<Props> {
               ETH
             </div>
             <div>
-              Recipient:{' '}
+              Contract/Recipient:{' '}
               <input
                 ref={(r) => (this.recipientRef = r ?? undefined)}
                 type="text"
+              />
+            </div>
+            <div>
+              Encoded Function Data:{' '}
+              <input
+                ref={(r) => (this.dataRef = r ?? undefined)}
+                type="text"
+                defaultValue="0x"
               />
             </div>
             <div>
@@ -57,6 +66,7 @@ export default class CreateTransaction extends React.Component<Props> {
                     try {
                       const amount = this.amountRef?.value || undefined;
                       const to = this.recipientRef?.value || undefined;
+                      const data = this.dataRef?.value || undefined;
 
                       if (amount === undefined || to === undefined) {
                         this.props.events.emit(
@@ -76,6 +86,7 @@ export default class CreateTransaction extends React.Component<Props> {
                               .parseEther(amount)
                               .toHexString(),
                             to,
+                            data,
                           },
                         ],
                       });
