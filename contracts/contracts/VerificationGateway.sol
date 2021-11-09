@@ -102,9 +102,11 @@ contract VerificationGateway is Initializable
             hash,
             keccak256(abi.encodePacked(
                 type(TransparentUpgradeableProxy).creationCode,
-                address(blsWalletLogic),
-                address(proxyAdmin),
-                getInitializeData()
+                abi.encode(
+                    address(blsWalletLogic),
+                    address(proxyAdmin),
+                    getInitializeData()
+                )
             ))
         )))));
         if (!hasCode(walletAddress)) {

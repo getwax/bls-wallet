@@ -18,7 +18,7 @@ import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
 
-describe.only('WalletActions', async function () {
+describe('WalletActions', async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
     console.log("Skipping non-deployer tests.");
     return;
@@ -58,24 +58,40 @@ describe.only('WalletActions', async function () {
     }
   });
 
-  it.only('should register new wallet', async function () {
+  it('should register new wallet', async function () {
     let blsSigner = fx.blsSigners[0];  
     let walletAddress = await fx.createBLSWallet(blsSigner);
-
     const BLSWallet = await ethers.getContractFactory("BLSWallet");  
-    
+    const TransparentUpgradeableProxy = await ethers.getContractFactory("TransparentUpgradeableProxy");
+    let proxyAdminAddress = await fx.verificationGateway.proxyAdmin();
+    let blsWalletLogicAddress = await fx.verificationGateway.blsWalletLogic();
+
+    let initFunctionParams = BLSWallet.interface.encodeFunctionData(
+      "initialize",
+      [fx.verificationGateway.address]
+    );
+
     let calculatedAddress = ethers.utils.getCreate2Address(
       fx.verificationGateway.address,
       blsKeyHash(blsSigner),
       ethers.utils.solidityKeccak256(
-        ["bytes"],
-        [BLSWallet.bytecode]
+        ["bytes", "bytes"],
+        [
+          TransparentUpgradeableProxy.bytecode,
+          ethers.utils.defaultAbiCoder.encode(
+            ["address", "address", "bytes"],
+            [
+              blsWalletLogicAddress,
+              proxyAdminAddress,
+              initFunctionParams
+            ]
+          )
+        ]
       )
     );
     expect(calculatedAddress).to.equal(walletAddress);
 
     let blsWallet = fx.BLSWallet.attach(walletAddress);
-    
     await Promise.all(blsSigner.pubkey.map(async (keyPart, i) => 
       expect(await blsWallet.publicKey(i))
     .to.equal(keyPart)));
