@@ -5,25 +5,33 @@ pragma abicoder v2;
 import "./lib/IBLS.sol"; // to use a deployed BLS library
 import "./lib/IERC20.sol";
 
+import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
+import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "./BLSWallet.sol";
-import "hardhat/console.sol";
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
+import "hardhat/console.sol";
 
 
 contract VerificationGateway is Initializable
 {
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_LEN = 4;
-    // uint256[BLS_LEN] ZERO_BLS_SIG = [uint256(0), uint256(0), uint256(0), uint256(0)];
+    uint256[BLS_LEN] ZERO_BLS_SIG = [uint256(0), uint256(0), uint256(0), uint256(0)];
 
     IBLS public blsLib;
+    ProxyAdmin public proxyAdmin;
+    BLSWallet public blsWalletLogic;
 
     /**
     @param bls verified bls library contract address
      */
     function initialize(IBLS bls) external initializer {
         blsLib = bls;
+        proxyAdmin = new ProxyAdmin();
+        blsWalletLogic = new BLSWallet();
+        blsWalletLogic.initialize(address(0));
     }
 
     event WalletCreated(
@@ -79,6 +87,10 @@ contract VerificationGateway is Initializable
         return size > 0;
     }
 
+    function getInitializeData() private view returns (bytes memory) {
+        return abi.encodeWithSignature("initialize(address)", address(this));
+    }
+
     /**
     @param hash BLS public key hash used as salt for create2
     @return BLSWallet at calculated address (if code exists), otherwise zero address
@@ -88,7 +100,12 @@ contract VerificationGateway is Initializable
             bytes1(0xff),
             address(this),
             hash,
-            keccak256(type(BLSWallet).creationCode)
+            keccak256(abi.encodePacked(
+                type(TransparentUpgradeableProxy).creationCode,
+                address(blsWalletLogic),
+                address(proxyAdmin),
+                getInitializeData()
+            ))
         )))));
         if (!hasCode(walletAddress)) {
             walletAddress = address(0);
@@ -101,6 +118,27 @@ contract VerificationGateway is Initializable
      */
     function walletCrossCheck(bytes32 hash) public payable {
         require(msg.sender == address(walletFromHash(hash)));
+    }
+
+    /**
+    Calls to proxy admin, exclusively from a wallet.
+    @param hash calling wallet's bls public key hash
+    @param encodedFunction the selector and params to call (first encoded param must be calling wallet)
+     */
+    function walletAdminCall(bytes32 hash, bytes calldata encodedFunction) public {
+        BLSWallet wallet = walletFromHash(hash);
+        require(msg.sender == address(wallet), "VerificationGateway: not called from wallet");
+
+        // ensure first parameter is the calling wallet
+        bytes memory encodedAddress = abi.encode(address(wallet));
+        uint8 selectorOffset = 4;
+        for (uint256 i=0; i<32; i++) {
+            require(encodedFunction[selectorOffset+i] == encodedAddress[i],
+                "VerificationGateway: first param to proxy admin is not calling wallet"
+            );
+        }
+        (bool success, ) = address(proxyAdmin).call(encodedFunction);
+        require(success);
     }
 
     /** 
@@ -154,12 +192,16 @@ contract VerificationGateway is Initializable
         private // consider making external and VG stateless
     {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
-        BLSWallet blsWallet = walletFromHash(publicKeyHash);
+        address blsWallet = address(walletFromHash(publicKeyHash));
 
         // wallet with publicKeyHash doesn't exist at expected create2 address
-        if (address(blsWallet) == address(0)) {
-            blsWallet = new BLSWallet{salt: publicKeyHash}();
-            blsWallet.initialize(publicKey);
+        if (blsWallet == address(0)) {
+            blsWallet = address(new TransparentUpgradeableProxy{salt: publicKeyHash}(
+                address(blsWalletLogic),
+                address(proxyAdmin),
+                getInitializeData()
+            ));
+            BLSWallet(payable(blsWallet)).latchPublicKey(publicKey);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey

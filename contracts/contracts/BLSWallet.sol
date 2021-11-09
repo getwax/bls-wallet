@@ -5,6 +5,7 @@ pragma abicoder v2;
 
 //To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
@@ -12,18 +13,24 @@ interface IVerificationGateway {
 
 contract BLSWallet is Initializable
 {
-    address public gateway;
-    uint256[4] public publicKey;
     uint256 public nonce;
+    address public gateway;
 
-    constructor() {
-        gateway = msg.sender;
-        nonce = 0;
-    }
+    uint256[4] public publicKey;
 
     function initialize(
+        address walletGateway
+    ) external initializer {
+        nonce = 0;
+        gateway = walletGateway;
+    }
+
+    function latchPublicKey(
         uint256[4] memory blsKey
-    ) external initializer onlyGateway {
+    ) public onlyGateway {
+        for (uint256 i=0; i<4; i++) {
+            require(publicKey[i] == 0, "BLSWallet: public key already set");
+        }
         publicKey = blsKey;
     }
 
