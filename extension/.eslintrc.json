@@ -5,12 +5,11 @@
     "@abhijithvijayan/eslint-config/react"
   ],
   "parserOptions": {
-    "project": [
-      "./tsconfig.json"
-    ],
+    "project": ["./tsconfig.json"],
     "sourceType": "module"
   },
   "rules": {
+    "@typescript-eslint/no-explicit-any": "warn",
     "consistent-return": "off",
     "no-console": "off",
     "no-continue": "off",
@@ -26,9 +25,12 @@
     "no-param-reassign": "off",
     "node/no-missing-import": "off",
     "node/no-unpublished-import": "off",
-    "node/no-unsupported-features/es-syntax": ["error", {
-      "ignores": ["modules"]
-    }],
+    "node/no-unsupported-features/es-syntax": [
+      "error",
+      {
+        "ignores": ["modules"]
+      }
+    ],
     "prettier/prettier": [
       "error",
       {
