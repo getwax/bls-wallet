@@ -92,6 +92,7 @@ contract VerificationGateway is Initializable
     }
 
     /**
+    Returns a BLSWallet if deployed from this contract, otherwise 0.
     @param hash BLS public key hash used as salt for create2
     @return BLSWallet at calculated address (if code exists), otherwise zero address
      */
@@ -127,15 +128,13 @@ contract VerificationGateway is Initializable
     @param hash calling wallet's bls public key hash
     @param encodedFunction the selector and params to call (first encoded param must be calling wallet)
      */
-    function walletAdminCall(bytes32 hash, bytes calldata encodedFunction) public {
-        BLSWallet wallet = walletFromHash(hash);
-        require(msg.sender == address(wallet), "VerificationGateway: not called from wallet");
-
+    function walletAdminCall(bytes32 hash, bytes calldata encodedFunction) public onlyWallet(hash) {
         // ensure first parameter is the calling wallet
-        bytes memory encodedAddress = abi.encode(address(wallet));
+        bytes memory encodedAddress = abi.encode(address(walletFromHash(hash)));
         uint8 selectorOffset = 4;
         for (uint256 i=0; i<32; i++) {
-            require(encodedFunction[selectorOffset+i] == encodedAddress[i],
+            require(
+                (encodedFunction[selectorOffset+i] == encodedAddress[i]),
                 "VerificationGateway: first param to proxy admin is not calling wallet"
             );
         }
@@ -224,6 +223,14 @@ contract VerificationGateway is Initializable
                 keccak256(txData.encodedFunction)
             )
         );
+    }
+
+    modifier onlyWallet(bytes32 hash) {
+        require(
+            (msg.sender == address(walletFromHash(hash))),
+            "VerificationGateway: not called from wallet"
+        );
+        _;
     }
 
 }
