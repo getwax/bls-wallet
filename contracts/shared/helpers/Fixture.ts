@@ -30,12 +30,17 @@ export type FullTxData = {
   params: any[]
 }
 
-export type TxData = {
-  publicKeySender: any;
-  nonce: BigNumber;
+
+export type ActionData = {
   ethValue: BigNumber;
   contractAddress: string;
   encodedFunction: string;
+}
+export type TxSet = {
+  publicKeySender: any;
+  nonce: BigNumber;
+  atomic: boolean;
+  actions: ActionData[];
 }
 
 export default class Fixture {
@@ -88,12 +93,22 @@ export default class Fixture {
 
     let create2Fixture = Create2Fixture.create();
 
+    // deploy wallet implementation contract
+    let blsWalletImpl = await create2Fixture.create2Contract("BLSWallet") as BLSWallet;
+    try {
+      await (await blsWalletImpl.initialize(
+        ethers.constants.AddressZero
+      )).wait();
+    } catch (e) {}
+
     // deploy Verification Gateway
     let verificationGateway = await create2Fixture.create2Contract("VerificationGateway") as VerificationGateway;
     let bls = await create2Fixture.create2Contract("BLSOpen");
+
     try {
       await (await verificationGateway.initialize(
-        bls.address
+        bls.address,
+        blsWalletImpl.address
       )).wait();
     } catch (e) {}
 
@@ -119,19 +134,17 @@ export default class Fixture {
   }
 
   async gatewayCallFull(txDataFull: FullTxData) {
-    let [txData, sig] = blsSignFunction(txDataFull);
+    let [txSet, sig] = blsSignFunction(txDataFull);
 
     await(await this.verificationGateway.actionCalls(
       [txDataFull.blsSigner.pubkey],
       sig,
-      [txData]
+      [txSet]
     )).wait();
   }
 
   async createBLSWallet(
-    blsSigner: BlsSignerInterface,
-    rewardAddress: string = ethers.constants.AddressZero,
-    reward: BigNumber = BigNumber.from(0)
+    blsSigner: BlsSignerInterface
   ): Promise<any> {
     const blsPubKeyHash = blsKeyHash(blsSigner);
 
@@ -167,9 +180,7 @@ export default class Fixture {
     let blsWalletAddresses = new Array<string>(length);
     for (let i = 0; i<length; i++) {
       blsWalletAddresses[i] = await this.createBLSWallet(
-        this.blsSigners[i],
-        rewardAddress,
-        reward
+        this.blsSigners[i]
       );
     }
     return blsWalletAddresses;

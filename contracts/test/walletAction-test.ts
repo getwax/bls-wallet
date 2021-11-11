@@ -6,7 +6,7 @@ const utils = ethers.utils;
 
 import Fixture, { FullTxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
-import dataPayload from "../shared/helpers/dataPayload";
+import dataPayload, { dataPayloadMulti } from "../shared/helpers/dataPayload";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber } from "ethers";
@@ -204,7 +204,7 @@ describe('WalletActions', async function () {
       [txData]
     );
 
-    txData.ethValue = parseEther("1");
+    txData.actions[0].ethValue = parseEther("1");
     await expectRevert(
       fx.verificationGateway.callStatic.verifySignatures(
         [blsSigner.pubkey],
@@ -242,7 +242,7 @@ describe('WalletActions', async function () {
     }
   });
 
-  it("should airdrop", async function() {
+  it("should airdrop (multicall)", async function() {
     th = new TokenHelper(fx);
 
     let blsWalletAddresses = await fx.createBLSWallets();
@@ -255,37 +255,34 @@ describe('WalletActions', async function () {
       totalAmount
     )).wait();
 
-    let signatures: any[] = new Array(blsWalletAddresses.length);
-    let encodedParams: string[] = new Array(blsWalletAddresses.length);
     let startNonce = await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce();
     let nonce = startNonce.toNumber();
-    let reward = BigNumber.from(0);
+    let ethValues: BigNumber[] = Array(blsWalletAddresses.length).fill(0);
+    let contractAddresses: string[] = Array(blsWalletAddresses.length).fill(testToken.address);
+    let encodedFunctions: string[] = new Array(blsWalletAddresses.length);
+    let encodedParams: string[] = new Array(blsWalletAddresses.length);
     for (let i = 0; i<blsWalletAddresses.length; i++) {
       // encode transfer of start amount to each wallet
-      let encodedFunction = testToken.interface.encodeFunctionData(
+      encodedFunctions[i] = testToken.interface.encodeFunctionData(
         "transfer",
         [blsWalletAddresses[i], th.userStartAmount.toString()]
       );
-      encodedParams[i] = '0x'+encodedFunction.substr(10);
+      encodedParams[i] = '0x'+encodedFunctions[i].substr(10);
 
-      let dataToSign = dataPayload(
+    }
+      let dataToSign = dataPayloadMulti(
         fx.chainId,
         nonce++,
-        BigNumber.from(0),
-        testToken.address,
-        encodedFunction
+        ethValues,
+        contractAddresses,
+        encodedFunctions
       );
-      signatures[i] = fx.blsSigners[0].sign(dataToSign);
-    }
-
-    let aggSignature = aggregate(signatures);
+    let signature = fx.blsSigners[0].sign(dataToSign);
 
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
       fx.blsSigners[0].pubkey,
       startNonce,
-      aggSignature,
-      ethers.constants.AddressZero,
-      Array(signatures.length).fill(0),
+      aggregate([signature]),
       testToken.address,
       testToken.interface.getSighash("transfer"),
       encodedParams
