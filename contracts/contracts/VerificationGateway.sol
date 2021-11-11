@@ -45,11 +45,10 @@ contract VerificationGateway is Initializable
         bool result
     );
 
-    struct TxData {
+    struct TxSet {
         uint256 nonce;
-        uint256 ethValue;
-        address contractAddress;
-        bytes encodedFunction;
+        bool atomic;
+        BLSWallet.ActionData[] actions;
     }
 
     /**
@@ -61,7 +60,7 @@ contract VerificationGateway is Initializable
     function verifySignatures(
         uint256[BLS_LEN][] calldata publicKeys,
         uint256[2] calldata signature,
-        TxData[] calldata txs
+        TxSet[] calldata txs
     ) public view {
         uint256 txCount = txs.length;
         uint256[2][] memory messages = new uint256[2][](txCount);
@@ -148,16 +147,22 @@ contract VerificationGateway is Initializable
     function transferToOrigin(
         uint256 amount,
         address token
-    ) public returns (bool success) {
+    ) public returns (bool) {
         BLSWallet blsWallet = BLSWallet(payable(msg.sender));
-        success = blsWallet.action(
-            0,
-            token,
-            abi.encodeWithSignature("transfer(address,uint256)",
+        BLSWallet.ActionData[] memory actions = new BLSWallet.ActionData[](1);
+        actions[0] = BLSWallet.ActionData({
+            ethValue: 0,
+            contractAddress: token,
+            encodedFunction: abi.encodeWithSignature("transfer(address,uint256)",
                 tx.origin,
                 amount
             )
+        });
+        (bool[] memory successes, ) = blsWallet.executeActions(
+            actions,
+            false
         );
+        return successes[0];
     }
 
     /** 
@@ -171,14 +176,14 @@ contract VerificationGateway is Initializable
     function actionCalls(
         uint256[BLS_LEN][] calldata publicKeys,
         uint256[2] calldata signature,
-        TxData[] calldata txs
-    ) external {
+        TxSet[] calldata txs
+    ) external returns (bytes[][] memory results) {
         // revert if signatures not verified
         verifySignatures(publicKeys, signature, txs);
 
         bytes32 publicKeyHash;
         BLSWallet wallet;
-        // check nonce then perform action
+        results = new bytes[][](txs.length);
         for (uint256 i = 0; i<txs.length; i++) {
 
             // create wallet if it doesn't exist
@@ -188,17 +193,18 @@ contract VerificationGateway is Initializable
             publicKeyHash = keccak256(abi.encodePacked(publicKeys[i]));
             wallet = walletFromHash(publicKeyHash);
 
+            // check nonce then perform action
             if (txs[i].nonce == wallet.nonce()) {
-                // action transaction (increments nonce)
-                bool success = wallet.action(
-                    txs[i].ethValue,
-                    txs[i].contractAddress,
-                    txs[i].encodedFunction
+                // action transaction (updates nonce)
+                (bool[] memory successes, bytes[] memory resultSet) = wallet.executeActions(
+                    txs[i].actions,
+                    false
                 );
+                results[i] = resultSet;
                 emit WalletActioned(
                     address(wallet),
                     wallet.nonce(),
-                    success
+                    true //TODO
                 );
             }
         }
@@ -229,16 +235,25 @@ contract VerificationGateway is Initializable
     }
 
     function messagePoint(
-        TxData calldata txData
+        TxSet calldata txSet
     ) internal view returns (uint256[2] memory) {
+        bytes memory encodedActionData;
+        BLSWallet.ActionData calldata a;
+        for (uint256 i=0; i<txSet.actions.length; i++) {
+            a = txSet.actions[i];
+            encodedActionData = abi.encodePacked(
+                encodedActionData,
+                a.ethValue,
+                a.contractAddress,
+                keccak256(a.encodedFunction)
+            );
+        }
         return blsLib.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(
                 block.chainid,
-                txData.nonce,
-                txData.ethValue,
-                txData.contractAddress,
-                keccak256(txData.encodedFunction)
+                txSet.nonce,
+                keccak256(encodedActionData)
             )
         );
     }
