@@ -95,8 +95,6 @@ contract BLSExpander is Initializable {
         uint256[4] calldata publicKey,
         uint256 nonce,
         uint256[2] calldata signature,
-        IERC20 ,
-        uint256[] calldata ,
         address contractAddress,
         bytes4 methodId,
         bytes[] calldata encodedParamSets
