@@ -14,6 +14,8 @@ interface IVerificationGateway {
 contract MockWalletUpgraded is Initializable
 {
     uint256 public nonce;
+
+    // Trusted address to action generic calls from the wallet.
     address public gateway;
 
     uint256[4] public publicKey;
@@ -50,6 +52,10 @@ contract MockWalletUpgraded is Initializable
         newData = param;
     }
 
+    /**
+    A regular wallet would expect the gateway to verify signed 
+    transactions with the wallet's public key, and nonce.
+     */
     function action(
         uint256 ethValue,
         address contractAddress,
@@ -64,19 +70,8 @@ contract MockWalletUpgraded is Initializable
         nonce++;
     }
 
-    function transferToOrigin(
-        uint256 amount,
-        address token
-    ) public onlyThis returns (bool success) {
-        (success, ) = token.call(abi.encodeWithSignature("transfer(address,uint256)",
-            tx.origin,
-            amount
-        ));
-    }
-
-    modifier onlyThis() {
-        require(msg.sender == address(this), "BLSWallet: only callable from this");
-        _;
+    function setGateway(address walletGateway) public onlyGateway {
+        gateway = walletGateway;
     }
 
     modifier onlyGateway() {

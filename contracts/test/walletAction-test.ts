@@ -337,7 +337,7 @@ describe('WalletActions', async function () {
     let rewardAmountRequired = th.userStartAmount.div(4); // arbitrary reward amount
     let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward    
 
-    let blsWallet = fx.BLSWallet.attach(rewarderAddress);
+    // let blsWallet = fx.BLSWallet.attach(rewarderAddress);
     let functionName = "transferToOrigin";
     let params = [rewardAmountToSend, testToken.address];
     let [txData2, sig2] = blsSignFunction({
@@ -345,15 +345,14 @@ describe('WalletActions', async function () {
       chainId: fx.chainId,
       nonce: 1,
       ethValue: BigNumber.from(0),
-      contract: blsWallet,
+      contract: fx.verificationGateway,
       functionName: functionName, 
       params: params
     });
 
     // shouldn't be able to directly call transferToOrigin
     expectRevert(
-      blsWallet.transferToOrigin(rewardAmountToSend, testToken.address),
-      "BLSWallet: only callable from this"
+      fx.verificationGateway.transferToOrigin(rewardAmountToSend, testToken.address)
     );
 
     let aggSignature = aggregate([sig1, sig2]);

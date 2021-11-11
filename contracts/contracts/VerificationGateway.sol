@@ -142,6 +142,24 @@ contract VerificationGateway is Initializable
         require(success);
     }
 
+    /**
+    Helper function for BLSWallet's to make a token transfer to tx.origin
+     */
+    function transferToOrigin(
+        uint256 amount,
+        address token
+    ) public returns (bool success) {
+        BLSWallet blsWallet = BLSWallet(payable(msg.sender));
+        success = blsWallet.action(
+            0,
+            token,
+            abi.encodeWithSignature("transfer(address,uint256)",
+                tx.origin,
+                amount
+            )
+        );
+    }
+
     /** 
     Base function for verifying and actioning BLS-signed transactions.
     Creates a new bls wallet if a transaction's first time.
