@@ -3,7 +3,7 @@ import { ethers, network } from "hardhat";
 import { expect, assert, should } from "chai";
 
 import Fixture from "../shared/helpers/Fixture";
-import { FullTxData, TxData } from "../shared/helpers/Fixture";
+import { FullTxData, TxSet, ActionData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { aggregate } from "../shared/lib/hubble-bls/src/signer";

@@ -18,7 +18,6 @@ contract VerificationGateway is Initializable
 {
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_LEN = 4;
-    uint256[BLS_LEN] ZERO_BLS_SIG = [uint256(0), uint256(0), uint256(0), uint256(0)];
 
     IBLS public blsLib;
     ProxyAdmin public proxyAdmin;
@@ -76,7 +75,7 @@ contract VerificationGateway is Initializable
             messages
         );
 
-        require(verified, "VerificationGateway: All sigs not verified");
+        require(verified, "VG: All sigs not verified");
     }
 
     function hasCode(address a) private view returns (bool) {
@@ -134,7 +133,7 @@ contract VerificationGateway is Initializable
         for (uint256 i=0; i<32; i++) {
             require(
                 (encodedFunction[selectorOffset+i] == encodedAddress[i]),
-                "VerificationGateway: first param to proxy admin is not calling wallet"
+                "VG: first param to proxy admin is not calling wallet"
             );
         }
         (bool success, ) = address(proxyAdmin).call(encodedFunction);
@@ -261,7 +260,7 @@ contract VerificationGateway is Initializable
     modifier onlyWallet(bytes32 hash) {
         require(
             (msg.sender == address(walletFromHash(hash))),
-            "VerificationGateway: not called from wallet"
+            "VG: not called from wallet"
         );
         _;
     }

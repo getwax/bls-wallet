@@ -6,17 +6,11 @@ const utils = ethers.utils;
 
 import Fixture, { FullTxData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
-import dataPayload from "../shared/helpers/dataPayload";
 
-import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber } from "ethers";
 import blsKeyHash from "../shared/helpers/blsKeyHash";
-import blsSignFunction from "../shared/helpers/blsSignFunction";
-import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import { ProxyAdmin, ProxyAdmin__factory } from "../typechain";
 
 
 describe('Upgrade', async function () {

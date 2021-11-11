@@ -5,15 +5,12 @@ import blsKeyHash from "./blsKeyHash";
 import dataPayload from "./dataPayload";
 
 import { BigNumber, Contract } from "ethers";
-import { TxData } from "./Fixture";
+import { TxSet } from "./Fixture";
 
 export default async function createBLSWallet(
   chainId: number,
   verificationGateway: Contract,
   blsSigner: BlsSignerInterface,
-  rewardRecipient: string,
-  rewardTokenAddress: string,
-  rewardTokenAmount: BigNumber = BigNumber.from(0),
   ethValue: BigNumber = BigNumber.from(0)
 ): Promise<string> {
   const blsPubKeyHash = blsKeyHash(blsSigner);
@@ -40,17 +37,20 @@ export default async function createBLSWallet(
 
   const signature = blsSigner.sign(dataToSign);
 
-  let data: TxData = {
-    publicKeyHash: blsKeyHash(blsSigner),
+  let txSet: TxSet = {
+    publicKeySender: blsSigner.pubkey,
     nonce: BigNumber.from(0),
-    ethValue: ethValue,
-    contractAddress: verificationGateway.address,
-    encodedFunction: encodedFunction
+    atomic: false,
+    actions: [{
+      ethValue: ethValue,
+      contractAddress: verificationGateway.address,
+      encodedFunction: encodedFunction
+      }]
   }
   await (await verificationGateway.actionCalls(
     [blsSigner.pubkey],
     signature,
-    [data]
+    [txSet]
   )).wait();
 
   return (await verificationGateway.walletFromHash(blsPubKeyHash)) as string;
