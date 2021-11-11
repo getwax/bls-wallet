@@ -11,7 +11,7 @@ interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
 }
 
-contract BLSWallet is Initializable
+contract MockWalletUpgraded is Initializable
 {
     uint256 public nonce;
 
@@ -19,6 +19,9 @@ contract BLSWallet is Initializable
     address public gateway;
 
     uint256[4] public publicKey;
+
+    /** Added data */
+    address public newData;
 
     function initialize(
         address walletGateway
@@ -39,16 +42,18 @@ contract BLSWallet is Initializable
     receive() external payable {}
     fallback() external payable {}
 
-    function getPublicKey() external view returns (uint256[4] memory) {
-        return publicKey;
-    }
+    //** Removed function */
+    // function getPublicKey() external view returns (uint256[4] memory) {
+    //     return publicKey;
+    // }
 
-    function setGateway(address walletGateway) public onlyGateway {
-        gateway = walletGateway;
+    /** Added function */
+    function setNewData(address param) public {
+        newData = param;
     }
 
     /**
-    A regular wallet expects the gateway to verify signed 
+    A regular wallet would expect the gateway to verify signed 
     transactions with the wallet's public key, and nonce.
      */
     function action(
@@ -62,11 +67,11 @@ contract BLSWallet is Initializable
         else {
             (success, ) = address(contractAddress).call(encodedFunction);
         }
-        incrementNonce();
+        nonce++;
     }
 
-    function incrementNonce() private {
-        nonce++;
+    function setGateway(address walletGateway) public onlyGateway {
+        gateway = walletGateway;
     }
 
     modifier onlyGateway() {
