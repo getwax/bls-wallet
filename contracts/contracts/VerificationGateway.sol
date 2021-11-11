@@ -7,9 +7,10 @@ import "./lib/IERC20.sol";
 
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import "./BLSWallet.sol";
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
+import "./interfaces/IWallet.sol";
 
 import "hardhat/console.sol";
 
@@ -21,16 +22,18 @@ contract VerificationGateway is Initializable
 
     IBLS public blsLib;
     ProxyAdmin public proxyAdmin;
-    BLSWallet public blsWalletLogic;
+    address public blsWalletLogic;
 
     /**
     @param bls verified bls library contract address
      */
-    function initialize(IBLS bls) external initializer {
+    function initialize(
+        IBLS bls,
+        address blsWalletImpl
+    ) external initializer {
         blsLib = bls;
+        blsWalletLogic = blsWalletImpl;
         proxyAdmin = new ProxyAdmin();
-        blsWalletLogic = new BLSWallet();
-        blsWalletLogic.initialize(address(0));
     }
 
     event WalletCreated(
@@ -47,7 +50,7 @@ contract VerificationGateway is Initializable
     struct TxSet {
         uint256 nonce;
         bool atomic;
-        BLSWallet.ActionData[] actions;
+        IWallet.ActionData[] actions;
     }
 
     /**
@@ -94,7 +97,7 @@ contract VerificationGateway is Initializable
     @param hash BLS public key hash used as salt for create2
     @return BLSWallet at calculated address (if code exists), otherwise zero address
      */
-    function walletFromHash(bytes32 hash) public view returns (BLSWallet) {
+    function walletFromHash(bytes32 hash) public view returns (IWallet) {
         address walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
             bytes1(0xff),
             address(this),
@@ -111,7 +114,7 @@ contract VerificationGateway is Initializable
         if (!hasCode(walletAddress)) {
             walletAddress = address(0);
         }
-        return BLSWallet(payable(walletAddress));
+        return IWallet(payable(walletAddress));
     }
 
     /** 
@@ -147,9 +150,9 @@ contract VerificationGateway is Initializable
         uint256 amount,
         address token
     ) public returns (bool) {
-        BLSWallet blsWallet = BLSWallet(payable(msg.sender));
-        BLSWallet.ActionData[] memory actions = new BLSWallet.ActionData[](1);
-        actions[0] = BLSWallet.ActionData({
+        IWallet blsWallet = IWallet(payable(msg.sender));
+        IWallet.ActionData[] memory actions = new IWallet.ActionData[](1);
+        actions[0] = IWallet.ActionData({
             ethValue: 0,
             contractAddress: token,
             encodedFunction: abi.encodeWithSignature("transfer(address,uint256)",
@@ -181,7 +184,7 @@ contract VerificationGateway is Initializable
         verifySignatures(publicKeys, signature, txs);
 
         bytes32 publicKeyHash;
-        BLSWallet wallet;
+        IWallet wallet;
         results = new bytes[][](txs.length);
         for (uint256 i = 0; i<txs.length; i++) {
 
@@ -225,7 +228,7 @@ contract VerificationGateway is Initializable
                 address(proxyAdmin),
                 getInitializeData()
             ));
-            BLSWallet(payable(blsWallet)).latchPublicKey(publicKey);
+            IWallet(payable(blsWallet)).latchPublicKey(publicKey);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
@@ -237,7 +240,7 @@ contract VerificationGateway is Initializable
         TxSet calldata txSet
     ) internal view returns (uint256[2] memory) {
         bytes memory encodedActionData;
-        BLSWallet.ActionData calldata a;
+        IWallet.ActionData calldata a;
         for (uint256 i=0; i<txSet.actions.length; i++) {
             a = txSet.actions[i];
             encodedActionData = abi.encodePacked(

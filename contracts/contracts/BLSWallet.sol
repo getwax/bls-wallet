@@ -5,6 +5,7 @@ pragma abicoder v2;
 
 //To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "./interfaces/IWallet.sol";
 
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
@@ -18,12 +19,6 @@ contract BLSWallet is Initializable
     address public gateway;
 
     uint256[4] public publicKey;
-
-    struct ActionData {
-        uint256 ethValue;
-        address contractAddress;
-        bytes encodedFunction;
-    }
 
     function initialize(
         address walletGateway
@@ -63,10 +58,10 @@ contract BLSWallet is Initializable
     transactions with the wallet's public key, and nonce.
      */
     function executeActions(
-        ActionData[] calldata actions,
+        IWallet.ActionData[] calldata actions,
         bool atomic
     ) public payable onlyGateway returns (bool[] memory successes, bytes[] memory results) {
-        ActionData calldata a;
+        IWallet.ActionData calldata a;
         bool success;
         bytes memory result;
         successes = new bool[](actions.length);

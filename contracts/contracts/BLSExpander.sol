@@ -109,7 +109,7 @@ contract BLSExpander is Initializable {
         VerificationGateway.TxSet[] memory txs = new VerificationGateway.TxSet[](1);
         txs[0].nonce = nonce;
         txs[0].atomic = false;
-        txs[0].actions = new BLSWallet.ActionData[](length);
+        txs[0].actions = new IWallet.ActionData[](length);
         for (uint256 i=0; i<length; i++) {
             txs[0].actions[i].ethValue = 0;
             txs[0].actions[i].contractAddress = contractAddress;

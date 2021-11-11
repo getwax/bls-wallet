@@ -18,7 +18,7 @@ import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
 
-describe.only('WalletActions', async function () {
+describe('WalletActions', async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
     console.log("Skipping non-deployer tests.");
     return;
@@ -58,7 +58,7 @@ describe.only('WalletActions', async function () {
     }
   });
 
-  it.only('should register new wallet', async function () {
+  it('should register new wallet', async function () {
     let blsSigner = fx.blsSigners[0];  
     let walletAddress = await fx.createBLSWallet(blsSigner);
     const BLSWallet = await ethers.getContractFactory("BLSWallet");  

@@ -93,28 +93,30 @@ export default class Fixture {
 
     let create2Fixture = Create2Fixture.create();
 
-    console.log("Deploying VG...");
+    // deploy wallet implementation contract
+    let blsWalletImpl = await create2Fixture.create2Contract("BLSWallet") as BLSWallet;
+    try {
+      await (await blsWalletImpl.initialize(
+        ethers.constants.AddressZero
+      )).wait();
+    } catch (e) {}
+
     // deploy Verification Gateway
     let verificationGateway = await create2Fixture.create2Contract("VerificationGateway") as VerificationGateway;
     let bls = await create2Fixture.create2Contract("BLSOpen");
+
     try {
       await (await verificationGateway.initialize(
-        bls.address
+        bls.address,
+        blsWalletImpl.address
       )).wait();
-      console.log("Deployed VG.");
-    } catch (e) {
-      console.log((e as Error).message);
-    }
+    } catch (e) {}
 
     // deploy BLSExpander Gateway
-    console.log("Deploying Expander...");
     let blsExpander = await create2Fixture.create2Contract("BLSExpander") as BLSExpander;
     try {
       await (await blsExpander.initialize(verificationGateway.address)).wait();
-      console.log("Deployed Expander.");
-    } catch (e) {
-      console.log((e as Error).message);
-    }
+    } catch (e) {}
 
     let BLSWallet = await ethers.getContractFactory("BLSWallet");
   
