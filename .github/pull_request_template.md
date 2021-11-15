@@ -9,7 +9,6 @@
 
 ## Checklist
 - [ ] I have manually tested these changes
-- [ ] This PR is ready for review
 - [ ] Post a link to the PR in the group chat
 
 *If your PR is not ready, please mark it as a draft*
