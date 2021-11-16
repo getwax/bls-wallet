@@ -14,6 +14,17 @@ type BigNumber = ethers.BigNumber;
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
+type SignSendOnlyParams = {
+  ethValue?: BigNumber;
+  nonce: BigNumber;
+  contract: ethers.Contract,
+};
+
+type SignFullParams = SignSendOnlyParams & {
+  method: string;
+  args: string[];
+};
+
 export default class BlsWallet {
   private constructor(
     public provider: ethers.providers.Provider,
@@ -113,7 +124,7 @@ export default class BlsWallet {
    * Creates the associated wallet contract if it doesn't exist yet, which is
    * why a parent wallet is required to create it.
    */
-  static async connectOrCreate(
+   static async connectOrCreate(
     privateKey: string,
     verificationGatewayAddress: string,
     /** Wallet used to create the new wallet, if needed. */
@@ -244,23 +255,22 @@ export default class BlsWallet {
    * Sign a transaction, producing a `TransactionData` object suitable for use
    * with an aggregator.
    */
-  sign({
-    contract,
-    method,
-    args,
-    ethValue = BigNumber.from(0),
-    nonce,
-  }: {
-    contract: ethers.Contract;
-    method: string;
-    args: string[];
-    ethValue?: BigNumber;
-    nonce: BigNumber;
-  }): TransactionData {
+  sign(opt: SignSendOnlyParams | SignFullParams): TransactionData {
+    const {
+      contract,
+      ethValue = BigNumber.from(0),
+      nonce,
+    } = opt;
+
+    const encodedFunction = ('method' in opt
+      ? contract.interface.encodeFunctionData(opt.method, opt.args)
+      : '0x'
+    );
+
     return this.blsWalletSigner.sign(
       {
         contractAddress: contract.address,
-        encodedFunction: contract.interface.encodeFunctionData(method, args),
+        encodedFunction,
         nonce,
         ethValue,
       },
