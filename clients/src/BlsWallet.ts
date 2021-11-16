@@ -1,8 +1,9 @@
 import * as ethers from 'ethers';
 import {
+  ActionData,
   BlsWalletSigner,
   initBlsWalletSigner,
-  TransactionData,
+  Transaction,
 } from 'bls-wallet-signer';
 
 import VerificationGateway from './VerificationGateway';
@@ -13,16 +14,18 @@ type BigNumber = ethers.BigNumber;
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
-type SignSendOnlyParams = {
-  ethValue?: BigNumber;
-  nonce: BigNumber;
-  contract: ethers.Contract,
-};
-
-type SignFullParams = SignSendOnlyParams & {
-  method: string;
-  args: string[];
-};
+type Action = (
+  | {
+    ethValue?: BigNumber;
+    contract: ethers.Contract,
+  }
+  | {
+    ethValue?: BigNumber;
+    contract: ethers.Contract,
+    method: string;
+    args: string[];
+  }
+);
 
 export default class BlsWallet {
   private constructor(
@@ -140,24 +143,29 @@ export default class BlsWallet {
    * Sign a transaction, producing a `TransactionData` object suitable for use
    * with an aggregator.
    */
-  sign(opt: SignSendOnlyParams | SignFullParams): TransactionData {
-    const {
-      contract,
-      ethValue = BigNumber.from(0),
-      nonce,
-    } = opt;
+  sign({ nonce, atomic = true, actions }: {
+    nonce: BigNumber;
+    atomic?: boolean;
+    actions: Action[];
+  }): Transaction {
+    const fullActions: ActionData[] = actions.map(a => {
+      const encodedFunction = ('method' in a
+        ? a.contract.interface.encodeFunctionData(a.method, a.args)
+        : '0x'
+      );
 
-    const encodedFunction = ('method' in opt
-      ? contract.interface.encodeFunctionData(opt.method, opt.args)
-      : '0x'
-    );
+      return {
+        ethValue: a.ethValue ?? BigNumber.from(0),
+        contractAddress: a.contract.address,
+        encodedFunction,
+      };
+    });
 
     return this.blsWalletSigner.sign(
       {
-        contractAddress: contract.address,
-        encodedFunction,
         nonce,
-        ethValue,
+        atomic,
+        actions: fullActions,
       },
       this.privateKey,
     );
