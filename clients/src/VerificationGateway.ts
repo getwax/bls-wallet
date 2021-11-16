@@ -40,15 +40,7 @@ export default class VerificationGateway {
     );
   }
 
-  async walletFromHash(publicKeyHash: string): Promise<string | undefined> {
-    const address: string = await this.contract.walletFromHash(
-      publicKeyHash,
-    );
-
-    if (address === ethers.constants.AddressZero) {
-      return undefined;
-    }
-
-    return address;
+  async walletFromHash(publicKeyHash: string): Promise<string> {
+    return await this.contract.walletFromHash(publicKeyHash);
   }
 }
