@@ -10,13 +10,13 @@ type Provider = ethers.providers.Provider;
 export default class VerificationGateway {
   static abi = VerificationGatewayAbi;
 
-  #contract: ethers.Contract;
+  contract: ethers.Contract;
 
   constructor(
     public address: string,
     signerOrProvider: Signer | Provider | undefined = undefined,
   ) {
-    this.#contract = new ethers.Contract(
+    this.contract = new ethers.Contract(
       address,
       VerificationGateway.abi,
       signerOrProvider,
@@ -27,7 +27,7 @@ export default class VerificationGateway {
     aggregateTx: AggregateTransactionData,
     overrides: ethers.Overrides = {},
   ): Promise<ethers.providers.TransactionResponse> {
-    return await this.#contract.actionCalls(
+    return await this.contract.actionCalls(
       aggregateTx.transactions.map((tx) => splitHex256(tx.publicKey)),
       splitHex256(aggregateTx.signature),
       aggregateTx.transactions.map((tx) => ({
@@ -41,7 +41,7 @@ export default class VerificationGateway {
   }
 
   async walletFromHash(publicKeyHash: string): Promise<string | undefined> {
-    const address: string = await this.#contract.walletFromHash(
+    const address: string = await this.contract.walletFromHash(
       publicKeyHash,
     );
 
