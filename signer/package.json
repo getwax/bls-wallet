@@ -1,6 +1,6 @@
 {
   "name": "bls-wallet-signer",
-  "version": "0.7.0",
+  "version": "0.8.0-rc.1",
   "description": "Client-side tool for signing bls transaction data",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
