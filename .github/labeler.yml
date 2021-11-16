@@ -6,3 +6,5 @@ contracts:
   - contracts/**/*
 clients:
   - clients/**/*
+signer:
+  - signer/**/*
