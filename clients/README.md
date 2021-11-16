@@ -17,8 +17,7 @@ await aggregator.addTransaction(...);
 ## BlsWallet
 
 Models a BLS wallet, storing the private key and providing `.sign(...)` to
-produce `TransactionData`, that can be used with
-`aggregator.addTransaction(...)`.
+produce `Transaction`, that can be used with `aggregator.addTransaction(...)`.
 
 ```ts
 import { BlsWallet } from 'bls-wallet-clients';
