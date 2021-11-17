@@ -20,7 +20,7 @@ contract BLSExpander is Initializable {
         uint256 tokenRewardAmount,
         uint256[4][] calldata publicKeys,
         uint256[2] memory signature,
-        VerificationGateway.TxData[] calldata txs
+        VerificationGateway.TxSet[] calldata txs
     ) external returns (uint256 balanceIncrease) {
         uint256 balanceBefore = tokenRewardAddress.balanceOf(tx.origin);
 
@@ -47,7 +47,7 @@ contract BLSExpander is Initializable {
     //     bytes[] calldata encodedParamSets
     // ) external {
     //     uint256 length = publicKeyHashes.length;
-    //     VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
+    //     VerificationGateway.TxSet[] memory txs = new VerificationGateway.TxSet[](length);
     //     for (uint256 i=0; i<length; i++) {
     //         txs[i].publicKeyHash = publicKeyHashes[i];
     //         txs[i].tokenRewardAmount = tokenRewardAmounts[i];
@@ -74,7 +74,7 @@ contract BLSExpander is Initializable {
     //     bytes[] calldata encodedParamSets
     // ) external {
     //     uint256 length = contractAddresses.length;
-    //     VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
+    //     VerificationGateway.TxSet[] memory txs = new VerificationGateway.TxSet[](length);
     //     for (uint256 i=0; i<length; i++) {
     //         txs[i].publicKeyHash = publicKeyHash;
     //         txs[i].tokenRewardAmount = tokenRewardAmounts[i];
@@ -93,23 +93,25 @@ contract BLSExpander is Initializable {
     // eg airdrop
     function blsCallMultiSameCallerContractFunction(
         uint256[4] calldata publicKey,
-        uint256 startNonce,
+        uint256 nonce,
         uint256[2] calldata signature,
-        IERC20 ,
-        uint256[] calldata ,
         address contractAddress,
         bytes4 methodId,
         bytes[] calldata encodedParamSets
     ) external {
         uint256 length = encodedParamSets.length;
-        uint256[4][] memory publicKeys = new uint256[4][](length);
-        VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
+
+        uint256[4][] memory publicKeys = new uint256[4][](1);
+        publicKeys[0] = publicKey;
+
+        VerificationGateway.TxSet[] memory txs = new VerificationGateway.TxSet[](1);
+        txs[0].nonce = nonce;
+        txs[0].atomic = false;
+        txs[0].actions = new IWallet.ActionData[](length);
         for (uint256 i=0; i<length; i++) {
-            publicKeys[i] = publicKey;
-            txs[i].nonce = startNonce+i;
-            txs[i].ethValue = 0;
-            txs[i].contractAddress = contractAddress;
-            txs[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
+            txs[0].actions[i].ethValue = 0;
+            txs[0].actions[i].contractAddress = contractAddress;
+            txs[0].actions[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
         }
 
         verificationGateway.actionCalls(
@@ -130,7 +132,7 @@ contract BLSExpander is Initializable {
     //     bytes calldata encodedParams
     // ) external {
     //     uint256 length = publicKeyHashes.length;
-    //     VerificationGateway.TxData[] memory txs = new VerificationGateway.TxData[](length);
+    //     VerificationGateway.TxSet[] memory txs = new VerificationGateway.TxSet[](length);
     //     for (uint256 i=0; i<length; i++) {
     //         txs[i].publicKeyHash = publicKeyHashes[i];
     //         txs[i].tokenRewardAmount = tokenRewardAmounts[i];

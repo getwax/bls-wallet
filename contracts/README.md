@@ -24,8 +24,6 @@ Note: each of these savings is proportional to the number of transactions submit
   - receive contract wallet address
 3. Create contract wallet with existing ECDSA keypair
 
-Note: Depending on the network being used, the address of the deployed PrecompileCostEstimator will need to be set [here](https://github.com/jzaki/bls-wallet/blob/main/contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol#L42). #15 will resolve this.
-
 ## See it in action
 See `extension`
 
@@ -83,7 +81,16 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 - Run the aggregation server (see `./server`).
 - build and test contracts - `npx hardhat test`
 
-## Optimism's L2
+Note: Depending on the network being used, the address of the deployed PrecompileCostEstimator will need to be set [here](https://github.com/jzaki/bls-wallet/blob/main/contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol#L42). #15 will resolve this.
+
+For each network, the deployer contract can be deployed with the following script (only needed once)
+`DEPLOY_DEPLOYER=true yarn hardhat run scripts/deploy-deployer.ts --network <network-name>`
+
+
+## Arbitrum
+
+
+## Optimism's L2 (paused)
 - clone https://github.com/ethereum-optimism/optimism
 - follow instructions (using latest version of docker)
 - in `opt/`, run script - `docker-compose up`
@@ -91,7 +98,7 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
     - L2 - http://localhost:8545 (chainId 420)
 
 ## Deploy scripts
-Specify network - `npx hardhat run scripts/<#_script.ts> --network optimism`
+Specify network - `npx hardhat run scripts/<#_script.ts> --network arbitrum-testnet`
 
 # License
 MIT

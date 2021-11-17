@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
-import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
+import { Wallet, BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
 
 import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../../shared/lib/hubble-bls/src/signer";
 import { solG1 } from "../../shared/lib/hubble-bls/src/mcl";
@@ -12,6 +12,8 @@ import createBLSWallet from "./createBLSWallet";
 import blsSignFunction from "./blsSignFunction";
 import blsKeyHash from "./blsKeyHash";
 import { exit, send } from "process";
+import Create2Fixture from "./Create2Fixture";
+import { BLSExpander, BLSWallet, BLSWallet__factory, VerificationGateway } from "../../typechain";
 
 const DOMAIN_HEX = utils.keccak256("0xfeedbee5");
 const DOMAIN = arrayify(DOMAIN_HEX);
@@ -28,12 +30,17 @@ export type FullTxData = {
   params: any[]
 }
 
-export type TxData = {
-  publicKeySender: any;
-  nonce: BigNumber;
+
+export type ActionData = {
   ethValue: BigNumber;
   contractAddress: string;
   encodedFunction: string;
+}
+export type TxSet = {
+  publicKeySender: any;
+  nonce: BigNumber;
+  atomic: boolean;
+  actions: ActionData[];
 }
 
 export default class Fixture {
@@ -43,7 +50,7 @@ export default class Fixture {
 
   private constructor(
     public chainId: number,
-    public provider,
+    public provider: any,
 
     public signers: Signer[],
     public addresses: string[],
@@ -51,23 +58,21 @@ export default class Fixture {
     public blsSignerFactory: BlsSignerFactory,
     public blsSigners: BlsSignerInterface[],
 
-    public VerificationGateway: ContractFactory,
-    public verificationGateway: Contract,
+    // private deployerWallet: Wallet,
+    public verificationGateway: VerificationGateway,
+    public blsExpander: BLSExpander,
 
-    public BLSExpander: ContractFactory,
-    public blsExpander: Contract,
-
-    public BLSWallet: ContractFactory,
+    public BLSWallet: BLSWallet__factory,
   ) {}
 
   /// @dev Contracts deployed by first ethers signer 
   static async create(
     blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
     initialized: boolean=true,
-    blsAddress: string=undefined,
-    vgAddress: string=undefined,
-    expanderAddress: string=undefined,
-    secretNumbers: number[]=undefined
+    blsAddress?: string,
+    vgAddress?: string,
+    expanderAddress?: string,
+    secretNumbers?: number[]
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
     let provider = ethers.provider;
@@ -86,42 +91,32 @@ export default class Fixture {
       blsSigners[i] = blsSignerFactory.getSigner(DOMAIN, "0x"+secretNumber.toString(16));
     }
 
-    // deploy Verification Gateway
-    let VerificationGateway = await ethers.getContractFactory("VerificationGateway");
-    let verificationGateway;
-    if (vgAddress) {
-      verificationGateway = VerificationGateway.attach(vgAddress);
-      console.log("Attached to VG. blsLib:", await verificationGateway.blsLib());
-    }
-    else {
-      let BLS = await ethers.getContractFactory("BLSOpen");
-      let bls;
-      if (blsAddress) {
-        bls = BLS.attach(blsAddress);
-      }
-      else {
-        bls = await BLS.deploy();
-        await bls.deployed();
-      }
-      verificationGateway = await VerificationGateway.deploy();
-      await verificationGateway.deployed();
-      if (initialized) {
-        await (await verificationGateway.initialize(
-          bls.address
-        )).wait();
-      }
-    }
+    let create2Fixture = Create2Fixture.create();
 
-    let BLSExpander = await ethers.getContractFactory("BLSExpander");
-    let blsExpander;
-    if (expanderAddress) {
-      blsExpander = BLSExpander.attach(expanderAddress);
-    }
-    else {
-      blsExpander = await BLSExpander.deploy(); 
-      await blsExpander.deployed();
+    // deploy wallet implementation contract
+    let blsWalletImpl = await create2Fixture.create2Contract("BLSWallet") as BLSWallet;
+    try {
+      await (await blsWalletImpl.initialize(
+        ethers.constants.AddressZero
+      )).wait();
+    } catch (e) {}
+
+    // deploy Verification Gateway
+    let verificationGateway = await create2Fixture.create2Contract("VerificationGateway") as VerificationGateway;
+    let bls = await create2Fixture.create2Contract("BLSOpen");
+
+    try {
+      await (await verificationGateway.initialize(
+        bls.address,
+        blsWalletImpl.address
+      )).wait();
+    } catch (e) {}
+
+    // deploy BLSExpander Gateway
+    let blsExpander = await create2Fixture.create2Contract("BLSExpander") as BLSExpander;
+    try {
       await (await blsExpander.initialize(verificationGateway.address)).wait();
-    }
+    } catch (e) {}
 
     let BLSWallet = await ethers.getContractFactory("BLSWallet");
   
@@ -132,28 +127,24 @@ export default class Fixture {
       addresses,
       blsSignerFactory,
       blsSigners,
-      VerificationGateway,
       verificationGateway,
-      BLSExpander,
       blsExpander,
       BLSWallet
     );
   }
 
   async gatewayCallFull(txDataFull: FullTxData) {
-    let [txData, sig] = blsSignFunction(txDataFull);
+    let [txSet, sig] = blsSignFunction(txDataFull);
 
     await(await this.verificationGateway.actionCalls(
       [txDataFull.blsSigner.pubkey],
       sig,
-      [txData]
+      [txSet]
     )).wait();
   }
 
   async createBLSWallet(
-    blsSigner: BlsSignerInterface,
-    rewardAddress: string = ethers.constants.AddressZero,
-    reward: BigNumber = BigNumber.from(0)
+    blsSigner: BlsSignerInterface
   ): Promise<any> {
     const blsPubKeyHash = blsKeyHash(blsSigner);
 
@@ -189,9 +180,7 @@ export default class Fixture {
     let blsWalletAddresses = new Array<string>(length);
     for (let i = 0; i<length; i++) {
       blsWalletAddresses[i] = await this.createBLSWallet(
-        this.blsSigners[i],
-        rewardAddress,
-        reward
+        this.blsSigners[i]
       );
     }
     return blsWalletAddresses;
