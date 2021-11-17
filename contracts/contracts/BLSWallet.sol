@@ -5,57 +5,86 @@ pragma abicoder v2;
 
 //To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "./interfaces/IWallet.sol";
 
 interface IVerificationGateway {
     function walletCrossCheck(bytes32 publicKeyHash) external;
 }
 
-contract BLSWallet
+contract BLSWallet is Initializable
 {
-    address public gateway;
-    uint256[4] public publicKey;
     uint256 public nonce;
 
-    constructor(uint256[4] memory blsKey) {
-        gateway = msg.sender;
-        publicKey = blsKey;
+    // Trusted address to action generic calls from the wallet.
+    address public gateway;
+
+    uint256[4] public publicKey;
+
+    function initialize(
+        address walletGateway
+    ) external initializer {
         nonce = 0;
+        gateway = walletGateway;
+    }
+
+    function latchPublicKey(
+        uint256[4] memory blsKey
+    ) public onlyGateway {
+        for (uint256 i=0; i<4; i++) {
+            require(publicKey[i] == 0, "BLSWallet: public key already set");
+        }
+        publicKey = blsKey;
     }
 
     receive() external payable {}
     fallback() external payable {}
 
+    /**
+    BLS public key format, contract can be upgraded for other types
+     */
     function getPublicKey() external view returns (uint256[4] memory) {
         return publicKey;
     }
 
-    function action(
-        uint256 ethValue,
-        address contractAddress,
-        bytes calldata encodedFunction
-    ) public payable onlyGateway returns (bool success) {
-        if (ethValue > 0) {
-            (success, ) = payable(contractAddress).call{value: ethValue}(encodedFunction);
+    /**
+    Wallet can migrate to a new gateway, eg additional signature support
+     */
+    function setGateway(address walletGateway) public onlyGateway {
+        gateway = walletGateway;
+    }
+
+    /**
+    A regular wallet expects the gateway to verify signed 
+    transactions with the wallet's public key, and nonce.
+     */
+    function executeActions(
+        IWallet.ActionData[] calldata actions,
+        bool atomic
+    ) public payable onlyGateway returns (bool[] memory successes, bytes[] memory results) {
+        IWallet.ActionData calldata a;
+        bool success;
+        bytes memory result;
+        successes = new bool[](actions.length);
+        results = new bytes[](actions.length);
+        for (uint256 i=0; i<actions.length; i++) {
+            a = actions[i];
+            if (a.ethValue > 0) {
+                (success, result) = payable(a.contractAddress).call{value: a.ethValue}(a.encodedFunction);
+            }
+            else {
+                (success, result) = address(a.contractAddress).call(a.encodedFunction);
+            }
+            require(!atomic||success, "BLSWallet: Action failed");
+            results[i] = result;
         }
-        else {
-            (success, ) = address(contractAddress).call(encodedFunction);
-        }
+        incrementNonce();
+    }
+
+    /**
+    Consecutive nonce increment, contract can be upgraded for other types
+     */
+    function incrementNonce() private {
         nonce++;
-    }
-
-    function transferToOrigin(
-        uint256 amount,
-        address token
-    ) public onlyThis returns (bool success) {
-        (success, ) = token.call(abi.encodeWithSignature("transfer(address,uint256)",
-            tx.origin,
-            amount
-        ));
-    }
-
-    modifier onlyThis() {
-        require(msg.sender == address(this), "BLSWallet: only callable from this");
-        _;
     }
 
     modifier onlyGateway() {

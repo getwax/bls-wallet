@@ -5,12 +5,17 @@ import dataPayload from "./dataPayload";
 import { BlsSignerInterface } from "../lib/hubble-bls/src/signer";
 import { solG1, solG2 } from "../lib/hubble-bls/src/mcl"
 
-import Fixture, { FullTxData, TxData } from "./Fixture";
+import Fixture, { FullTxData, TxSet, ActionData } from "./Fixture";
 import blsKeyHash from "./blsKeyHash";
 
+/**
+ * Sign single action data. TODO: multiple actions
+ * @param fullTxData 
+ * @returns 
+ */
 export default function blsSignFunction(
   fullTxData:FullTxData
-): [TxData, solG1] {
+): [TxSet, solG1] {
   let encodedFunction = "0x"; // empty bytes if sending ETH only
   let address:string;
   if (fullTxData.functionName !== "") {
@@ -24,12 +29,16 @@ export default function blsSignFunction(
     address = fullTxData.contract as string;
   }
 
-  let txData:TxData = {
-    publicKeySender: fullTxData.blsSigner.pubkey,
-    nonce: BigNumber.from(fullTxData.nonce),
+  let actionData: ActionData = {
     ethValue: fullTxData.ethValue,
     contractAddress: address,
     encodedFunction: encodedFunction
+  };
+  let txSet:TxSet = {
+    publicKeySender: fullTxData.blsSigner.pubkey,
+    nonce: BigNumber.from(fullTxData.nonce),
+    atomic: false,
+    actions: [actionData]
   };
 
   let dataToSign = dataPayload(
@@ -41,7 +50,7 @@ export default function blsSignFunction(
   );
 
   return [
-    txData,
+    txSet,
     fullTxData.blsSigner.sign(dataToSign)
   ];
 }

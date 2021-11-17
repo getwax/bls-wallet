@@ -12,13 +12,14 @@ export default class TokenHelper {
   static readonly initialSupply = utils.parseUnits("1000000")
   readonly userStartAmount: BigNumber;
 
-  testToken: Contract;
+  testToken: Contract|undefined;
   constructor(public fx: Fixture) { 
     this.userStartAmount = TokenHelper.initialSupply.div(fx.blsSigners.length);
+    this.testToken = undefined;
   }
 
   /// @dev Contract deployed by first ethers signer, has initial supply
-  static async deployTestToken(balanceAddress:string=undefined): Promise<Contract> {
+  static async deployTestToken(balanceAddress:string|undefined=undefined): Promise<Contract> {
     const MockERC20 = await ethers.getContractFactory("MockERC20");
     let mockERC20 = await MockERC20.deploy(
       "AnyToken",
@@ -79,7 +80,7 @@ export default class TokenHelper {
       chainId: this.fx.chainId,
       nonce: nonce,
       ethValue: BigNumber.from(0),
-      contract: this.testToken,
+      contract: this.testToken as Contract,
       functionName: "transfer",
       params: [recipient, amount]
     }
