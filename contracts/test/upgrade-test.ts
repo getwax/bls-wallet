@@ -6,9 +6,9 @@ const utils = ethers.utils;
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
-import { BigNumber } from "ethers";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
+import splitHex256 from "../shared/helpers/splitHex256";
 
 describe('Upgrade', async function () {
   this.beforeAll(async function () {
@@ -27,7 +27,6 @@ describe('Upgrade', async function () {
   });
 
   let fx: Fixture;
-  let th: TokenHelper;
   beforeEach(async function() {
     fx = await Fixture.create();
   });
@@ -38,7 +37,7 @@ describe('Upgrade', async function () {
     let blsWallet = BLSWallet.attach(wallet.address);
 
     expect((await blsWallet.getPublicKey())[0].toHexString()).to.equal(
-      wallet.blsWalletSigner.getPublicKey(wallet.privateKey)[0],
+      splitHex256(wallet.blsWalletSigner.getPublicKey(wallet.privateKey))[0],
     );
 
     const MockWalletUpgraded = await ethers.getContractFactory("MockWalletUpgraded");
@@ -50,7 +49,7 @@ describe('Upgrade', async function () {
       [blsWallet.address, mockWalletUpgraded.address]
     );
 
-    fx.verificationGateway.actionCalls(
+    await (await fx.verificationGateway.actionCalls(
       wallet.sign({
         nonce: await wallet.Nonce(),
         actions: [
@@ -64,7 +63,7 @@ describe('Upgrade', async function () {
           },
         ],
       }),
-    );
+    )).wait();
 
     let newBLSWallet = MockWalletUpgraded.attach(wallet.address);
     await (await newBLSWallet.setNewData(wallet.address)).wait();
