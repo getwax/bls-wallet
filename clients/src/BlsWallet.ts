@@ -8,6 +8,7 @@ import {
 
 import VerificationGateway from './VerificationGateway';
 import BlsWalletAbi from './contractAbis/BlsWalletAbi';
+import TransparentUpgradeableProxyBytecode from './contractAbis/TransparentUpgradeableProxyBytecode';
 
 const BigNumber = ethers.BigNumber;
 type BigNumber = ethers.BigNumber;
@@ -57,8 +58,31 @@ export default class BlsWallet {
       signerOrProvider,
     );
 
-    return await verificationGateway.walletFromHash(
+    const proxyAdminAddress = await verificationGateway.contract.proxyAdmin();
+    const blsWalletLogicAddress = await verificationGateway.contract.blsWalletLogic();
+
+    const initFunctionParams = new ethers.utils.Interface(BlsWalletAbi).encodeFunctionData(
+      "initialize",
+      [verificationGatewayAddress],
+    );
+
+    return ethers.utils.getCreate2Address(
+      verificationGatewayAddress,
       blsWalletSigner.getPublicKeyHash(privateKey),
+      ethers.utils.solidityKeccak256(
+        ["bytes", "bytes"],
+        [
+          TransparentUpgradeableProxyBytecode,
+          ethers.utils.defaultAbiCoder.encode(
+            ["address", "address", "bytes"],
+            [
+              blsWalletLogicAddress,
+              proxyAdminAddress,
+              initFunctionParams,
+            ],
+          ),
+        ],
+      ),
     );
   }
 
