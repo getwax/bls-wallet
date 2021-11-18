@@ -17,23 +17,28 @@ await aggregator.addTransaction(...);
 ## BlsWallet
 
 Models a BLS wallet, storing the private key and providing `.sign(...)` to
-produce `TransactionData`, that can be used with
-`aggregator.addTransaction(...)`.
+produce `Transaction`, that can be used with `aggregator.addTransaction(...)`.
 
 ```ts
 import { BlsWallet } from 'bls-wallet-clients';
 
-const wallet = await BlsWallet.connectOrCreate(
+const wallet = await BlsWallet.connect(
   privateKey,
   verificationGatewayAddress,
-  parentWallet, // A regular ethers wallet
+  provider,
 );
 
 const tx = wallet.sign({
-  contract: someToken, // An ethers.Contract
-  method: 'transfer',
-  args: [recipientAddress, ethers.utils.parseUnits('1', 18)],
   nonce: await wallet.Nonce(),
+  actions: [
+    {
+      contract: someToken, // An ethers.Contract
+      method: 'transfer',
+      args: [recipientAddress, ethers.utils.parseUnits('1', 18)],
+    },
+    // Additional actions can go here. When using multiple actions, they'll
+    // either all succeed or all fail.
+  ],
 });
 
 await aggregator.addTransaction(tx);

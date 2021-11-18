@@ -5,7 +5,8 @@ import { arrayify } from "@ethersproject/bytes";
 import { keccak256 } from "@ethersproject/keccak256";
 import { expect } from "chai";
 
-import { initBlsWalletSigner, RawTransactionData } from "../src";
+import { initBlsWalletSigner, Transaction, TransactionTemplate } from "../src";
+import Range from "./helpers/Range";
 
 const domain = arrayify(keccak256("0xfeedbee5"));
 const weiPerToken = BigNumber.from(10).pow(18);
@@ -14,11 +15,21 @@ const samples = (() => {
   const dummy256HexString = "0x" + "0123456789".repeat(10).slice(0, 64);
   const contractAddress = dummy256HexString;
 
-  const rawTx: RawTransactionData = {
+  const txTemplate: TransactionTemplate = {
     nonce: BigNumber.from(123),
-    ethValue: BigNumber.from(0),
-    contractAddress,
-    encodedFunction: "0x00",
+    atomic: true,
+    actions: [
+      {
+        ethValue: BigNumber.from(0),
+        contractAddress,
+        encodedFunction: "0x00",
+      },
+      {
+        ethValue: BigNumber.from(1),
+        contractAddress,
+        encodedFunction: "0x00",
+      }
+    ],
   };
 
   const privateKey = dummy256HexString;
@@ -26,7 +37,7 @@ const samples = (() => {
 
   return {
     contractAddress,
-    rawTx,
+    txTemplate,
     privateKey,
     otherPrivateKey,
   };
@@ -39,30 +50,40 @@ describe("index", () => {
       domain,
     });
 
-    const { rawTx, privateKey, otherPrivateKey } = samples;
+    const { txTemplate, privateKey, otherPrivateKey } = samples;
 
-    const tx = sign(rawTx, privateKey);
+    const tx = sign(txTemplate, privateKey);
 
     expect(tx.signature).to.equal([
-      "0x177500780b42f245e98229245126c9042e1cdaadc7ada72021ddd43492963a7b26f7a",
-      "a8f971b133e9f61d4197b4fb40fc82f5c239183cba80d6338a64500cb27",
+      "0x0058b38298f3c486223de7c61f461ff3b47530d2619a383e49b298a56249e4fb0bf8b",
+      "eb03979073e57656af0a5bab043fe2d6bf4cbbf600f6a7190ce95fcf69c",
     ].join(""));
 
     expect(verify(tx)).to.equal(true);
 
     const txBadSig = {
-      ...sign(rawTx, otherPrivateKey),
-      publicKey: tx.publicKey, // Pretend this is the public key
+      ...tx,
+      signature: sign(txTemplate, otherPrivateKey).signature,
     };
 
     expect(verify(txBadSig)).to.equal(false);
 
-    const txBadMessage = {
-      ...tx,
-
-      // Pretend the client signed to pay a million tokens
-      ethValue: weiPerToken.mul(1000000),
-    }
+    const txBadMessage: Transaction = {
+      subTransactions: [
+        {
+          ...tx.subTransactions[0],
+          actions: [
+            {
+              ...tx.subTransactions[0].actions[0],
+              // Pretend the client signed to pay a million tokens
+              ethValue: weiPerToken.mul(1000000),
+            },
+            ...tx.subTransactions[0].actions.slice(1),
+          ],
+        },
+      ],
+      signature: tx.signature,
+    };
 
     expect(verify(txBadMessage)).to.equal(false);
   });
@@ -71,34 +92,70 @@ describe("index", () => {
     const {
       sign,
       aggregate,
-      verifyAggregate,
+      verify,
     } = await initBlsWalletSigner({ chainId: 123, domain });
 
-    const { rawTx, privateKey } = samples;
+    const { txTemplate, privateKey } = samples;
 
-    const tx = sign(rawTx, privateKey);
-    const aggregateTx = aggregate([tx, tx]);
+    const tx1 = sign(txTemplate, privateKey);
+    const tx2 = aggregate([tx1, tx1]);
 
-    expect(aggregateTx.signature).to.equal([
-      "0x2cc0b05e8200cf564042735d15e2cc98181e730203530300022aafdd1ceb905830430",
-      "28617145dca56a00bf0693710e24683616ff4a42bc3cca7d587b36ff91f",
+    expect(tx2.signature).to.equal([
+      "0x091727df1b9834b31111c1d5c1e15989350de678232e46898c1c3c788e3c26ab1f69e",
+      "3373d329564e875a1401c0b7a4a6f7ab3e9cf93ef73b59a1feb3286e693",
     ].join(""));
 
-    expect(verifyAggregate(aggregateTx)).to.equal(true);
+    expect(verify(tx2)).to.equal(true);
 
-    const aggregateTxBadMessage = {
-      ...aggregateTx,
-      transactions: [
-        aggregateTx.transactions[0],
+    const tx2BadMessage: Transaction = {
+      ...tx2,
+      subTransactions: [
+        tx2.subTransactions[0],
         {
-          ...aggregateTx.transactions[1],
+          ...tx2.subTransactions[1],
 
           // Pretend this client signed to pay a million tokens
-          ethValue: weiPerToken.mul(1000000),
-        }
+          actions: [
+            {
+              ...tx2.subTransactions[1].actions[0],
+              ethValue: weiPerToken.mul(1000000),
+            },
+            ...tx2.subTransactions[1].actions.slice(1),
+          ],
+        },
       ],
     }
 
-    expect(verifyAggregate(aggregateTxBadMessage)).to.equal(false);
+    expect(verify(tx2BadMessage)).to.equal(false);
+  });
+
+  it("can aggregate transactions which already have multiple subTransactions", async () => {
+    const {
+      sign,
+      aggregate,
+      verify,
+    } = await initBlsWalletSigner({ chainId: 123, domain });
+
+    const { txTemplate, privateKey } = samples;
+
+    const txs = Range(4).map(i => sign(
+      {
+        ...txTemplate,
+        actions: [
+          {
+            ...txTemplate.actions[0],
+            ethValue: BigNumber.from(i),
+          }
+        ],
+      },
+      privateKey,
+    ));
+
+    const aggTx1 = aggregate(txs.slice(0, 2));
+    const aggTx2 = aggregate(txs.slice(2, 4));
+
+    let aggAggTx = aggregate([aggTx1, aggTx2]);
+
+    expect(verify(aggAggTx)).to.equal(true);
   });
 });

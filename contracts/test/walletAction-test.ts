@@ -1,6 +1,5 @@
 import { expect } from "chai";
-
-import { expectRevert } from "@openzeppelin/test-helpers";
+import expectRevert from "../shared/helpers/expectRevert";
 
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
@@ -13,10 +12,25 @@ import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 import splitHex256 from "../shared/helpers/splitHex256";
+import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
 describe('WalletActions', async function () {
+  if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
+    console.log("Skipping non-deployer tests.");
+    return;
+  }
+
   this.beforeAll(async function () {
-    if (network.name !== "rinkarby") {
+    // deploy the deployer contract for the transient hardhat network
+    if (network.name === "hardhat") {
+      // fund deployer wallet address
+      let fundedSigner = (await ethers.getSigners())[0];
+      await (await fundedSigner.sendTransaction({
+        to: defaultDeployerAddress(),
+        value: utils.parseEther("1")
+      })).wait();
+
+      // deploy the precompile contract (via deployer)
       console.log("PCE:", await deployAndRunPrecompileCostEstimator());
     }
   });
@@ -44,9 +58,36 @@ describe('WalletActions', async function () {
     const wallet = await fx.lazyBlsWallets[0]();
     expect(wallet.verificationGateway.address).to.equal(fx.verificationGateway.address);
 
-    // Check revert when adding same wallet twice
-    // await expectRevert.unspecified(fx.createBLSWallet(blsSigner));
+    const BLSWallet = await ethers.getContractFactory("BLSWallet");  
+    const TransparentUpgradeableProxy = await ethers.getContractFactory("TransparentUpgradeableProxy");
+    const proxyAdminAddress = await fx.verificationGateway.contract.proxyAdmin();
+    const blsWalletLogicAddress = await fx.verificationGateway.contract.blsWalletLogic();
 
+    const initFunctionParams = BLSWallet.interface.encodeFunctionData(
+      "initialize",
+      [fx.verificationGateway.address]
+    );
+
+    const calculatedAddress = ethers.utils.getCreate2Address(
+      fx.verificationGateway.address,
+      fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
+      ethers.utils.solidityKeccak256(
+        ["bytes", "bytes"],
+        [
+          TransparentUpgradeableProxy.bytecode,
+          ethers.utils.defaultAbiCoder.encode(
+            ["address", "address", "bytes"],
+            [
+              blsWalletLogicAddress,
+              proxyAdminAddress,
+              initFunctionParams
+            ]
+          )
+        ]
+      )
+    );
+
+    expect(calculatedAddress).to.equal(wallet.address);
   });
 
   it('should receive ETH', async function() {
@@ -151,7 +192,7 @@ describe('WalletActions', async function () {
     );
 
     tx.ethValue = parseEther("1");
-    await expectRevert.unspecified(
+    await expectRevert(
       fx.verificationGateway.contract.callStatic.verifySignatures(
         [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
         splitHex256(tx.signature),
@@ -194,7 +235,7 @@ describe('WalletActions', async function () {
     }
   });
 
-  it("should airdrop", async function() {
+  it("should airdrop (multicall)", async function() {
     th = new TokenHelper(fx);
 
     const wallets = await fx.createBLSWallets();
@@ -209,6 +250,7 @@ describe('WalletActions', async function () {
 
     const startNonce = await wallets[0].Nonce();
 
+    // TODO: Put the transfers into a single action group
     const txs = wallets.map((recvWallet, i) => wallets[0].sign({
       contract: testToken,
       method: "transfer",
@@ -222,8 +264,6 @@ describe('WalletActions', async function () {
       splitHex256(txs[0].publicKey),
       startNonce,
       splitHex256(aggTx.signature),
-      ethers.constants.AddressZero,
-      Array(wallets.length).fill(0),
       testToken.address,
       testToken.interface.getSighash("transfer"),
       txs.map(tx => `0x${tx.encodedFunction.slice(10)}`),
@@ -276,16 +316,9 @@ describe('WalletActions', async function () {
       nonce: BigNumber.from(1),
     });
 
-    const rewarderContractWithSigner = new ethers.Contract(
-      rewarder.address,
-      rewarder.walletContract.interface,
-      fx.signers[0],
-    );
-
     // shouldn't be able to directly call transferToOrigin
-    await expectRevert.unspecified(
-      rewarderContractWithSigner.transferToOrigin(rewardAmountToSend, testToken.address),
-      "BLSWallet: only callable from this"
+    expectRevert(
+      fx.verificationGateway.contract.transferToOrigin(rewardAmountToSend, testToken.address)
     );
 
     const aggTx = fx.blsWalletSigner.aggregate([tx1, tx2]);
@@ -306,7 +339,7 @@ describe('WalletActions', async function () {
     expect(rewardIncrease).to.equal(rewardAmountToSend);
 
     // exception when required more than rewarded
-    await expectRevert.unspecified(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
+    await expectRevert(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountToSend.add(1), //require more than amount sent
       aggTx.transactions.map(tx => splitHex256(tx.publicKey)),

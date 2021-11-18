@@ -10,11 +10,7 @@ async function main() {
   if (network.name == "rinkarby") {
     let addresses = getDeployedAddresses(network.name);
 
-    fx = await Fixture.create(
-      Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
-      true,
-      addresses.blsLibAddress
-    );
+    fx = await Fixture.create();
   }
   else {
     fx = await Fixture.create();

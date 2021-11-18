@@ -1,12 +1,12 @@
 import * as ethers from 'ethers';
 import {
+  ActionData,
   BlsWalletSigner,
   initBlsWalletSigner,
-  TransactionData,
+  Transaction,
 } from 'bls-wallet-signer';
 
 import VerificationGateway from './VerificationGateway';
-import assert from './helpers/assert';
 import BlsWalletAbi from './contractAbis/BlsWalletAbi';
 
 const BigNumber = ethers.BigNumber;
@@ -14,16 +14,18 @@ type BigNumber = ethers.BigNumber;
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
-type SignSendOnlyParams = {
-  ethValue?: BigNumber;
-  nonce: BigNumber;
-  contract: ethers.Contract,
-};
-
-type SignFullParams = SignSendOnlyParams & {
-  method: string;
-  args: string[];
-};
+type Action = (
+  | {
+    ethValue?: BigNumber;
+    contract: ethers.Contract,
+  }
+  | {
+    ethValue?: BigNumber;
+    contract: ethers.Contract,
+    method: string;
+    args: string[];
+  }
+);
 
 export default class BlsWallet {
   private constructor(
@@ -36,21 +38,6 @@ export default class BlsWallet {
     public walletContract: ethers.Contract,
   ) {}
 
-  /** Checks whether the wallet contract has been created for this key. */
-  static async Exists(
-    privateKey: string,
-    verificationGatewayAddress: string,
-    signerOrProvider: SignerOrProvider,
-  ): Promise<boolean> {
-    const address = await BlsWallet.Address(
-      privateKey,
-      verificationGatewayAddress,
-      signerOrProvider,
-    );
-
-    return address !== undefined;
-  }
-
   /** Get the wallet contract address for the given key, if it exists. */
   static async Address(
     privateKey: string,
@@ -62,7 +49,7 @@ export default class BlsWallet {
      * automatically.
      */
     blsWalletSigner?: BlsWalletSigner,
-  ): Promise<string | undefined> {
+  ): Promise<string> {
     blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
 
     const verificationGateway = new VerificationGateway(
@@ -75,112 +62,6 @@ export default class BlsWallet {
     );
   }
 
-  /** Creates a special transaction used for the creation of a wallet. */
-  static async signCreation(
-    privateKey: string,
-    verificationGatewayAddress: string,
-    signerOrProvider: SignerOrProvider,
-  ): Promise<TransactionData> {
-    const blsWalletSigner = await this.#BlsWalletSigner(signerOrProvider);
-
-    const verificationGateway = new VerificationGateway(
-      verificationGatewayAddress,
-      signerOrProvider,
-    );
-
-    return blsWalletSigner.sign(
-      {
-        contractAddress: verificationGateway.address,
-        encodedFunction: '0x',
-        nonce: BigNumber.from(0),
-        ethValue: BigNumber.from(0),
-      },
-      privateKey,
-    );
-  }
-
-  static async validateCreationTx(
-    tx: TransactionData,
-    signerOrProvider: SignerOrProvider,
-  ): Promise<{ failures: string[] }> {
-    const blsWalletSigner = await this.#BlsWalletSigner(signerOrProvider);
-
-    const failures: string[] = [];
-
-    if (!blsWalletSigner.verify(tx)) {
-      failures.push('invalid signature');
-    }
-
-    if (tx.encodedFunction !== '0x') {
-      failures.push('encoded function data mismatch');
-    }
-
-    return { failures };
-  }
-
-  /**
-   * Instantiate a `BLSWallet` associated with the provided key.
-   *
-   * Creates the associated wallet contract if it doesn't exist yet, which is
-   * why a signer is required to create it.
-   */
-  static async connectOrCreate(
-    privateKey: string,
-    verificationGatewayAddress: string,
-    /** Signer used to create the new wallet, if needed. */
-    parent: ethers.Signer,
-    /**
-     * If the parent doesn't have an associated provider, an explicit provider
-     * is required here.
-     */
-    provider?: ethers.providers.Provider,
-  ): Promise<BlsWallet> {
-    provider = provider ?? parent.provider;
-
-    if (provider === undefined) {
-      throw new Error('Unable to connect wallet without provider');
-    }
-
-    let wallet = await BlsWallet.connect(
-      privateKey,
-      verificationGatewayAddress,
-      provider,
-    );
-
-    if (wallet !== undefined) {
-      return wallet;
-    }
-
-    const tx = await BlsWallet.signCreation(
-      privateKey,
-      verificationGatewayAddress,
-      parent,
-    );
-
-    const verificationGateway = new VerificationGateway(
-      verificationGatewayAddress,
-      parent,
-    );
-
-    const blsWalletSigner = await this.#BlsWalletSigner(provider);
-
-    await (
-      await verificationGateway.actionCalls(
-        blsWalletSigner.aggregate([tx]),
-      )
-    ).wait();
-
-    wallet = await BlsWallet.connect(
-      privateKey,
-      verificationGatewayAddress,
-      provider,
-    );
-
-    assert(wallet !== undefined);
-
-    return wallet;
-  }
-
   /**
    * Instantiate a `BLSWallet` associated with the provided key if the
    * associated wallet contract already exists.
@@ -189,7 +70,7 @@ export default class BlsWallet {
     privateKey: string,
     verificationGatewayAddress: string,
     provider: ethers.providers.Provider,
-  ): Promise<BlsWallet | undefined> {
+  ): Promise<BlsWallet> {
     const network = await provider.getNetwork();
 
     const blsWalletSigner = await initBlsWalletSigner({
@@ -206,10 +87,6 @@ export default class BlsWallet {
       verificationGatewayAddress,
       provider,
     );
-
-    if (contractAddress === undefined) {
-      return undefined;
-    }
 
     const walletContract = new ethers.Contract(
       contractAddress,
@@ -233,6 +110,8 @@ export default class BlsWallet {
    * block.
    */
   async Nonce(): Promise<BigNumber> {
+    // TODO: What happens when VG hasn't created the wallet yet? This probably
+    // throws, and we need to return zero in this case.
     return await this.walletContract.nonce();
   }
 
@@ -249,16 +128,14 @@ export default class BlsWallet {
     const publicKeyHash = ethers.utils.keccak256(publicKey);
     const contractAddress = await verificationGateway.walletFromHash(publicKeyHash);
 
-    if (contractAddress === undefined) {
-      return BigNumber.from(0);
-    }
-
     const walletContract = new ethers.Contract(
       contractAddress,
       BlsWalletAbi,
       signerOrProvider,
     );
 
+    // TODO: What happens when VG hasn't created the wallet yet? This probably
+    // throws, and we need to return zero in this case.
     return await walletContract.nonce();
   }
 
@@ -266,24 +143,29 @@ export default class BlsWallet {
    * Sign a transaction, producing a `TransactionData` object suitable for use
    * with an aggregator.
    */
-  sign(opt: SignSendOnlyParams | SignFullParams): TransactionData {
-    const {
-      contract,
-      ethValue = BigNumber.from(0),
-      nonce,
-    } = opt;
+  sign({ nonce, atomic = true, actions }: {
+    nonce: BigNumber;
+    atomic?: boolean;
+    actions: Action[];
+  }): Transaction {
+    const fullActions: ActionData[] = actions.map(a => {
+      const encodedFunction = ('method' in a
+        ? a.contract.interface.encodeFunctionData(a.method, a.args)
+        : '0x'
+      );
 
-    const encodedFunction = ('method' in opt
-      ? contract.interface.encodeFunctionData(opt.method, opt.args)
-      : '0x'
-    );
+      return {
+        ethValue: a.ethValue ?? BigNumber.from(0),
+        contractAddress: a.contract.address,
+        encodedFunction,
+      };
+    });
 
     return this.blsWalletSigner.sign(
       {
-        contractAddress: contract.address,
-        encodedFunction,
         nonce,
-        ethValue,
+        atomic,
+        actions: fullActions,
       },
       this.privateKey,
     );
@@ -293,12 +175,16 @@ export default class BlsWallet {
     amount: BigNumber,
     token: ethers.Contract,
     nonce: BigNumber,
-  }): TransactionData {
+  }): Transaction {
     return this.sign({
-      contract: this.walletContract,
-      method: "transferToOrigin",
-      args: [amount.toHexString(), token.address],
       nonce,
+      actions: [
+        {
+          contract: this.verificationGateway.contract,
+          method: "transferToOrigin",
+          args: [amount.toHexString(), token.address],
+        }
+      ],
     });
   }
 

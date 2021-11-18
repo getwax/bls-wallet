@@ -1,24 +1,20 @@
 import { BigNumber } from "@ethersproject/bignumber";
 
-export type RawTransactionData = {
-  nonce: BigNumber;
+export type ActionData = {
   ethValue: BigNumber;
   contractAddress: string;
   encodedFunction: string;
 };
 
-export type TransactionData = RawTransactionData & {
-  publicKey: string;
-  signature: string;
+export type TransactionTemplate = {
+  nonce: BigNumber;
+  atomic: boolean;
+  actions: ActionData[];
 };
 
-export type AggregateTransactionData = {
-  transactions: {
-    publicKey: string;
-    nonce: BigNumber;
-    ethValue: BigNumber;
-    contractAddress: string;
-    encodedFunction: string;
-  }[],
-  signature: string,
+export type SubTransaction = TransactionTemplate & { publicKey: string };
+
+export type Transaction = {
+  subTransactions: SubTransaction[];
+  signature: string;
 };

@@ -1,12 +1,13 @@
 import "@nomiclabs/hardhat-ethers";
 import { ethers } from "hardhat";
-import { Signer, Contract, ContractFactory, Wallet } from "ethers";
+import { Signer, Contract, ContractFactory } from "ethers";
+import { Provider } from "@ethersproject/abstract-provider";
 import { BlsWallet, VerificationGateway } from "bls-wallet-clients";
 import { initBlsWalletSigner, BlsWalletSigner } from "bls-wallet-signer";
 
 import Range from "./Range";
 import assert from "./assert";
-import { Provider } from "@ethersproject/abstract-provider";
+import Create2Fixture from "./Create2Fixture";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -23,7 +24,6 @@ export default class Fixture {
 
     public verificationGateway: VerificationGateway,
 
-    public BLSExpander: ContractFactory,
     public blsExpander: Contract,
 
     public BLSWallet: ContractFactory,
@@ -34,10 +34,10 @@ export default class Fixture {
   static async create(
     blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
     initialized: boolean=true,
-    blsAddress: string=undefined,
-    vgAddress: string=undefined,
-    expanderAddress: string=undefined,
-    secretNumbers: number[]=undefined
+    blsAddress?: string,
+    vgAddress?: string,
+    expanderAddress?: string,
+    secretNumbers?: number[]
   ) {
     let chainId = (await ethers.provider.getNetwork()).chainId;
 
@@ -45,44 +45,34 @@ export default class Fixture {
     let signers = (allSigners).slice(0, Fixture.ECDSA_ACCOUNTS_LENGTH);
     let addresses = await Promise.all(signers.map(acc => acc.getAddress())) as string[];
 
+    let create2Fixture = Create2Fixture.create();
+
+    // deploy wallet implementation contract
+    let blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
+    try {
+      await (await blsWalletImpl.initialize(
+        ethers.constants.AddressZero
+      )).wait();
+    } catch (e) {}
+
     // deploy Verification Gateway
-    let vgContractFactory = await ethers.getContractFactory("VerificationGateway");
-    let vgContract;
-    if (vgAddress) {
-      vgContract = vgContractFactory.attach(vgAddress);
-      console.log("Attached to VG. blsLib:", await vgContract.blsLib());
-    }
-    else {
-      let BLS = await ethers.getContractFactory("BLSOpen");
-      let bls;
-      if (blsAddress) {
-        bls = BLS.attach(blsAddress);
-      }
-      else {
-        bls = await BLS.deploy();
-        await bls.deployed();
-      }
-      vgContract = await vgContractFactory.deploy();
-      await vgContract.deployed();
-      if (initialized) {
-        await (await vgContract.initialize(
-          bls.address
-        )).wait();
-      }
-    }
+    let vgContract = await create2Fixture.create2Contract("VerificationGateway");
+    let bls = await create2Fixture.create2Contract("BLSOpen");
+
+    try {
+      await (await vgContract.initialize(
+        bls.address,
+        blsWalletImpl.address
+      )).wait();
+    } catch (e) {}
+
+    // deploy BLSExpander Gateway
+    let blsExpander = await create2Fixture.create2Contract("BLSExpander");
+    try {
+      await (await blsExpander.initialize(vgContract.address)).wait();
+    } catch (e) {}
 
     const verificationGateway = new VerificationGateway(vgContract.address, vgContract.signer);
-
-    let BLSExpander = await ethers.getContractFactory("BLSExpander");
-    let blsExpander;
-    if (expanderAddress) {
-      blsExpander = BLSExpander.attach(expanderAddress);
-    }
-    else {
-      blsExpander = await BLSExpander.deploy(); 
-      await blsExpander.deployed();
-      await (await blsExpander.initialize(vgContract.address)).wait();
-    }
 
     let BLSWallet = await ethers.getContractFactory("BLSWallet");
 
@@ -99,7 +89,7 @@ export default class Fixture {
       return () => BlsWallet.connectOrCreate(
         `0x${secretNumber.toString(16)}`,
         verificationGateway.address,
-        vgContractFactory.signer,
+        vgContract.signer,
       );
     });
   
@@ -110,7 +100,6 @@ export default class Fixture {
       addresses,
       lazyBlsWallets,
       verificationGateway,
-      BLSExpander,
       blsExpander,
       BLSWallet,
       await initBlsWalletSigner({ chainId }),
