@@ -1,20 +1,16 @@
 import { expect } from "chai";
-import expectRevert from "../shared/helpers/expectRevert";
 
 import { ethers, network } from "hardhat";
 const utils = ethers.utils;
 
-import Fixture, { FullTxData } from "../shared/helpers/Fixture";
+import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber } from "ethers";
-import blsKeyHash from "../shared/helpers/blsKeyHash";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
-
 describe('Upgrade', async function () {
-
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
     if (network.name === "hardhat") {
@@ -37,12 +33,13 @@ describe('Upgrade', async function () {
   });
 
   it('should upgrade wallet contract', async function () {
-    let blsSigner = fx.blsSigners[0];  
-    let walletAddress = await fx.createBLSWallet(blsSigner);
+    const wallet = await fx.lazyBlsWallets[0]();
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
-    let blsWallet = BLSWallet.attach(walletAddress);
+    let blsWallet = BLSWallet.attach(wallet.address);
 
-    expect((await blsWallet.getPublicKey())[0].toHexString()).to.equal(blsSigner.pubkey[0]);
+    expect((await blsWallet.getPublicKey())[0].toHexString()).to.equal(
+      wallet.blsWalletSigner.getPublicKey(wallet.privateKey)[0],
+    );
 
     const MockWalletUpgraded = await ethers.getContractFactory("MockWalletUpgraded");
     let mockWalletUpgraded = await MockWalletUpgraded.deploy();
@@ -53,24 +50,24 @@ describe('Upgrade', async function () {
       [blsWallet.address, mockWalletUpgraded.address]
     );
 
-    await fx.gatewayCallFull({
-      blsSigner: blsSigner,
-      chainId: fx.chainId,
-      nonce: (await blsWallet.nonce()).toNumber(),
-      ethValue: BigNumber.from(0),
-      contract: fx.verificationGateway,
-      functionName: "walletAdminCall",
-      params: [
-        blsKeyHash(blsSigner),
-        upgradeFunctionData
-      ]
-    });
+    fx.verificationGateway.actionCalls(
+      wallet.sign({
+        nonce: await wallet.Nonce(),
+        actions: [
+          {
+            contract: fx.verificationGateway.contract,
+            method: "walletAdminCall",
+            args: [
+              wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
+              upgradeFunctionData
+            ],
+          },
+        ],
+      }),
+    );
 
-    let newBLSWallet = MockWalletUpgraded.attach(walletAddress);
-    await (await newBLSWallet.setNewData(walletAddress)).wait();
-    expect(await newBLSWallet.newData()).to.equal(walletAddress);
-
+    let newBLSWallet = MockWalletUpgraded.attach(wallet.address);
+    await (await newBLSWallet.setNewData(wallet.address)).wait();
+    expect(await newBLSWallet.newData()).to.equal(wallet.address);
   });
-
 });
-
