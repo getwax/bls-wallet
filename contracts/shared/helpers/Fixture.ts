@@ -86,10 +86,10 @@ export default class Fixture {
         secretNumber = Math.abs(Math.random() * 0xffffffff << 0);
       }
 
-      return () => BlsWallet.connectOrCreate(
+      return () => BlsWallet.connect(
         `0x${secretNumber.toString(16)}`,
         verificationGateway.address,
-        vgContract.signer,
+        vgContract.provider,
       );
     });
   

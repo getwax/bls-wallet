@@ -2469,18 +2469,18 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.1.1.tgz#bf313053978b2cd4c444a48795710be05c785702"
   integrity sha512-bLG6PHOCZJKNshTjGRBvET0vTciwQE6zFKOKKXPDJfwFBd4Ac0yBfPZqcGvGJap50l7ktvlpFqc2jGVaUgbJgg==
 
-bls-wallet-clients@^0.2.3:
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.2.4.tgz#0728a948697dc3a1ec67dd11476f9a094ddd8aef"
-  integrity sha512-zO+7M8VGOHW1ndPW/K8MW20pJ1f5ivWhxvK9fqDxrIj32AbQthQcj299sobg+1o+f1MlRzlUw3vwArOq4MfsQg==
+bls-wallet-clients@0.3.0-3ceb94e:
+  version "0.3.0-3ceb94e"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.3.0-3ceb94e.tgz#3798299164bf47d02baac92ee5310afe528dfee6"
+  integrity sha512-XNO+Mh8mxUEMDNAhDTf+4OWIfOCEhEwwuXRrD7VubwANmvnC5o6LJ1HSGDJgkU9NBkNpYUbPvv5pEQBYmDGglA==
   dependencies:
-    bls-wallet-signer "0.6.1"
+    bls-wallet-signer "0.8.0-rc.1"
     ethers "5.4.7"
 
-bls-wallet-signer@0.6.1, bls-wallet-signer@^0.6.1:
-  version "0.6.1"
-  resolved "https://registry.yarnpkg.com/bls-wallet-signer/-/bls-wallet-signer-0.6.1.tgz#aa0fcab90e1da704f94bd4aa78e1619253406a1e"
-  integrity sha512-UQ/aXcUHTYg3Q92riR+Kn/CAdF6F6WjaaMPweLnHHtSZ7rzUM3dN05SJoCbz1iCTEZOtFyay5Xv5+BRMsNXrUQ==
+bls-wallet-signer@0.8.0-rc.1, bls-wallet-signer@^0.8.0-rc.1:
+  version "0.8.0-rc.1"
+  resolved "https://registry.yarnpkg.com/bls-wallet-signer/-/bls-wallet-signer-0.8.0-rc.1.tgz#ba37d05ff83569c183772217497395e865277e38"
+  integrity sha512-RTl6UdUXPgO27EbjOClj2rWaxzPxSjpHl0U9/we86zAML9B+xkEpFs8m7CJ63CzzGDU7T2nWryY1CqCUBooP0A==
   dependencies:
     "@ethersproject/abi" "^5.4.0"
     "@ethersproject/bignumber" "^5.4.1"

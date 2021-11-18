@@ -8,8 +8,8 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^4.3.2",
-    "bls-wallet-clients": "^0.2.3",
-    "bls-wallet-signer": "^0.6.1"
+    "bls-wallet-clients": "0.3.0-3ceb94e",
+    "bls-wallet-signer": "^0.8.0-rc.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.0",

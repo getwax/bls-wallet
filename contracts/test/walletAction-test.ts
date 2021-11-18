@@ -120,9 +120,13 @@ describe('WalletActions', async function () {
     let receiverBalanceBefore = await fx.provider.getBalance(recvWallet.address);
 
     const tx = sendWallet.sign({
-      ethValue: ethToTransfer,
       nonce: await sendWallet.Nonce(),
-      contract: recvWallet.walletContract,
+      actions: [
+        {
+          ethValue: ethToTransfer,
+          contract: recvWallet.walletContract, // TODO: Does wallet contract need to exist?
+        },
+      ],
     });
 
     await fx.verificationGateway.actionCalls(
@@ -155,11 +159,15 @@ describe('WalletActions', async function () {
     await fx.verificationGateway.actionCalls(
       fx.blsWalletSigner.aggregate([
         sendWallet.sign({
-          contract: mockAuction,
-          method: "buyItNow",
-          args: [],
-          ethValue: ethToTransfer,
           nonce: BigNumber.from(1),
+          actions: [
+            {
+              contract: mockAuction,
+              method: "buyItNow",
+              args: [],
+              ethValue: ethToTransfer,
+            },
+          ],
         }),
       ]),
     );
@@ -172,10 +180,14 @@ describe('WalletActions', async function () {
     const wallet = await fx.lazyBlsWallets[0]();
 
     const tx = wallet.sign({
-      contract: fx.verificationGateway.contract,
-      method: "walletCrossCheck",
-      args: [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
       nonce: await wallet.Nonce(),
+      actions: [
+        {
+          contract: fx.verificationGateway.contract,
+          method: "walletCrossCheck",
+          args: [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
+        },
+      ],
     });
 
     await fx.verificationGateway.contract.callStatic.verifySignatures(
@@ -183,25 +195,25 @@ describe('WalletActions', async function () {
       splitHex256(tx.signature),
       [
         {
-          nonce: tx.nonce,
-          ethValue: tx.ethValue,
-          contractAddress: tx.contractAddress,
-          encodedFunction: tx.encodedFunction,
+          nonce: tx.subTransactions[0].nonce,
+          ethValue: tx.subTransactions[0].actions[0].ethValue,
+          contractAddress: tx.subTransactions[0].actions[0].contractAddress,
+          encodedFunction: tx.subTransactions[0].actions[0].encodedFunction,
         },
       ],
     );
 
-    tx.ethValue = parseEther("1");
+    tx.subTransactions[0].actions[0].ethValue = parseEther("1");
     await expectRevert(
       fx.verificationGateway.contract.callStatic.verifySignatures(
         [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
         splitHex256(tx.signature),
         [
           {
-            nonce: tx.nonce,
-            ethValue: tx.ethValue,
-            contractAddress: tx.contractAddress,
-            encodedFunction: tx.encodedFunction,
+            nonce: tx.subTransactions[0].nonce,
+            ethValue: tx.subTransactions[0].actions[0].ethValue,
+            contractAddress: tx.subTransactions[0].actions[0].contractAddress,
+            encodedFunction: tx.subTransactions[0].actions[0].encodedFunction,
           },
         ],
       ),
@@ -252,21 +264,25 @@ describe('WalletActions', async function () {
 
     // TODO: Put the transfers into a single action group
     const txs = wallets.map((recvWallet, i) => wallets[0].sign({
-      contract: testToken,
-      method: "transfer",
-      args: [recvWallet.address, th.userStartAmount.toString()],
       nonce: startNonce.add(i),
+      actions: [
+        {
+          contract: testToken,
+          method: "transfer",
+          args: [recvWallet.address, th.userStartAmount.toString()],
+        },
+      ],
     }));
 
     const aggTx = fx.blsWalletSigner.aggregate(txs);
 
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-      splitHex256(txs[0].publicKey),
+      splitHex256(txs[0].subTransactions[0].publicKey),
       startNonce,
       splitHex256(aggTx.signature),
       testToken.address,
       testToken.interface.getSighash("transfer"),
-      txs.map(tx => `0x${tx.encodedFunction.slice(10)}`),
+      txs.map(tx => `0x${tx.subTransactions[0].actions[0].encodedFunction.slice(10)}`),
     )).wait();
 
     for (let i = 0; i<wallets.length; i++) {
@@ -300,9 +316,13 @@ describe('WalletActions', async function () {
 
     // prepare and sign eth transfer tx (from wallet 1 to 2)
     const tx1 = wallet1.sign({
-      contract: wallet2.walletContract,
-      ethValue: ethToTransfer,
       nonce: BigNumber.from(1),
+      actions: [
+        {
+          contract: wallet2.walletContract,
+          ethValue: ethToTransfer,
+        },
+      ],
     });
 
     // prepare and sign token transfer to origin tx (reward)
@@ -327,13 +347,12 @@ describe('WalletActions', async function () {
     let rewardIncrease = await fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountRequired,
-      aggTx.transactions.map(tx => splitHex256(tx.publicKey)),
+      aggTx.subTransactions.map(tx => splitHex256(tx.publicKey)),
       splitHex256(aggTx.signature),
-      aggTx.transactions.map(tx => ({
+      aggTx.subTransactions.map(tx => ({
         nonce: tx.nonce,
-        ethValue: tx.ethValue,
-        contractAddress: tx.contractAddress,
-        encodedFunction: tx.encodedFunction,
+        atomic: tx.atomic,
+        actions: tx.actions,
       })),
     );
     expect(rewardIncrease).to.equal(rewardAmountToSend);
@@ -342,13 +361,12 @@ describe('WalletActions', async function () {
     await expectRevert(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountToSend.add(1), //require more than amount sent
-      aggTx.transactions.map(tx => splitHex256(tx.publicKey)),
+      aggTx.subTransactions.map(tx => splitHex256(tx.publicKey)),
       splitHex256(aggTx.signature),
-      aggTx.transactions.map(tx => ({
+      aggTx.subTransactions.map(tx => ({
         nonce: tx.nonce,
-        ethValue: tx.ethValue,
-        contractAddress: tx.contractAddress,
-        encodedFunction: tx.encodedFunction,
+        atomic: tx.atomic,
+        actions: tx.actions,
       })),
     ));
 
@@ -357,13 +375,12 @@ describe('WalletActions', async function () {
     await (await fx.blsExpander.blsCallMultiCheckRewardIncrease(
       rewardTokenAddress,
       rewardAmountRequired,
-      aggTx.transactions.map(tx => splitHex256(tx.publicKey)),
+      aggTx.subTransactions.map(tx => splitHex256(tx.publicKey)),
       splitHex256(aggTx.signature),
-      aggTx.transactions.map(tx => ({
+      aggTx.subTransactions.map(tx => ({
         nonce: tx.nonce,
-        ethValue: tx.ethValue,
-        contractAddress: tx.contractAddress,
-        encodedFunction: tx.encodedFunction,
+        atomic: tx.atomic,
+        actions: tx.actions,
       })),
     )).wait();
     let balanceAfter = await testToken.balanceOf(fx.addresses[0]);

@@ -75,10 +75,14 @@ export default class TokenHelper {
     await this.fx.verificationGateway.actionCalls(
       this.fx.blsWalletSigner.aggregate([
         sender.sign({
-          contract: this.testToken,
-          method: "transfer",
-          args: [recipient, amount.toHexString()],
           nonce,
+          actions: [
+            {
+              contract: this.testToken,
+              method: "transfer",
+              args: [recipient, amount.toHexString()],
+            },
+          ],
         }),
       ]),
     );

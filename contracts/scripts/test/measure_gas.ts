@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { TransactionData } from "bls-wallet-signer";
+import { Transaction } from "bls-wallet-signer";
 import getDeployedAddresses from "../../shared/helpers/getDeployedAddresses";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
@@ -43,7 +43,7 @@ async function logGasForTransfers() {
 
     // encode transfer to consecutive addresses of 1*10^-18 of a token
     // signed by first bls wallet
-    let txs: TransactionData[] = [];
+    let txs: Transaction[] = [];
     let startNonce: number = (await blsWallets[0].Nonce()).toNumber();
     let nonce = startNonce;
     console.log("airdropper balance before", await th.testToken.balanceOf(blsWallets[0].address));
@@ -53,10 +53,14 @@ async function logGasForTransfers() {
     console.log("Signing txs from nonce", nonce);
     for (let i = 0; i<transferCount; i++) {
       const tx = blsWallets[i].sign({
-        contract: th.testToken,
-        method: "transfer",
-        args: ["0x"+(i+1).toString(16).padStart(40, '0'), BigNumber.from(i).toHexString()],
         nonce: BigNumber.from(nonce++),
+        actions: [
+          {
+            contract: th.testToken,
+            method: "transfer",
+            args: ["0x"+(i+1).toString(16).padStart(40, '0'), BigNumber.from(i).toHexString()],
+          },
+        ],
       });
 
       txs.push(tx);
@@ -65,8 +69,10 @@ async function logGasForTransfers() {
     const aggTx = fx.blsWalletSigner.aggregate(txs);
     console.log("Done signing & aggregating.");
 
-    const methodId = txs[0].encodedFunction.slice(0, 10);
-    const encodedParamSets = txs.map(tx => `0x${tx.encodedFunction.slice(10)}`);
+    const methodId = txs[0].subTransactions[0].actions[0].encodedFunction.slice(0, 10);
+    const encodedParamSets = txs.map(tx =>
+      `0x${tx.subTransactions[0].actions[0].encodedFunction.slice(10)}`
+    );
     try {
       const publicKeyHash = fx.blsWalletSigner.getPublicKeyHash(blsWallets[0].privateKey);
 
