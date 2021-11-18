@@ -197,9 +197,8 @@ describe('WalletActions', async function () {
       [
         {
           nonce: tx.subTransactions[0].nonce,
-          ethValue: tx.subTransactions[0].actions[0].ethValue,
-          contractAddress: tx.subTransactions[0].actions[0].contractAddress,
-          encodedFunction: tx.subTransactions[0].actions[0].encodedFunction,
+          atomic: true,
+          actions: tx.subTransactions[0].actions,
         },
       ],
     );
@@ -212,9 +211,8 @@ describe('WalletActions', async function () {
         [
           {
             nonce: tx.subTransactions[0].nonce,
-            ethValue: tx.subTransactions[0].actions[0].ethValue,
-            contractAddress: tx.subTransactions[0].actions[0].contractAddress,
-            encodedFunction: tx.subTransactions[0].actions[0].encodedFunction,
+            atomic: true,
+            actions: tx.subTransactions[0].actions,
           },
         ],
       ),
