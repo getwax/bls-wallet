@@ -259,29 +259,24 @@ describe('WalletActions', async function () {
       totalAmount
     )).wait();
 
-    const startNonce = await wallets[0].Nonce();
+    const nonce = await wallets[0].Nonce();
 
-    // TODO: Put the transfers into a single action group
-    const txs = wallets.map((recvWallet, i) => wallets[0].sign({
-      nonce: startNonce.add(i),
-      actions: [
-        {
-          contract: testToken as any,
-          method: "transfer",
-          args: [recvWallet.address, th.userStartAmount.toString()],
-        },
-      ],
-    }));
-
-    const aggTx = fx.blsWalletSigner.aggregate(txs);
+    const tx = wallets[0].sign({
+      nonce,
+      actions: wallets.map((recvWallet, i) => ({
+        contract: testToken as any,
+        method: "transfer",
+        args: [recvWallet.address, th.userStartAmount.toString()],
+      })),
+    });
 
     await(await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-      splitHex256(txs[0].subTransactions[0].publicKey),
-      startNonce,
-      splitHex256(aggTx.signature),
+      splitHex256(tx.subTransactions[0].publicKey),
+      nonce,
+      splitHex256(tx.signature),
       testToken.address,
       testToken.interface.getSighash("transfer"),
-      txs.map(tx => `0x${tx.subTransactions[0].actions[0].encodedFunction.slice(10)}`),
+      tx.subTransactions[0].actions.map(action => `0x${action.encodedFunction.slice(10)}`),
     )).wait();
 
     for (let i = 0; i<wallets.length; i++) {
