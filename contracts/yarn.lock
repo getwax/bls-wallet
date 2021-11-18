@@ -2469,10 +2469,10 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.1.1.tgz#bf313053978b2cd4c444a48795710be05c785702"
   integrity sha512-bLG6PHOCZJKNshTjGRBvET0vTciwQE6zFKOKKXPDJfwFBd4Ac0yBfPZqcGvGJap50l7ktvlpFqc2jGVaUgbJgg==
 
-bls-wallet-clients@0.3.0-3ceb94e:
-  version "0.3.0-3ceb94e"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.3.0-3ceb94e.tgz#3798299164bf47d02baac92ee5310afe528dfee6"
-  integrity sha512-XNO+Mh8mxUEMDNAhDTf+4OWIfOCEhEwwuXRrD7VubwANmvnC5o6LJ1HSGDJgkU9NBkNpYUbPvv5pEQBYmDGglA==
+bls-wallet-clients@0.3.0-07ac8dc:
+  version "0.3.0-07ac8dc"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.3.0-07ac8dc.tgz#7e42932a35c8dc86226fdac8c3969e5215142860"
+  integrity sha512-tobqXpM7sKGxIFgP0ppQJght4Tt7+3S+3UZvIwtqZ4jYOFltLsSuti+DcDx0URyr/614k3maNIgC8BOy10qktA==
   dependencies:
     bls-wallet-signer "0.8.0-rc.1"
     ethers "5.4.7"
@@ -4480,7 +4480,7 @@ ethers@^4.0.32, ethers@^4.0.40:
     uuid "2.0.1"
     xmlhttprequest "1.8.0"
 
-ethers@^5.0.1, ethers@^5.0.2, ethers@^5.4.7:
+ethers@^5.0.1, ethers@^5.0.2, ethers@^5.4.7, ethers@^5.5.0:
   version "5.5.1"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.5.1.tgz#d3259a95a42557844aa543906c537106c0406fbf"
   integrity sha512-RodEvUFZI+EmFcE6bwkuJqpCYHazdzeR1nMzg+YWQSmQEsNtfl1KHGfp/FWZYl48bI/g7cgBeP2IlPthjiVngw==

@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^4.3.2",
-    "bls-wallet-clients": "0.3.0-3ceb94e",
+    "bls-wallet-clients": "0.3.0-07ac8dc",
     "bls-wallet-signer": "^0.8.0-rc.1"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-promise": "^5.1.0",
     "ethereum-waffle": "^3.0.0",
-    "ethers": "5.4.7",
+    "ethers": "^5.5.0",
     "hardhat": "^2.6.7",
     "hardhat-gas-reporter": "^1.0.4",
     "mcl-wasm": "^0.8.0",

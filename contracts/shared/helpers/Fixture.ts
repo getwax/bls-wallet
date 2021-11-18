@@ -1,6 +1,6 @@
 import "@nomiclabs/hardhat-ethers";
 import { ethers } from "hardhat";
-import { Signer, Contract, ContractFactory } from "ethers";
+import { Signer, Contract, ContractFactory, BigNumber } from "ethers";
 import { Provider } from "@ethersproject/abstract-provider";
 import { BlsWallet, VerificationGateway } from "bls-wallet-clients";
 import { initBlsWalletSigner, BlsWalletSigner } from "bls-wallet-signer";
@@ -86,11 +86,21 @@ export default class Fixture {
         secretNumber = Math.abs(Math.random() * 0xffffffff << 0);
       }
 
-      return () => BlsWallet.connect(
-        `0x${secretNumber.toString(16)}`,
-        verificationGateway.address,
-        vgContract.provider,
-      );
+      return async () => {
+        const wallet = await BlsWallet.connect(
+          `0x${secretNumber.toString(16)}`,
+          verificationGateway.address,
+          vgContract.provider,
+        );
+
+        // Perform an empty transaction to trigger wallet creation
+        await (await verificationGateway.actionCalls(wallet.sign({
+          nonce: BigNumber.from(0),
+          actions: [],
+        }))).wait();
+
+        return wallet;
+      }
     });
   
     return new Fixture(

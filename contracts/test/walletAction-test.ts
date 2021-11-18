@@ -87,6 +87,7 @@ describe('WalletActions', async function () {
       )
     );
 
+    // TODO: Better to check against address calculated by VerificationGateway
     expect(calculatedAddress).to.equal(wallet.address);
   });
 
@@ -162,7 +163,7 @@ describe('WalletActions', async function () {
           nonce: BigNumber.from(1),
           actions: [
             {
-              contract: mockAuction,
+              contract: mockAuction as any,
               method: "buyItNow",
               args: [],
               ethValue: ethToTransfer,
@@ -267,7 +268,7 @@ describe('WalletActions', async function () {
       nonce: startNonce.add(i),
       actions: [
         {
-          contract: testToken,
+          contract: testToken as any,
           method: "transfer",
           args: [recvWallet.address, th.userStartAmount.toString()],
         },
@@ -331,7 +332,7 @@ describe('WalletActions', async function () {
     let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward    
 
     const tx2 = rewarder.signTransferToOrigin({
-      token: testToken,
+      token: testToken as any,
       amount: rewardAmountToSend,
       nonce: BigNumber.from(1),
     });
