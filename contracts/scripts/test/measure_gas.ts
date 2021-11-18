@@ -1,13 +1,10 @@
 import { BigNumber } from "ethers";
-import blsKeyHash from "../../shared/helpers/blsKeyHash";
-import dataPayload from "../../shared/helpers/dataPayload";
-import getDeployedAddresses, { DeployedAddresses } from "../../shared/helpers/getDeployedAddresses";
+import { Transaction } from "bls-wallet-signer";
+import getDeployedAddresses from "../../shared/helpers/getDeployedAddresses";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
 
-import { aggregate } from "../../shared/lib/hubble-bls/src/signer";
-import { ethers, network } from "hardhat";
-import { exit } from "process";
+import { network } from "hardhat";
 
 let fx: Fixture;
 let th: TokenHelper;
@@ -42,62 +39,63 @@ async function logGasForTransfers() {
       [+process.env.BLS_SECRET_NUM_1]
     );
     th = new TokenHelper(fx);
-    let blsWalletAddresses = await th.walletTokenSetup();
+    let blsWallets = await th.walletTokenSetup();
 
     // encode transfer to consecutive addresses of 1*10^-18 of a token
     // signed by first bls wallet
-    let signatures: any[] = new Array(transferCount);
-    let encodedFunctions: any[] = new Array(transferCount);
-    let startNonce: number = (await fx.BLSWallet.attach(blsWalletAddresses[0]).nonce() as BigNumber).toNumber();
+    let txs: Transaction[] = [];
+    let startNonce: number = (await blsWallets[0].Nonce()).toNumber();
     let nonce = startNonce;
-    console.log("airdropper balance before", await th.testToken.balanceOf(blsWalletAddresses[0]));
+    console.log("airdropper balance before", await th.testToken.balanceOf(blsWallets[0].address));
 
     let AddressZero = "0x"+"0".repeat(40);
 
     console.log("Signing txs from nonce", nonce);
     for (let i = 0; i<transferCount; i++) {
-      encodedFunctions[i] = th.testToken.interface.encodeFunctionData(
-        "transfer",
-        ["0x"+(i+1).toString(16).padStart(40, '0'), i]
-      );
-  
-      let dataToSign = dataPayload(
-        fx.chainId,
-        nonce++,
-        BigNumber.from(0),
-        th.testToken.address,
-        encodedFunctions[i]
-      );
+      const tx = blsWallets[i].sign({
+        nonce: BigNumber.from(nonce++),
+        actions: [
+          {
+            contract: th.testToken,
+            method: "transfer",
+            args: ["0x"+(i+1).toString(16).padStart(40, '0'), BigNumber.from(i).toHexString()],
+          },
+        ],
+      });
 
-      signatures[i] = fx.blsSigners[0].sign(dataToSign);
+      txs.push(tx);
     }
 
-    let aggSignature = aggregate(signatures);
+    const aggTx = fx.blsWalletSigner.aggregate(txs);
     console.log("Done signing & aggregating.");
 
-    let methodId = encodedFunctions[0].substring(0,10);
-    let encodedParamSets = encodedFunctions.map( a => '0x'+a.substr(10) );
+    const methodId = txs[0].subTransactions[0].actions[0].encodedFunction.slice(0, 10);
+    const encodedParamSets = txs.map(tx =>
+      `0x${tx.subTransactions[0].actions[0].encodedFunction.slice(10)}`
+    );
     try {
+      const publicKeyHash = fx.blsWalletSigner.getPublicKeyHash(blsWallets[0].privateKey);
+
       console.log("Estimating...", fx.blsExpander.address);
       let gasEstimate = await fx.blsExpander.estimateGas.blsCallMultiSameCallerContractFunction(
-        blsKeyHash(fx.blsSigners[0]),
+        publicKeyHash,
         startNonce,
-        aggSignature,
+        aggTx.signature,
         AddressZero,
-        Array(signatures.length).fill(0),
+        Array(txs.length).fill(0),
         th.testToken.address,
         methodId,
-        encodedParamSets
-      )
+        encodedParamSets,
+      );
 
       console.log("Sending...");
       gasResults.estimate = gasEstimate.toNumber();
       let response = await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-        blsKeyHash(fx.blsSigners[0]),
+        publicKeyHash,
         startNonce,
-        aggSignature,
+        aggTx.signature,
         AddressZero,
-        Array(signatures.length).fill(0),
+        Array(txs.length).fill(0),
         th.testToken.address,
         methodId,
         encodedParamSets

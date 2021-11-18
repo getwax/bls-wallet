@@ -1,11 +1,9 @@
 import { ethers } from "hardhat";
 import { utils } from "ethers";
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
+import { BlsWallet } from "bls-wallet-clients";
 
-import { BlsSignerFactory, BlsSignerInterface, aggregate } from "../lib/hubble-bls/src/signer";
-
-import blsSignFunction from "./blsSignFunction";
-import Fixture, { FullTxData } from "./Fixture";
+import Fixture from "./Fixture";
 
 export default class TokenHelper {
 
@@ -14,7 +12,7 @@ export default class TokenHelper {
 
   testToken: Contract|undefined;
   constructor(public fx: Fixture) { 
-    this.userStartAmount = TokenHelper.initialSupply.div(fx.blsSigners.length);
+    this.userStartAmount = TokenHelper.initialSupply.div(fx.lazyBlsWallets.length);
     this.testToken = undefined;
   }
 
@@ -41,49 +39,52 @@ export default class TokenHelper {
   async distributeTokens(
     fromSigner: Signer,
     token: Contract,
-    addresses: string[]
+    wallets: BlsWallet[]
   ) {
-    const length = addresses.length;
+    const length = wallets.length;
     
     // split supply amongst bls wallet addresses
     for (let i = 0; i < length; i++) {
       // first account as aggregator, and holds token supply
       await (await token.connect(fromSigner).transfer(
-        addresses[i],
+        wallets[i].address,
         this.userStartAmount
       )).wait();
     }
   }
 
-  async walletTokenSetup(): Promise<string[]> {
-    let blsWalletAddresses = await this.fx.createBLSWallets();
+  async walletTokenSetup(): Promise<BlsWallet[]> {
+    let wallets = await this.fx.createBLSWallets();
 
     this.testToken = await TokenHelper.deployTestToken();
     await this.distributeTokens(
       this.fx.signers[0],
       this.testToken,
-      blsWalletAddresses
+      wallets,
     );
 
-    return blsWalletAddresses;
+    return wallets;
   }
 
   async transferFrom(
-    nonce: any,
-    reward: BigNumber,
-    sender: BlsSignerInterface,
+    nonce: BigNumber,
+    sender: BlsWallet,
     recipient: string,
-    amount: BigNumber
+    amount: BigNumber,
   ) {
-    let fullTxData: FullTxData = {
-      blsSigner: sender,
-      chainId: this.fx.chainId,
-      nonce: nonce,
-      ethValue: BigNumber.from(0),
-      contract: this.testToken as Contract,
-      functionName: "transfer",
-      params: [recipient, amount]
-    }
-    this.fx.gatewayCallFull(fullTxData);
+    await this.fx.verificationGateway.actionCalls(
+      this.fx.blsWalletSigner.aggregate([
+        sender.sign({
+          nonce,
+          actions: [
+            {
+              contract: this.testToken,
+              method: "transfer",
+              args: [recipient, amount.toHexString()],
+            },
+          ],
+        }),
+      ]),
+    );
   }
 }

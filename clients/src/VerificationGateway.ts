@@ -1,4 +1,4 @@
-import { AggregateTransactionData } from "bls-wallet-signer";
+import { Transaction } from "bls-wallet-signer";
 import { ethers } from "ethers";
 
 import VerificationGatewayAbi from "./contractAbis/VerificationGatewayAbi";
@@ -10,13 +10,13 @@ type Provider = ethers.providers.Provider;
 export default class VerificationGateway {
   static abi = VerificationGatewayAbi;
 
-  #contract: ethers.Contract;
+  contract: ethers.Contract;
 
   constructor(
     public address: string,
     signerOrProvider: Signer | Provider | undefined = undefined,
   ) {
-    this.#contract = new ethers.Contract(
+    this.contract = new ethers.Contract(
       address,
       VerificationGateway.abi,
       signerOrProvider,
@@ -24,31 +24,22 @@ export default class VerificationGateway {
   }
 
   async actionCalls(
-    aggregateTx: AggregateTransactionData,
+    tx: Transaction,
     overrides: ethers.Overrides = {},
   ): Promise<ethers.providers.TransactionResponse> {
-    return await this.#contract.actionCalls(
-      aggregateTx.transactions.map((tx) => splitHex256(tx.publicKey)),
-      splitHex256(aggregateTx.signature),
-      aggregateTx.transactions.map((tx) => ({
-        nonce: tx.nonce,
-        ethValue: tx.ethValue,
-        contractAddress: tx.contractAddress,
-        encodedFunction: tx.encodedFunction,
+    return await this.contract.actionCalls(
+      tx.subTransactions.map((subTx) => splitHex256(subTx.publicKey)),
+      splitHex256(tx.signature),
+      tx.subTransactions.map((subTx) => ({
+        nonce: subTx.nonce,
+        atomic: subTx.atomic,
+        actions: subTx.actions,
       })),
       overrides,
     );
   }
 
-  async walletFromHash(publicKeyHash: string): Promise<string | undefined> {
-    const address: string = await this.#contract.walletFromHash(
-      publicKeyHash,
-    );
-
-    if (address === ethers.constants.AddressZero) {
-      return undefined;
-    }
-
-    return address;
+  async walletFromHash(publicKeyHash: string): Promise<string> {
+    return await this.contract.walletFromHash(publicKeyHash);
   }
 }

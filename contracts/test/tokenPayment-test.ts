@@ -3,15 +3,11 @@ import { ethers, network } from "hardhat";
 import { expect, assert, should } from "chai";
 
 import Fixture from "../shared/helpers/Fixture";
-import { FullTxData, TxSet, ActionData } from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
-import { aggregate } from "../shared/lib/hubble-bls/src/signer";
 import { BigNumber, providers } from "ethers";
 import { getAddress } from "ethers/lib/utils";
 import { doesNotMatch } from "assert";
-import blsKeyHash from "../shared/helpers/blsKeyHash";
-import blsSignFunction from "../shared/helpers/blsSignFunction";
 
 
 
@@ -28,7 +24,7 @@ describe('TokenPayments', async function () {
   beforeEach(async function() {
     fx = await Fixture.create(7);
     th = new TokenHelper(fx);
-    blsWalletAddresses = await th.walletTokenSetup();
+    blsWalletAddresses = (await th.walletTokenSetup()).map(wallet => wallet.address);
   });
 
   // it("should reward tx submitter (single call)", async function() {

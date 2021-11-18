@@ -17,9 +17,19 @@ const samples = (() => {
 
   const txTemplate: TransactionTemplate = {
     nonce: BigNumber.from(123),
-    ethValue: BigNumber.from(0),
-    contractAddress,
-    encodedFunction: "0x00",
+    atomic: true,
+    actions: [
+      {
+        ethValue: BigNumber.from(0),
+        contractAddress,
+        encodedFunction: "0x00",
+      },
+      {
+        ethValue: BigNumber.from(1),
+        contractAddress,
+        encodedFunction: "0x00",
+      }
+    ],
   };
 
   const privateKey = dummy256HexString;
@@ -45,8 +55,8 @@ describe("index", () => {
     const tx = sign(txTemplate, privateKey);
 
     expect(tx.signature).to.equal([
-      "0x177500780b42f245e98229245126c9042e1cdaadc7ada72021ddd43492963a7b26f7a",
-      "a8f971b133e9f61d4197b4fb40fc82f5c239183cba80d6338a64500cb27",
+      "0x0058b38298f3c486223de7c61f461ff3b47530d2619a383e49b298a56249e4fb0bf8b",
+      "eb03979073e57656af0a5bab043fe2d6bf4cbbf600f6a7190ce95fcf69c",
     ].join(""));
 
     expect(verify(tx)).to.equal(true);
@@ -62,8 +72,14 @@ describe("index", () => {
       subTransactions: [
         {
           ...tx.subTransactions[0],
-          // Pretend the client signed to pay a million tokens
-          ethValue: weiPerToken.mul(1000000),
+          actions: [
+            {
+              ...tx.subTransactions[0].actions[0],
+              // Pretend the client signed to pay a million tokens
+              ethValue: weiPerToken.mul(1000000),
+            },
+            ...tx.subTransactions[0].actions.slice(1),
+          ],
         },
       ],
       signature: tx.signature,
@@ -85,8 +101,8 @@ describe("index", () => {
     const tx2 = aggregate([tx1, tx1]);
 
     expect(tx2.signature).to.equal([
-      "0x2cc0b05e8200cf564042735d15e2cc98181e730203530300022aafdd1ceb905830430",
-      "28617145dca56a00bf0693710e24683616ff4a42bc3cca7d587b36ff91f",
+      "0x091727df1b9834b31111c1d5c1e15989350de678232e46898c1c3c788e3c26ab1f69e",
+      "3373d329564e875a1401c0b7a4a6f7ab3e9cf93ef73b59a1feb3286e693",
     ].join(""));
 
     expect(verify(tx2)).to.equal(true);
@@ -99,7 +115,13 @@ describe("index", () => {
           ...tx2.subTransactions[1],
 
           // Pretend this client signed to pay a million tokens
-          ethValue: weiPerToken.mul(1000000),
+          actions: [
+            {
+              ...tx2.subTransactions[1].actions[0],
+              ethValue: weiPerToken.mul(1000000),
+            },
+            ...tx2.subTransactions[1].actions.slice(1),
+          ],
         },
       ],
     }
@@ -119,7 +141,12 @@ describe("index", () => {
     const txs = Range(4).map(i => sign(
       {
         ...txTemplate,
-        ethValue: BigNumber.from(i),
+        actions: [
+          {
+            ...txTemplate.actions[0],
+            ethValue: BigNumber.from(i),
+          }
+        ],
       },
       privateKey,
     ));

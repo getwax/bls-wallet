@@ -1,43 +1,49 @@
 export default [
   {
-    "inputs": [
-      {
-        "internalType": "uint256[4]",
-        "name": "blsKey",
-        "type": "uint256[4]"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
     "stateMutability": "payable",
     "type": "fallback"
   },
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "ethValue",
-        "type": "uint256"
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "ethValue",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "contractAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "encodedFunction",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct IWallet.ActionData[]",
+        "name": "actions",
+        "type": "tuple[]"
       },
-      {
-        "internalType": "address",
-        "name": "contractAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "bytes",
-        "name": "encodedFunction",
-        "type": "bytes"
-      }
-    ],
-    "name": "action",
-    "outputs": [
       {
         "internalType": "bool",
-        "name": "success",
+        "name": "atomic",
         "type": "bool"
+      }
+    ],
+    "name": "executeActions",
+    "outputs": [
+      {
+        "internalType": "bool[]",
+        "name": "successes",
+        "type": "bool[]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "results",
+        "type": "bytes[]"
       }
     ],
     "stateMutability": "payable",
@@ -66,6 +72,32 @@ export default [
         "type": "uint256[4]"
       }
     ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "walletGateway",
+        "type": "address"
+      }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[4]",
+        "name": "blsKey",
+        "type": "uint256[4]"
+      }
+    ],
+    "name": "latchPublicKey",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -99,6 +131,19 @@ export default [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "walletGateway",
+        "type": "address"
+      }
+    ],
+    "name": "setGateway",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

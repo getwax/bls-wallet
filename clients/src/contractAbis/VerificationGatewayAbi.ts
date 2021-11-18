@@ -63,28 +63,46 @@ export default [
             "type": "uint256"
           },
           {
-            "internalType": "uint256",
-            "name": "ethValue",
-            "type": "uint256"
+            "internalType": "bool",
+            "name": "atomic",
+            "type": "bool"
           },
           {
-            "internalType": "address",
-            "name": "contractAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes",
-            "name": "encodedFunction",
-            "type": "bytes"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "ethValue",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "contractAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "encodedFunction",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct IWallet.ActionData[]",
+            "name": "actions",
+            "type": "tuple[]"
           }
         ],
-        "internalType": "struct VerificationGateway.TxData[]",
+        "internalType": "struct VerificationGateway.TxSet[]",
         "name": "txs",
         "type": "tuple[]"
       }
     ],
     "name": "actionCalls",
-    "outputs": [],
+    "outputs": [
+      {
+        "internalType": "bytes[][]",
+        "name": "results",
+        "type": "bytes[][]"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -102,15 +120,70 @@ export default [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "blsWalletLogic",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "contract IBLS",
         "name": "bls",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "blsWalletImpl",
+        "type": "address"
       }
     ],
     "name": "initialize",
     "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "proxyAdmin",
+    "outputs": [
+      {
+        "internalType": "contract ProxyAdmin",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "transferToOrigin",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -134,22 +207,34 @@ export default [
             "type": "uint256"
           },
           {
-            "internalType": "uint256",
-            "name": "ethValue",
-            "type": "uint256"
+            "internalType": "bool",
+            "name": "atomic",
+            "type": "bool"
           },
           {
-            "internalType": "address",
-            "name": "contractAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes",
-            "name": "encodedFunction",
-            "type": "bytes"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "ethValue",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "contractAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "encodedFunction",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct IWallet.ActionData[]",
+            "name": "actions",
+            "type": "tuple[]"
           }
         ],
-        "internalType": "struct VerificationGateway.TxData[]",
+        "internalType": "struct VerificationGateway.TxSet[]",
         "name": "txs",
         "type": "tuple[]"
       }
@@ -157,6 +242,24 @@ export default [
     "name": "verifySignatures",
     "outputs": [],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "hash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "encodedFunction",
+        "type": "bytes"
+      }
+    ],
+    "name": "walletAdminCall",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -176,14 +279,14 @@ export default [
     "inputs": [
       {
         "internalType": "bytes32",
-        "name": "",
+        "name": "hash",
         "type": "bytes32"
       }
     ],
     "name": "walletFromHash",
     "outputs": [
       {
-        "internalType": "contract BLSWallet",
+        "internalType": "contract IWallet",
         "name": "",
         "type": "address"
       }
