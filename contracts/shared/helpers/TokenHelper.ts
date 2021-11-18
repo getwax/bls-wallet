@@ -78,7 +78,7 @@ export default class TokenHelper {
           nonce,
           actions: [
             {
-              contract: this.testToken as any,
+              contract: this.testToken,
               method: "transfer",
               args: [recipient, amount.toHexString()],
             },

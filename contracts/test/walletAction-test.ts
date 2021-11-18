@@ -163,7 +163,7 @@ describe('WalletActions', async function () {
           nonce: BigNumber.from(1),
           actions: [
             {
-              contract: mockAuction as any,
+              contract: mockAuction,
               method: "buyItNow",
               args: [],
               ethValue: ethToTransfer,
@@ -264,7 +264,7 @@ describe('WalletActions', async function () {
     const tx = wallets[0].sign({
       nonce,
       actions: wallets.map((recvWallet, i) => ({
-        contract: testToken as any,
+        contract: testToken,
         method: "transfer",
         args: [recvWallet.address, th.userStartAmount.toString()],
       })),
@@ -325,7 +325,7 @@ describe('WalletActions', async function () {
     let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward    
 
     const tx2 = rewarder.signTransferToOrigin({
-      token: testToken as any,
+      token: testToken,
       amount: rewardAmountToSend,
       nonce: BigNumber.from(1),
     });

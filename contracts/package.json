@@ -8,7 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^4.3.2",
-    "bls-wallet-clients": "0.3.0-07ac8dc",
+    "bls-wallet-clients": "0.3.0-9bdca2f",
     "bls-wallet-signer": "^0.8.0-rc.1"
   },
   "devDependencies": {

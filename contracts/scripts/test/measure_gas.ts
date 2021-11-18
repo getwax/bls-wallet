@@ -56,7 +56,7 @@ async function logGasForTransfers() {
         nonce: BigNumber.from(nonce++),
         actions: [
           {
-            contract: th.testToken as any,
+            contract: th.testToken,
             method: "transfer",
             args: ["0x"+(i+1).toString(16).padStart(40, '0'), BigNumber.from(i).toHexString()],
           },
