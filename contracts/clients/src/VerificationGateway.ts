@@ -1,8 +1,7 @@
-import { Transaction } from "./signer";
+import { Bundle } from "./signer";
 import { ethers } from "ethers";
 
 import VerificationGatewayAbi from "./contractAbis/VerificationGatewayAbi";
-import splitHex256 from "./helpers/splitHex256";
 
 type Signer = ethers.Signer;
 type Provider = ethers.providers.Provider;
@@ -24,19 +23,10 @@ export default class VerificationGateway {
   }
 
   async actionCalls(
-    tx: Transaction,
+    bundle: Bundle,
     overrides: ethers.Overrides = {},
   ): Promise<ethers.providers.TransactionResponse> {
-    return await this.contract.actionCalls(
-      tx.subTransactions.map((subTx) => splitHex256(subTx.publicKey)),
-      splitHex256(tx.signature),
-      tx.subTransactions.map((subTx) => ({
-        nonce: subTx.nonce,
-        atomic: subTx.atomic,
-        actions: subTx.actions,
-      })),
-      overrides,
-    );
+    return await this.contract.actionCalls(bundle, overrides);
   }
 
   async walletFromHash(publicKeyHash: string): Promise<string> {

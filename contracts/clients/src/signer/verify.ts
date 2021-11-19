@@ -1,21 +1,17 @@
 import * as hubbleBls from "../../deps/hubble-bls";
 
 import encodeMessageForSigning from "./encodeMessageForSigning";
-import { Transaction } from "./types";
+import { Bundle } from "./types";
 
 export default (
   domain: Uint8Array,
   chainId: number,
-) => (tx: Transaction): boolean => {
+) => (bundle: Bundle): boolean => {
   const verifier = new hubbleBls.signer.BlsVerifier(domain);
 
   return verifier.verifyMultiple(
-    hubbleBls.mcl.loadG1(tx.signature),
-    tx.subTransactions.map(
-      subTx => hubbleBls.mcl.loadG2(subTx.publicKey),
-    ),
-    tx.subTransactions.map(
-      subTx => encodeMessageForSigning(chainId)(subTx),
-    ),
+    bundle.signature,
+    bundle.users,
+    bundle.operations.map(encodeMessageForSigning(chainId)),
   );
 };

@@ -3,7 +3,8 @@ import {
   ActionData,
   BlsWalletSigner,
   initBlsWalletSigner,
-  Transaction,
+  Bundle,
+  Operation,
 } from './signer';
 
 import VerificationGateway from './VerificationGateway';
@@ -139,23 +140,9 @@ export default class BlsWalletWrapper {
     return await walletContract.nonce();
   }
 
-  /**
-   * Sign a transaction, producing a `TransactionData` object suitable for use
-   * with an aggregator.
-   */
-  sign({ nonce, atomic, actions }: {
-    nonce: BigNumber;
-    atomic: boolean;
-    actions: ActionData[];
-  }): Transaction {
-    return this.blsWalletSigner.sign(
-      {
-        nonce,
-        atomic,
-        actions,
-      },
-      this.privateKey,
-    );
+  /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
+  sign(operation: Operation): Bundle {
+    return this.blsWalletSigner.sign(operation, this.privateKey);
   }
 
   static async #BlsWalletSigner(
