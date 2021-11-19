@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { utils } from "ethers";
 import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
-import { BlsWallet } from "../../clients";
+import { BlsWallet } from "../../clients/src";
 
 import Fixture from "./Fixture";
 
