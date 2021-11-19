@@ -76,11 +76,15 @@ export default class TokenHelper {
       this.fx.blsWalletSigner.aggregate([
         sender.sign({
           nonce,
+          atomic: true,
           actions: [
             {
-              contract: this.testToken,
-              method: "transfer",
-              args: [recipient, amount.toHexString()],
+              ethValue: BigNumber.from(0),
+              contractAddress: this.testToken.address,
+              encodedFunction: this.testToken.interface.encodeFunctionData(
+                "transfer",
+                [recipient, amount.toHexString()],
+              ),
             },
           ],
         }),

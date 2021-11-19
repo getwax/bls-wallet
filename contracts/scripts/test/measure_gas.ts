@@ -54,11 +54,15 @@ async function logGasForTransfers() {
     for (let i = 0; i<transferCount; i++) {
       const tx = blsWallets[i].sign({
         nonce: BigNumber.from(nonce++),
+        atomic: true,
         actions: [
           {
-            contract: th.testToken,
-            method: "transfer",
-            args: ["0x"+(i+1).toString(16).padStart(40, '0'), BigNumber.from(i).toHexString()],
+            ethValue: BigNumber.from(0),
+            contractAddress: th.testToken.address,
+            encodedFunction: th.testToken.interface.encodeFunctionData(
+              "transfer",
+              ["0x"+(i+1).toString(16).padStart(40, '0'), BigNumber.from(i).toHexString()],
+            ),
           },
         ],
       });

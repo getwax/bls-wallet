@@ -15,19 +15,6 @@ type BigNumber = ethers.BigNumber;
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
-type Action = (
-  | {
-    ethValue?: BigNumber;
-    contract: ethers.Contract,
-  }
-  | {
-    ethValue?: BigNumber;
-    contract: ethers.Contract,
-    method: string;
-    args: string[];
-  }
-);
-
 export default class BlsWalletWrapper {
   private constructor(
     public provider: ethers.providers.Provider,
@@ -167,49 +154,19 @@ export default class BlsWalletWrapper {
    * Sign a transaction, producing a `TransactionData` object suitable for use
    * with an aggregator.
    */
-  sign({ nonce, atomic = true, actions }: {
+  sign({ nonce, atomic, actions }: {
     nonce: BigNumber;
-    atomic?: boolean;
-    actions: Action[];
+    atomic: boolean;
+    actions: ActionData[];
   }): Transaction {
-    const fullActions: ActionData[] = actions.map(a => {
-      const encodedFunction = ('method' in a
-        ? a.contract.interface.encodeFunctionData(a.method, a.args)
-        : '0x'
-      );
-
-      return {
-        ethValue: a.ethValue ?? BigNumber.from(0),
-        contractAddress: a.contract.address,
-        encodedFunction,
-      };
-    });
-
     return this.blsWalletSigner.sign(
       {
         nonce,
         atomic,
-        actions: fullActions,
+        actions,
       },
       this.privateKey,
     );
-  }
-
-  signTransferToOrigin({ amount, token, nonce }: {
-    amount: BigNumber,
-    token: ethers.Contract,
-    nonce: BigNumber,
-  }): Transaction {
-    return this.sign({
-      nonce,
-      actions: [
-        {
-          contract: this.verificationGateway.contract,
-          method: "transferToOrigin",
-          args: [amount.toHexString(), token.address],
-        }
-      ],
-    });
   }
 
   static async #BlsWalletSigner(

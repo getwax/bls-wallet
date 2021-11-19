@@ -122,10 +122,13 @@ describe('WalletActions', async function () {
 
     const tx = sendWallet.sign({
       nonce: await sendWallet.Nonce(),
+      atomic: true,
       actions: [
         {
           ethValue: ethToTransfer,
-          contract: recvWallet.walletContract, // TODO: Does wallet contract need to exist?
+          // TODO: Does wallet contract need to exist?
+          contractAddress: recvWallet.walletContract.address,
+          encodedFunction: "0x",
         },
       ],
     });
@@ -161,12 +164,12 @@ describe('WalletActions', async function () {
       fx.blsWalletSigner.aggregate([
         sendWallet.sign({
           nonce: BigNumber.from(1),
+          atomic: true,
           actions: [
             {
-              contract: mockAuction,
-              method: "buyItNow",
-              args: [],
               ethValue: ethToTransfer,
+              contractAddress: mockAuction.address,
+              encodedFunction: mockAuction.interface.encodeFunctionData("buyItNow"),
             },
           ],
         }),
@@ -182,11 +185,15 @@ describe('WalletActions', async function () {
 
     const tx = wallet.sign({
       nonce: await wallet.Nonce(),
+      atomic: true,
       actions: [
         {
-          contract: fx.verificationGateway.contract,
-          method: "walletCrossCheck",
-          args: [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
+          ethValue: BigNumber.from(0),
+          contractAddress: fx.verificationGateway.contract.address,
+          encodedFunction: fx.verificationGateway.contract.interface.encodeFunctionData(
+            "walletCrossCheck",
+            [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
+          ),
         },
       ],
     });
@@ -263,10 +270,14 @@ describe('WalletActions', async function () {
 
     const tx = wallets[0].sign({
       nonce,
-      actions: wallets.map((recvWallet, i) => ({
-        contract: testToken,
-        method: "transfer",
-        args: [recvWallet.address, th.userStartAmount.toString()],
+      atomic: true,
+      actions: wallets.map((recvWallet) => ({
+        ethValue: BigNumber.from(0),
+        contractAddress: testToken.address,
+        encodedFunction: testToken.interface.encodeFunctionData(
+          "transfer",
+          [recvWallet.address, th.userStartAmount.toString()],
+        ),
       })),
     });
 
@@ -311,10 +322,12 @@ describe('WalletActions', async function () {
     // prepare and sign eth transfer tx (from wallet 1 to 2)
     const tx1 = wallet1.sign({
       nonce: BigNumber.from(1),
+      atomic: true,
       actions: [
         {
-          contract: wallet2.walletContract,
           ethValue: ethToTransfer,
+          contractAddress: wallet2.walletContract.address,
+          encodedFunction: "0x",
         },
       ],
     });
@@ -322,12 +335,21 @@ describe('WalletActions', async function () {
     // prepare and sign token transfer to origin tx (reward)
     let rewardTokenAddress = testToken.address;
     let rewardAmountRequired = th.userStartAmount.div(4); // arbitrary reward amount
-    let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward    
+    let rewardAmountToSend = rewardAmountRequired.mul(2); // send double reward
 
-    const tx2 = rewarder.signTransferToOrigin({
-      token: testToken,
-      amount: rewardAmountToSend,
+    const tx2 = rewarder.sign({
       nonce: BigNumber.from(1),
+      atomic: true,
+      actions: [
+        {
+          ethValue: BigNumber.from(0),
+          contractAddress: fx.verificationGateway.contract.address,
+          encodedFunction: fx.verificationGateway.contract.interface.encodeFunctionData(
+            "transferToOrigin",
+            [rewardAmountToSend, testToken.address],
+          ),
+        },
+      ],
     });
 
     // shouldn't be able to directly call transferToOrigin
