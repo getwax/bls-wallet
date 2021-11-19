@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { Transaction } from "bls-wallet-signer";
+import { Transaction } from "../../clients/src";
 import getDeployedAddresses from "../../shared/helpers/getDeployedAddresses";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
