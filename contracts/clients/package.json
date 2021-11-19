@@ -10,7 +10,8 @@
   "private": false,
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "test": "mocha dist/**/*.test.js"
   },
   "dependencies": {
     "ethers": "^5.5.0",
