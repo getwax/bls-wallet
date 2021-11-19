@@ -1,69 +1,49 @@
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import TaskQueue from '../common/TaskQueue';
+
+// hooks and services
+
+// components, styles and UI
 import Button from '../components/Button';
 import CompactQuillHeading from '../components/CompactQuillHeading';
 
-type Props = {
-  _?: undefined;
-};
+// interfaces
+export interface ConfirmProps {}
 
-type State = {
-  _?: undefined;
-};
+const Confirm: React.FunctionComponent<ConfirmProps> = () => {
+  const [id, setId] = useState<string | null>();
+  const [prompt, setPromt] = useState<string>();
 
-export default class Popup extends React.Component<Props, State> {
-  cleanupTasks = new TaskQueue();
+  const cleanupTasks = new TaskQueue();
 
-  constructor(props: Props) {
-    super(props);
-
-    this.state = {};
-  }
-
-  componentWillUnmount(): void {
-    this.cleanupTasks.run();
-  }
-
-  render(): React.ReactNode {
+  useEffect(() => {
     const params = new URL(window.location.href).searchParams;
-    const id = params.get('id');
-    const promptText = params.get('promptText') ?? '(promptText not set)';
-    const buttons = parseButtons(params.get('buttons'));
+    setId(params.get('id'));
+    setPromt(params.get('promptText') || '(promptText not set)');
 
-    return (
-      <div className="confirm">
-        <div className="section">
-          <CompactQuillHeading />
-        </div>
-        <div className="section prompt">
-          <div>{promptText}</div>
-          <div />
-          {buttons.map((btnText, i) => (
-            <Button
-              highlight={i === 0}
-              onPress={() => {
-                browser.runtime.sendMessage(undefined, { id, result: btnText });
-              }}
-              key={btnText}
-            >
-              {btnText}
-            </Button>
-          ))}
-        </div>
+    return cleanupTasks.run();
+  }, []);
+
+  const respondTx = (result: string) => {
+    browser.runtime.sendMessage(undefined, { id, result });
+  };
+
+  return (
+    <div className="confirm">
+      <div className="section">
+        <CompactQuillHeading />
       </div>
-    );
-  }
-}
+      <div className="section prompt">
+        <div>{prompt}</div>
+        <div />
+        <Button highlight onPress={() => respondTx('Yes')}>
+          Confirm
+        </Button>
+        <Button onPress={() => respondTx('No')}>Reject</Button>
+      </div>
+    </div>
+  );
+};
 
-function parseButtons(buttonsStr: string | null): string[] {
-  if (buttonsStr === null) {
-    return ['(buttons not set)'];
-  }
-
-  if (buttonsStr === '') {
-    return [];
-  }
-
-  return buttonsStr.split(',');
-}
+export default Confirm;
