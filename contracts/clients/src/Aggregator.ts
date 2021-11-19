@@ -26,11 +26,6 @@ export type TransactionDTO = {
   signature: string;
 };
 
-type CreateWalletResult = {
-  address?: string;
-  failures: TransactionFailure[];
-};
-
 export default class Aggregator {
   origin: string;
 

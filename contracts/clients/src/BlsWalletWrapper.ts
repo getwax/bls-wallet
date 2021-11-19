@@ -28,7 +28,7 @@ type Action = (
   }
 );
 
-export default class BlsWallet {
+export default class BlsWalletWrapper {
   private constructor(
     public provider: ethers.providers.Provider,
     public network: ethers.providers.Network,
@@ -94,7 +94,7 @@ export default class BlsWallet {
     privateKey: string,
     verificationGatewayAddress: string,
     provider: ethers.providers.Provider,
-  ): Promise<BlsWallet> {
+  ): Promise<BlsWalletWrapper> {
     const network = await provider.getNetwork();
 
     const blsWalletSigner = await initBlsWalletSigner({
@@ -106,7 +106,7 @@ export default class BlsWallet {
       provider,
     );
 
-    const contractAddress = await BlsWallet.Address(
+    const contractAddress = await BlsWalletWrapper.Address(
       privateKey,
       verificationGatewayAddress,
       provider,
@@ -118,7 +118,7 @@ export default class BlsWallet {
       provider,
     );
 
-    return new BlsWallet(
+    return new BlsWalletWrapper(
       provider,
       network,
       verificationGateway,

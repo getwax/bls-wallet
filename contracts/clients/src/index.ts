@@ -1,11 +1,11 @@
 import Aggregator from './Aggregator';
-import BlsWallet from './BlsWallet';
+import BlsWalletWrapper from './BlsWalletWrapper';
 import VerificationGateway from './VerificationGateway';
 
 export * from "./signer";
 
 export {
   Aggregator,
-  BlsWallet,
+  BlsWalletWrapper,
   VerificationGateway,
 };
