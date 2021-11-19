@@ -5,7 +5,12 @@ import { arrayify } from "@ethersproject/bytes";
 import { keccak256 } from "@ethersproject/keccak256";
 import { expect } from "chai";
 
-import { initBlsWalletSigner, Transaction, TransactionTemplate } from "../src";
+import {
+  initBlsWalletSigner,
+  Transaction,
+  TransactionTemplate,
+} from "../src/signer";
+
 import Range from "./helpers/Range";
 
 const domain = arrayify(keccak256("0xfeedbee5"));

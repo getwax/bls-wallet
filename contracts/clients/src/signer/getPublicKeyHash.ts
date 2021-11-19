@@ -1,5 +1,5 @@
 import { keccak256 } from "@ethersproject/keccak256";
-import { BlsSignerFactory } from "../deps/hubble-bls/signer";
+import { BlsSignerFactory } from "../../deps/hubble-bls/signer";
 
 import getPublicKey from "./getPublicKey";
 

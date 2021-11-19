@@ -2,8 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers } from "hardhat";
 import { Signer, Contract, ContractFactory, BigNumber } from "ethers";
 import { Provider } from "@ethersproject/abstract-provider";
-import { BlsWallet, VerificationGateway } from "bls-wallet-clients";
-import { initBlsWalletSigner, BlsWalletSigner } from "bls-wallet-signer";
+import { BlsWallet, BlsWalletSigner, initBlsWalletSigner, VerificationGateway } from "../../clients/src";
 
 import Range from "./Range";
 import assert from "./assert";

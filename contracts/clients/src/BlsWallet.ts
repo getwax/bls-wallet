@@ -4,7 +4,7 @@ import {
   BlsWalletSigner,
   initBlsWalletSigner,
   Transaction,
-} from 'bls-wallet-signer';
+} from './signer';
 
 import VerificationGateway from './VerificationGateway';
 import BlsWalletAbi from './contractAbis/BlsWalletAbi';

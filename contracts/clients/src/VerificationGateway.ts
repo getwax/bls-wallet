@@ -1,4 +1,4 @@
-import { Transaction } from "bls-wallet-signer";
+import { Transaction } from "./signer";
 import { ethers } from "ethers";
 
 import VerificationGatewayAbi from "./contractAbis/VerificationGatewayAbi";

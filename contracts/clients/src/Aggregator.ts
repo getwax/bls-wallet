@@ -1,4 +1,4 @@
-import { Transaction } from 'bls-wallet-signer';
+import { Transaction } from './signer';
 
 type TransactionFailure =
   | { type: 'invalid-format'; description: string }

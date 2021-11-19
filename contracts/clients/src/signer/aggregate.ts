@@ -1,4 +1,4 @@
-import * as hubbleBls from "../deps/hubble-bls";
+import * as hubbleBls from "../../deps/hubble-bls";
 
 import { Transaction } from "./types";
 

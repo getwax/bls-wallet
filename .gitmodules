@@ -1,3 +1,0 @@
-[submodule "shared/lib/hubble-bls"]
-	path = contracts/shared/lib/hubble-bls
-	url = git@github.com:thehubbleproject/hubble-bls.git
