@@ -1,4 +1,4 @@
-import { signer } from "../deps/hubble-bls";
+import { signer } from "../../deps/hubble-bls";
 
 import aggregate from "./aggregate";
 import defaultDomain from "./defaultDomain";

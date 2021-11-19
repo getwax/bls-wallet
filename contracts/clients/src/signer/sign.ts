@@ -1,4 +1,4 @@
-import * as hubbleBls from "../deps/hubble-bls";
+import * as hubbleBls from "../../deps/hubble-bls";
 
 import encodeMessageForSigning from "./encodeMessageForSigning";
 import getPublicKey from "./getPublicKey";
