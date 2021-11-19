@@ -56,7 +56,7 @@ describe('WalletActions', async function () {
 
   it('should register new wallet', async function () {
     const wallet = await fx.lazyBlsWallets[0]();
-    expect(wallet.verificationGateway.address).to.equal(fx.verificationGateway.address);
+    expect(fx.verificationGateway.address).to.equal(fx.verificationGateway.address);
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");  
     const TransparentUpgradeableProxy = await ethers.getContractFactory("TransparentUpgradeableProxy");

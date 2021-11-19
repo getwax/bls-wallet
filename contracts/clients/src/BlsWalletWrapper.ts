@@ -17,9 +17,6 @@ type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
 export default class BlsWalletWrapper {
   private constructor(
-    public provider: ethers.providers.Provider,
-    public network: ethers.providers.Network,
-    public verificationGateway: VerificationGateway,
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
     public address: string,
@@ -88,11 +85,6 @@ export default class BlsWalletWrapper {
       chainId: network.chainId,
     });
 
-    const verificationGateway = new VerificationGateway(
-      verificationGatewayAddress,
-      provider,
-    );
-
     const contractAddress = await BlsWalletWrapper.Address(
       privateKey,
       verificationGatewayAddress,
@@ -106,9 +98,6 @@ export default class BlsWalletWrapper {
     );
 
     return new BlsWalletWrapper(
-      provider,
-      network,
-      verificationGateway,
       blsWalletSigner,
       privateKey,
       contractAddress,
