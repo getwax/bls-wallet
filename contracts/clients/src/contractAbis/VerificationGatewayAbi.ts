@@ -44,69 +44,6 @@ export default [
     "type": "event"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256[4][]",
-        "name": "publicKeys",
-        "type": "uint256[4][]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "signature",
-        "type": "uint256[2]"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "nonce",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "atomic",
-            "type": "bool"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint256",
-                "name": "ethValue",
-                "type": "uint256"
-              },
-              {
-                "internalType": "address",
-                "name": "contractAddress",
-                "type": "address"
-              },
-              {
-                "internalType": "bytes",
-                "name": "encodedFunction",
-                "type": "bytes"
-              }
-            ],
-            "internalType": "struct IWallet.ActionData[]",
-            "name": "actions",
-            "type": "tuple[]"
-          }
-        ],
-        "internalType": "struct VerificationGateway.TxSet[]",
-        "name": "txs",
-        "type": "tuple[]"
-      }
-    ],
-    "name": "actionCalls",
-    "outputs": [
-      {
-        "internalType": "bytes[][]",
-        "name": "results",
-        "type": "bytes[][]"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "blsLib",
     "outputs": [
@@ -151,6 +88,76 @@ export default [
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256[2]",
+            "name": "signature",
+            "type": "uint256[2]"
+          },
+          {
+            "internalType": "uint256[4][]",
+            "name": "senderPublicKeys",
+            "type": "uint256[4][]"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "nonce",
+                "type": "uint256"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "ethValue",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "contractAddress",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "encodedFunction",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct IWallet.ActionData[]",
+                "name": "actions",
+                "type": "tuple[]"
+              }
+            ],
+            "internalType": "struct IWallet.Operation[]",
+            "name": "operations",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct VerificationGateway.Bundle",
+        "name": "bundle",
+        "type": "tuple"
+      }
+    ],
+    "name": "processBundle",
+    "outputs": [
+      {
+        "internalType": "bool[]",
+        "name": "successes",
+        "type": "bool[]"
+      },
+      {
+        "internalType": "bytes[][]",
+        "name": "results",
+        "type": "bytes[][]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "proxyAdmin",
     "outputs": [
@@ -166,80 +173,58 @@ export default [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "transferToOrigin",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256[4][]",
-        "name": "publicKeys",
-        "type": "uint256[4][]"
-      },
-      {
-        "internalType": "uint256[2]",
-        "name": "signature",
-        "type": "uint256[2]"
-      },
-      {
         "components": [
           {
-            "internalType": "uint256",
-            "name": "nonce",
-            "type": "uint256"
+            "internalType": "uint256[2]",
+            "name": "signature",
+            "type": "uint256[2]"
           },
           {
-            "internalType": "bool",
-            "name": "atomic",
-            "type": "bool"
+            "internalType": "uint256[4][]",
+            "name": "senderPublicKeys",
+            "type": "uint256[4][]"
           },
           {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "ethValue",
+                "name": "nonce",
                 "type": "uint256"
               },
               {
-                "internalType": "address",
-                "name": "contractAddress",
-                "type": "address"
-              },
-              {
-                "internalType": "bytes",
-                "name": "encodedFunction",
-                "type": "bytes"
+                "components": [
+                  {
+                    "internalType": "uint256",
+                    "name": "ethValue",
+                    "type": "uint256"
+                  },
+                  {
+                    "internalType": "address",
+                    "name": "contractAddress",
+                    "type": "address"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "encodedFunction",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct IWallet.ActionData[]",
+                "name": "actions",
+                "type": "tuple[]"
               }
             ],
-            "internalType": "struct IWallet.ActionData[]",
-            "name": "actions",
+            "internalType": "struct IWallet.Operation[]",
+            "name": "operations",
             "type": "tuple[]"
           }
         ],
-        "internalType": "struct VerificationGateway.TxSet[]",
-        "name": "txs",
-        "type": "tuple[]"
+        "internalType": "struct VerificationGateway.Bundle",
+        "name": "bundle",
+        "type": "tuple"
       }
     ],
-    "name": "verifySignatures",
+    "name": "verify",
     "outputs": [],
     "stateMutability": "view",
     "type": "function"

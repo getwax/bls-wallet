@@ -4,52 +4,6 @@ export default [
     "type": "fallback"
   },
   {
-    "inputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "ethValue",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "contractAddress",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes",
-            "name": "encodedFunction",
-            "type": "bytes"
-          }
-        ],
-        "internalType": "struct IWallet.ActionData[]",
-        "name": "actions",
-        "type": "tuple[]"
-      },
-      {
-        "internalType": "bool",
-        "name": "atomic",
-        "type": "bool"
-      }
-    ],
-    "name": "executeActions",
-    "outputs": [
-      {
-        "internalType": "bool[]",
-        "name": "successes",
-        "type": "bool[]"
-      },
-      {
-        "internalType": "bytes[]",
-        "name": "results",
-        "type": "bytes[]"
-      }
-    ],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
     "inputs": [],
     "name": "gateway",
     "outputs": [
@@ -112,6 +66,59 @@ export default [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "ethValue",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "contractAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "encodedFunction",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct IWallet.ActionData[]",
+            "name": "actions",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct IWallet.Operation",
+        "name": "op",
+        "type": "tuple"
+      }
+    ],
+    "name": "performOperation",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "success",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "results",
+        "type": "bytes[]"
+      }
+    ],
+    "stateMutability": "payable",
     "type": "function"
   },
   {

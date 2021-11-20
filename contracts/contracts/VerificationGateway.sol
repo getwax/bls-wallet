@@ -47,34 +47,31 @@ contract VerificationGateway is Initializable
         bool result
     );
 
-    struct TxSet {
-        uint256 nonce;
-        bool atomic;
-        IWallet.ActionData[] actions;
+    /** Aggregated signature with corresponding senders + operations */
+    struct Bundle {
+        uint256[2] signature;
+        uint256[BLS_LEN][] senderPublicKeys;
+        IWallet.Operation[] operations;
     }
 
-    /**
-    Requires wallet contracts to exist.
-    @param publicKeys bls keys to be verified
-    @param signature aggregated signature
-    @param txs transaction data to be processed
-    */
-    function verifySignatures(
-        uint256[BLS_LEN][] calldata publicKeys,
-        uint256[2] calldata signature,
-        TxSet[] calldata txs
+    function verify(
+        Bundle calldata bundle
     ) public view {
-        uint256 txCount = txs.length;
-        uint256[2][] memory messages = new uint256[2][](txCount);
+        uint256 opLength = bundle.operations.length;
+        require(
+            opLength == bundle.senderPublicKeys.length,
+            "VG: Sender and operation length mismatch"
+        );
+        uint256[2][] memory messages = new uint256[2][](opLength);
 
-        for (uint256 i = 0; i<txCount; i++) {
+        for (uint256 i = 0; i<opLength; i++) {
             // construct params for signature verification
-            messages[i] = messagePoint(txs[i]);
+            messages[i] = messagePoint(bundle.operations[i]);
         }
 
         bool verified = blsLib.verifyMultiple(
-            signature,
-            publicKeys,
+            bundle.signature,
+            bundle.senderPublicKeys,
             messages
         );
 
@@ -143,65 +140,44 @@ contract VerificationGateway is Initializable
         require(success);
     }
 
-    /**
-    Helper function for BLSWallet's to make a token transfer to tx.origin
-     */
-    function transferToOrigin(
-        uint256 amount,
-        address token
-    ) public returns (bool) {
-        IWallet blsWallet = IWallet(payable(msg.sender));
-        IWallet.ActionData[] memory actions = new IWallet.ActionData[](1);
-        actions[0] = IWallet.ActionData({
-            ethValue: 0,
-            contractAddress: token,
-            encodedFunction: abi.encodeWithSignature("transfer(address,uint256)",
-                tx.origin,
-                amount
-            )
-        });
-        (bool[] memory successes, ) = blsWallet.executeActions(
-            actions,
-            false
-        );
-        return successes[0];
-    }
-
     /** 
     Base function for verifying and actioning BLS-signed transactions.
-    Creates a new bls wallet if a transaction's first time.
-    Can be called with a single transaction.
-    @param publicKeys the corresponding public bls keys for transactions
-    @param signature aggregated bls signature of all transactions
-    @param txs data required for a BLSWallet to make a transaction
+    Creates a new contract wallet per bls key if existing wallet not found.
+    Can be called with a single operation with no actions.
     */
-    function actionCalls(
-        uint256[BLS_LEN][] calldata publicKeys,
-        uint256[2] calldata signature,
-        TxSet[] calldata txs
-    ) external returns (bytes[][] memory results) {
-        // revert if signatures not verified
-        verifySignatures(publicKeys, signature, txs);
+    function processBundle(
+        Bundle calldata bundle
+    ) external returns (
+        bool[] memory successes,
+        bytes[][] memory results
+    ) {
+        // revert if signature not verified
+        verify(bundle);
 
         bytes32 publicKeyHash;
         IWallet wallet;
-        results = new bytes[][](txs.length);
-        for (uint256 i = 0; i<txs.length; i++) {
+        uint256 opLength = bundle.operations.length;
+        successes = new bool[](opLength);
+        results = new bytes[][](opLength);
+        for (uint256 i = 0; i<opLength; i++) {
 
-            // create wallet if it doesn't exist
-            createNewWallet(publicKeys[i]);
+            // create wallet if not found
+            createNewWallet(bundle.senderPublicKeys[i]);
 
             // construct params for signature verification
-            publicKeyHash = keccak256(abi.encodePacked(publicKeys[i]));
+            publicKeyHash = keccak256(abi.encodePacked(
+                bundle.senderPublicKeys[i]
+            ));
             wallet = walletFromHash(publicKeyHash);
 
             // check nonce then perform action
-            if (txs[i].nonce == wallet.nonce()) {
-                // action transaction (updates nonce)
-                (bool[] memory successes, bytes[] memory resultSet) = wallet.executeActions(
-                    txs[i].actions,
-                    false
-                );
+            if (bundle.operations[i].nonce == wallet.nonce()) {
+                // request wallet perform operation
+                (
+                    bool success,
+                    bytes[] memory resultSet
+                ) = wallet.performOperation(bundle.operations[i]);
+                successes[i] = success;
                 results[i] = resultSet;
                 emit WalletActioned(
                     address(wallet),
@@ -213,11 +189,11 @@ contract VerificationGateway is Initializable
     }
 
     /**
-    Create a new wallet if one doesn't exist for the given bls public key.
+    Create a new wallet if one found for the given bls public key.
      */
-    function createNewWallet(uint256[BLS_LEN] calldata publicKey)
-        private // consider making external and VG stateless
-    {
+    function createNewWallet(
+        uint256[BLS_LEN] calldata publicKey
+    ) private {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
         address blsWallet = address(walletFromHash(publicKeyHash));
 
@@ -237,12 +213,14 @@ contract VerificationGateway is Initializable
     }
 
     function messagePoint(
-        TxSet calldata txSet
-    ) internal view returns (uint256[2] memory) {
+        IWallet.Operation calldata op
+    ) internal view returns (
+        uint256[2] memory
+    ) {
         bytes memory encodedActionData;
         IWallet.ActionData calldata a;
-        for (uint256 i=0; i<txSet.actions.length; i++) {
-            a = txSet.actions[i];
+        for (uint256 i=0; i<op.actions.length; i++) {
+            a = op.actions[i];
             encodedActionData = abi.encodePacked(
                 encodedActionData,
                 a.ethValue,
@@ -254,7 +232,7 @@ contract VerificationGateway is Initializable
             BLS_DOMAIN,
             abi.encodePacked(
                 block.chainid,
-                txSet.nonce,
+                op.nonce,
                 keccak256(encodedActionData)
             )
         );

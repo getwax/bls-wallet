@@ -4,6 +4,11 @@ pragma abicoder v2;
 
 interface IWallet {
 
+    struct Operation {
+        uint256 nonce;
+        IWallet.ActionData[] actions;
+    }
+
     struct ActionData {
         uint256 ethValue;
         address contractAddress;
@@ -16,8 +21,10 @@ interface IWallet {
     ) external;
 
     function nonce() external returns (uint256);
-    function executeActions(
-        ActionData[] calldata actions,
-        bool atomic
-    ) external returns (bool[] memory successes, bytes[] memory results);
+    function performOperation(
+        Operation calldata op
+    ) external returns (
+        bool success,
+        bytes[] memory results
+    );
 }
