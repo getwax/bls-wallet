@@ -1,32 +1,29 @@
+import { ethers } from 'ethers';
 import React, { useEffect, useState } from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import TaskQueue from '../common/TaskQueue';
-
-// hooks and services
 
 // components, styles and UI
 import Button from '../components/Button';
 import CompactQuillHeading from '../components/CompactQuillHeading';
 import { useInputDecode } from '../hooks/useInputDecode';
+import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 
-// interfaces
-export interface ConfirmProps {}
-
-const Confirm: React.FunctionComponent<ConfirmProps> = () => {
-  const [id, setId] = useState<string | null>(null);
-  const [to, setTo] = useState<string | null>(null);
-  const [value, setValue] = useState<string | null>(null);
+const Confirm: React.FunctionComponent = () => {
+  const [id, setId] = useState<string>();
+  const [to, setTo] = useState<string>('0x');
+  const [value, setValue] = useState<string>('0');
   const [data, setData] = useState<string>('');
 
-  const { loading, method } = useInputDecode(data);
+  const { loading, method } = useInputDecode(data, to || '0x');
 
   const cleanupTasks = new TaskQueue();
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;
-    setId(params.get('id'));
-    setTo(params.get('to'));
-    setValue(params.get('value'));
+    setId(params.get('id') || '0');
+    setTo(params.get('to') || '0x');
+    setValue(params.get('value') || '0');
     setData(params.get('data') || '0x');
 
     return cleanupTasks.run();
@@ -47,8 +44,8 @@ const Confirm: React.FunctionComponent<ConfirmProps> = () => {
         ) : (
           <>
             <div>{method}</div>
-            <div>to: {to}</div>
-            <div>value: {value}</div>
+            <div>to: {formatCompactAddress(to)}</div>
+            <div>value: {ethers.utils.formatEther(value)} ETH</div>
             <div>
               data:
               <div className="data">{data}</div>

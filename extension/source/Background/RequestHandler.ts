@@ -4,8 +4,6 @@ import App from '../App';
 import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
 import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
-import formatBalance from '../Popup/helpers/formatBalance';
-import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 import promptUser from './promptUser';
 
 export default function RequestHandler(
@@ -60,9 +58,9 @@ export default function RequestHandler(
         }
 
         const promptText = `
-            &to=${formatCompactAddress(tx.to)}
+            &to=${tx.to}
             &data=${tx.data}
-            &value=${formatBalance(tx.value, 'ETH')}`;
+            &value=${tx.value}`;
 
         const promptResult = await promptUser({
           promptText,
