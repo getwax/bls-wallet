@@ -13,9 +13,9 @@ const Confirm: React.FunctionComponent = () => {
   const [id, setId] = useState<string>();
   const [to, setTo] = useState<string>('0x');
   const [value, setValue] = useState<string>('0');
-  const [data, setData] = useState<string>('');
+  const [data, setData] = useState<string>('0x');
 
-  const { loading, method } = useInputDecode(data, to || '0x');
+  const { loading, method } = useInputDecode(data, to);
 
   const cleanupTasks = new TaskQueue();
 
