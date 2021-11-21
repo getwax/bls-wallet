@@ -59,16 +59,10 @@ export default function RequestHandler(
           throw new Error('No wallet available');
         }
 
-        let promptText: string;
-        if (tx.data === '0x') {
-          promptText = `ETH Transfer 
-          ${formatBalance(tx.value, 'ETH')} 
-          to ${formatCompactAddress(tx.to)}`;
-        } else {
-          promptText = `Contract Interaction ${formatCompactAddress(tx.to)} 
-          value ${formatBalance(tx.value, 'ETH')} 
-          data  ${tx.data}`;
-        }
+        const promptText = `
+            &to=${formatCompactAddress(tx.to)}
+            &data=${tx.data}
+            &value=${formatBalance(tx.value, 'ETH')}`;
 
         const promptResult = await promptUser({
           promptText,
