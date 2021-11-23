@@ -4,8 +4,6 @@ import App from '../App';
 import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
 import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
-import formatBalance from '../Popup/helpers/formatBalance';
-import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 import promptUser from './promptUser';
 
 export default function RequestHandler(
@@ -59,16 +57,10 @@ export default function RequestHandler(
           throw new Error('No wallet available');
         }
 
-        let promptText: string;
-        if (tx.data === '0x') {
-          promptText = `ETH Transfer 
-          ${formatBalance(tx.value, 'ETH')} 
-          to ${formatCompactAddress(tx.to)}`;
-        } else {
-          promptText = `Contract Interaction ${formatCompactAddress(tx.to)} 
-          value ${formatBalance(tx.value, 'ETH')} 
-          data  ${tx.data}`;
-        }
+        const promptText = `
+            &to=${tx.to}
+            &data=${tx.data}
+            &value=${tx.value}`;
 
         const promptResult = await promptUser({
           promptText,
