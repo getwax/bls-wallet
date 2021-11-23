@@ -59,19 +59,17 @@ export const useInputDecode = (functionData: string, to: string) => {
 
       const data = functionData?.replace(/\s+/g, '');
 
-      let method;
       try {
-        method = await getMethodFromOnChainRegistry(data);
-        if (!method) {
-          method = await getMethodFromEtherscan(to, data);
+        const registryPromise = getMethodFromOnChainRegistry(data);
+        const etherScanPromise = getMethodFromEtherscan(to, data);
+        const method = (await registryPromise) ?? (await etherScanPromise);
+        if (method) {
+          setMethod(formatMethod(method));
         }
       } catch (error) {
         console.log({ error });
       }
 
-      if (method) {
-        setMethod(formatMethod(method));
-      }
       setLoading(false);
     };
 
