@@ -30,7 +30,7 @@
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-promise": "^5.1.0",
     "ethereum-waffle": "^3.0.0",
-    "ethers": "^5.0.0",
+    "ethers": "^5.5.0",
     "hardhat": "^2.6.7",
     "hardhat-gas-reporter": "^1.0.4",
     "mcl-wasm": "^0.8.0",

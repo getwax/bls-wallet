@@ -1,69 +1,65 @@
-import * as React from 'react';
+import { ethers } from 'ethers';
+import React, { useEffect, useState } from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import TaskQueue from '../common/TaskQueue';
+
+// components, styles and UI
 import Button from '../components/Button';
 import CompactQuillHeading from '../components/CompactQuillHeading';
+import { useInputDecode } from '../hooks/useInputDecode';
+import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 
-type Props = {
-  _?: undefined;
-};
+const Confirm: React.FunctionComponent = () => {
+  const [id, setId] = useState<string>();
+  const [to, setTo] = useState<string>('0x');
+  const [value, setValue] = useState<string>('0');
+  const [data, setData] = useState<string>('0x');
 
-type State = {
-  _?: undefined;
-};
+  const { loading, method } = useInputDecode(data, to);
 
-export default class Popup extends React.Component<Props, State> {
-  cleanupTasks = new TaskQueue();
+  const cleanupTasks = new TaskQueue();
 
-  constructor(props: Props) {
-    super(props);
-
-    this.state = {};
-  }
-
-  componentWillUnmount(): void {
-    this.cleanupTasks.run();
-  }
-
-  render(): React.ReactNode {
+  useEffect(() => {
     const params = new URL(window.location.href).searchParams;
-    const id = params.get('id');
-    const promptText = params.get('promptText') ?? '(promptText not set)';
-    const buttons = parseButtons(params.get('buttons'));
+    setId(params.get('id') || '0');
+    setTo(params.get('to') || '0x');
+    setValue(params.get('value') || '0');
+    setData(params.get('data') || '0x');
 
-    return (
-      <div className="confirm">
-        <div className="section">
-          <CompactQuillHeading />
-        </div>
-        <div className="section prompt">
-          <div>{promptText}</div>
-          <div />
-          {buttons.map((btnText, i) => (
-            <Button
-              highlight={i === 0}
-              onPress={() => {
-                browser.runtime.sendMessage(undefined, { id, result: btnText });
-              }}
-              key={btnText}
-            >
-              {btnText}
-            </Button>
-          ))}
-        </div>
+    return cleanupTasks.run();
+  }, []);
+
+  const respondTx = (result: string) => {
+    browser.runtime.sendMessage(undefined, { id, result });
+  };
+
+  return (
+    <div className="confirm">
+      <div className="section">
+        <CompactQuillHeading />
       </div>
-    );
-  }
-}
+      <div className="section prompt">
+        {loading ? (
+          'loading...'
+        ) : (
+          <>
+            <div>{method}</div>
+            <div>to: {formatCompactAddress(to)}</div>
+            <div>value: {ethers.utils.formatEther(value)} ETH</div>
+            <div>
+              data:
+              <div className="data">{data}</div>
+            </div>
 
-function parseButtons(buttonsStr: string | null): string[] {
-  if (buttonsStr === null) {
-    return ['(buttons not set)'];
-  }
+            <Button highlight onPress={() => respondTx('Yes')}>
+              Confirm
+            </Button>
+            <Button onPress={() => respondTx('No')}>Reject</Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
-  if (buttonsStr === '') {
-    return [];
-  }
-
-  return buttonsStr.split(',');
-}
+export default Confirm;

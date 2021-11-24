@@ -4,8 +4,6 @@ import App from '../App';
 import addErrorContext from '../common/addErrorContext';
 import RpcMap from '../common/RpcMap';
 import validateOptionalStringRecord from '../common/validateOptionalStringRecord';
-import formatBalance from '../Popup/helpers/formatBalance';
-import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 import promptUser from './promptUser';
 
 export default function RequestHandler(
@@ -51,15 +49,21 @@ export default function RequestHandler(
           throw new Error('Not implemented: "value" field missing');
         }
 
+        if (tx.data === undefined) {
+          throw new Error('Not implemented: "function data" field missing');
+        }
+
         if (app.wallet === undefined) {
           throw new Error('No wallet available');
         }
 
+        const promptText = `
+            &to=${tx.to}
+            &data=${tx.data}
+            &value=${tx.value}`;
+
         const promptResult = await promptUser({
-          promptText: `Send ${formatBalance(
-            tx.value,
-            'ETH',
-          )} to ${formatCompactAddress(tx.to)}?`,
+          promptText,
         });
 
         if (promptResult !== 'Yes') {
@@ -71,7 +75,7 @@ export default function RequestHandler(
             nonce: await app.wallet.Nonce(),
             ethValue: BigNumber.from(tx.value),
             contractAddress: tx.to,
-            encodedFunction: '0x',
+            encodedFunction: tx.data,
           },
           app.wallet.privateKey,
         );

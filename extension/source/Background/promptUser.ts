@@ -5,7 +5,6 @@ import getPropOrUndefined from '../helpers/getPropOrUndefined';
 
 export default function promptUser(opt: {
   promptText: string;
-  buttons?: string[];
 }): Promise<string | undefined> {
   const cleanupTasks = new TaskQueue();
 
@@ -23,11 +22,7 @@ export default function promptUser(opt: {
       }
 
       const popup = await browser.windows.create({
-        url: browser.runtime.getURL(
-          `confirm.html?promptText=${opt.promptText}&id=${id}&buttons=${(
-            opt.buttons ?? ['Yes', 'No']
-          ).join(',')}`,
-        ),
+        url: browser.runtime.getURL(`confirm.html?${opt.promptText}&id=${id}`),
         type: 'popup',
         width: popupWidth,
         height: 500,

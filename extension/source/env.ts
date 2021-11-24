@@ -1,6 +1,8 @@
 import { requireEnv, requireIntEnv } from './helpers/envTools';
 
 export const CHAIN_ID = requireIntEnv(process.env.CHAIN_ID);
+export const PROVIDER_URL = requireEnv(process.env.PROVIDER_URL);
+// export const ETHERSCAN_KEY = requireEnv(process.env.ETHERSCAN_KEY);
 
 export const PRIVATE_KEY_STORAGE_KEY = requireEnv(
   process.env.PRIVATE_KEY_STORAGE_KEY,

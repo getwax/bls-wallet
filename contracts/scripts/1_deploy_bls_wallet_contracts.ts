@@ -1,10 +1,7 @@
 require('dotenv').config();
 
-import { Contract } from "ethers";
-import { ethers, network } from "hardhat";
+import { network } from "hardhat";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
-
-const utils = ethers.utils;
 
 import Fixture from "../shared/helpers/Fixture";
 
@@ -13,11 +10,7 @@ async function main() {
   if (network.name == "rinkarby") {
     let addresses = getDeployedAddresses(network.name);
 
-    fx = await Fixture.create(
-      Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
-      true,
-      addresses.blsLibAddress
-    );
+    fx = await Fixture.create();
   }
   else {
     fx = await Fixture.create();
@@ -26,7 +19,6 @@ async function main() {
 
   console.log(`verificationGateway: ${fx.verificationGateway.address}`);
   console.log(`blsExpander: ${fx.blsExpander.address}`);
-
 }
 
 // We recommend this pattern to be able to use async/await everywhere

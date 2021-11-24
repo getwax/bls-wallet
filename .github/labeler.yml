@@ -1,0 +1,10 @@
+aggregator:
+  - aggregator/**/*
+extension:
+  - extension/**/*
+contracts:
+  - contracts/**/*
+clients:
+  - clients/**/*
+signer:
+  - signer/**/*
