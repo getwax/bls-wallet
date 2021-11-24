@@ -1538,12 +1538,12 @@
   dependencies:
     mkdirp "^1.0.4"
 
-"@toruslabs/openlogin-jrpc@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@toruslabs/openlogin-jrpc/-/openlogin-jrpc-1.0.2.tgz#ec29f1a45eaf0dcbdb0e1ebd5d0543f987198a8a"
-  integrity sha512-UcnAO3QZ7uUBxvEscBYpQYkZYwuP/CXQTI9zD9dGXyJk6YdZXQCN715kCQVangJFG7koH0re1/qnnMWWok8upQ==
+"@toruslabs/openlogin-jrpc@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@toruslabs/openlogin-jrpc/-/openlogin-jrpc-1.3.0.tgz#9d20ded133f2524e9b4bf8e53ae594aaab4643c7"
+  integrity sha512-Tfgjn2t8PRdLvKif2oX+ewI1c5PjPCg0N+oDTeGWQAZc3xufBElAXmzE47g0Z3UaAidc406hcNdjmjjuBy+2yw==
   dependencies:
-    "@toruslabs/openlogin-utils" "^1.0.2"
+    "@toruslabs/openlogin-utils" "^1.3.0"
     end-of-stream "^1.4.4"
     events "^3.3.0"
     fast-safe-stringify "^2.1.1"
@@ -1551,10 +1551,10 @@
     pump "^3.0.0"
     readable-stream "^3.6.0"
 
-"@toruslabs/openlogin-utils@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@toruslabs/openlogin-utils/-/openlogin-utils-1.0.2.tgz#09e10956c55729d4615a98d506d7345f3b4adb9e"
-  integrity sha512-f9NrKBiLvlyttUT8y6VNyc2Byd89cdmpHQKaS3B6dG2JdPID30p0rPHswVonh9r/zImFQqoywukgKnZJXWK/ig==
+"@toruslabs/openlogin-utils@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@toruslabs/openlogin-utils/-/openlogin-utils-1.3.0.tgz#e3b4788d85a6995fe3ece1e337715b5ac0ff4970"
+  integrity sha512-ugyBWIhNaaGJuGm4EqhNGJ1pjnUNGVwsyvMc6CCtgTEi/C07NdFUUMM9QqKcTGmRG8prdtbIlsVeTricK7EnUQ==
   dependencies:
     base64url "^3.0.1"
     keccak "^3.0.2"
