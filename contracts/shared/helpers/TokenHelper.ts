@@ -68,11 +68,10 @@ export default class TokenHelper {
     recipient: string,
     amount: BigNumber,
   ) {
-    await this.fx.verificationGateway.actionCalls(
+    await this.fx.verificationGateway.processBundle(
       this.fx.blsWalletSigner.aggregate([
         sender.sign({
           nonce,
-          atomic: true,
           actions: [
             {
               ethValue: BigNumber.from(0),

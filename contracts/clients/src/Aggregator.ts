@@ -1,4 +1,6 @@
-import { Bundle, PublicKey, Signature } from "./signer";
+import { BigNumber } from "ethers";
+import { solidityPack } from "ethers/lib/utils";
+import { Bundle } from "./signer";
 
 // TODO: Rename to BundleFailure?
 type TransactionFailure =
@@ -17,14 +19,13 @@ export type ActionDataDTO = {
 
 export type OperationDTO = {
   nonce: string;
-  atomic: boolean;
   actions: ActionDataDTO[];
 };
 
 export type BundleDTO = {
-  users: PublicKey[];
+  senderPublicKeys: [string, string, string, string][];
   operations: OperationDTO[];
-  signature: Signature;
+  signature: [string, string];
 };
 
 export default class Aggregator {
@@ -69,16 +70,26 @@ export default class Aggregator {
 
 function toDto(bundle: Bundle): BundleDTO {
   return {
-    users: bundle.users,
+    senderPublicKeys: bundle.senderPublicKeys.map(([n0, n1, n2, n3]) => [
+      BigNumber.from(n0).toHexString(),
+      BigNumber.from(n1).toHexString(),
+      BigNumber.from(n2).toHexString(),
+      BigNumber.from(n3).toHexString(),
+    ]),
     operations: bundle.operations.map((op) => ({
-      nonce: op.nonce.toHexString(),
-      atomic: op.atomic,
+      nonce: BigNumber.from(op.nonce).toHexString(),
       actions: op.actions.map((a) => ({
-        ethValue: a.ethValue.toHexString(),
+        ethValue: BigNumber.from(a.ethValue).toHexString(),
         contractAddress: a.contractAddress,
-        encodedFunction: a.encodedFunction,
+        encodedFunction:
+          typeof a.encodedFunction === "string"
+            ? a.encodedFunction
+            : solidityPack(["bytes"], [a.encodedFunction]),
       })),
     })),
-    signature: bundle.signature,
+    signature: [
+      BigNumber.from(bundle.signature[0]).toHexString(),
+      BigNumber.from(bundle.signature[1]).toHexString(),
+    ],
   };
 }

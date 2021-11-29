@@ -50,16 +50,15 @@ describe("Upgrade", async function () {
     );
 
     await (
-      await fx.verificationGateway.actionCalls(
+      await fx.verificationGateway.processBundle(
         wallet.sign({
           nonce: await wallet.Nonce(),
-          atomic: true,
           actions: [
             {
               ethValue: ethers.BigNumber.from(0),
-              contractAddress: fx.verificationGateway.contract.address,
+              contractAddress: fx.verificationGateway.address,
               encodedFunction:
-                fx.verificationGateway.contract.interface.encodeFunctionData(
+                fx.verificationGateway.interface.encodeFunctionData(
                   "walletAdminCall",
                   [
                     wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),

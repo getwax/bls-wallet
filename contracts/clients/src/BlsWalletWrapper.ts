@@ -6,11 +6,15 @@ import {
   Operation,
 } from "./signer";
 
-import VerificationGateway from "./VerificationGateway";
 import TransparentUpgradeableProxyBytecode from "./contractAbis/TransparentUpgradeableProxyBytecode";
 
-// eslint-disable-next-line camelcase
-import { BLSWallet, BLSWallet__factory } from "../typechain";
+import {
+  BLSWallet,
+  // eslint-disable-next-line camelcase
+  BLSWallet__factory,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+} from "../typechain";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -36,14 +40,13 @@ export default class BlsWalletWrapper {
   ): Promise<string> {
     blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
 
-    const verificationGateway = new VerificationGateway(
+    const verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
 
-    const proxyAdminAddress = await verificationGateway.contract.proxyAdmin();
-    const blsWalletLogicAddress =
-      await verificationGateway.contract.blsWalletLogic();
+    const proxyAdminAddress = await verificationGateway.proxyAdmin();
+    const blsWalletLogicAddress = await verificationGateway.blsWalletLogic();
 
     const initFunctionParams =
       BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
@@ -115,7 +118,7 @@ export default class BlsWalletWrapper {
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<BigNumber> {
-    const verificationGateway = new VerificationGateway(
+    const verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );

@@ -7,12 +7,16 @@ import {
   BlsWalletWrapper,
   BlsWalletSigner,
   initBlsWalletSigner,
-  VerificationGateway,
 } from "../../clients/src";
 
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
+import {
+  VerificationGateway,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+} from "../../typechain";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -80,7 +84,7 @@ export default class Fixture {
       await (await blsExpander.initialize(vgContract.address)).wait();
     } catch (e) {}
 
-    const verificationGateway = new VerificationGateway(
+    const verificationGateway = VerificationGateway__factory.connect(
       vgContract.address,
       vgContract.signer,
     );
@@ -106,12 +110,8 @@ export default class Fixture {
 
         // Perform an empty transaction to trigger wallet creation
         await (
-          await verificationGateway.actionCalls(
-            wallet.sign({
-              nonce: BigNumber.from(0),
-              atomic: true,
-              actions: [],
-            }),
+          await verificationGateway.processBundle(
+            wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
           )
         ).wait();
 

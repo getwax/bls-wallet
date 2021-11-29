@@ -15,7 +15,7 @@ export default (
     const signature = signer.sign(message);
 
     return {
-      users: [signer.pubkey],
+      senderPublicKeys: [signer.pubkey],
       operations: [operation],
       signature,
     };

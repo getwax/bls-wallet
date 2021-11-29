@@ -7,6 +7,7 @@ import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
 
 import { network } from "hardhat";
+import { solidityPack } from "ethers/lib/utils";
 
 let fx: Fixture;
 let th: TokenHelper;
@@ -59,7 +60,6 @@ async function logGasForTransfers() {
     for (let i = 0; i < transferCount; i++) {
       const tx = blsWallets[i].sign({
         nonce: BigNumber.from(nonce++),
-        atomic: true,
         actions: [
           {
             ethValue: BigNumber.from(0),
@@ -81,13 +81,14 @@ async function logGasForTransfers() {
     const aggTx = fx.blsWalletSigner.aggregate(txs);
     console.log("Done signing & aggregating.");
 
-    const methodId = txs[0].operations[0].actions[0].encodedFunction.slice(
-      0,
-      10,
+    const encodedFunction = solidityPack(
+      ["bytes"],
+      [txs[0].operations[0].actions[0].encodedFunction],
     );
-    const encodedParamSets = txs.map(
-      (tx) => `0x${tx.operations[0].actions[0].encodedFunction.slice(10)}`,
-    );
+
+    const methodId = encodedFunction.slice(0, 10);
+
+    const encodedParamSets = txs.map((tx) => `0x${encodedFunction.slice(10)}`);
     try {
       const publicKeyHash = fx.blsWalletSigner.getPublicKeyHash(
         blsWallets[0].privateKey,

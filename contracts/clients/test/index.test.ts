@@ -18,7 +18,6 @@ const samples = (() => {
 
   const bundleTemplate: Operation = {
     nonce: BigNumber.from(123),
-    atomic: true,
     actions: [
       {
         ethValue: BigNumber.from(0),
@@ -70,7 +69,7 @@ describe("index", () => {
     expect(verify(bundleBadSig)).to.equal(false);
 
     const bundleBadMessage: Bundle = {
-      users: bundle.users,
+      senderPublicKeys: bundle.senderPublicKeys,
       operations: [
         {
           ...bundle.operations[0],

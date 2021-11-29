@@ -1,23 +1,15 @@
 import { BigNumber } from "@ethersproject/bignumber";
-import { solG1, solG2 } from "../../deps/hubble-bls/mcl";
+import { VerificationGateway } from "../../typechain";
 
-export type PublicKey = solG2;
-export type Signature = solG1;
+export type Bundle = Parameters<VerificationGateway["processBundle"]>[0];
+
+export type Operation = Bundle["operations"][number];
+
+export type PublicKey = Bundle["senderPublicKeys"][number];
+export type Signature = Bundle["signature"];
 
 export type ActionData = {
   ethValue: BigNumber;
   contractAddress: string;
   encodedFunction: string;
-};
-
-export type Operation = {
-  nonce: BigNumber;
-  atomic: boolean;
-  actions: ActionData[];
-};
-
-export type Bundle = {
-  users: PublicKey[];
-  operations: Operation[];
-  signature: Signature;
 };
