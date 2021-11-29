@@ -87,9 +87,10 @@ export default class BlsWalletWrapper {
       provider,
     );
 
-    const walletContract = new BLSWallet__factory(
-      provider as unknown as ethers.Signer,
-    ).attach(contractAddress);
+    const walletContract = BLSWallet__factory.connect(
+      contractAddress,
+      provider,
+    );
 
     return new BlsWalletWrapper(
       blsWalletSigner,
@@ -124,9 +125,10 @@ export default class BlsWalletWrapper {
       publicKeyHash,
     );
 
-    const walletContract = new BLSWallet__factory(
-      signerOrProvider as ethers.Signer,
-    ).attach(contractAddress);
+    const walletContract = BLSWallet__factory.connect(
+      contractAddress,
+      signerOrProvider,
+    );
 
     // TODO: What happens when VG hasn't created the wallet yet? This probably
     // throws, and we need to return zero in this case.
