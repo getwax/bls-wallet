@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 import "@nomiclabs/hardhat-ethers";
 
 import { ethers } from "hardhat";
-import { Wallet, BigNumber } from "ethers";
+import { Wallet } from "ethers";
 import { Create2Deployer } from "../../typechain";
 
 dotenv.config();
@@ -43,7 +43,9 @@ export default async function deployerContract(): Promise<Create2Deployer> {
   // If deployer contract doesn't exist at expected address, deploy it there
   if ((await ethers.provider.getCode(deployerAddress)) === "0x") {
     if ((await deployerWallet.getTransactionCount()) > 0) {
-      throw "No contract at expected address, and first transaction already used";
+      throw new Error(
+        "No contract at expected address, and first transaction already used",
+      );
     }
     await (await Create2Deployer.deploy()).deployed();
   }

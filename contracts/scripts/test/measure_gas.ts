@@ -1,10 +1,13 @@
+/* eslint-disable no-process-exit */
+
 import { BigNumber } from "ethers";
-import { Transaction } from "../../clients/src";
+import { Bundle } from "../../clients/src";
 import getDeployedAddresses from "../../shared/helpers/getDeployedAddresses";
 import Fixture from "../../shared/helpers/Fixture";
 import TokenHelper from "../../shared/helpers/TokenHelper";
 
 import { network } from "hardhat";
+import { solidityPack } from "ethers/lib/utils";
 
 let fx: Fixture;
 let th: TokenHelper;
@@ -43,7 +46,7 @@ async function logGasForTransfers() {
 
     // encode transfer to consecutive addresses of 1*10^-18 of a token
     // signed by first bls wallet
-    const txs: Transaction[] = [];
+    const txs: Bundle[] = [];
     const startNonce: number = (await blsWallets[0].Nonce()).toNumber();
     let nonce = startNonce;
     console.log(
@@ -59,12 +62,15 @@ async function logGasForTransfers() {
         nonce: BigNumber.from(nonce++),
         actions: [
           {
-            contract: th.testToken,
-            method: "transfer",
-            args: [
-              "0x" + (i + 1).toString(16).padStart(40, "0"),
-              BigNumber.from(i).toHexString(),
-            ],
+            ethValue: BigNumber.from(0),
+            contractAddress: th.testToken.address,
+            encodedFunction: th.testToken.interface.encodeFunctionData(
+              "transfer",
+              [
+                "0x" + (i + 1).toString(16).padStart(40, "0"),
+                BigNumber.from(i).toHexString(),
+              ],
+            ),
           },
         ],
       });
@@ -75,13 +81,14 @@ async function logGasForTransfers() {
     const aggTx = fx.blsWalletSigner.aggregate(txs);
     console.log("Done signing & aggregating.");
 
-    const methodId = txs[0].subTransactions[0].actions[0].encodedFunction.slice(
-      0,
-      10,
+    const encodedFunction = solidityPack(
+      ["bytes"],
+      [txs[0].operations[0].actions[0].encodedFunction],
     );
-    const encodedParamSets = txs.map(
-      (tx) => `0x${tx.subTransactions[0].actions[0].encodedFunction.slice(10)}`,
-    );
+
+    const methodId = encodedFunction.slice(0, 10);
+
+    const encodedParamSets = txs.map((tx) => `0x${encodedFunction.slice(10)}`);
     try {
       const publicKeyHash = fx.blsWalletSigner.getPublicKeyHash(
         blsWallets[0].privateKey,

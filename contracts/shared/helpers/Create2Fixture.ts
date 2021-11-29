@@ -1,4 +1,4 @@
-import * as dotenv from "dotenv";
+import "dotenv";
 import "@nomiclabs/hardhat-ethers";
 
 import { ethers } from "hardhat";
@@ -53,7 +53,7 @@ export default class Create2Fixture {
     constructorParamsBytes: string = "0x",
     salt: BigNumber = BigNumber.from(0),
   ): string {
-    const initCode = factory.bytecode + constructorParamsBytes.substr(2);
+    // const initCode = factory.bytecode + constructorParamsBytes.substr(2);
 
     return "";
   }

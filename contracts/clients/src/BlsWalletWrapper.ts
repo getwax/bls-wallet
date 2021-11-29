@@ -1,41 +1,29 @@
-import * as ethers from "ethers";
+import { ethers, BigNumber } from "ethers";
 import {
-  ActionData,
   BlsWalletSigner,
   initBlsWalletSigner,
-  Transaction,
+  Bundle,
+  Operation,
 } from "./signer";
 
-import VerificationGateway from "./VerificationGateway";
-import BlsWalletAbi from "./contractAbis/BlsWalletAbi";
-import TransparentUpgradeableProxyBytecode from "./contractAbis/TransparentUpgradeableProxyBytecode";
-
-const BigNumber = ethers.BigNumber;
-type BigNumber = ethers.BigNumber;
+import {
+  BLSWallet,
+  // eslint-disable-next-line camelcase
+  BLSWallet__factory,
+  // eslint-disable-next-line camelcase
+  TransparentUpgradeableProxy__factory,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+} from "../typechain";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
-type Action =
-  | {
-      ethValue?: BigNumber;
-      contract: ethers.Contract;
-    }
-  | {
-      ethValue?: BigNumber;
-      contract: ethers.Contract;
-      method: string;
-      args: string[];
-    };
-
-export default class BlsWallet {
+export default class BlsWalletWrapper {
   private constructor(
-    public provider: ethers.providers.Provider,
-    public network: ethers.providers.Network,
-    public verificationGateway: VerificationGateway,
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
     public address: string,
-    public walletContract: ethers.Contract,
+    public walletContract: BLSWallet,
   ) {}
 
   /** Get the wallet contract address for the given key, if it exists. */
@@ -52,18 +40,18 @@ export default class BlsWallet {
   ): Promise<string> {
     blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
 
-    const verificationGateway = new VerificationGateway(
+    const verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
 
-    const proxyAdminAddress = await verificationGateway.contract.proxyAdmin();
-    const blsWalletLogicAddress =
-      await verificationGateway.contract.blsWalletLogic();
+    const proxyAdminAddress = await verificationGateway.proxyAdmin();
+    const blsWalletLogicAddress = await verificationGateway.blsWalletLogic();
 
-    const initFunctionParams = new ethers.utils.Interface(
-      BlsWalletAbi,
-    ).encodeFunctionData("initialize", [verificationGatewayAddress]);
+    const initFunctionParams =
+      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
+        verificationGatewayAddress,
+      ]);
 
     return ethers.utils.getCreate2Address(
       verificationGatewayAddress,
@@ -71,7 +59,7 @@ export default class BlsWallet {
       ethers.utils.solidityKeccak256(
         ["bytes", "bytes"],
         [
-          TransparentUpgradeableProxyBytecode,
+          TransparentUpgradeableProxy__factory.bytecode,
           ethers.utils.defaultAbiCoder.encode(
             ["address", "address", "bytes"],
             [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
@@ -89,34 +77,25 @@ export default class BlsWallet {
     privateKey: string,
     verificationGatewayAddress: string,
     provider: ethers.providers.Provider,
-  ): Promise<BlsWallet> {
+  ): Promise<BlsWalletWrapper> {
     const network = await provider.getNetwork();
 
     const blsWalletSigner = await initBlsWalletSigner({
       chainId: network.chainId,
     });
 
-    const verificationGateway = new VerificationGateway(
-      verificationGatewayAddress,
-      provider,
-    );
-
-    const contractAddress = await BlsWallet.Address(
+    const contractAddress = await BlsWalletWrapper.Address(
       privateKey,
       verificationGatewayAddress,
       provider,
     );
 
-    const walletContract = new ethers.Contract(
+    const walletContract = BLSWallet__factory.connect(
       contractAddress,
-      BlsWalletAbi,
       provider,
     );
 
-    return new BlsWallet(
-      provider,
-      network,
-      verificationGateway,
+    return new BlsWalletWrapper(
       blsWalletSigner,
       privateKey,
       contractAddress,
@@ -139,7 +118,7 @@ export default class BlsWallet {
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<BigNumber> {
-    const verificationGateway = new VerificationGateway(
+    const verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
@@ -149,9 +128,8 @@ export default class BlsWallet {
       publicKeyHash,
     );
 
-    const walletContract = new ethers.Contract(
+    const walletContract = BLSWallet__factory.connect(
       contractAddress,
-      BlsWalletAbi,
       signerOrProvider,
     );
 
@@ -160,61 +138,9 @@ export default class BlsWallet {
     return await walletContract.nonce();
   }
 
-  /**
-   * Sign a transaction, producing a `TransactionData` object suitable for use
-   * with an aggregator.
-   */
-  sign({
-    nonce,
-    atomic = true,
-    actions,
-  }: {
-    nonce: BigNumber;
-    atomic?: boolean;
-    actions: Action[];
-  }): Transaction {
-    const fullActions: ActionData[] = actions.map((a) => {
-      const encodedFunction =
-        "method" in a
-          ? a.contract.interface.encodeFunctionData(a.method, a.args)
-          : "0x";
-
-      return {
-        ethValue: a.ethValue ?? BigNumber.from(0),
-        contractAddress: a.contract.address,
-        encodedFunction,
-      };
-    });
-
-    return this.blsWalletSigner.sign(
-      {
-        nonce,
-        atomic,
-        actions: fullActions,
-      },
-      this.privateKey,
-    );
-  }
-
-  signTransferToOrigin({
-    amount,
-    token,
-    nonce,
-  }: {
-    amount: BigNumber;
-    token: ethers.Contract;
-    nonce: BigNumber;
-  }): Transaction {
-    return this.sign({
-      nonce,
-      actions: [
-        {
-          contract: this.verificationGateway.contract,
-          method: "transferToOrigin",
-          args: [amount.toHexString(), token.address],
-        },
-      ],
-    });
+  /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
+  sign(operation: Operation): Bundle {
+    return this.blsWalletSigner.sign(operation, this.privateKey);
   }
 
   static async #BlsWalletSigner(

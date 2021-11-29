@@ -1,18 +1,15 @@
-import { expect, assert } from "chai";
+import { expect } from "chai";
 import expectRevert from "../shared/helpers/expectRevert";
 
-import { BigNumber } from "@ethersproject/bignumber";
+import { BigNumber, ContractFactory } from "ethers";
 import { ethers } from "hardhat";
 import deployerContract, {
   defaultDeployerAddress,
   defaultDeployerWallet,
 } from "../shared/helpers/deployDeployer";
-import { Create2Deployer, Create2Deployer__factory } from "../typechain";
-import { ContractFactory } from "@ethersproject/contracts";
+import { Create2Deployer } from "../typechain";
 
 describe("Deployer", async function () {
-  let deployerSigner;
-  let eoaAddress;
   let Create2Deployer: ContractFactory;
   let create2Deployer: Create2Deployer;
   this.beforeAll(async function () {

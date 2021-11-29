@@ -1,4 +1,5 @@
-import { Contract } from "ethers";
+/* eslint-disable no-process-exit */
+
 import { network, ethers } from "hardhat";
 import Fixture from "../../shared/helpers/Fixture";
 import getDeployedAddresses, {
@@ -7,9 +8,9 @@ import getDeployedAddresses, {
 
 let config: DeployedAddresses;
 
-let ethToken: Contract;
+// let ethToken: Contract;
 
-let blsWallets: Contract[];
+// let blsWallets: Contract[];
 
 async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
   config = getDeployedAddresses(network.name);
@@ -28,9 +29,9 @@ async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
   console.log("Attaching to token:", config.tokenAddress);
   const ERC20 = await ethers.getContractFactory("MockERC20");
   ERC20.attach(config.tokenAddress);
-  if (config.ethAddress) {
-    ethToken = ERC20.attach(config.ethAddress);
-  }
+  // if (config.ethAddress) {
+  //   ethToken = ERC20.attach(config.ethAddress);
+  // }
   return fx;
 }
 
@@ -47,7 +48,7 @@ async function main() {
   );
   console.log(`BlsWallet contract addresses: ${config.blsAddresses}`);
 
-  blsWallets = config.blsAddresses.map((a) => fx.BLSWallet.attach(a));
+  // blsWallets = config.blsAddresses.map((a) => fx.BLSWallet.attach(a));
 
   // blsSignFunction({
   //   blsSigner: fx.blsSigners[0],

@@ -47,7 +47,7 @@ export async function init() {
 }
 
 export function validateDomain(domain: Domain) {
-  if (domain.length != 32) {
+  if (domain.length !== 32) {
     throw new BadDomain(`Expect 32 bytes but got ${domain.length}`);
   }
 }
@@ -160,7 +160,7 @@ export function verifyMultipleRaw(
 ): boolean {
   const size = pubkeys.length;
   if (size === 0) throw new EmptyArray("number of public key is zero");
-  if (size != messages.length) {
+  if (size !== messages.length) {
     throw new MismatchLength(
       `public keys ${size}; messages ${messages.length}`,
     );
@@ -227,7 +227,7 @@ export function dumpG2(solG2: solG2): string {
 
 export function loadG1(hex: string): solG1 {
   const bytesarray = arrayify(hex);
-  if (bytesarray.length != 64) {
+  if (bytesarray.length !== 64) {
     throw new BadByteLength(`Expect length 64 but got ${bytesarray.length}`);
   }
   const x = hexlify(bytesarray.slice(0, 32));
@@ -237,7 +237,7 @@ export function loadG1(hex: string): solG1 {
 
 export function loadG2(hex: string): solG2 {
   const bytesarray = arrayify(hex);
-  if (bytesarray.length != 128) {
+  if (bytesarray.length !== 128) {
     throw new BadByteLength(`Expect length 128 but got ${bytesarray.length}`);
   }
   const x0 = hexlify(bytesarray.slice(0, 32));

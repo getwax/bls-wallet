@@ -1,7 +1,16 @@
 import Aggregator from "./Aggregator";
-import BlsWallet from "./BlsWallet";
-import VerificationGateway from "./VerificationGateway";
+import BlsWalletWrapper from "./BlsWalletWrapper";
+
+import type { VerificationGateway } from "../typechain/VerificationGateway";
+// eslint-disable-next-line camelcase
+import { VerificationGateway__factory } from "../typechain/factories/VerificationGateway__factory";
 
 export * from "./signer";
 
-export { Aggregator, BlsWallet, VerificationGateway };
+export {
+  Aggregator,
+  BlsWalletWrapper,
+  VerificationGateway,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+};

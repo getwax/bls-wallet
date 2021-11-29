@@ -1,5 +1,3 @@
-import { BigNumber } from "@ethersproject/bignumber";
-import { ethers } from "hardhat";
 import Create2Fixture from "./Create2Fixture";
 
 export default async function precompileCostEstimator(): Promise<string> {

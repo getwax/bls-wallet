@@ -1,5 +1,8 @@
-import { Transaction } from "./signer";
+import { BigNumber } from "ethers";
+import { solidityPack } from "ethers/lib/utils";
+import { Bundle } from "./signer";
 
+// TODO: Rename to BundleFailure?
 type TransactionFailure =
   | { type: "invalid-format"; description: string }
   | { type: "invalid-signature"; description: string }
@@ -14,21 +17,15 @@ export type ActionDataDTO = {
   encodedFunction: string;
 };
 
-export type SubTransactionDTO = {
-  publicKey: string;
+export type OperationDTO = {
   nonce: string;
-  atomic: boolean;
   actions: ActionDataDTO[];
 };
 
-export type TransactionDTO = {
-  subTransactions: SubTransactionDTO[];
-  signature: string;
-};
-
-type CreateWalletResult = {
-  address?: string;
-  failures: TransactionFailure[];
+export type BundleDTO = {
+  senderPublicKeys: [string, string, string, string][];
+  operations: OperationDTO[];
+  signature: [string, string];
 };
 
 export default class Aggregator {
@@ -44,10 +41,10 @@ export default class Aggregator {
     this.origin = new URL(url).origin;
   }
 
-  async addTransaction(tx: Transaction): Promise<TransactionFailure[]> {
+  async add(bundle: Bundle): Promise<TransactionFailure[]> {
     const resp = await fetch(`${this.origin}/transaction`, {
       method: "POST",
-      body: JSON.stringify(toDto(tx)),
+      body: JSON.stringify(toDto(bundle)),
       headers: {
         "content-type": "application/json",
       },
@@ -71,18 +68,28 @@ export default class Aggregator {
   }
 }
 
-function toDto(tx: Transaction): TransactionDTO {
+function toDto(bundle: Bundle): BundleDTO {
   return {
-    subTransactions: tx.subTransactions.map((subTx) => ({
-      publicKey: subTx.publicKey,
-      nonce: subTx.nonce.toHexString(),
-      atomic: subTx.atomic,
-      actions: subTx.actions.map((a) => ({
-        ethValue: a.ethValue.toHexString(),
+    senderPublicKeys: bundle.senderPublicKeys.map(([n0, n1, n2, n3]) => [
+      BigNumber.from(n0).toHexString(),
+      BigNumber.from(n1).toHexString(),
+      BigNumber.from(n2).toHexString(),
+      BigNumber.from(n3).toHexString(),
+    ]),
+    operations: bundle.operations.map((op) => ({
+      nonce: BigNumber.from(op.nonce).toHexString(),
+      actions: op.actions.map((a) => ({
+        ethValue: BigNumber.from(a.ethValue).toHexString(),
         contractAddress: a.contractAddress,
-        encodedFunction: a.encodedFunction,
+        encodedFunction:
+          typeof a.encodedFunction === "string"
+            ? a.encodedFunction
+            : solidityPack(["bytes"], [a.encodedFunction]),
       })),
     })),
-    signature: tx.signature,
+    signature: [
+      BigNumber.from(bundle.signature[0]).toHexString(),
+      BigNumber.from(bundle.signature[1]).toHexString(),
+    ],
   };
 }

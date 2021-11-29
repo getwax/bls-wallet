@@ -3,12 +3,8 @@ import { expect } from "chai";
 import { ethers, network } from "hardhat";
 
 import Fixture from "../shared/helpers/Fixture";
-import TokenHelper from "../shared/helpers/TokenHelper";
-
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import splitHex256 from "../shared/helpers/splitHex256";
-const utils = ethers.utils;
 
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
@@ -19,7 +15,7 @@ describe("Upgrade", async function () {
       await (
         await fundedSigner.sendTransaction({
           to: defaultDeployerAddress(),
-          value: utils.parseEther("1"),
+          value: ethers.utils.parseEther("1"),
         })
       ).wait();
 
@@ -39,7 +35,7 @@ describe("Upgrade", async function () {
     const blsWallet = BLSWallet.attach(wallet.address);
 
     expect((await blsWallet.getPublicKey())[0].toHexString()).to.equal(
-      splitHex256(wallet.blsWalletSigner.getPublicKey(wallet.privateKey))[0],
+      wallet.blsWalletSigner.getPublicKey(wallet.privateKey)[0],
     );
 
     const MockWalletUpgraded = await ethers.getContractFactory(
@@ -54,17 +50,21 @@ describe("Upgrade", async function () {
     );
 
     await (
-      await fx.verificationGateway.actionCalls(
+      await fx.verificationGateway.processBundle(
         wallet.sign({
           nonce: await wallet.Nonce(),
           actions: [
             {
-              contract: fx.verificationGateway.contract,
-              method: "walletAdminCall",
-              args: [
-                wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
-                upgradeFunctionData,
-              ],
+              ethValue: ethers.BigNumber.from(0),
+              contractAddress: fx.verificationGateway.address,
+              encodedFunction:
+                fx.verificationGateway.interface.encodeFunctionData(
+                  "walletAdminCall",
+                  [
+                    wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
+                    upgradeFunctionData,
+                  ],
+                ),
             },
           ],
         }),

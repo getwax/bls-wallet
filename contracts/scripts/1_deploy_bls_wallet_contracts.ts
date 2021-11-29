@@ -1,5 +1,7 @@
+/* eslint-disable no-process-exit */
+
 import { network } from "hardhat";
-import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
+// import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 
 import Fixture from "../shared/helpers/Fixture";
 
@@ -7,8 +9,8 @@ require("dotenv").config();
 
 async function main() {
   let fx: Fixture;
-  if (network.name == "rinkarby") {
-    const addresses = getDeployedAddresses(network.name);
+  if (network.name === "rinkarby") {
+    // const addresses = getDeployedAddresses(network.name);
 
     fx = await Fixture.create();
   } else {

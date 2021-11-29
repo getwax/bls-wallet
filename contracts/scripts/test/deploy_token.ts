@@ -1,3 +1,5 @@
+/* eslint-disable no-process-exit */
+
 import { Contract } from "ethers";
 
 import { ethers } from "hardhat";

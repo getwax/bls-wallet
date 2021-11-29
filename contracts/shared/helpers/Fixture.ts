@@ -2,16 +2,21 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers } from "hardhat";
 import { Signer, Contract, ContractFactory, BigNumber } from "ethers";
 import { Provider } from "@ethersproject/abstract-provider";
+
 import {
-  BlsWallet,
+  BlsWalletWrapper,
   BlsWalletSigner,
   initBlsWalletSigner,
-  VerificationGateway,
 } from "../../clients/src";
 
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
+import {
+  VerificationGateway,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+} from "../../typechain";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -24,7 +29,7 @@ export default class Fixture {
     public signers: Signer[],
     public addresses: string[],
 
-    public lazyBlsWallets: (() => Promise<BlsWallet>)[],
+    public lazyBlsWallets: (() => Promise<BlsWalletWrapper>)[],
 
     public verificationGateway: VerificationGateway,
 
@@ -79,7 +84,7 @@ export default class Fixture {
       await (await blsExpander.initialize(vgContract.address)).wait();
     } catch (e) {}
 
-    const verificationGateway = new VerificationGateway(
+    const verificationGateway = VerificationGateway__factory.connect(
       vgContract.address,
       vgContract.signer,
     );
@@ -97,7 +102,7 @@ export default class Fixture {
       }
 
       return async () => {
-        const wallet = await BlsWallet.connect(
+        const wallet = await BlsWalletWrapper.connect(
           `0x${secretNumber.toString(16)}`,
           verificationGateway.address,
           vgContract.provider,
@@ -105,11 +110,8 @@ export default class Fixture {
 
         // Perform an empty transaction to trigger wallet creation
         await (
-          await verificationGateway.actionCalls(
-            wallet.sign({
-              nonce: BigNumber.from(0),
-              actions: [],
-            }),
+          await verificationGateway.processBundle(
+            wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
           )
         ).wait();
 
@@ -134,7 +136,7 @@ export default class Fixture {
    * Creates new BLS contract wallets from private keys
    * @returns array of wallets
    */
-  async createBLSWallets(): Promise<BlsWallet[]> {
+  async createBLSWallets(): Promise<BlsWalletWrapper[]> {
     return await Promise.all(
       this.lazyBlsWallets.map((lazyWallet) => lazyWallet()),
     );
