@@ -1,27 +1,25 @@
+// eslint-disable-next-line node/no-unpublished-import
 import { expect } from "chai";
-
 
 export default async function expectRevert(
   throwingPromise: Promise<any>,
-  expectedErrorMsg?: string
+  expectedErrorMsg?: string,
 ) {
   let failedToThrow = false;
   try {
     await throwingPromise;
     failedToThrow = true;
-  }
-  catch(e) {
-    if (expectedErrorMsg != undefined) {
-      let errMsg = (e as Error).message;
+  } catch (e) {
+    if (expectedErrorMsg !== undefined) {
+      const errMsg = (e as Error).message;
       expect(errMsg).to.contain(expectedErrorMsg);
     }
-  }
-  finally {
+  } finally {
     if (failedToThrow) {
       let failMsg = `No error received`;
-      if (expectedErrorMsg != undefined) {
-        failMsg += `, expected: ${expectedErrorMsg}`
-      };
+      if (expectedErrorMsg !== undefined) {
+        failMsg += `, expected: ${expectedErrorMsg}`;
+      }
       expect.fail(failMsg);
     }
   }

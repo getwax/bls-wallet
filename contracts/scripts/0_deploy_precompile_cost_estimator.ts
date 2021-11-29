@@ -1,14 +1,15 @@
+/* eslint-disable no-process-exit */
+
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 
-const hre = require("hardhat");
+// const hre = require("hardhat");
 
 async function main() {
   // await hre.run('compile');
 
-  ;
   console.log(
     "PrecompileCostEstimator:",
-    await deployAndRunPrecompileCostEstimator()
+    await deployAndRunPrecompileCostEstimator(),
   );
 }
 

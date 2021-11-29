@@ -35,12 +35,15 @@ export class NullBlsSinger implements BlsSignerInterface {
   get pubkey(): solG2 {
     throw new NullSigner("NullSinger has no public key");
   }
+
   sign(_message: string): solG1 {
     throw new NullSigner("NullSinger dosen't sign");
   }
+
   verify(_signature: solG1, _pubkey: solG2, _message: string): boolean {
     throw new NullSigner("NullSinger dosen't verify");
   }
+
   verifyMultiple(
     _aggSignature: solG1,
     _pubkeys: solG2[],
@@ -60,6 +63,7 @@ export class BlsVerifier {
     const messagePoint = hashToPoint(message, this.domain);
     return verifyRaw(signatureG1, pubkeyG2, messagePoint);
   }
+
   public verifyMultiple(
     aggSignature: solG1,
     pubkeys: solG2[],
@@ -77,6 +81,7 @@ export class BlsSignerFactory {
     await init();
     return new BlsSignerFactory();
   }
+
   private constructor() {}
 
   public getSigner(domain: Domain, secretHex: string) {
@@ -91,6 +96,7 @@ export class BlsSigner extends BlsVerifier implements BlsSignerInterface {
     super(domain);
     this._pubkey = getPubkey(secret);
   }
+
   get pubkey(): solG2 {
     return g2ToHex(this._pubkey);
   }

@@ -9,7 +9,7 @@ export default function splitHex256(hex: string) {
     throw new Error("hex doesn't fit evenly into 256 bit chunks");
   }
 
-  return Range(hex.length / 64).map((i) =>
-    `0x${hex.slice(64 * i, 64 * (i + 1))}`
+  return Range(hex.length / 64).map(
+    (i) => `0x${hex.slice(64 * i, 64 * (i + 1))}`,
   );
 }
