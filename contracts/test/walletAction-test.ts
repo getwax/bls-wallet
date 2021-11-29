@@ -55,7 +55,7 @@ describe("WalletActions", async function () {
     }
   });
 
-  it.only("should register new wallet", async function () {
+  it("should register new wallet", async function () {
     const wallet = await fx.lazyBlsWallets[0]();
     expect(fx.verificationGateway.address).to.equal(
       fx.verificationGateway.address,
