@@ -1,15 +1,15 @@
 import { keccak256 } from "@ethersproject/keccak256";
 import { pack as solidityPack } from "@ethersproject/solidity";
-import { TransactionTemplate } from "./types";
+import { Operation } from "./types";
 
 export default (
   chainId: number,
 ) => (
-  txTemplate: TransactionTemplate,
+  operation: Operation,
 ): string => {
   let encodedActionData = "0x";
 
-  for (const action of txTemplate.actions) {
+  for (const action of operation.actions) {
     encodedActionData = solidityPack(
       ["bytes", "uint256", "address", "bytes32"],
       [
@@ -25,7 +25,7 @@ export default (
     ["uint256", "uint256", "bytes32"],
     [
       chainId,
-      txTemplate.nonce,
+      operation.nonce,
       keccak256(encodedActionData),
     ],
   );

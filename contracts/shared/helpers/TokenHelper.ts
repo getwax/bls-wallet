@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import { utils } from "ethers";
-import { BigNumber, Signer, Contract, ContractFactory, getDefaultProvider } from "ethers";
-import { BlsWallet } from "../../clients/src";
+import { BigNumber, Signer, Contract } from "ethers";
+import { BlsWalletWrapper } from "../../clients/src";
 
 import Fixture from "./Fixture";
 
@@ -39,7 +39,7 @@ export default class TokenHelper {
   async distributeTokens(
     fromSigner: Signer,
     token: Contract,
-    wallets: BlsWallet[]
+    wallets: BlsWalletWrapper[]
   ) {
     const length = wallets.length;
     
@@ -53,7 +53,7 @@ export default class TokenHelper {
     }
   }
 
-  async walletTokenSetup(): Promise<BlsWallet[]> {
+  async walletTokenSetup(): Promise<BlsWalletWrapper[]> {
     let wallets = await this.fx.createBLSWallets();
 
     this.testToken = await TokenHelper.deployTestToken();
@@ -68,7 +68,7 @@ export default class TokenHelper {
 
   async transferFrom(
     nonce: BigNumber,
-    sender: BlsWallet,
+    sender: BlsWalletWrapper,
     recipient: string,
     amount: BigNumber,
   ) {
@@ -76,11 +76,15 @@ export default class TokenHelper {
       this.fx.blsWalletSigner.aggregate([
         sender.sign({
           nonce,
+          atomic: true,
           actions: [
             {
-              contract: this.testToken,
-              method: "transfer",
-              args: [recipient, amount.toHexString()],
+              ethValue: BigNumber.from(0),
+              contractAddress: this.testToken.address,
+              encodedFunction: this.testToken.interface.encodeFunctionData(
+                "transfer",
+                [recipient, amount.toHexString()],
+              ),
             },
           ],
         }),

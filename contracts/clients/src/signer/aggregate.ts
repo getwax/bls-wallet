@@ -1,13 +1,11 @@
 import * as hubbleBls from "../../deps/hubble-bls";
 
-import { Transaction } from "./types";
+import { Bundle } from "./types";
 
-export default (txs: Transaction[]): Transaction => {
-  const sigsG1 = txs.map(tx => hubbleBls.mcl.loadG1(tx.signature));
-  const aggSigG1 = hubbleBls.signer.aggregate(sigsG1);
-
+export default (bundles: Bundle[]): Bundle => {
   return {
-    subTransactions: txs.map(txSet => txSet.subTransactions).flat(),
-    signature: hubbleBls.mcl.dumpG1(aggSigG1),
+    users: bundles.map(b => b.users).flat(),
+    operations: bundles.map(b => b.operations).flat(),
+    signature: hubbleBls.signer.aggregate(bundles.map(b => b.signature)),
   };
 }

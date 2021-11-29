@@ -1,5 +1,6 @@
-import { Transaction } from './signer';
+import { Bundle, PublicKey, Signature } from './signer';
 
+// TODO: Rename to BundleFailure?
 type TransactionFailure =
   | { type: 'invalid-format'; description: string }
   | { type: 'invalid-signature'; description: string }
@@ -14,21 +15,16 @@ export type ActionDataDTO = {
   encodedFunction: string;
 };
 
-export type SubTransactionDTO = {
-  publicKey: string;
+export type OperationDTO = {
   nonce: string;
   atomic: boolean;
   actions: ActionDataDTO[];
 };
 
-export type TransactionDTO = {
-  subTransactions: SubTransactionDTO[];
-  signature: string;
-};
-
-type CreateWalletResult = {
-  address?: string;
-  failures: TransactionFailure[];
+export type BundleDTO = {
+  users: PublicKey[],
+  operations: OperationDTO[],
+  signature: Signature;
 };
 
 export default class Aggregator {
@@ -44,10 +40,10 @@ export default class Aggregator {
     this.origin = new URL(url).origin;
   }
 
-  async addTransaction(tx: Transaction): Promise<TransactionFailure[]> {
+  async add(bundle: Bundle): Promise<TransactionFailure[]> {
     const resp = await fetch(`${this.origin}/transaction`, {
       method: 'POST',
-      body: JSON.stringify(toDto(tx)),
+      body: JSON.stringify(toDto(bundle)),
       headers: {
         'content-type': 'application/json',
       },
@@ -71,18 +67,18 @@ export default class Aggregator {
   }
 }
 
-function toDto(tx: Transaction): TransactionDTO {
+function toDto(bundle: Bundle): BundleDTO {
   return {
-    subTransactions: tx.subTransactions.map(subTx => ({
-      publicKey: subTx.publicKey,
-      nonce: subTx.nonce.toHexString(),
-      atomic: subTx.atomic,
-      actions: subTx.actions.map(a => ({
+    users: bundle.users,
+    operations: bundle.operations.map(op => ({
+      nonce: op.nonce.toHexString(),
+      atomic: op.atomic,
+      actions: op.actions.map(a => ({
         ethValue: a.ethValue.toHexString(),
         contractAddress: a.contractAddress,
         encodedFunction: a.encodedFunction,
-      }))
+      })),
     })),
-    signature: tx.signature,
+    signature: bundle.signature,
   };
 }

@@ -1,11 +1,8 @@
 import { expect } from "chai";
 
 import { ethers, network } from "hardhat";
-const utils = ethers.utils;
 
 import Fixture from "../shared/helpers/Fixture";
-import TokenHelper from "../shared/helpers/TokenHelper";
-
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import splitHex256 from "../shared/helpers/splitHex256";
@@ -18,7 +15,7 @@ describe('Upgrade', async function () {
       let fundedSigner = (await ethers.getSigners())[0];
       await (await fundedSigner.sendTransaction({
         to: defaultDeployerAddress(),
-        value: utils.parseEther("1")
+        value: ethers.utils.parseEther("1")
       })).wait();
 
       // deploy the precompile contract (via deployer)
@@ -52,14 +49,18 @@ describe('Upgrade', async function () {
     await (await fx.verificationGateway.actionCalls(
       wallet.sign({
         nonce: await wallet.Nonce(),
+        atomic: true,
         actions: [
           {
-            contract: fx.verificationGateway.contract,
-            method: "walletAdminCall",
-            args: [
-              wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
-              upgradeFunctionData
-            ],
+            ethValue: ethers.BigNumber.from(0),
+            contractAddress: fx.verificationGateway.contract.address,
+            encodedFunction: fx.verificationGateway.contract.interface.encodeFunctionData(
+              "walletAdminCall",
+              [
+                wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
+                upgradeFunctionData
+              ],
+            ),
           },
         ],
       }),
