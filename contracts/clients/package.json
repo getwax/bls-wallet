@@ -12,7 +12,8 @@
     "build": "rm -rf dist && mkdir dist && cp -r typechain dist/typechain && tsc",
     "watch": "tsc -w",
     "test": "mocha dist/**/*.test.js",
-    "premerge": "yarn build && yarn test"
+    "premerge": "yarn build && yarn test",
+    "publish-experimental": "npm version $(node scripts/showBaseVersion.js)-$(git rev-parse HEAD | head -c7) --allow-same-version && npm publish --tag experimental"
   },
   "dependencies": {
     "ethers": "^5.5.0",
