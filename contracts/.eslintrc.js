@@ -21,5 +21,8 @@ module.exports = {
       { ignores: ["modules"] },
     ],
     "node/no-missing-import": "off",
+
+    // False-positives in typescript
+    "no-useless-constructor": "off",
   },
 };

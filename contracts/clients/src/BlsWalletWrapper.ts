@@ -1,18 +1,14 @@
-import * as ethers from 'ethers';
+import { ethers, BigNumber } from "ethers";
 import {
-  ActionData,
   BlsWalletSigner,
   initBlsWalletSigner,
   Bundle,
   Operation,
-} from './signer';
+} from "./signer";
 
-import VerificationGateway from './VerificationGateway';
-import BlsWalletAbi from './contractAbis/BlsWalletAbi';
-import TransparentUpgradeableProxyBytecode from './contractAbis/TransparentUpgradeableProxyBytecode';
-
-const BigNumber = ethers.BigNumber;
-type BigNumber = ethers.BigNumber;
+import VerificationGateway from "./VerificationGateway";
+import BlsWalletAbi from "./contractAbis/BlsWalletAbi";
+import TransparentUpgradeableProxyBytecode from "./contractAbis/TransparentUpgradeableProxyBytecode";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -44,12 +40,12 @@ export default class BlsWalletWrapper {
     );
 
     const proxyAdminAddress = await verificationGateway.contract.proxyAdmin();
-    const blsWalletLogicAddress = await verificationGateway.contract.blsWalletLogic();
+    const blsWalletLogicAddress =
+      await verificationGateway.contract.blsWalletLogic();
 
-    const initFunctionParams = new ethers.utils.Interface(BlsWalletAbi).encodeFunctionData(
-      "initialize",
-      [verificationGatewayAddress],
-    );
+    const initFunctionParams = new ethers.utils.Interface(
+      BlsWalletAbi,
+    ).encodeFunctionData("initialize", [verificationGatewayAddress]);
 
     return ethers.utils.getCreate2Address(
       verificationGatewayAddress,
@@ -60,11 +56,7 @@ export default class BlsWalletWrapper {
           TransparentUpgradeableProxyBytecode,
           ethers.utils.defaultAbiCoder.encode(
             ["address", "address", "bytes"],
-            [
-              blsWalletLogicAddress,
-              proxyAdminAddress,
-              initFunctionParams,
-            ],
+            [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
           ),
         ],
       ),
@@ -127,7 +119,9 @@ export default class BlsWalletWrapper {
     );
 
     const publicKeyHash = ethers.utils.keccak256(publicKey);
-    const contractAddress = await verificationGateway.walletFromHash(publicKeyHash);
+    const contractAddress = await verificationGateway.walletFromHash(
+      publicKeyHash,
+    );
 
     const walletContract = new ethers.Contract(
       contractAddress,
@@ -149,7 +143,7 @@ export default class BlsWalletWrapper {
     signerOrProvider: SignerOrProvider,
   ): Promise<BlsWalletSigner> {
     const chainId =
-      'getChainId' in signerOrProvider
+      "getChainId" in signerOrProvider
         ? await signerOrProvider.getChainId()
         : (await signerOrProvider.getNetwork()).chainId;
 
