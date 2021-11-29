@@ -1,12 +1,12 @@
-import { Transaction } from './signer';
+import { Transaction } from "./signer";
 
 type TransactionFailure =
-  | { type: 'invalid-format'; description: string }
-  | { type: 'invalid-signature'; description: string }
-  | { type: 'duplicate-nonce'; description: string }
-  | { type: 'insufficient-reward'; description: string }
-  | { type: 'unpredictable-gas-limit'; description: string }
-  | { type: 'invalid-creation'; description: string };
+  | { type: "invalid-format"; description: string }
+  | { type: "invalid-signature"; description: string }
+  | { type: "duplicate-nonce"; description: string }
+  | { type: "insufficient-reward"; description: string }
+  | { type: "unpredictable-gas-limit"; description: string }
+  | { type: "invalid-creation"; description: string };
 
 export type ActionDataDTO = {
   ethValue: string;
@@ -37,7 +37,7 @@ export default class Aggregator {
   constructor(url: string) {
     const parsedUrl = new URL(url);
 
-    if (parsedUrl.pathname !== '/' || parsedUrl.search !== '') {
+    if (parsedUrl.pathname !== "/" || parsedUrl.search !== "") {
       throw new Error(`Invalid client url includes pathname/search: ${url}`);
     }
 
@@ -46,10 +46,10 @@ export default class Aggregator {
 
   async addTransaction(tx: Transaction): Promise<TransactionFailure[]> {
     const resp = await fetch(`${this.origin}/transaction`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(toDto(tx)),
       headers: {
-        'content-type': 'application/json',
+        "content-type": "application/json",
       },
     });
 
@@ -63,7 +63,7 @@ export default class Aggregator {
       throw new Error(`Unexpected invalid JSON response: ${text}`);
     }
 
-    if (json === null || typeof json !== 'object' || !('failures' in json)) {
+    if (json === null || typeof json !== "object" || !("failures" in json)) {
       throw new Error(`Unexpected response: ${text}`);
     }
 
@@ -73,15 +73,15 @@ export default class Aggregator {
 
 function toDto(tx: Transaction): TransactionDTO {
   return {
-    subTransactions: tx.subTransactions.map(subTx => ({
+    subTransactions: tx.subTransactions.map((subTx) => ({
       publicKey: subTx.publicKey,
       nonce: subTx.nonce.toHexString(),
       atomic: subTx.atomic,
-      actions: subTx.actions.map(a => ({
+      actions: subTx.actions.map((a) => ({
         ethValue: a.ethValue.toHexString(),
         contractAddress: a.contractAddress,
         encodedFunction: a.encodedFunction,
-      }))
+      })),
     })),
     signature: tx.signature,
   };

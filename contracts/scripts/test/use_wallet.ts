@@ -1,9 +1,9 @@
 import { Contract } from "ethers";
-import { network } from "hardhat";
+import { network, ethers } from "hardhat";
 import Fixture from "../../shared/helpers/Fixture";
-import getDeployedAddresses, { DeployedAddresses } from "../../shared/helpers/getDeployedAddresses";
-
-import { ethers } from "hardhat";
+import getDeployedAddresses, {
+  DeployedAddresses,
+} from "../../shared/helpers/getDeployedAddresses";
 
 let config: DeployedAddresses;
 
@@ -11,43 +11,43 @@ let ethToken: Contract;
 
 let blsWallets: Contract[];
 
-
 async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
   config = getDeployedAddresses(network.name);
   console.log("config:", config);
 
   console.log("Creating fixture from use wallet...");
-  let fx = await Fixture.create(
+  const fx = await Fixture.create(
     blsSecretNumbers.length,
     true,
     config.blsLibAddress,
     config.vgAddress,
     config.expanderAddress,
-    blsSecretNumbers
+    blsSecretNumbers,
   );
 
   console.log("Attaching to token:", config.tokenAddress);
-  let ERC20 = await ethers.getContractFactory("MockERC20");
+  const ERC20 = await ethers.getContractFactory("MockERC20");
   ERC20.attach(config.tokenAddress);
   if (config.ethAddress) {
     ethToken = ERC20.attach(config.ethAddress);
-  }  
+  }
   return fx;
 }
 
 async function main() {
-
   // setup fixture with bls wallet secret numbers
-  let fx = await setup([
+  const fx = await setup([
     +process.env.BLS_SECRET_NUM_1,
     +process.env.BLS_SECRET_NUM_2,
-    +process.env.BLS_SECRET_NUM_3
+    +process.env.BLS_SECRET_NUM_3,
   ]);
-  
-  config.blsAddresses = (await fx.createBLSWallets()).map(wallet => wallet.address);
+
+  config.blsAddresses = (await fx.createBLSWallets()).map(
+    (wallet) => wallet.address,
+  );
   console.log(`BlsWallet contract addresses: ${config.blsAddresses}`);
-  
-  blsWallets = config.blsAddresses.map( a => fx.BLSWallet.attach(a) );
+
+  blsWallets = config.blsAddresses.map((a) => fx.BLSWallet.attach(a));
 
   // blsSignFunction({
   //   blsSigner: fx.blsSigners[0],
@@ -58,7 +58,6 @@ async function main() {
   //   functionName: ,
   //   params: []
   //   })
-
 }
 
 // class Wallet {
@@ -68,16 +67,12 @@ async function main() {
 //     contract: Contract
 //   ) {
 
-
-  // }
 // }
-
-
+// }
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
-  

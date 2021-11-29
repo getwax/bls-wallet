@@ -5,10 +5,9 @@ const hre = require("hardhat");
 async function main() {
   // await hre.run('compile');
 
-  ;
   console.log(
     "PrecompileCostEstimator:",
-    await deployAndRunPrecompileCostEstimator()
+    await deployAndRunPrecompileCostEstimator(),
   );
 }
 

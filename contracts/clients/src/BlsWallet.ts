@@ -1,32 +1,31 @@
-import * as ethers from 'ethers';
+import * as ethers from "ethers";
 import {
   ActionData,
   BlsWalletSigner,
   initBlsWalletSigner,
   Transaction,
-} from './signer';
+} from "./signer";
 
-import VerificationGateway from './VerificationGateway';
-import BlsWalletAbi from './contractAbis/BlsWalletAbi';
-import TransparentUpgradeableProxyBytecode from './contractAbis/TransparentUpgradeableProxyBytecode';
+import VerificationGateway from "./VerificationGateway";
+import BlsWalletAbi from "./contractAbis/BlsWalletAbi";
+import TransparentUpgradeableProxyBytecode from "./contractAbis/TransparentUpgradeableProxyBytecode";
 
 const BigNumber = ethers.BigNumber;
 type BigNumber = ethers.BigNumber;
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
-type Action = (
+type Action =
   | {
-    ethValue?: BigNumber;
-    contract: ethers.Contract,
-  }
+      ethValue?: BigNumber;
+      contract: ethers.Contract;
+    }
   | {
-    ethValue?: BigNumber;
-    contract: ethers.Contract,
-    method: string;
-    args: string[];
-  }
-);
+      ethValue?: BigNumber;
+      contract: ethers.Contract;
+      method: string;
+      args: string[];
+    };
 
 export default class BlsWallet {
   private constructor(
@@ -59,12 +58,12 @@ export default class BlsWallet {
     );
 
     const proxyAdminAddress = await verificationGateway.contract.proxyAdmin();
-    const blsWalletLogicAddress = await verificationGateway.contract.blsWalletLogic();
+    const blsWalletLogicAddress =
+      await verificationGateway.contract.blsWalletLogic();
 
-    const initFunctionParams = new ethers.utils.Interface(BlsWalletAbi).encodeFunctionData(
-      "initialize",
-      [verificationGatewayAddress],
-    );
+    const initFunctionParams = new ethers.utils.Interface(
+      BlsWalletAbi,
+    ).encodeFunctionData("initialize", [verificationGatewayAddress]);
 
     return ethers.utils.getCreate2Address(
       verificationGatewayAddress,
@@ -75,11 +74,7 @@ export default class BlsWallet {
           TransparentUpgradeableProxyBytecode,
           ethers.utils.defaultAbiCoder.encode(
             ["address", "address", "bytes"],
-            [
-              blsWalletLogicAddress,
-              proxyAdminAddress,
-              initFunctionParams,
-            ],
+            [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
           ),
         ],
       ),
@@ -150,7 +145,9 @@ export default class BlsWallet {
     );
 
     const publicKeyHash = ethers.utils.keccak256(publicKey);
-    const contractAddress = await verificationGateway.walletFromHash(publicKeyHash);
+    const contractAddress = await verificationGateway.walletFromHash(
+      publicKeyHash,
+    );
 
     const walletContract = new ethers.Contract(
       contractAddress,
@@ -167,16 +164,20 @@ export default class BlsWallet {
    * Sign a transaction, producing a `TransactionData` object suitable for use
    * with an aggregator.
    */
-  sign({ nonce, atomic = true, actions }: {
+  sign({
+    nonce,
+    atomic = true,
+    actions,
+  }: {
     nonce: BigNumber;
     atomic?: boolean;
     actions: Action[];
   }): Transaction {
-    const fullActions: ActionData[] = actions.map(a => {
-      const encodedFunction = ('method' in a
-        ? a.contract.interface.encodeFunctionData(a.method, a.args)
-        : '0x'
-      );
+    const fullActions: ActionData[] = actions.map((a) => {
+      const encodedFunction =
+        "method" in a
+          ? a.contract.interface.encodeFunctionData(a.method, a.args)
+          : "0x";
 
       return {
         ethValue: a.ethValue ?? BigNumber.from(0),
@@ -195,10 +196,14 @@ export default class BlsWallet {
     );
   }
 
-  signTransferToOrigin({ amount, token, nonce }: {
-    amount: BigNumber,
-    token: ethers.Contract,
-    nonce: BigNumber,
+  signTransferToOrigin({
+    amount,
+    token,
+    nonce,
+  }: {
+    amount: BigNumber;
+    token: ethers.Contract;
+    nonce: BigNumber;
   }): Transaction {
     return this.sign({
       nonce,
@@ -207,7 +212,7 @@ export default class BlsWallet {
           contract: this.verificationGateway.contract,
           method: "transferToOrigin",
           args: [amount.toHexString(), token.address],
-        }
+        },
       ],
     });
   }
@@ -216,7 +221,7 @@ export default class BlsWallet {
     signerOrProvider: SignerOrProvider,
   ): Promise<BlsWalletSigner> {
     const chainId =
-      'getChainId' in signerOrProvider
+      "getChainId" in signerOrProvider
         ? await signerOrProvider.getChainId()
         : (await signerOrProvider.getNetwork()).chainId;
 
