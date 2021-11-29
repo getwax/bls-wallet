@@ -9,7 +9,7 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && mkdir dist && cp -r typechain dist/typechain && tsc",
     "watch": "tsc -w",
     "test": "mocha dist/**/*.test.js"
   },
