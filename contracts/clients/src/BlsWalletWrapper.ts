@@ -6,12 +6,12 @@ import {
   Operation,
 } from "./signer";
 
-import TransparentUpgradeableProxyBytecode from "./contractAbis/TransparentUpgradeableProxyBytecode";
-
 import {
   BLSWallet,
   // eslint-disable-next-line camelcase
   BLSWallet__factory,
+  // eslint-disable-next-line camelcase
+  TransparentUpgradeableProxy__factory,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
 } from "../typechain";
@@ -59,7 +59,7 @@ export default class BlsWalletWrapper {
       ethers.utils.solidityKeccak256(
         ["bytes", "bytes"],
         [
-          TransparentUpgradeableProxyBytecode,
+          TransparentUpgradeableProxy__factory.bytecode,
           ethers.utils.defaultAbiCoder.encode(
             ["address", "address", "bytes"],
             [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
