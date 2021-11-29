@@ -10,7 +10,6 @@ import { BigNumber } from "ethers";
 import { parseEther } from "@ethersproject/units";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
-import splitHex256 from "../shared/helpers/splitHex256";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 const utils = ethers.utils;
 
@@ -216,27 +215,27 @@ describe("WalletActions", async function () {
     });
 
     await fx.verificationGateway.contract.callStatic.verifySignatures(
-      [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
-      splitHex256(tx.signature),
+      [fx.blsWalletSigner.getPublicKey(wallet.privateKey)],
+      tx.signature,
       [
         {
-          nonce: tx.subTransactions[0].nonce,
+          nonce: tx.operations[0].nonce,
           atomic: true,
-          actions: tx.subTransactions[0].actions,
+          actions: tx.operations[0].actions,
         },
       ],
     );
 
-    tx.subTransactions[0].actions[0].ethValue = parseEther("1");
+    tx.operations[0].actions[0].ethValue = parseEther("1");
     await expectRevert(
       fx.verificationGateway.contract.callStatic.verifySignatures(
-        [splitHex256(fx.blsWalletSigner.getPublicKey(wallet.privateKey))],
-        splitHex256(tx.signature),
+        [fx.blsWalletSigner.getPublicKey(wallet.privateKey)],
+        tx.signature,
         [
           {
-            nonce: tx.subTransactions[0].nonce,
+            nonce: tx.operations[0].nonce,
             atomic: true,
-            actions: tx.subTransactions[0].actions,
+            actions: tx.operations[0].actions,
           },
         ],
       ),
@@ -266,7 +265,7 @@ describe("WalletActions", async function () {
     const totalAmount = th.userStartAmount.mul(wallets.length);
     for (let i = 0; i < wallets.length; i++) {
       const walletBalance = await th.testToken.balanceOf(wallets[i].address);
-      expect(walletBalance).to.equal(i == 0 ? totalAmount : 0);
+      expect(walletBalance).to.equal(i === 0 ? totalAmount : 0);
     }
   });
 
@@ -301,12 +300,12 @@ describe("WalletActions", async function () {
 
     await (
       await fx.blsExpander.blsCallMultiSameCallerContractFunction(
-        splitHex256(tx.subTransactions[0].publicKey),
+        tx.users[0],
         nonce,
-        splitHex256(tx.signature),
+        tx.signature,
         testToken.address,
         testToken.interface.getSighash("transfer"),
-        tx.subTransactions[0].actions.map(
+        tx.operations[0].actions.map(
           (action) => `0x${action.encodedFunction.slice(10)}`,
         ),
       )
