@@ -1,6 +1,7 @@
 *
 !/dist/src/**/*
 !/dist/deps/**/*
+!/dist/typechain/**/*
 !/src/**/*
 !/deps/**/*
 !/package.json
