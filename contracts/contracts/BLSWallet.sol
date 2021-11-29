@@ -7,10 +7,6 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IWallet.sol";
 
-interface IVerificationGateway {
-    function walletCrossCheck(bytes32 publicKeyHash) external;
-}
-
 contract BLSWallet is Initializable
 {
     uint256 public nonce;
@@ -57,24 +53,24 @@ contract BLSWallet is Initializable
     A regular wallet expects the gateway to verify signed 
     transactions with the wallet's public key, and nonce.
      */
-    function executeActions(
-        IWallet.ActionData[] calldata actions,
-        bool atomic
-    ) public payable onlyGateway returns (bool[] memory successes, bytes[] memory results) {
-        IWallet.ActionData calldata a;
-        bool success;
+    function performOperation(
+        IWallet.Operation calldata op
+    ) public payable onlyGateway thisNonce(op.nonce) returns (
+        bool success, bytes[] memory results
+    ) {
         bytes memory result;
-        successes = new bool[](actions.length);
-        results = new bytes[](actions.length);
-        for (uint256 i=0; i<actions.length; i++) {
-            a = actions[i];
+        results = new bytes[](op.actions.length);
+
+        IWallet.ActionData calldata a;
+        for (uint256 i=0; i<op.actions.length; i++) {
+            a = op.actions[i];
             if (a.ethValue > 0) {
                 (success, result) = payable(a.contractAddress).call{value: a.ethValue}(a.encodedFunction);
             }
             else {
                 (success, result) = address(a.contractAddress).call(a.encodedFunction);
             }
-            require(!atomic||success, "BLSWallet: Action failed");
+            require(success, "BLSWallet: All actions must succeed");
             results[i] = result;
         }
         incrementNonce();
@@ -91,4 +87,10 @@ contract BLSWallet is Initializable
         require(msg.sender == gateway, "BLSWallet: only callable from gateway");
         _;
     }
+
+    modifier thisNonce(uint256 opNonce) {
+        require(opNonce == nonce, "BLSWallet: only callable with current nonce");
+        _;
+    }
+
 }

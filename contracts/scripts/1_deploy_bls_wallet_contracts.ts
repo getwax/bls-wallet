@@ -1,18 +1,17 @@
-require('dotenv').config();
-
 import { network } from "hardhat";
 import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
 
 import Fixture from "../shared/helpers/Fixture";
 
+require("dotenv").config();
+
 async function main() {
   let fx: Fixture;
   if (network.name == "rinkarby") {
-    let addresses = getDeployedAddresses(network.name);
+    const addresses = getDeployedAddresses(network.name);
 
     fx = await Fixture.create();
-  }
-  else {
+  } else {
     fx = await Fixture.create();
   }
   console.log(`Deployer account address: ${fx.addresses[0]}`);
@@ -25,8 +24,7 @@ async function main() {
 // and properly handle errors.
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
-  

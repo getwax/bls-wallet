@@ -9,9 +9,7 @@ import { BigNumber, providers } from "ethers";
 import { getAddress } from "ethers/lib/utils";
 import { doesNotMatch } from "assert";
 
-
-
-describe('TokenPayments', async function () {
+describe("TokenPayments", async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
     console.log("Skipping non-deployer tests.");
     return;
@@ -21,17 +19,19 @@ describe('TokenPayments', async function () {
   let th: TokenHelper;
   let blsWalletAddresses: string[];
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     fx = await Fixture.create(7);
     th = new TokenHelper(fx);
-    blsWalletAddresses = (await th.walletTokenSetup()).map(wallet => wallet.address);
+    blsWalletAddresses = (await th.walletTokenSetup()).map(
+      (wallet) => wallet.address,
+    );
   });
 
   // it("should reward tx submitter (single call)", async function() {
   //   const reward = ethers.utils.parseUnits("10");
 
   //   let blsSigner = fx.blsSigners[0];
-    
+
   //   let txDataFull: FullTxData = {
   //     blsSigner: blsSigner,
   //     chainId: fx.chainId,
@@ -54,7 +54,7 @@ describe('TokenPayments', async function () {
 
   // it("should perform wallet action with reward (single call)", async function() {
   //   const reward = ethers.utils.parseUnits("10");
-    
+
   //   let blsSigner = fx.blsSigners[0];
   //   const blsPubKeyHash = blsKeyHash(blsSigner);
 
@@ -72,8 +72,8 @@ describe('TokenPayments', async function () {
   //     ethValue: BigNumber.from(0),
   //     contract: actionToken,
   //     functionName: "transfer",
-  //     params: [burnAddress, actionAmount]    
-  //   } 
+  //     params: [burnAddress, actionAmount]
+  //   }
   //   let walletActionBalanceBefore = await actionToken.balanceOf(blsWalletAddresses[0]);
   //   await fx.gatewayCallFull(txDataFull);
   //   let walletActionBalanceAfter = await actionToken.balanceOf(blsWalletAddresses[0]);
@@ -107,7 +107,7 @@ describe('TokenPayments', async function () {
   //   let walletNonce = 1;  //next nonce after creation
   //   let tx: TxDataCall|TxDataSend;
   //   for (let i = 0; i<blsWalletAddresses.length; i++) {
-      
+
   //     [tx, signatures[i]] = blsSignFunction({
   //       blsSigner: fx.blsSigners[i],
   //       chainId: fx.chainId,
@@ -135,7 +135,7 @@ describe('TokenPayments', async function () {
 
   //   let balancesAfter = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
   //   let expectedAfter = th.userStartAmount.sub(reward);
-    
+
   //   balancesAfter.map( b => expect(b).to.equal(expectedAfter) );
   //   let aggBalance = await th.testToken.balanceOf(firstSigner);
   //   expect(aggBalance).to.equal(aggBalanceBefore.add(reward.mul(blsWalletAddresses.length)));
@@ -202,7 +202,7 @@ describe('TokenPayments', async function () {
 
   //   let walletNonce = 1;
   //   let balancesBefore = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
-    
+
   //   // Just enough for action after reward
   //   let rewards = balancesBefore.map( b => b.sub(actionAmount) );
   //   // Reward amount greater than balance (for failure)
@@ -248,5 +248,4 @@ describe('TokenPayments', async function () {
   //   expect(aggBalance).to.equal(aggBalanceBefore.add(totalAggReward));
 
   // });
-
 });

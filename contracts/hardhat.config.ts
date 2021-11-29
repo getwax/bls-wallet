@@ -22,8 +22,8 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 // Accounts used for testing and deploying
 const accounts = {
   mnemonic: `${process.env.MAIN_MNEMONIC}`,
-  count: 5
-}
+  count: 5,
+};
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -33,29 +33,29 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000
-          }
-        }
+            runs: 1000,
+          },
+        },
       },
       {
         version: "0.7.6",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000
-          }
-        }
+            runs: 1000,
+          },
+        },
       },
       {
         version: "0.6.12",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000
-          }
-        }
-      }
-    ]
+            runs: 1000,
+          },
+        },
+      },
+    ],
   },
   networks: {
     hardhat: {
@@ -65,18 +65,20 @@ const config: HardhatUserConfig = {
     gethDev: {
       url: `http://localhost:8545`,
       accounts,
-      gasPrice: 0
+      gasPrice: 0,
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
-      accounts
+      accounts,
     },
-    arbitrum_testnet: { //chainId: 421611
+    arbitrum_testnet: {
+      // chainId: 421611
       url: process.env.ARBITRUM_TESTNET_URL,
       accounts,
-      gasPrice: 1408857682, //287938372,
+      gasPrice: 1408857682, // 287938372,
     },
-    arbitrum: { //chainId: 42161
+    arbitrum: {
+      // chainId: 42161
       url: process.env.ARBITRUM_URL,
       accounts,
       gasPrice: 700000000,
@@ -102,8 +104,8 @@ const config: HardhatUserConfig = {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
   mocha: {
-    timeout: 120000
-  }
+    timeout: 120000,
+  },
 };
 
 export default config;
