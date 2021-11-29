@@ -7,8 +7,10 @@ import {
 } from "./signer";
 
 import VerificationGateway from "./VerificationGateway";
-import BlsWalletAbi from "./contractAbis/BlsWalletAbi";
 import TransparentUpgradeableProxyBytecode from "./contractAbis/TransparentUpgradeableProxyBytecode";
+
+// eslint-disable-next-line camelcase
+import { BLSWallet, BLSWallet__factory } from "../typechain";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -17,7 +19,7 @@ export default class BlsWalletWrapper {
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
     public address: string,
-    public walletContract: ethers.Contract,
+    public walletContract: BLSWallet,
   ) {}
 
   /** Get the wallet contract address for the given key, if it exists. */
@@ -43,9 +45,10 @@ export default class BlsWalletWrapper {
     const blsWalletLogicAddress =
       await verificationGateway.contract.blsWalletLogic();
 
-    const initFunctionParams = new ethers.utils.Interface(
-      BlsWalletAbi,
-    ).encodeFunctionData("initialize", [verificationGatewayAddress]);
+    const initFunctionParams =
+      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
+        verificationGatewayAddress,
+      ]);
 
     return ethers.utils.getCreate2Address(
       verificationGatewayAddress,
@@ -84,11 +87,9 @@ export default class BlsWalletWrapper {
       provider,
     );
 
-    const walletContract = new ethers.Contract(
-      contractAddress,
-      BlsWalletAbi,
-      provider,
-    );
+    const walletContract = new BLSWallet__factory(
+      provider as unknown as ethers.Signer,
+    ).attach(contractAddress);
 
     return new BlsWalletWrapper(
       blsWalletSigner,
@@ -123,11 +124,9 @@ export default class BlsWalletWrapper {
       publicKeyHash,
     );
 
-    const walletContract = new ethers.Contract(
-      contractAddress,
-      BlsWalletAbi,
-      signerOrProvider,
-    );
+    const walletContract = new BLSWallet__factory(
+      signerOrProvider as ethers.Signer,
+    ).attach(contractAddress);
 
     // TODO: What happens when VG hasn't created the wallet yet? This probably
     // throws, and we need to return zero in this case.
