@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "check-ts": "tsc --noEmit",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "premerge": "rm -rf artifacts cache typechain && hardhat compile && yarn lint && yarn check-ts && yarn --cwd clients premerge && yarn hardhat test"
   },
   "author": "James Zaki",
   "license": "MIT",
