@@ -31,25 +31,22 @@ export {
 import { ethers } from "https://esm.sh/ethers@5.4.7";
 export const keccak256 = ethers.utils.keccak256;
 
-export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.6.1";
-
 export type {
   BlsWalletSigner,
-  TransactionData,
-} from "https://esm.sh/bls-wallet-signer@0.6.1";
+  Bundle,
+  BundleDto,
+  NetworkConfig,
+} from "https://esm.sh/bls-wallet-clients@0.5.0-405ec15";
 
 export {
   Aggregator as AggregatorClient,
-  BlsWallet,
+  BlsWalletWrapper,
+  bundleFromDto,
+  bundleToDto,
   getConfig,
-  NetworkConfig,
+  initBlsWalletSigner,
   VerificationGateway,
-/**
- * TODO (merge-ok) Switch back to esm.sh when HKT import resolves correctly.
- * error: Import 'https://cdn.esm.sh/v58/fp-ts@2.11.5/lib/HKT/HKT.d.ts' failed: 404 Not Found
- *  at https://cdn.esm.sh/v58/bls-wallet-clients@0.2.5-rc.1/deno/bls-wallet-clients.js:2:34
- */
-} from "https://cdn.skypack.dev/bls-wallet-clients@0.2.5-rc.1?dts";
+} from "https://esm.sh/bls-wallet-clients@0.5.0-405ec15";
 
 // Database dependencies
 export {

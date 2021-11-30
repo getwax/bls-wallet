@@ -1,10 +1,4 @@
-import { BigNumber, TransactionData } from "../../deps.ts";
-
-export type TransactionDataDto = {
-  [K in keyof TransactionData]: (
-    TransactionData[K] extends BigNumber ? string : TransactionData[K]
-  );
-};
+import { BundleDto } from "../../deps.ts";
 
 type ParseResult<T> = (
   | { success: T }
@@ -121,16 +115,83 @@ export function parseNumber(value: unknown): ParseResult<number> {
   return { failures: ["not a number"] };
 }
 
-export function parseTransactionDataDto(
-  txData: unknown,
-): ParseResult<TransactionDataDto> {
+export function parseArray<T>(
+  elementParser: Parser<T>,
+): Parser<T[]> {
+  return (value) => {
+    if (!Array.isArray(value)) {
+      return { failures: ["not an array"] };
+    }
+
+    const parsedElements: T[] = [];
+    const failures: string[] = [];
+
+    for (let i = 0; i < value.length; i++) {
+      const element = value[i];
+      const parseResult = elementParser(element);
+
+      if ("failures" in parseResult) {
+        failures.push(...parseResult.failures.map((f) => `element ${i}: ${f}`));
+      } else {
+        parsedElements.push(parseResult.success);
+      }
+    }
+
+    if (failures.length > 0) {
+      return { failures };
+    }
+
+    return { success: parsedElements };
+  };
+}
+
+type DataTuple<ParserTuple> = (
+  ParserTuple extends Parser<unknown>[] ? (
+    ParserTuple extends [Parser<infer T>, ...infer Tail]
+      ? [T, ...DataTuple<Tail>]
+      : []
+  )
+    : never
+);
+
+export function parseTuple<ParserTuple extends Parser<unknown>[]>(
+  ...parserTuple: ParserTuple
+): Parser<DataTuple<ParserTuple>> {
+  return (value) => {
+    if (!Array.isArray(value)) {
+      return { failures: ["not an array"] };
+    }
+
+    const parsedElements: unknown[] = [];
+    const failures: string[] = [];
+
+    for (let i = 0; i < value.length; i++) {
+      const element = value[i];
+      const parseResult = parserTuple[i](element);
+
+      if ("failures" in parseResult) {
+        failures.push(...parseResult.failures.map((f) => `element ${i}: ${f}`));
+      } else {
+        parsedElements.push(parseResult.success);
+      }
+    }
+
+    if (failures.length > 0) {
+      return { failures };
+    }
+
+    return { success: parsedElements as DataTuple<ParserTuple> };
+  };
+}
+
+type OperationDto = BundleDto["operations"][number];
+type ActionDataDto = OperationDto["actions"][number];
+
+function parseActionDataDto(actionData: unknown): ParseResult<ActionDataDto> {
   const result = combine(
-    field(txData, "publicKey", parseHex({ bytes: 128 })),
-    field(txData, "signature", parseHex({ bytes: 64 })),
-    field(txData, "nonce", parseHex()),
-    field(txData, "ethValue", parseHex()),
-    field(txData, "contractAddress", parseHex({ bytes: 20 })),
-    field(txData, "encodedFunction", parseHex()),
+    field(actionData, "ethValue", parseHex()),
+    field(actionData, "contractAddress", parseHex()),
+    field(actionData, "encodedFunction", parseHex()),
   );
 
   if ("failures" in result) {
@@ -138,9 +199,6 @@ export function parseTransactionDataDto(
   }
 
   const [
-    publicKey,
-    signature,
-    nonce,
     ethValue,
     contractAddress,
     encodedFunction,
@@ -148,12 +206,58 @@ export function parseTransactionDataDto(
 
   return {
     success: {
-      publicKey,
-      signature,
-      nonce,
       ethValue,
       contractAddress,
       encodedFunction,
+    },
+  };
+}
+
+function parseOperationDto(operationData: unknown): ParseResult<OperationDto> {
+  const result = combine(
+    field(operationData, "nonce", parseHex()),
+    field(operationData, "actions", parseArray(parseActionDataDto)),
+  );
+
+  if ("failures" in result) {
+    return result;
+  }
+
+  const [
+    nonce,
+    actions,
+  ] = result.success;
+
+  return {
+    success: {
+      nonce,
+      actions,
+    },
+  };
+}
+
+export function parseBundleDto(bundleData: unknown): ParseResult<BundleDto> {
+  const result = combine(
+    field(
+      bundleData,
+      "senderPublicKeys",
+      parseArray(parseTuple(parseHex(), parseHex(), parseHex(), parseHex())),
+    ),
+    field(bundleData, "operations", parseArray(parseOperationDto)),
+    field(bundleData, "signature", parseTuple(parseHex(), parseHex())),
+  );
+
+  if ("failures" in result) {
+    return result;
+  }
+
+  const [senderPublicKeys, operations, signature] = result.success;
+
+  return {
+    success: {
+      senderPublicKeys,
+      operations,
+      signature,
     },
   };
 }
