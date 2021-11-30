@@ -65,7 +65,7 @@ PRIVATE_KEY_ADMIN=PK1
 ...
 ```
 
-Then update `./contracts/.env` with hardhat's mnemonic seed.
+Set this value in `./contracts/.env` (This mnemonic is special to hardhat and has funds).
 ```
 ...
 DEPLOYER_MNEMONIC="test test test test test test test test test test test junk"
