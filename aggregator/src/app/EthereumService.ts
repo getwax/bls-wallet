@@ -28,7 +28,7 @@ export type CreateWalletResult = {
   failures: TransactionFailure[];
 };
 
-export default class WalletService {
+export default class EthereumService {
   verificationGateway: VerificationGateway;
 
   constructor(
@@ -53,13 +53,13 @@ export default class WalletService {
     emit: (evt: AppEvent) => void,
     verificationGatewayAddress: string,
     aggPrivateKey: string,
-  ): Promise<WalletService> {
-    const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
+  ): Promise<EthereumService> {
+    const aggregatorSigner = EthereumService.getAggregatorSigner(aggPrivateKey);
     const nextNonce = (await aggregatorSigner.getTransactionCount());
     const chainId = await aggregatorSigner.getChainId();
     const blsWalletSigner = await initBlsWalletSigner({ chainId });
 
-    return new WalletService(
+    return new EthereumService(
       emit,
       aggregatorSigner,
       blsWalletSigner,

@@ -147,17 +147,17 @@ script completes successfully before merging into main.
 
 - **src/chain**: Should contain all of the contract interactions, exposing more
   suitable abstractions to the rest of the code. There's still some contract
-  interaction in `WalletService` and in tests though.
+  interaction in `EthereumService` and in tests though.
 - **`BlsWallet`**: Models a BLS smart contract wallet (see
   [BLSWallet.sol](https://github.com/jzaki/bls-wallet-contracts/blob/main/contracts/BLSWallet.sol)).
 - **`app.ts`**: Runs the app (the aggregator), requiring only a definition of
   what to do with the events (invoked with `console.log` by
   `programs/aggregator.ts`).
-- **`WalletService`**: Responsible for submitting aggregations (aka batches)
+- **`EthereumService`**: Responsible for submitting aggregations (aka batches)
   once they have been formed. This was where all the contract interaction was
-  before `src/chain`. Probably needs a rename and some rethinking.
+  before `src/chain`. Might need some rethinking.
 - **`TxService`**: Keeps track of all stored transactions, as well as accepting
-  (or rejecting) them and sending off batches to `WalletService`.
+  (or rejecting) them and sending off batches to `EthereumService`.
 - **`TxTable`**: Abstraction layer over postgres transaction tables, exposing
   typed functions instead of queries. Handles conversions to and from the field
   types supported by postgres so that other code can has a uniform js-friendly

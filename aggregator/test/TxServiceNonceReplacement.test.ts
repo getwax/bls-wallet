@@ -11,7 +11,7 @@ Fixture.test(
     const [wallet] = await fx.setupWallets(1);
     let walletNonce = await wallet.Nonce();
 
-    await fx.walletService.sendTxs([
+    await fx.ethereumService.sendTxs([
       wallet.sign({
         contract: fx.rewardErc20.contract,
         method: "mint",

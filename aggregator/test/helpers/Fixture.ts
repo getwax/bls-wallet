@@ -1,7 +1,7 @@
 import { BigNumber, BlsWallet, ethers, TransactionData } from "../../deps.ts";
 
 import testRng from "./testRng.ts";
-import WalletService from "../../src/app/WalletService.ts";
+import EthereumService from "../../src/app/EthereumService.ts";
 import TxTable, { TxTableRow } from "../../src/app/TxTable.ts";
 import TxService from "../../src/app/TxService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
@@ -13,7 +13,9 @@ import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 import MockErc20 from "./MockErc20.ts";
 import nil, { isNotNil } from "../../src/helpers/nil.ts";
-import getNetworkConfig, { NetworkConfig } from "../../src/helpers/getNetworkConfig.ts";
+import getNetworkConfig, {
+  NetworkConfig,
+} from "../../src/helpers/getNetworkConfig.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -45,20 +47,20 @@ export default class Fixture {
     const netCfg = await getNetworkConfig();
     const rng = testRng.seed(testName);
 
-    const walletService = await WalletService.create(
+    const ethereumService = await EthereumService.create(
       (evt) => fx.emit(evt),
       netCfg.addresses.verificationGateway,
       env.PRIVATE_KEY_AGG,
     );
 
     const chainId =
-      (await walletService.aggregatorSigner.provider.getNetwork()).chainId;
+      (await ethereumService.aggregatorSigner.provider.getNetwork()).chainId;
 
     const fx: Fixture = new Fixture(
       testName,
       rng,
       chainId,
-      walletService,
+      ethereumService,
       netCfg,
     );
 
@@ -90,21 +92,21 @@ export default class Fixture {
     public testName: string,
     public rng: typeof testRng,
     public chainId: number,
-    public walletService: WalletService,
+    public ethereumService: EthereumService,
     public networkConfig: NetworkConfig,
   ) {
     this.testErc20 = new MockErc20(
       this.networkConfig.addresses.testToken,
-      this.walletService.aggregatorSigner,
+      this.ethereumService.aggregatorSigner,
     );
 
     this.rewardErc20 = new MockErc20(
       this.networkConfig.addresses.rewardToken,
-      this.walletService.aggregatorSigner,
+      this.ethereumService.aggregatorSigner,
     );
 
     this.adminWallet = AdminWallet(
-      this.walletService.aggregatorSigner.provider,
+      this.ethereumService.aggregatorSigner.provider,
       env.PRIVATE_KEY_ADMIN,
     );
   }
@@ -141,7 +143,7 @@ export default class Fixture {
       txTablesMutex,
       txTable,
       futureTxTable,
-      this.walletService,
+      this.ethereumService,
       config,
     );
   }
@@ -211,7 +213,7 @@ export default class Fixture {
       const filteredTxs = txs.filter(isNotNil);
 
       if (filteredTxs.length > 0) {
-        await this.walletService.sendTxs(filteredTxs);
+        await this.ethereumService.sendTxs(filteredTxs);
       }
 
       wallets.push(wallet);

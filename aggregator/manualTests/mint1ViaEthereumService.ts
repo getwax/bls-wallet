@@ -2,7 +2,7 @@
 
 import { delay, ethers } from "../deps.ts";
 
-import WalletService from "../src/app/WalletService.ts";
+import EthereumService from "../src/app/EthereumService.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
@@ -12,7 +12,7 @@ const { addresses } = await getNetworkConfig();
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
-const walletService = await WalletService.create(
+const ethereumService = await EthereumService.create(
   (evt) => {
     console.log(evt);
   },
@@ -33,11 +33,11 @@ const tx = wallet.sign({
   nonce: await wallet.Nonce(),
 });
 
-console.log("Sending via walletService");
+console.log("Sending via ethereumService");
 
 (async () => {
   try {
-    await walletService.sendTxs([tx]);
+    await ethereumService.sendTxs([tx]);
   } catch (error) {
     console.error(error.stack);
     Deno.exit(1);

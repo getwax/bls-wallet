@@ -1,7 +1,7 @@
 import { Application } from "../../deps.ts";
 
 import * as env from "../env.ts";
-import WalletService from "./WalletService.ts";
+import EthereumService from "./EthereumService.ts";
 import TxService from "./TxService.ts";
 import TxRouter from "./TxRouter.ts";
 import AdminRouter from "./AdminRouter.ts";
@@ -18,7 +18,7 @@ import WalletRouter from "./WalletRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
   const { addresses } = await getNetworkConfig();
-  
+
   const clock = Clock.create();
 
   const queryClient = createQueryClient(emit);
@@ -32,10 +32,10 @@ export default async function app(emit: (evt: AppEvent) => void) {
     env.FUTURE_TX_TABLE_NAME,
   );
 
-  const walletService = await WalletService.create(
+  const ethereumService = await EthereumService.create(
     emit,
     addresses.verificationGateway,
-    env.PRIVATE_KEY_AGG
+    env.PRIVATE_KEY_AGG,
   );
 
   const txService = new TxService(
@@ -45,18 +45,18 @@ export default async function app(emit: (evt: AppEvent) => void) {
     txTablesMutex,
     readyTxTable,
     futureTxTable,
-    walletService,
+    ethereumService,
   );
 
   const adminService = new AdminService(
-    walletService,
+    ethereumService,
     readyTxTable,
     futureTxTable,
   );
 
   const routers = [
     TxRouter(txService),
-    WalletRouter(walletService),
+    WalletRouter(ethereumService),
     AdminRouter(adminService),
   ];
 

@@ -5,6 +5,7 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno",
   "debug.javascript.unmapMissingSources": true,
+  "editor.rulers": [80],
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,

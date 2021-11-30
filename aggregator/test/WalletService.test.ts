@@ -3,7 +3,7 @@ import { assertEquals, BigNumber, BlsWallet } from "./deps.ts";
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
-Fixture.test("WalletService sends single tx", async (fx) => {
+Fixture.test("EthereumService sends single tx", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const startBalance = await fx.testErc20.balanceOf(wallet.address);
 
@@ -14,14 +14,14 @@ Fixture.test("WalletService sends single tx", async (fx) => {
     nonce: await wallet.Nonce(),
   });
 
-  await fx.walletService.sendTxs([tx]);
+  await fx.ethereumService.sendTxs([tx]);
 
   const balance: BigNumber = await fx.testErc20.balanceOf(wallet.address);
 
   assertEquals(balance.toNumber(), startBalance.toNumber() + 7);
 });
 
-Fixture.test("WalletService sends single transfer tx", async (fx) => {
+Fixture.test("EthereumService sends single transfer tx", async (fx) => {
   const wallets = await fx.setupWallets(2);
 
   const tx = wallets[0].sign({
@@ -31,7 +31,7 @@ Fixture.test("WalletService sends single transfer tx", async (fx) => {
     nonce: await wallets[0].Nonce(),
   });
 
-  await fx.walletService.sendTxs([tx]);
+  await fx.ethereumService.sendTxs([tx]);
 
   const balances: BigNumber[] = await Promise.all(wallets.map(
     (w) => fx.testErc20.balanceOf(w.address),
@@ -40,11 +40,11 @@ Fixture.test("WalletService sends single transfer tx", async (fx) => {
   assertEquals(balances.map((b) => b.toNumber()), [999, 1001]);
 });
 
-Fixture.test("WalletService sends aggregate transaction", async (fx) => {
+Fixture.test("EthereumService sends aggregate transaction", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
-  await fx.walletService.sendTxs([
+  await fx.ethereumService.sendTxs([
     wallet.sign({
       contract: fx.testErc20.contract,
       method: "mint",
@@ -64,13 +64,13 @@ Fixture.test("WalletService sends aggregate transaction", async (fx) => {
   assertEquals(balance.toNumber(), 1008);
 });
 
-Fixture.test("WalletService sends large aggregate mint tx", async (fx) => {
+Fixture.test("EthereumService sends large aggregate mint tx", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
   const size = 11;
 
-  await fx.walletService.sendTxs(
+  await fx.ethereumService.sendTxs(
     Range(size).map((i) =>
       wallet.sign({
         contract: fx.testErc20.contract,
@@ -86,13 +86,13 @@ Fixture.test("WalletService sends large aggregate mint tx", async (fx) => {
   assertEquals(balance.toNumber(), 1000 + size);
 });
 
-Fixture.test("WalletService sends large aggregate transfer tx", async (fx) => {
+Fixture.test("EthereumService sends large aggregate transfer tx", async (fx) => {
   const [sendWallet, recvWallet] = await fx.setupWallets(2);
   const sendWalletNonce = await sendWallet.Nonce();
 
   const size = 29;
 
-  await fx.walletService.sendTxs(
+  await fx.ethereumService.sendTxs(
     Range(size).map((i) =>
       sendWallet.sign({
         contract: fx.testErc20.contract,
@@ -109,14 +109,14 @@ Fixture.test("WalletService sends large aggregate transfer tx", async (fx) => {
 });
 
 Fixture.test(
-  "WalletService sends multiple aggregate transactions",
+  "EthereumService sends multiple aggregate transactions",
   async (fx) => {
     const [wallet] = await fx.setupWallets(1);
 
     for (let i = 1; i <= 2; i++) {
       const walletNonce = await wallet.Nonce();
 
-      await fx.walletService.sendTxs(
+      await fx.ethereumService.sendTxs(
         Range(5).map((i) =>
           wallet.sign({
             contract: fx.testErc20.contract,
@@ -139,7 +139,7 @@ Fixture.test(
 // only sometimes. This causes tx2,tx3 to fail because it says tx3 will fail the
 // sig check because it gets the wrong nonce because tx2 hasn't been confirmed.
 // Fixture.test(
-//   "WalletService can concurrently send txs with consecutive nonces",
+//   "EthereumService can concurrently send txs with consecutive nonces",
 //   async (fx) => {
 //     const [wallet] = await fx.setupWallets(1);
 //     const walletNonce = await wallet.Nonce();
@@ -159,7 +159,7 @@ Fixture.test(
 //         // but are still trying to get into the same block
 //         await delay(100 * i);
 
-//         await fx.walletService.sendTxs([tx], 10, 300);
+//         await fx.ethereumService.sendTxs([tx], 10, 300);
 //       }),
 //     );
 
@@ -169,14 +169,14 @@ Fixture.test(
 //   },
 // );
 
-Fixture.test("WalletService can create a wallet", async (fx) => {
+Fixture.test("EthereumService can create a wallet", async (fx) => {
   const tx = await BlsWallet.signCreation(
     fx.rng.seed("aggregator-free-wallet").address(),
     fx.networkConfig.addresses.verificationGateway,
     fx.adminWallet.provider,
   );
 
-  const creationResult = await fx.walletService.createWallet(tx);
+  const creationResult = await fx.ethereumService.createWallet(tx);
 
   assertEquals(typeof creationResult.address, "string");
   assertEquals(creationResult.failures, []);
