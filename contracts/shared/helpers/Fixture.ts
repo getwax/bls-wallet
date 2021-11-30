@@ -16,6 +16,7 @@ import {
   VerificationGateway,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
+  BLSOpen,
 } from "../../typechain";
 
 export default class Fixture {
@@ -33,6 +34,7 @@ export default class Fixture {
 
     public verificationGateway: VerificationGateway,
 
+    public blsLibrary: BLSOpen,
     public blsExpander: Contract,
 
     public BLSWallet: ContractFactory,
@@ -42,10 +44,6 @@ export default class Fixture {
   /// @dev Contracts deployed by first ethers signer
   static async create(
     blsWalletCount: number = Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
-    initialized: boolean = true,
-    blsAddress?: string,
-    vgAddress?: string,
-    expanderAddress?: string,
     secretNumbers?: number[],
   ) {
     const chainId = (await ethers.provider.getNetwork()).chainId;
@@ -70,7 +68,7 @@ export default class Fixture {
     const vgContract = await create2Fixture.create2Contract(
       "VerificationGateway",
     );
-    const bls = await create2Fixture.create2Contract("BLSOpen");
+    const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
 
     try {
       await (
@@ -96,7 +94,7 @@ export default class Fixture {
 
       if (secretNumbers !== undefined) {
         secretNumber = secretNumbers[i];
-        assert(secretNumber !== undefined);
+        assert(!isNaN(secretNumber), "secret ");
       } else {
         secretNumber = Math.abs((Math.random() * 0xffffffff) << 0);
       }
@@ -126,6 +124,7 @@ export default class Fixture {
       addresses,
       lazyBlsWallets,
       verificationGateway,
+      bls,
       blsExpander,
       BLSWallet,
       await initBlsWalletSigner({ chainId }),

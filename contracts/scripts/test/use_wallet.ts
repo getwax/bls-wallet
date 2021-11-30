@@ -2,36 +2,25 @@
 
 import { network, ethers } from "hardhat";
 import Fixture from "../../shared/helpers/Fixture";
-import getDeployedAddresses, {
-  DeployedAddresses,
-} from "../../shared/helpers/getDeployedAddresses";
+import getNetworkConfig from "../../shared/helpers/getNetworkConfig";
 
-let config: DeployedAddresses;
+let config;
 
 // let ethToken: Contract;
 
-// let blsWallets: Contract[];
+let blsAddresses: string[];
 
 async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
-  config = getDeployedAddresses(network.name);
+  config = await getNetworkConfig(network.name);
   console.log("config:", config);
 
   console.log("Creating fixture from use wallet...");
-  const fx = await Fixture.create(
-    blsSecretNumbers.length,
-    true,
-    config.blsLibAddress,
-    config.vgAddress,
-    config.expanderAddress,
-    blsSecretNumbers,
-  );
+  const fx = await Fixture.create(blsSecretNumbers.length, blsSecretNumbers);
 
-  console.log("Attaching to token:", config.tokenAddress);
+  console.log("Attaching to token:", config.addresses.testToken);
   const ERC20 = await ethers.getContractFactory("MockERC20");
-  ERC20.attach(config.tokenAddress);
-  // if (config.ethAddress) {
-  //   ethToken = ERC20.attach(config.ethAddress);
-  // }
+  ERC20.attach(config.addresses.testToken);
+
   return fx;
 }
 
@@ -43,12 +32,10 @@ async function main() {
     +process.env.BLS_SECRET_NUM_3,
   ]);
 
-  config.blsAddresses = (await fx.createBLSWallets()).map(
-    (wallet) => wallet.address,
-  );
-  console.log(`BlsWallet contract addresses: ${config.blsAddresses}`);
+  blsAddresses = (await fx.createBLSWallets()).map((wallet) => wallet.address);
+  console.log(`BlsWallet contract addresses: ${blsAddresses}`);
 
-  // blsWallets = config.blsAddresses.map((a) => fx.BLSWallet.attach(a));
+  // blsWallets = blsAddresses.map((a) => fx.BLSWallet.attach(a));
 
   // blsSignFunction({
   //   blsSigner: fx.blsSigners[0],

@@ -78,10 +78,10 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 
 # Dev/test
 
-- Run the aggregation server (see `./server`).
-- build and test contracts - `npx hardhat test`
+- Run the aggregation server (see `../aggregator`).
+- build and test contracts - `yarn hardhat test`
 
-Note: Depending on the network being used, the address of the deployed PrecompileCostEstimator will need to be set [here](https://github.com/jzaki/bls-wallet/blob/main/contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol#L42). #15 will resolve this.
+-Note: Depending on the network being used, the address of the deployed PrecompileCostEstimator will need to be set [here](https://github.com/jzaki/bls-wallet/blob/main/contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol#L42).
 
 For each network, the deployer contract can be deployed with the following script (only needed once)
 `DEPLOY_DEPLOYER=true yarn hardhat run scripts/deploy-deployer.ts --network <network-name>`
@@ -98,7 +98,7 @@ For each network, the deployer contract can be deployed with the following scrip
     - L2 - http://localhost:8545 (chainId 420)
 
 ## Deploy scripts
-Specify network - `npx hardhat run scripts/<#_script.ts> --network arbitrum-testnet`
+Specify network - `yarn hardhat run scripts/<#_script.ts> --network arbitrum-testnet`
 
 # License
 MIT

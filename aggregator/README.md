@@ -31,6 +31,15 @@ commands.
 
 ### PostgreSQL
 
+#### With docker-compose
+
+```sh
+cd .. # root of repo
+docker-compose up -d postgres
+```
+
+#### Local Install
+
 Install, e.g.:
 
 ```sh
@@ -124,7 +133,7 @@ Tests are defined in `test`. Running them directly is a bit verbose because of
 the deno flags you need:
 
 ```sh
-deno test -j --allow-net --allow-env --allow-read --unstable -- --env local
+deno test -j --allow-net --allow-env --allow-read --unstable
 ```
 
 Instead, `./programs/premerge.ts` may be more useful for you. It'll make sure

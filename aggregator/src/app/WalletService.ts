@@ -35,10 +35,11 @@ export default class WalletService {
     public emit: (evt: AppEvent) => void,
     public aggregatorSigner: Wallet,
     public blsWalletSigner: BlsWalletSigner,
+    verificationGatewayAddress: string,
     public nextNonce: number,
   ) {
     this.verificationGateway = new VerificationGateway(
-      env.VERIFICATION_GATEWAY_ADDRESS,
+      verificationGatewayAddress,
       this.aggregatorSigner,
     );
   }
@@ -50,6 +51,7 @@ export default class WalletService {
 
   static async create(
     emit: (evt: AppEvent) => void,
+    verificationGatewayAddress: string,
     aggPrivateKey: string,
   ): Promise<WalletService> {
     const aggregatorSigner = WalletService.getAggregatorSigner(aggPrivateKey);
@@ -61,6 +63,7 @@ export default class WalletService {
       emit,
       aggregatorSigner,
       blsWalletSigner,
+      verificationGatewayAddress,
       nextNonce,
     );
   }
@@ -79,7 +82,7 @@ export default class WalletService {
 
     const nextNonce = await BlsWallet.Nonce(
       tx.publicKey,
-      env.VERIFICATION_GATEWAY_ADDRESS,
+      this.verificationGateway.address,
       this.aggregatorSigner,
     );
 

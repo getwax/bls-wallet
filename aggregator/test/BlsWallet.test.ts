@@ -1,12 +1,11 @@
 import { assertEquals, BlsWallet, keccak256 } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
-import * as env from "./env.ts";
 
 Fixture.test("should register new wallet", async (fx) => {
   const wallet = await BlsWallet.connectOrCreate(
     fx.rng.seed("blsPrivateKey").address(),
-    env.VERIFICATION_GATEWAY_ADDRESS,
+    fx.networkConfig.addresses.verificationGateway,
     fx.adminWallet,
   );
 
@@ -21,13 +20,13 @@ Fixture.test(
   async (fx) => {
     const firstWallet = await BlsWallet.connectOrCreate(
       fx.rng.seed("blsPrivateKey").address(),
-      env.VERIFICATION_GATEWAY_ADDRESS,
+      fx.networkConfig.addresses.verificationGateway,
       fx.adminWallet,
     );
 
     const secondWallet = await BlsWallet.connectOrCreate(
       fx.rng.seed("blsPrivateKey").address(),
-      env.VERIFICATION_GATEWAY_ADDRESS,
+      fx.networkConfig.addresses.verificationGateway,
       fx.adminWallet,
     );
 

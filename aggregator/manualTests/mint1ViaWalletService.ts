@@ -6,6 +6,9 @@ import WalletService from "../src/app/WalletService.ts";
 import * as env from "../test/env.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
+import getNetworkConfig from "../src/helpers/networkConfig.ts";
+
+const { addresses } = await getNetworkConfig();
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
@@ -13,10 +16,11 @@ const walletService = await WalletService.create(
   (evt) => {
     console.log(evt);
   },
+  addresses.verificationGateway,
   env.PRIVATE_KEY_AGG,
 );
 
-const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
+const testErc20 = new MockErc20(addresses.testToken, provider);
 
 const [wallet] = await TestBlsWallets(provider, 1);
 

@@ -2,6 +2,20 @@
 
 *Client libraries for interacting with BLS Wallet components*
 
+## Network Config
+
+Deployed contract addresses and metadata.
+
+```ts
+import { NetworkConfig, getConfig } from 'bls-wallet-clients';
+
+const netCfg: NetworkConfig = await getConfig(
+  '/path/to/network/config',
+  async (path) => ... /* fetch, fs.readFile, etc. */
+);
+// Read from netCfg.addresses.verificationGateway, etc.
+```
+
 ## Aggregator
 
 Exposes typed functions for interacting with the Aggregator's HTTP api.

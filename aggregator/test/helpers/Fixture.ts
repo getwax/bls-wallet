@@ -13,6 +13,7 @@ import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 import MockErc20 from "./MockErc20.ts";
 import nil, { isNotNil } from "../../src/helpers/nil.ts";
+import getNetworkConfig, { NetworkConfig } from "../../src/helpers/getNetworkConfig.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -41,10 +42,12 @@ export default class Fixture {
   }
 
   static async create(testName: string): Promise<Fixture> {
+    const netCfg = await getNetworkConfig();
     const rng = testRng.seed(testName);
 
     const walletService = await WalletService.create(
       (evt) => fx.emit(evt),
+      netCfg.addresses.verificationGateway,
       env.PRIVATE_KEY_AGG,
     );
 
@@ -56,6 +59,7 @@ export default class Fixture {
       rng,
       chainId,
       walletService,
+      netCfg,
     );
 
     return fx;
@@ -87,14 +91,15 @@ export default class Fixture {
     public rng: typeof testRng,
     public chainId: number,
     public walletService: WalletService,
+    public networkConfig: NetworkConfig,
   ) {
     this.testErc20 = new MockErc20(
-      env.TEST_TOKEN_ADDRESS,
+      this.networkConfig.addresses.testToken,
       this.walletService.aggregatorSigner,
     );
 
     this.rewardErc20 = new MockErc20(
-      env.REWARD_TOKEN_ADDRESS,
+      this.networkConfig.addresses.rewardToken,
       this.walletService.aggregatorSigner,
     );
 
@@ -170,7 +175,7 @@ export default class Fixture {
     for (const i of Range(count)) {
       const wallet = await BlsWallet.connectOrCreate(
         this.createBlsPrivateKey(`${i}`, ...extraSeeds),
-        env.VERIFICATION_GATEWAY_ADDRESS,
+        this.networkConfig.addresses.verificationGateway,
         this.adminWallet,
       );
 

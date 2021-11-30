@@ -8,11 +8,11 @@ import App from '../App';
 import getPropOrUndefined from '../helpers/getPropOrUndefined';
 import RequestHandler from './RequestHandler';
 
-import { AGGREGATOR_URL, CHAIN_ID, CHAIN_RPC_URL } from '../env';
+import { AGGREGATOR_URL, NETWORK_CONFIG, CHAIN_RPC_URL } from '../env';
 
 (async () => {
   const app = new App(
-    await initBlsWalletSigner({ chainId: CHAIN_ID }),
+    await initBlsWalletSigner({ chainId: NETWORK_CONFIG.auxiliary.chainid }),
     new Aggregator(AGGREGATOR_URL),
     new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL),
     browser.storage.local,
