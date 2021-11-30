@@ -154,6 +154,11 @@ function parseObject<ParserObject extends Record<string, Parser<unknown>>>(
     const failures: string[] = [];
 
     for (const key of Object.keys(parserObject)) {
+      if (!(key in valueRecord)) {
+        failures.push(`field ${key}: not provided`);
+        continue;
+      }
+
       const element = valueRecord[key];
       const parseResult = parserObject[key](element);
 
