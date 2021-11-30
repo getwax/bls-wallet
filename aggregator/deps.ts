@@ -36,17 +36,28 @@ export type {
   Bundle,
   BundleDto,
   NetworkConfig,
+  VerificationGateway,
 } from "https://esm.sh/bls-wallet-clients@0.5.0-405ec15";
 
-export {
-  Aggregator as AggregatorClient,
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.5.0-405ec15";
+
+const {
+  Aggregator: AggregatorClient,
   BlsWalletWrapper,
   bundleFromDto,
   bundleToDto,
   getConfig,
   initBlsWalletSigner,
-  VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.5.0-405ec15";
+} = blsWalletClients;
+
+export {
+  AggregatorClient,
+  BlsWalletWrapper,
+  bundleFromDto,
+  bundleToDto,
+  getConfig,
+  initBlsWalletSigner,
+};
 
 // Database dependencies
 export {
