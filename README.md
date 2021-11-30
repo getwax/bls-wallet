@@ -56,16 +56,23 @@ Start a local Hardhat node for RPC use.
 cd ./contracts
 npx hardhat node
 ```
-You can use any two of the private keys displayed for the aggregator (PK0 & PK1)
 
-Update `./contracts/.env`.
+You can use any two of the private keys displayed (PK0 & PK1) to update `./aggregator/.env`.
+```
+...
+PRIVATE_KEY_AGG=PK0
+PRIVATE_KEY_ADMIN=PK1
+...
+```
+
+Then update `./contracts/.env` with hardhat's mnemonic seed.
 ```
 ...
 DEPLOYER_MNEMONIC="test test test test test test test test test test test junk"
 ...
 ```
 
-Deploy PrecompileCostEstimator.
+Deploy the PrecompileCostEstimator contract.
 ```sh
 npx hardhat run scripts/0_deploy_precompile_cost_estimator.ts --network gethDev
 ```
@@ -81,14 +88,6 @@ address private constant COST_ESTIMATOR_ADDRESS = 0x57047C275bbCb44D85DFA50AD562
 Deploy all remaining `bls-wallet` contracts.
 ```sh
 npx hardhat run scripts/deploy_all.ts --network gethDev
-```
-
-Update `./aggregator/.env`.
-```
-...
-PRIVATE_KEY_AGG=PK0
-PRIVATE_KEY_ADMIN=PK1
-...
 ```
 
 ### Arbitrum Testnet (Rinkeby Arbitrum Testnet)
