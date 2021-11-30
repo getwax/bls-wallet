@@ -9,6 +9,7 @@ import sign from "./sign";
 import verify from "./verify";
 
 export * from "./types";
+export * from "./conversions";
 
 export type BlsWalletSigner = AsyncReturnType<typeof initBlsWalletSigner>;
 

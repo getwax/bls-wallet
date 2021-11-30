@@ -1,6 +1,4 @@
-import { BigNumber } from "ethers";
-import { solidityPack } from "ethers/lib/utils";
-import { Bundle } from "./signer";
+import { Bundle, bundleToDto } from "./signer";
 
 // TODO: Rename to BundleFailure?
 type TransactionFailure =
@@ -11,20 +9,20 @@ type TransactionFailure =
   | { type: "unpredictable-gas-limit"; description: string }
   | { type: "invalid-creation"; description: string };
 
-export type ActionDataDTO = {
+export type ActionDataDto = {
   ethValue: string;
   contractAddress: string;
   encodedFunction: string;
 };
 
-export type OperationDTO = {
+export type OperationDto = {
   nonce: string;
-  actions: ActionDataDTO[];
+  actions: ActionDataDto[];
 };
 
-export type BundleDTO = {
+export type BundleDto = {
   senderPublicKeys: [string, string, string, string][];
-  operations: OperationDTO[];
+  operations: OperationDto[];
   signature: [string, string];
 };
 
@@ -44,7 +42,7 @@ export default class Aggregator {
   async add(bundle: Bundle): Promise<TransactionFailure[]> {
     const resp = await fetch(`${this.origin}/transaction`, {
       method: "POST",
-      body: JSON.stringify(toDto(bundle)),
+      body: JSON.stringify(bundleToDto(bundle)),
       headers: {
         "content-type": "application/json",
       },
@@ -66,30 +64,4 @@ export default class Aggregator {
 
     return json.failures;
   }
-}
-
-function toDto(bundle: Bundle): BundleDTO {
-  return {
-    senderPublicKeys: bundle.senderPublicKeys.map(([n0, n1, n2, n3]) => [
-      BigNumber.from(n0).toHexString(),
-      BigNumber.from(n1).toHexString(),
-      BigNumber.from(n2).toHexString(),
-      BigNumber.from(n3).toHexString(),
-    ]),
-    operations: bundle.operations.map((op) => ({
-      nonce: BigNumber.from(op.nonce).toHexString(),
-      actions: op.actions.map((a) => ({
-        ethValue: BigNumber.from(a.ethValue).toHexString(),
-        contractAddress: a.contractAddress,
-        encodedFunction:
-          typeof a.encodedFunction === "string"
-            ? a.encodedFunction
-            : solidityPack(["bytes"], [a.encodedFunction]),
-      })),
-    })),
-    signature: [
-      BigNumber.from(bundle.signature[0]).toHexString(),
-      BigNumber.from(bundle.signature[1]).toHexString(),
-    ],
-  };
 }
