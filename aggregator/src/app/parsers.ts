@@ -7,55 +7,6 @@ type ParseResult<T> = (
 
 type Parser<T> = (value: unknown) => ParseResult<T>;
 
-type CombinedSuccess<Results> = (
-  Results extends ParseResult<unknown>[]
-    ? Results extends [ParseResult<infer T>, ...infer Tail]
-      ? [T, ...CombinedSuccess<Tail>]
-    : []
-    : never
-);
-
-function combine<Results extends ParseResult<unknown>[]>(
-  ...results: Results
-): ParseResult<CombinedSuccess<Results>> {
-  const successes: unknown[] = [];
-  const failures: string[] = [];
-
-  for (const result of results) {
-    if ("success" in result) {
-      successes.push(result.success);
-    } else {
-      failures.push(...result.failures);
-    }
-  }
-
-  if (successes.length === results.length) {
-    return { success: successes as CombinedSuccess<Results> };
-  }
-
-  return { failures };
-}
-
-export function field<T>(
-  obj: unknown,
-  name: string,
-  parser: Parser<T>,
-): ParseResult<T> {
-  if (typeof obj !== "object" || obj === null || !(name in obj)) {
-    return { failures: [`field ${name}: not provided`] };
-  }
-
-  const parseResult = parser((obj as Record<string, unknown>)[name]);
-
-  if ("success" in parseResult) {
-    return parseResult;
-  }
-
-  return {
-    failures: parseResult.failures.map((f) => `field ${name}: ${f}`),
-  };
-}
-
 function parseString(value: unknown): ParseResult<string> {
   if (typeof value === "string") {
     return { success: value };
@@ -184,80 +135,57 @@ export function parseTuple<ParserTuple extends Parser<unknown>[]>(
   };
 }
 
+type DataObject<ParserObject extends Record<string, Parser<unknown>>> = {
+  [K in keyof ParserObject]:
+    (ParserObject[K] extends Parser<infer T> ? T : never);
+};
+
+function parseObject<ParserObject extends Record<string, Parser<unknown>>>(
+  parserObject: ParserObject,
+): Parser<DataObject<ParserObject>> {
+  return (value) => {
+    if (typeof value !== "object" || value === null) {
+      return { failures: ["not an object"] };
+    }
+
+    const valueRecord = value as Record<string, unknown>;
+
+    const result: Record<string, unknown> = {};
+    const failures: string[] = [];
+
+    for (const key of Object.keys(parserObject)) {
+      const element = valueRecord[key];
+      const parseResult = parserObject[key](element);
+
+      if ("failures" in parseResult) {
+        failures.push(...parseResult.failures.map((f) => `field ${key}: ${f}`));
+      } else {
+        result[key] = parseResult.success;
+      }
+    }
+
+    return { success: result as DataObject<ParserObject> };
+  };
+}
+
 type OperationDto = BundleDto["operations"][number];
 type ActionDataDto = OperationDto["actions"][number];
 
-function parseActionDataDto(actionData: unknown): ParseResult<ActionDataDto> {
-  const result = combine(
-    field(actionData, "ethValue", parseHex()),
-    field(actionData, "contractAddress", parseHex()),
-    field(actionData, "encodedFunction", parseHex()),
-  );
+const parseActionDataDto: Parser<ActionDataDto> = parseObject({
+  ethValue: parseHex(),
+  contractAddress: parseHex(),
+  encodedFunction: parseHex(),
+});
 
-  if ("failures" in result) {
-    return result;
-  }
+const parseOperationDto: Parser<OperationDto> = parseObject({
+  nonce: parseHex(),
+  actions: parseArray(parseActionDataDto),
+});
 
-  const [
-    ethValue,
-    contractAddress,
-    encodedFunction,
-  ] = result.success;
-
-  return {
-    success: {
-      ethValue,
-      contractAddress,
-      encodedFunction,
-    },
-  };
-}
-
-function parseOperationDto(operationData: unknown): ParseResult<OperationDto> {
-  const result = combine(
-    field(operationData, "nonce", parseHex()),
-    field(operationData, "actions", parseArray(parseActionDataDto)),
-  );
-
-  if ("failures" in result) {
-    return result;
-  }
-
-  const [
-    nonce,
-    actions,
-  ] = result.success;
-
-  return {
-    success: {
-      nonce,
-      actions,
-    },
-  };
-}
-
-export function parseBundleDto(bundleData: unknown): ParseResult<BundleDto> {
-  const result = combine(
-    field(
-      bundleData,
-      "senderPublicKeys",
-      parseArray(parseTuple(parseHex(), parseHex(), parseHex(), parseHex())),
-    ),
-    field(bundleData, "operations", parseArray(parseOperationDto)),
-    field(bundleData, "signature", parseTuple(parseHex(), parseHex())),
-  );
-
-  if ("failures" in result) {
-    return result;
-  }
-
-  const [senderPublicKeys, operations, signature] = result.success;
-
-  return {
-    success: {
-      senderPublicKeys,
-      operations,
-      signature,
-    },
-  };
-}
+export const parseBundleDto: Parser<BundleDto> = parseObject({
+  senderPublicKeys: parseArray(
+    parseTuple(parseHex(), parseHex(), parseHex(), parseHex()),
+  ),
+  operations: parseArray(parseOperationDto),
+  signature: parseTuple(parseHex(), parseHex()),
+});
