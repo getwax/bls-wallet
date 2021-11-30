@@ -169,6 +169,10 @@ function parseObject<ParserObject extends Record<string, Parser<unknown>>>(
       }
     }
 
+    if (failures.length > 0) {
+      return { failures };
+    }
+
     return { success: result as DataObject<ParserObject> };
   };
 }
