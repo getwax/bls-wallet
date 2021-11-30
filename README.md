@@ -54,10 +54,10 @@ Then choose to target either a local Hardhat node or the Arbitrum Testnet.
 Start a local Hardhat node for RPC use.
 ```sh
 cd ./contracts
-npx hardhat node
+yarn hardhat node
 ```
 
-You can use any two of the private keys displayed (PK0 & PK1) to update `./aggregator/.env`.
+You can use any two of the private keys displayed (PK0 & PK1) to update these values in `./aggregator/.env`.
 ```
 ...
 PRIVATE_KEY_AGG=PK0
@@ -74,7 +74,7 @@ DEPLOYER_MNEMONIC="test test test test test test test test test test test junk"
 
 Deploy the PrecompileCostEstimator contract.
 ```sh
-npx hardhat run scripts/0_deploy_precompile_cost_estimator.ts --network gethDev
+yarn hardhat run scripts/0_deploy_precompile_cost_estimator.ts --network gethDev
 ```
 Copy the address that is output.
 
@@ -87,7 +87,7 @@ address private constant COST_ESTIMATOR_ADDRESS = 0x57047C275bbCb44D85DFA50AD562
 
 Deploy all remaining `bls-wallet` contracts.
 ```sh
-npx hardhat run scripts/deploy_all.ts --network gethDev
+yarn hardhat run scripts/deploy_all.ts --network gethDev
 ```
 
 ### Arbitrum Testnet (Rinkeby Arbitrum Testnet)
@@ -96,7 +96,7 @@ You will need two ETH addresses with Rinkeby ETH and their private keys (PK0 & P
 
 You can get Rinkeby ETH at https://app.mycrypto.com/faucet, and transfer it into the Arbitrum testnet via https://bridge.arbitrum.io/. Make sure when doing so that your network is set to Rinkeby in MetaMask.
 
-Update `./aggregator/.env`
+Update these values in `./aggregator/.env`.
 ```
 RPC_URL=https://rinkeby.arbitrum.io/rpc
 ...
@@ -106,7 +106,7 @@ PRIVATE_KEY_ADMIN=PK1
 ...
 ```
 
-Update `./extension/.env`
+And then update this value in `./extension/.env`.
 ```
 ...
 
