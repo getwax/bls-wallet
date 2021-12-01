@@ -1,4 +1,10 @@
-import { BigNumber, delay, QueryClient, TransactionData } from "../../deps.ts";
+import {
+  BigNumber,
+  BlsWalletSigner,
+  Bundle,
+  delay,
+  QueryClient,
+} from "../../deps.ts";
 import { IClock } from "../helpers/Clock.ts";
 import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
@@ -8,7 +14,7 @@ import BatchTimer from "./BatchTimer.ts";
 import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import TxTable, { TxTableRow } from "./TxTable.ts";
-import WalletService, { TxCheckResult } from "./WalletService.ts";
+import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import nil from "../helpers/nil.ts";
 
@@ -32,7 +38,8 @@ export default class TxService {
     public txTablesMutex: Mutex,
     public readyTxTable: TxTable,
     public futureTxTable: TxTable,
-    public walletService: WalletService,
+    public blsWalletSigner: BlsWalletSigner,
+    public ethereumService: EthereumService,
     public config = TxService.defaultConfig,
   ) {
     this.batchTimer = new BatchTimer(
@@ -66,23 +73,32 @@ export default class TxService {
     return runQueryGroup(this.emit, this.txTablesMutex, this.queryClient, body);
   }
 
-  async add(txData: TransactionData): Promise<TransactionFailure[]> {
-    let checkTxResult: TxCheckResult;
+  async add(bundle: Bundle): Promise<TransactionFailure[]> {
+    if (bundle.operations.length !== bundle.senderPublicKeys.length) {
+      return [
+        {
+          type: "invalid-format",
+          description:
+            "number of operations does not match number of public keys",
+        },
+      ];
+    }
 
-    try {
-      checkTxResult = await this.walletService.checkTx(txData);
-    } catch (error) {
-      if (error.message.includes("code=UNPREDICTABLE_GAS_LIMIT,")) {
-        return [{
-          type: "unpredictable-gas-limit",
-          description: [
-            "Checking transaction produced UNPREDICTABLE_GAS_LIMIT, which",
-            "may not be super-helpful. We don't know what went wrong.",
-          ].join(" "),
-        }];
-      }
+    const signedCorrectly = this.blsWalletSigner.verify(bundle);
 
-      throw error;
+    const failures: TransactionFailure[] = [];
+
+    if (signedCorrectly === false) {
+      failures.push({
+        type: "invalid-signature",
+        description: "invalid signature",
+      });
+    }
+
+    failures.push(...await this.ethereumService.checkNonces(bundle));
+
+    if (failures.length > 0) {
+      return failures;
     }
 
     return await this.runQueryGroup(async () => {
@@ -358,7 +374,7 @@ export default class TxService {
     publicKey: string,
     /**
      * Example transaction with this public key, facilitating a call to
-     * this.walletService.checkTx
+     * this.ethereumService.checkTx
      *
      * Enhancement: Remove the need for this by providing a way to check the
      * next chain nonce of a public key without checking a transaction.
@@ -367,7 +383,7 @@ export default class TxService {
   ) {
     const promises: Promise<unknown>[] = [];
 
-    const nextChainNonce = (await this.walletService.checkTx(exampleTx))
+    const nextChainNonce = (await this.ethereumService.checkTx(exampleTx))
       .nextNonce;
 
     const nextUnconfirmedNonce = this.NextUnconfirmedNonce(publicKey);
@@ -463,7 +479,7 @@ export default class TxService {
 
         (async () => {
           try {
-            const recpt = await this.walletService.sendTxs(
+            const recpt = await this.ethereumService.sendTxs(
               batchTxs,
               Infinity,
               300,
