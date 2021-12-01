@@ -19,11 +19,9 @@ type AppEvent = (
   | { type: "batch-confirmed"; data: { txIds: TxId[]; blockNumber: number } }
   | { type: "warning"; data: string }
   | {
-    type: "tx-added";
+    type: "bundle-added";
     data: {
-      category: "ready" | "future";
-      publicKeyShort: string;
-      nonce: number;
+      publicKeyShorts: string[];
     };
   }
   | {

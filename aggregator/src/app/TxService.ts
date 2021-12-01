@@ -3,6 +3,8 @@ import {
   BlsWalletSigner,
   Bundle,
   delay,
+  ethers,
+  PublicKey,
   QueryClient,
 } from "../../deps.ts";
 import { IClock } from "../helpers/Clock.ts";
@@ -13,10 +15,10 @@ import TransactionFailure from "./TransactionFailure.ts";
 import BatchTimer from "./BatchTimer.ts";
 import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
-import TxTable, { TxTableRow } from "./TxTable.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import nil from "../helpers/nil.ts";
+import BundleTable from "./BundleTable.ts";
 
 export default class TxService {
   static defaultConfig = {
@@ -29,15 +31,14 @@ export default class TxService {
 
   unconfirmedTxs = new Set<TxTableRow>();
   batchTimer: BatchTimer;
-  batchesInProgress = 0;
+  submissionsInProgress = 0;
 
   constructor(
     public emit: (evt: AppEvent) => void,
     public clock: IClock,
     public queryClient: QueryClient,
     public txTablesMutex: Mutex,
-    public readyTxTable: TxTable,
-    public futureTxTable: TxTable,
+    public bundleTable: BundleTable,
     public blsWalletSigner: BlsWalletSigner,
     public ethereumService: EthereumService,
     public config = TxService.defaultConfig,
@@ -48,11 +49,11 @@ export default class TxService {
       () => this.runBatch(),
     );
 
-    this.checkReadyTxCount();
+    this.tryAggregating();
   }
 
-  async checkReadyTxCount() {
-    if (this.batchesInProgress > 0) {
+  async tryAggregating() {
+    if (this.submissionsInProgress > 0) {
       // No need to check because there is already a batch in progress, and a
       // new check is run after every batch.
       return;
@@ -102,47 +103,20 @@ export default class TxService {
     }
 
     return await this.runQueryGroup(async () => {
-      const {
-        failures,
-        nextNonce: nextChainNonce,
-      } = checkTxResult;
+      await this.bundleTable.add({
+        bundle,
+        eligibleAfter: await this.ethereumService.BlockNumber(),
+        nextEligibilityDelay: BigNumber.from(1),
+      });
 
-      if (failures.length > 0) {
-        return failures;
-      }
+      this.emit({
+        type: "bundle-added",
+        data: {
+          publicKeyShorts: bundle.senderPublicKeys.map(toShortPublicKey),
+        },
+      });
 
-      const nextNonce = await this.NextNonce(
-        nextChainNonce,
-        txData.publicKey,
-      );
-
-      const emitAdded = (category: "ready" | "future") => {
-        this.emit({
-          type: "tx-added",
-          data: {
-            category,
-            publicKeyShort: txData.publicKey.slice(2, 9),
-            nonce: txData.nonce.toNumber(),
-          },
-        });
-      };
-
-      if (txData.nonce.lt(nextNonce)) {
-        const result = await this.replaceReadyTx(nextNonce, txData);
-        emitAdded("ready");
-        return result;
-      }
-
-      if (nextNonce.eq(txData.nonce)) {
-        this.readyTxTable.add(txData);
-        await this.tryMoveFutureTxs(txData.publicKey, nextNonce.add(1));
-        emitAdded("ready");
-        this.checkReadyTxCount();
-      } else {
-        await this.ensureFutureTxSpace();
-        this.futureTxTable.add(txData);
-        emitAdded("future");
-      }
+      this.tryAggregating();
 
       return [];
     });
@@ -447,7 +421,7 @@ export default class TxService {
   }
 
   async runBatch() {
-    this.batchesInProgress++;
+    this.submissionsInProgress++;
 
     const batchResult = await this.runQueryGroup(async () => {
       const priorityTxs = await this.readyTxTable.getHighestPriority(
@@ -503,8 +477,8 @@ export default class TxService {
       await this.removeFromReady(batchTxs);
     });
 
-    this.batchesInProgress--;
-    this.checkReadyTxCount();
+    this.submissionsInProgress--;
+    this.tryAggregating();
 
     return batchResult;
   }
@@ -537,4 +511,8 @@ function bigMax(a: BigNumber, b: BigNumber) {
 
 function groupByNonce(txs: TxTableRow[]) {
   return groupBy(txs, (tx) => tx.nonce, (a, b) => a.eq(b));
+}
+
+function toShortPublicKey(publicKey: PublicKey) {
+  return ethers.utils.solidityPack(["uint256"], [publicKey[0]]).slice(2, 9);
 }

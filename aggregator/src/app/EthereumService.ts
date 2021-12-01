@@ -70,6 +70,12 @@ export default class EthereumService {
     );
   }
 
+  async BlockNumber(): Promise<BigNumber> {
+    return BigNumber.from(
+      await this.aggregatorSigner.provider.getBlockNumber(),
+    );
+  }
+
   async checkTx(tx: TransactionData): Promise<TxCheckResult> {
     const signedCorrectly = this.blsWalletSigner.verify(tx);
 
