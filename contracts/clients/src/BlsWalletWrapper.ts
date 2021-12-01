@@ -1,9 +1,12 @@
 import { ethers, BigNumber } from "ethers";
+import { solidityKeccak256 } from "ethers/lib/utils";
+
 import {
   BlsWalletSigner,
   initBlsWalletSigner,
   Bundle,
   Operation,
+  PublicKey,
 } from "./signer";
 
 import {
@@ -121,7 +124,7 @@ export default class BlsWalletWrapper {
   }
 
   static async Nonce(
-    publicKey: string,
+    publicKey: PublicKey,
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<BigNumber> {
@@ -130,7 +133,11 @@ export default class BlsWalletWrapper {
       signerOrProvider,
     );
 
-    const publicKeyHash = ethers.utils.keccak256(publicKey);
+    const publicKeyHash = solidityKeccak256(
+      ["uint256", "uint256", "uint256", "uint256"],
+      publicKey,
+    );
+
     const contractAddress = await verificationGateway.walletFromHash(
       publicKeyHash,
     );
