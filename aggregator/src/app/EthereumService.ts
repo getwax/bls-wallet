@@ -2,6 +2,8 @@ import {
   BigNumber,
   BlsWallet,
   BlsWalletSigner,
+  BlsWalletWrapper,
+  Bundle,
   delay,
   ethers,
   initBlsWalletSigner,
@@ -97,6 +99,38 @@ export default class EthereumService {
     }
 
     return { failures, nextNonce };
+  }
+
+  async checkNonces(bundle: Bundle): Promise<TransactionFailure[]> {
+    const failures: TransactionFailure[] = [];
+
+    // Not our responsibility to check these are consistent, but we do want to
+    // ensure that our indexes are valid.
+    const len = Math.min(
+      bundle.operations.length,
+      bundle.senderPublicKeys.length,
+    );
+
+    for (let i = 0; i < len; i++) {
+      const nextNonce = await BlsWalletWrapper.Nonce(
+        bundle.senderPublicKeys[i],
+        this.verificationGateway.address,
+        this.aggregatorSigner,
+      );
+
+      if (nextNonce.gt(bundle.operations[i].nonce)) {
+        failures.push({
+          type: "duplicate-nonce",
+          description: [
+            `operation ${i}: nonce ${bundle.operations[i].nonce} has already`,
+            `been processed (the next nonce for this wallet will be`,
+            `${nextNonce.toString()})`,
+          ].join(" "),
+        });
+      }
+    }
+
+    return failures;
   }
 
   async sendTxs(
