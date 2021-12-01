@@ -108,8 +108,15 @@ export default class BlsWalletWrapper {
    * block.
    */
   async Nonce(): Promise<BigNumber> {
-    // TODO: What happens when VG hasn't created the wallet yet? This probably
-    // throws, and we need to return zero in this case.
+    const code = await this.walletContract.provider.getCode(this.address);
+
+    if (code === "0x") {
+      // The wallet doesn't exist yet. Wallets are lazily created, so the nonce
+      // is effectively zero, since that will be accepted as valid for a first
+      // operation that also creates the wallet.
+      return BigNumber.from(0);
+    }
+
     return await this.walletContract.nonce();
   }
 
@@ -133,8 +140,15 @@ export default class BlsWalletWrapper {
       signerOrProvider,
     );
 
-    // TODO: What happens when VG hasn't created the wallet yet? This probably
-    // throws, and we need to return zero in this case.
+    const code = await walletContract.provider.getCode(contractAddress);
+
+    if (code === "0x") {
+      // The wallet doesn't exist yet. Wallets are lazily created, so the nonce
+      // is effectively zero, since that will be accepted as valid for a first
+      // operation that also creates the wallet.
+      return BigNumber.from(0);
+    }
+
     return await walletContract.nonce();
   }
 
