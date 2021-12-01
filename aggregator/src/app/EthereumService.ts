@@ -144,7 +144,7 @@ export default class EthereumService {
     maxAttempts = 1,
     retryDelay = 300,
   ): Promise<ethers.providers.TransactionReceipt> {
-    assert(txs.length > 0, "Cannot process empty batch");
+    assert(txs.length > 0, "Cannot process empty bundle");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
     const aggregateTx = this.blsWalletSigner.aggregate(txs);
@@ -186,7 +186,7 @@ export default class EthereumService {
 
     for (let i = 0; i < maxAttempts; i++) {
       this.emit({
-        type: "batch-attempt",
+        type: "submission-attempt",
         data: { attemptNumber: i + 1, txIds },
       });
 
@@ -204,7 +204,7 @@ export default class EthereumService {
 
       if (i !== maxAttempts - 1) {
         this.emit({
-          type: "batch-attempt-failed",
+          type: "submission-attempt-failed",
           data: {
             attemptNumber: i + 1,
             txIds,

@@ -13,13 +13,7 @@ export default class AdminService {
     await this.readyTxTable.clear();
   }
 
-  async sendBatch() {
-    const txs = await this.readyTxTable.all();
-    console.log(`Sending ${txs.length} txs`);
-    await this.ethereumService.sendTxs(txs);
-  }
-
-  async txCount() {
+  async txCount(): Promise<bigint> {
     return await this.readyTxTable.count();
   }
 }

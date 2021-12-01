@@ -17,10 +17,5 @@ export default function AdminRouter(adminService: AdminService) {
     ctx.response.body = "Transactions reset";
   });
 
-  router.get("sendBatch", async (ctx) => {
-    await adminService.sendBatch();
-    ctx.response.body = "Sent batch of transactions";
-  });
-
   return router;
 }

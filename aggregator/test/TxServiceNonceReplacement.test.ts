@@ -66,11 +66,11 @@ function reinsertionTest(extraTxs: number) {
     async (fx) => {
       const txService = await fx.createTxService({
         ...TxService.defaultConfig,
-        // Small query limit forces multiple batches when processing the
-        // reinsertion, checking that batching works correctly
+        // Small query limit forces multiple submissions when processing the
+        // reinsertion, checking that submitting works correctly
         txQueryLimit: 2,
 
-        // Prevent batching to focus on testing which table txs land in
+        // Prevent submitting to focus on testing which table txs land in
         maxAggregationSize: 100,
       });
 

@@ -2,9 +2,9 @@
 
 Aggregation service for bls-signed transaction data.
 
-Accepts posts of signed transactions and, upon instruction, can aggregate
-signatures and submit a transaction batch to the configured Verification
-Gateway.
+Accepts transaction bundles (including bundles that contain a single
+transaction) and submits aggregations of these bundles to the configured
+Verification Gateway.
 
 ## Installation
 
@@ -153,11 +153,11 @@ script completes successfully before merging into main.
 - **`app.ts`**: Runs the app (the aggregator), requiring only a definition of
   what to do with the events (invoked with `console.log` by
   `programs/aggregator.ts`).
-- **`EthereumService`**: Responsible for submitting aggregations (aka batches)
-  once they have been formed. This was where all the contract interaction was
-  before `src/chain`. Might need some rethinking.
+- **`EthereumService`**: Responsible for submitting aggregations once they have
+  been formed. This was where all the contract interaction was before
+  `src/chain`. Might need some rethinking.
 - **`TxService`**: Keeps track of all stored transactions, as well as accepting
-  (or rejecting) them and sending off batches to `EthereumService`.
+  (or rejecting) them and submitting aggregated bundles to `EthereumService`.
 - **`TxTable`**: Abstraction layer over postgres transaction tables, exposing
   typed functions instead of queries. Handles conversions to and from the field
   types supported by postgres so that other code can has a uniform js-friendly

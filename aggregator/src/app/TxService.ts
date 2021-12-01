@@ -12,7 +12,7 @@ import groupBy from "../helpers/groupBy.ts";
 import Mutex from "../helpers/Mutex.ts";
 
 import TransactionFailure from "./TransactionFailure.ts";
-import BatchTimer from "./BatchTimer.ts";
+import SubmissionTimer from "./SubmissionTimer.ts";
 import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
@@ -30,7 +30,7 @@ export default class TxService {
   };
 
   unconfirmedTxs = new Set<TxTableRow>();
-  batchTimer: BatchTimer;
+  submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
 
   constructor(
@@ -43,10 +43,10 @@ export default class TxService {
     public ethereumService: EthereumService,
     public config = TxService.defaultConfig,
   ) {
-    this.batchTimer = new BatchTimer(
+    this.submissionTimer = new SubmissionTimer(
       clock,
       config.maxAggregationDelayMillis,
-      () => this.runBatch(),
+      () => this.runSubmission(),
     );
 
     this.tryAggregating();
@@ -54,19 +54,19 @@ export default class TxService {
 
   async tryAggregating() {
     if (this.submissionsInProgress > 0) {
-      // No need to check because there is already a batch in progress, and a
-      // new check is run after every batch.
+      // No need to check because there is already a submission in progress, and a
+      // new check is run after every submission.
       return;
     }
 
     const readyTxCount = await this.readyTxTable.count();
 
     if (readyTxCount >= this.config.maxAggregationSize) {
-      this.batchTimer.trigger();
+      this.submissionTimer.trigger();
     } else if (readyTxCount > 0) {
-      this.batchTimer.notifyTxWaiting();
+      this.submissionTimer.notifyTxWaiting();
     } else {
-      this.batchTimer.clear();
+      this.submissionTimer.clear();
     }
   }
 
@@ -170,7 +170,7 @@ export default class TxService {
     publicKey: string,
     nextNonce: BigNumber,
   ) {
-    let needNextBatch: boolean;
+    let needNextSubmission: boolean;
 
     do {
       const txsToAdd: TransactionData[] = [];
@@ -201,15 +201,16 @@ export default class TxService {
       await this.readyTxTable.addWithNewId(...txsToAdd);
       await this.futureTxTable.remove(...futureTxsToRemove);
 
-      // If we remove all future txs in this batch, we need to process the next
+      // If we remove all future txs in this submission, we need to process the next
       // one too.
       //
       // To put it another way, if there is a future tx that doesn't get
       // removed, that signals that we've reached a nonce that can't be moved
-      // to ready txs, and any following batches will all be at least that
+      // to ready txs, and any following submissions will all be at least that
       // nonce, and so cannot be moved to ready txs.
-      needNextBatch = futureTxsToRemove.length === this.config.txQueryLimit;
-    } while (needNextBatch);
+      needNextSubmission =
+        futureTxsToRemove.length === this.config.txQueryLimit;
+    } while (needNextSubmission);
   }
 
   /**
@@ -420,67 +421,67 @@ export default class TxService {
     );
   }
 
-  async runBatch() {
+  async runSubmission() {
     this.submissionsInProgress++;
 
-    const batchResult = await this.runQueryGroup(async () => {
+    const submissionResult = await this.runQueryGroup(async () => {
       const priorityTxs = await this.readyTxTable.getHighestPriority(
         this.config.txQueryLimit,
       );
 
-      const batchTxs: TxTableRow[] = priorityTxs.slice(
+      const submissionTxs: TxTableRow[] = priorityTxs.slice(
         0,
         this.config.maxAggregationSize,
       );
 
-      if (batchTxs.length > 0) {
+      if (submissionTxs.length > 0) {
         const maxUnconfirmedTxs = (
           this.config.maxUnconfirmedAggregations *
           this.config.maxAggregationSize
         );
 
         while (
-          this.unconfirmedTxs.size + batchTxs.length > maxUnconfirmedTxs
+          this.unconfirmedTxs.size + submissionTxs.length > maxUnconfirmedTxs
         ) {
           // FIXME (merge-ok): Polling
           this.emit({ type: "waiting-unconfirmed-space" });
           await delay(1000);
         }
 
-        for (const tx of batchTxs) {
+        for (const tx of submissionTxs) {
           this.unconfirmedTxs.add(tx);
         }
 
         (async () => {
           try {
             const recpt = await this.ethereumService.sendTxs(
-              batchTxs,
+              submissionTxs,
               Infinity,
               300,
             );
 
             this.emit({
-              type: "batch-confirmed",
+              type: "submission-confirmed",
               data: {
-                txIds: batchTxs.map((tx) => tx.txId),
+                txIds: submissionTxs.map((tx) => tx.txId),
                 blockNumber: recpt.blockNumber,
               },
             });
           } finally {
-            for (const tx of batchTxs) {
+            for (const tx of submissionTxs) {
               this.unconfirmedTxs.delete(tx);
             }
           }
         })();
       }
 
-      await this.removeFromReady(batchTxs);
+      await this.removeFromReady(submissionTxs);
     });
 
     this.submissionsInProgress--;
     this.tryAggregating();
 
-    return batchResult;
+    return submissionResult;
   }
 
   async waitForConfirmations() {

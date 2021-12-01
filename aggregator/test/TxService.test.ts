@@ -240,11 +240,11 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
     async (fx) => {
       const txService = await fx.createTxService({
         ...TxService.defaultConfig,
-        // Small query limit forces multiple batches when processing the
-        // future txs, checking that batching works correctly
+        // Small query limit forces multiple submissions when processing the
+        // future txs, checking that submitting works correctly
         txQueryLimit: 2,
 
-        // Prevent batching to focus on testing which table txs land in
+        // Prevent submitting to focus on testing which table txs land in
         maxAggregationSize: 100,
       });
 
@@ -366,7 +366,7 @@ Fixture.test(
     const txService = await fx.createTxService({
       ...TxService.defaultConfig,
 
-      // Prevent batching to focus on testing which table txs land in
+      // Prevent submitting to focus on testing which table txs land in
       maxAggregationSize: 100,
     });
 

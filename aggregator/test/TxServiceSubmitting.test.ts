@@ -12,7 +12,7 @@ const txServiceConfig = {
   maxAggregationDelayMillis: 5000,
 };
 
-Fixture.test("submits a single transaction in a timed batch", async (fx) => {
+Fixture.test("submits a single transaction in a timed submission", async (fx) => {
   const txService = await fx.createTxService(txServiceConfig);
   const [wallet] = await fx.setupWallets(1);
 
@@ -37,7 +37,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
   });
 
   fx.clock.advance(5000);
-  await txService.batchTimer.waitForCompletedBatches(1);
+  await txService.submissionTimer.waitForCompletedSubmissions(1);
   await txService.waitForConfirmations();
 
   assertEquals(
@@ -51,7 +51,7 @@ Fixture.test("submits a single transaction in a timed batch", async (fx) => {
   });
 });
 
-Fixture.test("submits a full batch without delay", async (fx) => {
+Fixture.test("submits a full submission without delay", async (fx) => {
   const txService = await fx.createTxService(txServiceConfig);
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
@@ -68,11 +68,11 @@ Fixture.test("submits a full batch without delay", async (fx) => {
   const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
   assertEquals(failures.flat(), []);
 
-  await txService.batchTimer.waitForCompletedBatches(1);
+  await txService.submissionTimer.waitForCompletedSubmissions(1);
   await txService.waitForConfirmations();
 
-  // Check mints have occurred, ensuring a batch has occurred even though the
-  // clock has not advanced
+  // Check mints have occurred, ensuring a submission has occurred even though
+  // the clock has not advanced
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1005), // 1000 (initial) + 5 * 1 (mint txs)
@@ -81,7 +81,7 @@ Fixture.test("submits a full batch without delay", async (fx) => {
 
 Fixture.test(
   [
-    "submits batch from over-full readyTxs without delay and submits leftover",
+    "submits submission from over-full readyTxs without delay and submits leftover",
     "txs after delay",
   ].join(" "),
   async (fx) => {
@@ -101,10 +101,10 @@ Fixture.test(
     const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
     assertEquals(failures.flat(), []);
 
-    await txService.batchTimer.waitForCompletedBatches(1);
+    await txService.submissionTimer.waitForCompletedSubmissions(1);
     await txService.waitForConfirmations();
 
-    // Check mints have occurred, ensuring a batch has occurred even though the
+    // Check mints have occurred, ensuring a submission has occurred even though the
     // clock has not advanced
     assertEquals(
       await fx.testErc20.balanceOf(wallet.address),
@@ -118,7 +118,7 @@ Fixture.test(
     });
 
     await fx.clock.advance(5000);
-    await txService.batchTimer.waitForCompletedBatches(2);
+    await txService.submissionTimer.waitForCompletedSubmissions(2);
     await txService.waitForConfirmations();
 
     assertEquals(
@@ -129,15 +129,15 @@ Fixture.test(
 );
 
 Fixture.test(
-  "submits 3 batches added concurrently in a jumbled order",
+  "submits 3 submissions added concurrently in a jumbled order",
   async (fx) => {
     const txService = await fx.createTxService({
       ...txServiceConfig,
 
       // TODO (merge-ok): Stop overriding this when BlsWallet nonces become
-      // explicit. Without this, batches will be sent concurrently, and the
-      // batches that are dependent on the first one will get rejected on the
-      // sig check.
+      // explicit. Without this, submissions will be sent concurrently, and the
+      // submissions that are dependent on the first one will get rejected on
+      // the sig check.
       maxUnconfirmedAggregations: 1,
     });
 
@@ -156,7 +156,7 @@ Fixture.test(
     const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
     assertEquals(failures.flat(), []);
 
-    await txService.batchTimer.waitForCompletedBatches(3);
+    await txService.submissionTimer.waitForCompletedSubmissions(3);
     await txService.waitForConfirmations();
 
     // Check mints have occurred
