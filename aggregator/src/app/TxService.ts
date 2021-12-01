@@ -59,11 +59,19 @@ export default class TxService {
       return;
     }
 
-    const readyTxCount = await this.readyTxTable.count();
+    const eligibleBundleRows = await this.bundleTable.findEligible(
+      await this.ethereumService.BlockNumber(),
+      this.config.txQueryLimit,
+    );
 
-    if (readyTxCount >= this.config.maxAggregationSize) {
+    const actionCount = (eligibleBundleRows
+      .map((r) => countActions(r.bundle))
+      .reduce(plus, 0));
+
+    if (actionCount >= this.config.maxAggregationSize) {
       this.submissionTimer.trigger();
-    } else if (readyTxCount > 0) {
+    } else if (actionCount > 0) {
+      // TODO: tx -> bundle
       this.submissionTimer.notifyTxWaiting();
     } else {
       this.submissionTimer.clear();
@@ -516,4 +524,12 @@ function groupByNonce(txs: TxTableRow[]) {
 
 function toShortPublicKey(publicKey: PublicKey) {
   return ethers.utils.solidityPack(["uint256"], [publicKey[0]]).slice(2, 9);
+}
+
+function countActions(bundle: Bundle) {
+  return bundle.operations.map((op) => op.actions.length).reduce(plus, 0);
+}
+
+function plus(a: number, b: number) {
+  return a + b;
 }

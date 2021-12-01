@@ -120,6 +120,20 @@ export default class BundleTable {
     ));
   }
 
+  async findEligible(blockNumber: BigNumber, limit: number) {
+    const rows: RawRow[] = await this.queryClient.query(
+      `
+        SELECT * from ${this.safeName}
+        WHERE
+          "eligibleAfter" <= ${blockNumber.toNumber()}
+        ORDER BY "id" ASC
+        LIMIT ${limit}
+      `,
+    );
+
+    return rows.map(fromRawRow);
+  }
+
   async count(): Promise<bigint> {
     const result = await this.queryClient.query(
       `SELECT COUNT(*) FROM ${this.queryTable.name}`,
