@@ -31,14 +31,14 @@ export default class EthereumService {
 
   constructor(
     public emit: (evt: AppEvent) => void,
-    public aggregatorSigner: Wallet,
+    public wallet: Wallet,
     public blsWalletSigner: BlsWalletSigner,
     verificationGatewayAddress: string,
     public nextNonce: number,
   ) {
     this.verificationGateway = new VerificationGateway(
       verificationGatewayAddress,
-      this.aggregatorSigner,
+      this.wallet,
     );
   }
 
@@ -52,14 +52,14 @@ export default class EthereumService {
     verificationGatewayAddress: string,
     aggPrivateKey: string,
   ): Promise<EthereumService> {
-    const aggregatorSigner = EthereumService.getAggregatorSigner(aggPrivateKey);
-    const nextNonce = (await aggregatorSigner.getTransactionCount());
-    const chainId = await aggregatorSigner.getChainId();
+    const wallet = EthereumService.Wallet(aggPrivateKey);
+    const nextNonce = (await wallet.getTransactionCount());
+    const chainId = await wallet.getChainId();
     const blsWalletSigner = await initBlsWalletSigner({ chainId });
 
     return new EthereumService(
       emit,
-      aggregatorSigner,
+      wallet,
       blsWalletSigner,
       verificationGatewayAddress,
       nextNonce,
@@ -68,13 +68,13 @@ export default class EthereumService {
 
   async BlockNumber(): Promise<BigNumber> {
     return BigNumber.from(
-      await this.aggregatorSigner.provider.getBlockNumber(),
+      await this.wallet.provider.getBlockNumber(),
     );
   }
 
   async waitForNextBlock() {
     await new Promise((resolve) => {
-      this.aggregatorSigner.provider.once("block", resolve);
+      this.wallet.provider.once("block", resolve);
     });
   }
 
@@ -92,7 +92,7 @@ export default class EthereumService {
       const nextNonce = await BlsWalletWrapper.Nonce(
         bundle.senderPublicKeys[i],
         this.verificationGateway.address,
-        this.aggregatorSigner,
+        this.wallet,
       );
 
       if (nextNonce.gt(bundle.operations[i].nonce)) {
@@ -192,22 +192,22 @@ export default class EthereumService {
     throw new Error("Expected return or throw from attempt loop");
   }
 
-  private static getAggregatorSigner(privateKey: string) {
+  private static Wallet(privateKey: string) {
     const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
-    const aggregatorSigner = new Wallet(privateKey, provider);
+    const wallet = new Wallet(privateKey, provider);
 
     if (env.USE_TEST_NET) {
-      const originalPopulateTransaction = aggregatorSigner.populateTransaction
+      const originalPopulateTransaction = wallet.populateTransaction
         .bind(
-          aggregatorSigner,
+          wallet,
         );
 
-      aggregatorSigner.populateTransaction = (transaction) => {
+      wallet.populateTransaction = (transaction) => {
         transaction.gasPrice = 0;
         return originalPopulateTransaction(transaction);
       };
     }
 
-    return aggregatorSigner;
+    return wallet;
   }
 }
