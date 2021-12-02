@@ -112,6 +112,15 @@ export default class EthereumService {
     return failures;
   }
 
+  async checkBundle(bundle: Bundle) {
+    try {
+      await this.verificationGateway.callStatic.processBundle(bundle);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async submitBundle(
     bundle: Bundle,
     maxAttempts = 1,
