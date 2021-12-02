@@ -45,7 +45,7 @@ const tableOptions: TableOptions = {
 };
 
 function fromRawRow(rawRow: RawRow): Row {
-  const parseResult = parseBundleDto(rawRow.bundle);
+  const parseResult = parseBundleDto(JSON.parse(rawRow.bundle));
 
   if ("failures" in parseResult) {
     throw new Error(parseResult.failures.join("\n"));
@@ -63,12 +63,17 @@ function toRawRow(row: Row): RawRow {
   const toUint256Hex = (n: BigNumber) =>
     `0x${n.toHexString().slice(2).padStart(64, "0")}`;
 
-  return {
-    id: row.id,
+  const rawRow: RawRow = {
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
   };
+
+  if ("id" in row) {
+    rawRow.id = row.id;
+  }
+
+  return rawRow;
 }
 
 export default class BundleTable {
@@ -129,6 +134,8 @@ export default class BundleTable {
   }
 
   async findEligible(blockNumber: BigNumber, limit: number) {
+    // FIXME: blockNumber needs to be compared as a 256bit hex string
+
     const rows: RawRow[] = await this.queryClient.query(
       `
         SELECT * from ${this.safeName}
