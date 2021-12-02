@@ -112,7 +112,7 @@ export default class EthereumService {
     return failures;
   }
 
-  async submit(
+  async submitBundle(
     bundle: Bundle,
     maxAttempts = 1,
     retryDelay = 300,

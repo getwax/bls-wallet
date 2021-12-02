@@ -206,7 +206,7 @@ export default class BundleService {
 
       (async () => {
         try {
-          const recpt = await this.ethereumService.submit(
+          const recpt = await this.ethereumService.submitBundle(
             aggregateBundle,
             Infinity,
             300,
