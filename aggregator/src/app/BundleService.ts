@@ -18,8 +18,7 @@ import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable from "./BundleTable.ts";
 
-// TODO: Rename. Maybe "BundlePoolService"?
-export default class TxService {
+export default class BundleService {
   static defaultConfig = {
     txQueryLimit: env.TX_QUERY_LIMIT,
     maxFutureTxs: env.MAX_FUTURE_TXS,
@@ -42,7 +41,7 @@ export default class TxService {
     public bundleTable: BundleTable,
     public blsWalletSigner: BlsWalletSigner,
     public ethereumService: EthereumService,
-    public config = TxService.defaultConfig,
+    public config = BundleService.defaultConfig,
   ) {
     this.submissionTimer = new SubmissionTimer(
       clock,

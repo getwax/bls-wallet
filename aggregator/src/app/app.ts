@@ -2,7 +2,7 @@ import { Application } from "../../deps.ts";
 
 import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
-import TxService from "./TxService.ts";
+import BundleService from "./BundleService.ts";
 import TxRouter from "./TxRouter.ts";
 import AdminRouter from "./AdminRouter.ts";
 import AdminService from "./AdminService.ts";
@@ -38,7 +38,7 @@ export default async function app(emit: (evt: AppEvent) => void) {
     env.PRIVATE_KEY_AGG,
   );
 
-  const txService = new TxService(
+  const bundleService = new BundleService(
     emit,
     clock,
     queryClient,
@@ -55,7 +55,7 @@ export default async function app(emit: (evt: AppEvent) => void) {
   );
 
   const routers = [
-    TxRouter(txService),
+    TxRouter(bundleService),
     WalletRouter(ethereumService),
     AdminRouter(adminService),
   ];

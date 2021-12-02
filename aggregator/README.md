@@ -156,8 +156,9 @@ script completes successfully before merging into main.
 - **`EthereumService`**: Responsible for submitting aggregations once they have
   been formed. This was where all the contract interaction was before
   `src/chain`. Might need some rethinking.
-- **`TxService`**: Keeps track of all stored transactions, as well as accepting
-  (or rejecting) them and submitting aggregated bundles to `EthereumService`.
+- **`BundleService`**: Keeps track of all stored transactions, as well as
+  accepting (or rejecting) them and submitting aggregated bundles to
+  `EthereumService`.
 - **`TxTable`**: Abstraction layer over postgres transaction tables, exposing
   typed functions instead of queries. Handles conversions to and from the field
   types supported by postgres so that other code can has a uniform js-friendly
