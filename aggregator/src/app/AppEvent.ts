@@ -1,6 +1,6 @@
 import { HTTPMethods } from "../../deps.ts";
 
-type TxId = number | undefined;
+type RowId = number | undefined;
 
 type AppEvent = (
   | { type: "listening"; data: { port: number } }
@@ -8,20 +8,20 @@ type AppEvent = (
   | { type: "waiting-unconfirmed-space" }
   | {
     type: "submission-attempt";
-    data: { txIds: TxId[]; attemptNumber: number };
+    data: { rowIds: RowId[]; attemptNumber: number };
   }
   | {
     type: "submission-attempt-failed";
     data: {
-      txIds: TxId[];
+      rowIds: RowId[];
       attemptNumber: number;
       error: Error;
     };
   }
-  | { type: "submission-sent"; data: { txIds: TxId[] } }
+  | { type: "submission-sent"; data: { rowIds: RowId[] } }
   | {
     type: "submission-confirmed";
-    data: { txIds: TxId[]; blockNumber: number };
+    data: { rowIds: RowId[]; blockNumber: number };
   }
   | { type: "warning"; data: string }
   | {

@@ -18,6 +18,7 @@ import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable from "./BundleTable.ts";
 
+// TODO: Rename. Maybe "BundlePoolService"?
 export default class TxService {
   static defaultConfig = {
     txQueryLimit: env.TX_QUERY_LIMIT,
@@ -27,7 +28,9 @@ export default class TxService {
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
   };
 
-  unconfirmedTxs = new Set<TxTableRow>();
+  unconfirmedBundles = new Set<Bundle>();
+  unconfirmedActionCount = 0;
+  unconfirmedRowIds = new Set<number>();
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
 
@@ -151,57 +154,95 @@ export default class TxService {
     this.submissionsInProgress++;
 
     const submissionResult = await this.runQueryGroup(async () => {
-      const priorityTxs = await this.readyTxTable.getHighestPriority(
+      let aggregateBundle: Bundle = {
+        signature: [BigNumber.from(0), BigNumber.from(0)],
+        senderPublicKeys: [],
+        operations: [],
+      };
+
+      const eligibleBundleRows = await this.bundleTable.findEligible(
+        await this.ethereumService.BlockNumber(),
         this.config.txQueryLimit,
       );
 
-      const submissionTxs: TxTableRow[] = priorityTxs.slice(
-        0,
-        this.config.maxAggregationSize,
-      );
+      const includedRows: typeof eligibleBundleRows = [];
+      let actionCount = 0; // TODO: Count gas instead?
 
-      if (submissionTxs.length > 0) {
-        const maxUnconfirmedTxs = (
-          this.config.maxUnconfirmedAggregations *
-          this.config.maxAggregationSize
-        );
-
-        while (
-          this.unconfirmedTxs.size + submissionTxs.length > maxUnconfirmedTxs
-        ) {
-          // FIXME (merge-ok): Polling
-          this.emit({ type: "waiting-unconfirmed-space" });
-          await delay(1000);
+      for (const row of eligibleBundleRows) {
+        if (this.unconfirmedRowIds.has(row.id!)) {
+          continue;
         }
 
-        for (const tx of submissionTxs) {
-          this.unconfirmedTxs.add(tx);
+        const rowActionCount = countActions(row.bundle);
+
+        if (actionCount + rowActionCount > this.config.maxAggregationSize) {
+          break;
         }
 
-        (async () => {
-          try {
-            const recpt = await this.ethereumService.sendTxs(
-              submissionTxs,
-              Infinity,
-              300,
-            );
+        const candidateBundle = this.blsWalletSigner.aggregate([
+          aggregateBundle,
+          row.bundle,
+        ]);
 
-            this.emit({
-              type: "submission-confirmed",
-              data: {
-                txIds: submissionTxs.map((tx) => tx.txId),
-                blockNumber: recpt.blockNumber,
-              },
-            });
-          } finally {
-            for (const tx of submissionTxs) {
-              this.unconfirmedTxs.delete(tx);
-            }
-          }
-        })();
+        if (this.ethereumService.checkBundle(candidateBundle)) {
+          aggregateBundle = candidateBundle;
+          includedRows.push(row);
+          actionCount += rowActionCount;
+        } else {
+          await this.handleFailedRow(row);
+        }
       }
 
-      await this.removeFromReady(submissionTxs);
+      if (includedRows.length === 0) {
+        return;
+      }
+
+      const maxUnconfirmedActions = (
+        this.config.maxUnconfirmedAggregations *
+        this.config.maxAggregationSize
+      );
+
+      while (
+        this.unconfirmedActionCount + actionCount > maxUnconfirmedActions
+      ) {
+        // FIXME (merge-ok): Polling
+        this.emit({ type: "waiting-unconfirmed-space" });
+        await delay(1000);
+      }
+
+      this.unconfirmedActionCount += actionCount;
+      this.unconfirmedBundles.add(aggregateBundle);
+
+      for (const row of includedRows) {
+        this.unconfirmedRowIds.add(row.id!);
+      }
+
+      (async () => {
+        try {
+          const recpt = await this.ethereumService.processBundle(
+            aggregateBundle,
+            Infinity,
+            300,
+          );
+
+          this.emit({
+            type: "submission-confirmed",
+            data: {
+              rowIds: includedRows.map((row) => row.id),
+              blockNumber: recpt.blockNumber,
+            },
+          });
+
+          await this.bundleTable.remove(...includedRows);
+        } finally {
+          this.unconfirmedActionCount -= actionCount;
+          this.unconfirmedBundles.delete(aggregateBundle);
+
+          for (const row of includedRows) {
+            this.unconfirmedRowIds.delete(row.id!);
+          }
+        }
+      })();
     });
 
     this.submissionsInProgress--;
