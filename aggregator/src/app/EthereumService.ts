@@ -76,37 +76,6 @@ export default class EthereumService {
     );
   }
 
-  async checkTx(tx: TransactionData): Promise<TxCheckResult> {
-    const signedCorrectly = this.blsWalletSigner.verify(tx);
-
-    const failures: TransactionFailure[] = [];
-
-    if (signedCorrectly === false) {
-      failures.push({
-        type: "invalid-signature",
-        description: "invalid signature",
-      });
-    }
-
-    const nextNonce = await BlsWallet.Nonce(
-      tx.publicKey,
-      this.verificationGateway.address,
-      this.aggregatorSigner,
-    );
-
-    if (BigNumber.from(tx.nonce).lt(nextNonce)) {
-      failures.push({
-        type: "duplicate-nonce",
-        description: [
-          `nonce ${tx.nonce} has already been processed (the next nonce for`,
-          `this wallet will be ${nextNonce.toString()})`,
-        ].join(" "),
-      });
-    }
-
-    return { failures, nextNonce };
-  }
-
   async checkNonces(bundle: Bundle): Promise<TransactionFailure[]> {
     const failures: TransactionFailure[] = [];
 
@@ -219,34 +188,6 @@ export default class EthereumService {
     }
 
     throw new Error("Expected return or throw from attempt loop");
-  }
-
-  async createWallet(
-    tx: TransactionData,
-  ): Promise<CreateWalletResult> {
-    const failures: TransactionFailure[] = [];
-
-    const creationValidation = await BlsWallet.validateCreationTx(
-      tx,
-      this.aggregatorSigner.provider,
-    );
-
-    failures.push(...creationValidation.failures.map((description) => ({
-      type: "invalid-creation" as const,
-      description,
-    })));
-
-    if (failures.length > 0) {
-      return { address: nil, failures };
-    }
-
-    await this.sendTxs([tx], Infinity, 300);
-
-    const address = await this.verificationGateway.walletFromHash(
-      keccak256(tx.publicKey),
-    );
-
-    return { address, failures };
   }
 
   private static getAggregatorSigner(privateKey: string) {
