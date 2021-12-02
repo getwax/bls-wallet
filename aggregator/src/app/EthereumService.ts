@@ -16,7 +16,7 @@ import * as env from "../env.ts";
 import TransactionFailure from "./TransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
-import { TxTableRow } from "./TxTable.ts";
+import toPublicKeyShort from "./helpers/toPublicKeyShort.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -112,27 +112,26 @@ export default class EthereumService {
     return failures;
   }
 
-  async sendTxs(
-    txs: TxTableRow[],
+  async submit(
+    bundle: Bundle,
     maxAttempts = 1,
     retryDelay = 300,
   ): Promise<ethers.providers.TransactionReceipt> {
-    assert(txs.length > 0, "Cannot process empty bundle");
+    assert(bundle.operations.length > 0, "Cannot process empty bundle");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
-    const aggregateTx = this.blsWalletSigner.aggregate(txs);
-
-    const actionCallsArgs: Parameters<VerificationGateway["actionCalls"]> = [
-      aggregateTx,
-      { nonce: this.NextNonce() },
-    ];
+    const processBundleArgs: Parameters<VerificationGateway["processBundle"]> =
+      [
+        bundle,
+        { nonce: this.NextNonce() },
+      ];
 
     const attempt = async () => {
       let txResponse: ethers.providers.TransactionResponse;
 
       try {
-        txResponse = await this.verificationGateway.actionCalls(
-          ...actionCallsArgs,
+        txResponse = await this.verificationGateway.processBundle(
+          ...processBundleArgs,
         );
       } catch (error) {
         if (/\binvalid transaction nonce\b/.test(error.message)) {
@@ -155,12 +154,12 @@ export default class EthereumService {
       }
     };
 
-    const txIds = txs.map((tx) => tx.txId);
+    const publicKeyShorts = bundle.senderPublicKeys.map(toPublicKeyShort);
 
     for (let i = 0; i < maxAttempts; i++) {
       this.emit({
         type: "submission-attempt",
-        data: { attemptNumber: i + 1, txIds },
+        data: { attemptNumber: i + 1, publicKeyShorts },
       });
 
       const attemptResult = await attempt();
@@ -180,7 +179,7 @@ export default class EthereumService {
           type: "submission-attempt-failed",
           data: {
             attemptNumber: i + 1,
-            txIds,
+            publicKeyShorts,
             error: suspectedTransientError,
           },
         });

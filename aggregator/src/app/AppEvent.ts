@@ -8,12 +8,12 @@ type AppEvent = (
   | { type: "waiting-unconfirmed-space" }
   | {
     type: "submission-attempt";
-    data: { rowIds: RowId[]; attemptNumber: number };
+    data: { publicKeyShorts: string[]; attemptNumber: number };
   }
   | {
     type: "submission-attempt-failed";
     data: {
-      rowIds: RowId[];
+      publicKeyShorts: string[];
       attemptNumber: number;
       error: Error;
     };

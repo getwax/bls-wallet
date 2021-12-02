@@ -3,8 +3,6 @@ import {
   BlsWalletSigner,
   Bundle,
   delay,
-  ethers,
-  PublicKey,
   QueryClient,
 } from "../../deps.ts";
 import { IClock } from "../helpers/Clock.ts";
@@ -17,6 +15,7 @@ import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable, { BundleRow } from "./BundleTable.ts";
+import toShortPublicKey from "./helpers/toPublicKeyShort.ts";
 
 export default class BundleService {
   static defaultConfig = {
@@ -207,7 +206,7 @@ export default class BundleService {
 
       (async () => {
         try {
-          const recpt = await this.ethereumService.processBundle(
+          const recpt = await this.ethereumService.submit(
             aggregateBundle,
             Infinity,
             300,
@@ -263,10 +262,6 @@ export default class BundleService {
       await delay(100);
     }
   }
-}
-
-function toShortPublicKey(publicKey: PublicKey) {
-  return ethers.utils.solidityPack(["uint256"], [publicKey[0]]).slice(2, 9);
 }
 
 function countActions(bundle: Bundle) {
