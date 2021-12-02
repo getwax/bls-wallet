@@ -171,7 +171,7 @@ export default class BundleService {
           row.bundle,
         ]);
 
-        if (this.ethereumService.checkBundle(candidateBundle)) {
+        if (await this.ethereumService.checkBundle(candidateBundle)) {
           aggregateBundle = candidateBundle;
           includedRows.push(row);
           actionCount += rowActionCount;
