@@ -50,6 +50,8 @@ const {
   bundleToDto,
   getConfig,
   initBlsWalletSigner,
+  // deno-lint-ignore camelcase
+  VerificationGateway__factory,
 } = blsWalletClients;
 
 export {
@@ -59,6 +61,7 @@ export {
   bundleToDto,
   getConfig,
   initBlsWalletSigner,
+  VerificationGateway__factory,
 };
 
 // Database dependencies

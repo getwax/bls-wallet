@@ -7,6 +7,8 @@ import {
   ethers,
   initBlsWalletSigner,
   VerificationGateway,
+  // deno-lint-ignore camelcase
+  VerificationGateway__factory,
   Wallet,
 } from "../../deps.ts";
 
@@ -36,7 +38,7 @@ export default class EthereumService {
     verificationGatewayAddress: string,
     public nextNonce: number,
   ) {
-    this.verificationGateway = new VerificationGateway(
+    this.verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       this.wallet,
     );
