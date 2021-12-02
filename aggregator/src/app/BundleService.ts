@@ -16,7 +16,7 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
-import BundleTable from "./BundleTable.ts";
+import BundleTable, { BundleRow } from "./BundleTable.ts";
 
 export default class BundleService {
   static defaultConfig = {
@@ -140,12 +140,14 @@ export default class BundleService {
         operations: [],
       };
 
+      const currentBlockNumber = await this.ethereumService.BlockNumber();
+
       const eligibleBundleRows = await this.bundleTable.findEligible(
-        await this.ethereumService.BlockNumber(),
+        currentBlockNumber,
         this.config.txQueryLimit,
       );
 
-      const includedRows: typeof eligibleBundleRows = [];
+      const includedRows: BundleRow[] = [];
       let actionCount = 0; // TODO: Count gas instead?
 
       for (const row of eligibleBundleRows) {
@@ -169,7 +171,7 @@ export default class BundleService {
           includedRows.push(row);
           actionCount += rowActionCount;
         } else {
-          await this.handleFailedRow(row);
+          await this.handleFailedRow(row, currentBlockNumber);
         }
       }
 
@@ -229,6 +231,14 @@ export default class BundleService {
     this.tryAggregating();
 
     return submissionResult;
+  }
+
+  async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
+    await this.bundleTable.update({
+      ...row,
+      eligibleAfter: currentBlockNumber.add(row.nextEligibilityDelay),
+      nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
+    });
   }
 
   async waitForConfirmations() {

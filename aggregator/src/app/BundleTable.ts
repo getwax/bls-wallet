@@ -11,6 +11,7 @@ import {
   TableOptions,
   unsketchify,
 } from "../../deps.ts";
+import assert from "../helpers/assert.ts";
 
 import assertExists from "../helpers/assertExists.ts";
 import { parseBundleDto } from "./parsers.ts";
@@ -33,6 +34,8 @@ type Row = {
   eligibleAfter: BigNumber;
   nextEligibilityDelay: BigNumber;
 };
+
+export type BundleRow = Row;
 
 const tableOptions: TableOptions = {
   id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
@@ -110,6 +113,11 @@ export default class BundleTable {
     });
 
     return await this.add(...rowsWithoutIds);
+  }
+
+  async update(row: Row) {
+    assert(row.id !== undefined);
+    await this.queryTable.where({ id: row.id }).update(toRawRow(row));
   }
 
   async remove(...rows: Row[]) {
