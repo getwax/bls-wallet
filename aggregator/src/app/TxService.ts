@@ -233,11 +233,11 @@ export default class TxService {
   }
 
   async waitForConfirmations() {
-    const startUnconfirmedTxs = [...this.unconfirmedTxs];
+    const startUnconfirmedBundles = [...this.unconfirmedBundles];
 
     while (true) {
-      const allConfirmed = startUnconfirmedTxs.every(
-        (tx) => !this.unconfirmedTxs.has(tx),
+      const allConfirmed = startUnconfirmedBundles.every(
+        (bundle) => !this.unconfirmedBundles.has(bundle),
       );
 
       if (allConfirmed) {
