@@ -131,25 +131,6 @@ export default class TxService {
     });
   }
 
-  /**
-   * Find the nonce that would come after the unconfirmed transactions for this
-   * public key, or zero.
-   */
-  NextUnconfirmedNonce(publicKey: string): BigNumber {
-    const unconfirmedTxs = [...this.unconfirmedTxs.values()]
-      .filter((tx) => tx.publicKey === publicKey);
-
-    if (unconfirmedTxs.length === 0) {
-      return BigNumber.from(0);
-    }
-
-    const highestUnconfirmedNonce = unconfirmedTxs
-      .map((tx) => tx.nonce)
-      .reduce(bigMax);
-
-    return highestUnconfirmedNonce.add(1);
-  }
-
   async runSubmission() {
     this.submissionsInProgress++;
 
@@ -267,10 +248,6 @@ export default class TxService {
       await delay(100);
     }
   }
-}
-
-function bigMax(a: BigNumber, b: BigNumber) {
-  return a.gt(b) ? a : b;
 }
 
 function toShortPublicKey(publicKey: PublicKey) {
