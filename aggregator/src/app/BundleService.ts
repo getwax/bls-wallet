@@ -19,8 +19,8 @@ import toShortPublicKey from "./helpers/toPublicKeyShort.ts";
 
 export default class BundleService {
   static defaultConfig = {
-    txQueryLimit: env.TX_QUERY_LIMIT,
-    maxFutureTxs: env.MAX_FUTURE_TXS,
+    txQueryLimit: env.TX_QUERY_LIMIT, // TODO: Rename QUERY_LIMIT
+    maxFutureTxs: env.MAX_FUTURE_TXS, // TODO: Remove (but trim bundles?)
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
