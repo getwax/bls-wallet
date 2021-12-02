@@ -17,7 +17,7 @@ export default class SubmissionTimer {
     public runSubmission: () => Promise<unknown>,
   ) {}
 
-  notifyTxWaiting() {
+  notifyActive() {
     // If there isn't a timer to be cleared, create one
     if (!this.clearTimer) {
       let cleared = false;

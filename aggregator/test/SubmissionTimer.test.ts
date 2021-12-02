@@ -22,7 +22,7 @@ function Fixture() {
 Deno.test("SubmissionTimer triggers after configured delay", async () => {
   const { clock, timer, submissionTimes } = Fixture();
 
-  timer.notifyTxWaiting();
+  timer.notifyActive();
   await clock.advance(5000);
 
   assertEquals(submissionTimes, [5000]);
@@ -31,7 +31,7 @@ Deno.test("SubmissionTimer triggers after configured delay", async () => {
 Deno.test("SubmissionTimer does not trigger again if not notified", async () => {
   const { clock, timer, submissionTimes } = Fixture();
 
-  timer.notifyTxWaiting();
+  timer.notifyActive();
   await clock.advance(5000);
   assertEquals(submissionTimes, [5000]);
 
@@ -47,11 +47,11 @@ Deno.test(
   async () => {
     const { clock, timer, submissionTimes } = Fixture();
 
-    timer.notifyTxWaiting();
+    timer.notifyActive();
     await clock.advance(1000);
-    timer.notifyTxWaiting();
-    timer.notifyTxWaiting();
-    timer.notifyTxWaiting();
+    timer.notifyActive();
+    timer.notifyActive();
+    timer.notifyActive();
     await clock.advance(4000);
     assertEquals(submissionTimes, [5000]);
 
@@ -68,12 +68,12 @@ Deno.test(
   async () => {
     const { clock, timer, submissionTimes } = Fixture();
 
-    timer.notifyTxWaiting();
+    timer.notifyActive();
     await clock.advance(5000);
     assertEquals(submissionTimes, [5000]);
 
     await clock.advance(123456);
-    timer.notifyTxWaiting();
+    timer.notifyActive();
     await clock.advance(5000);
     assertEquals(submissionTimes, [5000, 5000 + 123456 + 5000]);
 
@@ -108,7 +108,7 @@ Deno.test(
   async () => {
     const { clock, timer, submissionTimes } = Fixture();
 
-    timer.notifyTxWaiting();
+    timer.notifyActive();
     await clock.advance(100);
     timer.trigger();
     await clock.advance(5000);

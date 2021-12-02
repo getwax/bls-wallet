@@ -77,7 +77,7 @@ export default class BundleService {
       this.submissionTimer.trigger();
     } else if (actionCount > 0) {
       // TODO: tx -> bundle
-      this.submissionTimer.notifyTxWaiting();
+      this.submissionTimer.notifyActive();
     } else {
       this.submissionTimer.clear();
     }
