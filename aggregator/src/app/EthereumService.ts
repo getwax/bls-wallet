@@ -1,14 +1,11 @@
 import {
   BigNumber,
-  BlsWallet,
   BlsWalletSigner,
   BlsWalletWrapper,
   Bundle,
   delay,
   ethers,
   initBlsWalletSigner,
-  keccak256,
-  TransactionData,
   VerificationGateway,
   Wallet,
 } from "../../deps.ts";
@@ -18,7 +15,6 @@ import TransactionFailure from "./TransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import { TxTableRow } from "./TxTable.ts";
-import nil from "../helpers/nil.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -74,6 +70,12 @@ export default class EthereumService {
     return BigNumber.from(
       await this.aggregatorSigner.provider.getBlockNumber(),
     );
+  }
+
+  async waitForNextBlock() {
+    await new Promise((resolve) => {
+      this.aggregatorSigner.provider.once("block", resolve);
+    });
   }
 
   async checkNonces(bundle: Bundle): Promise<TransactionFailure[]> {

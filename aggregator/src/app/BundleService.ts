@@ -49,7 +49,12 @@ export default class BundleService {
       () => this.runSubmission(),
     );
 
-    this.tryAggregating();
+    (async () => {
+      while (true) {
+        this.tryAggregating();
+        await this.ethereumService.waitForNextBlock();
+      }
+    })();
   }
 
   async tryAggregating() {
@@ -64,9 +69,10 @@ export default class BundleService {
       this.config.txQueryLimit,
     );
 
-    const actionCount = (eligibleBundleRows
+    const actionCount = eligibleBundleRows
+      .filter((r) => !this.unconfirmedRowIds.has(r.id!))
       .map((r) => countActions(r.bundle))
-      .reduce(plus, 0));
+      .reduce(plus, 0);
 
     if (actionCount >= this.config.maxAggregationSize) {
       this.submissionTimer.trigger();
