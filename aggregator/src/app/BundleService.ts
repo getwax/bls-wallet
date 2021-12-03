@@ -29,9 +29,13 @@ export default class BundleService {
   unconfirmedBundles = new Set<Bundle>();
   unconfirmedActionCount = 0;
   unconfirmedRowIds = new Set<number>();
+
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
+
+  stopping = false;
   stopped = false;
+  pendingTaskPromises = new Set<Promise<unknown>>();
 
   constructor(
     public emit: (evt: AppEvent) => void,
@@ -52,7 +56,7 @@ export default class BundleService {
     (async () => {
       await delay(100);
 
-      while (!this.stopped) {
+      while (!this.stopping) {
         this.tryAggregating();
         // TODO: Stop if there aren't any bundles?
         await this.ethereumService.waitForNextBlock();
@@ -60,8 +64,20 @@ export default class BundleService {
     })();
   }
 
-  stop() {
+  async stop() {
+    this.stopping = true;
+    await Promise.all(Array.from(this.pendingTaskPromises));
     this.stopped = true;
+  }
+
+  addTask(task: () => Promise<unknown>) {
+    if (this.stopping) {
+      return;
+    }
+
+    const promise = task().catch(() => {});
+    this.pendingTaskPromises.add(promise);
+    promise.then(() => this.pendingTaskPromises.delete(promise));
   }
 
   async tryAggregating() {
@@ -137,7 +153,7 @@ export default class BundleService {
         },
       });
 
-      this.tryAggregating();
+      this.addTask(() => this.tryAggregating());
 
       return [];
     });
@@ -241,7 +257,7 @@ export default class BundleService {
     });
 
     this.submissionsInProgress--;
-    this.tryAggregating();
+    this.addTask(() => this.tryAggregating());
 
     return submissionResult;
   }

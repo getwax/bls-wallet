@@ -162,7 +162,7 @@ export default class BundleTable {
   }
 
   async drop() {
-    await this.queryTable.create(tableOptions, CreateTableMode.DropIfExists);
+    await this.queryTable.drop(true);
   }
 
   async clear() {

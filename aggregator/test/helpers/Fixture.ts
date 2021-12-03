@@ -134,8 +134,6 @@ export default class Fixture {
     const tableName = `bundles_test_${suffix}`;
     const table = await BundleTable.createFresh(queryClient, tableName);
 
-    console.log(`Created table ${tableName}`);
-
     const bundleService = new BundleService(
       this.emit,
       this.clock,
@@ -148,9 +146,8 @@ export default class Fixture {
     );
 
     this.cleanupJobs.push(async () => {
-      bundleService.stop();
+      await bundleService.stop();
       await table.drop();
-      console.log(`Dropped table ${tableName}`);
     });
 
     return bundleService;
