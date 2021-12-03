@@ -1,8 +1,6 @@
-import BundleService from "../src/app/BundleService.ts";
 import { assertEquals } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
-import Range from "../src/helpers/Range.ts";
 
 Fixture.test("adds valid transaction", async (fx) => {
   const bundleService = await fx.createBundleService();
@@ -108,7 +106,7 @@ Fixture.test(
   },
 );
 
-Fixture.test("adds tx with future nonce to futureTxs", async (fx) => {
+Fixture.test("adds tx with future nonce", async (fx) => {
   const bundleService = await fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
@@ -129,271 +127,40 @@ Fixture.test("adds tx with future nonce to futureTxs", async (fx) => {
   assertEquals(await bundleService.futureTxTable.count(), 1n);
 });
 
-Fixture.test(
-  "filling the nonce gap adds the eligible future tx to the end of ready txs",
-  async (fx) => {
-    const bundleService = await fx.createBundleService();
-    const [wallet, otherWallet] = await fx.setupWallets(2);
+// TODO: Add a mechanism for limiting the number of stored transactions
+// Fixture.test(
+//   "when future txs reach maxFutureTxs, the oldest ones are dropped",
+//   async (fx) => {
+//     const bundleService = await fx.createBundleService({
+//       ...BundleService.defaultConfig,
+//       maxFutureTxs: 3,
+//     });
 
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [],
-      future: [],
-    });
+//     const [wallet] = await fx.setupWallets(1);
 
-    const walletNonce = await wallet.Nonce();
+//     const walletNonce = await wallet.Nonce();
 
-    // Add tx in the future
-    const txB = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      nonce: walletNonce.add(1),
-    });
+//     const futureTxs = Range(5).map((i) =>
+//       wallet.sign({
+//         contract: fx.testErc20.contract,
+//         method: "mint",
+//         args: [wallet.address, "3"],
+//         nonce: walletNonce.add(i + 1),
+//       })
+//     );
 
-    const failuresB = await bundleService.add(txB);
-    assertEquals(failuresB, []);
+//     for (const tx of futureTxs) {
+//       await bundleService.add(tx);
+//     }
 
-    // This tx is ready, so it should get to go first even though the tx above
-    // was added first.
-    const otherTx = otherWallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [otherWallet.address, "3"],
-      nonce: await otherWallet.Nonce(),
-    });
-
-    const otherFailures = await bundleService.add(otherTx);
-    assertEquals(otherFailures, []);
-
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [otherTx],
-      future: [txB],
-    });
-
-    // Add txA, which makes txB ready
-    const txA = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      nonce: walletNonce,
-    });
-
-    const failuresA = await bundleService.add(txA);
-    assertEquals(failuresA, []);
-
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [
-        otherTx,
-        txA,
-
-        // Note that txB had id 1 when it was future, and it gets a new id here
-        txB,
-      ],
-      future: [],
-    });
-  },
-);
-
-Fixture.test(
-  "when future txs reach maxFutureTxs, the oldest ones are dropped",
-  async (fx) => {
-    const bundleService = await fx.createBundleService({
-      ...BundleService.defaultConfig,
-      maxFutureTxs: 3,
-    });
-
-    const [wallet] = await fx.setupWallets(1);
-
-    const walletNonce = await wallet.Nonce();
-
-    const futureTxs = Range(5).map((i) =>
-      wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "3"],
-        nonce: walletNonce.add(i + 1),
-      })
-    );
-
-    for (const tx of futureTxs) {
-      await bundleService.add(tx);
-    }
-
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [],
-      future: [
-        // futureTxs[0] and futureTxs[1] should have been dropped
-        futureTxs[2],
-        futureTxs[3],
-        futureTxs[4],
-      ],
-    });
-  },
-);
-
-function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
-  Fixture.test(
-    [
-      "filling the nonce gap adds multiple eligible future txs",
-      `(futureTxCount: ${futureTxCount})`,
-    ].join(" "),
-    async (fx) => {
-      const bundleService = await fx.createBundleService({
-        ...BundleService.defaultConfig,
-        // Small query limit forces multiple submissions when processing the
-        // future txs, checking that submitting works correctly
-        txQueryLimit: 2,
-
-        // Prevent submitting to focus on testing which table txs land in
-        maxAggregationSize: 100,
-      });
-
-      const [wallet] = await fx.setupWallets(1);
-      const walletNonce = await wallet.Nonce();
-
-      assertEquals(await fx.allTxs(bundleService), {
-        ready: [],
-        future: [],
-      });
-
-      // Add multiple txs in the future (and out of order)
-
-      const futureTxs = [];
-
-      for (const i of Range(futureTxCount)) {
-        const futureTx = wallet.sign({
-          contract: fx.testErc20.contract,
-          method: "mint",
-          args: [wallet.address, "3"],
-          nonce: walletNonce.add(futureTxCount - i),
-        });
-
-        const failures = await bundleService.add(futureTx);
-        assertEquals(failures, []);
-
-        futureTxs.push(futureTx);
-      }
-
-      assertEquals(await fx.allTxs(bundleService), {
-        ready: [],
-        future: futureTxs,
-      });
-
-      // Add tx, which makes futureTxs ready
-      const tx = wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "3"],
-        nonce: walletNonce,
-      });
-
-      const failures = await bundleService.add(tx);
-      assertEquals(failures, []);
-
-      assertEquals(await fx.allTxs(bundleService), {
-        ready: [tx, ...futureTxs.slice().reverse()],
-        future: [],
-      });
-    },
-  );
-}
-
-fillGapToEnableMultipleFutureTxsTest(3);
-fillGapToEnableMultipleFutureTxsTest(4);
-
-Fixture.test(
-  "filling the nonce gap adds eligible future tx but stops at the next gap",
-  async (fx) => {
-    const bundleService = await fx.createBundleService();
-    const [wallet] = await fx.setupWallets(1);
-    const walletNonce = await wallet.Nonce();
-
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [],
-      future: [],
-    });
-
-    // Add multiple txs in the future (and out of order)
-    const tx4 = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      nonce: walletNonce.add(3),
-    });
-
-    const failures4 = await bundleService.add(tx4);
-    assertEquals(failures4, []);
-
-    const tx2 = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      nonce: walletNonce.add(1),
-    });
-
-    const failures2 = await bundleService.add(tx2);
-    assertEquals(failures2, []);
-
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [],
-      future: [tx4, tx2],
-    });
-
-    // Add tx1, which makes earlier txs ready
-    const tx1 = wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
-      nonce: walletNonce,
-    });
-
-    const failures1 = await bundleService.add(tx1);
-    assertEquals(failures1, []);
-
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [tx1, tx2],
-      future: [tx4],
-    });
-  },
-);
-
-Fixture.test(
-  [
-    "concurrently request many contiguous txs in a jumbled order - all find",
-    "their way to ready and don't get stuck in future",
-  ].join(" "),
-  async (fx) => {
-    const bundleService = await fx.createBundleService({
-      ...BundleService.defaultConfig,
-
-      // Prevent submitting to focus on testing which table txs land in
-      maxAggregationSize: 100,
-    });
-
-    const [wallet] = await fx.setupWallets(1);
-    const walletNonce = await wallet.Nonce();
-
-    const txs = fx.rng.shuffle(Range(10)).map((i) =>
-      wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "1"],
-        nonce: walletNonce.add(i),
-      })
-    );
-
-    const allFailures = await Promise.all(
-      txs.map((tx) => bundleService.add(tx)),
-    );
-    assertEquals(allFailures.flat(), []);
-
-    const sortedTxs = txs.slice().sort((txA, txB) =>
-      txA.nonce.sub(txB.nonce).toNumber()
-    );
-
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: sortedTxs,
-      future: [],
-    });
-  },
-);
+//     assertEquals(await fx.allTxs(bundleService), {
+//       ready: [],
+//       future: [
+//         // futureTxs[0] and futureTxs[1] should have been dropped
+//         futureTxs[2],
+//         futureTxs[3],
+//         futureTxs[4],
+//       ],
+//     });
+//   },
+// );
