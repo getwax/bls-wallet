@@ -16,14 +16,21 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
   const bundleService = await fx.createBundleService(bundleServiceConfig);
   const [wallet] = await fx.setupWallets(1);
 
-  const tx = wallet.sign({
-    contract: fx.testErc20.contract,
-    method: "mint",
-    args: [wallet.address, "1"],
+  const bundle = wallet.sign({
     nonce: await wallet.Nonce(),
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.contract.address,
+        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, 1],
+        ),
+      },
+    ],
   });
 
-  const failures = await bundleService.add(tx);
+  const failures = await bundleService.add(bundle);
   assertEquals(failures, []);
 
   assertEquals(
@@ -31,10 +38,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     BigNumber.from(1000),
   );
 
-  assertEquals(await fx.allTxs(bundleService), {
-    ready: [tx],
-    future: [],
-  });
+  assertEquals(await bundleService.bundleTable.count(), 1n);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -45,10 +49,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     BigNumber.from(1001),
   );
 
-  assertEquals(await fx.allTxs(bundleService), {
-    ready: [],
-    future: [],
-  });
+  assertEquals(await bundleService.bundleTable.count(), 0n);
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
@@ -56,16 +57,26 @@ Fixture.test("submits a full submission without delay", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
-  const txs = Range(5).map((i) =>
+  const bundles = Range(5).map((i) =>
     wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "1"],
       nonce: walletNonce.add(i),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: fx.testErc20.contract.address,
+          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            "mint",
+            [wallet.address, 1],
+          ),
+        },
+      ],
     })
   );
 
-  const failures = await Promise.all(txs.map((tx) => bundleService.add(tx)));
+  const failures = await Promise.all(
+    bundles.map((bundle) => bundleService.add(bundle)),
+  );
+
   assertEquals(failures.flat(), []);
 
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -89,16 +100,26 @@ Fixture.test(
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
-    const txs = Range(7).map((i) =>
+    const bundles = Range(7).map((i) =>
       wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "1"],
         nonce: walletNonce.add(i),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.testErc20.contract.address,
+            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+              "mint",
+              [wallet.address, 1],
+            ),
+          },
+        ],
       })
     );
 
-    const failures = await Promise.all(txs.map((tx) => bundleService.add(tx)));
+    const failures = await Promise.all(
+      bundles.map((bundle) => bundleService.add(bundle)),
+    );
+
     assertEquals(failures.flat(), []);
 
     await bundleService.submissionTimer.waitForCompletedSubmissions(1);

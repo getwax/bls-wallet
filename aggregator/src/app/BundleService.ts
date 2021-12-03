@@ -228,6 +228,7 @@ export default class BundleService {
         this.unconfirmedRowIds.add(row.id!);
       }
 
+      // TODO: Use a task
       (async () => {
         try {
           const recpt = await this.ethereumService.submitBundle(
