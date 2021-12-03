@@ -5,7 +5,7 @@ import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
 Fixture.test("adds valid transaction", async (fx) => {
-  const txService = await fx.createTxService();
+  const txService = await fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -24,7 +24,7 @@ Fixture.test("adds valid transaction", async (fx) => {
 });
 
 Fixture.test("rejects transaction with invalid signature", async (fx) => {
-  const txService = await fx.createTxService();
+  const txService = await fx.createBundleService();
   const [wallet, otherWallet] = await fx.setupWallets(2);
 
   const signParams = {
@@ -52,7 +52,7 @@ Fixture.test("rejects transaction with invalid signature", async (fx) => {
 });
 
 Fixture.test("rejects transaction with nonce from the past", async (fx) => {
-  const txService = await fx.createTxService();
+  const txService = await fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -74,7 +74,7 @@ Fixture.test("rejects transaction with nonce from the past", async (fx) => {
 Fixture.test(
   "rejects transaction with invalid signature and nonce from the past",
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createBundleService();
     const [wallet, otherWallet] = await fx.setupWallets(2);
 
     const signParams = {
@@ -109,7 +109,7 @@ Fixture.test(
 );
 
 Fixture.test("adds tx with future nonce to futureTxs", async (fx) => {
-  const txService = await fx.createTxService();
+  const txService = await fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -132,7 +132,7 @@ Fixture.test("adds tx with future nonce to futureTxs", async (fx) => {
 Fixture.test(
   "filling the nonce gap adds the eligible future tx to the end of ready txs",
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createBundleService();
     const [wallet, otherWallet] = await fx.setupWallets(2);
 
     assertEquals(await fx.allTxs(txService), {
@@ -197,7 +197,7 @@ Fixture.test(
 Fixture.test(
   "when future txs reach maxFutureTxs, the oldest ones are dropped",
   async (fx) => {
-    const txService = await fx.createTxService({
+    const txService = await fx.createBundleService({
       ...TxService.defaultConfig,
       maxFutureTxs: 3,
     });
@@ -238,7 +238,7 @@ function fillGapToEnableMultipleFutureTxsTest(futureTxCount: number) {
       `(futureTxCount: ${futureTxCount})`,
     ].join(" "),
     async (fx) => {
-      const txService = await fx.createTxService({
+      const txService = await fx.createBundleService({
         ...TxService.defaultConfig,
         // Small query limit forces multiple submissions when processing the
         // future txs, checking that submitting works correctly
@@ -304,7 +304,7 @@ fillGapToEnableMultipleFutureTxsTest(4);
 Fixture.test(
   "filling the nonce gap adds eligible future tx but stops at the next gap",
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createBundleService();
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
@@ -363,7 +363,7 @@ Fixture.test(
     "their way to ready and don't get stuck in future",
   ].join(" "),
   async (fx) => {
-    const txService = await fx.createTxService({
+    const txService = await fx.createBundleService({
       ...TxService.defaultConfig,
 
       // Prevent submitting to focus on testing which table txs land in

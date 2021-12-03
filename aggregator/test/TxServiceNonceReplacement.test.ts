@@ -7,7 +7,7 @@ import Range from "../src/helpers/Range.ts";
 Fixture.test(
   "reusing a nonce from ready txs with a higher reward replaces the tx",
   async (fx) => {
-    const txService = await fx.createTxService();
+    const txService = await fx.createBundleService();
     const [wallet] = await fx.setupWallets(1);
     let walletNonce = await wallet.Nonce();
 
@@ -64,7 +64,7 @@ function reinsertionTest(extraTxs: number) {
       `(extraTxs: ${extraTxs})`,
     ].join(" "),
     async (fx) => {
-      const txService = await fx.createTxService({
+      const txService = await fx.createBundleService({
         ...TxService.defaultConfig,
         // Small query limit forces multiple submissions when processing the
         // reinsertion, checking that submitting works correctly

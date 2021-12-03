@@ -13,7 +13,7 @@ const txServiceConfig = {
 };
 
 Fixture.test("submits a single transaction in a timed submission", async (fx) => {
-  const txService = await fx.createTxService(txServiceConfig);
+  const txService = await fx.createBundleService(txServiceConfig);
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -52,7 +52,7 @@ Fixture.test("submits a single transaction in a timed submission", async (fx) =>
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
-  const txService = await fx.createTxService(txServiceConfig);
+  const txService = await fx.createBundleService(txServiceConfig);
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
@@ -85,7 +85,7 @@ Fixture.test(
     "txs after delay",
   ].join(" "),
   async (fx) => {
-    const txService = await fx.createTxService(txServiceConfig);
+    const txService = await fx.createBundleService(txServiceConfig);
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
@@ -131,7 +131,7 @@ Fixture.test(
 Fixture.test(
   "submits 3 submissions added concurrently in a jumbled order",
   async (fx) => {
-    const txService = await fx.createTxService({
+    const txService = await fx.createBundleService({
       ...txServiceConfig,
 
       // TODO (merge-ok): Stop overriding this when BlsWallet nonces become
