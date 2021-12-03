@@ -12,7 +12,7 @@ const bundleServiceConfig = {
   maxAggregationDelayMillis: 5000,
 };
 
-Fixture.test("submits a single transaction in a timed submission", async (fx) => {
+Fixture.test("submits a single action in a timed submission", async (fx) => {
   const bundleService = await fx.createBundleService(bundleServiceConfig);
   const [wallet] = await fx.setupWallets(1);
 
@@ -81,8 +81,8 @@ Fixture.test("submits a full submission without delay", async (fx) => {
 
 Fixture.test(
   [
-    "submits submission from over-full readyTxs without delay and submits leftover",
-    "txs after delay",
+    "submits submission from over-full bundle table without delay and submits",
+    "leftover bundles after delay",
   ].join(" "),
   async (fx) => {
     const bundleService = await fx.createBundleService(bundleServiceConfig);
@@ -129,7 +129,7 @@ Fixture.test(
 );
 
 Fixture.test(
-  "submits 3 submissions added concurrently in a jumbled order",
+  "submits 3 bundles added concurrently in a jumbled order",
   async (fx) => {
     const bundleService = await fx.createBundleService({
       ...bundleServiceConfig,
@@ -144,7 +144,7 @@ Fixture.test(
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
-    const txs = fx.rng.shuffle(Range(15)).map((i) =>
+    const txs = fx.rng.shuffle(Range(3)).map((i) =>
       wallet.sign({
         contract: fx.testErc20.contract,
         method: "mint",
