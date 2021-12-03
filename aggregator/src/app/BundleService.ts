@@ -51,6 +51,7 @@ export default class BundleService {
     (async () => {
       while (true) {
         this.tryAggregating();
+        // TODO: Stop if there aren't any bundles?
         await this.ethereumService.waitForNextBlock();
       }
     })();

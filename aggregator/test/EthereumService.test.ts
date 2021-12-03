@@ -3,35 +3,49 @@ import { assertEquals, BigNumber } from "./deps.ts";
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
-Fixture.test("EthereumService sends single action bundle", async (fx) => {
+Fixture.test("EthereumService submits mint action", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const startBalance = await fx.testErc20.balanceOf(wallet.address);
 
   const bundle = wallet.sign({
-    contract: fx.testErc20.contract,
-    method: "mint",
-    args: [wallet.address, "7"],
     nonce: await wallet.Nonce(),
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.contract.address,
+        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, 7],
+        ),
+      },
+    ],
   });
 
-  await fx.ethereumService.sendTxs([bundle]);
+  await fx.ethereumService.submitBundle(bundle);
 
   const balance: BigNumber = await fx.testErc20.balanceOf(wallet.address);
 
   assertEquals(balance.toNumber(), startBalance.toNumber() + 7);
 });
 
-Fixture.test("EthereumService sends single transfer bundle", async (fx) => {
+Fixture.test("EthereumService submits transfer action", async (fx) => {
   const wallets = await fx.setupWallets(2);
 
   const bundle = wallets[0].sign({
-    contract: fx.testErc20.contract,
-    method: "transfer",
-    args: [wallets[1].address, "1"],
     nonce: await wallets[0].Nonce(),
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.contract.address,
+        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          "transfer",
+          [wallets[1].address, 1],
+        ),
+      },
+    ],
   });
 
-  await fx.ethereumService.sendTxs([bundle]);
+  await fx.ethereumService.submitBundle(bundle);
 
   const balances: BigNumber[] = await Promise.all(wallets.map(
     (w) => fx.testErc20.balanceOf(w.address),
@@ -40,46 +54,72 @@ Fixture.test("EthereumService sends single transfer bundle", async (fx) => {
   assertEquals(balances.map((b) => b.toNumber()), [999, 1001]);
 });
 
-Fixture.test("EthereumService sends aggregate transaction", async (fx) => {
+Fixture.test("EthereumService submits aggregated bundle", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
-  await fx.ethereumService.sendTxs([
+  const bundle = fx.blsWalletSigner.aggregate([
     wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "3"],
       nonce: walletNonce,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: fx.testErc20.contract.address,
+          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            "mint",
+            [wallet.address, 3],
+          ),
+        },
+      ],
     }),
     wallet.sign({
-      contract: fx.testErc20.contract,
-      method: "mint",
-      args: [wallet.address, "5"],
       nonce: walletNonce.add(1),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: fx.testErc20.contract.address,
+          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            "mint",
+            [wallet.address, 5],
+          ),
+        },
+      ],
     }),
   ]);
+
+  await fx.ethereumService.submitBundle(bundle);
 
   const balance = await fx.testErc20.balanceOf(wallet.address);
 
   assertEquals(balance.toNumber(), 1008);
 });
 
-Fixture.test("EthereumService sends large aggregate mint bundle", async (fx) => {
+Fixture.test("EthereumService submits large aggregate mint bundle", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
   const size = 11;
 
-  await fx.ethereumService.sendTxs(
+  const bundle = fx.blsWalletSigner.aggregate(
     Range(size).map((i) =>
       wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "1"],
         nonce: walletNonce.add(i),
+        actions: [
+          // TODO: Add single operation multi-action variation of this test
+          {
+            ethValue: 0,
+            contractAddress: fx.testErc20.contract.address,
+            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+              "mint",
+              [wallet.address, 1],
+            ),
+          },
+        ],
       })
     ),
   );
+
+  await fx.ethereumService.submitBundle(bundle);
 
   const balance: BigNumber = await fx.testErc20.balanceOf(wallet.address);
 
@@ -92,16 +132,25 @@ Fixture.test("EthereumService sends large aggregate transfer bundle", async (fx)
 
   const size = 29;
 
-  await fx.ethereumService.sendTxs(
+  const bundle = fx.blsWalletSigner.aggregate(
     Range(size).map((i) =>
       sendWallet.sign({
-        contract: fx.testErc20.contract,
-        method: "transfer",
-        args: [recvWallet.address, "1"],
         nonce: sendWalletNonce.add(i),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.testErc20.contract.address,
+            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+              "transfer",
+              [recvWallet.address, 1],
+            ),
+          },
+        ],
       })
     ),
   );
+
+  await fx.ethereumService.submitBundle(bundle);
 
   const balance: BigNumber = await fx.testErc20.balanceOf(recvWallet.address);
 
@@ -116,16 +165,26 @@ Fixture.test(
     for (let i = 1; i <= 2; i++) {
       const walletNonce = await wallet.Nonce();
 
-      await fx.ethereumService.sendTxs(
+      const bundle = fx.blsWalletSigner.aggregate(
         Range(5).map((i) =>
           wallet.sign({
-            contract: fx.testErc20.contract,
-            method: "mint",
-            args: [wallet.address, "1"],
             nonce: walletNonce.add(i),
+            actions: [
+              {
+                ethValue: 0,
+                contractAddress: fx.testErc20.contract.address,
+                encodedFunction: fx.testErc20.contract.interface
+                  .encodeFunctionData(
+                    "mint",
+                    [wallet.address, "1"],
+                  ),
+              },
+            ],
           })
         ),
       );
+
+      await fx.ethereumService.submitBundle(bundle);
 
       const balance: BigNumber = await fx.testErc20.balanceOf(wallet.address);
 
