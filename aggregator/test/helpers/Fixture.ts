@@ -4,6 +4,7 @@ import {
   BlsWalletWrapper,
   ethers,
   NetworkConfig,
+  QueryClient,
 } from "../../deps.ts";
 
 import testRng from "./testRng.ts";
@@ -23,6 +24,8 @@ import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
+
+let existingClient: QueryClient | nil = nil;
 
 export default class Fixture {
   static test(
@@ -123,19 +126,17 @@ export default class Fixture {
 
   async createBundleService(config = BundleService.defaultConfig) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
-    const queryClient = createQueryClient(this.emit);
+    existingClient = createQueryClient(this.emit, existingClient);
+    const queryClient = existingClient;
 
     const tablesMutex = new Mutex();
 
     const tableName = `bundles_test_${suffix}`;
     const table = await BundleTable.createFresh(queryClient, tableName);
 
-    this.cleanupJobs.push(async () => {
-      await table.drop();
-      await queryClient.disconnect();
-    });
+    console.log(`Created table ${tableName}`);
 
-    return new BundleService(
+    const bundleService = new BundleService(
       this.emit,
       this.clock,
       queryClient,
@@ -145,6 +146,14 @@ export default class Fixture {
       this.ethereumService,
       config,
     );
+
+    this.cleanupJobs.push(async () => {
+      bundleService.stop();
+      await table.drop();
+      console.log(`Dropped table ${tableName}`);
+    });
+
+    return bundleService;
   }
 
   async allBundles(

@@ -60,9 +60,6 @@ function fromRawRow(rawRow: RawRow): Row {
 }
 
 function toRawRow(row: Row): RawRow {
-  const toUint256Hex = (n: BigNumber) =>
-    `0x${n.toHexString().slice(2).padStart(64, "0")}`;
-
   const rawRow: RawRow = {
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
@@ -140,7 +137,7 @@ export default class BundleTable {
       `
         SELECT * from ${this.safeName}
         WHERE
-          "eligibleAfter" <= ${blockNumber.toNumber()}
+          "eligibleAfter" <= '${toUint256Hex(blockNumber)}'
         ORDER BY "id" ASC
         LIMIT ${limit}
       `,
@@ -173,4 +170,8 @@ export default class BundleTable {
       DELETE from ${this.safeName}
     `);
   }
+}
+
+function toUint256Hex(n: BigNumber) {
+  return `0x${n.toHexString().slice(2).padStart(64, "0")}`;
 }

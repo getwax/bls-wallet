@@ -36,6 +36,7 @@ export type {
   Bundle,
   BundleDto,
   NetworkConfig,
+  Operation,
   PublicKey,
   Signature,
   VerificationGateway,

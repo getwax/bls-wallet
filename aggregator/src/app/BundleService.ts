@@ -31,6 +31,7 @@ export default class BundleService {
   unconfirmedRowIds = new Set<number>();
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
+  stopped = false;
 
   constructor(
     public emit: (evt: AppEvent) => void,
@@ -49,12 +50,18 @@ export default class BundleService {
     );
 
     (async () => {
-      while (true) {
+      await delay(100);
+
+      while (!this.stopped) {
         this.tryAggregating();
         // TODO: Stop if there aren't any bundles?
         await this.ethereumService.waitForNextBlock();
       }
     })();
+  }
+
+  stop() {
+    this.stopped = true;
   }
 
   async tryAggregating() {
