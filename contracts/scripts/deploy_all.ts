@@ -47,6 +47,9 @@ async function main() {
   // These can be run in parallel
   const [testToken, version] = await Promise.all([deployToken(), getVersion()]);
 
+  console.log("deploying reward token...");
+  const rewardToken = await deployToken();
+
   const netCfg: NetworkConfig = {
     parameters: {},
     addresses: {
@@ -56,7 +59,7 @@ async function main() {
       verificationGateway: fx.verificationGateway.address,
       blsExpander: fx.blsExpander.address,
       testToken,
-      rewardToken: testToken,
+      rewardToken,
     },
     auxiliary: {
       chainid: fx.chainId,
