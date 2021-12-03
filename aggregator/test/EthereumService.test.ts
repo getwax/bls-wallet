@@ -1,4 +1,4 @@
-import { assertEquals, BigNumber, BlsWalletWrapper } from "./deps.ts";
+import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
@@ -168,16 +168,3 @@ Fixture.test(
 //     assertEquals(balance.toNumber(), 1002);
 //   },
 // );
-
-Fixture.test("EthereumService can create a wallet", async (fx) => {
-  const tx = await BlsWalletWrapper.signCreation(
-    fx.rng.seed("aggregator-free-wallet").address(),
-    fx.networkConfig.addresses.verificationGateway,
-    fx.adminWallet.provider,
-  );
-
-  const creationResult = await fx.ethereumService.createWallet(tx);
-
-  assertEquals(typeof creationResult.address, "string");
-  assertEquals(creationResult.failures, []);
-});
