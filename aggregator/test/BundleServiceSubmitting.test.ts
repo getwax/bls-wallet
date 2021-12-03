@@ -1,10 +1,10 @@
-import TxService from "../src/app/TxService.ts";
+import BundleService from "../src/app/BundleService.ts";
 import { assertEquals, BigNumber } from "./deps.ts";
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
-const txServiceConfig = {
-  ...TxService.defaultConfig,
+const bundleServiceConfig = {
+  ...BundleService.defaultConfig,
 
   // These may be the defaults, but they're technically env dependent, so we
   // make sure we have these values because the tests assume them.
@@ -13,7 +13,7 @@ const txServiceConfig = {
 };
 
 Fixture.test("submits a single transaction in a timed submission", async (fx) => {
-  const txService = await fx.createBundleService(txServiceConfig);
+  const bundleService = await fx.createBundleService(bundleServiceConfig);
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -23,7 +23,7 @@ Fixture.test("submits a single transaction in a timed submission", async (fx) =>
     nonce: await wallet.Nonce(),
   });
 
-  const failures = await txService.add(tx);
+  const failures = await bundleService.add(tx);
   assertEquals(failures, []);
 
   assertEquals(
@@ -31,28 +31,28 @@ Fixture.test("submits a single transaction in a timed submission", async (fx) =>
     BigNumber.from(1000),
   );
 
-  assertEquals(await fx.allTxs(txService), {
+  assertEquals(await fx.allTxs(bundleService), {
     ready: [tx],
     future: [],
   });
 
   fx.clock.advance(5000);
-  await txService.submissionTimer.waitForCompletedSubmissions(1);
-  await txService.waitForConfirmations();
+  await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+  await bundleService.waitForConfirmations();
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1001),
   );
 
-  assertEquals(await fx.allTxs(txService), {
+  assertEquals(await fx.allTxs(bundleService), {
     ready: [],
     future: [],
   });
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
-  const txService = await fx.createBundleService(txServiceConfig);
+  const bundleService = await fx.createBundleService(bundleServiceConfig);
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
@@ -65,11 +65,11 @@ Fixture.test("submits a full submission without delay", async (fx) => {
     })
   );
 
-  const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
+  const failures = await Promise.all(txs.map((tx) => bundleService.add(tx)));
   assertEquals(failures.flat(), []);
 
-  await txService.submissionTimer.waitForCompletedSubmissions(1);
-  await txService.waitForConfirmations();
+  await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+  await bundleService.waitForConfirmations();
 
   // Check mints have occurred, ensuring a submission has occurred even though
   // the clock has not advanced
@@ -85,7 +85,7 @@ Fixture.test(
     "txs after delay",
   ].join(" "),
   async (fx) => {
-    const txService = await fx.createBundleService(txServiceConfig);
+    const bundleService = await fx.createBundleService(bundleServiceConfig);
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
@@ -98,11 +98,11 @@ Fixture.test(
       })
     );
 
-    const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
+    const failures = await Promise.all(txs.map((tx) => bundleService.add(tx)));
     assertEquals(failures.flat(), []);
 
-    await txService.submissionTimer.waitForCompletedSubmissions(1);
-    await txService.waitForConfirmations();
+    await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+    await bundleService.waitForConfirmations();
 
     // Check mints have occurred, ensuring a submission has occurred even though the
     // clock has not advanced
@@ -112,14 +112,14 @@ Fixture.test(
     );
 
     // Leftover txs
-    assertEquals(await fx.allTxs(txService), {
+    assertEquals(await fx.allTxs(bundleService), {
       ready: [txs[5], txs[6]],
       future: [],
     });
 
     await fx.clock.advance(5000);
-    await txService.submissionTimer.waitForCompletedSubmissions(2);
-    await txService.waitForConfirmations();
+    await bundleService.submissionTimer.waitForCompletedSubmissions(2);
+    await bundleService.waitForConfirmations();
 
     assertEquals(
       await fx.testErc20.balanceOf(wallet.address),
@@ -131,8 +131,8 @@ Fixture.test(
 Fixture.test(
   "submits 3 submissions added concurrently in a jumbled order",
   async (fx) => {
-    const txService = await fx.createBundleService({
-      ...txServiceConfig,
+    const bundleService = await fx.createBundleService({
+      ...bundleServiceConfig,
 
       // TODO (merge-ok): Stop overriding this when BlsWallet nonces become
       // explicit. Without this, submissions will be sent concurrently, and the
@@ -153,11 +153,11 @@ Fixture.test(
       })
     );
 
-    const failures = await Promise.all(txs.map((tx) => txService.add(tx)));
+    const failures = await Promise.all(txs.map((tx) => bundleService.add(tx)));
     assertEquals(failures.flat(), []);
 
-    await txService.submissionTimer.waitForCompletedSubmissions(3);
-    await txService.waitForConfirmations();
+    await bundleService.submissionTimer.waitForCompletedSubmissions(3);
+    await bundleService.waitForConfirmations();
 
     // Check mints have occurred
     assertEquals(
@@ -166,7 +166,7 @@ Fixture.test(
     );
 
     // Nothing left over
-    assertEquals(await fx.allTxs(txService), {
+    assertEquals(await fx.allTxs(bundleService), {
       ready: [],
       future: [],
     });
