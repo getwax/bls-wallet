@@ -64,28 +64,34 @@ export default class Fixture {
       ).wait();
     } catch (e) {}
 
-    // deploy Verification Gateway
-    const vgContract = await create2Fixture.create2Contract(
-      "VerificationGateway",
-    );
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
+    // deploy Verification Gateway
+    const verificationGateway = (await create2Fixture.create2Contract(
+      "VerificationGateway",
+      ethers.utils.defaultAbiCoder.encode(
+        ["address", "address"],
+        [bls.address, blsWalletImpl.address],
+      ),
+    )) as VerificationGateway;
 
-    try {
-      await (
-        await vgContract.initialize(bls.address, blsWalletImpl.address)
-      ).wait();
-    } catch (e) {}
+    // try {
+    //   await (
+    //     await verificationGateway.initialize(bls.address, blsWalletImpl.address)
+    //   ).wait();
+    // } catch (e) {}
 
     // deploy BLSExpander Gateway
-    const blsExpander = await create2Fixture.create2Contract("BLSExpander");
-    try {
-      await (await blsExpander.initialize(vgContract.address)).wait();
-    } catch (e) {}
-
-    const verificationGateway = VerificationGateway__factory.connect(
-      vgContract.address,
-      vgContract.signer,
+    const blsExpander = await create2Fixture.create2Contract(
+      "BLSExpander",
+      ethers.utils.defaultAbiCoder.encode(
+        ["address"],
+        [verificationGateway.address],
+      ),
     );
+
+    // try {
+    //   await (await blsExpander.initialize(vgContract.address)).wait();
+    // } catch (e) {}
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 
@@ -103,7 +109,7 @@ export default class Fixture {
         const wallet = await BlsWalletWrapper.connect(
           `0x${secretNumber.toString(16)}`,
           verificationGateway.address,
-          vgContract.provider,
+          verificationGateway.provider,
         );
 
         // Perform an empty transaction to trigger wallet creation

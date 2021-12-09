@@ -4,14 +4,15 @@ pragma abicoder v2;
 
 import "./VerificationGateway.sol";
 import "./interfaces/IWallet.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
 @dev Optimisations to reduce calldata of VerificationGateway multiCall
 with shared params.
 */
-contract BLSExpander is Initializable {
+contract BLSExpander {
     VerificationGateway verificationGateway;
-    function initialize(address gateway) public initializer {
+    constructor(address gateway) {
         verificationGateway = VerificationGateway(gateway);
     }
 

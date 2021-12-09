@@ -3,55 +3,54 @@ pragma solidity >=0.8.0 <0.9.0;
 pragma abicoder v2;
 
 import "./lib/IBLS.sol"; // to use a deployed BLS library
-import "./lib/IERC20.sol";
 
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import "./interfaces/IWallet.sol";
 
 import "hardhat/console.sol";
 
 
-contract VerificationGateway is Initializable
+contract VerificationGateway
 {
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
-    uint8 constant BLS_LEN = 4;
+    uint8 constant BLS_KEY_LEN = 4;
 
     IBLS public blsLib;
-    ProxyAdmin public proxyAdmin;
+    ProxyAdmin public immutable walletProxyAdmin;
     address public blsWalletLogic;
 
-    /**
-    @param bls verified bls library contract address
-     */
-    function initialize(
-        IBLS bls,
-        address blsWalletImpl
-    ) external initializer {
-        blsLib = bls;
-        blsWalletLogic = blsWalletImpl;
-        proxyAdmin = new ProxyAdmin();
+
+    /** Aggregated signature with corresponding senders + operations */
+    struct Bundle {
+        uint256[2] signature;
+        uint256[BLS_KEY_LEN][] senderPublicKeys;
+        IWallet.Operation[] operations;
     }
 
     event WalletCreated(
         address indexed wallet,
-        uint256[BLS_LEN] publicKey
+        uint256[BLS_KEY_LEN] publicKey
     );
 
-    event WalletActioned(
+    event WalletOperationProcessed(
         address indexed wallet,
         uint256 nonce,
         bool result
     );
 
-    /** Aggregated signature with corresponding senders + operations */
-    struct Bundle {
-        uint256[2] signature;
-        uint256[BLS_LEN][] senderPublicKeys;
-        IWallet.Operation[] operations;
+
+    /**
+    @param bls verified bls library contract address
+     */
+    constructor(
+        IBLS bls,
+        address blsWalletImpl
+    ) {
+        blsLib = bls;
+        blsWalletLogic = blsWalletImpl;
+        walletProxyAdmin = new ProxyAdmin();
     }
 
     function verify(
@@ -78,17 +77,6 @@ contract VerificationGateway is Initializable
         require(verified, "VG: All sigs not verified");
     }
 
-    function hasCode(address a) private view returns (bool) {
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(a) }
-        return size > 0;
-    }
-
-    function getInitializeData() private view returns (bytes memory) {
-        return abi.encodeWithSignature("initialize(address)", address(this));
-    }
-
     /**
     Returns a BLSWallet if deployed from this contract, otherwise 0.
     @param hash BLS public key hash used as salt for create2
@@ -103,7 +91,7 @@ contract VerificationGateway is Initializable
                 type(TransparentUpgradeableProxy).creationCode,
                 abi.encode(
                     address(blsWalletLogic),
-                    address(proxyAdmin),
+                    address(walletProxyAdmin),
                     getInitializeData()
                 )
             ))
@@ -136,12 +124,12 @@ contract VerificationGateway is Initializable
                 "VG: first param to proxy admin is not calling wallet"
             );
         }
-        (bool success, ) = address(proxyAdmin).call(encodedFunction);
+        (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
         require(success);
     }
 
     /** 
-    Base function for verifying and actioning BLS-signed transactions.
+    Base function for verifying and processing BLS-signed transactions.
     Creates a new contract wallet per bls key if existing wallet not found.
     Can be called with a single operation with no actions.
     */
@@ -179,10 +167,10 @@ contract VerificationGateway is Initializable
                 ) = wallet.performOperation(bundle.operations[i]);
                 successes[i] = success;
                 results[i] = resultSet;
-                emit WalletActioned(
+                emit WalletOperationProcessed(
                     address(wallet),
                     wallet.nonce(),
-                    true //TODO
+                    success
                 );
             }
         }
@@ -192,7 +180,7 @@ contract VerificationGateway is Initializable
     Create a new wallet if one found for the given bls public key.
      */
     function createNewWallet(
-        uint256[BLS_LEN] calldata publicKey
+        uint256[BLS_KEY_LEN] calldata publicKey
     ) private {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
         address blsWallet = address(walletFromHash(publicKeyHash));
@@ -201,15 +189,34 @@ contract VerificationGateway is Initializable
         if (blsWallet == address(0)) {
             blsWallet = address(new TransparentUpgradeableProxy{salt: publicKeyHash}(
                 address(blsWalletLogic),
-                address(proxyAdmin),
+                address(walletProxyAdmin),
                 getInitializeData()
             ));
-            IWallet(payable(blsWallet)).latchPublicKey(publicKey);
+            IBLSWallet(payable(blsWallet)).latchBLSPublicKey(publicKey);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
             );
         }
+    }
+
+    function hasCode(address a) private view returns (bool) {
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { size := extcodesize(a) }
+        return size > 0;
+    }
+
+    function getInitializeData() private view returns (bytes memory) {
+        return abi.encodeWithSignature("initialize(address)", address(this));
+    }
+
+    modifier onlyWallet(bytes32 hash) {
+        require(
+            (msg.sender == address(walletFromHash(hash))),
+            "VG: not called from wallet"
+        );
+        _;
     }
 
     function messagePoint(
@@ -236,14 +243,6 @@ contract VerificationGateway is Initializable
                 keccak256(encodedActionData)
             )
         );
-    }
-
-    modifier onlyWallet(bytes32 hash) {
-        require(
-            (msg.sender == address(walletFromHash(hash))),
-            "VG: not called from wallet"
-        );
-        _;
     }
 
 }

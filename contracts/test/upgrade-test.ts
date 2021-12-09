@@ -34,7 +34,7 @@ describe("Upgrade", async function () {
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
     const blsWallet = BLSWallet.attach(wallet.address);
 
-    expect((await blsWallet.getPublicKey())[0].toHexString()).to.equal(
+    expect((await blsWallet.getBLSPublicKey())[0].toHexString()).to.equal(
       wallet.blsWalletSigner.getPublicKey(wallet.privateKey)[0],
     );
 

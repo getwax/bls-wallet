@@ -7,29 +7,31 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IWallet.sol";
 
-contract BLSWallet is Initializable
+contract BLSWallet is Initializable, IBLSWallet
 {
     uint256 public nonce;
 
-    // Trusted address to action generic calls from the wallet.
-    address public gateway;
-
-    uint256[4] public publicKey;
+    // BLS variables
+    uint256[4] public blsPublicKey;
+    address public trustedBLSGateway;
 
     function initialize(
-        address walletGateway
+        address blsGateway
     ) external initializer {
         nonce = 0;
-        gateway = walletGateway;
+        trustedBLSGateway = blsGateway;
     }
 
-    function latchPublicKey(
+    function latchBLSPublicKey(
         uint256[4] memory blsKey
-    ) public onlyGateway {
+    ) public onlyTrustedGateway {
         for (uint256 i=0; i<4; i++) {
-            require(publicKey[i] == 0, "BLSWallet: public key already set");
+            require(
+                blsPublicKey[i] == 0,
+                "BLSWallet: public key already set"
+            );
         }
-        publicKey = blsKey;
+        blsPublicKey = blsKey;
     }
 
     receive() external payable {}
@@ -38,15 +40,15 @@ contract BLSWallet is Initializable
     /**
     BLS public key format, contract can be upgraded for other types
      */
-    function getPublicKey() external view returns (uint256[4] memory) {
-        return publicKey;
+    function getBLSPublicKey() external view returns (uint256[4] memory) {
+        return blsPublicKey;
     }
 
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
-    function setGateway(address walletGateway) public onlyGateway {
-        gateway = walletGateway;
+    function setTrustedBLSGateway(address blsGateway) public onlyTrustedGateway {
+        trustedBLSGateway = blsGateway;
     }
 
     /**
@@ -55,8 +57,9 @@ contract BLSWallet is Initializable
      */
     function performOperation(
         IWallet.Operation calldata op
-    ) public payable onlyGateway thisNonce(op.nonce) returns (
-        bool success, bytes[] memory results
+    ) public payable onlyTrustedGateway thisNonce(op.nonce) returns (
+        bool success,
+        bytes[] memory results
     ) {
         bytes memory result;
         results = new bytes[](op.actions.length);
@@ -70,7 +73,9 @@ contract BLSWallet is Initializable
             else {
                 (success, result) = address(a.contractAddress).call(a.encodedFunction);
             }
-            require(success, "BLSWallet: All actions must succeed");
+            if (!success) {
+                return (false, results);
+            }
             results[i] = result;
         }
         incrementNonce();
@@ -83,9 +88,12 @@ contract BLSWallet is Initializable
         nonce++;
     }
 
-    modifier onlyGateway() {
-        require(msg.sender == gateway, "BLSWallet: only callable from gateway");
-        _;
+    modifier onlyTrustedGateway() {
+        bool isTrustedGateway =
+            (msg.sender == trustedBLSGateway)
+        ;
+        require(isTrustedGateway, "BLSWallet: only callable from trusted gateway");
+         _;
     }
 
     modifier thisNonce(uint256 opNonce) {
