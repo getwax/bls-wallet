@@ -7,6 +7,10 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IWallet.sol";
 
+
+/** Minimal upgradable smart contract wallet.
+    Generic calls can only be requested by its trusted gateway.
+ */
 contract BLSWallet is Initializable, IBLSWallet
 {
     uint256 public nonce;
@@ -22,6 +26,7 @@ contract BLSWallet is Initializable, IBLSWallet
         trustedBLSGateway = blsGateway;
     }
 
+    /** */
     function latchBLSPublicKey(
         uint256[4] memory blsKey
     ) public onlyTrustedGateway {

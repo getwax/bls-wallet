@@ -2,6 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 pragma abicoder v2;
 
+/** Interface for a contract wallet that can perform Operations
+ */
 interface IWallet {
 
     struct Operation {
@@ -26,6 +28,8 @@ interface IWallet {
     );
 }
 
+/** Interface for bls-specific functions
+ */
 interface IBLSWallet is IWallet {
     // type BLSPublicKey is uint256[4]; // The underlying type for a user defined value type has to be an elementary value type.
 
@@ -33,5 +37,8 @@ interface IBLSWallet is IWallet {
         uint256[4] memory blsKey
     ) external;
 
+    function getBLSPublicKey() external view returns (uint256[4] memory);
+    function setTrustedBLSGateway(address blsGateway) external;
+    
  }
  

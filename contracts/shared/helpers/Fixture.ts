@@ -12,12 +12,7 @@ import {
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
-import {
-  VerificationGateway,
-  // eslint-disable-next-line camelcase
-  VerificationGateway__factory,
-  BLSOpen,
-} from "../../typechain";
+import { VerificationGateway, BLSOpen } from "../../typechain";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;

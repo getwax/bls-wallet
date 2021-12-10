@@ -6,6 +6,11 @@ import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
+import {
+  proxyAdminCall,
+  proxyAdminCallStatic,
+} from "../shared/helpers/callProxyAdmin";
+
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
@@ -29,47 +34,35 @@ describe("Upgrade", async function () {
     fx = await Fixture.create();
   });
 
-  it("should upgrade wallet contract", async function () {
+  it("should read proxy admin function", async function () {
     const wallet = await fx.lazyBlsWallets[0]();
-    const BLSWallet = await ethers.getContractFactory("BLSWallet");
-    const blsWallet = BLSWallet.attach(wallet.address);
 
-    expect((await blsWallet.getBLSPublicKey())[0].toHexString()).to.equal(
-      wallet.blsWalletSigner.getPublicKey(wallet.privateKey)[0],
+    const resultBytes = await proxyAdminCallStatic(
+      fx,
+      wallet,
+      "getProxyAdmin",
+      [wallet.address],
     );
+    const adminAddress = ethers.utils.defaultAbiCoder.decode(
+      ["address"],
+      resultBytes,
+    )[0];
+    expect(adminAddress).to.equal(
+      await fx.verificationGateway.walletProxyAdmin(),
+    );
+  });
 
+  it("should upgrade wallet contract", async function () {
     const MockWalletUpgraded = await ethers.getContractFactory(
       "MockWalletUpgraded",
     );
     const mockWalletUpgraded = await MockWalletUpgraded.deploy();
 
-    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
-    const upgradeFunctionData = ProxyAdmin.interface.encodeFunctionData(
-      "upgrade",
-      [blsWallet.address, mockWalletUpgraded.address],
-    );
-
-    await (
-      await fx.verificationGateway.processBundle(
-        wallet.sign({
-          nonce: await wallet.Nonce(),
-          actions: [
-            {
-              ethValue: ethers.BigNumber.from(0),
-              contractAddress: fx.verificationGateway.address,
-              encodedFunction:
-                fx.verificationGateway.interface.encodeFunctionData(
-                  "walletAdminCall",
-                  [
-                    wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
-                    upgradeFunctionData,
-                  ],
-                ),
-            },
-          ],
-        }),
-      )
-    ).wait();
+    const wallet = await fx.lazyBlsWallets[0]();
+    await proxyAdminCall(fx, wallet, "upgrade", [
+      wallet.address,
+      mockWalletUpgraded.address,
+    ]);
 
     const newBLSWallet = MockWalletUpgraded.attach(wallet.address);
     await (await newBLSWallet.setNewData(wallet.address)).wait();

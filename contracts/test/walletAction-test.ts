@@ -194,7 +194,7 @@ describe("WalletActions", async function () {
           ethValue: BigNumber.from(0),
           contractAddress: fx.verificationGateway.address,
           encodedFunction: fx.verificationGateway.interface.encodeFunctionData(
-            "walletCrossCheck",
+            "walletFromHash",
             [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
           ),
         },

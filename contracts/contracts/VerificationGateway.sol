@@ -9,11 +9,16 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 
 import "./interfaces/IWallet.sol";
 
-import "hardhat/console.sol";
 
-
+/**
+A non-upgradable gateway used to create BLSWallets and call them with
+verified Operations that have been respectively signed.
+The gateway holds a single ProxyAdmin contract for all wallets, and can
+only called by a wallet that the VG created, and only if the first param
+ */
 contract VerificationGateway
 {
+    /** Domain chosen arbitrarily */
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_KEY_LEN = 4;
 
@@ -53,6 +58,7 @@ contract VerificationGateway
         walletProxyAdmin = new ProxyAdmin();
     }
 
+    /** Throw if bundle not valid or signature verification fails */
     function verify(
         Bundle calldata bundle
     ) public view {
@@ -102,19 +108,17 @@ contract VerificationGateway
         return IWallet(payable(walletAddress));
     }
 
-    /** 
-    Useful no-op function to call when calling a wallet for the first time.
-     */
-    function walletCrossCheck(bytes32 hash) public payable {
-        require(msg.sender == address(walletFromHash(hash)));
-    }
-
     /**
     Calls to proxy admin, exclusively from a wallet.
     @param hash calling wallet's bls public key hash
     @param encodedFunction the selector and params to call (first encoded param must be calling wallet)
      */
-    function walletAdminCall(bytes32 hash, bytes calldata encodedFunction) public onlyWallet(hash) {
+    function walletAdminCall(
+        bytes32 hash,
+        bytes calldata encodedFunction
+    ) public onlyWallet(hash) returns (
+        bytes memory
+    ) {
         // ensure first parameter is the calling wallet
         bytes memory encodedAddress = abi.encode(address(walletFromHash(hash)));
         uint8 selectorOffset = 4;
@@ -124,8 +128,9 @@ contract VerificationGateway
                 "VG: first param to proxy admin is not calling wallet"
             );
         }
-        (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
+        (bool success, bytes memory result) = address(walletProxyAdmin).call(encodedFunction);
         require(success);
+        return result;
     }
 
     /** 
@@ -177,7 +182,7 @@ contract VerificationGateway
     }
 
     /**
-    Create a new wallet if one found for the given bls public key.
+    Create a new wallet if not found for the given bls public key.
      */
     function createNewWallet(
         uint256[BLS_KEY_LEN] calldata publicKey
