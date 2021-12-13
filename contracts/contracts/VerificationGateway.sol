@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 
 import "./interfaces/IWallet.sol";
 
-
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
 verified Operations that have been respectively signed.
@@ -25,6 +24,7 @@ contract VerificationGateway
     IBLS public blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
     address public blsWalletLogic;
+    mapping(bytes32 => IWallet) externalWalletsFromHash;
 
 
     /** Aggregated signature with corresponding senders + operations */
@@ -89,6 +89,11 @@ contract VerificationGateway
     @return BLSWallet at calculated address (if code exists), otherwise zero address
      */
     function walletFromHash(bytes32 hash) public view returns (IWallet) {
+        //return wallet of hash registered explicitly
+        if (externalWalletsFromHash[hash] != IWallet(address(0))) {
+            return externalWalletsFromHash[hash];
+        }
+
         address walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
             bytes1(0xff),
             address(this),
@@ -106,6 +111,33 @@ contract VerificationGateway
             walletAddress = address(0);
         }
         return IWallet(payable(walletAddress));
+    }
+
+    /**
+    If an existing wallet contract wishes to be called by this verification
+    gateway, it can directly register itself with a simple signed msg.
+    NB: this is independent of the proxyAdmin, and if desired can be changed
+    via the corresponding call.
+    @dev overrides previous wallet address registered with the given public key
+    @param signature of message containing only the calling address
+    @param publicKey that signed the caller's address
+     */
+    function setExternalWallet(
+        uint256[2] calldata signature,
+        uint256[BLS_KEY_LEN] calldata publicKey
+    ) public {
+        uint256[2] memory addressMsg = blsLib.hashToPoint(
+            BLS_DOMAIN,
+            abi.encodePacked(msg.sender)
+        );
+        require(
+            blsLib.verifySingle(signature, publicKey, addressMsg),
+            "VG: Signature not verified for wallet address."
+        );
+        bytes32 publicKeyHash = keccak256(abi.encodePacked(
+            publicKey
+        ));
+        externalWalletsFromHash[publicKeyHash] = IWallet(msg.sender);
     }
 
     /**

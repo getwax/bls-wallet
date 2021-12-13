@@ -7,7 +7,7 @@ interface IBLS {
         uint256[2] memory signature,
         uint256[4] memory pubkey,
         uint256[2] memory message
-    ) external view returns (bool, bool);
+    ) external view returns (bool);
 
     function verifyMultiple(
         uint256[2] memory signature,

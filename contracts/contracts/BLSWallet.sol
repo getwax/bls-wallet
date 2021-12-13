@@ -79,7 +79,7 @@ contract BLSWallet is Initializable, IBLSWallet
                 (success, result) = address(a.contractAddress).call(a.encodedFunction);
             }
             if (!success) {
-                return (false, results);
+                break;
             }
             results[i] = result;
         }
