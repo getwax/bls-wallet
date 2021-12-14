@@ -7,9 +7,6 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
-interface IVerificationGateway {
-    function walletCrossCheck(bytes32 publicKeyHash) external;
-}
 
 contract MockWalletUpgraded is Initializable
 {

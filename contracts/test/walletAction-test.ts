@@ -57,7 +57,7 @@ describe("WalletActions", async function () {
     const TransparentUpgradeableProxy = await ethers.getContractFactory(
       "TransparentUpgradeableProxy",
     );
-    const proxyAdminAddress = await fx.verificationGateway.proxyAdmin();
+    const proxyAdminAddress = await fx.verificationGateway.walletProxyAdmin();
     const blsWalletLogicAddress = await fx.verificationGateway.blsWalletLogic();
 
     const initFunctionParams = BLSWallet.interface.encodeFunctionData(
@@ -194,7 +194,7 @@ describe("WalletActions", async function () {
           ethValue: BigNumber.from(0),
           contractAddress: fx.verificationGateway.address,
           encodedFunction: fx.verificationGateway.interface.encodeFunctionData(
-            "walletCrossCheck",
+            "walletFromHash",
             [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
           ),
         },

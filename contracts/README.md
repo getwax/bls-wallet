@@ -29,11 +29,16 @@ See `extension`
 
 # Components
 
-## Layer 2 contract: BLS Wallet
-A smart contract wallet for users to interact with layer 2 dapps. Created (and actioned) via the "Verification Gateway" with bls signed messages.
-
 ## Layer 2 contract: Verification Gateway
-Creates contract wallets, mapping them from a hash of the corresponding public key. Verifies messages that have been signed with a known bls keypair, then calls the corresponding wallet passing parameters for it to action.
+Creates contract wallets deterministically (create2) with the hash of respective bls public keys. It verifies a set of actions (`Operation`) that have been signed with a known bls keypair, then calls the corresponding wallet passing parameters for it to action. Generally this will be an aggregated signature for many different wallets' Operations (`Bundle`).
+
+## Layer 2 contract: BLS Wallet
+A smart contract wallet for users to interact with layer 2 dapps. Created via the aforementioned verification gateway.
+Wallets use the proxy upgrade method, and can call upon their proxy admin to change their implementation. Wallets can also choose to set a different contract as their trusted verification gateway.
+
+### Upgradability
+The verification gateway (VG1) is the `owner` of a single proxy admin (PA1), and is responsible for all VG1 wallets. A wallet can call `walletAdminCall` on VG1 to then call `upgrade` to change it's implementation.
+If in the future a new verification gateway is created (say VG2/PA2), a wallet can choose to set it's trusted gateway to this instead. That means VG1 will no longer be permitted to make arbitrary calls to the wallet, only VG2. Note: PA1 will remain as the proxy admin of the wallet. The wallet can change this to PA2 via an admin call on VG1 to `changeProxyAdmin`.
 
 ## Client tool: BLS Wallet/Signer
 Wallets (eg Metamask, Argent, ...) to implement BLS keypair generation and signing.
