@@ -52,7 +52,14 @@ contract BLSWallet is Initializable, IBLSWallet
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
-    function setTrustedBLSGateway(address blsGateway) public onlyTrustedGateway {
+    function setTrustedBLSGateway(address blsGateway) public onlyThis {
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { size := extcodesize(blsGateway) }
+        require(
+            (blsGateway != address(0)) && (size > 0),
+            "BLSWallet: gateway address param not valid"
+        );
         trustedBLSGateway = blsGateway;
     }
 
@@ -63,6 +70,29 @@ contract BLSWallet is Initializable, IBLSWallet
     function performOperation(
         IWallet.Operation calldata op
     ) public payable onlyTrustedGateway thisNonce(op.nonce) returns (
+        bool success,
+        bytes[] memory results
+    ) {
+        try this._performOperation(op) returns (
+            bool _success,
+            bytes[] memory _results
+        ) {
+            success = _success;
+            results = _results;
+        }
+        catch {
+            success = false;
+        }
+        incrementNonce(); // regardless of outcome of operation
+    }
+
+    /**
+    @dev Restricted to only be called by this contract, but needs to be public
+    so that it can be used in the try/catch block.
+     */
+    function _performOperation(
+        IWallet.Operation calldata op
+    ) public payable onlyThis returns (
         bool success,
         bytes[] memory results
     ) {
@@ -78,12 +108,9 @@ contract BLSWallet is Initializable, IBLSWallet
             else {
                 (success, result) = address(a.contractAddress).call(a.encodedFunction);
             }
-            if (!success) {
-                break;
-            }
+            require(success);
             results[i] = result;
         }
-        incrementNonce();
     }
 
     /**
@@ -91,6 +118,11 @@ contract BLSWallet is Initializable, IBLSWallet
      */
     function incrementNonce() private {
         nonce++;
+    }
+
+    modifier onlyThis() {
+        require(msg.sender == address(this), "BLSWallet: only callable from this");
+         _;
     }
 
     modifier onlyTrustedGateway() {

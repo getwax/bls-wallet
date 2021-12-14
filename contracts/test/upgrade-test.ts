@@ -7,6 +7,7 @@ import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunP
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
 import {
+  proxyAdminBundle,
   proxyAdminCall,
   proxyAdminCallStatic,
 } from "../shared/helpers/callProxyAdmin";
@@ -76,10 +77,10 @@ describe("Upgrade", async function () {
   });
 
   it("should register with new verification gateway", async function () {
+    // Deploy new verification gateway
     const create2Fixture = Create2Fixture.create();
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
     const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
-
     const VerificationGateway = await ethers.getContractFactory(
       "VerificationGateway",
     );
@@ -88,20 +89,28 @@ describe("Upgrade", async function () {
       blsWalletImpl.address,
     );
 
+    // Recreate hubble bls signer
     const walletOldVg = await fx.lazyBlsWallets[0]();
     const walletAddress = walletOldVg.address;
     const blsSecret = walletOldVg.privateKey;
-
     const blsSigner = (await BlsSignerFactory.new()).getSigner(
       defaultDomain,
       blsSecret,
     );
-
+    // Sign simple address message
     const addressMessage = solidityPack(["address"], [walletAddress]);
     const signedAddress = blsSigner.sign(addressMessage);
+    // Get admin action to change proxy
+    const bundle = await proxyAdminBundle(fx, walletOldVg, "changeProxyAdmin", [
+      walletAddress,
+      await vg2.walletProxyAdmin(),
+    ]);
+    const changeProxyAction = bundle.operations[0].actions[0];
 
-    // Atomically register wallet with new gateway, and set wallet's
-    // new trusted gateway address.
+    // Atomically perform actions:
+    //  1. register external wallet in vg2
+    //  2. change proxy admin to that in vg2
+    //  3. lastly, set wallet's new trusted gateway address
     await (
       await fx.verificationGateway.processBundle(
         fx.blsWalletSigner.aggregate([
@@ -116,6 +125,7 @@ describe("Upgrade", async function () {
                   [signedAddress, blsSigner.pubkey],
                 ),
               },
+              changeProxyAction,
               {
                 ethValue: 0,
                 contractAddress: walletAddress,
@@ -131,12 +141,25 @@ describe("Upgrade", async function () {
       )
     ).wait();
 
+    // Create required objects for data/contracts for checks
     const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
       walletOldVg.privateKey,
     );
+    const proxyAdmin = await ethers.getContractAt(
+      "ProxyAdmin",
+      await vg2.walletProxyAdmin(),
+    );
+    const blsWallet = await ethers.getContractAt("BLSWallet", walletAddress);
 
-    // Check new gateway has wallet via call through new gateway
-    const bundleResult = await fx.verificationGateway.callStatic.processBundle(
+    // Direct checks corresponding to each action
+    expect(await vg2.walletFromHash(hash)).to.equal(walletAddress);
+    expect(await proxyAdmin.getProxyAdmin(walletAddress)).to.equal(
+      proxyAdmin.address,
+    );
+    expect(await blsWallet.trustedBLSGateway()).to.equal(vg2.address);
+
+    // Check new gateway has wallet via static call through new gateway
+    const bundleResult = await vg2.callStatic.processBundle(
       fx.blsWalletSigner.aggregate([
         walletOldVg.sign({
           nonce: BigNumber.from(2),
@@ -158,19 +181,5 @@ describe("Upgrade", async function () {
       bundleResult.results[0][0], // first and only operation/action result
     )[0];
     expect(walletFromHashAddress).to.equal(walletAddress);
-
-    const proxyAdmin = await ethers.getContractAt(
-      "ProxyAdmin",
-      await vg2.walletProxyAdmin(),
-    );
-
-    await proxyAdminCall(fx, walletOldVg, "changeProxyAdmin", [
-      walletAddress,
-      proxyAdmin.address,
-    ]);
-
-    expect(await proxyAdmin.getProxyAdmin(walletAddress)).to.equal(
-      proxyAdmin.address,
-    );
   });
 });

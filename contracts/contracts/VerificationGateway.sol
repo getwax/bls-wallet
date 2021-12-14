@@ -206,8 +206,8 @@ contract VerificationGateway
                 results[i] = resultSet;
                 emit WalletOperationProcessed(
                     address(wallet),
-                    wallet.nonce(),
-                    success
+                    bundle.operations[i].nonce,
+                    successes[i]
                 );
             }
         }
