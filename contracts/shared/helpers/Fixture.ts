@@ -69,12 +69,6 @@ export default class Fixture {
       ),
     )) as VerificationGateway;
 
-    // try {
-    //   await (
-    //     await verificationGateway.initialize(bls.address, blsWalletImpl.address)
-    //   ).wait();
-    // } catch (e) {}
-
     // deploy BLSExpander Gateway
     const blsExpander = await create2Fixture.create2Contract(
       "BLSExpander",
@@ -83,10 +77,6 @@ export default class Fixture {
         [verificationGateway.address],
       ),
     );
-
-    // try {
-    //   await (await blsExpander.initialize(vgContract.address)).wait();
-    // } catch (e) {}
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 
