@@ -4,9 +4,11 @@
     "@abhijithvijayan/eslint-config/node",
     "@abhijithvijayan/eslint-config/react"
   ],
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "project": ["./tsconfig.json"],
-    "sourceType": "module"
+    "project": "./tsconfig.json",
+    "sourceType": "module",
+    "ecmaVersion": 11
   },
   "rules": {
     "@typescript-eslint/no-explicit-any": "warn",
@@ -50,7 +52,10 @@
     "@typescript-eslint/lines-between-class-members": "off"
   },
   "env": {
-    "webextensions": true
+    "webextensions": true,
+    "es2020": true,
+    "browser": true,
+    "node": true
   },
   "settings": {
     "node": {
