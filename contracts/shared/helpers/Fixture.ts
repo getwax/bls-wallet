@@ -12,12 +12,7 @@ import {
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
-import {
-  VerificationGateway,
-  // eslint-disable-next-line camelcase
-  VerificationGateway__factory,
-  BLSOpen,
-} from "../../typechain";
+import { VerificationGateway, BLSOpen } from "../../typechain";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -64,27 +59,23 @@ export default class Fixture {
       ).wait();
     } catch (e) {}
 
-    // deploy Verification Gateway
-    const vgContract = await create2Fixture.create2Contract(
-      "VerificationGateway",
-    );
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
-
-    try {
-      await (
-        await vgContract.initialize(bls.address, blsWalletImpl.address)
-      ).wait();
-    } catch (e) {}
+    // deploy Verification Gateway
+    const verificationGateway = (await create2Fixture.create2Contract(
+      "VerificationGateway",
+      ethers.utils.defaultAbiCoder.encode(
+        ["address", "address"],
+        [bls.address, blsWalletImpl.address],
+      ),
+    )) as VerificationGateway;
 
     // deploy BLSExpander Gateway
-    const blsExpander = await create2Fixture.create2Contract("BLSExpander");
-    try {
-      await (await blsExpander.initialize(vgContract.address)).wait();
-    } catch (e) {}
-
-    const verificationGateway = VerificationGateway__factory.connect(
-      vgContract.address,
-      vgContract.signer,
+    const blsExpander = await create2Fixture.create2Contract(
+      "BLSExpander",
+      ethers.utils.defaultAbiCoder.encode(
+        ["address"],
+        [verificationGateway.address],
+      ),
     );
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
@@ -103,7 +94,7 @@ export default class Fixture {
         const wallet = await BlsWalletWrapper.connect(
           `0x${secretNumber.toString(16)}`,
           verificationGateway.address,
-          vgContract.provider,
+          verificationGateway.provider,
         );
 
         // Perform an empty transaction to trigger wallet creation

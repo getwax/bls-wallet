@@ -45,7 +45,7 @@ export default class BlsWalletWrapper {
       signerOrProvider,
     );
 
-    const proxyAdminAddress = await verificationGateway.proxyAdmin();
+    const proxyAdminAddress = await verificationGateway.walletProxyAdmin();
     const blsWalletLogicAddress = await verificationGateway.blsWalletLogic();
 
     const initFunctionParams =
