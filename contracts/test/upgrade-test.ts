@@ -17,7 +17,7 @@ import defaultDomain from "../clients/src/signer/defaultDomain";
 import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
 import { solidityPack } from "ethers/lib/utils";
 
-describe.only("Upgrade", async function () {
+describe("Upgrade", async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
     if (network.name === "hardhat") {
@@ -75,7 +75,7 @@ describe.only("Upgrade", async function () {
     expect(await newBLSWallet.newData()).to.equal(wallet.address);
   });
 
-  it.only("should register with new verification gateway", async function () {
+  it("should register with new verification gateway", async function () {
     const create2Fixture = Create2Fixture.create();
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
     const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");

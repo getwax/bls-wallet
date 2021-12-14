@@ -161,7 +161,7 @@ contract VerificationGateway
             );
         }
         (bool success, bytes memory result) = address(walletProxyAdmin).call(encodedFunction);
-        require(success);
+        require(success, "VG: call to proxy admin failed");
         return result;
     }
 
