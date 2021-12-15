@@ -264,6 +264,7 @@ export default class BundleService {
       eligibleAfter: currentBlockNumber.add(row.nextEligibilityDelay),
       nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
     });
+    this.unconfirmedRowIds.delete(row.id!);
   }
 
   async waitForConfirmations() {

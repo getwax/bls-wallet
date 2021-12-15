@@ -146,7 +146,7 @@ Fixture.test(
 );
 
 Fixture.test(
-  "submits 3 bundles in reverse (incorrect) nonce order",
+  "submits 3 bundles in reverse (incorrect) nonce order. First will get stuck",
   async (fx) => {
     const bundleService = await fx.createBundleService(bundleServiceConfig);
     const [wallet] = await fx.setupWallets(1);
@@ -174,7 +174,7 @@ Fixture.test(
     }
     assertEquals(failures.flat(), []);
 
-    await fx.clock.advance(5000);
+    await bundleService.submissionTimer.trigger();
     await bundleService.submissionTimer.waitForCompletedSubmissions(1);
     await bundleService.waitForConfirmations();
 
@@ -189,7 +189,7 @@ Fixture.test(
     assertEquals(remainingBundles.length, 2);
 
     // Re-run submissions
-    await fx.clock.advance(5000);
+    await bundleService.submissionTimer.trigger();
     await bundleService.submissionTimer.waitForCompletedSubmissions(2);
     await bundleService.waitForConfirmations();
 
@@ -204,17 +204,17 @@ Fixture.test(
     assertEquals(remainingBundles.length, 1);
 
     // Re-run submissions
-    await fx.clock.advance(5000);
+    await bundleService.submissionTimer.trigger();
     await bundleService.submissionTimer.waitForCompletedSubmissions(3);
     await bundleService.waitForConfirmations();
 
-    // 3rd mint bundle (nonce 3) should now have gone through.
+    // 3rd mint bundle (nonce 3) should now be stuck.
     assertEquals(
       await fx.testErc20.balanceOf(wallet.address),
-      BigNumber.from(1003), // 1000 (initial) + 3 * 1 (mint txs)
+      BigNumber.from(1002), // 1000 (initial) + 2 * 1 (mint txs)
     );
-    assertEquals(await wallet.Nonce(), BigNumber.from(4));
-    // Nothing left
-    assertEquals(await fx.allBundles(bundleService), []);
+    assertEquals(await wallet.Nonce(), BigNumber.from(3));
+    remainingBundles = await fx.allBundles(bundleService);
+    assertEquals(remainingBundles.length, 1);
   },
 );
