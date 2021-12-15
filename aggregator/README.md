@@ -133,7 +133,7 @@ Tests are defined in `test`. Running them directly is a bit verbose because of
 the deno flags you need:
 
 ```sh
-deno test -j --allow-net --allow-env --allow-read --unstable
+deno test --allow-net --allow-env --allow-read --unstable
 ```
 
 Instead, `./programs/premerge.ts` may be more useful for you. It'll make sure

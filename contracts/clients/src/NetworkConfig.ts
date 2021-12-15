@@ -16,7 +16,6 @@ export type NetworkConfig = {
     blsLibrary: string;
     blsExpander: string;
     testToken: string;
-    rewardToken: string;
   };
   /**
    * Additional information about deployment/deployed state

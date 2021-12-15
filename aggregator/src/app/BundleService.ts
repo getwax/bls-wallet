@@ -163,12 +163,6 @@ export default class BundleService {
     this.submissionsInProgress++;
 
     const submissionResult = await this.runQueryGroup(async () => {
-      let aggregateBundle: Bundle = {
-        signature: [BigNumber.from(0), BigNumber.from(0)],
-        senderPublicKeys: [],
-        operations: [],
-      };
-
       const currentBlockNumber = await this.ethereumService.BlockNumber();
 
       const eligibleBundleRows = await this.bundleTable.findEligible(
@@ -176,6 +170,7 @@ export default class BundleService {
         this.config.txQueryLimit,
       );
 
+      let aggregateBundle: Bundle | null = null;
       const includedRows: BundleRow[] = [];
       let actionCount = 0; // TODO: Count gas instead?
 
@@ -191,7 +186,7 @@ export default class BundleService {
         }
 
         const candidateBundle = this.blsWalletSigner.aggregate([
-          aggregateBundle,
+          ...(aggregateBundle ? [aggregateBundle] : []),
           row.bundle,
         ]);
 
@@ -204,7 +199,7 @@ export default class BundleService {
         }
       }
 
-      if (includedRows.length === 0) {
+      if (!aggregateBundle || includedRows.length === 0) {
         return;
       }
 

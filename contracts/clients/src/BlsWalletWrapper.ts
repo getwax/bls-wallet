@@ -120,7 +120,7 @@ export default class BlsWalletWrapper {
       return BigNumber.from(0);
     }
 
-    return await this.walletContract.nonce();
+    return this.walletContract.nonce();
   }
 
   static async Nonce(

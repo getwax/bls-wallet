@@ -37,7 +37,6 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1000),
   );
-
   assertEquals(await bundleService.bundleTable.count(), 1n);
 
   fx.clock.advance(5000);
@@ -48,7 +47,6 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1001),
   );
-
   assertEquals(await bundleService.bundleTable.count(), 0n);
 });
 
@@ -73,10 +71,10 @@ Fixture.test("submits a full submission without delay", async (fx) => {
     })
   );
 
-  const failures = await Promise.all(
-    bundles.map((bundle) => bundleService.add(bundle)),
-  );
-
+  const failures = [];
+  for (const b of bundles) {
+    failures.push(await bundleService.add(b));
+  }
   assertEquals(failures.flat(), []);
 
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -116,10 +114,10 @@ Fixture.test(
       })
     );
 
-    const failures = await Promise.all(
-      bundles.map((bundle) => bundleService.add(bundle)),
-    );
-
+    const failures = [];
+    for (const b of bundles) {
+      failures.push(await bundleService.add(b));
+    }
     assertEquals(failures.flat(), []);
 
     await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -133,10 +131,8 @@ Fixture.test(
     );
 
     // Leftover txs
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [txs[5], txs[6]],
-      future: [],
-    });
+    const remainingBundles = await fx.allBundles(bundleService);
+    assertEquals(remainingBundles.length, 2);
 
     await fx.clock.advance(5000);
     await bundleService.submissionTimer.waitForCompletedSubmissions(2);
@@ -150,46 +146,75 @@ Fixture.test(
 );
 
 Fixture.test(
-  "submits 3 bundles added concurrently in a jumbled order",
+  "submits 3 bundles in reverse (incorrect) nonce order",
   async (fx) => {
-    const bundleService = await fx.createBundleService({
-      ...bundleServiceConfig,
-
-      // TODO (merge-ok): Stop overriding this when BlsWallet nonces become
-      // explicit. Without this, submissions will be sent concurrently, and the
-      // submissions that are dependent on the first one will get rejected on
-      // the sig check.
-      maxUnconfirmedAggregations: 1,
-    });
-
+    const bundleService = await fx.createBundleService(bundleServiceConfig);
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
-    const txs = fx.rng.shuffle(Range(3)).map((i) =>
+    const bundles = Range(3).reverse().map((i) =>
       wallet.sign({
-        contract: fx.testErc20.contract,
-        method: "mint",
-        args: [wallet.address, "1"],
         nonce: walletNonce.add(i),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.testErc20.contract.address,
+            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+              "mint",
+              [wallet.address, 1],
+            ),
+          },
+        ],
       })
     );
 
-    const failures = await Promise.all(txs.map((tx) => bundleService.add(tx)));
+    const failures = [];
+    for (const b of bundles) {
+      failures.push(await bundleService.add(b));
+    }
     assertEquals(failures.flat(), []);
 
+    await fx.clock.advance(5000);
+    await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+    await bundleService.waitForConfirmations();
+
+    // Check 3rd mint bundle occurred (nonce 1)
+    assertEquals(
+      await fx.testErc20.balanceOf(wallet.address),
+      BigNumber.from(1001), // 1000 (initial) + 1 * 1 (mint txs)
+    );
+    assertEquals(await wallet.Nonce(), BigNumber.from(2));
+    // 2 mints should be left as both failed submission pre-check
+    let remainingBundles = await fx.allBundles(bundleService);
+    assertEquals(remainingBundles.length, 2);
+
+    // Re-run submissions
+    await fx.clock.advance(5000);
+    await bundleService.submissionTimer.waitForCompletedSubmissions(2);
+    await bundleService.waitForConfirmations();
+
+    // 2nd mint bundle (nonce 2) should now have gone through.
+    assertEquals(
+      await fx.testErc20.balanceOf(wallet.address),
+      BigNumber.from(1002), // 1000 (initial) + 2 * 1 (mint txs)
+    );
+    assertEquals(await wallet.Nonce(), BigNumber.from(3));
+    // 1 mints (nonce 3) should be left as it failed submission pre-check
+    remainingBundles = await fx.allBundles(bundleService);
+    assertEquals(remainingBundles.length, 1);
+
+    // Re-run submissions
+    await fx.clock.advance(5000);
     await bundleService.submissionTimer.waitForCompletedSubmissions(3);
     await bundleService.waitForConfirmations();
 
-    // Check mints have occurred
+    // 3rd mint bundle (nonce 3) should now have gone through.
     assertEquals(
       await fx.testErc20.balanceOf(wallet.address),
-      BigNumber.from(1015), // 1000 (initial) + 15 * 1 (mint txs)
+      BigNumber.from(1003), // 1000 (initial) + 3 * 1 (mint txs)
     );
-
-    // Nothing left over
-    assertEquals(await fx.allTxs(bundleService), {
-      ready: [],
-      future: [],
-    });
+    assertEquals(await wallet.Nonce(), BigNumber.from(4));
+    // Nothing left
+    assertEquals(await fx.allBundles(bundleService), []);
   },
 );

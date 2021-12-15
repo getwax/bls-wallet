@@ -93,7 +93,6 @@ export default class Fixture {
   clock = new TestClock();
 
   testErc20: MockErc20;
-  rewardErc20: MockErc20;
   adminWallet: ethers.Wallet;
 
   private constructor(
@@ -106,11 +105,6 @@ export default class Fixture {
   ) {
     this.testErc20 = new MockErc20(
       this.networkConfig.addresses.testToken,
-      this.ethereumService.wallet,
-    );
-
-    this.rewardErc20 = new MockErc20(
-      this.networkConfig.addresses.rewardToken,
       this.ethereumService.wallet,
     );
 
@@ -170,7 +164,7 @@ export default class Fixture {
    */
   async setupWallets(count: number, ...extraSeeds: string[]) {
     const wallets = [];
-    const tokens = [this.testErc20, this.rewardErc20];
+    const tokens = [this.testErc20];
 
     // Unfortunately attempting to parallelize these causes duplicate nonce
     // issues. This might be mitigated by collecting `TransactionResponse`s in a

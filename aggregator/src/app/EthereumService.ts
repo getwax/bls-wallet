@@ -80,6 +80,9 @@ export default class EthereumService {
     });
   }
 
+  // TODO (merge-ok): Consider: We may want to fail operations
+  // that are not at the next expected nonce, including all
+  // current pending transactions for that wallet.
   async checkNonces(bundle: Bundle): Promise<TransactionFailure[]> {
     const failures: TransactionFailure[] = [];
 
@@ -114,8 +117,10 @@ export default class EthereumService {
 
   async checkBundle(bundle: Bundle) {
     try {
-      await this.verificationGateway.callStatic.processBundle(bundle);
-      return true;
+      const { successes } = await this.verificationGateway.callStatic
+        .processBundle(bundle);
+      // All operations in the bundle should be estimated to succeed.
+      return successes.every((suc) => suc);
     } catch {
       return false;
     }
