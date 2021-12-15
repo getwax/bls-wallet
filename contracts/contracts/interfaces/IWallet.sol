@@ -26,6 +26,11 @@ interface IWallet {
         bool success,
         bytes[] memory results
     );
+    
+    // prepares gateway to be set (after pending timestamp)
+    function setTrustedGateway(address gateway) external;
+    // checks any pending variables and sets them if past their timestamp
+    function setAnyPending() external;
 }
 
 /** Interface for bls-specific functions
@@ -38,7 +43,5 @@ interface IBLSWallet is IWallet {
     ) external;
 
     function getBLSPublicKey() external view returns (uint256[4] memory);
-    function setTrustedBLSGateway(address blsGateway) external;
-    
  }
  

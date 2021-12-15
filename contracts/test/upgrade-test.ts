@@ -17,6 +17,7 @@ import { BigNumber } from "ethers";
 import defaultDomain from "../clients/src/signer/defaultDomain";
 import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
 import { solidityPack } from "ethers/lib/utils";
+import expectRevert from "../shared/helpers/expectRevert";
 
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
@@ -107,6 +108,10 @@ describe("Upgrade", async function () {
     ]);
     const changeProxyAction = bundle.operations[0].actions[0];
 
+    const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
+      walletOldVg.privateKey,
+    );
+
     // Atomically perform actions:
     //  1. register external wallet in vg2
     //  2. change proxy admin to that in vg2
@@ -128,12 +133,12 @@ describe("Upgrade", async function () {
               changeProxyAction,
               {
                 ethValue: 0,
-                contractAddress: walletAddress,
-                encodedFunction: (
-                  await ethers.getContractFactory("BLSWallet")
-                ).interface.encodeFunctionData("setTrustedBLSGateway", [
-                  vg2.address,
-                ]),
+                contractAddress: fx.verificationGateway.address,
+                encodedFunction:
+                  fx.verificationGateway.interface.encodeFunctionData(
+                    "setTrustedBLSGateway",
+                    [hash, vg2.address],
+                  ),
               },
             ],
           }),
@@ -142,9 +147,6 @@ describe("Upgrade", async function () {
     ).wait();
 
     // Create required objects for data/contracts for checks
-    const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
-      walletOldVg.privateKey,
-    );
     const proxyAdmin = await ethers.getContractAt(
       "ProxyAdmin",
       await vg2.walletProxyAdmin(),
@@ -156,6 +158,22 @@ describe("Upgrade", async function () {
     expect(await proxyAdmin.getProxyAdmin(walletAddress)).to.equal(
       proxyAdmin.address,
     );
+
+    // New verification gateway pending
+    expect(await blsWallet.trustedBLSGateway()).to.equal(
+      fx.verificationGateway.address,
+    );
+    // Advance time one week
+    const latestTimestamp = (await ethers.provider.getBlock("latest"))
+      .timestamp;
+    await network.provider.send("evm_setNextBlockTimestamp", [
+      BigNumber.from(latestTimestamp)
+        .add(24 * 7 * 60 * 60 + 1)
+        .toHexString(),
+    ]);
+    // set pending
+    await (await blsWallet.setAnyPending()).wait();
+    // Check new verification gateway was set
     expect(await blsWallet.trustedBLSGateway()).to.equal(vg2.address);
 
     // Check new gateway has wallet via static call through new gateway

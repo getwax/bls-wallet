@@ -165,6 +165,23 @@ contract VerificationGateway
         return result;
     }
 
+    /**
+    Wallet can migrate to a new gateway, eg additional signature support
+     */
+    function setTrustedBLSGateway(
+        bytes32 hash,
+        address blsGateway
+    ) public onlyWallet(hash) {
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { size := extcodesize(blsGateway) }
+        require(
+            (blsGateway != address(0)) && (size > 0),
+            "BLSWallet: gateway address param not valid"
+        );
+        walletFromHash(hash).setTrustedGateway(blsGateway);
+    }
+
     /** 
     Base function for verifying and processing BLS-signed transactions.
     Creates a new contract wallet per bls key if existing wallet not found.

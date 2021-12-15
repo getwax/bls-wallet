@@ -18,6 +18,8 @@ contract BLSWallet is Initializable, IBLSWallet
     // BLS variables
     uint256[4] public blsPublicKey;
     address public trustedBLSGateway;
+    address pendingBLSGateway;
+    uint pendingGatewayTime;
 
     function initialize(
         address blsGateway
@@ -52,15 +54,20 @@ contract BLSWallet is Initializable, IBLSWallet
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
-    function setTrustedBLSGateway(address blsGateway) public onlyThis {
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(blsGateway) }
-        require(
-            (blsGateway != address(0)) && (size > 0),
-            "BLSWallet: gateway address param not valid"
-        );
-        trustedBLSGateway = blsGateway;
+    function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
+        pendingBLSGateway = blsGateway;
+        pendingGatewayTime = block.timestamp + 604800; // 1 week from now
+    }
+
+    /**
+    Set results of any pending set operation if their respective timestamp has elapsed.
+     */
+    function setAnyPending() public {
+        if (block.timestamp > pendingGatewayTime) {
+            trustedBLSGateway = pendingBLSGateway;
+            pendingGatewayTime = 0;
+            pendingBLSGateway = address(0);
+        }
     }
 
     /**
