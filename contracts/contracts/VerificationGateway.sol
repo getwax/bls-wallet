@@ -183,6 +183,24 @@ contract VerificationGateway
         }
     }
 
+    function recoverWallet(
+        bytes32 blsKeyHash,
+        bytes32 salt,
+        uint256[4] memory newBLSKey
+    ) public {
+        IWallet wallet = walletFromHash(blsKeyHash);
+        bytes32 recoveryHash = keccak256(
+            abi.encodePacked(msg.sender, blsKeyHash, salt)
+        );
+        if (recoveryHash == wallet.recoveryHash()) {
+            // override mapping of old key hash (takes precedence over create2 address)
+            externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
+            bytes32 newKeyHash = keccak256(abi.encodePacked(newBLSKey));
+            externalWalletsFromHash[newKeyHash] = wallet;
+            wallet.recover(newBLSKey);
+        }
+    }
+
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */

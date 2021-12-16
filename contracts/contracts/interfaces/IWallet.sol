@@ -27,6 +27,9 @@ interface IWallet {
         bytes[] memory results
     );
 
+    function recoveryHash() external returns (bytes32);
+    function recover(uint256[4] calldata newBLSKey) external;
+
     // prepares gateway to be set (after pending timestamp)
     function setTrustedGateway(address gateway) external;
     // checks any pending variables and sets them if past their timestamp

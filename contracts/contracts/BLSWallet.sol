@@ -169,6 +169,22 @@ contract BLSWallet is Initializable, IBLSWallet
         }
     }
 
+    function recover(
+        uint256[4] calldata newBLSKey
+    ) public onlyTrustedGateway {
+        // set new bls key
+        blsPublicKey = newBLSKey;
+        // clear any pending operations
+        pendingRecoveryHashTime = type(uint256).max;
+        pendingRecoveryHash = bytes32(0);
+        pendingBLSPublicKeyTime = type(uint256).max;
+        pendingBLSPublicKey = [0,0,0,0];
+        pendingGatewayTime = type(uint256).max;
+        pendingBLSGateway = address(0);
+        pendingPAFunctionTime = type(uint256).max;
+        pendingPAFunction = new bytes(0);
+    }
+
     /**
     A regular wallet expects the gateway to verify signed 
     transactions with the wallet's public key, and nonce.
