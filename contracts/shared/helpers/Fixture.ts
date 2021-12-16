@@ -1,6 +1,12 @@
 import "@nomiclabs/hardhat-ethers";
-import { ethers } from "hardhat";
-import { Signer, Contract, ContractFactory, BigNumber } from "ethers";
+import { ethers, network } from "hardhat";
+import {
+  Signer,
+  Contract,
+  ContractFactory,
+  BigNumber,
+  BigNumberish,
+} from "ethers";
 import { Provider } from "@ethersproject/abstract-provider";
 
 import {
@@ -130,5 +136,43 @@ export default class Fixture {
     return await Promise.all(
       this.lazyBlsWallets.map((lazyWallet) => lazyWallet()),
     );
+  }
+
+  async call(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ) {
+    await (
+      await this.verificationGateway.processBundle(
+        this.blsWalletSigner.aggregate([
+          wallet.sign({
+            nonce: nonce,
+            actions: [
+              {
+                ethValue: ethValue,
+                contractAddress: contract.address,
+                encodedFunction: contract.interface.encodeFunctionData(
+                  method,
+                  params,
+                ),
+              },
+            ],
+          }),
+        ]),
+      )
+    ).wait();
+  }
+
+  async advanceTimeBy(seconds: number) {
+    // Advance time one week
+    const latestTimestamp = (await ethers.provider.getBlock("latest"))
+      .timestamp;
+    await network.provider.send("evm_setNextBlockTimestamp", [
+      BigNumber.from(latestTimestamp).add(seconds).toHexString(),
+    ]);
   }
 }

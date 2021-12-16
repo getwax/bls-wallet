@@ -114,12 +114,7 @@ describe("Upgrade", async function () {
     ]);
 
     // Advance time one week
-    let latestTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
-    await network.provider.send("evm_setNextBlockTimestamp", [
-      BigNumber.from(latestTimestamp)
-        .add(24 * 7 * 60 * 60 + 1)
-        .toHexString(),
-    ]);
+    await fx.advanceTimeBy(24 * 7 * 60 * 60 + 1);
 
     const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
       walletOldVg.privateKey,
@@ -177,12 +172,7 @@ describe("Upgrade", async function () {
       fx.verificationGateway.address,
     );
     // Advance time one week
-    latestTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
-    await network.provider.send("evm_setNextBlockTimestamp", [
-      BigNumber.from(latestTimestamp)
-        .add(24 * 7 * 60 * 60 + 1)
-        .toHexString(),
-    ]);
+    await fx.advanceTimeBy(24 * 7 * 60 * 60 + 1);
     // set pending
     await (await blsWallet.setAnyPending()).wait();
     // Check new verification gateway was set

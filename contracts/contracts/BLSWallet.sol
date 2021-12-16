@@ -84,7 +84,7 @@ contract BLSWallet is Initializable, IBLSWallet
     }
 
     /**
-    Wallet can migrate to a new gateway, eg additional signature support
+    Wallet can update its BLS key
      */
     function setBLSPublicKey(uint256[4] memory blsKey) public onlyThis {
         require(isZeroBLSKey(blsKey) == false, "BLSWallet: blsKey must be non-zero");

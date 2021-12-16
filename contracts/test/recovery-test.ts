@@ -6,19 +6,10 @@ import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
-import {
-  proxyAdminBundle,
-  proxyAdminCall,
-} from "../shared/helpers/callProxyAdmin";
-import Create2Fixture from "../shared/helpers/Create2Fixture";
-import { BLSOpen } from "../typechain";
 import { BigNumber } from "ethers";
-import defaultDomain from "../clients/src/signer/defaultDomain";
-import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
-import { solidityPack } from "ethers/lib/utils";
 import { PublicKey } from "../clients/deps/hubble-bls/mcl";
 
-describe.only("Upgrade", async function () {
+describe("Recovery", async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
     if (network.name === "hardhat") {
@@ -47,37 +38,12 @@ describe.only("Upgrade", async function () {
     const newKey: PublicKey = [1, 2, 3, 4].map(BigNumber.from);
     const initialKey = await blsWallet.getBLSPublicKey();
 
-    await (
-      await fx.verificationGateway.processBundle(
-        fx.blsWalletSigner.aggregate([
-          wallet.sign({
-            nonce: BigNumber.from(1),
-            actions: [
-              {
-                ethValue: 0,
-                contractAddress: blsWallet.address,
-                encodedFunction: blsWallet.interface.encodeFunctionData(
-                  "setBLSPublicKey",
-                  [newKey],
-                ),
-              },
-            ],
-          }),
-        ]),
-      )
-    ).wait();
+    await fx.call(wallet, blsWallet, "setBLSPublicKey", [newKey], 1);
 
     expect(await blsWallet.getBLSPublicKey()).to.eql(initialKey);
 
-    // Advance time one week
-    const latestTimestamp = (await ethers.provider.getBlock("latest"))
-      .timestamp;
-    await network.provider.send("evm_setNextBlockTimestamp", [
-      BigNumber.from(latestTimestamp)
-        .add(24 * 7 * 60 * 60 + 1)
-        .toHexString(),
-    ]);
-    await blsWallet.setAnyPending();
+    await fx.advanceTimeBy(24 * 7 * 60 * 60 + 1);
+    await (await blsWallet.setAnyPending()).wait();
 
     expect(await blsWallet.getBLSPublicKey()).to.eql(newKey);
   });
