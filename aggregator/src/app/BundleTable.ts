@@ -131,8 +131,6 @@ export default class BundleTable {
   }
 
   async findEligible(blockNumber: BigNumber, limit: number) {
-    // FIXME: blockNumber needs to be compared as a 256bit hex string
-
     const rows: RawRow[] = await this.queryClient.query(
       `
         SELECT * from ${this.safeName}
@@ -142,7 +140,6 @@ export default class BundleTable {
         LIMIT ${limit}
       `,
     );
-
     return rows.map(fromRawRow);
   }
 

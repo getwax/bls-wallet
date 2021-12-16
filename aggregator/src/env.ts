@@ -23,16 +23,14 @@ export const PG = {
   DB_NAME: requireEnv("PG_DB_NAME"),
 };
 
-export const TX_TABLE_NAME = requireEnv("TX_TABLE_NAME");
-export const FUTURE_TX_TABLE_NAME = requireEnv("FUTURE_TX_TABLE_NAME");
+export const BUNDLE_TABLE_NAME = requireEnv("BUNDLE_TABLE_NAME");
 
 /**
- * Query limit used when processing potentially large numbers of txs.
+ * Query limit used when processing potentially large numbers of bundles.
  * (Using batching if needed.)
  */
-export const TX_QUERY_LIMIT = requireIntEnv("TX_QUERY_LIMIT");
-
-export const MAX_FUTURE_TXS = requireIntEnv("MAX_FUTURE_TXS");
+export const BUNDLE_QUERY_LIMIT = requireIntEnv("BUNDLE_QUERY_LIMIT");
+export const MAX_FUTURE_BUNDLES = requireIntEnv("MAX_FUTURE_BUNDLES");
 
 export const MAX_AGGREGATION_SIZE = requireIntEnv("MAX_AGGREGATION_SIZE");
 

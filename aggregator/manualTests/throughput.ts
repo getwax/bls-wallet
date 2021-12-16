@@ -12,7 +12,7 @@ import * as env from "../test/env.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
-import getNetworkConfig from "../src/helpers/networkConfig.ts";
+import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 
 const logStartTime = Date.now();
 

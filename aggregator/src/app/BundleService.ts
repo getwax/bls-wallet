@@ -19,8 +19,7 @@ import toShortPublicKey from "./helpers/toPublicKeyShort.ts";
 
 export default class BundleService {
   static defaultConfig = {
-    txQueryLimit: env.TX_QUERY_LIMIT, // TODO: Rename QUERY_LIMIT
-    maxFutureTxs: env.MAX_FUTURE_TXS, // TODO: Remove (but trim bundles?)
+    bundleQueryLimit: env.BUNDLE_QUERY_LIMIT,
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
@@ -41,7 +40,7 @@ export default class BundleService {
     public emit: (evt: AppEvent) => void,
     public clock: IClock,
     public queryClient: QueryClient,
-    public txTablesMutex: Mutex,
+    public bundleTableMutex: Mutex,
     public bundleTable: BundleTable,
     public blsWalletSigner: BlsWalletSigner,
     public ethereumService: EthereumService,
@@ -58,7 +57,7 @@ export default class BundleService {
 
       while (!this.stopping) {
         this.tryAggregating();
-        // TODO: Stop if there aren't any bundles?
+        // TODO (merge-ok): Stop if there aren't any bundles?
         await this.ethereumService.waitForNextBlock();
       }
     })();
@@ -89,7 +88,7 @@ export default class BundleService {
 
     const eligibleBundleRows = await this.bundleTable.findEligible(
       await this.ethereumService.BlockNumber(),
-      this.config.txQueryLimit,
+      this.config.bundleQueryLimit,
     );
 
     const actionCount = eligibleBundleRows
@@ -100,7 +99,6 @@ export default class BundleService {
     if (actionCount >= this.config.maxAggregationSize) {
       this.submissionTimer.trigger();
     } else if (actionCount > 0) {
-      // TODO: tx -> bundle
       this.submissionTimer.notifyActive();
     } else {
       this.submissionTimer.clear();
@@ -108,7 +106,12 @@ export default class BundleService {
   }
 
   runQueryGroup<T>(body: () => Promise<T>): Promise<T> {
-    return runQueryGroup(this.emit, this.txTablesMutex, this.queryClient, body);
+    return runQueryGroup(
+      this.emit,
+      this.bundleTableMutex,
+      this.queryClient,
+      body,
+    );
   }
 
   async add(bundle: Bundle): Promise<TransactionFailure[]> {
@@ -167,12 +170,14 @@ export default class BundleService {
 
       const eligibleBundleRows = await this.bundleTable.findEligible(
         currentBlockNumber,
-        this.config.txQueryLimit,
+        this.config.bundleQueryLimit,
       );
 
       let aggregateBundle: Bundle | null = null;
       const includedRows: BundleRow[] = [];
-      let actionCount = 0; // TODO: Count gas instead?
+      // TODO (merge-ok): Count gas instead, have idea
+      // or way to query max gas per txn (submission).
+      let actionCount = 0;
 
       for (const row of eligibleBundleRows) {
         if (this.unconfirmedRowIds.has(row.id!)) {
@@ -223,7 +228,7 @@ export default class BundleService {
         this.unconfirmedRowIds.add(row.id!);
       }
 
-      // TODO: Use a task
+      // TODO (merge-ok): Use a task
       (async () => {
         try {
           const recpt = await this.ethereumService.submitBundle(

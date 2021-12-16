@@ -105,7 +105,7 @@ Fixture.test("EthereumService submits large aggregate mint bundle", async (fx) =
       wallet.sign({
         nonce: walletNonce.add(i),
         actions: [
-          // TODO: Add single operation multi-action variation of this test
+          // TODO (merge-ok): Add single operation multi-action variation of this test
           {
             ethValue: 0,
             contractAddress: fx.testErc20.contract.address,

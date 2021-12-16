@@ -160,8 +160,8 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
   assertEquals(await bundleService.bundleTable.count(), 1n);
 });
 
-// TODO: Add a mechanism for limiting the number of stored transactions (and
-// add a new test for it)
+// TODO (merge-ok): Add a mechanism for limiting the number of stored
+// transactions (and add a new test for it).
 // Fixture.test(
 //   "when future txs reach maxFutureTxs, the oldest ones are dropped",
 //   async (fx) => {

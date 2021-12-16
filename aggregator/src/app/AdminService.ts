@@ -1,19 +1,17 @@
-import TxTable from "./TxTable.ts";
+import BundleTable from "./BundleTable.ts";
 import EthereumService from "./EthereumService.ts";
 
 export default class AdminService {
   constructor(
     private ethereumService: EthereumService,
-    private readyTxTable: TxTable,
-    private futureTxTable: TxTable,
+    private bundleTable: BundleTable,
   ) {}
 
-  async resetTxs() {
-    await this.futureTxTable.clear();
-    await this.readyTxTable.clear();
+  async resetBundles() {
+    await this.bundleTable.clear();
   }
 
-  async txCount(): Promise<bigint> {
-    return await this.readyTxTable.count();
+  async bundleCount(): Promise<bigint> {
+    return await this.bundleTable.count();
   }
 }

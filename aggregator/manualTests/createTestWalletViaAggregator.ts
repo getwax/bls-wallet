@@ -3,7 +3,7 @@
 import { AggregatorClient, BlsWallet, ethers, parseArgs } from "../deps.ts";
 
 import assert from "../src/helpers/assert.ts";
-import getNetworkConfig from "../src/helpers/networkConfig.ts";
+import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 import nil from "../src/helpers/nil.ts";
 import Rng from "../src/helpers/Rng.ts";
 import * as env from "../test/env.ts";

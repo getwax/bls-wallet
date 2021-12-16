@@ -4,12 +4,12 @@
 
 import createQueryClient from "../src/app/createQueryClient.ts";
 import * as env from "../src/env.ts";
-import TxTable from "../src/app/TxTable.ts";
+import BundleTable from "../src/app/BundleTable.ts";
 
 const queryClient = createQueryClient(() => {});
 
-for (const tableName of [env.TX_TABLE_NAME, env.FUTURE_TX_TABLE_NAME]) {
-  const table = await TxTable.create(queryClient, tableName);
+for (const tableName of [env.BUNDLE_TABLE_NAME]) {
+  const table = await BundleTable.create(queryClient, tableName);
   await table.drop();
   console.log(`dropped table ${tableName}`);
 }

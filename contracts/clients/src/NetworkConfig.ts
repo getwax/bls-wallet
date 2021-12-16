@@ -60,7 +60,6 @@ export function validateConfig(cfg: any): NetworkConfig {
       blsLibrary: assertString(cfg.addresses.blsLibrary),
       blsExpander: assertString(cfg.addresses.blsExpander),
       testToken: assertString(cfg.addresses.testToken),
-      rewardToken: assertString(cfg.addresses.rewardToken),
     },
     auxiliary: {
       chainid: assertNumber(cfg.auxiliary.chainid),

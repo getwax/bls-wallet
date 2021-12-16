@@ -8,13 +8,13 @@ import AdminRouter from "./AdminRouter.ts";
 import AdminService from "./AdminService.ts";
 import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
-import TxTable from "./TxTable.ts";
 import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
 import getNetworkConfig from "../helpers/getNetworkConfig.ts";
 import AppEvent from "./AppEvent.ts";
 import WalletRouter from "./WalletRouter.ts";
+import BundleTable from "./BundleTable.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
   const { addresses } = await getNetworkConfig();
@@ -22,14 +22,10 @@ export default async function app(emit: (evt: AppEvent) => void) {
   const clock = Clock.create();
 
   const queryClient = createQueryClient(emit);
-
-  const txTablesMutex = new Mutex();
-
-  const readyTxTable = await TxTable.create(queryClient, env.TX_TABLE_NAME);
-
-  const futureTxTable = await TxTable.create(
+  const bundleTableMutex = new Mutex();
+  const bundleTable = await BundleTable.create(
     queryClient,
-    env.FUTURE_TX_TABLE_NAME,
+    env.BUNDLE_TABLE_NAME,
   );
 
   const ethereumService = await EthereumService.create(
@@ -42,16 +38,15 @@ export default async function app(emit: (evt: AppEvent) => void) {
     emit,
     clock,
     queryClient,
-    txTablesMutex,
-    readyTxTable,
-    futureTxTable,
+    bundleTableMutex,
+    bundleTable,
+    ethereumService.blsWalletSigner,
     ethereumService,
   );
 
   const adminService = new AdminService(
     ethereumService,
-    readyTxTable,
-    futureTxTable,
+    bundleTable,
   );
 
   const routers = [

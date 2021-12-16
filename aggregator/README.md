@@ -159,7 +159,7 @@ script completes successfully before merging into main.
 - **`BundleService`**: Keeps track of all stored transactions, as well as
   accepting (or rejecting) them and submitting aggregated bundles to
   `EthereumService`.
-- **`TxTable`**: Abstraction layer over postgres transaction tables, exposing
+- **`BundleTable`**: Abstraction layer over postgres bundle tables, exposing
   typed functions instead of queries. Handles conversions to and from the field
   types supported by postgres so that other code can has a uniform js-friendly
   interface
