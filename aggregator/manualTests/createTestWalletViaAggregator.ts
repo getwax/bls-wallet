@@ -1,6 +1,11 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { AggregatorClient, BlsWallet, ethers, parseArgs } from "../deps.ts";
+import {
+  AggregatorClient,
+  BlsWalletWrapper,
+  ethers,
+  parseArgs,
+} from "../deps.ts";
 
 import assert from "../src/helpers/assert.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
@@ -10,7 +15,7 @@ import * as env from "../test/env.ts";
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
-const client = new AggregatorClient(env.ORIGIN);
+const _client = new AggregatorClient(env.ORIGIN);
 
 const rng = Rng.root.seed("test-wallet");
 
@@ -28,7 +33,7 @@ const privateKey = rng.seed(`${seed}`).address();
 
 const { addresses } = await getNetworkConfig();
 
-const wallet = await BlsWallet.connect(
+const wallet = await BlsWalletWrapper.connect(
   privateKey,
   addresses.verificationGateway,
   provider,
@@ -39,15 +44,15 @@ if (wallet !== nil) {
   Deno.exit(0);
 }
 
-const tx = await BlsWallet.signCreation(
-  privateKey,
-  addresses.verificationGateway,
-  provider,
-);
-
 console.log("Sending creation tx to aggregator");
 
-const createResult = await client.createWallet(tx);
+// TODO (merge-ok) Fix when wallet creation added.
+// const createResult = await client.createWallet(bun);
+const createResult = {
+  failures: [{
+    description: "createTestWalletViaAggregator: createWallet not implemented",
+  }],
+};
 
 assert(
   createResult.failures.length === 0,

@@ -3,7 +3,7 @@ import { Application } from "../../deps.ts";
 import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
 import BundleService from "./BundleService.ts";
-import TxRouter from "./TxRouter.ts";
+import BundleRouter from "./BundleRouter.ts";
 import AdminRouter from "./AdminRouter.ts";
 import AdminService from "./AdminService.ts";
 import errorHandler from "./errorHandler.ts";
@@ -14,6 +14,7 @@ import Clock from "../helpers/Clock.ts";
 import getNetworkConfig from "../helpers/getNetworkConfig.ts";
 import AppEvent from "./AppEvent.ts";
 import WalletRouter from "./WalletRouter.ts";
+import WalletService from "./WalletService.ts";
 import BundleTable from "./BundleTable.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
@@ -34,6 +35,8 @@ export default async function app(emit: (evt: AppEvent) => void) {
     env.PRIVATE_KEY_AGG,
   );
 
+  const walletService = new WalletService();
+
   const bundleService = new BundleService(
     emit,
     clock,
@@ -50,8 +53,8 @@ export default async function app(emit: (evt: AppEvent) => void) {
   );
 
   const routers = [
-    TxRouter(bundleService),
-    WalletRouter(ethereumService),
+    BundleRouter(bundleService),
+    WalletRouter(walletService),
     AdminRouter(adminService),
   ];
 

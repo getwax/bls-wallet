@@ -1,17 +1,17 @@
 import { Router } from "../../deps.ts";
 import nil from "../helpers/nil.ts";
 import failRequest from "./helpers/failRequest.ts";
-import TxHandler from "./helpers/TxHandler.ts";
+import BundleHandler from "./helpers/BundleHandler.ts";
 
-import EthereumService from "./EthereumService.ts";
+import WalletService from "./WalletService.ts";
 
-export default function WalletRouter(ethereumService: EthereumService) {
+export default function WalletRouter(walletService: WalletService) {
   const router = new Router({ prefix: "/" });
 
   router.post(
     "wallet",
-    TxHandler(async (ctx, tx) => {
-      const createResult = await ethereumService.createWallet(tx);
+    BundleHandler(async (ctx, bundle) => {
+      const createResult = await walletService.createWallet(bundle);
 
       if (createResult.address !== nil) {
         ctx.response.body = createResult;

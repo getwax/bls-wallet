@@ -39,31 +39,18 @@ export type {
   Operation,
   PublicKey,
   Signature,
-  VerificationGateway,
 } from "https://esm.sh/bls-wallet-clients@0.5.0-32ca69b";
 
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.5.0-32ca69b";
-
-const {
-  Aggregator: AggregatorClient,
-  BlsWalletWrapper,
-  bundleFromDto,
-  bundleToDto,
-  getConfig,
-  initBlsWalletSigner,
-  // deno-lint-ignore camelcase
-  VerificationGateway__factory,
-} = blsWalletClients;
-
 export {
-  AggregatorClient,
+  Aggregator,
   BlsWalletWrapper,
   bundleFromDto,
   bundleToDto,
   getConfig,
   initBlsWalletSigner,
+  VerificationGateway,
   VerificationGateway__factory,
-};
+} from "https://esm.sh/bls-wallet-clients@0.5.0-32ca69b";
 
 // Database dependencies
 export {
