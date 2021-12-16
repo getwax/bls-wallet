@@ -14,6 +14,9 @@ import "./interfaces/IWallet.sol";
 contract BLSWallet is Initializable, IBLSWallet
 {
     uint256 public nonce;
+    bytes32 public recoveryHash;
+    bytes32 pendingRecoveryHash;
+    uint256 pendingRecoveryHashTime;
     bytes public approvedProxyAdminFunction;
     bytes pendingPAFunction;
     uint256 pendingPAFunctionTime;
@@ -26,6 +29,9 @@ contract BLSWallet is Initializable, IBLSWallet
     address pendingBLSGateway;
     uint256 pendingGatewayTime;
 
+    event PendingRecoveryHashSet(
+        bytes32 pendingRecoveryHash
+    );
     event PendingBLSKeySet(
         uint256[4] pendingBLSKey
     );
@@ -36,6 +42,10 @@ contract BLSWallet is Initializable, IBLSWallet
         bytes pendingProxyAdminFunction
     );
 
+    event RecoveryHashUpdated(
+        bytes32 oldHash,
+        bytes32 newHash
+    );
     event BLSKeySet(
         uint256[4] oldBLSKey,
         uint256[4] newBLSKey
@@ -84,6 +94,21 @@ contract BLSWallet is Initializable, IBLSWallet
     }
 
     /**
+    Wallet can update its recovery hash
+     */
+    function setRecoveryHash(bytes32 hash) public onlyThis {
+        if (recoveryHash == bytes32(0)) {
+            recoveryHash = hash;
+            emit RecoveryHashUpdated(bytes32(0), recoveryHash);
+        }
+        else {
+            pendingRecoveryHash = hash;
+            pendingRecoveryHashTime = block.timestamp + 604800; // 1 week from now
+            emit PendingRecoveryHashSet(pendingRecoveryHash);
+        }
+    }
+
+    /**
     Wallet can update its BLS key
      */
     function setBLSPublicKey(uint256[4] memory blsKey) public onlyThis {
@@ -115,6 +140,13 @@ contract BLSWallet is Initializable, IBLSWallet
     Set results of any pending set operation if their respective timestamp has elapsed.
      */
     function setAnyPending() public {
+        if (block.timestamp > pendingRecoveryHashTime) {
+            bytes32 previousRecoveryHash = recoveryHash;
+            recoveryHash = pendingRecoveryHash;
+            pendingRecoveryHashTime = type(uint256).max;
+            pendingRecoveryHash = bytes32(0);
+            emit RecoveryHashUpdated(previousRecoveryHash, recoveryHash);
+        }
         if (block.timestamp > pendingBLSPublicKeyTime) {
             uint256[4] memory previousBLSPublicKey = blsPublicKey;
             blsPublicKey = pendingBLSPublicKey;
