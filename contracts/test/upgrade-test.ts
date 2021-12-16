@@ -47,7 +47,6 @@ describe("Upgrade", async function () {
     const mockWalletUpgraded = await MockWalletUpgraded.deploy();
 
     const wallet = await fx.lazyBlsWallets[0]();
-    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
 
     // prepare call
     await proxyAdminCall(fx, wallet, "upgrade", [

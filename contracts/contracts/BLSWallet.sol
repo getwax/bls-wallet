@@ -20,20 +20,32 @@ contract BLSWallet is Initializable, IBLSWallet
 
     // BLS variables
     uint256[4] public blsPublicKey;
+    uint256[4] pendingBLSPublicKey;
+    uint256 pendingBLSPublicKeyTime;
     address public trustedBLSGateway;
     address pendingBLSGateway;
     uint256 pendingGatewayTime;
 
-    event GatewaySetPending(
+    event PendingBLSKeySet(
+        uint256[4] pendingBLSKey
+    );
+    event PendingGatewaySet(
         address pendingGateway
     );
-    event ProxyAdminFunctionSetPending(
-        bytes encodedFunction
+    event PendingProxyAdminFunctionSet(
+        bytes pendingProxyAdminFunction
     );
 
+    event BLSKeySet(
+        uint256[4] oldBLSKey,
+        uint256[4] newBLSKey
+    );
     event GatewayUpdated(
         address oldGateway,
         address newGateway
+    );
+    event ProxyAdminFunctionApproved(
+        bytes approvedProxyAdmin
     );
 
     function initialize(
@@ -49,13 +61,16 @@ contract BLSWallet is Initializable, IBLSWallet
     function latchBLSPublicKey(
         uint256[4] memory blsKey
     ) public onlyTrustedGateway {
-        for (uint256 i=0; i<4; i++) {
-            require(
-                blsPublicKey[i] == 0,
-                "BLSWallet: public key already set"
-            );
-        }
+        require(isZeroBLSKey(blsPublicKey), "BLSWallet: public key already set");
         blsPublicKey = blsKey;
+    }
+
+    function isZeroBLSKey(uint256[4] memory blsKey) public pure returns (bool) {
+        bool isZero = true;
+        for (uint256 i=0; isZero && i<4; i++) {
+            isZero = (blsKey[i] == 0);
+        }
+        return isZero;
     }
 
     receive() external payable {}
@@ -71,10 +86,20 @@ contract BLSWallet is Initializable, IBLSWallet
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
+    function setBLSPublicKey(uint256[4] memory blsKey) public onlyThis {
+        require(isZeroBLSKey(blsKey) == false, "BLSWallet: blsKey must be non-zero");
+        pendingBLSPublicKey = blsKey;
+        pendingBLSPublicKeyTime = block.timestamp + 604800; // 1 week from now
+        emit PendingBLSKeySet(pendingBLSPublicKey);
+    }
+
+    /**
+    Wallet can migrate to a new gateway, eg additional signature support
+     */
     function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
         pendingBLSGateway = blsGateway;
         pendingGatewayTime = block.timestamp + 604800; // 1 week from now
-        emit GatewaySetPending(pendingBLSGateway);
+        emit PendingGatewaySet(pendingBLSGateway);
     }
 
     /**
@@ -83,13 +108,20 @@ contract BLSWallet is Initializable, IBLSWallet
     function setProxyAdminFunction(bytes calldata encodedFunction) public onlyTrustedGateway {
         pendingPAFunction = encodedFunction;
         pendingPAFunctionTime = block.timestamp + 604800; // 1 week from now
-        emit ProxyAdminFunctionSetPending(pendingPAFunction);
+        emit PendingProxyAdminFunctionSet(pendingPAFunction);
     }
 
     /**
     Set results of any pending set operation if their respective timestamp has elapsed.
      */
     function setAnyPending() public {
+        if (block.timestamp > pendingBLSPublicKeyTime) {
+            uint256[4] memory previousBLSPublicKey = blsPublicKey;
+            blsPublicKey = pendingBLSPublicKey;
+            pendingBLSPublicKeyTime = type(uint256).max;
+            pendingBLSPublicKey = [0,0,0,0];
+            emit BLSKeySet(previousBLSPublicKey, blsPublicKey);
+        }
         if (block.timestamp > pendingGatewayTime) {
             address previousGateway = trustedBLSGateway;
             trustedBLSGateway = pendingBLSGateway;
@@ -101,6 +133,7 @@ contract BLSWallet is Initializable, IBLSWallet
             approvedProxyAdminFunction = pendingPAFunction;
             pendingPAFunctionTime = type(uint256).max;
             pendingPAFunction = new bytes(0);
+            emit ProxyAdminFunctionApproved(approvedProxyAdminFunction);
         }
     }
 

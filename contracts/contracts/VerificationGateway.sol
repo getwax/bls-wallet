@@ -142,7 +142,7 @@ contract VerificationGateway
 
     /**
     Calls to proxy admin, exclusively from a wallet. Must be called twice.
-    Once to set the function in the wallet as pending
+    Once to set the function in the wallet as pending, then again after the recovery time.
     @param hash calling wallet's bls public key hash
     @param encodedFunction the selector and params to call (first encoded param must be calling wallet)
      */
@@ -177,7 +177,7 @@ contract VerificationGateway
         }
         else {
             // call approved function
-            (bool success, bytes memory result) = address(walletProxyAdmin).call(encodedFunction);
+            (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
             require(success, "VG: call to proxy admin failed");
             wallet.clearApprovedProxyAdminFunction();
         }
