@@ -26,11 +26,15 @@ interface IWallet {
         bool success,
         bytes[] memory results
     );
-    
+
     // prepares gateway to be set (after pending timestamp)
     function setTrustedGateway(address gateway) external;
     // checks any pending variables and sets them if past their timestamp
     function setAnyPending() external;
+
+    function setProxyAdminFunction(bytes memory) external;
+    function approvedProxyAdminFunction() external view returns (bytes memory);
+    function clearApprovedProxyAdminFunction() external;
 }
 
 /** Interface for bls-specific functions

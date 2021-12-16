@@ -16,25 +16,6 @@ export async function proxyAdminCall(
   ).wait();
 }
 
-/** Statically call sign a single operation bundle that contains a single
- * proxy admin action, and return the bytes result of a staticcall to the
- * verification gateway.
- */
-export async function proxyAdminCallStatic(
-  fx: Fixture,
-  wallet: BlsWalletWrapper,
-  functionName: string,
-  functionParams: any[],
-): Promise<string> {
-  const bundleResult = await fx.verificationGateway.callStatic.processBundle(
-    await proxyAdminBundle(fx, wallet, functionName, functionParams),
-  );
-  return ethers.utils.defaultAbiCoder.decode(
-    ["bytes"],
-    bundleResult.results[0][0], // first and only operation/action result
-  )[0];
-}
-
 /** proxyAdmin function data is a parameter to the walletAdminCall
  * function of the Verification Gateway. The encoded admin call is
  * then wrapped in an action, signed into a single operation bundle.

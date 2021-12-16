@@ -141,18 +141,19 @@ contract VerificationGateway
     }
 
     /**
-    Calls to proxy admin, exclusively from a wallet.
+    Calls to proxy admin, exclusively from a wallet. Must be called twice.
+    Once to set the function in the wallet as pending
     @param hash calling wallet's bls public key hash
     @param encodedFunction the selector and params to call (first encoded param must be calling wallet)
      */
     function walletAdminCall(
         bytes32 hash,
         bytes calldata encodedFunction
-    ) public onlyWallet(hash) returns (
-        bytes memory
-    ) {
-        // ensure first parameter is the calling wallet
-        bytes memory encodedAddress = abi.encode(address(walletFromHash(hash)));
+    ) public onlyWallet(hash) {
+        IWallet wallet = walletFromHash(hash);
+
+        // ensure first parameter is the calling wallet address
+        bytes memory encodedAddress = abi.encode(address(wallet));
         uint8 selectorOffset = 4;
         for (uint256 i=0; i<32; i++) {
             require(
@@ -160,9 +161,26 @@ contract VerificationGateway
                 "VG: first param to proxy admin is not calling wallet"
             );
         }
-        (bool success, bytes memory result) = address(walletProxyAdmin).call(encodedFunction);
-        require(success, "VG: call to proxy admin failed");
-        return result;
+
+        wallet.setAnyPending();
+
+        // ensure wallet has pre-approved encodedFunction
+        bytes memory approvedFunction = wallet.approvedProxyAdminFunction();
+        bool matchesApproved = (encodedFunction.length == approvedFunction.length);
+        for (uint i=0; matchesApproved && i<approvedFunction.length; i++) {
+            matchesApproved = (encodedFunction[i] == approvedFunction[i]);
+        }
+
+        if (matchesApproved == false) {
+            // prepare for a future call
+            wallet.setProxyAdminFunction(encodedFunction);
+        }
+        else {
+            // call approved function
+            (bool success, bytes memory result) = address(walletProxyAdmin).call(encodedFunction);
+            require(success, "VG: call to proxy admin failed");
+            wallet.clearApprovedProxyAdminFunction();
+        }
     }
 
     /**

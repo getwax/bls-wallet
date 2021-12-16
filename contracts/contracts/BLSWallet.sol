@@ -14,18 +14,35 @@ import "./interfaces/IWallet.sol";
 contract BLSWallet is Initializable, IBLSWallet
 {
     uint256 public nonce;
+    bytes public approvedProxyAdminFunction;
+    bytes pendingPAFunction;
+    uint256 pendingPAFunctionTime;
 
     // BLS variables
     uint256[4] public blsPublicKey;
     address public trustedBLSGateway;
     address pendingBLSGateway;
-    uint pendingGatewayTime;
+    uint256 pendingGatewayTime;
+
+    event GatewaySetPending(
+        address pendingGateway
+    );
+    event ProxyAdminFunctionSetPending(
+        bytes encodedFunction
+    );
+
+    event GatewayUpdated(
+        address oldGateway,
+        address newGateway
+    );
 
     function initialize(
         address blsGateway
     ) external initializer {
         nonce = 0;
         trustedBLSGateway = blsGateway;
+        pendingGatewayTime = type(uint256).max;
+        pendingPAFunctionTime = type(uint256).max;
     }
 
     /** */
@@ -57,6 +74,16 @@ contract BLSWallet is Initializable, IBLSWallet
     function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
         pendingBLSGateway = blsGateway;
         pendingGatewayTime = block.timestamp + 604800; // 1 week from now
+        emit GatewaySetPending(pendingBLSGateway);
+    }
+
+    /**
+    Prepare wallet with desired implementation contract to upgrade to.
+    */
+    function setProxyAdminFunction(bytes calldata encodedFunction) public onlyTrustedGateway {
+        pendingPAFunction = encodedFunction;
+        pendingPAFunctionTime = block.timestamp + 604800; // 1 week from now
+        emit ProxyAdminFunctionSetPending(pendingPAFunction);
     }
 
     /**
@@ -64,9 +91,16 @@ contract BLSWallet is Initializable, IBLSWallet
      */
     function setAnyPending() public {
         if (block.timestamp > pendingGatewayTime) {
+            address previousGateway = trustedBLSGateway;
             trustedBLSGateway = pendingBLSGateway;
-            pendingGatewayTime = 0;
+            pendingGatewayTime = type(uint256).max;
             pendingBLSGateway = address(0);
+            emit GatewayUpdated(previousGateway, trustedBLSGateway);
+        }
+        if (block.timestamp > pendingPAFunctionTime) {
+            approvedProxyAdminFunction = pendingPAFunction;
+            pendingPAFunctionTime = type(uint256).max;
+            pendingPAFunction = new bytes(0);
         }
     }
 
@@ -118,6 +152,10 @@ contract BLSWallet is Initializable, IBLSWallet
             require(success);
             results[i] = result;
         }
+    }
+
+    function clearApprovedProxyAdminFunction() public onlyTrustedGateway {
+        approvedProxyAdminFunction = new bytes(0);
     }
 
     /**

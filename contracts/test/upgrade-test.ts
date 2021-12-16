@@ -9,7 +9,6 @@ import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import {
   proxyAdminBundle,
   proxyAdminCall,
-  proxyAdminCallStatic,
 } from "../shared/helpers/callProxyAdmin";
 import Create2Fixture from "../shared/helpers/Create2Fixture";
 import { BLSOpen } from "../typechain";
@@ -17,7 +16,6 @@ import { BigNumber } from "ethers";
 import defaultDomain from "../clients/src/signer/defaultDomain";
 import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
 import { solidityPack } from "ethers/lib/utils";
-import expectRevert from "../shared/helpers/expectRevert";
 
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
@@ -42,24 +40,6 @@ describe("Upgrade", async function () {
     fx = await Fixture.create();
   });
 
-  it("should read proxy admin function", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
-
-    const resultBytes = await proxyAdminCallStatic(
-      fx,
-      wallet,
-      "getProxyAdmin",
-      [wallet.address],
-    );
-    const adminAddress = ethers.utils.defaultAbiCoder.decode(
-      ["address"],
-      resultBytes,
-    )[0];
-    expect(adminAddress).to.equal(
-      await fx.verificationGateway.walletProxyAdmin(),
-    );
-  });
-
   it("should upgrade wallet contract", async function () {
     const MockWalletUpgraded = await ethers.getContractFactory(
       "MockWalletUpgraded",
@@ -67,6 +47,24 @@ describe("Upgrade", async function () {
     const mockWalletUpgraded = await MockWalletUpgraded.deploy();
 
     const wallet = await fx.lazyBlsWallets[0]();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    // prepare call
+    await proxyAdminCall(fx, wallet, "upgrade", [
+      wallet.address,
+      mockWalletUpgraded.address,
+    ]);
+
+    // Advance time one week
+    const latestTimestamp = (await ethers.provider.getBlock("latest"))
+      .timestamp;
+    await network.provider.send("evm_setNextBlockTimestamp", [
+      BigNumber.from(latestTimestamp)
+        .add(24 * 7 * 60 * 60 + 1)
+        .toHexString(),
+    ]);
+
+    // make call
     await proxyAdminCall(fx, wallet, "upgrade", [
       wallet.address,
       mockWalletUpgraded.address,
@@ -101,12 +99,28 @@ describe("Upgrade", async function () {
     // Sign simple address message
     const addressMessage = solidityPack(["address"], [walletAddress]);
     const signedAddress = blsSigner.sign(addressMessage);
+
+    const proxyAdmin2Address = await vg2.walletProxyAdmin();
     // Get admin action to change proxy
     const bundle = await proxyAdminBundle(fx, walletOldVg, "changeProxyAdmin", [
       walletAddress,
-      await vg2.walletProxyAdmin(),
+      proxyAdmin2Address,
     ]);
     const changeProxyAction = bundle.operations[0].actions[0];
+
+    // prepare call
+    await proxyAdminCall(fx, walletOldVg, "changeProxyAdmin", [
+      walletAddress,
+      proxyAdmin2Address,
+    ]);
+
+    // Advance time one week
+    let latestTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
+    await network.provider.send("evm_setNextBlockTimestamp", [
+      BigNumber.from(latestTimestamp)
+        .add(24 * 7 * 60 * 60 + 1)
+        .toHexString(),
+    ]);
 
     const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
       walletOldVg.privateKey,
@@ -120,7 +134,7 @@ describe("Upgrade", async function () {
       await fx.verificationGateway.processBundle(
         fx.blsWalletSigner.aggregate([
           walletOldVg.sign({
-            nonce: BigNumber.from(1),
+            nonce: BigNumber.from(2),
             actions: [
               {
                 ethValue: 0,
@@ -151,7 +165,6 @@ describe("Upgrade", async function () {
       "ProxyAdmin",
       await vg2.walletProxyAdmin(),
     );
-    const blsWallet = await ethers.getContractAt("BLSWallet", walletAddress);
 
     // Direct checks corresponding to each action
     expect(await vg2.walletFromHash(hash)).to.equal(walletAddress);
@@ -159,13 +172,13 @@ describe("Upgrade", async function () {
       proxyAdmin.address,
     );
 
+    const blsWallet = await ethers.getContractAt("BLSWallet", walletAddress);
     // New verification gateway pending
     expect(await blsWallet.trustedBLSGateway()).to.equal(
       fx.verificationGateway.address,
     );
     // Advance time one week
-    const latestTimestamp = (await ethers.provider.getBlock("latest"))
-      .timestamp;
+    latestTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
     await network.provider.send("evm_setNextBlockTimestamp", [
       BigNumber.from(latestTimestamp)
         .add(24 * 7 * 60 * 60 + 1)
@@ -180,7 +193,7 @@ describe("Upgrade", async function () {
     const bundleResult = await vg2.callStatic.processBundle(
       fx.blsWalletSigner.aggregate([
         walletOldVg.sign({
-          nonce: BigNumber.from(2),
+          nonce: BigNumber.from(3),
           actions: [
             {
               ethValue: 0,
