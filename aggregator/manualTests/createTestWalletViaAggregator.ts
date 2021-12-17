@@ -49,6 +49,7 @@ console.log("Sending creation tx to aggregator");
 // TODO (merge-ok) Fix when wallet creation added.
 // const createResult = await client.createWallet(bun);
 const createResult = {
+  address: "0x123456",
   failures: [{
     description: "createTestWalletViaAggregator: createWallet not implemented",
   }],

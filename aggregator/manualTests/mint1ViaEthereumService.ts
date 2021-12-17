@@ -11,7 +11,6 @@ import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 const { addresses } = await getNetworkConfig();
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
-
 const ethereumService = await EthereumService.create(
   (evt) => {
     console.log(evt);
@@ -21,23 +20,26 @@ const ethereumService = await EthereumService.create(
 );
 
 const testErc20 = new MockErc20(addresses.testToken, provider);
-
 const [wallet] = await TestBlsWallets(provider, 1);
-
 const startBalance = await testErc20.balanceOf(wallet.address);
 
-const tx = wallet.sign({
-  contract: testErc20.contract,
-  method: "mint",
-  args: [wallet.address, "1"],
+const bundle = wallet.sign({
   nonce: await wallet.Nonce(),
+  actions: [{
+    ethValue: 0,
+    contractAddress: testErc20.contract.address,
+    encodedFunction: testErc20.contract.interface.encodeFunctionData(
+      "mint",
+      [wallet.address, 20],
+    ),
+  }],
 });
 
 console.log("Sending via ethereumService");
 
 (async () => {
   try {
-    await ethereumService.sendTxs([tx]);
+    await ethereumService.submitBundle(bundle);
   } catch (error) {
     console.error(error.stack);
     Deno.exit(1);

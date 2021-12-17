@@ -1,5 +1,4 @@
 import { Router } from "../../deps.ts";
-import nil from "../helpers/nil.ts";
 import failRequest from "./helpers/failRequest.ts";
 import BundleHandler from "./helpers/BundleHandler.ts";
 
@@ -11,13 +10,13 @@ export default function WalletRouter(walletService: WalletService) {
   router.post(
     "wallet",
     BundleHandler(async (ctx, bundle) => {
-      const createResult = await walletService.createWallet(bundle);
-
-      if (createResult.address !== nil) {
-        ctx.response.body = createResult;
-      } else {
-        failRequest(ctx, createResult.failures);
+      const { wallet, failures } = await walletService.createWallet(bundle);
+      if (failures.length) {
+        failRequest(ctx, failures);
+        return;
       }
+
+      ctx.response.body = wallet;
     }),
   );
 
