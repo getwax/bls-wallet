@@ -3,6 +3,7 @@ import { Aggregator, BlsWallet } from 'bls-wallet-clients';
 import { initBlsWalletSigner } from 'bls-wallet-signer';
 import { providers } from 'ethers';
 import generateRandomHex from '../../helpers/generateRandomHex';
+import { PublicKey, PrivateKey, Wallet } from './IKeyringController';
 
 import {
   AGGREGATOR_URL,
@@ -13,12 +14,6 @@ import {
 
 const type = 'Simple Key Pair';
 
-type Wallet = {
-  privateKey: string;
-  publicKey: string;
-};
-type PrivateKey = string;
-type PublicKey = string;
 type Options = {
   withAppKeyOrigin?: string;
 };
