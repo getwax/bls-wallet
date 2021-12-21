@@ -146,7 +146,7 @@ Fixture.test(
 );
 
 Fixture.test(
-  "submits 3 bundles in reverse (incorrect) nonce order. First will get stuck",
+  "submits 3 bundles in reverse (incorrect) nonce order",
   async (fx) => {
     const bundleService = await fx.createBundleService(bundleServiceConfig);
     const [wallet] = await fx.setupWallets(1);
@@ -203,18 +203,21 @@ Fixture.test(
     remainingBundles = await fx.allBundles(bundleService);
     assertEquals(remainingBundles.length, 1);
 
+    // Simulate 1 block being mined
+    await fx.mine(1);
+
     // Re-run submissions
     await bundleService.submissionTimer.trigger();
     await bundleService.submissionTimer.waitForCompletedSubmissions(3);
     await bundleService.waitForConfirmations();
 
-    // 3rd mint bundle (nonce 3) should now be stuck.
+    // 3rd mint bundle (nonce 3) should now have gone through.
     assertEquals(
       await fx.testErc20.balanceOf(wallet.address),
-      BigNumber.from(1002), // 1000 (initial) + 2 * 1 (mint txs)
+      BigNumber.from(1003), // 1000 (initial) + 3 * 1 (mint txs)
     );
-    assertEquals(await wallet.Nonce(), BigNumber.from(3));
+    assertEquals(await wallet.Nonce(), BigNumber.from(4));
     remainingBundles = await fx.allBundles(bundleService);
-    assertEquals(remainingBundles.length, 1);
+    assertEquals(remainingBundles.length, 0);
   },
 );

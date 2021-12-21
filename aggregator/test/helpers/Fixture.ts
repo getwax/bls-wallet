@@ -147,6 +147,14 @@ export default class Fixture {
     return bundleService;
   }
 
+  async mine(numBlocks: number): Promise<void> {
+    const provider = this.ethereumService.wallet
+      .provider as ethers.providers.JsonRpcProvider;
+    for (let i = 0; i < numBlocks; i++) {
+      await provider.send("evm_mine", []);
+    }
+  }
+
   async allBundles(
     bundleService: BundleService,
   ): Promise<BundleRow[]> {
