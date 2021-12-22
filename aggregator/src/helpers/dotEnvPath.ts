@@ -3,7 +3,9 @@ import { exists, parseArgs } from "../../deps.ts";
 const args = parseArgs(Deno.args);
 
 export const envName = args.env;
-const dotEnvPath = envName ? `.env.${envName}` : ".env";
+const dotEnvPath = envName && envName !== "undefined"
+  ? `.env.${envName}`
+  : ".env";
 
 if (!await exists(dotEnvPath)) {
   console.log("Couldn't find env file", dotEnvPath);

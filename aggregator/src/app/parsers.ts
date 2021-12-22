@@ -1,10 +1,4 @@
-import { BigNumber, TransactionData } from "../../deps.ts";
-
-export type TransactionDataDto = {
-  [K in keyof TransactionData]: (
-    TransactionData[K] extends BigNumber ? string : TransactionData[K]
-  );
-};
+import { BundleDto } from "../../deps.ts";
 
 type ParseResult<T> = (
   | { success: T }
@@ -12,55 +6,6 @@ type ParseResult<T> = (
 );
 
 type Parser<T> = (value: unknown) => ParseResult<T>;
-
-type CombinedSuccess<Results> = (
-  Results extends ParseResult<unknown>[]
-    ? Results extends [ParseResult<infer T>, ...infer Tail]
-      ? [T, ...CombinedSuccess<Tail>]
-    : []
-    : never
-);
-
-function combine<Results extends ParseResult<unknown>[]>(
-  ...results: Results
-): ParseResult<CombinedSuccess<Results>> {
-  const successes: unknown[] = [];
-  const failures: string[] = [];
-
-  for (const result of results) {
-    if ("success" in result) {
-      successes.push(result.success);
-    } else {
-      failures.push(...result.failures);
-    }
-  }
-
-  if (successes.length === results.length) {
-    return { success: successes as CombinedSuccess<Results> };
-  }
-
-  return { failures };
-}
-
-export function field<T>(
-  obj: unknown,
-  name: string,
-  parser: Parser<T>,
-): ParseResult<T> {
-  if (typeof obj !== "object" || obj === null || !(name in obj)) {
-    return { failures: [`field ${name}: not provided`] };
-  }
-
-  const parseResult = parser((obj as Record<string, unknown>)[name]);
-
-  if ("success" in parseResult) {
-    return parseResult;
-  }
-
-  return {
-    failures: parseResult.failures.map((f) => `field ${name}: ${f}`),
-  };
-}
 
 function parseString(value: unknown): ParseResult<string> {
   if (typeof value === "string") {
@@ -121,39 +66,135 @@ export function parseNumber(value: unknown): ParseResult<number> {
   return { failures: ["not a number"] };
 }
 
-export function parseTransactionDataDto(
-  txData: unknown,
-): ParseResult<TransactionDataDto> {
-  const result = combine(
-    field(txData, "publicKey", parseHex({ bytes: 128 })),
-    field(txData, "signature", parseHex({ bytes: 64 })),
-    field(txData, "nonce", parseHex()),
-    field(txData, "ethValue", parseHex()),
-    field(txData, "contractAddress", parseHex({ bytes: 20 })),
-    field(txData, "encodedFunction", parseHex()),
-  );
+export function parseArray<T>(
+  elementParser: Parser<T>,
+): Parser<T[]> {
+  return (value) => {
+    if (!Array.isArray(value)) {
+      return { failures: ["not an array"] };
+    }
 
-  if ("failures" in result) {
-    return result;
-  }
+    const parsedElements: T[] = [];
+    const failures: string[] = [];
 
-  const [
-    publicKey,
-    signature,
-    nonce,
-    ethValue,
-    contractAddress,
-    encodedFunction,
-  ] = result.success;
+    for (let i = 0; i < value.length; i++) {
+      const element = value[i];
+      const parseResult = elementParser(element);
 
-  return {
-    success: {
-      publicKey,
-      signature,
-      nonce,
-      ethValue,
-      contractAddress,
-      encodedFunction,
-    },
+      if ("failures" in parseResult) {
+        failures.push(...parseResult.failures.map((f) => `element ${i}: ${f}`));
+      } else {
+        parsedElements.push(parseResult.success);
+      }
+    }
+
+    if (failures.length > 0) {
+      return { failures };
+    }
+
+    return { success: parsedElements };
   };
 }
+
+type DataTuple<ParserTuple> = (
+  ParserTuple extends Parser<unknown>[] ? (
+    ParserTuple extends [Parser<infer T>, ...infer Tail]
+      ? [T, ...DataTuple<Tail>]
+      : []
+  )
+    : never
+);
+
+export function parseTuple<ParserTuple extends Parser<unknown>[]>(
+  ...parserTuple: ParserTuple
+): Parser<DataTuple<ParserTuple>> {
+  return (value) => {
+    if (!Array.isArray(value)) {
+      return { failures: ["not an array"] };
+    }
+
+    const parsedElements: unknown[] = [];
+    const failures: string[] = [];
+
+    for (let i = 0; i < value.length; i++) {
+      const element = value[i];
+      const parseResult = parserTuple[i](element);
+
+      if ("failures" in parseResult) {
+        failures.push(...parseResult.failures.map((f) => `element ${i}: ${f}`));
+      } else {
+        parsedElements.push(parseResult.success);
+      }
+    }
+
+    if (failures.length > 0) {
+      return { failures };
+    }
+
+    return { success: parsedElements as DataTuple<ParserTuple> };
+  };
+}
+
+type DataObject<ParserObject extends Record<string, Parser<unknown>>> = {
+  [K in keyof ParserObject]:
+    (ParserObject[K] extends Parser<infer T> ? T : never);
+};
+
+function parseObject<ParserObject extends Record<string, Parser<unknown>>>(
+  parserObject: ParserObject,
+): Parser<DataObject<ParserObject>> {
+  return (value) => {
+    if (typeof value !== "object" || value === null) {
+      return { failures: ["not an object"] };
+    }
+
+    const valueRecord = value as Record<string, unknown>;
+
+    const result: Record<string, unknown> = {};
+    const failures: string[] = [];
+
+    for (const key of Object.keys(parserObject)) {
+      if (!(key in valueRecord)) {
+        failures.push(`field ${key}: not provided`);
+        continue;
+      }
+
+      const element = valueRecord[key];
+      const parseResult = parserObject[key](element);
+
+      if ("failures" in parseResult) {
+        failures.push(...parseResult.failures.map((f) => `field ${key}: ${f}`));
+      } else {
+        result[key] = parseResult.success;
+      }
+    }
+
+    if (failures.length > 0) {
+      return { failures };
+    }
+
+    return { success: result as DataObject<ParserObject> };
+  };
+}
+
+type OperationDto = BundleDto["operations"][number];
+type ActionDataDto = OperationDto["actions"][number];
+
+const parseActionDataDto: Parser<ActionDataDto> = parseObject({
+  ethValue: parseHex(),
+  contractAddress: parseHex(),
+  encodedFunction: parseHex(),
+});
+
+const parseOperationDto: Parser<OperationDto> = parseObject({
+  nonce: parseHex(),
+  actions: parseArray(parseActionDataDto),
+});
+
+export const parseBundleDto: Parser<BundleDto> = parseObject({
+  senderPublicKeys: parseArray(
+    parseTuple(parseHex(), parseHex(), parseHex(), parseHex()),
+  ),
+  operations: parseArray(parseOperationDto),
+  signature: parseTuple(parseHex(), parseHex()),
+});

@@ -56,7 +56,6 @@ async function main() {
       verificationGateway: fx.verificationGateway.address,
       blsExpander: fx.blsExpander.address,
       testToken,
-      rewardToken: testToken,
     },
     auxiliary: {
       chainid: fx.chainId,

@@ -26,30 +26,37 @@ export {
   Contract,
   ethers,
   Wallet,
-} from "https://esm.sh/ethers@5.4.7";
+} from "https://esm.sh/ethers@5.5.1";
 
-import { ethers } from "https://esm.sh/ethers@5.4.7";
+import { ethers } from "https://esm.sh/ethers@5.5.1";
 export const keccak256 = ethers.utils.keccak256;
-
-export { initBlsWalletSigner } from "https://esm.sh/bls-wallet-signer@0.6.1";
 
 export type {
   BlsWalletSigner,
-  TransactionData,
-} from "https://esm.sh/bls-wallet-signer@0.6.1";
+  Bundle,
+  BundleDto,
+  NetworkConfig,
+  Operation,
+  PublicKey,
+  Signature,
+} from "https://esm.sh/bls-wallet-clients@0.5.0-d6d7dd4";
 
 export {
   Aggregator as AggregatorClient,
-  BlsWallet,
+  BlsWalletWrapper,
   getConfig,
-  NetworkConfig,
   VerificationGateway,
-/**
- * TODO (merge-ok) Switch back to esm.sh when HKT import resolves correctly.
- * error: Import 'https://cdn.esm.sh/v58/fp-ts@2.11.5/lib/HKT/HKT.d.ts' failed: 404 Not Found
- *  at https://cdn.esm.sh/v58/bls-wallet-clients@0.2.5-rc.1/deno/bls-wallet-clients.js:2:34
- */
-} from "https://cdn.skypack.dev/bls-wallet-clients@0.2.5-rc.1?dts";
+  VerificationGateway__factory,
+} from "https://esm.sh/bls-wallet-clients@0.5.0-d6d7dd4";
+
+// Workaround for esbuild's export-star bug
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.5.0-d6d7dd4";
+const {
+  bundleFromDto,
+  bundleToDto,
+  initBlsWalletSigner,
+} = blsWalletClients;
+export { bundleFromDto, bundleToDto, initBlsWalletSigner };
 
 // Database dependencies
 export {

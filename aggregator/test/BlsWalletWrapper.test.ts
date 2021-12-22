@@ -1,33 +1,30 @@
-import { assertEquals, BlsWallet, keccak256 } from "./deps.ts";
+import { assert, assertEquals, BlsWalletWrapper, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 
-Fixture.test("should register new wallet", async (fx) => {
-  const wallet = await BlsWallet.connectOrCreate(
+Fixture.test("should connect wallet", async (fx) => {
+  const wallet = await BlsWalletWrapper.connect(
     fx.rng.seed("blsPrivateKey").address(),
     fx.networkConfig.addresses.verificationGateway,
-    fx.adminWallet,
+    fx.adminWallet.provider,
   );
 
-  assertEquals(
-    keccak256(wallet.blsWalletSigner.getPublicKey(wallet.privateKey)),
-    wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
-  );
+  assert(wallet.address !== ethers.constants.AddressZero);
 });
 
 Fixture.test(
   "should regenerate same wallet when registering the same key",
   async (fx) => {
-    const firstWallet = await BlsWallet.connectOrCreate(
+    const firstWallet = await BlsWalletWrapper.connect(
       fx.rng.seed("blsPrivateKey").address(),
       fx.networkConfig.addresses.verificationGateway,
-      fx.adminWallet,
+      fx.adminWallet.provider,
     );
 
-    const secondWallet = await BlsWallet.connectOrCreate(
+    const secondWallet = await BlsWalletWrapper.connect(
       fx.rng.seed("blsPrivateKey").address(),
       fx.networkConfig.addresses.verificationGateway,
-      fx.adminWallet,
+      fx.adminWallet.provider,
     );
 
     assertEquals(firstWallet.address, secondWallet.address);

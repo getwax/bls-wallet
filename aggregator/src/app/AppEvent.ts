@@ -1,29 +1,33 @@
 import { HTTPMethods } from "../../deps.ts";
 
-type TxId = number | undefined;
+type RowId = number | undefined;
 
 type AppEvent = (
   | { type: "listening"; data: { port: number } }
   | { type: "db-query"; data: { sql: string; params: unknown[] } }
   | { type: "waiting-unconfirmed-space" }
-  | { type: "batch-attempt"; data: { txIds: TxId[]; attemptNumber: number } }
   | {
-    type: "batch-attempt-failed";
+    type: "submission-attempt";
+    data: { publicKeyShorts: string[]; attemptNumber: number };
+  }
+  | {
+    type: "submission-attempt-failed";
     data: {
-      txIds: TxId[];
+      publicKeyShorts: string[];
       attemptNumber: number;
       error: Error;
     };
   }
-  | { type: "batch-sent"; data: { txIds: TxId[] } }
-  | { type: "batch-confirmed"; data: { txIds: TxId[]; blockNumber: number } }
+  | { type: "submission-sent"; data: { rowIds: RowId[] } }
+  | {
+    type: "submission-confirmed";
+    data: { rowIds: RowId[]; blockNumber: number };
+  }
   | { type: "warning"; data: string }
   | {
-    type: "tx-added";
+    type: "bundle-added";
     data: {
-      category: "ready" | "future";
-      publicKeyShort: string;
-      nonce: number;
+      publicKeyShorts: string[];
     };
   }
   | {
