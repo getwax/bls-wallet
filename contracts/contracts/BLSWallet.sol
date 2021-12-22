@@ -99,6 +99,7 @@ contract BLSWallet is Initializable, IBLSWallet
     function setRecoveryHash(bytes32 hash) public onlyThis {
         if (recoveryHash == bytes32(0)) {
             recoveryHash = hash;
+            clearPendingRecoveryHash();
             emit RecoveryHashUpdated(bytes32(0), recoveryHash);
         }
         else {
@@ -143,8 +144,7 @@ contract BLSWallet is Initializable, IBLSWallet
         if (block.timestamp > pendingRecoveryHashTime) {
             bytes32 previousRecoveryHash = recoveryHash;
             recoveryHash = pendingRecoveryHash;
-            pendingRecoveryHashTime = type(uint256).max;
-            pendingRecoveryHash = bytes32(0);
+            clearPendingRecoveryHash();
             emit RecoveryHashUpdated(previousRecoveryHash, recoveryHash);
         }
         if (block.timestamp > pendingBLSPublicKeyTime) {
@@ -169,14 +169,18 @@ contract BLSWallet is Initializable, IBLSWallet
         }
     }
 
+    function clearPendingRecoveryHash() internal {
+        pendingRecoveryHashTime = type(uint256).max;
+        pendingRecoveryHash = bytes32(0);
+    }
+
     function recover(
         uint256[4] calldata newBLSKey
     ) public onlyTrustedGateway {
         // set new bls key
         blsPublicKey = newBLSKey;
         // clear any pending operations
-        pendingRecoveryHashTime = type(uint256).max;
-        pendingRecoveryHash = bytes32(0);
+        clearPendingRecoveryHash();
         pendingBLSPublicKeyTime = type(uint256).max;
         pendingBLSPublicKey = [0,0,0,0];
         pendingGatewayTime = type(uint256).max;

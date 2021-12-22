@@ -35,6 +35,7 @@ describe("Upgrade", async function () {
     }
   });
 
+  const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
   beforeEach(async function () {
     fx = await Fixture.create();
@@ -59,7 +60,7 @@ describe("Upgrade", async function () {
       .timestamp;
     await network.provider.send("evm_setNextBlockTimestamp", [
       BigNumber.from(latestTimestamp)
-        .add(24 * 7 * 60 * 60 + 1)
+        .add(safetyDelaySeconds + 1)
         .toHexString(),
     ]);
 
@@ -114,7 +115,7 @@ describe("Upgrade", async function () {
     ]);
 
     // Advance time one week
-    await fx.advanceTimeBy(24 * 7 * 60 * 60 + 1);
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
 
     const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
       walletOldVg.privateKey,
@@ -172,7 +173,7 @@ describe("Upgrade", async function () {
       fx.verificationGateway.address,
     );
     // Advance time one week
-    await fx.advanceTimeBy(24 * 7 * 60 * 60 + 1);
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
     // set pending
     await (await blsWallet.setAnyPending()).wait();
     // Check new verification gateway was set

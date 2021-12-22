@@ -13,6 +13,7 @@ import {
   BlsWalletWrapper,
   BlsWalletSigner,
   initBlsWalletSigner,
+  Bundle,
 } from "../../clients/src";
 
 import Range from "./Range";
@@ -138,6 +139,31 @@ export default class Fixture {
     );
   }
 
+  bundleFrom(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ): Bundle {
+    return this.blsWalletSigner.aggregate([
+      wallet.sign({
+        nonce: nonce,
+        actions: [
+          {
+            ethValue: ethValue,
+            contractAddress: contract.address,
+            encodedFunction: contract.interface.encodeFunctionData(
+              method,
+              params,
+            ),
+          },
+        ],
+      }),
+    ]);
+  }
+
   async call(
     wallet: BlsWalletWrapper,
     contract: Contract,
@@ -148,23 +174,22 @@ export default class Fixture {
   ) {
     await (
       await this.verificationGateway.processBundle(
-        this.blsWalletSigner.aggregate([
-          wallet.sign({
-            nonce: nonce,
-            actions: [
-              {
-                ethValue: ethValue,
-                contractAddress: contract.address,
-                encodedFunction: contract.interface.encodeFunctionData(
-                  method,
-                  params,
-                ),
-              },
-            ],
-          }),
-        ]),
+        this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
       )
     ).wait();
+  }
+
+  async callStatic(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ) {
+    return await this.verificationGateway.callStatic.processBundle(
+      this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+    );
   }
 
   async advanceTimeBy(seconds: number) {

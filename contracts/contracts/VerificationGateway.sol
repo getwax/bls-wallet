@@ -242,12 +242,11 @@ contract VerificationGateway
             // create wallet if not found
             createNewWallet(bundle.senderPublicKeys[i]);
 
-            // construct params for signature verification
+            // calculate public key hash
             publicKeyHash = keccak256(abi.encodePacked(
                 bundle.senderPublicKeys[i]
             ));
             wallet = walletFromHash(publicKeyHash);
-
             // check nonce then perform action
             if (bundle.operations[i].nonce == wallet.nonce()) {
                 // request wallet perform operation
@@ -274,7 +273,6 @@ contract VerificationGateway
     ) private {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
         address blsWallet = address(walletFromHash(publicKeyHash));
-
         // wallet with publicKeyHash doesn't exist at expected create2 address
         if (blsWallet == address(0)) {
             blsWallet = address(new TransparentUpgradeableProxy{salt: publicKeyHash}(
