@@ -1,12 +1,19 @@
 import "@nomiclabs/hardhat-ethers";
-import { ethers } from "hardhat";
-import { Signer, Contract, ContractFactory, BigNumber } from "ethers";
+import { ethers, network } from "hardhat";
+import {
+  Signer,
+  Contract,
+  ContractFactory,
+  BigNumber,
+  BigNumberish,
+} from "ethers";
 import { Provider } from "@ethersproject/abstract-provider";
 
 import {
   BlsWalletWrapper,
   BlsWalletSigner,
   initBlsWalletSigner,
+  Bundle,
 } from "../../clients/src";
 
 import Range from "./Range";
@@ -130,5 +137,67 @@ export default class Fixture {
     return await Promise.all(
       this.lazyBlsWallets.map((lazyWallet) => lazyWallet()),
     );
+  }
+
+  bundleFrom(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ): Bundle {
+    return this.blsWalletSigner.aggregate([
+      wallet.sign({
+        nonce: nonce,
+        actions: [
+          {
+            ethValue: ethValue,
+            contractAddress: contract.address,
+            encodedFunction: contract.interface.encodeFunctionData(
+              method,
+              params,
+            ),
+          },
+        ],
+      }),
+    ]);
+  }
+
+  async call(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ) {
+    await (
+      await this.verificationGateway.processBundle(
+        this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+      )
+    ).wait();
+  }
+
+  async callStatic(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ) {
+    return await this.verificationGateway.callStatic.processBundle(
+      this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+    );
+  }
+
+  async advanceTimeBy(seconds: number) {
+    // Advance time one week
+    const latestTimestamp = (await ethers.provider.getBlock("latest"))
+      .timestamp;
+    await network.provider.send("evm_setNextBlockTimestamp", [
+      BigNumber.from(latestTimestamp).add(seconds).toHexString(),
+    ]);
   }
 }

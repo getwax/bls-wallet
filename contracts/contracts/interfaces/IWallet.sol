@@ -26,6 +26,18 @@ interface IWallet {
         bool success,
         bytes[] memory results
     );
+
+    function recoveryHash() external returns (bytes32);
+    function recover(uint256[4] calldata newBLSKey) external;
+
+    // prepares gateway to be set (after pending timestamp)
+    function setTrustedGateway(address gateway) external;
+    // checks any pending variables and sets them if past their timestamp
+    function setAnyPending() external;
+
+    function setProxyAdminFunction(bytes memory) external;
+    function approvedProxyAdminFunction() external view returns (bytes memory);
+    function clearApprovedProxyAdminFunction() external;
 }
 
 /** Interface for bls-specific functions
@@ -38,7 +50,5 @@ interface IBLSWallet is IWallet {
     ) external;
 
     function getBLSPublicKey() external view returns (uint256[4] memory);
-    function setTrustedBLSGateway(address blsGateway) external;
-    
  }
  
