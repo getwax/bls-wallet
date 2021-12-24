@@ -70,17 +70,17 @@ export default function RequestHandler(
           throw new Error('Denied by user');
         }
 
-        const txData = app.wallet.blsWalletSigner.sign(
-          {
-            nonce: await app.wallet.Nonce(),
-            ethValue: BigNumber.from(tx.value),
-            contractAddress: tx.to,
-            encodedFunction: tx.data,
-          },
-          app.wallet.privateKey,
-        );
-
-        const failures = await app.aggregator.addTransaction(txData);
+        const bundle = app.wallet.sign({
+          nonce: await app.wallet.Nonce(),
+          actions: [
+            {
+              ethValue: BigNumber.from(tx.value),
+              contractAddress: tx.to,
+              encodedFunction: tx.data,
+            },
+          ],
+        });
+        const failures = await app.aggregator.add(bundle);
 
         if (failures.length > 0) {
           throw new Error(

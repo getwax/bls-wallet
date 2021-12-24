@@ -4,6 +4,7 @@ import aggregate from "./aggregate";
 import defaultDomain from "./defaultDomain";
 import getPublicKey from "./getPublicKey";
 import getPublicKeyHash from "./getPublicKeyHash";
+import getPublicKeyStr from "./getPublicKeyStr";
 import AsyncReturnType from "./helpers/AsyncReturnType";
 import sign from "./sign";
 import verify from "./verify";
@@ -32,6 +33,7 @@ export async function initBlsWalletSigner({
     aggregate,
     getPublicKey: getPublicKey(signerFactory, domain),
     getPublicKeyHash: getPublicKeyHash(signerFactory, domain),
+    getPublicKeyStr: getPublicKeyStr(signerFactory, domain),
     sign: sign(signerFactory, domain, chainId),
     verify: verify(domain, chainId),
   };

@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
-import { CHAIN_RPC_URL } from '../env';
 import axios from 'axios';
+import { CHAIN_RPC_URL } from '../env';
 
 const getParitySigRegistry = () => {
   const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
@@ -39,7 +39,7 @@ const getMethodFromEtherscan = async (to: string, data: string) => {
     return iface.parseTransaction({ data, value: 1 }).name;
   }
 
-  throw 'Unverified Contract';
+  throw new Error('Unverified Contract');
 };
 
 const formatMethod = (method: string) => {
@@ -49,7 +49,15 @@ const formatMethod = (method: string) => {
     .toUpperCase();
 };
 
-export const useInputDecode = (functionData: string, to: string) => {
+type UseInputDecodeValues = {
+  loading: boolean;
+  method: string;
+};
+
+export const useInputDecode = (
+  functionData: string,
+  to: string,
+): UseInputDecodeValues => {
   const [loading, setLoading] = useState<boolean>(true);
   const [method, setMethod] = useState<string>('CONTRACT INTERACTION');
 
@@ -76,7 +84,7 @@ export const useInputDecode = (functionData: string, to: string) => {
     if (functionData) {
       getMethod();
     }
-  }, [functionData]);
+  }, [functionData, to]);
 
   return { loading, method };
 };

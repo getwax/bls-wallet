@@ -17,7 +17,7 @@ const Confirm: React.FunctionComponent = () => {
 
   const { loading, method } = useInputDecode(data, to);
 
-  const cleanupTasks = new TaskQueue();
+  const cleanupTasks = React.useMemo(() => new TaskQueue(), []);
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;
@@ -27,7 +27,7 @@ const Confirm: React.FunctionComponent = () => {
     setData(params.get('data') || '0x');
 
     return cleanupTasks.run();
-  }, []);
+  }, [cleanupTasks]);
 
   const respondTx = (result: string) => {
     browser.runtime.sendMessage(undefined, { id, result });

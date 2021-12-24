@@ -1,8 +1,7 @@
 import { EventEmitter } from 'events';
 
-import { BlsWallet } from 'bls-wallet-clients';
+import { BlsWalletWrapper } from 'bls-wallet-clients';
 import type { Aggregator } from 'bls-wallet-clients';
-import { BlsWalletSigner } from 'bls-wallet-signer';
 import type { ethers } from 'ethers';
 import type TypedEventEmitter from 'typed-emitter';
 import { browser } from 'webextension-polyfill-ts';
@@ -33,12 +32,11 @@ export default class App {
   events = new EventEmitter() as TypedEventEmitter<Events>;
   pageEvents = new EventEmitter() as PageEvents;
   cleanupTasks = new TaskQueue();
-  wallet?: BlsWallet;
+  wallet?: BlsWalletWrapper;
 
   state: AppState;
 
   constructor(
-    public blsWalletSigner: BlsWalletSigner,
     public aggregator: Aggregator,
     public provider: ethers.providers.Provider,
     public storage: typeof browser.storage.local,
@@ -192,38 +190,7 @@ export default class App {
       return undefined;
     }
 
-    return this.blsWalletSigner.getPublicKey(this.state.privateKey);
-  }
-
-  async createWallet(): Promise<void> {
-    const publicKey = this.PublicKey();
-
-    if (this.state.privateKey === undefined || publicKey === undefined) {
-      console.error("Can't create a wallet without a key");
-      return;
-    }
-
-    this.incrementWalletAddressLoading();
-
-    try {
-      const creationTx = await BlsWallet.signCreation(
-        this.state.privateKey,
-        env.NETWORK_CONFIG.addresses.verificationGateway,
-        this.provider,
-      );
-
-      const createResult = await this.aggregator.createWallet(creationTx);
-
-      if (createResult.address !== undefined) {
-        // The address is in the createResult but we'd rather just check with the
-        // network to potential mishaps from incorrect aggregators.
-        this.checkWalletAddress();
-      } else {
-        console.error('Create wallet failed', createResult);
-      }
-    } finally {
-      this.decrementWalletAddressLoading();
-    }
+    return this.wallet?.PublicKeyStr();
   }
 
   async checkWalletAddress(): Promise<void> {
@@ -242,7 +209,7 @@ export default class App {
     const lookupPrivateKey = this.state.privateKey;
 
     try {
-      this.wallet = await BlsWallet.connect(
+      this.wallet = await BlsWalletWrapper.connect(
         this.state.privateKey,
         env.NETWORK_CONFIG.addresses.verificationGateway,
         this.provider,
@@ -260,6 +227,8 @@ export default class App {
       });
 
       this.checkWalletState();
+    } catch (err) {
+      console.error(err);
     } finally {
       this.decrementWalletAddressLoading();
     }

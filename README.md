@@ -142,7 +142,7 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 
 ## Testing/using updates to ./clients
 
-For `extension`:
+### extension
 ```sh
 cd ./contracts/clients
 yarn build
@@ -151,11 +151,19 @@ cd ../extension
 yarn link bls-wallet-clients
 ```
 
-For aggregator, you will need to push up a release canidate (-rc) version to 'bls-wallet-clients' on npm and update the version in `./aggregtor/src/deps.ts` until a local linking solution for deno is found. See https://github.com/alephjs/esm.sh/discussions/216 for details.
+### aggregator
 
-`./aggregtor/deps.ts`
+You will need to push up an `@experimental` version to 'bls-wallet-clients' on npm and update the version in `./aggregtor/src/deps.ts` until a local linking solution for deno is found. See https://github.com/alephjs/esm.sh/discussions/216 for details.
+
+In `./contracts/clients` with your changes:
+```
+yarn publish-experimental
+```
+Note the `x.y.z-abc1234` version that was output.
+
+Then in `./aggregtor/deps.ts`, change all `from` references for that package.
 ```typescript
 ...
-} from "https://cdn.skypack.dev/bls-wallet-clients@x.y.z-rc.w?dts";
+} from "https://esm.sh/bls-wallet-clients@x.y.z-abc1234";
 ...
 ```

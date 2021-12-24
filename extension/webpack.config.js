@@ -236,11 +236,3 @@ module.exports = {
     ],
   },
 };
-
-function requireEnv(value) {
-  if (value === undefined) {
-    throw new Error('Missing required environment variable');
-  }
-
-  return value;
-}
