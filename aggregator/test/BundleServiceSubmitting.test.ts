@@ -221,3 +221,84 @@ Fixture.test(
     assertEquals(remainingBundles.length, 0);
   },
 );
+
+Fixture.test("retains failing bundle when its eligibility delay is smaller than MAX_ELIGIBILITY_DELAY", async (fx) => {
+  const bundleService = await fx.createBundleService({
+    ...bundleServiceConfig,
+    maxEligibilityDelay: 300,
+  });
+
+  const [wallet] = await fx.setupWallets(1);
+
+  const bundle = wallet.sign({
+    // Future nonce makes this a failing bundle
+    nonce: (await wallet.Nonce()).add(1),
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.contract.address,
+        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, 1],
+        ),
+      },
+    ],
+  });
+
+  // "failing" above refers to execution, which doesn't cause failure to simply
+  // add it to the service
+  const failures = await bundleService.add(bundle);
+  await bundleService.runPendingTasks();
+  assertEquals(failures, []);
+
+  assertEquals(await bundleService.bundleTable.count(), 1n);
+
+  fx.clock.advance(5000);
+  await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+
+  assertEquals(await bundleService.bundleTable.count(), 1n);
+});
+
+Fixture.test("removes failing bundle when its eligibility delay is larger than MAX_ELIGIBILITY_DELAY", async (fx) => {
+  const bundleService = await fx.createBundleService({
+    ...bundleServiceConfig,
+    maxEligibilityDelay: 300,
+  });
+
+  const [wallet] = await fx.setupWallets(1);
+
+  const bundle = wallet.sign({
+    // Future nonce makes this a failing bundle
+    nonce: (await wallet.Nonce()).add(1),
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.contract.address,
+        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, 1],
+        ),
+      },
+    ],
+  });
+
+  // "failing" above refers to execution, which doesn't cause failure to simply
+  // add it to the service
+  const failures = await bundleService.add(bundle);
+  await bundleService.runPendingTasks();
+  assertEquals(failures, []);
+
+  assertEquals(await bundleService.bundleTable.count(), 1n);
+
+  const [bundleRow] = await bundleService.bundleTable.all();
+
+  await bundleService.bundleTable.update({
+    ...bundleRow,
+    nextEligibilityDelay: BigNumber.from(1000),
+  });
+
+  fx.clock.advance(5000);
+  await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+
+  assertEquals(await bundleService.bundleTable.count(), 0n);
+});

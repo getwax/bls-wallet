@@ -70,6 +70,12 @@ export default class BundleService {
     this.stopped = true;
   }
 
+  async runPendingTasks() {
+    while (this.pendingTaskPromises.size > 0) {
+      await Promise.all(Array.from(this.pendingTaskPromises));
+    }
+  }
+
   addTask(task: () => Promise<unknown>) {
     if (this.stopping) {
       return;
