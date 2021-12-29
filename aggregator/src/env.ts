@@ -11,18 +11,9 @@ export const PORT = requireIntEnv("PORT");
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
 
+export const NETWORK_CONFIG_PATH = requireEnv("NETWORK_CONFIG_PATH");
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
 export const PRIVATE_KEY_ADMIN = requireEnv("PRIVATE_KEY_ADMIN");
-
-export const DEPLOYER_ADDRESS = requireEnv("DEPLOYER_ADDRESS");
-
-export const VERIFICATION_GATEWAY_ADDRESS = requireEnv(
-  "VERIFICATION_GATEWAY_ADDRESS",
-);
-
-export const BLS_EXPANDER_ADDRESS = requireEnv("BLS_EXPANDER_ADDRESS");
-
-export const REWARD_TOKEN_ADDRESS = requireEnv("REWARD_TOKEN_ADDRESS");
 
 export const PG = {
   HOST: requireEnv("PG_HOST"),
@@ -32,16 +23,14 @@ export const PG = {
   DB_NAME: requireEnv("PG_DB_NAME"),
 };
 
-export const TX_TABLE_NAME = requireEnv("TX_TABLE_NAME");
-export const FUTURE_TX_TABLE_NAME = requireEnv("FUTURE_TX_TABLE_NAME");
+export const BUNDLE_TABLE_NAME = requireEnv("BUNDLE_TABLE_NAME");
 
 /**
- * Query limit used when processing potentially large numbers of txs.
+ * Query limit used when processing potentially large numbers of bundles.
  * (Using batching if needed.)
  */
-export const TX_QUERY_LIMIT = requireIntEnv("TX_QUERY_LIMIT");
-
-export const MAX_FUTURE_TXS = requireIntEnv("MAX_FUTURE_TXS");
+export const BUNDLE_QUERY_LIMIT = requireIntEnv("BUNDLE_QUERY_LIMIT");
+export const MAX_FUTURE_BUNDLES = requireIntEnv("MAX_FUTURE_BUNDLES");
 
 export const MAX_AGGREGATION_SIZE = requireIntEnv("MAX_AGGREGATION_SIZE");
 

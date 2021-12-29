@@ -1,25 +1,17 @@
-import TxTable from "./TxTable.ts";
-import WalletService from "./WalletService.ts";
+import BundleTable from "./BundleTable.ts";
+import EthereumService from "./EthereumService.ts";
 
 export default class AdminService {
   constructor(
-    private walletService: WalletService,
-    private readyTxTable: TxTable,
-    private futureTxTable: TxTable,
+    private ethereumService: EthereumService,
+    private bundleTable: BundleTable,
   ) {}
 
-  async resetTxs() {
-    await this.futureTxTable.clear();
-    await this.readyTxTable.clear();
+  async resetBundles() {
+    await this.bundleTable.clear();
   }
 
-  async sendBatch() {
-    const txs = await this.readyTxTable.all();
-    console.log(`Sending ${txs.length} txs`);
-    await this.walletService.sendTxs(txs);
-  }
-
-  async txCount() {
-    return await this.readyTxTable.count();
+  async bundleCount(): Promise<bigint> {
+    return await this.bundleTable.count();
   }
 }

@@ -1,9 +1,14 @@
-import { BigNumber, BlsWallet, ethers, TransactionData } from "../../deps.ts";
+import {
+  BigNumber,
+  BlsWalletSigner,
+  BlsWalletWrapper,
+  ethers,
+  NetworkConfig,
+  QueryClient,
+} from "../../deps.ts";
 
 import testRng from "./testRng.ts";
-import WalletService from "../../src/app/WalletService.ts";
-import TxTable, { TxTableRow } from "../../src/app/TxTable.ts";
-import TxService from "../../src/app/TxService.ts";
+import EthereumService from "../../src/app/EthereumService.ts";
 import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "../../src/helpers/Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
@@ -13,9 +18,14 @@ import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
 import MockErc20 from "./MockErc20.ts";
 import nil, { isNotNil } from "../../src/helpers/nil.ts";
+import getNetworkConfig from "../../src/helpers/getNetworkConfig.ts";
+import BundleService from "../../src/app/BundleService.ts";
+import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
+
+let existingClient: QueryClient | nil = nil;
 
 export default class Fixture {
   static test(
@@ -41,21 +51,25 @@ export default class Fixture {
   }
 
   static async create(testName: string): Promise<Fixture> {
+    const netCfg = await getNetworkConfig();
     const rng = testRng.seed(testName);
 
-    const walletService = await WalletService.create(
+    const ethereumService = await EthereumService.create(
       (evt) => fx.emit(evt),
+      netCfg.addresses.verificationGateway,
       env.PRIVATE_KEY_AGG,
     );
 
     const chainId =
-      (await walletService.aggregatorSigner.provider.getNetwork()).chainId;
+      (await ethereumService.wallet.provider.getNetwork()).chainId;
 
     const fx: Fixture = new Fixture(
       testName,
       rng,
       chainId,
-      walletService,
+      ethereumService,
+      ethereumService.blsWalletSigner,
+      netCfg,
     );
 
     return fx;
@@ -79,27 +93,23 @@ export default class Fixture {
   clock = new TestClock();
 
   testErc20: MockErc20;
-  rewardErc20: MockErc20;
   adminWallet: ethers.Wallet;
 
   private constructor(
     public testName: string,
     public rng: typeof testRng,
     public chainId: number,
-    public walletService: WalletService,
+    public ethereumService: EthereumService,
+    public blsWalletSigner: BlsWalletSigner,
+    public networkConfig: NetworkConfig,
   ) {
     this.testErc20 = new MockErc20(
-      env.TEST_TOKEN_ADDRESS,
-      this.walletService.aggregatorSigner,
-    );
-
-    this.rewardErc20 = new MockErc20(
-      env.REWARD_TOKEN_ADDRESS,
-      this.walletService.aggregatorSigner,
+      this.networkConfig.addresses.testToken,
+      this.ethereumService.wallet,
     );
 
     this.adminWallet = AdminWallet(
-      this.walletService.aggregatorSigner.provider,
+      this.ethereumService.wallet.provider,
       env.PRIVATE_KEY_ADMIN,
     );
   }
@@ -108,51 +118,52 @@ export default class Fixture {
     return this.rng.seed("blsPrivateKey", ...extraSeeds).address();
   }
 
-  async createTxService(config = TxService.defaultConfig) {
+  async createBundleService(config = BundleService.defaultConfig) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
-    const queryClient = createQueryClient(this.emit);
+    existingClient = createQueryClient(this.emit, existingClient);
+    const queryClient = existingClient;
 
-    const txTablesMutex = new Mutex();
+    const tablesMutex = new Mutex();
 
-    const tableName = `txs_test_${suffix}`;
-    const txTable = await TxTable.createFresh(queryClient, tableName);
+    const tableName = `bundles_test_${suffix}`;
+    const table = await BundleTable.createFresh(queryClient, tableName);
 
-    const futureTableName = `future_txs_test_${suffix}`;
-    const futureTxTable = await TxTable.createFresh(
-      queryClient,
-      futureTableName,
-    );
-
-    this.cleanupJobs.push(async () => {
-      await txTable.drop();
-      await futureTxTable.drop();
-      await queryClient.disconnect();
-    });
-
-    return new TxService(
+    const bundleService = new BundleService(
       this.emit,
       this.clock,
       queryClient,
-      txTablesMutex,
-      txTable,
-      futureTxTable,
-      this.walletService,
+      tablesMutex,
+      table,
+      this.blsWalletSigner,
+      this.ethereumService,
       config,
     );
+
+    this.cleanupJobs.push(async () => {
+      await bundleService.stop();
+      await table.drop();
+    });
+
+    return bundleService;
   }
 
-  async allTxs(
-    txService: TxService,
-  ): Promise<{ ready: TransactionData[]; future: TransactionData[] }> {
-    const removeId = (tx: TxTableRow) => {
-      delete tx.txId;
-      return tx;
+  async mine(numBlocks: number): Promise<void> {
+    const provider = this.ethereumService.wallet
+      .provider as ethers.providers.JsonRpcProvider;
+    for (let i = 0; i < numBlocks; i++) {
+      await provider.send("evm_mine", []);
+    }
+  }
+
+  async allBundles(
+    bundleService: BundleService,
+  ): Promise<BundleRow[]> {
+    const removeId = (row: BundleRow) => {
+      delete row.id;
+      return row;
     };
 
-    return {
-      ready: (await txService.readyTxTable.all()).map(removeId),
-      future: (await txService.futureTxTable.all()).map(removeId),
-    };
+    return (await bundleService.bundleTable.all()).map(removeId);
   }
 
   /**
@@ -161,20 +172,20 @@ export default class Fixture {
    */
   async setupWallets(count: number, ...extraSeeds: string[]) {
     const wallets = [];
-    const tokens = [this.testErc20, this.rewardErc20];
+    const tokens = [this.testErc20];
 
     // Unfortunately attempting to parallelize these causes duplicate nonce
     // issues. This might be mitigated by collecting `TransactionResponse`s in a
     // serial way but then awaiting .wait() in parallel. That's a significant
     // refactor though that I'm avoiding right now.
     for (const i of Range(count)) {
-      const wallet = await BlsWallet.connectOrCreate(
+      const wallet = await BlsWalletWrapper.connect(
         this.createBlsPrivateKey(`${i}`, ...extraSeeds),
-        env.VERIFICATION_GATEWAY_ADDRESS,
-        this.adminWallet,
+        this.networkConfig.addresses.verificationGateway,
+        this.adminWallet.provider,
       );
 
-      const txs = await Promise.all(tokens.map(async (token, i) => {
+      const bundles = await Promise.all(tokens.map(async (token, i) => {
         const balance = await token.balanceOf(wallet.address);
 
         // When seeding tests, we can generate wallets from previous tests, and
@@ -184,29 +195,45 @@ export default class Fixture {
 
         if (topUp.gt(0)) {
           return wallet.sign({
-            contract: token.contract,
-            method: "mint",
-            args: [wallet.address, topUp.toString()],
             nonce: (await wallet.Nonce()).add(i),
+            actions: [
+              {
+                ethValue: 0,
+                contractAddress: token.contract.address,
+                encodedFunction: token.contract.interface.encodeFunctionData(
+                  "mint",
+                  [wallet.address, topUp],
+                ),
+              },
+            ],
           });
         }
 
         if (topUp.lt(0)) {
           return wallet.sign({
-            contract: token.contract,
-            method: "transfer",
-            args: [this.adminWallet.address, topUp.mul(-1).toString()],
             nonce: (await wallet.Nonce()).add(i),
+            actions: [
+              {
+                ethValue: 0,
+                contractAddress: token.contract.address,
+                encodedFunction: token.contract.interface.encodeFunctionData(
+                  "transfer",
+                  [this.adminWallet.address, topUp.mul(-1)],
+                ),
+              },
+            ],
           });
         }
 
         return nil;
       }));
 
-      const filteredTxs = txs.filter(isNotNil);
+      const filteredBundles = bundles.filter(isNotNil);
 
-      if (filteredTxs.length > 0) {
-        await this.walletService.sendTxs(filteredTxs);
+      if (filteredBundles.length > 0) {
+        await this.ethereumService.submitBundle(
+          this.blsWalletSigner.aggregate(filteredBundles),
+        );
       }
 
       wallets.push(wallet);

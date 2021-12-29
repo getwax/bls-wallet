@@ -208,7 +208,7 @@ export default class App {
     try {
       const creationTx = await BlsWallet.signCreation(
         this.state.privateKey,
-        env.VERIFICATION_GATEWAY_ADDRESS,
+        env.NETWORK_CONFIG.addresses.verificationGateway,
         this.provider,
       );
 
@@ -244,7 +244,7 @@ export default class App {
     try {
       this.wallet = await BlsWallet.connect(
         this.state.privateKey,
-        env.VERIFICATION_GATEWAY_ADDRESS,
+        env.NETWORK_CONFIG.addresses.verificationGateway,
         this.provider,
       );
 

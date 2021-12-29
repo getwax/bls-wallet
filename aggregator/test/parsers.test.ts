@@ -1,45 +1,48 @@
-import {
-  parseTransactionDataDto,
-  TransactionDataDto,
-} from "../src/app/parsers.ts";
-import { assertEquals } from "./deps.ts";
+import { parseBundleDto } from "../src/app/parsers.ts";
+import { assertEquals, BundleDto } from "./deps.ts";
 
-Deno.test("parseTransactionDataDto reports missing fields for undefined", () => {
+Deno.test("parseBundleDto reports not-an-object for undefined", () => {
   assertEquals(
-    parseTransactionDataDto(undefined),
+    parseBundleDto(undefined),
+    { failures: ["not an object"] },
+  );
+});
+
+Deno.test("parseBundleDto reports missing fields", () => {
+  assertEquals(
+    parseBundleDto({}),
     {
       failures: [
-        "field publicKey: not provided",
+        "field senderPublicKeys: not provided",
+        "field operations: not provided",
         "field signature: not provided",
-        "field nonce: not provided",
-        "field ethValue: not provided",
-        "field contractAddress: not provided",
-        "field encodedFunction: not provided",
       ],
     },
   );
 });
 
-Deno.test("parseTransactionDataDto accepts dummy values", () => {
-  const dummyTxData: TransactionDataDto = {
-    "publicKey": [
-      "0x000102030405060708091011121314151617181920212223242526272829303132333",
-      "43536373839404142434445464748495051525354555657585960616263646566676869",
-      "70717273747576777879808182838485868788899091929394959697989900010203040",
-      "506070809101112131415161718192021222324252627",
-    ].join(""),
-    "nonce": "0x01",
-    "signature": [
-      "0x000102030405060708091011121314151617181920212223242526272829303132333",
-      "43536373839404142434445464748495051525354555657585960616263",
-    ].join(""),
-    "ethValue": "0x00",
-    "contractAddress": "0x0001020304050607080910111213141516171819",
-    "encodedFunction": "0x0001020300010203040506",
+Deno.test("parseBundleDto accepts dummy values", () => {
+  const dummyBundleData: BundleDto = {
+    "senderPublicKeys": [
+      ["0x01", "0x02", "0x03", "0x04"],
+    ],
+    "operations": [
+      {
+        "nonce": "0x01",
+        "actions": [
+          {
+            "ethValue": "0x00",
+            "contractAddress": "0x00",
+            "encodedFunction": "0x00",
+          },
+        ],
+      },
+    ],
+    "signature": ["0x01", "0x02"],
   };
 
   assertEquals(
-    parseTransactionDataDto(dummyTxData),
-    { success: dummyTxData },
+    parseBundleDto(dummyBundleData),
+    { success: dummyBundleData },
   );
 });

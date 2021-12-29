@@ -3,7 +3,7 @@
 import {
   AggregatorClient,
   BigNumber,
-  BlsWallet,
+  BlsWalletWrapper,
   delay,
   ethers,
 } from "../deps.ts";
@@ -12,6 +12,7 @@ import * as env from "../test/env.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
 import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
+import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 
 const logStartTime = Date.now();
 
@@ -29,10 +30,12 @@ const leadTarget = env.MAX_AGGREGATION_SIZE * env.MAX_UNCONFIRMED_AGGREGATIONS;
 const pollingInterval = 400;
 const sendWalletCount = 50;
 
+const { addresses } = await getNetworkConfig();
+
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 const adminWallet = AdminWallet(provider);
 
-const testErc20 = new MockErc20(env.TEST_TOKEN_ADDRESS, provider);
+const testErc20 = new MockErc20(addresses.testToken, provider);
 
 const client = new AggregatorClient(env.ORIGIN);
 
@@ -47,7 +50,7 @@ log("Checking/minting test tokens...");
 
 for (const wallet of sendWallets) {
   const testErc20 = new MockErc20(
-    env.TEST_TOKEN_ADDRESS,
+    addresses.testToken,
     adminWallet,
   );
 
@@ -65,7 +68,7 @@ const startBalance = await testErc20.balanceOf(recvWallet.address);
 
 log("Getting nonces...");
 
-const nextNonceMap = new Map<BlsWallet, BigNumber>(
+const nextNonceMap = new Map<BlsWalletWrapper, BigNumber>(
   await Promise.all(sendWallets.map(async (sendWallet) => {
     const nextNonce = await sendWallet.Nonce();
 
@@ -92,14 +95,19 @@ pollingLoop(() => {
     const nonce = nextNonceMap.get(sendWallet)!;
     nextNonceMap.set(sendWallet, nonce.add(1));
 
-    const tx = sendWallet.sign({
-      contract: testErc20.contract,
-      method: "transfer",
-      args: [recvWallet.address, "1"],
+    const bundle = sendWallet.sign({
       nonce,
+      actions: [{
+        ethValue: 0,
+        contractAddress: testErc20.contract.address,
+        encodedFunction: testErc20.contract.interface.encodeFunctionData(
+          "trasnfer",
+          [recvWallet.address, 1],
+        ),
+      }],
     });
 
-    client.addTransaction(tx).then((failures) => {
+    client.add(bundle).then((failures) => {
       if (failures.length > 0) {
         console.log({ failures });
       }

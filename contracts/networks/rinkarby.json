@@ -1,0 +1,18 @@
+{
+    "parameters": {},
+    "addresses": {
+        "precompileCostEstimator": "0x85C17E7180879a71EDAE76B43E4a85159a7eA601",
+        "verificationGateway": "0xb679755176c3cCad9120d99d4715FCE176998b15",
+        "blsLibrary": "0xA86c40ad4b04E0228BB89B672bb32214Cb9bf02f",
+        "blsExpander": "0x2eC878702014849Ca7739c2a6DaFe795A8a8F778",
+        "testToken": "0x8CD755F93E56C90E3d5803c036771CFCc12B7c53",
+        "rewardToken": "0x8CD755F93E56C90E3d5803c036771CFCc12B7c53"
+    },
+    "auxiliary": {
+        "chainid": 421611,
+        "domain": "0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc",
+        "genesisBlock": 123456,
+        "deployedBy": "TODO fill in",
+        "version": "c1d1f197ba9b68284cbc4ec145e286a4e84c0eaf"
+    }
+}

@@ -3,14 +3,16 @@ pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
 import "./VerificationGateway.sol";
+import "./interfaces/IWallet.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
 @dev Optimisations to reduce calldata of VerificationGateway multiCall
 with shared params.
 */
-contract BLSExpander is Initializable {
+contract BLSExpander {
     VerificationGateway verificationGateway;
-    function initialize(address gateway) public initializer {
+    constructor(address gateway) {
         verificationGateway = VerificationGateway(gateway);
     }
 
@@ -18,17 +20,14 @@ contract BLSExpander is Initializable {
     function blsCallMultiCheckRewardIncrease(
         IERC20 tokenRewardAddress,
         uint256 tokenRewardAmount,
-        uint256[4][] calldata publicKeys,
-        uint256[2] memory signature,
-        VerificationGateway.TxSet[] calldata txs
+        VerificationGateway.Bundle calldata bundle
+        // uint256[4][] calldata publicKeys,
+        // uint256[2] memory signature,
+        // VerificationGateway.TxSet[] calldata txs
     ) external returns (uint256 balanceIncrease) {
         uint256 balanceBefore = tokenRewardAddress.balanceOf(tx.origin);
 
-        verificationGateway.actionCalls(
-            publicKeys,
-            signature,
-            txs
-        );
+        verificationGateway.processBundle(bundle);
 
         uint256 balanceAfter = tokenRewardAddress.balanceOf(tx.origin);
         balanceIncrease = balanceAfter - balanceBefore;
@@ -101,24 +100,22 @@ contract BLSExpander is Initializable {
     ) external {
         uint256 length = encodedParamSets.length;
 
-        uint256[4][] memory publicKeys = new uint256[4][](1);
-        publicKeys[0] = publicKey;
+        VerificationGateway.Bundle memory bundle;
+        bundle.signature = signature;
 
-        VerificationGateway.TxSet[] memory txs = new VerificationGateway.TxSet[](1);
-        txs[0].nonce = nonce;
-        txs[0].atomic = false;
-        txs[0].actions = new IWallet.ActionData[](length);
+        bundle.senderPublicKeys = new uint256[4][](1);
+        bundle.senderPublicKeys[0] = publicKey;
+
+        bundle.operations = new IWallet.Operation[](1);
+        bundle.operations[0].nonce = nonce;
+        bundle.operations[0].actions = new IWallet.ActionData[](length);
         for (uint256 i=0; i<length; i++) {
-            txs[0].actions[i].ethValue = 0;
-            txs[0].actions[i].contractAddress = contractAddress;
-            txs[0].actions[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
+            bundle.operations[0].actions[i].ethValue = 0;
+            bundle.operations[0].actions[i].contractAddress = contractAddress;
+            bundle.operations[0].actions[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
         }
 
-        verificationGateway.actionCalls(
-            publicKeys,
-            signature,
-            txs
-        );
+        verificationGateway.processBundle(bundle);
     }
 
     // eg identical txs from multiple accounts

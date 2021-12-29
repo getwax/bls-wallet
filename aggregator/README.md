@@ -2,9 +2,9 @@
 
 Aggregation service for bls-signed transaction data.
 
-Accepts posts of signed transactions and, upon instruction, can aggregate
-signatures and submit a transaction batch to the configured Verification
-Gateway.
+Accepts transaction bundles (including bundles that contain a single
+transaction) and submits aggregations of these bundles to the configured
+Verification Gateway.
 
 ## Installation
 
@@ -30,6 +30,15 @@ If you don't have a `.env`, you will need to append `--env <name>` to all
 commands.
 
 ### PostgreSQL
+
+#### With docker-compose
+
+```sh
+cd .. # root of repo
+docker-compose up -d postgres
+```
+
+#### Local Install
 
 Install, e.g.:
 
@@ -124,7 +133,7 @@ Tests are defined in `test`. Running them directly is a bit verbose because of
 the deno flags you need:
 
 ```sh
-deno test -j --allow-net --allow-env --allow-read --unstable -- --env local
+deno test --allow-net --allow-env --allow-read --unstable
 ```
 
 Instead, `./programs/premerge.ts` may be more useful for you. It'll make sure
@@ -138,18 +147,19 @@ script completes successfully before merging into main.
 
 - **src/chain**: Should contain all of the contract interactions, exposing more
   suitable abstractions to the rest of the code. There's still some contract
-  interaction in `WalletService` and in tests though.
+  interaction in `EthereumService` and in tests though.
 - **`BlsWallet`**: Models a BLS smart contract wallet (see
   [BLSWallet.sol](https://github.com/jzaki/bls-wallet-contracts/blob/main/contracts/BLSWallet.sol)).
 - **`app.ts`**: Runs the app (the aggregator), requiring only a definition of
   what to do with the events (invoked with `console.log` by
   `programs/aggregator.ts`).
-- **`WalletService`**: Responsible for submitting aggregations (aka batches)
-  once they have been formed. This was where all the contract interaction was
-  before `src/chain`. Probably needs a rename and some rethinking.
-- **`TxService`**: Keeps track of all stored transactions, as well as accepting
-  (or rejecting) them and sending off batches to `WalletService`.
-- **`TxTable`**: Abstraction layer over postgres transaction tables, exposing
+- **`EthereumService`**: Responsible for submitting aggregations once they have
+  been formed. This was where all the contract interaction was before
+  `src/chain`. Might need some rethinking.
+- **`BundleService`**: Keeps track of all stored transactions, as well as
+  accepting (or rejecting) them and submitting aggregated bundles to
+  `EthereumService`.
+- **`BundleTable`**: Abstraction layer over postgres bundle tables, exposing
   typed functions instead of queries. Handles conversions to and from the field
   types supported by postgres so that other code can has a uniform js-friendly
   interface

@@ -1,6 +1,6 @@
 module.exports = {
   env: {
-    browser: false,
+    browser: true,
     es2021: true,
     mocha: true,
     node: true,
@@ -18,7 +18,22 @@ module.exports = {
   rules: {
     "node/no-unsupported-features/es-syntax": [
       "error",
-      { ignores: ["modules"] },
+      {
+        version: ">=16.0.0",
+        ignores: ["modules"],
+      },
+    ],
+    "node/no-missing-import": "off",
+
+    // False-positives in typescript
+    "no-useless-constructor": "off",
+
+    "node/no-unsupported-features/node-builtins": [
+      "error",
+      {
+        version: ">=16.0.0",
+        ignores: [],
+      },
     ],
   },
 };

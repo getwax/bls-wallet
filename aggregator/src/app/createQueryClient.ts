@@ -5,8 +5,13 @@ import AppEvent from "./AppEvent.ts";
 
 export default function createQueryClient(
   emit: (evt: AppEvent) => void,
+  /**
+   * Sadly, there appears to be a singleton inside QueryClient, which forces us
+   * to re-use it during testing.
+   */
+  existingClient?: QueryClient,
 ): QueryClient {
-  const client = new QueryClient({
+  const client = existingClient ?? new QueryClient({
     hostname: env.PG.HOST,
     port: env.PG.PORT,
     user: env.PG.USER,

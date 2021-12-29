@@ -1,10 +1,10 @@
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
-import { PROVIDER_URL } from '../env';
+import { CHAIN_RPC_URL } from '../env';
 import axios from 'axios';
 
 const getParitySigRegistry = () => {
-  const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+  const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
   const address = '0x44691B39d1a75dC4E0A0346CBB15E310e6ED1E86';
   const abi = [
     {

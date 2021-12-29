@@ -1,12 +1,12 @@
 import * as hubbleBls from "../../deps/hubble-bls";
+import { PublicKey } from "./types";
 
 export default (
-  signerFactory: hubbleBls.signer.BlsSignerFactory,
-  domain: Uint8Array
-) => (
-  privateKey: string
-): string => {
-  const signer = signerFactory.getSigner(domain, privateKey);
+    signerFactory: hubbleBls.signer.BlsSignerFactory,
+    domain: Uint8Array,
+  ) =>
+  (privateKey: string): PublicKey => {
+    const signer = signerFactory.getSigner(domain, privateKey);
 
-  return hubbleBls.mcl.dumpG2(signer.pubkey);
-};
+    return signer.pubkey;
+  };

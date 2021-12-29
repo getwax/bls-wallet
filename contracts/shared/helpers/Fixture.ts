@@ -1,12 +1,25 @@
 import "@nomiclabs/hardhat-ethers";
-import { ethers } from "hardhat";
-import { Signer, Contract, ContractFactory, BigNumber } from "ethers";
+import { ethers, network } from "hardhat";
+import {
+  Signer,
+  Contract,
+  ContractFactory,
+  BigNumber,
+  BigNumberish,
+} from "ethers";
 import { Provider } from "@ethersproject/abstract-provider";
-import { BlsWallet, BlsWalletSigner, initBlsWalletSigner, VerificationGateway } from "../../clients/src";
+
+import {
+  BlsWalletWrapper,
+  BlsWalletSigner,
+  initBlsWalletSigner,
+  Bundle,
+} from "../../clients/src";
 
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
+import { VerificationGateway, BLSOpen } from "../../typechain";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -19,89 +32,89 @@ export default class Fixture {
     public signers: Signer[],
     public addresses: string[],
 
-    public lazyBlsWallets: (() => Promise<BlsWallet>)[],
+    public lazyBlsWallets: (() => Promise<BlsWalletWrapper>)[],
 
     public verificationGateway: VerificationGateway,
 
+    public blsLibrary: BLSOpen,
     public blsExpander: Contract,
 
     public BLSWallet: ContractFactory,
     public blsWalletSigner: BlsWalletSigner,
   ) {}
 
-  /// @dev Contracts deployed by first ethers signer 
+  /// @dev Contracts deployed by first ethers signer
   static async create(
-    blsWalletCount: number=Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
-    initialized: boolean=true,
-    blsAddress?: string,
-    vgAddress?: string,
-    expanderAddress?: string,
-    secretNumbers?: number[]
+    blsWalletCount: number = Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
+    secretNumbers?: number[],
   ) {
-    let chainId = (await ethers.provider.getNetwork()).chainId;
+    const chainId = (await ethers.provider.getNetwork()).chainId;
 
-    let allSigners = await ethers.getSigners();
-    let signers = (allSigners).slice(0, Fixture.ECDSA_ACCOUNTS_LENGTH);
-    let addresses = await Promise.all(signers.map(acc => acc.getAddress())) as string[];
+    const allSigners = await ethers.getSigners();
+    const signers = allSigners.slice(0, Fixture.ECDSA_ACCOUNTS_LENGTH);
+    const addresses = (await Promise.all(
+      signers.map((acc) => acc.getAddress()),
+    )) as string[];
 
-    let create2Fixture = Create2Fixture.create();
+    const create2Fixture = Create2Fixture.create();
 
     // deploy wallet implementation contract
-    let blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
+    const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
     try {
-      await (await blsWalletImpl.initialize(
-        ethers.constants.AddressZero
-      )).wait();
+      await (
+        await blsWalletImpl.initialize(ethers.constants.AddressZero)
+      ).wait();
     } catch (e) {}
 
+    const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
     // deploy Verification Gateway
-    let vgContract = await create2Fixture.create2Contract("VerificationGateway");
-    let bls = await create2Fixture.create2Contract("BLSOpen");
-
-    try {
-      await (await vgContract.initialize(
-        bls.address,
-        blsWalletImpl.address
-      )).wait();
-    } catch (e) {}
+    const verificationGateway = (await create2Fixture.create2Contract(
+      "VerificationGateway",
+      ethers.utils.defaultAbiCoder.encode(
+        ["address", "address"],
+        [bls.address, blsWalletImpl.address],
+      ),
+    )) as VerificationGateway;
 
     // deploy BLSExpander Gateway
-    let blsExpander = await create2Fixture.create2Contract("BLSExpander");
-    try {
-      await (await blsExpander.initialize(vgContract.address)).wait();
-    } catch (e) {}
+    const blsExpander = await create2Fixture.create2Contract(
+      "BLSExpander",
+      ethers.utils.defaultAbiCoder.encode(
+        ["address"],
+        [verificationGateway.address],
+      ),
+    );
 
-    const verificationGateway = new VerificationGateway(vgContract.address, vgContract.signer);
+    const BLSWallet = await ethers.getContractFactory("BLSWallet");
 
-    let BLSWallet = await ethers.getContractFactory("BLSWallet");
-
-    const lazyBlsWallets = Range(blsWalletCount).map(i => {
+    const lazyBlsWallets = Range(blsWalletCount).map((i) => {
       let secretNumber: number;
 
       if (secretNumbers !== undefined) {
         secretNumber = secretNumbers[i];
-        assert(secretNumber !== undefined);
+        assert(!isNaN(secretNumber), "secret ");
       } else {
-        secretNumber = Math.abs(Math.random() * 0xffffffff << 0);
+        secretNumber = Math.abs((Math.random() * 0xffffffff) << 0);
       }
 
       return async () => {
-        const wallet = await BlsWallet.connect(
+        const wallet = await BlsWalletWrapper.connect(
           `0x${secretNumber.toString(16)}`,
           verificationGateway.address,
-          vgContract.provider,
+          verificationGateway.provider,
         );
 
         // Perform an empty transaction to trigger wallet creation
-        await (await verificationGateway.actionCalls(wallet.sign({
-          nonce: BigNumber.from(0),
-          actions: [],
-        }))).wait();
+        await (
+          await verificationGateway.processBundle(
+            wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
+          )
+        ).wait();
 
         return wallet;
-      }
+      };
     });
-  
+
     return new Fixture(
       chainId,
       ethers.provider,
@@ -109,6 +122,7 @@ export default class Fixture {
       addresses,
       lazyBlsWallets,
       verificationGateway,
+      bls,
       blsExpander,
       BLSWallet,
       await initBlsWalletSigner({ chainId }),
@@ -119,9 +133,71 @@ export default class Fixture {
    * Creates new BLS contract wallets from private keys
    * @returns array of wallets
    */
-  async createBLSWallets(): Promise<BlsWallet[]> {
-    return await Promise.all(this.lazyBlsWallets.map(
-      lazyWallet => lazyWallet(),
-    ));
+  async createBLSWallets(): Promise<BlsWalletWrapper[]> {
+    return await Promise.all(
+      this.lazyBlsWallets.map((lazyWallet) => lazyWallet()),
+    );
+  }
+
+  bundleFrom(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ): Bundle {
+    return this.blsWalletSigner.aggregate([
+      wallet.sign({
+        nonce: nonce,
+        actions: [
+          {
+            ethValue: ethValue,
+            contractAddress: contract.address,
+            encodedFunction: contract.interface.encodeFunctionData(
+              method,
+              params,
+            ),
+          },
+        ],
+      }),
+    ]);
+  }
+
+  async call(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ) {
+    await (
+      await this.verificationGateway.processBundle(
+        this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+      )
+    ).wait();
+  }
+
+  async callStatic(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ) {
+    return await this.verificationGateway.callStatic.processBundle(
+      this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+    );
+  }
+
+  async advanceTimeBy(seconds: number) {
+    // Advance time one week
+    const latestTimestamp = (await ethers.provider.getBlock("latest"))
+      .timestamp;
+    await network.provider.send("evm_setNextBlockTimestamp", [
+      BigNumber.from(latestTimestamp).add(seconds).toHexString(),
+    ]);
   }
 }

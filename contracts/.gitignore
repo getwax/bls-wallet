@@ -4,7 +4,8 @@
 node_modules
 coverage
 coverage.json
-typechain
+/typechain
+networks/local.json
 
 #Hardhat files
 artifacts

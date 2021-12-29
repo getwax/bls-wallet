@@ -1,252 +1,243 @@
-import { ethers, network } from "hardhat";
+// import Fixture from "../shared/helpers/Fixture";
+// import TokenHelper from "../shared/helpers/TokenHelper";
 
-import { expect, assert, should } from "chai";
+// describe("TokenPayments", async function () {
+//   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
+//     console.log("Skipping non-deployer tests.");
+//     return;
+//   }
 
-import Fixture from "../shared/helpers/Fixture";
-import TokenHelper from "../shared/helpers/TokenHelper";
+//   let fx: Fixture;
+//   let th: TokenHelper;
+//   let blsWalletAddresses: string[];
 
-import { BigNumber, providers } from "ethers";
-import { getAddress } from "ethers/lib/utils";
-import { doesNotMatch } from "assert";
+//   beforeEach(async function () {
+//     fx = await Fixture.create(7);
+//     th = new TokenHelper(fx);
+//     blsWalletAddresses = (await th.walletTokenSetup()).map(
+//       (wallet) => wallet.address,
+//     );
+//   });
 
+//   // it("should reward tx submitter (single call)", async function() {
+//   //   const reward = ethers.utils.parseUnits("10");
 
+//   //   let blsSigner = fx.blsSigners[0];
 
-describe('TokenPayments', async function () {
-  if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
-    console.log("Skipping non-deployer tests.");
-    return;
-  }
+//   //   let txDataFull: FullTxData = {
+//   //     blsSigner: blsSigner,
+//   //     chainId: fx.chainId,
+//   //     nonce: 1, //next nonce after creation
+//   //     reward: reward,
+//   //     ethValue: BigNumber.from(0),
+//   //     contract:fx.verificationGateway,
+//   //     functionName:"walletCrossCheck",
+//   //     params:[blsKeyHash(blsSigner)]
+//   //   }
 
-  let fx: Fixture;
-  let th: TokenHelper;
-  let blsWalletAddresses: string[];
+//   //   let aggBalanceBefore = await th.testToken.balanceOf(await fx.signers[0].getAddress());
+//   //   await fx.gatewayCallFull(txDataFull);
+//   //   let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[0]);
 
-  beforeEach(async function() {
-    fx = await Fixture.create(7);
-    th = new TokenHelper(fx);
-    blsWalletAddresses = (await th.walletTokenSetup()).map(wallet => wallet.address);
-  });
+//   //   expect(walletBalance).to.equal(th.userStartAmount.sub(reward));
+//   //   let aggBalance = await th.testToken.balanceOf(await fx.signers[0].getAddress());
+//   //   expect(aggBalance).to.equal(aggBalanceBefore.add(reward));
+//   // });
 
-  // it("should reward tx submitter (single call)", async function() {
-  //   const reward = ethers.utils.parseUnits("10");
+//   // it("should perform wallet action with reward (single call)", async function() {
+//   //   const reward = ethers.utils.parseUnits("10");
 
-  //   let blsSigner = fx.blsSigners[0];
-    
-  //   let txDataFull: FullTxData = {
-  //     blsSigner: blsSigner,
-  //     chainId: fx.chainId,
-  //     nonce: 1, //next nonce after creation
-  //     reward: reward,
-  //     ethValue: BigNumber.from(0),
-  //     contract:fx.verificationGateway,
-  //     functionName:"walletCrossCheck",
-  //     params:[blsKeyHash(blsSigner)]
-  //   }
+//   //   let blsSigner = fx.blsSigners[0];
+//   //   const blsPubKeyHash = blsKeyHash(blsSigner);
 
-  //   let aggBalanceBefore = await th.testToken.balanceOf(await fx.signers[0].getAddress());
-  //   await fx.gatewayCallFull(txDataFull);
-  //   let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[0]);
+//   //   let actionToken = await TokenHelper.deployTestToken(blsWalletAddresses[0]);
+//   //   const actionAmount = ethers.utils.parseUnits("5");
+//   //   const burnAddress = "0x" + "1234".padStart(40, "0");
 
-  //   expect(walletBalance).to.equal(th.userStartAmount.sub(reward));
-  //   let aggBalance = await th.testToken.balanceOf(await fx.signers[0].getAddress());
-  //   expect(aggBalance).to.equal(aggBalanceBefore.add(reward));
-  // });
+//   //   let walletNonce = 1;  //next nonce after creation
 
-  // it("should perform wallet action with reward (single call)", async function() {
-  //   const reward = ethers.utils.parseUnits("10");
-    
-  //   let blsSigner = fx.blsSigners[0];
-  //   const blsPubKeyHash = blsKeyHash(blsSigner);
+//   //   let txDataFull:FullTxData = {
+//   //     blsSigner: blsSigner,
+//   //     chainId: fx.chainId,
+//   //     nonce: walletNonce++,
+//   //     reward: reward,
+//   //     ethValue: BigNumber.from(0),
+//   //     contract: actionToken,
+//   //     functionName: "transfer",
+//   //     params: [burnAddress, actionAmount]
+//   //   }
+//   //   let walletActionBalanceBefore = await actionToken.balanceOf(blsWalletAddresses[0]);
+//   //   await fx.gatewayCallFull(txDataFull);
+//   //   let walletActionBalanceAfter = await actionToken.balanceOf(blsWalletAddresses[0]);
 
-  //   let actionToken = await TokenHelper.deployTestToken(blsWalletAddresses[0]);
-  //   const actionAmount = ethers.utils.parseUnits("5");
-  //   const burnAddress = "0x" + "1234".padStart(40, "0");
+//   //   //successfull transfer of action-token
+//   //   expect(walletActionBalanceAfter).to.equal(walletActionBalanceBefore.sub(actionAmount));
 
-  //   let walletNonce = 1;  //next nonce after creation
+//   //   let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[0]);
 
-  //   let txDataFull:FullTxData = {
-  //     blsSigner: blsSigner,
-  //     chainId: fx.chainId,
-  //     nonce: walletNonce++,
-  //     reward: reward,
-  //     ethValue: BigNumber.from(0),
-  //     contract: actionToken,
-  //     functionName: "transfer",
-  //     params: [burnAddress, actionAmount]    
-  //   } 
-  //   let walletActionBalanceBefore = await actionToken.balanceOf(blsWalletAddresses[0]);
-  //   await fx.gatewayCallFull(txDataFull);
-  //   let walletActionBalanceAfter = await actionToken.balanceOf(blsWalletAddresses[0]);
+//   //   let failedTestMessage = "GatewayCall should not execute with insufficient reward.";
+//   //   try {
+//   //     txDataFull.nonce = walletNonce++;
+//   //     txDataFull.reward = walletBalance.add(1);
+//   //     await fx.gatewayCallFull(txDataFull);
+//   //     expect.fail(failedTestMessage);
+//   //   } catch(e) {
+//   //     if (e.message == failedTestMessage) {
+//   //       throw(e);
+//   //     };
+//   //   }
+//   // });
 
-  //   //successfull transfer of action-token
-  //   expect(walletActionBalanceAfter).to.equal(walletActionBalanceBefore.sub(actionAmount));
+//   // it("should reward tx submitter (callMany)", async function() {
+//   //   const reward = ethers.utils.parseUnits("10");
 
-  //   let walletBalance = await th.testToken.balanceOf(blsWalletAddresses[0]);
+//   //   let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
+//   //   let signatures: any[] = new Array(blsWalletAddresses.length);
 
-  //   let failedTestMessage = "GatewayCall should not execute with insufficient reward.";
-  //   try {
-  //     txDataFull.nonce = walletNonce++;
-  //     txDataFull.reward = walletBalance.add(1);
-  //     await fx.gatewayCallFull(txDataFull);
-  //     expect.fail(failedTestMessage);
-  //   } catch(e) {
-  //     if (e.message == failedTestMessage) {
-  //       throw(e);
-  //     };
-  //   }
-  // });
+//   //   let sigHash = fx.VerificationGateway.interface.getSighash("walletCrossCheck");
 
-  // it("should reward tx submitter (callMany)", async function() {
-  //   const reward = ethers.utils.parseUnits("10");
+//   //   let walletNonce = 1;  //next nonce after creation
+//   //   let tx: TxDataCall|TxDataSend;
+//   //   for (let i = 0; i<blsWalletAddresses.length; i++) {
 
-  //   let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
-  //   let signatures: any[] = new Array(blsWalletAddresses.length);
+//   //     [tx, signatures[i]] = blsSignFunction({
+//   //       blsSigner: fx.blsSigners[i],
+//   //       chainId: fx.chainId,
+//   //       nonce: walletNonce,
+//   //       reward: reward,
+//   //       ethValue: BigNumber.from(0),
+//   //       contract: fx.verificationGateway,
+//   //       functionName: "walletCrossCheck",
+//   //       params: [blsKeyHash(fx.blsSigners[i])]
+//   //     });
+//   //     txs[i] = tx as TxDataCall;
+//   //   }
 
-  //   let sigHash = fx.VerificationGateway.interface.getSighash("walletCrossCheck");
+//   //   let aggSignature = aggregate(signatures);
 
-  //   let walletNonce = 1;  //next nonce after creation
-  //   let tx: TxDataCall|TxDataSend;
-  //   for (let i = 0; i<blsWalletAddresses.length; i++) {
-      
-  //     [tx, signatures[i]] = blsSignFunction({
-  //       blsSigner: fx.blsSigners[i],
-  //       chainId: fx.chainId,
-  //       nonce: walletNonce,
-  //       reward: reward,
-  //       ethValue: BigNumber.from(0),
-  //       contract: fx.verificationGateway,
-  //       functionName: "walletCrossCheck",
-  //       params: [blsKeyHash(fx.blsSigners[i])]
-  //     });
-  //     txs[i] = tx as TxDataCall;
-  //   }
+//   //   let balancesBefore = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
 
-  //   let aggSignature = aggregate(signatures);
+//   //   let firstSigner = await fx.signers[0].getAddress();
+//   //   let aggBalanceBefore = await th.testToken.balanceOf(firstSigner);
+//   //   await(await fx.verificationGateway.blsCallMany(
+//   //     firstSigner,
+//   //     aggSignature,
+//   //     txs
+//   //   )).wait();
 
-  //   let balancesBefore = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
+//   //   let balancesAfter = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
+//   //   let expectedAfter = th.userStartAmount.sub(reward);
 
-  //   let firstSigner = await fx.signers[0].getAddress();
-  //   let aggBalanceBefore = await th.testToken.balanceOf(firstSigner);
-  //   await(await fx.verificationGateway.blsCallMany(
-  //     firstSigner,
-  //     aggSignature,
-  //     txs
-  //   )).wait();
+//   //   balancesAfter.map( b => expect(b).to.equal(expectedAfter) );
+//   //   let aggBalance = await th.testToken.balanceOf(firstSigner);
+//   //   expect(aggBalance).to.equal(aggBalanceBefore.add(reward.mul(blsWalletAddresses.length)));
 
-  //   let balancesAfter = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
-  //   let expectedAfter = th.userStartAmount.sub(reward);
-    
-  //   balancesAfter.map( b => expect(b).to.equal(expectedAfter) );
-  //   let aggBalance = await th.testToken.balanceOf(firstSigner);
-  //   expect(aggBalance).to.equal(aggBalanceBefore.add(reward.mul(blsWalletAddresses.length)));
+//   //   walletNonce++;
 
-  //   walletNonce++;
+//   // });
 
-  // });
+//   // it("should perform wallet actions with reward (multi call)", async function() {
+//   //   const reward = ethers.utils.parseUnits("10");
 
-  // it("should perform wallet actions with reward (multi call)", async function() {
-  //   const reward = ethers.utils.parseUnits("10");
+//   //   let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
+//   //   let signatures: any[] = new Array(blsWalletAddresses.length);
 
-  //   let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
-  //   let signatures: any[] = new Array(blsWalletAddresses.length);
+//   //   const burnAddress = "0x" + "1234".padStart(40, "0");
+//   //   const actionAmount = reward.div(2);
 
-  //   const burnAddress = "0x" + "1234".padStart(40, "0");
-  //   const actionAmount = reward.div(2);
+//   //   let encodedFunction = th.testToken.interface.encodeFunctionData(
+//   //     "transfer",
+//   //     [burnAddress, actionAmount]
+//   //   );
+//   //   let sigHash = encodedFunction.substr(0, 10);
 
-  //   let encodedFunction = th.testToken.interface.encodeFunctionData(
-  //     "transfer",
-  //     [burnAddress, actionAmount]
-  //   );
-  //   let sigHash = encodedFunction.substr(0, 10);
+//   //   let walletNonce = 1;
+//   //   let tx: TxDataCall|TxDataSend;
+//   //   for (let i = 0; i<blsWalletAddresses.length; i++) {
+//   //     [tx, signatures[i]] = blsSignFunction({
+//   //       blsSigner: fx.blsSigners[i],
+//   //       chainId: fx.chainId,
+//   //       nonce: walletNonce,
+//   //       reward: reward,
+//   //       ethValue: BigNumber.from(0),
+//   //       contract: th.testToken,
+//   //       functionName: "transfer",
+//   //       params: [burnAddress, actionAmount]
+//   //     });
+//   //     txs[i] = tx as TxDataCall;
+//   //   }
 
-  //   let walletNonce = 1;
-  //   let tx: TxDataCall|TxDataSend;
-  //   for (let i = 0; i<blsWalletAddresses.length; i++) {
-  //     [tx, signatures[i]] = blsSignFunction({
-  //       blsSigner: fx.blsSigners[i],
-  //       chainId: fx.chainId,
-  //       nonce: walletNonce,
-  //       reward: reward,
-  //       ethValue: BigNumber.from(0),
-  //       contract: th.testToken,
-  //       functionName: "transfer",
-  //       params: [burnAddress, actionAmount]
-  //     });
-  //     txs[i] = tx as TxDataCall;
-  //   }
+//   //   let aggSignature = aggregate(signatures);
 
-  //   let aggSignature = aggregate(signatures);
+//   //   let firstSigner = await fx.signers[0].getAddress();
+//   //   let aggBalanceBefore = await th.testToken.balanceOf(firstSigner);
+//   //   await(await fx.verificationGateway.blsCallMany(
+//   //     firstSigner,
+//   //     aggSignature,
+//   //     txs
+//   //   )).wait();
 
-  //   let firstSigner = await fx.signers[0].getAddress();
-  //   let aggBalanceBefore = await th.testToken.balanceOf(firstSigner);
-  //   await(await fx.verificationGateway.blsCallMany(
-  //     firstSigner,
-  //     aggSignature,
-  //     txs
-  //   )).wait();
+//   //   let balancesAfter = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
+//   //   let expectedAfter = th.userStartAmount.sub(reward).sub(actionAmount);
+//   //   balancesAfter.map( b => expect(b).to.equal(expectedAfter) );
+//   //   let aggBalance = await th.testToken.balanceOf(firstSigner);
+//   //   expect(aggBalance).to.equal(aggBalanceBefore.add(reward.mul(blsWalletAddresses.length)));
+//   // });
 
-  //   let balancesAfter = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
-  //   let expectedAfter = th.userStartAmount.sub(reward).sub(actionAmount);
-  //   balancesAfter.map( b => expect(b).to.equal(expectedAfter) );
-  //   let aggBalance = await th.testToken.balanceOf(firstSigner);
-  //   expect(aggBalance).to.equal(aggBalanceBefore.add(reward.mul(blsWalletAddresses.length)));
-  // });
+//   // it("should skip wallet actions that can't pay reward (multi call)", async function() {
 
-  // it("should skip wallet actions that can't pay reward (multi call)", async function() {
+//   //   let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
+//   //   let signatures: any[] = new Array(blsWalletAddresses.length);
 
-  //   let txs: TxDataCall[] = new Array(blsWalletAddresses.length);
-  //   let signatures: any[] = new Array(blsWalletAddresses.length);
+//   //   const burnAddress = "0x" + "1234".padStart(40, "0");
+//   //   const actionAmount = ethers.utils.parseUnits("10");
 
-  //   const burnAddress = "0x" + "1234".padStart(40, "0");
-  //   const actionAmount = ethers.utils.parseUnits("10");
+//   //   let walletNonce = 1;
+//   //   let balancesBefore = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
 
-  //   let walletNonce = 1;
-  //   let balancesBefore = await Promise.all(blsWalletAddresses.map(a => th.testToken.balanceOf(a)));
-    
-  //   // Just enough for action after reward
-  //   let rewards = balancesBefore.map( b => b.sub(actionAmount) );
-  //   // Reward amount greater than balance (for failure)
-  //   const insufficientRewardIndex = 2;
-  //   rewards[insufficientRewardIndex] = balancesBefore[insufficientRewardIndex].add(1);
-  //   let tx: TxDataCall|TxDataSend;
-  //   for (let i = 0; i<blsWalletAddresses.length; i++) {
-  //     [tx, signatures[i]] = blsSignFunction({
-  //       blsSigner: fx.blsSigners[i],
-  //       chainId: fx.chainId,
-  //       nonce: walletNonce,
-  //       reward: rewards[i],
-  //       ethValue: BigNumber.from(0),
-  //       contract: th.testToken,
-  //       functionName: "transfer",
-  //       params: [burnAddress, actionAmount]
-  //     });
-  //     txs[i] = tx as TxDataCall;
-  //   }
-  //   let aggSignature = aggregate(signatures);
+//   //   // Just enough for action after reward
+//   //   let rewards = balancesBefore.map( b => b.sub(actionAmount) );
+//   //   // Reward amount greater than balance (for failure)
+//   //   const insufficientRewardIndex = 2;
+//   //   rewards[insufficientRewardIndex] = balancesBefore[insufficientRewardIndex].add(1);
+//   //   let tx: TxDataCall|TxDataSend;
+//   //   for (let i = 0; i<blsWalletAddresses.length; i++) {
+//   //     [tx, signatures[i]] = blsSignFunction({
+//   //       blsSigner: fx.blsSigners[i],
+//   //       chainId: fx.chainId,
+//   //       nonce: walletNonce,
+//   //       reward: rewards[i],
+//   //       ethValue: BigNumber.from(0),
+//   //       contract: th.testToken,
+//   //       functionName: "transfer",
+//   //       params: [burnAddress, actionAmount]
+//   //     });
+//   //     txs[i] = tx as TxDataCall;
+//   //   }
+//   //   let aggSignature = aggregate(signatures);
 
-  //   let firstSigner = await fx.signers[0].getAddress();
-  //   let aggBalanceBefore = await th.testToken.balanceOf(firstSigner);
-  //   await(await fx.verificationGateway.blsCallMany(
-  //     firstSigner,
-  //     aggSignature,
-  //     txs
-  //   )).wait();
+//   //   let firstSigner = await fx.signers[0].getAddress();
+//   //   let aggBalanceBefore = await th.testToken.balanceOf(firstSigner);
+//   //   await(await fx.verificationGateway.blsCallMany(
+//   //     firstSigner,
+//   //     aggSignature,
+//   //     txs
+//   //   )).wait();
 
-  //   let totalAggReward = BigNumber.from(0);
-  //   for (let i=0; i<blsWalletAddresses.length; i++) {
-  //     let balanceAfter = await th.testToken.balanceOf(blsWalletAddresses[i]);
-  //     let expectedAfter = th.userStartAmount.sub(rewards[i]).sub(actionAmount);
-  //     totalAggReward = totalAggReward.add(rewards[i]);
-  //     if (i == insufficientRewardIndex) { //expect unchanged balance
-  //       expectedAfter = th.userStartAmount;
-  //       totalAggReward = totalAggReward.sub(rewards[i]); //not paid to aggregator
-  //     }
-  //     expect(balanceAfter).to.equal(expectedAfter)
-  //   }
+//   //   let totalAggReward = BigNumber.from(0);
+//   //   for (let i=0; i<blsWalletAddresses.length; i++) {
+//   //     let balanceAfter = await th.testToken.balanceOf(blsWalletAddresses[i]);
+//   //     let expectedAfter = th.userStartAmount.sub(rewards[i]).sub(actionAmount);
+//   //     totalAggReward = totalAggReward.add(rewards[i]);
+//   //     if (i == insufficientRewardIndex) { //expect unchanged balance
+//   //       expectedAfter = th.userStartAmount;
+//   //       totalAggReward = totalAggReward.sub(rewards[i]); //not paid to aggregator
+//   //     }
+//   //     expect(balanceAfter).to.equal(expectedAfter)
+//   //   }
 
-  //   let aggBalance = await th.testToken.balanceOf(firstSigner);
-  //   expect(aggBalance).to.equal(aggBalanceBefore.add(totalAggReward));
+//   //   let aggBalance = await th.testToken.balanceOf(firstSigner);
+//   //   expect(aggBalance).to.equal(aggBalanceBefore.add(totalAggReward));
 
-  // });
-
-});
+//   // });
+// });

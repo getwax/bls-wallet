@@ -9,15 +9,21 @@ const client = new AggregatorClient(env.ORIGIN);
 const fx = await Fixture.create(import.meta.url);
 const [wallet] = await fx.setupWallets(1);
 
-const tx = wallet.sign({
-  contract: fx.testErc20.contract,
-  method: "mint",
-  args: [wallet.address, "20"],
+const bundle = wallet.sign({
   nonce: await wallet.Nonce(),
+  actions: [{
+    ethValue: 0,
+    contractAddress: fx.testErc20.contract.address,
+    encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+      "mint",
+      [wallet.address, 20],
+    ),
+  }],
 });
 
-console.log("sending", tx);
+console.log("sending", bundle);
 
-const failures = await client.addTransaction(tx);
-
-console.log({ failures });
+const failures = await client.add(bundle);
+if (failures.length) {
+  throw new Error(failures.join(", "));
+}

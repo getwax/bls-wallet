@@ -1,20 +1,11 @@
-require('dotenv').config();
-
-import { network } from "hardhat";
-import getDeployedAddresses from "../shared/helpers/getDeployedAddresses";
+/* eslint-disable no-process-exit */
 
 import Fixture from "../shared/helpers/Fixture";
 
-async function main() {
-  let fx: Fixture;
-  if (network.name == "rinkarby") {
-    let addresses = getDeployedAddresses(network.name);
+require("dotenv").config();
 
-    fx = await Fixture.create();
-  }
-  else {
-    fx = await Fixture.create();
-  }
+async function main() {
+  const fx = await Fixture.create();
   console.log(`Deployer account address: ${fx.addresses[0]}`);
 
   console.log(`verificationGateway: ${fx.verificationGateway.address}`);
@@ -25,8 +16,7 @@ async function main() {
 // and properly handle errors.
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
-  
