@@ -5,52 +5,16 @@ import {
   JRPCResponse,
   SafeEventEmitter,
 } from '@toruslabs/openlogin-jrpc';
+import { ProviderConfig } from '../constants';
 
 import { BaseConfig, BaseState, IController } from '../interfaces';
-
-export interface ProviderConfig {
-  /**
-   * Block explorer url for the chain
-   * @example https://ropsten.etherscan.io
-   */
-  blockExplorerUrl: string;
-  /**
-   * Logo url for the base token
-   */
-  logo: string;
-  /**
-   * Name for ticker
-   * @example 'Binance Token', 'Ethereum', 'Matic Network Token'
-   */
-  tickerName: string;
-  /**
-   * Symbol for ticker
-   * @example BNB, ETH
-   */
-  ticker: string;
-  /**
-   * RPC target Url for the chain
-   * @example https://ropsten.infura.io/v3/YOUR_API_KEY
-   */
-  rpcTarget: string;
-  /**
-   * Chain Id parameter(hex with 0x prefix) for the network. Mandatory for all networks. (assign one with a map to network identifier for platforms)
-   * @example 0x1 for mainnet, 'loading' if not connected to anything yet or connection fails
-   * @defaultValue 'loading'
-   */
-  chainId: string;
-  /**
-   * Display name for the network
-   */
-  displayName: string;
-}
 
 /**
  * Custom network properties
  * @example isEIP1559Compatible: true etc.
  */
 export interface NetworkProperties {
-  [key: string]: number | string | boolean;
+  [key: string]: number | string | boolean | unknown;
 }
 
 /**
