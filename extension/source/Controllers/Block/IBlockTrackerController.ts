@@ -12,8 +12,12 @@ export interface PollingBlockTrackerConfig extends BaseBlockTrackerConfig {
   setSkipCacheFlag: boolean;
 }
 
-export interface BaseBlockTrackerState<T extends { idempotencyKey: string }>
-  extends BaseState {
-  _currentBlock?: T;
+export interface BaseBlockTrackerState extends BaseState {
+  /**
+   * block number in hex string
+   */
+  _currentBlock?: string;
   _isRunning?: boolean;
 }
+
+export type PollingBlockTrackerState = BaseBlockTrackerState;

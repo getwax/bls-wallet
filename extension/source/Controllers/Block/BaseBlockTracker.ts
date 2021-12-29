@@ -11,9 +11,8 @@ const calculateSum = (accumulator: number, currentValue: number) =>
 const blockTrackerEvents: string[] = ['sync', 'latest'];
 
 export class BaseBlockTracker<
-  T extends { idempotencyKey: string },
   C extends BaseBlockTrackerConfig,
-  S extends BaseBlockTrackerState<T>,
+  S extends BaseBlockTrackerState,
 > extends BaseController<C, S> {
   name = 'BaseBlockTracker';
 
@@ -31,7 +30,7 @@ export class BaseBlockTracker<
     // config
 
     this.defaultState = {
-      _currentBlock: { idempotencyKey: '' },
+      _currentBlock: '',
       _isRunning: false,
     } as S;
 
@@ -54,18 +53,18 @@ export class BaseBlockTracker<
     return this.state._isRunning;
   }
 
-  getCurrentBlock(): T | undefined {
+  getCurrentBlock(): string | undefined {
     return this.state._currentBlock;
   }
 
-  async getLatestBlock(): Promise<T> {
+  async getLatestBlock(): Promise<string> {
     // return if available
     if (this.state._currentBlock) {
       return this.state._currentBlock;
     }
     // wait for a new latest block
-    const latestBlock = await new Promise((resolve: (state: T) => void) =>
-      this.once('latest', (newState: BaseBlockTrackerState<T>) => {
+    const latestBlock = await new Promise((resolve: (state: string) => void) =>
+      this.once('latest', (newState: BaseBlockTrackerState) => {
         if (newState._currentBlock) {
           resolve(newState._currentBlock);
         }
@@ -103,12 +102,12 @@ export class BaseBlockTracker<
     // default behavior is noop
   }
 
-  protected _newPotentialLatest(newBlock: T): void {
+  protected _newPotentialLatest(newBlock: string): void {
     const currentBlock = this.state._currentBlock;
     // only update if blok number is higher
     if (
       currentBlock &&
-      newBlock.idempotencyKey === currentBlock.idempotencyKey
+      Number.parseInt(newBlock, 16) <= Number.parseInt(currentBlock, 16)
     ) {
       return;
     }
@@ -161,7 +160,7 @@ export class BaseBlockTracker<
       .reduce(calculateSum);
   }
 
-  private _setCurrentBlock(newBlock: T): void {
+  private _setCurrentBlock(newBlock: string): void {
     const oldBlock = this.state._currentBlock;
     this.update({
       _currentBlock: newBlock,
@@ -187,6 +186,6 @@ export class BaseBlockTracker<
   }
 
   private _resetCurrentBlock(): void {
-    this.update({ _currentBlock: { idempotencyKey: '' } } as Partial<S>);
+    this.update({ _currentBlock: '' } as Partial<S>);
   }
 }
