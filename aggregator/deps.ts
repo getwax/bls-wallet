@@ -26,9 +26,9 @@ export {
   Contract,
   ethers,
   Wallet,
-} from "https://esm.sh/ethers@5.5.1";
+} from "https://esm.sh/v59/ethers@5.5.2";
 
-import { ethers } from "https://esm.sh/ethers@5.5.1";
+import { ethers } from "https://esm.sh/v59/ethers@5.5.2";
 export const keccak256 = ethers.utils.keccak256;
 
 export type {
@@ -39,7 +39,7 @@ export type {
   Operation,
   PublicKey,
   Signature,
-} from "https://esm.sh/bls-wallet-clients@0.5.0-d6d7dd4";
+} from "https://esm.sh/v59/bls-wallet-clients@0.5.0-d6d7dd4";
 
 export {
   Aggregator as AggregatorClient,
@@ -47,10 +47,10 @@ export {
   getConfig,
   VerificationGateway,
   VerificationGateway__factory,
-} from "https://esm.sh/bls-wallet-clients@0.5.0-d6d7dd4";
+} from "https://esm.sh/v59/bls-wallet-clients@0.5.0-d6d7dd4";
 
 // Workaround for esbuild's export-star bug
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.5.0-d6d7dd4";
+import blsWalletClients from "https://esm.sh/v59/bls-wallet-clients@0.5.0-d6d7dd4";
 const {
   bundleFromDto,
   bundleToDto,
