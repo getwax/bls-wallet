@@ -264,11 +264,16 @@ export default class BundleService {
   }
 
   async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
-    await this.bundleTable.update({
-      ...row,
-      eligibleAfter: currentBlockNumber.add(row.nextEligibilityDelay),
-      nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
-    });
+    if (row.nextEligibilityDelay.lte(env.MAX_ELIGIBILITY_DELAY)) {
+      await this.bundleTable.update({
+        ...row,
+        eligibleAfter: currentBlockNumber.add(row.nextEligibilityDelay),
+        nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
+      });
+    } else {
+      await this.bundleTable.remove(row);
+    }
+
     this.unconfirmedRowIds.delete(row.id!);
   }
 
