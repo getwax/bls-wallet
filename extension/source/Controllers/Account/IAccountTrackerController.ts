@@ -12,8 +12,8 @@ export interface IAccountTrackerController<C, S> extends IController<C, S> {
   refresh(): Promise<void>;
 }
 
-export interface AccountTrackerConfig<T> extends BaseConfig {
-  _currentBlock?: T;
+export interface AccountTrackerConfig extends BaseConfig {
+  _currentBlock?: string;
 }
 
 /**
