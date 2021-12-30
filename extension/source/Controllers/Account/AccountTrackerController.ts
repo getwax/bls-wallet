@@ -113,7 +113,7 @@ class AccountTrackerController
         );
       }
     } catch (error) {
-      // ignore error
+      console.error(error);
     } finally {
       releaseLock();
     }
