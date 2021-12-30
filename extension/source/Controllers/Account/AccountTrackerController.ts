@@ -107,11 +107,9 @@ class AccountTrackerController
       const currentBlock = this.config._currentBlock;
       if (!currentBlock) return;
       const addresses = Object.keys(accounts);
-      if (addresses.length > 0) {
-        await Promise.all(
-          addresses.map((x) => this._updateAccount(x, currentBlock)),
-        );
-      }
+      await Promise.all(
+        addresses.map((x) => this._updateAccount(x, currentBlock)),
+      );
     } catch (error) {
       console.error(error);
     } finally {
