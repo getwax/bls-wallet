@@ -30,7 +30,10 @@ export const BUNDLE_TABLE_NAME = requireEnv("BUNDLE_TABLE_NAME");
  * (Using batching if needed.)
  */
 export const BUNDLE_QUERY_LIMIT = requireIntEnv("BUNDLE_QUERY_LIMIT");
-export const MAX_FUTURE_BUNDLES = requireIntEnv("MAX_FUTURE_BUNDLES");
+/**
+ * Maximum retry delay in blocks before a failed bundle is discarded.
+ */
+export const MAX_ELIGIBILITY_DELAY = requireIntEnv("MAX_ELIGIBILITY_DELAY");
 
 export const MAX_AGGREGATION_SIZE = requireIntEnv("MAX_AGGREGATION_SIZE");
 
