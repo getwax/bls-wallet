@@ -22,8 +22,7 @@ This gives us the gas cost of storing the calldata on L1 for each transaction.
 
 ### BLS Signature Transactions
 Each L2 transaction sent to the sequencer is a BLS signed transaction that contains multiple L2 transactions 
-batched together (these are token transfer transactions in our case, for testing purposes). When testing on
-RinkArby, it was found that the max number of L2 token transfers that would fit into one BLS signed transaction
+batched together (these are token transfer transactions in our case, for testing purposes). When testing on the Arbitrum Testnet (RinkArby), it was found that the max number of L2 token transfers that would fit into one BLS signed transaction
 accepted by the Arbitrum network was 29. So, each BLS signed transaction sent to the sequencer contains 29 
 L2 token transfers. The sequencer script will then batch multiple of these BLS signed transactions into a single
 batch and send it to our custom SequencerInbox contract.

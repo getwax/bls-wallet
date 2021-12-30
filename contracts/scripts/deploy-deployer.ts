@@ -6,7 +6,9 @@ import "dotenv";
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers, network } from "hardhat";
-import deployDeployer from "../shared/helpers/deployDeployer";
+import deployDeployer, {
+  defaultDeployerWallet,
+} from "../shared/helpers/deployDeployer";
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -15,13 +17,14 @@ async function main() {
   // If this script is run directly using `node` you may want to call compile
   // manually to make sure everything is compiled
   // await hre.run('compile');
-  const deployer = (await ethers.getSigners())[0];
+  const deployer = defaultDeployerWallet();
   const eoaAddress = deployer.address;
   console.log(`
     Network: ${network.name},
     Account Index: ${process.env.DEPLOYER_SET_INDEX},
     eoaAddress: ${eoaAddress},
-    nonce: ${await deployer.getTransactionCount()}
+    nonce: ${await deployer.getTransactionCount()},
+    balance: ${await ethers.provider.getBalance(eoaAddress)}
   `);
 
   const create2Deployer = await deployDeployer();
