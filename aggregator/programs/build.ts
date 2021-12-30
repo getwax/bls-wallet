@@ -31,6 +31,12 @@ async function allFiles() {
   ];
 }
 
+async function shortContentHash(filePath: string) {
+  const contentHash = (await shell.Line("shasum", "-a", "256", filePath));
+
+  return contentHash.slice(0, 7);
+}
+
 async function BuildName() {
   // TODO: Make build name change when networkConfig changes
 
@@ -42,8 +48,7 @@ async function BuildName() {
   const isDirty =
     (await shell.Lines("git", "status", "--porcelain")).length > 0;
 
-  const envHashShort = (await shell.Line("shasum", "-a", "256", dotEnvPath))
-    .slice(0, 7);
+  const envHashShort = await shortContentHash(`${buildDir}/.env`);
 
   return [
     "git",
@@ -60,8 +65,8 @@ async function ensureFreshBuildDir() {
     await Deno.remove(buildDir, { recursive: true });
   } catch (error) {
     if (error.name === "NotFound") {
-      // We don't care that remove failed due to NotFound (why do we need to catch
-      // an exception to handle this normal use case? 🤔)
+      // We don't care that remove failed due to NotFound (why do we need to
+      // catch an exception to handle this normal use case? 🤔)
     } else {
       throw error;
     }
@@ -73,25 +78,42 @@ async function ensureFreshBuildDir() {
 async function buildEnvironment() {
   const originalDotEnv = await Deno.readTextFile(dotEnvPath);
 
-  let networkConfigPath: string | nil = nil;
+  type NetworkConfigPaths = { repo: string; build: string } | nil;
+  let networkConfigPaths: NetworkConfigPaths = nil;
 
   const dotEnv = originalDotEnv
     .split("\n")
     .map((line) => {
       if (line.startsWith("NETWORK_CONFIG_PATH=")) {
-        networkConfigPath = line.slice("NETWORK_CONFIG_PATH=".length);
+        const repoNetworkConfigPath = line.slice(
+          "NETWORK_CONFIG_PATH=".length,
+        );
 
-        // Need to replace this value with a fixed location because otherwise this
-        // file won't be included in the docker image
-        return "NETWORK_CONFIG_PATH=networkConfig.json";
+        const networkConfigHash = shortContentHash(repoNetworkConfigPath);
+
+        networkConfigPaths = {
+          repo: repoNetworkConfigPath,
+          build: `networkConfig-${networkConfigHash}.json`,
+        };
+
+        // Need to replace this value with a build location because otherwise
+        // this file might not be included in the docker image
+        return `NETWORK_CONFIG_PATH=${networkConfigPaths.build}`;
       }
 
       return line;
     })
     .join("\n");
 
-  if (networkConfigPath !== nil) {
-    await Deno.copyFile(networkConfigPath, `${buildDir}/networkConfig.json`);
+  // Workaround TypeScript not understanding that this value can change in the
+  // map callback above.
+  networkConfigPaths = networkConfigPaths as NetworkConfigPaths;
+
+  if (networkConfigPaths !== nil) {
+    await Deno.copyFile(
+      networkConfigPaths.repo,
+      `${buildDir}/${networkConfigPaths.build}`,
+    );
   }
 
   await Deno.writeTextFile(`${buildDir}/.env`, dotEnv);
