@@ -100,7 +100,7 @@ Update these values in `./aggregator/.env`.
 ```
 RPC_URL=https://rinkeby.arbitrum.io/rpc
 ...
-NETWORK_CONFIG_PATH=../contracts/networks/rinkarby.json
+NETWORK_CONFIG_PATH=../contracts/networks/arbitrum-testnet.json
 PRIVATE_KEY_AGG=PK0
 PRIVATE_KEY_ADMIN=PK1
 ...
