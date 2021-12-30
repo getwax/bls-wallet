@@ -76,38 +76,33 @@ async function ensureFreshBuildDir() {
 }
 
 async function buildEnvironment() {
-  const originalDotEnv = await Deno.readTextFile(dotEnvPath);
+  const repoDotEnv = await Deno.readTextFile(dotEnvPath);
 
-  type NetworkConfigPaths = { repo: string; build: string } | nil;
-  let networkConfigPaths: NetworkConfigPaths = nil;
+  let networkConfigPaths: { repo: string; build: string } | nil = nil;
+  const buildDotEnvLines: string[] = [];
 
-  const dotEnv = originalDotEnv
-    .split("\n")
-    .map((line) => {
-      if (line.startsWith("NETWORK_CONFIG_PATH=")) {
-        const repoNetworkConfigPath = line.slice(
-          "NETWORK_CONFIG_PATH=".length,
-        );
+  for (const line of repoDotEnv.split("\n")) {
+    let buildLine = line;
 
-        const networkConfigHash = shortContentHash(repoNetworkConfigPath);
+    if (line.startsWith("NETWORK_CONFIG_PATH=")) {
+      const repoNetworkConfigPath = line.slice(
+        "NETWORK_CONFIG_PATH=".length,
+      );
 
-        networkConfigPaths = {
-          repo: repoNetworkConfigPath,
-          build: `networkConfig-${networkConfigHash}.json`,
-        };
+      const networkConfigHash = await shortContentHash(repoNetworkConfigPath);
 
-        // Need to replace this value with a build location because otherwise
-        // this file might not be included in the docker image
-        return `NETWORK_CONFIG_PATH=${networkConfigPaths.build}`;
-      }
+      networkConfigPaths = {
+        repo: repoNetworkConfigPath,
+        build: `networkConfig-${networkConfigHash}.json`,
+      };
 
-      return line;
-    })
-    .join("\n");
+      // Need to replace this value with a build location because otherwise
+      // this file might not be included in the docker image
+      buildLine = `NETWORK_CONFIG_PATH=${networkConfigPaths.build}`;
+    }
 
-  // Workaround TypeScript not understanding that this value can change in the
-  // map callback above.
-  networkConfigPaths = networkConfigPaths as NetworkConfigPaths;
+    buildDotEnvLines.push(buildLine);
+  }
 
   if (networkConfigPaths !== nil) {
     await Deno.copyFile(
@@ -116,7 +111,7 @@ async function buildEnvironment() {
     );
   }
 
-  await Deno.writeTextFile(`${buildDir}/.env`, dotEnv);
+  await Deno.writeTextFile(`${buildDir}/.env`, buildDotEnvLines.join("\n"));
 }
 
 async function copyTypescriptFiles() {
