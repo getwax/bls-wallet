@@ -5,5 +5,6 @@ declare module 'eth-query' {
       opts: { method: string; params?: unknown },
       cb: (err: Error, res: unknown) => void,
     ): void;
+    request<T>(opts: { method: string; params?: unknown }): Promise<T>;
   }
 }

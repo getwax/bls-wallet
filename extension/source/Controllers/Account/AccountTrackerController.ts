@@ -1,5 +1,5 @@
 import { Mutex } from 'async-mutex';
-import EthQuery from 'eth-query';
+import EthQuery from '../EthQuery';
 import BaseController from '../BaseController';
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';
@@ -125,28 +125,19 @@ class AccountTrackerController
     if (currentChainId === 'loading') {
       return;
     }
-    return new Promise((resolve, reject) => {
-      // query balance
-      this.ethQuery.sendAsync(
-        {
-          method: 'eth_getBalance',
-          params: [address, currentBlock],
-        },
-        (error, res) => {
-          if (error) return reject(error);
-          const result: AccountInformation = {
-            balance: res as string,
-          };
-          // update accounts state
-          const { accounts: newAccounts } = this.state;
-          // only populate if the entry is still present
-          if (!newAccounts[address]) return resolve();
-          newAccounts[address] = result;
-          this.update({ accounts: newAccounts });
-          resolve();
-        },
-      );
+    const balance = await this.ethQuery.request({
+      method: 'eth_getBalance',
+      params: [address, currentBlock],
     });
+    const result: AccountInformation = {
+      balance: balance as string,
+    };
+    // update accounts state
+    const { accounts: newAccounts } = this.state;
+    // only populate if the entry is still present
+    if (!newAccounts[address]) return;
+    newAccounts[address] = result;
+    this.update({ accounts: newAccounts });
   }
 }
 

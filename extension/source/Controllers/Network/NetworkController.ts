@@ -1,7 +1,7 @@
 import type { Block } from '@ethersproject/providers';
 import { JRPCEngine, JRPCMiddleware } from '@toruslabs/openlogin-jrpc';
 import { Mutex } from 'async-mutex';
-import EthQuery from 'eth-query';
+import EthQuery from '../EthQuery';
 
 import BaseController from '../BaseController';
 import {
@@ -155,26 +155,18 @@ export default class NetworkController
     if (EIPS[1559] !== undefined) {
       return EIPS[1559];
     }
-    return new Promise((resolve, reject) => {
-      this.ethQuery.sendAsync(
-        {
-          method: 'eth_getBlockByNumber',
-          params: ['latest', false],
-        },
-        (err: unknown, latestBlock: unknown) => {
-          if (err) reject(err);
-          const supportsEIP1559 =
-            (latestBlock as Block) &&
-            (latestBlock as Block).baseFeePerGas !== undefined;
-          this.update({
-            properties: {
-              EIPS: { 1559: supportsEIP1559 },
-            },
-          });
-          resolve(supportsEIP1559);
-        },
-      );
+    const latestBlock = await this.ethQuery.request<Block>({
+      method: 'eth_getBlockByNumber',
+      params: ['latest', false],
     });
+    const supportsEIP1559 =
+      latestBlock && latestBlock.baseFeePerGas !== undefined;
+    this.update({
+      properties: {
+        EIPS: { 1559: supportsEIP1559 },
+      },
+    });
+    return supportsEIP1559;
   }
 
   private configureProvider(): void {
