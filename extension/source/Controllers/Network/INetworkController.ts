@@ -15,6 +15,11 @@ import { BaseConfig, BaseState, IController } from '../interfaces';
  */
 export interface NetworkProperties {
   [key: string]: number | string | boolean | unknown;
+
+  EIPS: {
+    // undefined means we have not checked yet. (true or false means property is set)
+    [key: string | number]: boolean | undefined;
+  };
 }
 
 /**

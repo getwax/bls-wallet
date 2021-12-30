@@ -4,7 +4,7 @@
 export type Listener<T> = (state: T) => void;
 
 /**
- * Base controller configuration
+ * Base controller configuration (represents variables which subscriber doesn't care about)
  */
 export interface BaseConfig {
   [key: string]: unknown;
@@ -15,7 +15,7 @@ export interface BaseConfig {
 }
 
 /**
- * Base state representation
+ * Base state representation (represents variables which subscriber cares about)
  */
 export interface BaseState {
   [key: string]: unknown;

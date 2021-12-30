@@ -109,7 +109,10 @@ export default class NetworkController
   async lookupNetwork(): Promise<void> {
     const { rpcTarget, chainId } = this.getProviderConfig();
     if (!chainId || !rpcTarget || !this._provider) {
-      this.update({ chainId: 'loading', properties: {} });
+      this.update({
+        chainId: 'loading',
+        properties: { EIPS: { 1559: undefined } },
+      });
       return;
     }
     const query = this.ethQuery;
@@ -149,8 +152,8 @@ export default class NetworkController
   async getEIP1559Compatibility(): Promise<boolean> {
     const { EIPS } = this.state.properties;
     // log.info('checking eip 1559 compatibility', EIPS[1559])
-    if ((EIPS as any)[1559] !== undefined) {
-      return (EIPS as any)[1559];
+    if (EIPS[1559] !== undefined) {
+      return EIPS[1559];
     }
     return new Promise((resolve, reject) => {
       this.ethQuery.sendAsync(
@@ -242,7 +245,10 @@ export default class NetworkController
   }
 
   private refreshNetwork() {
-    this.update({ chainId: 'loading', properties: {} });
+    this.update({
+      chainId: 'loading',
+      properties: { EIPS: { 1559: undefined } },
+    });
     this.configureProvider();
     this.lookupNetwork();
   }
