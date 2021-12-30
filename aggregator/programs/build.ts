@@ -38,8 +38,6 @@ async function shortContentHash(filePath: string) {
 }
 
 async function BuildName() {
-  // TODO: Make build name change when networkConfig changes
-
   const commitShort = (await shell.Line("git", "rev-parse", "HEAD")).slice(
     0,
     7,
