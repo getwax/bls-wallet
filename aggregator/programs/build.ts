@@ -5,6 +5,7 @@ import { dirname, parseArgs } from "../deps.ts";
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";
 import dotEnvPath, { envName } from "../src/helpers/dotEnvPath.ts";
+import nil from "../src/helpers/nil.ts";
 
 const args = parseArgs(Deno.args);
 
@@ -41,7 +42,30 @@ try {
 
 await Deno.mkdir(buildDir);
 
-await Deno.copyFile(dotEnvPath, `${buildDir}/.env`);
+const originalDotEnv = await Deno.readTextFile(dotEnvPath);
+
+let networkConfigPath: string | nil = nil;
+
+const dotEnv = originalDotEnv
+  .split("\n")
+  .map((line) => {
+    if (line.startsWith("NETWORK_CONFIG_PATH=")) {
+      networkConfigPath = line.slice("NETWORK_CONFIG_PATH=".length);
+
+      // Need to replace this value with a fixed location because otherwise this
+      // file won't be included in the docker image
+      return "NETWORK_CONFIG_PATH=networkConfig.json";
+    }
+
+    return line;
+  })
+  .join("\n");
+
+if (networkConfigPath !== nil) {
+  await Deno.copyFile(networkConfigPath, `${buildDir}/networkConfig.json`);
+}
+
+await Deno.writeTextFile(`${buildDir}/.env`, dotEnv);
 
 for (const f of await allFiles()) {
   if (!f.endsWith(".ts")) {
