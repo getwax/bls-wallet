@@ -11,8 +11,6 @@ import { AGGREGATOR_URL /* , NETWORK_CONFIG */, CHAIN_RPC_URL } from '../env';
 
 (async () => {
   const app = new App(
-    // TODO Is this still needed for something else?
-    // await initBlsWalletSigner({ chainId: NETWORK_CONFIG.auxiliary.chainid }),
     new Aggregator(AGGREGATOR_URL),
     new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL),
     browser.storage.local,
