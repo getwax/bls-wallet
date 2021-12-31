@@ -17,23 +17,30 @@ export type BlsKey = {
   private: string;
 };
 
-const WalletHomeScreen = (props: { app: App }): React.ReactElement => (
+type Props = {
+  app: App;
+};
+
+const WalletHomeScreen = ({ app }: Props): React.ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
       <CompactQuillHeading />
     </div>
     <div className="section">
       <div className="field-list">
-        <BLSKeyField app={props.app} />
+        <BLSKeyField app={app} />
         <NetworkField />
         {(() => {
-          if (props.app.state.walletAddress.loadCounter > 0) {
+          const { walletAddress, walletState } = app.state;
+          if (walletAddress.loadCounter > 0 || !walletAddress.value) {
             return (
               <>
                 <div />
                 <Button
                   highlight={true}
-                  onPress={() => props.app.createWallet()}
+                  onPress={() => {
+                    /* no-op */
+                  }}
                   loading={true}
                 >
                   Loading...
@@ -42,38 +49,27 @@ const WalletHomeScreen = (props: { app: App }): React.ReactElement => (
             );
           }
 
-          if (!props.app.state.walletAddress.value) {
-            return (
-              <>
-                <div />
-                <Button
-                  highlight={true}
-                  onPress={() => props.app.createWallet()}
-                >
-                  Create BLS Wallet
-                </Button>
-              </>
-            );
-          }
-
           return (
             <AddressField
-              app={props.app}
-              address={props.app.state.walletAddress.value}
-              nonce={props.app.state.walletState.nonce}
+              app={app}
+              address={walletAddress.value}
+              nonce={walletState.nonce}
             />
           );
         })()}
       </div>
     </div>
-    <WalletContent app={props.app} />
+    <WalletContent app={app} />
   </div>
 );
 
 export default WalletHomeScreen;
 
-const BLSKeyField = (props: { app: App }): React.ReactElement => {
-  const publicKey = assertExists(props.app.PublicKey());
+const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
+  const publicKey = app.PublicKey();
+  if (!publicKey) {
+    return null;
+  }
 
   return (
     <div>
@@ -90,7 +86,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
         className="field-value grow"
         {...defineAction(() => {
           navigator.clipboard.writeText(publicKey);
-          props.app.pageEvents.emit(
+          app.pageEvents.emit(
             'notification',
             'info',
             'BLS public key copied to clipboard',
@@ -105,8 +101,8 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
           src={browser.runtime.getURL('assets/download.svg')}
           text="Backup private key"
           onAction={() =>
-            props.app.pageEvents.emit('overlay', (close) => (
-              <CopyPrivateKeyPrompt app={props.app} close={close} />
+            app.pageEvents.emit('overlay', (close) => (
+              <CopyPrivateKeyPrompt app={app} close={close} />
             ))
           }
         />
@@ -114,8 +110,8 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
           src={browser.runtime.getURL('assets/trashcan.svg')}
           text="Delete BLS key"
           onAction={() =>
-            props.app.pageEvents.emit('overlay', (close) => (
-              <DeleteKeyPrompt app={props.app} close={close} />
+            app.pageEvents.emit('overlay', (close) => (
+              <DeleteKeyPrompt app={app} close={close} />
             ))
           }
         />
@@ -183,8 +179,8 @@ const AddressField = (props: {
   </div>
 );
 
-const WalletContent = (props: { app: App }): React.ReactElement => {
-  if (!props.app.state.walletAddress.value) {
+const WalletContent = ({ app }: Props): React.ReactElement => {
+  if (!app.state.walletAddress.value) {
     return <></>;
   }
 
@@ -193,7 +189,7 @@ const WalletContent = (props: { app: App }): React.ReactElement => {
       <div className="balance">
         <div className="label">Balance:</div>
         <div className="value">
-          {formatBalance(props.app.state.walletState.balance, 'ETH')}
+          {formatBalance(app.state.walletState.balance, 'ETH')}
         </div>
       </div>
       <Button

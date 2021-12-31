@@ -164,6 +164,24 @@ export default class BlsWalletWrapper {
     return this.blsWalletSigner.sign(operation, this.privateKey);
   }
 
+  /**
+   * Gets the BLS public key associated with this wallet.
+   *
+   * @returns Wallet's BLS public key.
+   */
+  PublicKey(): PublicKey {
+    return this.blsWalletSigner.getPublicKey(this.privateKey);
+  }
+
+  /**
+   * Gets the BLS public key associated with this wallet as a concatenated string.
+   *
+   * @returns Wallet's BLS public key as a string.
+   */
+  PublicKeyStr(): string {
+    return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
+  }
+
   static async #BlsWalletSigner(
     signerOrProvider: SignerOrProvider,
   ): Promise<BlsWalletSigner> {

@@ -13,8 +13,6 @@ import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
 import getNetworkConfig from "../helpers/getNetworkConfig.ts";
 import AppEvent from "./AppEvent.ts";
-import WalletRouter from "./WalletRouter.ts";
-import WalletService from "./WalletService.ts";
 import BundleTable from "./BundleTable.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
@@ -35,8 +33,6 @@ export default async function app(emit: (evt: AppEvent) => void) {
     env.PRIVATE_KEY_AGG,
   );
 
-  const walletService = new WalletService();
-
   const bundleService = new BundleService(
     emit,
     clock,
@@ -54,7 +50,6 @@ export default async function app(emit: (evt: AppEvent) => void) {
 
   const routers = [
     BundleRouter(bundleService),
-    WalletRouter(walletService),
     AdminRouter(adminService),
   ];
 
