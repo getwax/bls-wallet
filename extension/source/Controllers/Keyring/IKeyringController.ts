@@ -1,22 +1,25 @@
-import { BaseState } from '../interfaces';
+import { Bundle, Operation } from 'bls-wallet-clients';
+import { BaseConfig, BaseState } from '../interfaces';
+import { SafeEventEmitterProvider } from '../Network/INetworkController';
 
 export type KeyPair = {
   /**
    * Hex string without 0x prefix
    */
-  publicKey: string;
-  /**
-   * Hex string without 0x prefix
-   */
   privateKey: string;
   /**
-   * Address of the key pair
+   * Address of the deployed contract wallet
    */
   address: string;
 };
 
+export interface KeyringControllerConfig extends BaseConfig {
+  provider: SafeEventEmitterProvider;
+}
+
 export interface KeyringControllerState extends BaseState {
   wallets: KeyPair[];
+  chainId: string;
 }
 
 export interface IKeyringController {
@@ -26,10 +29,15 @@ export interface IKeyringController {
   getAccounts(): string[];
 
   /**
+   * Creates a new key pair
+   */
+  createAccount(): Promise<string>;
+
+  /**
    * Imports a key pair
    * @param privateKey - Hex string without 0x prefix
    */
-  importAccount(privateKey: string): string;
+  importAccount(privateKey: string): Promise<string>;
 
   /**
    * Removes a key pair
@@ -39,8 +47,8 @@ export interface IKeyringController {
 
   /**
    * Signs a transaction of Type T
+   * @param address - account to sign the tx with
    * @param tx - Transaction to sign
-   * @param withAddress - account to sign the tx with
    */
-  //   signTransaction<T>(tx: T, withAddress: string): T;
+  signTransactions(address: string, tx: Operation): Promise<Bundle>;
 }
