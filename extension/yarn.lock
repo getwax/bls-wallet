@@ -2483,10 +2483,10 @@ bl@^4.0.3:
     inherits "^2.0.4"
     readable-stream "^3.4.0"
 
-bls-wallet-clients@0.5.3-8da99e2:
-  version "0.5.3-8da99e2"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.5.3-8da99e2.tgz#134ed5cb0d3e1d233537dcb052d9d1dcb98464f6"
-  integrity sha512-eEnlfV6I0V/sE06xWPJQ/1CROqYS2qTBPSDQta4LlgbeJ1EphccbR+4GDrj+eXk7MD4Z7R6IJ6HHcM7kyV61UQ==
+bls-wallet-clients@0.5.3:
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.5.3.tgz#6a9cab07082040837f57856b528f56ea3c542277"
+  integrity sha512-hKo4RQ566f3J3Wu6Z8KgRnBc6cMrweK1O7RUjQs2sXNxOze/pYvAnqnlisfU5GF9cHQTM4txykCsJdsYxCAOsg==
   dependencies:
     ethers "^5.5.2"
     mcl-wasm "0.7.6"
