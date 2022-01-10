@@ -4,10 +4,10 @@ import { browser } from 'webextension-polyfill-ts';
 const LargeQuillHeading = (): React.ReactElement => (
   <div className="large-quill-heading">
     <img
-      src={browser.runtime.getURL('assets/logo.svg')}
+      src={browser.runtime.getURL('assets/logo-with-text.svg')}
       alt="Quill"
-      width="80"
-      height="56"
+      width="100"
+      height="35"
     />
   </div>
 );
