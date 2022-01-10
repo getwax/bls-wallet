@@ -187,6 +187,38 @@
           width: 258px;
         }
       }
+
+      .radios-section {
+        text-align: center;
+
+        .radios-container {
+          display: inline-block;
+
+          .radio {
+            position: relative;
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-top: 10px;
+            border-radius: 100%;
+            border: 1px solid $grey-1;
+
+            &:not(:first-child) {
+              margin-left: 12px;
+            }
+
+            .radio-filler {
+              position: absolute;
+              left: 1px;
+              top: 1px;
+              width: 10px;
+              height: 10px;
+              background-color: $primary-base;
+              border-radius: 100%;
+            }
+          }
+        }
+      }
     }
   }
 }

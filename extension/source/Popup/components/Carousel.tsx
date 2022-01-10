@@ -148,7 +148,15 @@ export default class Carousel extends React.Component<Props, State> {
             />
           </div>
         </div>
-        <div className="radios-container">Radios...</div>
+        <div className="radios-section">
+          <div className="radios-container">
+            <div className="radio">
+              <div className="radio-filler" />
+            </div>
+            <div className="radio" />
+            <div className="radio" />
+          </div>
+        </div>
       </div>
     );
   }
