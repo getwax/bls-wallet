@@ -16,9 +16,13 @@ export default class WelcomeScreen extends React.Component<Props, State> {
     return (
       <div className="welcome-screen">
         <LargeQuillHeading />
-        <div className="welcome-carousel-container">
-          <Carousel />
-        </div>
+        <Carousel
+          images={[
+            browser.runtime.getURL('assets/welcome-art-1.svg'),
+            browser.runtime.getURL('assets/welcome-art-2.svg'),
+            browser.runtime.getURL('assets/welcome-art-3.svg'),
+          ]}
+        />
         <div className="body">
           <h3>Welcome to Quill!</h3>
           <p>Your digital wallet for a digital world.</p>

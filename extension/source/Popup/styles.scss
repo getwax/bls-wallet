@@ -172,5 +172,23 @@
         gap: 12px;
       }
     }
+
+    .carousel {
+      .image-container {
+        position: relative;
+        overflow: hidden;
+        max-width: 100%;
+        height: 215px;
+
+        .image-slider {
+          position: relative;
+          display: flex;
+          flex-direction: row;
+          width: 1000vw;
+          left: 71px;
+          gap: 258px;
+        }
+      }
+    }
   }
 }
