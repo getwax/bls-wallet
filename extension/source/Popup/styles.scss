@@ -213,8 +213,13 @@
               top: 1px;
               width: 10px;
               height: 10px;
-              background-color: $primary-base;
+              background-color: transparent;
               border-radius: 100%;
+              transition: background-color 500ms ease;
+
+              &.active {
+                background-color: $primary-base;
+              }
             }
           }
         }

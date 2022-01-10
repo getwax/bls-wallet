@@ -150,11 +150,24 @@ export default class Carousel extends React.Component<Props, State> {
         </div>
         <div className="radios-section">
           <div className="radios-container">
-            <div className="radio">
-              <div className="radio-filler" />
-            </div>
-            <div className="radio" />
-            <div className="radio" />
+            {this.props.images.map((imgSrc, i) => {
+              const fillerClasses = ['radio-filler'];
+
+              if (
+                (this.state.imageA.position === 'middle' &&
+                  this.state.imageA.index === i) ||
+                (this.state.imageB.position === 'middle' &&
+                  this.state.imageB.index === i)
+              ) {
+                fillerClasses.push('active');
+              }
+
+              return (
+                <div className="radio" key={imgSrc}>
+                  <div className={fillerClasses.join(' ')} />
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
