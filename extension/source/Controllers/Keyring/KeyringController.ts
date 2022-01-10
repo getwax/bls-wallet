@@ -1,8 +1,4 @@
-import {
-  BlsWalletWrapper,
-  initBlsWalletSigner,
-  Operation,
-} from 'bls-wallet-clients';
+import { BlsWalletWrapper, Operation } from 'bls-wallet-clients';
 import generateRandomHex from '../../helpers/generateRandomHex';
 import BaseController from '../BaseController';
 import {
@@ -10,7 +6,7 @@ import {
   KeyringControllerConfig,
   KeyringControllerState,
 } from './IKeyringController';
-import { NETWORK_CONFIG, PROVIDER_URL } from '../../env';
+import { NETWORK_CONFIG, CHAIN_RPC_URL } from '../../env';
 import { ethers } from 'ethers';
 
 export default class KeyringController
@@ -61,10 +57,10 @@ export default class KeyringController
   }
 
   async signTransactions(address: string, tx: Operation) {
-    const signer = await this._getBLSSinger();
     const privKey = this._getPrivateKeyFor(address);
+    const signer = await this._getBLSSinger(privKey);
 
-    return signer.sign(tx, privKey);
+    return signer.sign(tx);
   }
 
   async _createAccountAndUpdate(privateKey: string): Promise<string> {
@@ -92,7 +88,7 @@ export default class KeyringController
   }
 
   private _getContractWalletAddress(privateKey: string) {
-    const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
+    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
@@ -100,9 +96,12 @@ export default class KeyringController
     );
   }
 
-  private async _getBLSSinger() {
-    return initBlsWalletSigner({
-      chainId: Number(this.state.chainId),
-    });
+  private async _getBLSSinger(privateKey: string) {
+    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
+    return BlsWalletWrapper.connect(
+      privateKey,
+      NETWORK_CONFIG.addresses.verificationGateway,
+      provider,
+    );
   }
 }
