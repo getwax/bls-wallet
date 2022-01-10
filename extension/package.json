@@ -27,6 +27,7 @@
   "dependencies": {
     "@babel/runtime": "^7.14.0",
     "advanced-css-reset": "^1.2.2",
+    "async-mutex": "^0.3.2",
     "bls-wallet-clients": "0.5.3",
     "dotenv-webpack": "^7.0.3",
     "emoji-log": "^1.0.2",

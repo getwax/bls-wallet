@@ -202,6 +202,7 @@
             margin-top: 10px;
             border-radius: 100%;
             border: 1px solid $grey-1;
+            cursor: pointer;
 
             &:not(:first-child) {
               margin-left: 12px;

@@ -1,13 +1,13 @@
 import * as React from 'react';
+import { Mutex } from 'async-mutex';
+
 import TaskQueue from '../../common/TaskQueue';
 import delay from '../../helpers/delay';
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 type Props = {
   images: string[];
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-types
 type State = {
   imageA: {
     index: number;
@@ -29,6 +29,8 @@ const positionMap = {
 
 export default class Carousel extends React.Component<Props, State> {
   cleanupTasks = new TaskQueue();
+  intervalId = -1;
+  transitionMutex = new Mutex();
 
   constructor(props: Props) {
     super(props);
@@ -48,12 +50,12 @@ export default class Carousel extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    const intervalId = setInterval(() => {
-      this.nextImage();
-    }, 5000);
+    this.intervalId = setInterval(() => {
+      this.transitionImage();
+    }, 5000) as unknown as number;
 
     this.cleanupTasks.push(() => {
-      clearInterval(intervalId);
+      clearInterval(this.intervalId);
     });
   }
 
@@ -61,7 +63,9 @@ export default class Carousel extends React.Component<Props, State> {
     this.cleanupTasks.run();
   }
 
-  async nextImage() {
+  async transitionImage(index?: number) {
+    const releaseMutex = await this.transitionMutex.acquire();
+
     let primaryImageKey: 'imageA' | 'imageB';
     let secondaryImageKey: 'imageA' | 'imageB';
 
@@ -82,6 +86,11 @@ export default class Carousel extends React.Component<Props, State> {
       [secondaryImageKey]: {
         ...this.state[secondaryImageKey],
         position: 'middle',
+        ...(index === undefined
+          ? {}
+          : {
+              index,
+            }),
       },
     });
 
@@ -107,6 +116,8 @@ export default class Carousel extends React.Component<Props, State> {
         resetting: false,
       },
     });
+
+    releaseMutex();
   }
 
   render(): React.ReactNode {
@@ -163,7 +174,20 @@ export default class Carousel extends React.Component<Props, State> {
               }
 
               return (
-                <div className="radio" key={imgSrc}>
+                <div
+                  className="radio"
+                  key={imgSrc}
+                  onClick={() => {
+                    clearInterval(this.intervalId);
+                    this.transitionImage(Number(i));
+                  }}
+                  onKeyDown={(evt) => {
+                    if (['Space', 'Enter'].includes(evt.code)) {
+                      clearInterval(this.intervalId);
+                      this.transitionImage(Number(i));
+                    }
+                  }}
+                >
                   <div className={fillerClasses.join(' ')} />
                 </div>
               );
