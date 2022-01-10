@@ -15,6 +15,11 @@
     text-align: center;
   }
 
+  h3 {
+    font-size: 1.5em;
+    margin-bottom: 0;
+  }
+
   .screen {
     position: absolute;
     top: 0;
@@ -138,6 +143,17 @@
 
     &.loading {
       filter: grayscale(50%);
+    }
+
+    .icon-button-content {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+
+      .icon-button-icon {
+        width: 24px;
+        height: 23px;
+      }
     }
   }
 

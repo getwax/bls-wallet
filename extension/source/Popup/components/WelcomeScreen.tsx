@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { browser } from 'webextension-polyfill-ts';
 import Button from '../../components/Button';
 
 import LargeQuillHeading from './LargeQuillHeading';
@@ -6,51 +7,27 @@ import LargeQuillHeading from './LargeQuillHeading';
 // eslint-disable-next-line @typescript-eslint/ban-types
 type Props = {};
 
-type State = {
-  pasteText: string;
-};
+// eslint-disable-next-line @typescript-eslint/ban-types
+type State = {};
 
 export default class WelcomeScreen extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-
-    this.state = {
-      pasteText: '',
-    };
-  }
-
   render(): React.ReactNode {
     return (
       <div className="key-entry-screen">
         <LargeQuillHeading />
         <div className="body">
-          <Button onPress={() => {}} highlight={this.state.pasteText === ''}>
-            Create BLS Key
+          <h3>Welcome to Quill!</h3>
+          <p>Your digital wallet for a digital world.</p>
+          <Button
+            onPress={() => {}}
+            highlight={true}
+            icon={{
+              src: browser.runtime.getURL('assets/arrow-small.svg'),
+              px: 19,
+            }}
+          >
+            Get Started
           </Button>
-          <div style={{ color: '#ccc' }}>OR</div>
-          <div style={{ flexGrow: 1, position: 'relative' }}>
-            <textarea
-              placeholder="Paste BLS Private Key..."
-              value={this.state.pasteText}
-              onInput={(evt) => {
-                this.setState({
-                  pasteText: (evt.target as HTMLTextAreaElement).value,
-                });
-              }}
-            />
-            <div
-              className="restore-button"
-              style={this.state.pasteText === '' ? { display: 'none' } : {}}
-            >
-              <Button onPress={() => {}} highlight={true}>
-                Restore
-              </Button>
-            </div>
-          </div>
-          <div className="notice">
-            Quill&apos;s development is in Alpha, please do not to use large
-            sums of money
-          </div>
         </div>
       </div>
     );
