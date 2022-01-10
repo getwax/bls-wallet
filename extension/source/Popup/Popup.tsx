@@ -7,6 +7,7 @@ import LoadingScreen from './components/LoadingScreen';
 import Page from '../components/Page';
 import WalletHomeScreen from './components/WalletHomeScreen';
 import WelcomeScreen from './components/WelcomeScreen';
+import KeyEntryScreen from './components/KeyEntryScreen';
 
 type Props = {
   appPromise: Promise<App>;
@@ -16,6 +17,8 @@ type State = {
   app?: App;
   appState?: AppState;
 };
+
+const useNewUI = true;
 
 export default class Popup extends React.Component<Props, State> {
   cleanupTasks = new TaskQueue();
@@ -54,8 +57,11 @@ export default class Popup extends React.Component<Props, State> {
       <Page classes={['popup']} events={this.state.app.pageEvents}>
         {(() => {
           if (this.state.app.state.privateKey === undefined) {
-            // return <KeyEntryScreen app={this.state.app} />;
-            return <WelcomeScreen />;
+            return useNewUI ? (
+              <WelcomeScreen />
+            ) : (
+              <KeyEntryScreen app={this.state.app} />
+            );
           }
 
           return <WalletHomeScreen app={this.state.app} />;
