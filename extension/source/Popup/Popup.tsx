@@ -5,8 +5,8 @@ import type App from '../App';
 import { AppState } from '../App';
 import LoadingScreen from './components/LoadingScreen';
 import Page from '../components/Page';
-import KeyEntryScreen from './components/KeyEntryScreen';
 import WalletHomeScreen from './components/WalletHomeScreen';
+import WelcomeScreen from './components/WelcomeScreen';
 
 type Props = {
   appPromise: Promise<App>;
@@ -54,7 +54,8 @@ export default class Popup extends React.Component<Props, State> {
       <Page classes={['popup']} events={this.state.app.pageEvents}>
         {(() => {
           if (this.state.app.state.privateKey === undefined) {
-            return <KeyEntryScreen app={this.state.app} />;
+            // return <KeyEntryScreen app={this.state.app} />;
+            return <WelcomeScreen />;
           }
 
           return <WalletHomeScreen app={this.state.app} />;
