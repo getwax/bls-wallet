@@ -29,7 +29,7 @@
      inkscape:window-width="2339"
      inkscape:window-height="1081"
      inkscape:window-x="542"
-     inkscape:window-y="119"
+     inkscape:window-y="91"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg10"
      inkscape:snap-text-baseline="true" />
@@ -37,7 +37,7 @@
      d="M0 16.9058C0 9.36329 0 5.59205 2.34315 3.24891C4.68629 0.905762 8.45753 0.905762 16 0.905762H242C249.542 0.905762 253.314 0.905762 255.657 3.24891C258 5.59205 258 9.36329 258 16.9058V198.906C258 206.448 258 210.219 255.657 212.563C253.314 214.906 249.542 214.906 242 214.906H16C8.45753 214.906 4.68629 214.906 2.34315 212.563C0 210.219 0 206.448 0 198.906V16.9058Z"
      fill="#FBFCFD"
      id="path2"
-     style="fill:#dde5ee;fill-opacity:1" />
+     style="fill:#f5f7fa;fill-opacity:1" />
   <path
      d="m 240.42153,15.664105 h -14 c -1.105,0 -2,0.8954 -2,2.0002 v 14 c 0,1.104 0.895,2 2,2 h 14 c 1.105,0 2,-0.896 2,-2 v -14 c 0,-1.1048 -0.895,-2.0002 -2,-2.0002 z"
      stroke="#1e7ee5"
