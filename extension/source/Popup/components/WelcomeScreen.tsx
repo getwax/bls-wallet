@@ -20,7 +20,7 @@ const WelcomeScreen: React.FunctionComponent = () => (
       <p>Your digital wallet for a digital world.</p>
       <div className="get-started-container">
         <Button
-          onPress={() => {}}
+          onPress={() => window.open(browser.runtime.getURL('quillPage.html'))}
           highlight={true}
           icon={{
             src: browser.runtime.getURL('assets/arrow-small.svg'),
