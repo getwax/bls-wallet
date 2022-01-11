@@ -161,4 +161,21 @@ describe("index", () => {
 
     expect(verify(aggAggBundle)).to.equal(true);
   });
+
+  it("generates expected publicKeyStr", async () => {
+    const { getPublicKeyStr } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+    });
+
+    expect(getPublicKeyStr(samples.privateKey)).to.equal(
+      [
+        "0x",
+        "0127eaaf599e0e5997ebff004ae96b61afef4c35d9d67277ebd32a08bc42e2eb",
+        "01dc98a8d2e5ac73933935dbb2888c6719914e86f14de30bf441b951867e27cd",
+        "2f29d73e617ee30597f79b3fe567a11eb3bea1a2625ccb3fcb9635edf1d2f429",
+        "27fac8b975dd299618e7f48753fdfa492f11f701445cdd7c3ca98bf5c386ec65",
+      ].join(""),
+    );
+  });
 });
