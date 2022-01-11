@@ -1,22 +1,18 @@
 import { expect } from "chai";
-
+import { BigNumber } from "ethers";
+import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
+import { BLSOpen } from "../typechain";
+import { ActionData, BlsWalletWrapper } from "../clients";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-
 import {
   proxyAdminBundle,
   proxyAdminCall,
 } from "../shared/helpers/callProxyAdmin";
 import Create2Fixture from "../shared/helpers/Create2Fixture";
-import { BLSOpen } from "../typechain";
-import { BigNumber } from "ethers";
-import defaultDomain from "../clients/src/signer/defaultDomain";
-import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
-import { solidityPack } from "ethers/lib/utils";
-import { ActionData } from "../clients/src";
 
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
@@ -93,13 +89,15 @@ describe("Upgrade", async function () {
     const walletOldVg = await fx.lazyBlsWallets[0]();
     const walletAddress = walletOldVg.address;
     const blsSecret = walletOldVg.privateKey;
-    const blsSigner = (await BlsSignerFactory.new()).getSigner(
-      defaultDomain,
+
+    const wallet = await BlsWalletWrapper.connect(
       blsSecret,
+      fx.verificationGateway.address,
+      fx.provider,
     );
     // Sign simple address message
     const addressMessage = solidityPack(["address"], [walletAddress]);
-    const signedAddress = blsSigner.sign(addressMessage);
+    const addressSignature = wallet.signMessage(addressMessage);
 
     const proxyAdmin2Address = await vg2.walletProxyAdmin();
     // Get admin action to change proxy
@@ -126,7 +124,7 @@ describe("Upgrade", async function () {
       ethValue: BigNumber.from(0),
       contractAddress: vg2.address,
       encodedFunction: vg2.interface.encodeFunctionData("setExternalWallet", [
-        signedAddress,
+        addressSignature,
         walletOldVg.PublicKey(),
       ]),
     };

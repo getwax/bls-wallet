@@ -1,5 +1,4 @@
-import { keccak256 } from "@ethersproject/keccak256";
-import { pack as solidityPack } from "@ethersproject/solidity";
+import { keccak256, solidityPack } from "ethers/lib/utils";
 import { Operation } from "./types";
 
 export default (chainId: number) =>

@@ -1,9 +1,9 @@
 import { solidityKeccak256 } from "ethers/lib/utils";
-import { BlsSignerFactory } from "../../deps/hubble-bls/signer";
+import { signer } from "@thehubbleproject/bls";
 
 import getPublicKey from "./getPublicKey";
 
-export default (signerFactory: BlsSignerFactory, domain: Uint8Array) =>
+export default (signerFactory: signer.BlsSignerFactory, domain: Uint8Array) =>
   (privateKey: string): string => {
     const publicKey = getPublicKey(signerFactory, domain)(privateKey);
     return solidityKeccak256(

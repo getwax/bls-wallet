@@ -26,14 +26,14 @@ export {
   Contract,
   ethers,
   Wallet,
-} from "https://esm.sh/ethers@5.5.2";
+} from "https://esm.sh/ethers@5.5.4";
 
-import { ethers } from "https://esm.sh/ethers@5.5.2";
+import { ethers } from "https://esm.sh/ethers@5.5.4";
 export type {
   BaseContract,
   BigNumberish,
   BytesLike,
-} from "https://esm.sh/ethers@5.5.2";
+} from "https://esm.sh/ethers@5.5.4";
 export const keccak256 = ethers.utils.keccak256;
 
 export type {

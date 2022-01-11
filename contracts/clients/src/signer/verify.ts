@@ -1,5 +1,5 @@
+import { signer } from "@thehubbleproject/bls";
 import { BigNumber } from "ethers";
-import * as hubbleBls from "../../deps/hubble-bls";
 
 import encodeMessageForSigning from "./encodeMessageForSigning";
 import type { Bundle } from "./types";
@@ -12,7 +12,7 @@ export default (domain: Uint8Array, chainId: number) =>
       return true;
     }
 
-    const verifier = new hubbleBls.signer.BlsVerifier(domain);
+    const verifier = new signer.BlsVerifier(domain);
 
     return verifier.verifyMultiple(
       [

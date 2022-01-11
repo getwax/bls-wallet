@@ -164,7 +164,9 @@ TS2300 [ERROR]: Duplicate identifier 'TypedArray'.
 
 You need to reload modules (`-r`):
 
-`deno run -r --allow-net --allow-env --allow-read --unstable ./programs/aggregator.ts`
+```sh
+deno run -r --allow-net --allow-env --allow-read --unstable ./programs/aggregator.ts
+```
 
 ### Notable Components
 

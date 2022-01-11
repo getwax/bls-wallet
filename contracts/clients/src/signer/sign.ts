@@ -1,10 +1,10 @@
-import * as hubbleBls from "../../deps/hubble-bls";
+import { signer } from "@thehubbleproject/bls";
 
 import encodeMessageForSigning from "./encodeMessageForSigning";
 import { Bundle, Operation } from "./types";
 
 export default (
-    signerFactory: hubbleBls.signer.BlsSignerFactory,
+    signerFactory: signer.BlsSignerFactory,
     domain: Uint8Array,
     chainId: number,
   ) =>

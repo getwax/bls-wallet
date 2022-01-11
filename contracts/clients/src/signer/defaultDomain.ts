@@ -1,4 +1,3 @@
-import { arrayify } from "@ethersproject/bytes";
-import { keccak256 } from "@ethersproject/keccak256";
+import { arrayify, keccak256 } from "ethers/lib/utils";
 
 export default arrayify(keccak256("0xfeedbee5"));
