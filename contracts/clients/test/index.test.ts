@@ -1,13 +1,15 @@
 import "source-map-support/register";
 
-import { BigNumber } from "@ethersproject/bignumber";
-import { arrayify } from "@ethersproject/bytes";
-import { keccak256 } from "@ethersproject/keccak256";
+import * as ethers from "ethers";
+import { BigNumber } from "ethers";
 import { expect } from "chai";
 
 import { initBlsWalletSigner, Bundle, Operation } from "../src/signer";
 
 import Range from "./helpers/Range";
+
+const keccak256 = ethers.utils.keccak256;
+const arrayify = ethers.utils.arrayify;
 
 const domain = arrayify(keccak256("0xfeedbee5"));
 const weiPerToken = BigNumber.from(10).pow(18);
