@@ -7,7 +7,7 @@ import QuickRow from './QuickRow';
 import WorkflowNumbers from './WorkflowNumbers';
 
 const SetPasswordPage: React.FunctionComponent = () => (
-  <div className="set-password-page">
+  <div className="set-password-page" style={{ height: '100vh' }}>
     <QuickRow>
       <QuickColumn>
         <div className="artwork" />
