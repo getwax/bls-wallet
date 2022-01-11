@@ -1,24 +1,11 @@
 import * as React from 'react';
 import { Mutex } from 'async-mutex';
 
-import TaskQueue from '../../common/TaskQueue';
 import delay from '../../helpers/delay';
 
-type Props = {
-  images: string[];
-};
-
-type State = {
-  imageA: {
-    index: number;
-    position: 'left' | 'middle' | 'right';
-    resetting: boolean;
-  };
-  imageB: {
-    index: number;
-    position: 'left' | 'middle' | 'right';
-    resetting: boolean;
-  };
+type ImageState = {
+  index: number;
+  position: 'left' | 'middle' | 'right';
 };
 
 const positionMap = {
@@ -27,174 +14,164 @@ const positionMap = {
   right: 71 + 516,
 };
 
-export default class Carousel extends React.Component<Props, State> {
-  cleanupTasks = new TaskQueue();
-  intervalId = -1;
-  transitionMutex = new Mutex();
+function useGetSet<T>(initialValue: T) {
+  const [, reactSetValue] = React.useState(initialValue);
 
-  constructor(props: Props) {
-    super(props);
+  let value = initialValue;
 
-    this.state = {
-      imageA: {
-        index: 0,
-        position: 'middle',
-        resetting: false,
-      },
-      imageB: {
-        index: 1,
-        position: 'right',
-        resetting: false,
-      },
-    };
-  }
+  return {
+    get: () => value,
+    set: (newValue: T) => {
+      value = newValue;
+      reactSetValue(newValue);
+    },
+    update: (partialNewValue: Partial<T>) => {
+      value = { ...value, partialNewValue };
+      reactSetValue(value);
+    },
+  };
+}
 
-  componentDidMount() {
-    this.intervalId = setInterval(() => {
-      this.transitionImage();
-    }, 5000) as unknown as number;
+const ImageSlider: React.FunctionComponent<{
+  url: string;
+  position: 'left' | 'middle' | 'right';
+  resetting: boolean;
+}> = ({ url, position, resetting }) => {
+  return (
+    <div
+      className="image-slider"
+      key="A"
+      style={{
+        left: `${positionMap[position]}px`,
+        ...(resetting ? { transition: 'none', visibility: 'hidden' } : {}),
+      }}
+    >
+      <img src={url} width="258" height="215" alt="artwork" />
+    </div>
+  );
+};
 
-    this.cleanupTasks.push(() => {
-      clearInterval(this.intervalId);
-    });
-  }
+const Carousel: React.FunctionComponent<{
+  images: string[];
+}> = ({ images }) => {
+  const imageA = useGetSet<ImageState>({
+    index: 0,
+    position: 'middle',
+  });
 
-  componentWillUnmount() {
-    this.cleanupTasks.run();
-  }
+  const imageB = useGetSet<ImageState>({
+    index: 1,
+    position: 'right',
+  });
 
-  async transitionImage(index?: number) {
-    const releaseMutex = await this.transitionMutex.acquire();
+  const [resetting, setResetting] = React.useState(false);
+  const [transitionMutex] = React.useState(new Mutex());
+  const [intervalId, setIntervalId] = React.useState(-1);
 
-    let primaryImageKey: 'imageA' | 'imageB';
-    let secondaryImageKey: 'imageA' | 'imageB';
+  const transitionImage = React.useCallback(
+    (index?: number) => {
+      (async () => {
+        const releaseMutex = await transitionMutex.acquire();
 
-    if (this.state.imageA.position === 'middle') {
-      primaryImageKey = 'imageA';
-      secondaryImageKey = 'imageB';
-    } else {
-      primaryImageKey = 'imageB';
-      secondaryImageKey = 'imageA';
-    }
+        const indexUpdate = { index: index ?? imageB.get().index };
+        console.log(JSON.stringify({ index, indexUpdate }));
 
-    this.setState({
-      ...this.state,
-      [primaryImageKey]: {
-        ...this.state[primaryImageKey],
-        position: 'left',
-      },
-      [secondaryImageKey]: {
-        ...this.state[secondaryImageKey],
-        position: 'middle',
-        ...(index === undefined
-          ? {}
-          : {
-              index,
-            }),
-      },
-    });
+        imageA.update({ position: 'left' });
+        imageB.update({ position: 'middle', ...indexUpdate });
 
-    await delay(550);
+        await delay(550);
 
-    this.setState({
-      ...this.state,
-      [primaryImageKey]: {
-        ...this.state[primaryImageKey],
-        resetting: true,
-        position: 'right',
-        index:
-          (this.state[primaryImageKey].index + 2) % this.props.images.length,
-      },
-    });
+        setResetting(true);
+        imageA.update({ position: 'middle', ...indexUpdate });
 
-    await delay(50);
+        const newImageB: ReturnType<typeof imageB['get']> = {
+          ...imageB.get(),
+          position: 'right',
+          index: (imageB.get().index + 1) % images.length,
+        };
 
-    this.setState({
-      ...this.state,
-      [primaryImageKey]: {
-        ...this.state[primaryImageKey],
-        resetting: false,
-      },
-    });
+        imageB.update(newImageB);
 
-    releaseMutex();
-  }
+        console.log(newImageB);
 
-  render(): React.ReactNode {
-    return (
-      <div className="carousel">
-        <div className="image-container">
-          <div
-            className="image-slider"
-            key="A"
-            style={{
-              left: `${positionMap[this.state.imageA.position]}px`,
-              ...(this.state.imageA.resetting
-                ? { transition: 'none', visibility: 'hidden' }
-                : {}),
-            }}
-          >
-            <img
-              src={this.props.images[this.state.imageA.index]}
-              width="258"
-              height="215"
-              alt="artwork"
-            />
-          </div>
-          <div
-            className="image-slider"
-            key="B"
-            style={{
-              left: `${positionMap[this.state.imageB.position]}px`,
-              ...(this.state.imageB.resetting
-                ? { transition: 'none', visibility: 'hidden' }
-                : {}),
-            }}
-          >
-            <img
-              src={this.props.images[this.state.imageB.index]}
-              width="258"
-              height="215"
-              alt="artwork"
-            />
-          </div>
-        </div>
-        <div className="radios-section">
-          <div className="radios-container">
-            {this.props.images.map((imgSrc, i) => {
-              const fillerClasses = ['radio-filler'];
+        await delay(50);
 
-              if (
-                (this.state.imageA.position === 'middle' &&
-                  this.state.imageA.index === i) ||
-                (this.state.imageB.position === 'middle' &&
-                  this.state.imageB.index === i)
-              ) {
-                fillerClasses.push('active');
-              }
+        setResetting(false);
 
-              return (
-                <div
-                  className="radio"
-                  key={imgSrc}
-                  onClick={() => {
-                    clearInterval(this.intervalId);
-                    this.transitionImage(Number(i));
-                  }}
-                  onKeyDown={(evt) => {
-                    if (['Space', 'Enter'].includes(evt.code)) {
-                      clearInterval(this.intervalId);
-                      this.transitionImage(Number(i));
-                    }
-                  }}
-                >
-                  <div className={fillerClasses.join(' ')} />
-                </div>
-              );
-            })}
-          </div>
+        releaseMutex();
+      })();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [imageA, imageB],
+  );
+
+  React.useEffect(() => {
+    console.log('Running useEffect');
+    setIntervalId(setInterval(transitionImage, 5000) as unknown as number);
+
+    return () => clearInterval(intervalId);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  console.log(
+    'rendering',
+    JSON.stringify({
+      imageA: imageA.get(),
+      imageB: imageB.get(),
+    }),
+  );
+
+  return (
+    <div className="carousel">
+      <div className="image-container">
+        <ImageSlider
+          url={images[imageA.get().index]}
+          position={imageA.get().position}
+          resetting={resetting}
+        />
+        <ImageSlider
+          url={images[imageB.get().index]}
+          position={imageB.get().position}
+          resetting={resetting}
+        />
+      </div>
+      <div className="radios-section">
+        <div className="radios-container">
+          {images.map((imgSrc, i) => {
+            const fillerClasses = ['radio-filler'];
+
+            if (
+              (imageA.get().position === 'middle' &&
+                imageA.get().index === i) ||
+              (imageB.get().position === 'middle' && imageB.get().index === i)
+            ) {
+              fillerClasses.push('active');
+            }
+
+            return (
+              <div
+                className="radio"
+                key={imgSrc}
+                onClick={() => {
+                  clearInterval(intervalId);
+                  transitionImage(Number(i));
+                }}
+                onKeyDown={(evt) => {
+                  if (['Space', 'Enter'].includes(evt.code)) {
+                    clearInterval(intervalId);
+                    transitionImage(Number(i));
+                  }
+                }}
+              >
+                <div className={fillerClasses.join(' ')} />
+              </div>
+            );
+          })}
         </div>
       </div>
-    );
-  }
-}
+    </div>
+  );
+};
+
+export default Carousel;
