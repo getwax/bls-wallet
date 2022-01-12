@@ -27,12 +27,47 @@ const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
         }}
       />
       <div className="info-text">
-        <h3>What is Quill?</h3>
-        <p>
-          The world is changing and Quill will be your co-pilot as you engage
-          with many new and exciting opportunities provided by the Ethereum
-          blockchain.
-        </p>
+        {[
+          <>
+            <h3>What is Quill?</h3>
+            <p>
+              The world is changing and Quill will be your co-pilot as you
+              engage with many new and exciting opportunities provided by the
+              Ethereum blockchain.
+            </p>
+          </>,
+          <>
+            <h3>What is under the hood?</h3>
+            <p>
+              Quill is on the cutting edge, leveraging the newest Ethereum
+              technologies to give you fast and low-cost transactions, directly
+              in your browser.
+            </p>
+          </>,
+          <>
+            <h3>How do I keep my wallets secure?</h3>
+            <ol>
+              <li>
+                NEVER share your secret recovery phrase. This can be used to
+                access your wallets. No legitimate service will ever ask for
+                this phrase.
+              </li>
+              <li>
+                Write this phrase down and store a physical copy somewhere safe,
+                like a safety deposit box or vault.
+              </li>
+              <li>
+                You can also store this phrase in a password manager, however
+                this is less secure.
+              </li>
+              <li>
+                Your own memory is the safest place to store your recovery
+                phrase, just remember that if you forget it you cannot restore
+                your wallets.
+              </li>
+            </ol>
+          </>,
+        ][pageIndex]}
       </div>
       <LogoFooter />
     </div>
