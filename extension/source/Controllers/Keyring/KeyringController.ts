@@ -1,4 +1,4 @@
-import { BlsWalletWrapper, Operation } from 'bls-wallet-clients';
+import { BlsWalletWrapper, Bundle, Operation } from 'bls-wallet-clients';
 import generateRandomHex from '../../helpers/generateRandomHex';
 import BaseController from '../BaseController';
 import {
@@ -58,9 +58,9 @@ export default class KeyringController
 
   async signTransactions(address: string, tx: Operation) {
     const privKey = this._getPrivateKeyFor(address);
-    const signer = await this._getBLSSinger(privKey);
+    const wallet = await this._getBLSWallet(privKey);
 
-    return signer.sign(tx);
+    return wallet.sign(tx);
   }
 
   async _createAccountAndUpdate(privateKey: string): Promise<string> {
@@ -96,7 +96,7 @@ export default class KeyringController
     );
   }
 
-  private async _getBLSSinger(privateKey: string) {
+  private async _getBLSWallet(privateKey: string): Promise<BlsWalletWrapper> {
     const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
     return BlsWalletWrapper.connect(
       privateKey,
