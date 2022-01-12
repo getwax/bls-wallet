@@ -36,4 +36,28 @@
       background-color: $primary-base;
     }
   }
+
+  .view-secret-phrase-panel {
+    .secret-phrase-box {
+      display: none;
+    }
+
+    .hide-box {
+      display: none;
+    }
+
+    &.expanded {
+      .secret-phrase-box {
+        display: block;
+      }
+  
+      .hide-box {
+        display: block;
+      }
+
+      .show-box {
+        display: none;
+      }
+    }
+  }
 }
