@@ -2,8 +2,6 @@ import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import LogoFooter from './LogoFooter';
 
-import QuickColumn from './QuickColumn';
-
 const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
@@ -16,7 +14,18 @@ const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
         )})`,
       }}
     >
-      <div className="artwork" />
+      <div
+        className="artwork"
+        style={{
+          background: [
+            'no-repeat',
+            'center',
+            `url(${browser.runtime.getURL(
+              `assets/onboarding-art-${pageIndex + 1}.svg`,
+            )})`,
+          ].join(' '),
+        }}
+      />
       <div className="info-text">
         <h3>What is Quill?</h3>
         <p>
