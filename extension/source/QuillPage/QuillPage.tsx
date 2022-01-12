@@ -1,7 +1,7 @@
 import * as React from 'react';
 
-import SetupPage from './components/SetupPage';
+import OnboardingPage from './components/OnboardingPage';
 
-const QuillPage: React.FunctionComponent = () => <SetupPage pageIndex={0} />;
+const QuillPage: React.FunctionComponent = () => <OnboardingPage pageIndex={0} />;
 
 export default QuillPage;

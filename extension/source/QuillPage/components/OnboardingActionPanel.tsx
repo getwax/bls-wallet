@@ -4,7 +4,7 @@ import PasswordCreationPanel from './PasswordCreationPanel';
 import QuickColumn from './QuickColumn';
 import WorkflowNumbers from './WorkflowNumbers';
 
-const SetupActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
+const OnboardingActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
   <QuickColumn>
@@ -18,4 +18,4 @@ const SetupActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   </QuickColumn>
 );
 
-export default SetupActionPanel;
+export default OnboardingActionPanel;

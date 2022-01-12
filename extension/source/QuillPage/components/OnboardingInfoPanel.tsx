@@ -4,10 +4,10 @@ import LogoFooter from './LogoFooter';
 
 import QuickColumn from './QuickColumn';
 
-const SetupInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
+const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
-  <div className="setup-info-panel quick-column">
+  <div className="onboarding-info-panel quick-column">
     <div
       className="quick-column"
       style={{
@@ -30,4 +30,4 @@ const SetupInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   </div>
 );
 
-export default SetupInfoPanel;
+export default OnboardingInfoPanel;
