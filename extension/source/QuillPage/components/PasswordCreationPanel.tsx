@@ -13,16 +13,20 @@ const PasswordCreationPanel: React.FunctionComponent = () => (
       </p>
     </div>
     <PasswordCreationForm />
-    <Button
-      onPress={() => {}}
-      highlight={true}
-      icon={{
-        src: browser.runtime.getURL('assets/arrow-small.svg'),
-        px: 19,
-      }}
-    >
-      Continue
-    </Button>
+    <div>
+      <div style={{ display: 'inline-block' }}>
+        <Button
+          onPress={() => {}}
+          highlight={true}
+          icon={{
+            src: browser.runtime.getURL('assets/arrow-small.svg'),
+            px: 19,
+          }}
+        >
+          Continue
+        </Button>
+      </div>
+    </div>
   </>
 );
 
