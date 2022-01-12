@@ -28,6 +28,10 @@
   }
 
   .workflow-numbers {
+    .number {
+      cursor: pointer;
+    }
+
     .highlight {
       background-color: $primary-base;
     }
