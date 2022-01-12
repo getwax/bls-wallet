@@ -29,7 +29,7 @@
      inkscape:window-width="2339"
      inkscape:window-height="1081"
      inkscape:window-x="571"
-     inkscape:window-y="117"
+     inkscape:window-y="89"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg10"
      inkscape:snap-text-baseline="true" />
@@ -43,19 +43,22 @@
      stroke="#1e7ee5"
      stroke-linecap="round"
      stroke-linejoin="round"
-     id="path4" />
+     id="path4"
+     style="stroke:#ffffff;stroke-opacity:1" />
   <path
      d="m 229.92153,22.664305 c 0.828,0 1.5,-0.672 1.5,-1.5 0,-0.829 -0.672,-1.5 -1.5,-1.5 -0.828,0 -1.5,0.671 -1.5,1.5 0,0.828 0.672,1.5 1.5,1.5 z"
      stroke="#1e7ee5"
      stroke-linecap="round"
      stroke-linejoin="round"
-     id="path6" />
+     id="path6"
+     style="stroke:#ffffff;stroke-opacity:1" />
   <path
      d="m 242.42153,27.664305 -5,-5 -11,11"
      stroke="#1e7ee5"
      stroke-linecap="round"
      stroke-linejoin="round"
-     id="path8" />
+     id="path8"
+     style="stroke:#ffffff;stroke-opacity:1" />
   <text
      xml:space="preserve"
      style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
@@ -65,13 +68,16 @@
        sodipodi:role="line"
        x="130.01527"
        y="84.226799"
-       id="tspan2489">Onboarding</tspan><tspan
+       id="tspan2489"
+       style="fill:#fefefe;fill-opacity:1">Onboarding</tspan><tspan
        sodipodi:role="line"
        x="130.01527"
        y="134.22681"
-       id="tspan3897">art</tspan><tspan
+       id="tspan3897"
+       style="fill:#fefefe;fill-opacity:1">art</tspan><tspan
        sodipodi:role="line"
        x="130.01527"
        y="184.22681"
-       id="tspan3899">2</tspan></text>
+       id="tspan3899"
+       style="fill:#fefefe;fill-opacity:1">2</tspan></text>
 </svg>
