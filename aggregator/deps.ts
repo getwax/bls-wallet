@@ -39,13 +39,13 @@ export type {
   Operation,
   PublicKey,
   Signature,
+  VerificationGateway,
 } from "https://esm.sh/bls-wallet-clients@0.5.3";
 
 export {
   Aggregator as AggregatorClient,
   BlsWalletWrapper,
   getConfig,
-  VerificationGateway,
   VerificationGateway__factory,
 } from "https://esm.sh/bls-wallet-clients@0.5.3";
 
