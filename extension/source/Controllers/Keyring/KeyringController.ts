@@ -1,22 +1,25 @@
-import { Wallet } from 'ethers';
+import { BlsWalletWrapper, Bundle, Operation } from 'bls-wallet-clients';
+import generateRandomHex from '../../helpers/generateRandomHex';
 import BaseController from '../BaseController';
-import { BaseConfig } from '../interfaces';
 import {
   IKeyringController,
+  KeyringControllerConfig,
   KeyringControllerState,
 } from './IKeyringController';
+import { NETWORK_CONFIG, CHAIN_RPC_URL } from '../../env';
+import { ethers } from 'ethers';
 
 export default class KeyringController
-  extends BaseController<BaseConfig, KeyringControllerState>
+  extends BaseController<KeyringControllerConfig, KeyringControllerState>
   implements IKeyringController
 {
   name = 'KeyringController';
 
   constructor({
-    config = {},
+    config,
     state,
   }: {
-    config: BaseConfig;
+    config: Partial<KeyringControllerConfig>;
     state: Partial<KeyringControllerState>;
   }) {
     super({ config, state });
@@ -30,33 +33,18 @@ export default class KeyringController
     return this.state.wallets.map((x) => x.address);
   }
 
-  getPublicKeys(): string[] {
-    return this.state.wallets.map((x) => x.publicKey);
+  async createAccount(): Promise<string> {
+    const privateKey = generateRandomHex(256);
+    return this._createAccountAndUpdate(privateKey);
   }
 
-  getPublicKeyFromAddress(address: string): string {
-    const keyPair = this.state.wallets.find((x) => x.address === address);
-    if (!keyPair) throw new Error('key does not exist');
-    return keyPair.publicKey;
-  }
-
-  importAccount(privateKey: string): string {
+  async importAccount(privateKey: string): Promise<string> {
     const existingWallet = this.state.wallets.find(
       (x) => x.privateKey.toLowerCase() === privateKey.toLowerCase(),
     );
     if (existingWallet) return existingWallet.address;
-    const wallet = new Wallet(privateKey);
-    this.update({
-      wallets: [
-        ...this.state.wallets,
-        {
-          publicKey: wallet.publicKey,
-          privateKey,
-          address: wallet.address,
-        },
-      ],
-    });
-    return wallet.address;
+
+    return this._createAccountAndUpdate(privateKey);
   }
 
   removeAccount(address: string): void {
@@ -68,5 +56,52 @@ export default class KeyringController
     }
   }
 
-  // TODO: add methods to sign transactions / messages
+  async signTransactions(address: string, tx: Operation) {
+    const privKey = this._getPrivateKeyFor(address);
+    const wallet = await this._getBLSWallet(privKey);
+
+    return wallet.sign(tx);
+  }
+
+  async _createAccountAndUpdate(privateKey: string): Promise<string> {
+    const address = await this._getContractWalletAddress(privateKey);
+
+    if (address) {
+      this.update({
+        wallets: [
+          ...this.state.wallets,
+          {
+            privateKey,
+            address: address,
+          },
+        ],
+      });
+    }
+
+    return address;
+  }
+
+  private _getPrivateKeyFor(address: string): string {
+    const keyPair = this.state.wallets.find((x) => x.address === address);
+    if (!keyPair) throw new Error('key does not exist');
+    return keyPair.privateKey;
+  }
+
+  private _getContractWalletAddress(privateKey: string) {
+    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
+    return BlsWalletWrapper.Address(
+      privateKey,
+      NETWORK_CONFIG.addresses.verificationGateway,
+      provider,
+    );
+  }
+
+  private async _getBLSWallet(privateKey: string): Promise<BlsWalletWrapper> {
+    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
+    return BlsWalletWrapper.connect(
+      privateKey,
+      NETWORK_CONFIG.addresses.verificationGateway,
+      provider,
+    );
+  }
 }
