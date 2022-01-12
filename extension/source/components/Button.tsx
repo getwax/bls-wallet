@@ -5,6 +5,10 @@ const Button = (props: {
   highlight?: boolean;
   loading?: boolean;
   children?: React.ReactNode;
+  icon?: {
+    src: string;
+    px: number;
+  };
 }): React.ReactElement => {
   const classes = ['button'];
 
@@ -26,7 +30,23 @@ const Button = (props: {
         }
       }}
     >
-      {props.children}
+      {(() => {
+        if (!props.icon) {
+          return props.children;
+        }
+
+        return (
+          <div className="icon-button-content">
+            <div>{props.children}</div>
+            <div
+              className="icon-button-icon"
+              style={{
+                background: `no-repeat center url(${props.icon.src})`,
+              }}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 };
