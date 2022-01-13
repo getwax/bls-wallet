@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import ReviewSecretPhrasePanel from './ReviewSecrectPhrasePanel';
+import ReviewSecretPhrasePanel from './ReviewSecretPhrasePanel';
 import ViewSecretPhrasePanel from './ViewSecretPhrasePanel';
 
 const exampleSecretPhrase = [
