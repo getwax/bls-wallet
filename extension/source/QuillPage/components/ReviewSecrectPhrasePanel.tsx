@@ -60,6 +60,12 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
                 }
               }}
             />
+            {
+              // Just printing the className applied to the fields for debug
+              // purposes here. Remove this when the fields are styled
+              // accordingly.
+              reviewWordStates[i]
+            }
           </div>
         ))}
       </div>
