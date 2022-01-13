@@ -4,6 +4,7 @@ const Button = (props: {
   onPress: () => void;
   highlight?: boolean;
   loading?: boolean;
+  disabled?: boolean;
   children?: React.ReactNode;
   icon?: {
     src: string;
@@ -18,6 +19,10 @@ const Button = (props: {
 
   if (props.loading) {
     classes.push('loading');
+  }
+
+  if (props.disabled) {
+    classes.push('disabled');
   }
 
   return (

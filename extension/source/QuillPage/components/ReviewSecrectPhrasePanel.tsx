@@ -85,6 +85,7 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
               src: browser.runtime.getURL('assets/arrow-small.svg'),
               px: 19,
             }}
+            disabled={reviewWordStates.some((s) => s !== 'correct')}
           >
             Confirm secret phrase
           </Button>

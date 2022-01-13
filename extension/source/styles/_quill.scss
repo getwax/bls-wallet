@@ -138,11 +138,23 @@
       &:active {
         filter: none;
         background-color: $primary-base-btn-active;
+
+        &.disabled {
+          background-color: $primary-base;
+        }
       }
     }
 
     &.loading {
       filter: grayscale(50%);
+    }
+
+    &.disabled {
+      opacity: 0.3;
+
+      &:active {
+        filter: none;
+      }
     }
 
     .icon-button-content {
