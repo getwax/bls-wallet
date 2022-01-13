@@ -143,6 +143,29 @@ are actually imported whenever you run something). There's also a bunch of other
 checking going on. As the name suggests, it's a good idea to make sure this
 script completes successfully before merging into main.
 
+### Troubleshooting
+
+#### TS "Duplicate identifier" error
+
+If you see TypeScript errors like below when attempting to run a script/command
+from Deno such as `./programs/aggregator.ts`:
+
+```sh
+TS2300 [ERROR]: Duplicate identifier 'TypedArray'.
+    type TypedArray =
+         ~~~~~~~~~~
+    at https://cdn.esm.sh/v59/node.ns.d.ts:508:10
+
+    'TypedArray' was also declared here.
+        type TypedArray =
+             ~~~~~~~~~~
+        at https://cdn.esm.sh/v62/node.ns.d.ts:508:10
+```
+
+You need to reload modules (`-r`):
+
+`deno run -r --allow-net --allow-env --allow-read --unstable ./programs/aggregator.ts`
+
 ### Notable Components
 
 - **src/chain**: Should contain all of the contract interactions, exposing more
