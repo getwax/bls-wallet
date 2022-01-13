@@ -21,7 +21,7 @@ const WorkflowNumbers: React.FunctionComponent<{
         >
           {i + 1}
         </div>
-        {i + 1 === max ? <></> : <div className="dash" />}
+        {i + 1 === max &&  <div className="dash" />}
       </>
     ))}
   </div>
