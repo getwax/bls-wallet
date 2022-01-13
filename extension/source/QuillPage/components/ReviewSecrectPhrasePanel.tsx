@@ -19,6 +19,8 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
     ReviewWordState[]
   >(Range(len).map(() => 'partial'));
 
+  const allCorrect = reviewWordStates.every((s) => s === 'correct');
+
   return (
     <div>
       <div className="instructions-text">
@@ -79,13 +81,13 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
             Back
           </Button>
           <Button
-            onPress={onComplete}
+            onPress={() => allCorrect && onComplete()}
             highlight={true}
             icon={{
               src: browser.runtime.getURL('assets/arrow-small.svg'),
               px: 19,
             }}
-            disabled={reviewWordStates.some((s) => s !== 'correct')}
+            disabled={!allCorrect}
           >
             Confirm secret phrase
           </Button>
