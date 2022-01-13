@@ -2,7 +2,9 @@ import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import Button from '../../components/Button';
 
-const PasswordCreationPanel: React.FunctionComponent = () => (
+const PasswordCreationPanel: React.FunctionComponent<{
+  onComplete: () => void;
+}> = ({ onComplete }) => (
   <>
     <div className="instructions-text">
       <h3>It&apos;s time to create your first wallet!</h3>
@@ -20,7 +22,7 @@ const PasswordCreationPanel: React.FunctionComponent = () => (
     <div>
       <div style={{ display: 'inline-block' }}>
         <Button
-          onPress={() => {}}
+          onPress={onComplete}
           highlight={true}
           icon={{
             src: browser.runtime.getURL('assets/arrow-small.svg'),

@@ -13,17 +13,30 @@ const OnboardingActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
     <WorkflowNumbers
       current={pageIndex + 1}
       max={3}
-      onSelect={(pageNumber) => {
-        // Note: This is for demo purposes only. We're not going to be using
-        // search parameters like this.
-        window.location.href = `?p=${pageNumber}`;
+      onSelect={(workflowNumber) => {
+        window.location.href = `?p=${workflowNumber}`;
       }}
     />
     {
       [
-        <PasswordCreationPanel key={1} />,
-        <SetNicknamePanel key={2} />,
-        <SecretPhrasePanel key={3} onComplete={() => {}} />,
+        <PasswordCreationPanel
+          key={1}
+          onComplete={() => {
+            window.location.href = `?p=2`;
+          }}
+        />,
+        <SetNicknamePanel
+          key={2}
+          onComplete={() => {
+            window.location.href = `?p=3`;
+          }}
+        />,
+        <SecretPhrasePanel
+          key={3}
+          onComplete={() => {
+            window.location.href = `?p=1`;
+          }}
+        />,
       ][pageIndex]
     }
   </QuickColumn>
