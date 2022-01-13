@@ -36,14 +36,18 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
               type="text"
               placeholder={`Secret word ${sampleIndexes[i] + 1}`}
               onInput={(e) => {
-                const fieldValue = (e.target as HTMLInputElement).value;
+                const userEntry = (
+                  e.target as HTMLInputElement
+                ).value.toLowerCase();
+
+                const correctEntry = correctSamples[i].toLowerCase();
 
                 const currentState = reviewWordStates[i];
                 let newState: ReviewWordState;
 
-                if (fieldValue === correctSamples[i]) {
+                if (userEntry === correctEntry) {
                   newState = 'correct';
-                } else if (correctSamples[i].startsWith(fieldValue)) {
+                } else if (correctEntry.startsWith(userEntry)) {
                   newState = 'partial';
                 } else {
                   newState = 'incorrect';
