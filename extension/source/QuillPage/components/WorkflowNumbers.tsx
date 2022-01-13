@@ -9,7 +9,7 @@ const WorkflowNumbers: React.FunctionComponent<{
 }> = ({ current, max, onSelect = () => {} }) => (
   <div className="workflow-numbers quick-row">
     {Range(max).map((i) => (
-      <>
+      <div className="quick-row" key={i}>
         <div
           className={i + 1 <= current ? 'number highlight' : 'number'}
           onClick={() => onSelect(i + 1)}
@@ -21,8 +21,8 @@ const WorkflowNumbers: React.FunctionComponent<{
         >
           {i + 1}
         </div>
-        {i + 1 === max &&  <div className="dash" />}
-      </>
+        {i + 1 !== max && <div className="dash">-</div>}
+      </div>
     ))}
   </div>
 );
