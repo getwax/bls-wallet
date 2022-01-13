@@ -9,6 +9,8 @@ import WalletHomeScreen from './components/WalletHomeScreen';
 import WelcomeScreen from './components/WelcomeScreen';
 import KeyEntryScreen from './components/KeyEntryScreen';
 
+import "../styles/index.css";
+
 type Props = {
   appPromise: Promise<App>;
 };
@@ -18,7 +20,7 @@ type State = {
   appState?: AppState;
 };
 
-const useNewUI = true;
+const useNewUI = false;
 
 export default class Popup extends React.Component<Props, State> {
   cleanupTasks = new TaskQueue();
