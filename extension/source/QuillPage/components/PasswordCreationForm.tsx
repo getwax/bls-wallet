@@ -33,12 +33,12 @@ const PasswordCreationForm: React.FunctionComponent<{
       setConfirmPasswordFieldValue(newConfirmPassword);
     }
 
-    const newResultPasswd =
+    const newResultPassword =
       newPassword === newConfirmPassword ? newPassword : undefined;
 
-    if (newResultPasswd !== password) {
-      setPassword(newResultPasswd);
-      onPasswordUpdate(newResultPasswd);
+    if (newResultPassword !== password) {
+      setPassword(newResultPassword);
+      onPasswordUpdate(newResultPassword);
     }
   }
 
