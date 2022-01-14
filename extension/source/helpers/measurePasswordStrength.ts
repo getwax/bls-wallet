@@ -30,7 +30,7 @@ export default function measurePasswordStrength(
   if (guessesLog10 < 12) {
     fillRatio = guessesLog10 / 15;
   } else {
-    fillRatio = 12 / 15 + 3 * approach(3, 1 / 15, guessesLog10 - 12);
+    fillRatio = 12 / 15 + approach(3 / 15, 1 / 15, guessesLog10 - 12);
   }
 
   return {
