@@ -14,7 +14,7 @@ const PasswordCreationPanel: React.FunctionComponent<{
         wallets.
       </p>
     </div>
-    <PasswordCreationForm />
+    <PasswordCreationForm onPasswordUpdate={() => {}} />
     <div>
       <div style={{ display: 'inline-block' }}>
         <Button
