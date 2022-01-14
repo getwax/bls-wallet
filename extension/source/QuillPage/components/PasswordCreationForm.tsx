@@ -18,9 +18,6 @@ const passwordCommentaryMap: Record<PasswordStrength['descriptor'], string> = {
 const PasswordCreationForm: React.FunctionComponent<{
   onPasswordUpdate: (password: string | undefined) => void;
 }> = ({ onPasswordUpdate }) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  onPasswordUpdate;
-
   const [password, setPassword] = React.useState<string>();
 
   const [passwordFieldValue, setPasswordFieldValue] = React.useState('');
