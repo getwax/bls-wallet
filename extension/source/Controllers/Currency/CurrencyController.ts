@@ -1,24 +1,24 @@
 import BaseController from '../BaseController';
 import {
-  BaseCurrencyControllerConfig,
-  BaseCurrencyControllerState,
+  CurrencyControllerConfig,
+  CurrencyControllerState,
 } from './ICurrencyController';
 
 // every ten minutes
 const POLLING_INTERVAL = 600_000;
 
-export class BaseCurrencyController<
-  C extends BaseCurrencyControllerConfig,
-  S extends BaseCurrencyControllerState,
-> extends BaseController<C, S> {
+export default class CurrencyController extends BaseController<
+  CurrencyControllerConfig,
+  CurrencyControllerState
+> {
   private conversionInterval: number;
 
   constructor({
     config = {},
     state,
   }: {
-    config: Partial<C>;
-    state?: Partial<S>;
+    config: Partial<CurrencyControllerConfig>;
+    state?: Partial<CurrencyControllerState>;
   }) {
     super({ config, state });
     this.defaultState = {
@@ -26,11 +26,11 @@ export class BaseCurrencyController<
       conversionRate: 0,
       conversionDate: 'N/A',
       nativeCurrency: 'ETH',
-    } as S;
+    } as CurrencyControllerState;
 
     this.defaultConfig = {
       pollInterval: POLLING_INTERVAL,
-    } as C;
+    } as CurrencyControllerConfig;
     this.initialize();
   }
 
@@ -46,7 +46,7 @@ export class BaseCurrencyController<
     this.update({
       nativeCurrency,
       ticker: nativeCurrency,
-    } as S);
+    } as CurrencyControllerState);
   }
 
   public getCurrentCurrency(): string {
@@ -54,7 +54,7 @@ export class BaseCurrencyController<
   }
 
   public setCurrentCurrency(currentCurrency: string): void {
-    this.update({ currentCurrency } as S);
+    this.update({ currentCurrency } as CurrencyControllerState);
   }
 
   /**
@@ -68,7 +68,7 @@ export class BaseCurrencyController<
   }
 
   public setConversionRate(conversionRate: number): void {
-    this.update({ conversionRate } as S);
+    this.update({ conversionRate } as CurrencyControllerState);
   }
 
   /**
@@ -83,7 +83,7 @@ export class BaseCurrencyController<
   }
 
   public setConversionDate(conversionDate: string): void {
-    this.update({ conversionDate } as S);
+    this.update({ conversionDate } as CurrencyControllerState);
   }
 
   async updateConversionRate(): Promise<void> {

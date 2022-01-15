@@ -22,12 +22,9 @@ export const DEFAULT_PREFERENCES = {
 /**
  * Controller that stores shared settings and exposes convenience methods
  */
-export abstract class BasePreferencesController<
-    C extends PreferencesConfig,
-    S extends PreferencesState,
-  >
-  extends BaseController<C, S>
-  implements IPreferencesController<C, S>
+export default class PreferencesController
+  extends BaseController<PreferencesConfig, PreferencesState>
+  implements IPreferencesController<PreferencesConfig, PreferencesState>
 {
   /**
    * Name of this controller used during composition
@@ -47,8 +44,8 @@ export abstract class BasePreferencesController<
     state,
     defaultPreferences,
   }: {
-    config?: Partial<C>;
-    state?: Partial<S>;
+    config?: Partial<PreferencesConfig>;
+    state?: Partial<PreferencesState>;
     defaultPreferences?: Partial<AddressPreferences>;
   }) {
     super({ config, state });
@@ -57,8 +54,8 @@ export abstract class BasePreferencesController<
       selectedAddress: '',
       lastErrorMessage: '',
       lastSuccessMessage: '',
-    } as S;
-    this.defaultConfig = {} as C;
+    } as PreferencesState;
+    this.defaultConfig = {} as PreferencesConfig;
     this.initialize();
     this.defaultPreferences = {
       ...DEFAULT_PREFERENCES,
@@ -140,7 +137,7 @@ export abstract class BasePreferencesController<
         ...this.state.identities,
         [selectedAddress]: mergedState,
       },
-    } as S);
+    } as PreferencesState);
     return mergedState;
   }
 
@@ -150,6 +147,6 @@ export abstract class BasePreferencesController<
    * @param selectedAddress - eth address
    */
   setSelectedAddress(selectedAddress: string): void {
-    this.update({ selectedAddress } as Partial<S>);
+    this.update({ selectedAddress } as Partial<PreferencesState>);
   }
 }

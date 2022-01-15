@@ -1,6 +1,6 @@
 import { BaseConfig, BaseState } from '../interfaces';
 
-export interface BaseCurrencyControllerState extends BaseState {
+export interface CurrencyControllerState extends BaseState {
   currentCurrency: string;
   conversionRate: number;
   conversionDate: string;
@@ -8,7 +8,7 @@ export interface BaseCurrencyControllerState extends BaseState {
   ticker: string;
 }
 
-export interface BaseCurrencyControllerConfig extends BaseConfig {
+export interface CurrencyControllerConfig extends BaseConfig {
   pollInterval: number;
   api: string;
 }
