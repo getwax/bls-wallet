@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { runtime, tabs } from 'webextension-polyfill';
 
 import { CREATE_TX_URL } from '../../env';
 import assertExists from '../../helpers/assertExists';
@@ -79,7 +79,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
     <div>
       <div style={{ width: '17px' }}>
         <img
-          src={browser.runtime.getURL('assets/key.svg')}
+          src={runtime.getURL('assets/key.svg')}
           alt="key"
           width="14"
           height="15"
@@ -102,7 +102,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
       </div>
       <div className="field-trailer">
         <KeyIcon
-          src={browser.runtime.getURL('assets/download.svg')}
+          src={runtime.getURL('assets/download.svg')}
           text="Backup private key"
           onAction={() =>
             props.app.pageEvents.emit('overlay', (close) => (
@@ -111,7 +111,7 @@ const BLSKeyField = (props: { app: App }): React.ReactElement => {
           }
         />
         <KeyIcon
-          src={browser.runtime.getURL('assets/trashcan.svg')}
+          src={runtime.getURL('assets/trashcan.svg')}
           text="Delete BLS key"
           onAction={() =>
             props.app.pageEvents.emit('overlay', (close) => (
@@ -128,7 +128,7 @@ const NetworkField = (): React.ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
-        src={browser.runtime.getURL('assets/network.svg')}
+        src={runtime.getURL('assets/network.svg')}
         alt="network"
         width="14"
         height="15"
@@ -138,7 +138,7 @@ const NetworkField = (): React.ReactElement => (
     <select
       className="field-value grow"
       style={{
-        backgroundImage: `url("${browser.runtime.getURL(
+        backgroundImage: `url("${runtime.getURL(
           'assets/selector-down-arrow.svg',
         )}")`,
       }}
@@ -158,7 +158,7 @@ const AddressField = (props: {
   <div>
     <div style={{ width: '17px' }}>
       <img
-        src={browser.runtime.getURL('assets/address.svg')}
+        src={runtime.getURL('assets/address.svg')}
         alt="address"
         width="14"
         height="15"
@@ -199,7 +199,7 @@ const WalletContent = (props: { app: App }): React.ReactElement => {
       <Button
         highlight={true}
         onPress={() => {
-          browser.tabs.create({
+          tabs.create({
             url: CREATE_TX_URL || 'createTransaction.html',
           });
         }}

@@ -2040,6 +2040,11 @@
   dependencies:
     source-map "^0.6.1"
 
+"@types/webextension-polyfill@^0.8.2":
+  version "0.8.2"
+  resolved "https://registry.yarnpkg.com/@types/webextension-polyfill/-/webextension-polyfill-0.8.2.tgz#d909371d332ce3e1a94684624deb0a8693eee900"
+  integrity sha512-Pd+p5AQx6s78jr4gDC2p3vbw+uxP2DLLqE9iAJJpZ+OUqDm3txr6uN2wUBEwjVgZTNdBHPsxawGvPCTipF2s6w==
+
 "@types/webpack-sources@*":
   version "1.4.0"
   resolved "https://registry.npmjs.org/@types/webpack-sources/-/webpack-sources-1.4.0.tgz"
@@ -9012,22 +9017,15 @@ webext-base-css@^1.3.2:
   resolved "https://registry.yarnpkg.com/webext-base-css/-/webext-base-css-1.3.2.tgz#d87d93fdfd1757ecd1942fc06e0915ff603b3d43"
   integrity sha512-A4g+L7KcBSBJElLpZvW+N6e/kqMlDkT9jsImJhkwBgB6Cewxdj6z9AYmJz6refSOwyCFprELQj1cqIwiyAOJZg==
 
-webextension-polyfill-ts@^0.25.0:
-  version "0.25.0"
-  resolved "https://registry.npmjs.org/webextension-polyfill-ts/-/webextension-polyfill-ts-0.25.0.tgz"
-  integrity sha512-ikQhwwHYkpBu00pFaUzIKY26I6L87DeRI+Q6jBT1daZUNuu8dSrg5U9l/ZbqdaQ1M/TTSPKeAa3kolP5liuedw==
-  dependencies:
-    webextension-polyfill "^0.7.0"
-
 webextension-polyfill@^0.5.0:
   version "0.5.0"
   resolved "https://registry.npmjs.org/webextension-polyfill/-/webextension-polyfill-0.5.0.tgz"
   integrity sha512-aFrl38x43t1bTboX/paCT8I97+idzX/TY0+fuM52hrIkCpYfROEF9kSn0BXuEIi3J9LTYt2ZZKkhx9NB1qF3nA==
 
-webextension-polyfill@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.npmjs.org/webextension-polyfill/-/webextension-polyfill-0.7.0.tgz"
-  integrity sha512-su48BkMLxqzTTvPSE1eWxKToPS2Tv5DLGxKexLEVpwFd6Po6N8hhSLIvG6acPAg7qERoEaDL+Y5HQJeJeml5Aw==
+webextension-polyfill@^0.8.0:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/webextension-polyfill/-/webextension-polyfill-0.8.0.tgz#f80e9f4b7f81820c420abd6ffbebfa838c60e041"
+  integrity sha512-a19+DzlT6Kp9/UI+mF9XQopeZ+n2ussjhxHJ4/pmIGge9ijCDz7Gn93mNnjpZAk95T4Tae8iHZ6sSf869txqiQ==
 
 webpack-cli@^4.9.1:
   version "4.9.1"

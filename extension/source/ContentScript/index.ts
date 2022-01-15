@@ -1,10 +1,10 @@
-import { browser } from 'webextension-polyfill-ts';
 import {
   BasePostMessageStream,
   ObjectMultiplex,
   Stream,
 } from '@toruslabs/openlogin-jrpc';
 import pump from 'pump';
+import { runtime } from 'webextension-polyfill';
 import PortDuplexStream from './PortStream';
 
 const CONTENT_SCRIPT = 'quill-contentscript';
@@ -26,9 +26,7 @@ function injectScript() {
   try {
     const container = document.head || document.documentElement;
     const pageContentScriptTag = document.createElement('script');
-    pageContentScriptTag.src = browser.runtime.getURL(
-      'js/pageContentScript.bundle.js',
-    );
+    pageContentScriptTag.src = runtime.getURL('js/pageContentScript.bundle.js');
     container.insertBefore(pageContentScriptTag, container.children[0]);
     // Can remove after script injection
     container.removeChild(pageContentScriptTag);
@@ -48,7 +46,7 @@ async function setupStreams() {
     name: CONTENT_SCRIPT,
     target: INPAGE,
   });
-  const extensionPort = browser.runtime.connect(undefined, {
+  const extensionPort = runtime.connect(undefined, {
     name: CONTENT_SCRIPT,
   });
   const extensionStream = new PortDuplexStream(extensionPort);

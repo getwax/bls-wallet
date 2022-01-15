@@ -1,5 +1,5 @@
 import { Duplex } from 'readable-stream';
-import { Runtime } from 'webextension-polyfill-ts';
+import type { Runtime } from 'webextension-polyfill';
 
 export default class PortDuplexStream extends Duplex {
   private _port: Runtime.Port;

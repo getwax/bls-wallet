@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import React, { useEffect, useState } from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { FunctionComponent, useEffect, useState } from 'react';
+import { runtime } from 'webextension-polyfill';
 import TaskQueue from '../common/TaskQueue';
 
 // components, styles and UI
@@ -9,7 +9,7 @@ import CompactQuillHeading from '../components/CompactQuillHeading';
 import { useInputDecode } from '../hooks/useInputDecode';
 import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 
-const Confirm: React.FunctionComponent = () => {
+const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string>();
   const [to, setTo] = useState<string>('0x');
   const [value, setValue] = useState<string>('0');
@@ -30,7 +30,7 @@ const Confirm: React.FunctionComponent = () => {
   }, []);
 
   const respondTx = (result: string) => {
-    browser.runtime.sendMessage(undefined, { id, result });
+    runtime.sendMessage(undefined, { id, result });
   };
 
   return (
