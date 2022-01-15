@@ -1,4 +1,5 @@
 import { BlsWalletWrapper, Bundle, Operation } from 'bls-wallet-clients';
+import { ethers } from 'ethers';
 import generateRandomHex from '../../helpers/generateRandomHex';
 import BaseController from '../BaseController';
 import {
@@ -7,7 +8,6 @@ import {
   KeyringControllerState,
 } from './IKeyringController';
 import { NETWORK_CONFIG, CHAIN_RPC_URL } from '../../env';
-import { ethers } from 'ethers';
 
 export default class KeyringController
   extends BaseController<KeyringControllerConfig, KeyringControllerState>
@@ -72,7 +72,7 @@ export default class KeyringController
           ...this.state.wallets,
           {
             privateKey,
-            address: address,
+            address,
           },
         ],
       });
