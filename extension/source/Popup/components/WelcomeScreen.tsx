@@ -22,8 +22,8 @@ const WelcomeScreen: React.FunctionComponent = () => (
       <div className="mt-2">
         <Button
           onPress={() => {}}
-          highlight={true}
           icon={<ArrowRight className='icon-md'/>}
+          className='btn-primary px-9 py-4'
           >
           Get Started
         </Button>

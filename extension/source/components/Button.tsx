@@ -2,25 +2,16 @@ import { IconProps } from 'phosphor-react';
 import * as React from 'react';
 
 const Button = (props: {
+  className?: string;
   onPress: () => void;
-  highlight?: boolean;
+  highlight?: boolean; //TODO - remove dependency
   loading?: boolean;
   children?: React.ReactNode;
   icon?: IconProps
 }): React.ReactElement => {
-  const classes = ['btn-primary'];
-
-  if (props.highlight) {
-    classes.push('highlight');
-  }
-
-  if (props.loading) {
-    classes.push('loading');
-  }
-
   return (
     <div
-      className={classes.join(' ')}
+      className={props.loading ? 'btn-loading' : `flex gap-2 items-center ${props.className}`}
       onClick={props.onPress}
       onKeyDown={(evt) => {
         if (evt.code === 'Enter') {
@@ -28,10 +19,8 @@ const Button = (props: {
         }
       }}
     >
-      <div className="flex gap-2 items-center">
-        <div>{props.children}</div>
-        {props.icon && <div>{props.icon}</div>}
-      </div>
+      <div>{props.children}</div>
+      {props.icon && <div>{props.icon}</div>}
     </div>
   );
 };
