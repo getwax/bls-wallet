@@ -1,3 +1,4 @@
+import { IconProps } from 'phosphor-react';
 import * as React from 'react';
 
 const Button = (props: {
@@ -5,12 +6,9 @@ const Button = (props: {
   highlight?: boolean;
   loading?: boolean;
   children?: React.ReactNode;
-  icon?: {
-    src: string;
-    px: number;
-  };
+  icon?: IconProps
 }): React.ReactElement => {
-  const classes = ['button'];
+  const classes = ['btn-primary'];
 
   if (props.highlight) {
     classes.push('highlight');
@@ -30,23 +28,10 @@ const Button = (props: {
         }
       }}
     >
-      {(() => {
-        if (!props.icon) {
-          return props.children;
-        }
-
-        return (
-          <div className="icon-button-content">
-            <div>{props.children}</div>
-            <div
-              className="icon-button-icon"
-              style={{
-                background: `no-repeat center url(${props.icon.src})`,
-              }}
-            />
-          </div>
-        );
-      })()}
+      <div className="flex gap-2 items-center">
+        <div>{props.children}</div>
+        {props.icon && <div>{props.icon}</div>}
+      </div>
     </div>
   );
 };

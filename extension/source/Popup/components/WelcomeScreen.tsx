@@ -2,11 +2,12 @@ import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
 import Button from '../../components/Button';
 import Carousel from './Carousel';
+import { ArrowRight } from "phosphor-react";
 
 import LargeQuillHeading from './LargeQuillHeading';
 
 const WelcomeScreen: React.FunctionComponent = () => (
-  <div className="welcome-screen">
+  <div>
     <LargeQuillHeading />
     <Carousel
       images={[
@@ -15,18 +16,15 @@ const WelcomeScreen: React.FunctionComponent = () => (
         browser.runtime.getURL('assets/welcome-art-3.svg'),
       ]}
     />
-    <div className="body">
+    <div className="flex-grow flex flex-col gap-3 pt-2 place-items-center">
       <h3>Welcome to Quill!</h3>
-      <p>Your digital wallet for a digital world.</p>
-      <div className="get-started-container">
+      <p className="font-light">Your digital wallet for a digital world.</p>
+      <div className="mt-2">
         <Button
           onPress={() => {}}
           highlight={true}
-          icon={{
-            src: browser.runtime.getURL('assets/arrow-small.svg'),
-            px: 19,
-          }}
-        >
+          icon={<ArrowRight className='icon-md'/>}
+          >
           Get Started
         </Button>
       </div>
