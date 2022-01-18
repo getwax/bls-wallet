@@ -14,6 +14,7 @@ A non-upgradable gateway used to create BLSWallets and call them with
 verified Operations that have been respectively signed.
 The gateway holds a single ProxyAdmin contract for all wallets, and can
 only called by a wallet that the VG created, and only if the first param
+is the calling wallet's address.
  */
 contract VerificationGateway
 {

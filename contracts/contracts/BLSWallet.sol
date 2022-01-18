@@ -200,10 +200,9 @@ contract BLSWallet is Initializable, IBLSWallet
         bytes[] memory results
     ) {
         try this._performOperation(op) returns (
-            bool _success,
             bytes[] memory _results
         ) {
-            success = _success;
+            success = (_results.length > 0); // false when no actions given
             results = _results;
         }
         catch {
@@ -215,17 +214,18 @@ contract BLSWallet is Initializable, IBLSWallet
     /**
     @dev Restricted to only be called by this contract, but needs to be public
     so that it can be used in the try/catch block.
+    Throws if any action does not succeed.
      */
     function _performOperation(
         IWallet.Operation calldata op
     ) public payable onlyThis returns (
-        bool success,
         bytes[] memory results
     ) {
         bytes memory result;
         results = new bytes[](op.actions.length);
 
         IWallet.ActionData calldata a;
+        bool success;
         for (uint256 i=0; i<op.actions.length; i++) {
             a = op.actions[i];
             if (a.ethValue > 0) {
