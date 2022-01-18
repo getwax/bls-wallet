@@ -68,6 +68,7 @@ export type SendCallBack<U> = (err: any, providerRes: U | undefined) => void;
 
 export type Payload = Partial<JRPCRequest<string[]>>;
 export interface SafeEventEmitterProvider extends SafeEventEmitter {
+  request: <T, U>(req: JRPCRequest<T>) => Promise<U>;
   sendAsync: <T, U>(req: JRPCRequest<T>) => Promise<U>;
   send: <T, U>(req: JRPCRequest<T>, callback: SendCallBack<U>) => void;
 }
@@ -89,6 +90,15 @@ export function providerFromEngine(
     }
     return res.result as U;
   };
+
+  provider.request = async <T, U>(req: JRPCRequest<T>) => {
+    const res = await engine.handle(req);
+    if (res.error) {
+      throw new Error(res.error);
+    }
+    return res.result as U;
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   provider.send = <T, U>(
     req: JRPCRequest<T>,

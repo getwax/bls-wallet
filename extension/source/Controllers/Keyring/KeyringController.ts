@@ -1,4 +1,4 @@
-import { BlsWalletWrapper, Bundle, Operation } from 'bls-wallet-clients';
+import { BlsWalletWrapper, Operation } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import generateRandomHex from '../../helpers/generateRandomHex';
 import BaseController from '../BaseController';
@@ -87,7 +87,7 @@ export default class KeyringController
     return keyPair.privateKey;
   }
 
-  private _getContractWalletAddress(privateKey: string) {
+  private _getContractWalletAddress(privateKey: string): Promise<string> {
     const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
     return BlsWalletWrapper.Address(
       privateKey,
