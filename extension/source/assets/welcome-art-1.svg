@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="258"
+   height="215"
+   viewBox="0 0 258 215"
+   fill="none"
+   version="1.1"
+   id="svg10"
+   sodipodi:docname="welcome-art-1.svg"
+   inkscape:version="1.1.1 (c3084ef, 2021-09-22)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs14" />
+  <sodipodi:namedview
+     id="namedview12"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     showgrid="false"
+     inkscape:zoom="4.0604651"
+     inkscape:cx="80.532646"
+     inkscape:cy="94.201031"
+     inkscape:window-width="2339"
+     inkscape:window-height="1081"
+     inkscape:window-x="571"
+     inkscape:window-y="145"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg10"
+     inkscape:snap-text-baseline="true" />
+  <path
+     d="M0 16.9058C0 9.36329 0 5.59205 2.34315 3.24891C4.68629 0.905762 8.45753 0.905762 16 0.905762H242C249.542 0.905762 253.314 0.905762 255.657 3.24891C258 5.59205 258 9.36329 258 16.9058V198.906C258 206.448 258 210.219 255.657 212.563C253.314 214.906 249.542 214.906 242 214.906H16C8.45753 214.906 4.68629 214.906 2.34315 212.563C0 210.219 0 206.448 0 198.906V16.9058Z"
+     fill="#FBFCFD"
+     id="path2"
+     style="fill:#f4f7fa;fill-opacity:1" />
+  <path
+     d="m 240.42153,15.664105 h -14 c -1.105,0 -2,0.8954 -2,2.0002 v 14 c 0,1.104 0.895,2 2,2 h 14 c 1.105,0 2,-0.896 2,-2 v -14 c 0,-1.1048 -0.895,-2.0002 -2,-2.0002 z"
+     stroke="#1e7ee5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path4" />
+  <path
+     d="m 229.92153,22.664305 c 0.828,0 1.5,-0.672 1.5,-1.5 0,-0.829 -0.672,-1.5 -1.5,-1.5 -0.828,0 -1.5,0.671 -1.5,1.5 0,0.828 0.672,1.5 1.5,1.5 z"
+     stroke="#1e7ee5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path6" />
+  <path
+     d="m 242.42153,27.664305 -5,-5 -11,11"
+     stroke="#1e7ee5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path8" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"
+     x="130.01527"
+     y="84.226799"
+     id="text2485"><tspan
+       sodipodi:role="line"
+       id="tspan2483"
+       x="130.01527"
+       y="84.226799">Welcome</tspan><tspan
+       sodipodi:role="line"
+       x="130.01527"
+       y="134.22681"
+       id="tspan10709">placeholder</tspan><tspan
+       sodipodi:role="line"
+       x="130.01527"
+       y="184.22682"
+       id="tspan2489">1</tspan></text>
+</svg>

@@ -48,7 +48,10 @@
     "typed-emitter": "^1.4.0",
     "typescript": "^4.5.3",
     "webext-base-css": "^1.3.2",
-    "webextension-polyfill": "^0.8.0"
+    "webextension-polyfill": "^0.8.0",
+    "@types/zxcvbn": "^4.4.1",
+    "webextension-polyfill-ts": "^0.25.0",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@abhijithvijayan/eslint-config": "^2.6.3",

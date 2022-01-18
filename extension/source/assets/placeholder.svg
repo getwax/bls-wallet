@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="258"
+   height="215"
+   viewBox="0 0 258 215"
+   fill="none"
+   version="1.1"
+   id="svg10"
+   sodipodi:docname="placeholder.svg"
+   inkscape:version="1.1.1 (c3084ef, 2021-09-22)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs14" />
+  <sodipodi:namedview
+     id="namedview12"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     showgrid="false"
+     inkscape:zoom="4.0604651"
+     inkscape:cx="80.532646"
+     inkscape:cy="110.45533"
+     inkscape:window-width="2339"
+     inkscape:window-height="1081"
+     inkscape:window-x="765"
+     inkscape:window-y="184"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg10" />
+  <path
+     d="M0 16.9058C0 9.36329 0 5.59205 2.34315 3.24891C4.68629 0.905762 8.45753 0.905762 16 0.905762H242C249.542 0.905762 253.314 0.905762 255.657 3.24891C258 5.59205 258 9.36329 258 16.9058V198.906C258 206.448 258 210.219 255.657 212.563C253.314 214.906 249.542 214.906 242 214.906H16C8.45753 214.906 4.68629 214.906 2.34315 212.563C0 210.219 0 206.448 0 198.906V16.9058Z"
+     fill="#FBFCFD"
+     id="path2"
+     style="fill:#dde5ee;fill-opacity:1" />
+  <path
+     d="M136 98.9058H122C120.895 98.9058 120 99.8012 120 100.906V114.906C120 116.01 120.895 116.906 122 116.906H136C137.105 116.906 138 116.01 138 114.906V100.906C138 99.8012 137.105 98.9058 136 98.9058Z"
+     stroke="#1E7EE5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path4" />
+  <path
+     d="M125.5 105.906C126.328 105.906 127 105.234 127 104.406C127 103.577 126.328 102.906 125.5 102.906C124.672 102.906 124 103.577 124 104.406C124 105.234 124.672 105.906 125.5 105.906Z"
+     stroke="#1E7EE5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path6" />
+  <path
+     d="M138 110.906L133 105.906L122 116.906"
+     stroke="#1E7EE5"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path8" />
+</svg>

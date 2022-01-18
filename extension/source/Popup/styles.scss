@@ -1,8 +1,8 @@
 @import "../styles/quill";
 
 #popup-root {
-  min-width: 359px;
-  height: 500px;
+  min-width: 400px;
+  height: 600px;
   background-color: white;
 }
 
@@ -30,6 +30,24 @@
         position: absolute;
         width: calc(100% - 24px);
         bottom: 12px;
+      }
+    }
+
+    .welcome-screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+
+      .body {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+  
+        > * {
+          display: flex;
+          justify-content: center;
+        }
       }
     }
   
@@ -152,6 +170,60 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
+      }
+    }
+
+    .carousel {
+      margin-bottom: 24px;
+
+      .image-container {
+        position: relative;
+        overflow: hidden;
+        height: 215px;
+
+        .image-slider {
+          position: absolute;
+          transition: left 500ms ease;
+          width: 258px;
+        }
+      }
+
+      .radios-section {
+        text-align: center;
+
+        .radios-container {
+          display: inline-block;
+
+          .radio {
+            position: relative;
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-top: 10px;
+            border-radius: 100%;
+            border: 1px solid $grey-1;
+            cursor: pointer;
+
+            &:not(:first-child) {
+              margin-left: 12px;
+            }
+
+            .radio-filler {
+              position: absolute;
+              left: 1px;
+              top: 1px;
+              width: 10px;
+              height: 10px;
+              background-color: transparent;
+              border-radius: 100%;
+              transition: background-color 500ms ease;
+
+              &.active {
+                background-color: $primary-base;
+              }
+            }
+          }
+        }
       }
     }
   }

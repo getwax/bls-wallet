@@ -3,8 +3,7 @@ aggregator:
 extension:
   - extension/**/*
 contracts:
-  - contracts/**/*
+# Don't label client only changes.
+- any: ['contracts/**/*', '!contracts/clients/**/*']
 clients:
-  - clients/**/*
-signer:
-  - signer/**/*
+  - contracts/clients/**/*

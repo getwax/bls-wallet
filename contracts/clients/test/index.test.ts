@@ -1,13 +1,15 @@
 import "source-map-support/register";
 
-import { BigNumber } from "@ethersproject/bignumber";
-import { arrayify } from "@ethersproject/bytes";
-import { keccak256 } from "@ethersproject/keccak256";
+import * as ethers from "ethers";
+import { BigNumber } from "ethers";
 import { expect } from "chai";
 
 import { initBlsWalletSigner, Bundle, Operation } from "../src/signer";
 
 import Range from "./helpers/Range";
+
+const keccak256 = ethers.utils.keccak256;
+const arrayify = ethers.utils.arrayify;
 
 const domain = arrayify(keccak256("0xfeedbee5"));
 const weiPerToken = BigNumber.from(10).pow(18);
@@ -158,5 +160,22 @@ describe("index", () => {
     const aggAggBundle = aggregate([aggBundle1, aggBundle2]);
 
     expect(verify(aggAggBundle)).to.equal(true);
+  });
+
+  it("generates expected publicKeyStr", async () => {
+    const { getPublicKeyStr } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+    });
+
+    expect(getPublicKeyStr(samples.privateKey)).to.equal(
+      [
+        "0x",
+        "0127eaaf599e0e5997ebff004ae96b61afef4c35d9d67277ebd32a08bc42e2eb",
+        "01dc98a8d2e5ac73933935dbb2888c6719914e86f14de30bf441b951867e27cd",
+        "2f29d73e617ee30597f79b3fe567a11eb3bea1a2625ccb3fcb9635edf1d2f429",
+        "27fac8b975dd299618e7f48753fdfa492f11f701445cdd7c3ca98bf5c386ec65",
+      ].join(""),
+    );
   });
 });

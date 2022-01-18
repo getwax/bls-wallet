@@ -10,6 +10,6 @@ export default function splitHex256(hex: string): string[] {
   }
 
   return Range(hex.length / 64).map(
-    (i) => `0x${hex.slice(64 * i, 64 * (i + 1))}`
+    (i) => `0x${hex.slice(64 * i, 64 * (i + 1))}`,
   );
 }

@@ -40,7 +40,7 @@ export default class Aggregator {
   }
 
   async add(bundle: Bundle): Promise<TransactionFailure[]> {
-    const resp = await fetch(`${this.origin}/transaction`, {
+    const resp = await fetch(`${this.origin}/bundle`, {
       method: "POST",
       body: JSON.stringify(bundleToDto(bundle)),
       headers: {

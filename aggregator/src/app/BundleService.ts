@@ -23,6 +23,7 @@ export default class BundleService {
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
+    maxEligibilityDelay: env.MAX_ELIGIBILITY_DELAY,
   };
 
   unconfirmedBundles = new Set<Bundle>();
@@ -67,6 +68,12 @@ export default class BundleService {
     this.stopping = true;
     await Promise.all(Array.from(this.pendingTaskPromises));
     this.stopped = true;
+  }
+
+  async runPendingTasks() {
+    while (this.pendingTaskPromises.size > 0) {
+      await Promise.all(Array.from(this.pendingTaskPromises));
+    }
   }
 
   addTask(task: () => Promise<unknown>) {
@@ -264,11 +271,16 @@ export default class BundleService {
   }
 
   async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
-    await this.bundleTable.update({
-      ...row,
-      eligibleAfter: currentBlockNumber.add(row.nextEligibilityDelay),
-      nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
-    });
+    if (row.nextEligibilityDelay.lte(this.config.maxEligibilityDelay)) {
+      await this.bundleTable.update({
+        ...row,
+        eligibleAfter: currentBlockNumber.add(row.nextEligibilityDelay),
+        nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
+      });
+    } else {
+      await this.bundleTable.remove(row);
+    }
+
     this.unconfirmedRowIds.delete(row.id!);
   }
 
