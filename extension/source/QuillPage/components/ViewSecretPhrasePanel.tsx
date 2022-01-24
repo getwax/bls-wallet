@@ -61,8 +61,8 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
           <div style={{ display: 'inline-block' }}>
             <Button
               onPress={() => setExpanded(true)}
-              highlight={false}
-              icon={<Eye className="icon-md" />} // TODO: Is icon-md needed?
+              className="btn-secondary"
+              icon={<Eye className="icon-md" />}
             >
               Show secret phrase
             </Button>
@@ -72,12 +72,15 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
       {expanded && (
         <div className="hide-box">
           <QuickRow>
-            <Button onPress={() => setExpanded(false)} highlight={false}>
+            <Button
+              className="btn-secondary"
+              onPress={() => setExpanded(false)}
+            >
               Hide secret phrase
             </Button>
             <Button
               onPress={() => {}}
-              highlight={true}
+              className="btn-primary"
               icon={<ArrowRight className="icon-md" />}
             >
               Review secret phrase

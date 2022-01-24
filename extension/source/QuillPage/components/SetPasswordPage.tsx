@@ -34,7 +34,7 @@ const SetPasswordPage: React.FunctionComponent = () => (
         <PasswordCreationForm />
         <Button
           onPress={() => {}}
-          highlight={true}
+          className="btn-primary"
           icon={<ArrowRight className="icon-md" />}
         >
           Continue

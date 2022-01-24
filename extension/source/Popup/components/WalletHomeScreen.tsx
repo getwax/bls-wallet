@@ -37,7 +37,7 @@ const WalletHomeScreen = ({ app }: Props): React.ReactElement => (
               <>
                 <div />
                 <Button
-                  highlight={true}
+                  className="btn-primary"
                   onPress={() => {
                     /* no-op */
                   }}
@@ -193,7 +193,7 @@ const WalletContent = ({ app }: Props): React.ReactElement => {
         </div>
       </div>
       <Button
-        highlight={true}
+        className="btn-primary"
         onPress={() => {
           browser.tabs.create({
             url: CREATE_TX_URL || 'createTransaction.html',
@@ -238,7 +238,7 @@ const DeleteKeyPrompt = (props: {
     </div>
     <div />
     <Button
-      highlight={true}
+      className="btn-primary"
       onPress={() => {
         props.app.deletePrivateKey();
         props.close();
@@ -246,7 +246,9 @@ const DeleteKeyPrompt = (props: {
     >
       Delete BLS key
     </Button>
-    <Button onPress={props.close}>Cancel</Button>
+    <Button className="btn-secondary" onPress={props.close}>
+      Cancel
+    </Button>
   </div>
 );
 
@@ -261,7 +263,7 @@ const CopyPrivateKeyPrompt = (props: {
     </div>
     <div />
     <Button
-      highlight={true}
+      className="btn-primary"
       onPress={() => {
         navigator.clipboard.writeText(assertExists(props.app.state.privateKey));
         props.close();
@@ -274,6 +276,8 @@ const CopyPrivateKeyPrompt = (props: {
     >
       Copy private key
     </Button>
-    <Button onPress={props.close}>Cancel</Button>
+    <Button className="btn-secondary" onPress={props.close}>
+      Cancel
+    </Button>
   </div>
 );

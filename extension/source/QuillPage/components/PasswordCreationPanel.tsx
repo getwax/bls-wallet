@@ -18,7 +18,7 @@ const PasswordCreationPanel: React.FunctionComponent = () => (
       <div style={{ display: 'inline-block' }}>
         <Button
           onPress={() => {}}
-          highlight={true}
+          className="btn-primary"
           icon={<ArrowRight className="icon-md" />} // TODO: Where is svg?
         >
           Continue
