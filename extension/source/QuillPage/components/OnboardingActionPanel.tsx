@@ -10,13 +10,7 @@ const OnboardingActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
   <QuickColumn>
-    <WorkflowNumbers
-      current={pageIndex + 1}
-      max={3}
-      onSelect={(workflowNumber) => {
-        window.location.href = `?p=${workflowNumber}`;
-      }}
-    />
+    <WorkflowNumbers current={pageIndex + 1} max={3} />
     {
       [
         <PasswordCreationPanel

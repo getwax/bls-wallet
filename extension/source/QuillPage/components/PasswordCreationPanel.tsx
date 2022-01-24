@@ -1,5 +1,6 @@
+import { ArrowRight } from 'phosphor-react';
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+
 import Button from '../../components/Button';
 import PasswordCreationForm from './PasswordCreationForm';
 
@@ -21,13 +22,9 @@ const PasswordCreationPanel: React.FunctionComponent<{
       <div>
         <div style={{ display: 'inline-block' }}>
           <Button
+            className={password === undefined ? 'btn-disabled' : 'btn-primary'}
             onPress={() => password && onComplete()}
-            highlight={true}
-            icon={{
-              src: browser.runtime.getURL('assets/arrow-small.svg'),
-              px: 19,
-            }}
-            disabled={password === undefined}
+            icon={<ArrowRight className="icon-md" />} // TODO: Where is svg?
           >
             Continue
           </Button>

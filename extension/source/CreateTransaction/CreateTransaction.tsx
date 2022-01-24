@@ -47,7 +47,7 @@ export default class CreateTransaction extends React.Component<Props> {
             <div>
               <div style={{ display: 'inline-block' }}>
                 <Button
-                  highlight={true}
+                  className="btn-primary"
                   onPress={async () => {
                     const provider = getPropOrUndefined(window, 'ethereum') as
                       | QuillEthereumProvider
