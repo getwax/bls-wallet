@@ -176,22 +176,6 @@
     }
   }
 
-  input[type=text] {
-    border: 2px solid $tone-grey-lightest;
-    border-radius: 5px;
-    padding: 2px;
-
-    &::placeholder {
-      color: $tone-grey-light;
-    }
-
-    caret-color: $primary-base;
-
-    &:focus {
-      border-color: $primary-light;
-    }
-  }
-
   .body {
     padding: 12px 24px 41px 24px;
   }

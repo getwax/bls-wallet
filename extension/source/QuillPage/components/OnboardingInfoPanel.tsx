@@ -43,7 +43,7 @@ const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
 }) => (
   <div className="bg-blue-500 flex flex-col w-2/5">
     <div
-      className="h-screen px-36 py-32 flex flex-col justify-between"
+      className="h-screen p-32 flex flex-col justify-between"
       style={{
         background: `center no-repeat url(${browser.runtime.getURL(
           "assets/info-panel-pretty-curve.svg"

@@ -6,21 +6,16 @@ const WorkflowNumbers: React.FunctionComponent<{
   current: number;
   max: number;
 }> = ({ current, max }) => (
-  <div className="flex bg-grey-400 place-items-center px-40">
+  <div className="flex justify-center space-x-10">
     {Range(max).map((i) => (
-      <div className="quick-row" key={i}>
-        <div
-          className={i + 1 <= current ? "number highlight" : "number"}
-          onClick={() => onSelect(i + 1)}
-          onKeyDown={(e) => {
-            if (["Space", "Enter"].includes(e.code)) {
-              onSelect(i + 1);
-            }
-          }}
-        >
-          {i + 1}
-        </div>
-        {i + 1 !== max && <div className="dash">-</div>}
+      <div
+        key={i}
+        className={`icon-lg rounded-full text-center leading-8 cursor-pointer ${
+          i + 1 <= current ? "bg-blue-500 text-white" : "text-black"
+        }`}
+        onClick={() => onSelect(i)}
+      >
+        {i + 1}
       </div>
     ))}
   </div>

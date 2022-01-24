@@ -1,26 +1,47 @@
-import * as React from 'react';
-import QuickColumn from './QuickColumn';
-import QuickRow from './QuickRow';
+import * as React from "react";
+
+const PasswordStrengthMeter: React.FunctionComponent<{ strength: number }> = ({
+  strength,
+}) => {
+  const [color, setColor] = React.useState("bg-alert-500");
+
+  const getColor = (strength: number) => {
+    if (strength < 50) {
+      return "bg-alert-500";
+    } else if (strength >= 50 && strength < 75) {
+      return "bg-neutral-500";
+    } else {
+      return "bg-positive-500";
+    }
+  };
+
+  React.useEffect(() => {
+    setColor(getColor(strength));
+  }, [strength]);
+
+  return (
+    <div className="mt-4 text-grey-500">
+      Password strength
+      <div
+        className={`h-1 my-2 w-full rounded-md ${color}`}
+        style={{ width: `${strength}%` }}
+      />
+    </div>
+  );
+};
 
 const PasswordCreationForm: React.FunctionComponent = () => (
   <div className="password-creation-form quick-column">
-    <QuickColumn>
-      <input
-        type="password"
-        placeholder="Password"
-        style={{ width: '100%', flexGrow: 0 }}
-      />
+    <div className="flex flex-col">
+      <input type="password" placeholder="Password" className="input" />
       <input
         type="password"
         placeholder="Confirm password"
-        style={{ width: '100%', flexGrow: 0 }}
+        className="input mt-2 disabled:input-filled"
+        disabled
       />
-      <QuickRow>
-        <div>Password strength</div>
-        <div>Average</div>
-      </QuickRow>
-      <div>This password is ok, but could be more secure.</div>
-    </QuickColumn>
+      <PasswordStrengthMeter strength={100} />
+    </div>
   </div>
 );
 
