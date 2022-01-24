@@ -234,6 +234,9 @@ describe("WalletActions", async function () {
     }
   });
 
+  // TODO: it should allow other operations when one fails
+  // TODO: it should prevent other actions when one fails
+
   it("should airdrop (multicall)", async function () {
     th = new TokenHelper(fx);
 
