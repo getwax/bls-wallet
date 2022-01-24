@@ -61,11 +61,6 @@ const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
                   You can also store this phrase in a password manager, however
                   this is less secure.
                 </li>
-                <li>
-                  Your own memory is the safest place to store your recovery
-                  phrase, just remember that if you forget it you cannot restore
-                  your wallets.
-                </li>
               </ol>
             </>,
           ][pageIndex]
