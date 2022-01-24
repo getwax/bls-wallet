@@ -70,9 +70,9 @@ export const useInputDecode = (
       try {
         const registryPromise = getMethodFromOnChainRegistry(data);
         const etherScanPromise = getMethodFromEtherscan(to, data);
-        const method = (await registryPromise) ?? (await etherScanPromise);
-        if (method) {
-          setMethod(formatMethod(method));
+        const rawMethod = (await registryPromise) ?? (await etherScanPromise);
+        if (rawMethod) {
+          setMethod(formatMethod(rawMethod));
         }
       } catch (error) {
         console.log({ error });
