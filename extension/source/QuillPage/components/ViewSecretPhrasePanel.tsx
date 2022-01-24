@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { ArrowRight, Eye } from 'phosphor-react';
+
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
 import QuickColumn from './QuickColumn';
@@ -30,7 +31,7 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
   ];
 
   return (
-    <div className={`view-secret-phrase-panel ${expanded && 'expanded'}`}>
+    <div className="view-secret-phrase-panel">
       <div className="instructions-text">
         <h3>
           Congratulations!
@@ -42,48 +43,48 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
           restoring your wallets should you lose access.
         </p>
       </div>
-      <div className="secret-phrase-box">
-        {Range(4).map((i) => (
-          <QuickRow key={`row${i}`}>
-            {Range(3).map((j) => (
-              <QuickColumn key={`column${j}`}>
-                {3 * i + j + 1}. {secretWords[3 * i + j]}
-              </QuickColumn>
-            ))}
-          </QuickRow>
-        ))}
-      </div>
-      <div className="show-box">
-        <div style={{ display: 'inline-block' }}>
-          <Button
-            onPress={() => setExpanded(true)}
-            highlight={false}
-            icon={{
-              src: browser.runtime.getURL('assets/eye.svg'),
-              px: 19,
-            }}
-          >
-            Show secret phrase
-          </Button>
+      {expanded && (
+        <div className="secret-phrase-box">
+          {Range(4).map((i) => (
+            <QuickRow key={`row${i}`}>
+              {Range(3).map((j) => (
+                <QuickColumn key={`column${j}`}>
+                  {3 * i + j + 1}. {secretWords[3 * i + j]}
+                </QuickColumn>
+              ))}
+            </QuickRow>
+          ))}
         </div>
-      </div>
-      <div className="hide-box">
-        <QuickRow>
-          <Button onPress={() => setExpanded(false)} highlight={false}>
-            Hide secret phrase
-          </Button>
-          <Button
-            onPress={() => {}}
-            highlight={true}
-            icon={{
-              src: browser.runtime.getURL('assets/arrow-small.svg'),
-              px: 19,
-            }}
-          >
-            Review secret phrase
-          </Button>
-        </QuickRow>
-      </div>
+      )}
+      {!expanded && (
+        <div className="show-box">
+          <div style={{ display: 'inline-block' }}>
+            <Button
+              onPress={() => setExpanded(true)}
+              highlight={false}
+              icon={<Eye className="icon-md" />} // TODO: Is icon-md needed?
+            >
+              Show secret phrase
+            </Button>
+          </div>
+        </div>
+      )}
+      {expanded && (
+        <div className="hide-box">
+          <QuickRow>
+            <Button onPress={() => setExpanded(false)} highlight={false}>
+              Hide secret phrase
+            </Button>
+            <Button
+              onPress={() => {}}
+              highlight={true}
+              icon={<ArrowRight className="icon-md" />}
+            >
+              Review secret phrase
+            </Button>
+          </QuickRow>
+        </div>
+      )}
     </div>
   );
 };
