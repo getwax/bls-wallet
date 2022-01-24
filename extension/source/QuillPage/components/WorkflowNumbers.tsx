@@ -5,8 +5,7 @@ import Range from '../../helpers/Range';
 const WorkflowNumbers: React.FunctionComponent<{
   current: number;
   max: number;
-  onSelect?: (selection: number) => void;
-}> = ({ current, max, onSelect = () => {} }) => (
+}> = ({ current, max }) => (
   <div className="workflow-numbers quick-row">
     {Range(max).map((i) => (
       <div className="quick-row" key={i}>
@@ -26,5 +25,11 @@ const WorkflowNumbers: React.FunctionComponent<{
     ))}
   </div>
 );
+
+function onSelect(pageIndex: number) {
+  // Note: This is for demo purposes only. We're not going to be using
+  // search parameters like this.
+  window.location.href = `?p=${pageIndex + 1}`;
+}
 
 export default WorkflowNumbers;
