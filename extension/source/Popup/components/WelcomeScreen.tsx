@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { browser } from 'webextension-polyfill-ts';
+import { ArrowRight } from 'phosphor-react';
 import Button from '../../components/Button';
 import Carousel from './Carousel';
-import { ArrowRight } from "phosphor-react";
 
 import LargeQuillHeading from './LargeQuillHeading';
 
@@ -22,9 +22,9 @@ const WelcomeScreen: React.FunctionComponent = () => (
       <div className="mt-2">
         <Button
           onPress={() => {}}
-          icon={<ArrowRight className='icon-md'/>}
-          className='btn-primary px-9 py-4'
-          >
+          icon={<ArrowRight className="icon-md" />}
+          className="btn-primary px-9 py-4"
+        >
           Get Started
         </Button>
       </div>
