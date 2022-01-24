@@ -1,19 +1,19 @@
-import * as React from 'react';
+import * as React from "react";
 
-import Range from '../../helpers/Range';
+import Range from "../../helpers/Range";
 
 const WorkflowNumbers: React.FunctionComponent<{
   current: number;
   max: number;
 }> = ({ current, max }) => (
-  <div className="workflow-numbers quick-row">
+  <div className="flex bg-grey-400 place-items-center px-40">
     {Range(max).map((i) => (
       <div className="quick-row" key={i}>
         <div
-          className={i + 1 <= current ? 'number highlight' : 'number'}
+          className={i + 1 <= current ? "number highlight" : "number"}
           onClick={() => onSelect(i + 1)}
           onKeyDown={(e) => {
-            if (['Space', 'Enter'].includes(e.code)) {
+            if (["Space", "Enter"].includes(e.code)) {
               onSelect(i + 1);
             }
           }}

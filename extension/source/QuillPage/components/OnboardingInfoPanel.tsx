@@ -1,70 +1,66 @@
-import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
-import LogoFooter from './LogoFooter';
+import * as React from "react";
+import { browser } from "webextension-polyfill-ts";
+import LogoFooter from "./LogoFooter";
+
+const info = [
+  {
+    heading: "What is Quill?",
+    description: `The world is changing and Quill will be your co-pilot as you
+  engage with many new and exciting opportunities provided by the
+  Ethereum blockchain.`,
+  },
+  {
+    heading: "What is under the hood?",
+    description: `Quill is on the cutting edge, leveraging the newest Ethereum
+  technologies to give you fast and low-cost transactions,
+  directly in your browser.`,
+  },
+  {
+    heading: "How do I keep my wallets secure?",
+    description: (
+      <ol>
+        <li>
+          1. NEVER share your secret recovery phrase. This can be used to access
+          your wallets. No legitimate service will ever ask for this phrase.
+        </li>
+        <br />
+        <li>
+          2. Write this phrase down and store a physical copy somewhere safe,
+          like a safety deposit box or vault.
+        </li>
+        <br />
+        <li>
+          3. You can also store this phrase in a password manager, however this
+          is less secure.
+        </li>
+      </ol>
+    ),
+  },
+];
 
 const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
-  <div className="onboarding-info-panel quick-column">
+  <div className="bg-blue-500 flex flex-col w-2/5">
     <div
-      className="quick-column"
+      className="h-screen px-36 py-32 flex flex-col justify-between"
       style={{
         background: `center no-repeat url(${browser.runtime.getURL(
-          'assets/info-panel-pretty-curve.svg',
+          "assets/info-panel-pretty-curve.svg"
         )})`,
       }}
     >
       <div
-        className="artwork"
+        className="h-64 w-full rounded-md"
         style={{
-          background: [
-            'no-repeat',
-            'center',
-            `url(${browser.runtime.getURL(
-              `assets/onboarding-art-${pageIndex + 1}.svg`,
-            )})`,
-          ].join(' '),
+          background: `url(${browser.runtime.getURL(
+            `assets/onboarding-art-${pageIndex + 1}.svg`
+          )}) no-repeat center`,
         }}
       />
-      <div className="info-text">
-        {
-          [
-            <>
-              <h3>What is Quill?</h3>
-              <p>
-                The world is changing and Quill will be your co-pilot as you
-                engage with many new and exciting opportunities provided by the
-                Ethereum blockchain.
-              </p>
-            </>,
-            <>
-              <h3>What is under the hood?</h3>
-              <p>
-                Quill is on the cutting edge, leveraging the newest Ethereum
-                technologies to give you fast and low-cost transactions,
-                directly in your browser.
-              </p>
-            </>,
-            <>
-              <h3>How do I keep my wallets secure?</h3>
-              <ol>
-                <li>
-                  NEVER share your secret recovery phrase. This can be used to
-                  access your wallets. No legitimate service will ever ask for
-                  this phrase.
-                </li>
-                <li>
-                  Write this phrase down and store a physical copy somewhere
-                  safe, like a safety deposit box or vault.
-                </li>
-                <li>
-                  You can also store this phrase in a password manager, however
-                  this is less secure.
-                </li>
-              </ol>
-            </>,
-          ][pageIndex]
-        }
+      <div className="flex-grow text-white py-8">
+        <div className="font-medium mb-2">{info[pageIndex].heading}</div>
+        <div className="font-light">{info[pageIndex].description}</div>
       </div>
       <LogoFooter />
     </div>

@@ -1,15 +1,14 @@
-import * as React from 'react';
+import * as React from "react";
 
-import PasswordCreationPanel from './PasswordCreationPanel';
-import QuickColumn from './QuickColumn';
-import SecretPhrasePanel from './SecretPhrasePanel';
-import SetNicknamePanel from './SetNicknamePanel';
-import WorkflowNumbers from './WorkflowNumbers';
+import PasswordCreationPanel from "./PasswordCreationPanel";
+import SecretPhrasePanel from "./SecretPhrasePanel";
+import SetNicknamePanel from "./SetNicknamePanel";
+import WorkflowNumbers from "./WorkflowNumbers";
 
 const OnboardingActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
-  <QuickColumn>
+  <div className="flex flex-col flex-grow">
     <WorkflowNumbers current={pageIndex + 1} max={3} />
     {
       [
@@ -33,7 +32,7 @@ const OnboardingActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
         />,
       ][pageIndex]
     }
-  </QuickColumn>
+  </div>
 );
 
 export default OnboardingActionPanel;
