@@ -1,5 +1,6 @@
+import { ArrowRight } from 'phosphor-react';
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+
 import Button from '../../components/Button';
 import PasswordCreationForm from './PasswordCreationForm';
 import QuickColumn from './QuickColumn';
@@ -34,10 +35,7 @@ const SetPasswordPage: React.FunctionComponent = () => (
         <Button
           onPress={() => {}}
           highlight={true}
-          icon={{
-            src: browser.runtime.getURL('assets/arrow-small.svg'),
-            px: 19,
-          }}
+          icon={<ArrowRight className="icon-md" />}
         >
           Continue
         </Button>
