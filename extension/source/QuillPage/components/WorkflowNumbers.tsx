@@ -1,6 +1,6 @@
-import * as React from "react";
+import * as React from 'react';
 
-import Range from "../../helpers/Range";
+import Range from '../../helpers/Range';
 
 const WorkflowNumbers: React.FunctionComponent<{
   current: number;
@@ -11,9 +11,14 @@ const WorkflowNumbers: React.FunctionComponent<{
       <div
         key={i}
         className={`icon-lg rounded-full text-center leading-8 cursor-pointer ${
-          i + 1 <= current ? "bg-blue-500 text-white" : "text-black"
+          i + 1 <= current ? 'bg-blue-500 text-white' : 'text-black'
         }`}
         onClick={() => onSelect(i)}
+        onKeyDown={(e) => {
+          if (['Space', 'Enter'].includes(e.code)) {
+            onSelect(i + 1);
+          }
+        }}
       >
         {i + 1}
       </div>

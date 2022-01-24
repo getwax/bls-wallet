@@ -1,9 +1,9 @@
-import * as React from "react";
+import * as React from 'react';
 
-import PasswordCreationPanel from "./PasswordCreationPanel";
-import SecretPhrasePanel from "./SecretPhrasePanel";
-import SetNicknamePanel from "./SetNicknamePanel";
-import WorkflowNumbers from "./WorkflowNumbers";
+import PasswordCreationPanel from './PasswordCreationPanel';
+import SecretPhrasePanel from './SecretPhrasePanel';
+import SetNicknamePanel from './SetNicknamePanel';
+import WorkflowNumbers from './WorkflowNumbers';
 
 const OnboardingActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,

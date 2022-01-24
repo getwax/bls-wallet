@@ -1,18 +1,18 @@
-import * as React from "react";
+import * as React from 'react';
 
 const PasswordStrengthMeter: React.FunctionComponent<{ strength: number }> = ({
   strength,
 }) => {
-  const [color, setColor] = React.useState("bg-alert-500");
+  const [color, setColor] = React.useState('bg-alert-500');
 
-  const getColor = (strength: number) => {
-    if (strength < 50) {
-      return "bg-alert-500";
-    } else if (strength >= 50 && strength < 75) {
-      return "bg-neutral-500";
-    } else {
-      return "bg-positive-500";
+  const getColor = (level: number) => {
+    if (level < 50) {
+      return 'bg-alert-500';
     }
+    if (level >= 50 && level < 75) {
+      return 'bg-neutral-500';
+    }
+    return 'bg-positive-500';
   };
 
   React.useEffect(() => {

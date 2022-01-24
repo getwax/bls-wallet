@@ -21,19 +21,4 @@
       flex-basis: 0;
     }
   }
-
-  .onboarding-info-panel {
-    background-color: $primary-base;
-    color: $tone-white;
-  }
-
-  .workflow-numbers {
-    .number {
-      cursor: pointer;
-    }
-
-    .highlight {
-      background-color: $primary-base;
-    }
-  }
 }

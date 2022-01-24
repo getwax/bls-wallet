@@ -1,7 +1,7 @@
-import * as React from "react";
+import * as React from 'react';
 
-import OnboardingActionPanel from "./OnboardingActionPanel";
-import OnboardingInfoPanel from "./OnboardingInfoPanel";
+import OnboardingActionPanel from './OnboardingActionPanel';
+import OnboardingInfoPanel from './OnboardingInfoPanel';
 
 const OnboardingPage: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,

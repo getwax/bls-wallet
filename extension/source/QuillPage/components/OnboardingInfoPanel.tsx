@@ -1,22 +1,22 @@
-import * as React from "react";
-import { browser } from "webextension-polyfill-ts";
-import LogoFooter from "./LogoFooter";
+import * as React from 'react';
+import { browser } from 'webextension-polyfill-ts';
+import LogoFooter from './LogoFooter';
 
 const info = [
   {
-    heading: "What is Quill?",
+    heading: 'What is Quill?',
     description: `The world is changing and Quill will be your co-pilot as you
   engage with many new and exciting opportunities provided by the
   Ethereum blockchain.`,
   },
   {
-    heading: "What is under the hood?",
+    heading: 'What is under the hood?',
     description: `Quill is on the cutting edge, leveraging the newest Ethereum
   technologies to give you fast and low-cost transactions,
   directly in your browser.`,
   },
   {
-    heading: "How do I keep my wallets secure?",
+    heading: 'How do I keep my wallets secure?',
     description: (
       <ol>
         <li>
@@ -46,7 +46,7 @@ const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
       className="h-screen p-32 flex flex-col justify-between"
       style={{
         background: `center no-repeat url(${browser.runtime.getURL(
-          "assets/info-panel-pretty-curve.svg"
+          'assets/info-panel-pretty-curve.svg',
         )})`,
       }}
     >
@@ -54,7 +54,7 @@ const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
         className="h-64 w-full rounded-md"
         style={{
           background: `url(${browser.runtime.getURL(
-            `assets/onboarding-art-${pageIndex + 1}.svg`
+            `assets/onboarding-art-${pageIndex + 1}.svg`,
           )}) no-repeat center`,
         }}
       />
