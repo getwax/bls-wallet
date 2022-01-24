@@ -19,7 +19,7 @@ const PasswordCreationPanel: React.FunctionComponent = () => (
         <Button
           onPress={() => {}}
           className="btn-primary"
-          icon={<ArrowRight className="icon-md" />} // TODO: Where is svg?
+          icon={<ArrowRight className="icon-md" />}
         >
           Continue
         </Button>
