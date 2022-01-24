@@ -6,7 +6,6 @@ const Button = (props: {
   onPress: () => void;
   highlight?: boolean; // TODO - remove dependency
   loading?: boolean;
-  disabled?: boolean;
   children?: React.ReactNode;
   icon?: IconProps;
 }): React.ReactElement => {
