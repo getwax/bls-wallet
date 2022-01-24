@@ -30,7 +30,7 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
   ];
 
   return (
-    <div className={classes.join(' ')}>
+    <div className={`view-secret-phrase-panel ${expanded && 'expanded'}`}>
       <div className="instructions-text">
         <h3>
           Congratulations!
