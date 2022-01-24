@@ -1,5 +1,6 @@
+import { ArrowRight } from 'phosphor-react';
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
 import QuickRow from './QuickRow';
@@ -77,17 +78,13 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
       </div>
       <div>
         <QuickRow>
-          <Button onPress={onBack} highlight={false}>
+          <Button className="btn-secondary" onPress={onBack} highlight={false}>
             Back
           </Button>
           <Button
+            className={allCorrect ? 'btn-primary' : 'btn-disabled'}
             onPress={() => allCorrect && onComplete()}
-            highlight={true}
-            icon={{
-              src: browser.runtime.getURL('assets/arrow-small.svg'),
-              px: 19,
-            }}
-            disabled={!allCorrect}
+            icon={<ArrowRight className="icon-md" />}
           >
             Confirm secret phrase
           </Button>
