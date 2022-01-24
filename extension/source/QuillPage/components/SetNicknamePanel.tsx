@@ -1,5 +1,6 @@
+import { ArrowRight } from 'phosphor-react';
 import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+
 import Button from '../../components/Button';
 
 const PasswordCreationPanel: React.FunctionComponent<{
@@ -23,11 +24,8 @@ const PasswordCreationPanel: React.FunctionComponent<{
       <div style={{ display: 'inline-block' }}>
         <Button
           onPress={onComplete}
-          highlight={true}
-          icon={{
-            src: browser.runtime.getURL('assets/arrow-small.svg'),
-            px: 19,
-          }}
+          className="btn-primary"
+          icon={<ArrowRight className="icon-md" />}
         >
           Create wallet
         </Button>
