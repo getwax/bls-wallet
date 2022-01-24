@@ -69,21 +69,19 @@ export default class TokenHelper {
     amount: BigNumber,
   ) {
     await this.fx.verificationGateway.processBundle(
-      this.fx.blsWalletSigner.aggregate([
-        sender.sign({
-          nonce,
-          actions: [
-            {
-              ethValue: BigNumber.from(0),
-              contractAddress: this.testToken.address,
-              encodedFunction: this.testToken.interface.encodeFunctionData(
-                "transfer",
-                [recipient, amount.toHexString()],
-              ),
-            },
-          ],
-        }),
-      ]),
+      sender.sign({
+        nonce,
+        actions: [
+          {
+            ethValue: BigNumber.from(0),
+            contractAddress: this.testToken.address,
+            encodedFunction: this.testToken.interface.encodeFunctionData(
+              "transfer",
+              [recipient, amount.toHexString()],
+            ),
+          },
+        ],
+      }),
     );
   }
 }
