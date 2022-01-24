@@ -11,7 +11,7 @@ const WorkflowNumbers: React.FunctionComponent<{
       <div className="quick-row" key={i}>
         <div
           className={i + 1 <= current ? 'number highlight' : 'number'}
-          onClick={() => onSelect(i + 1)}
+          onClick={() => onSelect(i)}
           onKeyDown={(e) => {
             if (['Space', 'Enter'].includes(e.code)) {
               onSelect(i + 1);
