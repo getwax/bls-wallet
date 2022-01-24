@@ -13,29 +13,30 @@
 @layer components {
   .btn {
     @apply text-white py-2 px-4 rounded;
+    cursor: pointer;
   }
 
   // primary buttons
   .btn-primary {
-    @apply btn bg-blue-500 hover:bg-blue-700;
+    @apply btn bg-blue-500 active:bg-blue-700;
   }
 
   .btn-primary-alert {
-    @apply btn bg-alert-500 hover:bg-alert-600;
+    @apply btn bg-alert-500 active:bg-alert-600;
   }
 
   // secondary buttons
   .btn-secondary {
-    @apply btn bg-white text-black hover:bg-grey-200;
+    @apply btn bg-white text-black active:bg-grey-200;
   }
 
   .btn-secondary-alert {
-    @apply btn bg-alert-300 text-black hover:bg-alert-400;
+    @apply btn bg-alert-300 text-black active:bg-alert-400;
   }
 
   // tertiary buttons
   .btn-tertiary {
-    @apply text-blue-700 hover:text-blue-900;
+    @apply text-blue-700 active:text-blue-900;
   }
 
   .btn-tertiary-alert {
