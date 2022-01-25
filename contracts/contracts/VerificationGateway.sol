@@ -267,6 +267,13 @@ contract VerificationGateway
     }
 
     /**
+    Declare that this is a verification gateway. See BLSWallet#setTrustedGateway.
+     */
+    function isVerificationGateway() public pure returns (bool) {
+        return true;
+    }
+
+    /**
     Create a new wallet if not found for the given bls public key.
      */
     function createNewWallet(
