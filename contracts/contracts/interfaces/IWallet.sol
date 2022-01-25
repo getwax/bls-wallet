@@ -2,6 +2,8 @@
 pragma solidity >=0.8.4 <0.9.0;
 pragma abicoder v2;
 
+import "./IVerificationGateway.sol";
+
 /** Interface for a contract wallet that can perform Operations
  */
 interface IWallet {
@@ -17,7 +19,7 @@ interface IWallet {
         bytes encodedFunction;
     }
 
-    function initialize(address gateway) external;
+    function initialize(IVerificationGateway gateway) external;
     function nonce() external returns (uint256);
 
     function performOperation(
@@ -31,7 +33,7 @@ interface IWallet {
     function recover(uint256[4] calldata newBLSKey) external;
 
     // prepares gateway to be set (after pending timestamp)
-    function setTrustedGateway(address gateway) external;
+    function setTrustedGateway(IVerificationGateway gateway) external;
     // checks any pending variables and sets them if past their timestamp
     function setAnyPending() external;
 

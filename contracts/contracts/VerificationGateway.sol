@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./interfaces/IWallet.sol";
+import "./interfaces/IVerificationGateway.sol";
 
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
@@ -16,7 +17,7 @@ The gateway holds a single ProxyAdmin contract for all wallets, and can
 only called by a wallet that the VG created, and only if the first param
 is the calling wallet's address.
  */
-contract VerificationGateway
+contract VerificationGateway is IVerificationGateway
 {
     /** Domain chosen arbitrarily */
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
@@ -207,13 +208,13 @@ contract VerificationGateway
      */
     function setTrustedBLSGateway(
         bytes32 hash,
-        address blsGateway
+        IVerificationGateway blsGateway
     ) public onlyWallet(hash) {
         uint256 size;
         // solhint-disable-next-line no-inline-assembly
         assembly { size := extcodesize(blsGateway) }
         require(
-            (blsGateway != address(0)) && (size > 0),
+            (address(blsGateway) != address(0)) && (size > 0),
             "BLSWallet: gateway address param not valid"
         );
         walletFromHash(hash).setTrustedGateway(blsGateway);
@@ -269,7 +270,7 @@ contract VerificationGateway
     /**
     Declare that this is a verification gateway. See BLSWallet#setTrustedGateway.
      */
-    function isVerificationGateway() public pure returns (bool) {
+    function isVerificationGateway() external pure returns (bool) {
         return true;
     }
 

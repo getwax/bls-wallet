@@ -6,6 +6,7 @@ pragma abicoder v2;
 //To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IWallet.sol";
+import "./interfaces/IVerificationGateway.sol";
 
 
 /** Minimal upgradable smart contract wallet.
@@ -25,8 +26,8 @@ contract BLSWallet is Initializable, IBLSWallet
     uint256[4] public blsPublicKey;
     uint256[4] pendingBLSPublicKey;
     uint256 pendingBLSPublicKeyTime;
-    address public trustedBLSGateway;
-    address pendingBLSGateway;
+    IVerificationGateway public trustedBLSGateway;
+    IVerificationGateway pendingBLSGateway;
     uint256 pendingGatewayTime;
 
     event PendingRecoveryHashSet(
@@ -36,7 +37,7 @@ contract BLSWallet is Initializable, IBLSWallet
         uint256[4] pendingBLSKey
     );
     event PendingGatewaySet(
-        address pendingGateway
+        IVerificationGateway pendingGateway
     );
     event PendingProxyAdminFunctionSet(
         bytes pendingProxyAdminFunction
@@ -51,15 +52,15 @@ contract BLSWallet is Initializable, IBLSWallet
         uint256[4] newBLSKey
     );
     event GatewayUpdated(
-        address oldGateway,
-        address newGateway
+        IVerificationGateway oldGateway,
+        IVerificationGateway newGateway
     );
     event ProxyAdminFunctionApproved(
         bytes approvedProxyAdmin
     );
 
     function initialize(
-        address blsGateway
+        IVerificationGateway blsGateway
     ) external initializer {
         nonce = 0;
         trustedBLSGateway = blsGateway;
@@ -122,7 +123,8 @@ contract BLSWallet is Initializable, IBLSWallet
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
-    function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
+    function setTrustedGateway(IVerificationGateway blsGateway) public onlyTrustedGateway {
+        require(blsGateway.isVerificationGateway());
         pendingBLSGateway = blsGateway;
         pendingGatewayTime = block.timestamp + 604800; // 1 week from now
         emit PendingGatewaySet(pendingBLSGateway);
@@ -155,10 +157,10 @@ contract BLSWallet is Initializable, IBLSWallet
             emit BLSKeySet(previousBLSPublicKey, blsPublicKey);
         }
         if (block.timestamp > pendingGatewayTime) {
-            address previousGateway = trustedBLSGateway;
+            IVerificationGateway previousGateway = trustedBLSGateway;
             trustedBLSGateway = pendingBLSGateway;
             pendingGatewayTime = type(uint256).max;
-            pendingBLSGateway = address(0);
+            pendingBLSGateway = IVerificationGateway(address(0));
             emit GatewayUpdated(previousGateway, trustedBLSGateway);
         }
         if (block.timestamp > pendingPAFunctionTime) {
@@ -184,7 +186,7 @@ contract BLSWallet is Initializable, IBLSWallet
         pendingBLSPublicKeyTime = type(uint256).max;
         pendingBLSPublicKey = [0,0,0,0];
         pendingGatewayTime = type(uint256).max;
-        pendingBLSGateway = address(0);
+        pendingBLSGateway = IVerificationGateway(address(0));
         pendingPAFunctionTime = type(uint256).max;
         pendingPAFunction = new bytes(0);
     }
@@ -257,7 +259,7 @@ contract BLSWallet is Initializable, IBLSWallet
 
     modifier onlyTrustedGateway() {
         bool isTrustedGateway =
-            (msg.sender == trustedBLSGateway)
+            (msg.sender == address(trustedBLSGateway))
         ;
         require(isTrustedGateway, "BLSWallet: only callable from trusted gateway");
          _;
