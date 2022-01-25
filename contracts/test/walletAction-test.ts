@@ -288,8 +288,49 @@ describe("WalletActions", async function () {
     expect(recipientBalance.eq(th.userStartAmount.mul(2)));
   });
 
-  it("should prevent other actions when one fails", async () => {
-    // TODO
+  it("should prevent other actions within an operation when one fails", async () => {
+    const th = new TokenHelper(fx);
+    const [sender, recipient] = await th.walletTokenSetup();
+
+    await (
+      await fx.verificationGateway.processBundle(
+        sender.sign({
+          nonce: await sender.Nonce(),
+          actions: [
+            // Try to send ourselves a lot of tokens from address zero, which
+            // obviously shouldn't work.
+            {
+              ethValue: 0,
+              contractAddress: th.testToken.address,
+              encodedFunction: th.testToken.interface.encodeFunctionData(
+                "transferFrom",
+                [
+                  ethers.constants.AddressZero,
+                  sender.address,
+                  ethers.constants.MaxUint256,
+                ],
+              ),
+            },
+
+            // Send tokens to recipient.
+            {
+              ethValue: 0,
+              contractAddress: th.testToken.address,
+              encodedFunction: th.testToken.interface.encodeFunctionData(
+                "transfer",
+                [recipient.address, th.userStartAmount],
+              ),
+            },
+          ],
+        }),
+      )
+    ).wait();
+
+    const recipientBalance = await th.testToken.balanceOf(recipient.address);
+
+    // Should be unchanged because the operation that would have added tokens
+    // also contained a transferFrom from the zero address.
+    expect(recipientBalance.eq(th.userStartAmount));
   });
 
   it("should airdrop (multicall)", async function () {
