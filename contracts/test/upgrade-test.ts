@@ -203,4 +203,44 @@ describe("Upgrade", async function () {
     )[0];
     expect(walletFromHashAddress).to.equal(walletAddress);
   });
+
+  it("should reject attempt to set non-gateway in setTrustedBLSGateway", async () => {
+    // Recreate hubble bls signer
+    const walletOldVg = await fx.lazyBlsWallets[0]();
+
+    const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
+      walletOldVg.privateKey,
+    );
+
+    const oldNonce = await walletOldVg.Nonce();
+
+    await (
+      await fx.verificationGateway.processBundle(
+        walletOldVg.sign({
+          nonce: BigNumber.from(2),
+          actions: [
+            {
+              ethValue: 0,
+              contractAddress: fx.verificationGateway.address,
+              encodedFunction:
+                fx.verificationGateway.interface.encodeFunctionData(
+                  "setTrustedBLSGateway",
+                  [
+                    hash,
+
+                    // A wallet is not a gateway
+                    walletOldVg.address,
+                  ],
+                ),
+            },
+          ],
+        }),
+      )
+    ).wait();
+
+    const newNonce = await walletOldVg.Nonce();
+
+    // Nonce has not incremented because the action failed
+    expect(newNonce.eq(oldNonce));
+  });
 });
