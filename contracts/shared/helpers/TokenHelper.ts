@@ -3,12 +3,13 @@ import { utils, BigNumber, Signer, Contract } from "ethers";
 import { BlsWalletWrapper } from "../../clients/src";
 
 import Fixture from "./Fixture";
+import { IERC20 } from "../../typechain";
 
 export default class TokenHelper {
   static readonly initialSupply = utils.parseUnits("1000000");
   readonly userStartAmount: BigNumber;
 
-  testToken: Contract | undefined;
+  testToken: IERC20 | undefined;
   constructor(public fx: Fixture) {
     this.userStartAmount = TokenHelper.initialSupply.div(
       fx.lazyBlsWallets.length,
@@ -56,7 +57,7 @@ export default class TokenHelper {
   async walletTokenSetup(): Promise<BlsWalletWrapper[]> {
     const wallets = await this.fx.createBLSWallets();
 
-    this.testToken = await TokenHelper.deployTestToken();
+    this.testToken = (await TokenHelper.deployTestToken()) as IERC20;
     await this.distributeTokens(this.fx.signers[0], this.testToken, wallets);
 
     return wallets;

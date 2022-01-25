@@ -234,7 +234,58 @@ describe("WalletActions", async function () {
   });
 
   it("should allow other operations when one fails", async () => {
-    // TODO
+    const th = new TokenHelper(fx);
+    const [sender1, sender2, recipient] = await th.walletTokenSetup();
+
+    await (
+      await fx.verificationGateway.processBundle(
+        fx.blsWalletSigner.aggregate([
+          sender1.sign({
+            nonce: await sender1.Nonce(),
+            actions: [
+              {
+                ethValue: 0,
+                contractAddress: th.testToken.address,
+                encodedFunction: th.testToken.interface.encodeFunctionData(
+                  "transfer",
+                  [
+                    recipient.address,
+
+                    // Should fail because it's more than the sender has
+                    th.userStartAmount.add(1),
+                  ],
+                ),
+              },
+            ],
+          }),
+          sender2.sign({
+            nonce: await sender2.Nonce(),
+            actions: [
+              {
+                ethValue: 0,
+                contractAddress: th.testToken.address,
+                encodedFunction: th.testToken.interface.encodeFunctionData(
+                  "transfer",
+                  [
+                    recipient.address,
+
+                    // Should succeed (should not be affected by other operation
+                    // in bundle)
+                    th.userStartAmount,
+                  ],
+                ),
+              },
+            ],
+          }),
+        ]),
+      )
+    ).wait();
+
+    const recipientBalance = await th.testToken.balanceOf(recipient.address);
+
+    // Should have exactly double the starting amount by receiving all of
+    // sender2's tokens.
+    expect(recipientBalance.eq(th.userStartAmount.mul(2)));
   });
 
   it("should prevent other actions when one fails", async () => {
