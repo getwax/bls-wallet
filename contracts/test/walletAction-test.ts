@@ -38,7 +38,6 @@ describe("WalletActions", async function () {
   });
 
   let fx: Fixture;
-  let th: TokenHelper;
   beforeEach(async function () {
     if (network.name === "rinkarby") {
       fx = await Fixture.create(Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
@@ -208,7 +207,7 @@ describe("WalletActions", async function () {
   });
 
   it("should process individual calls", async function () {
-    th = new TokenHelper(fx);
+    const th = new TokenHelper(fx);
     const wallets = await th.walletTokenSetup();
 
     // check each wallet has start amount
@@ -234,11 +233,16 @@ describe("WalletActions", async function () {
     }
   });
 
-  // TODO: it should allow other operations when one fails
-  // TODO: it should prevent other actions when one fails
+  it("should allow other operations when one fails", async () => {
+    // TODO
+  });
+
+  it("should prevent other actions when one fails", async () => {
+    // TODO
+  });
 
   it("should airdrop (multicall)", async function () {
-    th = new TokenHelper(fx);
+    const th = new TokenHelper(fx);
 
     const wallets = await fx.createBLSWallets();
     const testToken = await TokenHelper.deployTestToken();
