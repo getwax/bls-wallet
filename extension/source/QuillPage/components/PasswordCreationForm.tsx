@@ -91,6 +91,9 @@ const PasswordCreationForm: React.FunctionComponent<{
     if (confirmPasswordFieldValue === passwordFieldValue) {
       return 'border-2 border-positive-500 bg-positive-500 focus:border-positive-500';
     }
+    if (passwordFieldValue.startsWith(confirmPasswordFieldValue)) {
+      return 'border-2 border-neutral-500 bg-neutral-500 focus:border-neutral-500';
+    }
     return 'border-2 border-alert-500 bg-alert-500 focus:border-alert-500';
   };
 

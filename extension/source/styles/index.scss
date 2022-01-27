@@ -27,7 +27,7 @@
 
   // secondary buttons
   .btn-secondary {
-    @apply btn bg-white text-black active:bg-grey-200;
+    @apply btn bg-white text-black border border-grey-400 active:bg-grey-200;
   }
 
   .btn-secondary-alert {
