@@ -24,7 +24,7 @@ const PasswordCreationPanel: React.FunctionComponent<{
           <Button
             className={password === undefined ? 'btn-disabled' : 'btn-primary'}
             onPress={() => password && onComplete()}
-            icon={<ArrowRight className="icon-md" />} // TODO: Where is svg?
+            icon={<ArrowRight className="icon-md" />}
           >
             Continue
           </Button>
