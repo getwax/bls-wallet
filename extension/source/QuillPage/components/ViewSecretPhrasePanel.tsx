@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ArrowRight, Eye } from 'phosphor-react';
+import { ArrowRight, Eye, EyeClosed } from 'phosphor-react';
 
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
@@ -44,38 +44,30 @@ const ViewSecretPhrasePanel: React.FunctionComponent<{
           ))}
         </div>
       )}
-      {!expanded && (
-        <div className="show-box">
-          <div style={{ display: 'inline-block' }}>
-            <Button
-              onPress={() => setExpanded(true)}
-              className="btn-secondary"
-              icon={<Eye className="icon-md" />}
-            >
-              Show secret phrase
-            </Button>
-          </div>
-        </div>
-      )}
-      {expanded && (
-        <div className="hide-box">
-          <QuickRow>
-            <Button
-              className="btn-secondary"
-              onPress={() => setExpanded(false)}
-            >
-              Hide secret phrase
-            </Button>
-            <Button
-              onPress={onComplete}
-              className="btn-primary"
-              icon={<ArrowRight className="icon-md" />}
-            >
-              Review secret phrase
-            </Button>
-          </QuickRow>
-        </div>
-      )}
+      <div style={{ display: 'inline-block' }}>
+        <Button
+          onPress={() => setExpanded(!expanded)}
+          className="btn-secondary"
+          icon={
+            !expanded ? (
+              <Eye className="icon-md" />
+            ) : (
+              <EyeClosed className="icon-md" />
+            )
+          }
+        >
+          {!expanded ? 'Show secret phrase' : 'Hide secret phrase'}
+        </Button>
+        {expanded && (
+          <Button
+            onPress={onComplete}
+            className="btn-primary"
+            icon={<ArrowRight className="icon-md" />}
+          >
+            Review secret phrase
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
