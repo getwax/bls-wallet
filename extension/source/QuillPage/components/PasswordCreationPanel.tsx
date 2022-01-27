@@ -4,7 +4,9 @@ import * as React from 'react';
 import Button from '../../components/Button';
 import PasswordCreationForm from './PasswordCreationForm';
 
-const PasswordCreationPanel: React.FunctionComponent = () => (
+const PasswordCreationPanel: React.FunctionComponent<{
+  onComplete: () => void;
+}> = ({ onComplete }) => (
   <>
     <div className="instructions-text">
       <h3>Let&apos;s start by setting a password.</h3>
@@ -17,7 +19,7 @@ const PasswordCreationPanel: React.FunctionComponent = () => (
     <div>
       <div style={{ display: 'inline-block' }}>
         <Button
-          onPress={() => {}}
+          onPress={onComplete}
           className="btn-primary"
           icon={<ArrowRight className="icon-md" />}
         >

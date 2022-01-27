@@ -6,7 +6,10 @@ import Range from '../../helpers/Range';
 import QuickColumn from './QuickColumn';
 import QuickRow from './QuickRow';
 
-const ViewSecretPhrasePanel: React.FunctionComponent = () => {
+const ViewSecretPhrasePanel: React.FunctionComponent<{
+  secretPhrase: string[];
+  onComplete: () => void;
+}> = ({ secretPhrase, onComplete }) => {
   const [expanded, setExpanded] = React.useState(false);
 
   const classes = ['view-secret-phrase-panel'];
@@ -14,21 +17,6 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
   if (expanded) {
     classes.push('expanded');
   }
-
-  const secretWords = [
-    'Potato',
-    'Velvet',
-    'Keen',
-    'Water',
-    'Travel',
-    'Pill',
-    'Book',
-    'Photo',
-    'Image',
-    'Space',
-    'Pause',
-    'Power',
-  ];
 
   return (
     <div className="view-secret-phrase-panel">
@@ -49,7 +37,7 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
             <QuickRow key={`row${i}`}>
               {Range(3).map((j) => (
                 <QuickColumn key={`column${j}`}>
-                  {3 * i + j + 1}. {secretWords[3 * i + j]}
+                  {3 * i + j + 1}. {secretPhrase[3 * i + j]}
                 </QuickColumn>
               ))}
             </QuickRow>
@@ -72,7 +60,7 @@ const ViewSecretPhrasePanel: React.FunctionComponent = () => {
         </Button>
         {expanded && (
           <Button
-            onPress={() => {}}
+            onPress={onComplete}
             className="btn-primary"
             icon={<ArrowRight className="icon-md" />}
           >
