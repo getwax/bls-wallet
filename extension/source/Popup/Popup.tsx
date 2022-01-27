@@ -9,7 +9,7 @@ import WalletHomeScreen from './components/WalletHomeScreen';
 import WelcomeScreen from './components/WelcomeScreen';
 import KeyEntryScreen from './components/KeyEntryScreen';
 
-import "../styles/index.scss";
+import '../styles/index.scss';
 
 type Props = {
   appPromise: Promise<App>;

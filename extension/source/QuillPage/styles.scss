@@ -1,0 +1,39 @@
+@import "../styles/quill";
+
+#quill-page-root {
+  .quick-row {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+
+    > * {
+      flex-grow: 1;
+      flex-basis: 0;
+    }
+  }
+
+  .quick-column {
+    display: flex;
+    flex-direction: column;
+
+    > * {
+      flex-grow: 1;
+      flex-basis: 0;
+    }
+  }
+
+  .onboarding-info-panel {
+    background-color: $primary-base;
+    color: $tone-white;
+  }
+
+  .workflow-numbers {
+    .number {
+      cursor: pointer;
+    }
+
+    .highlight {
+      background-color: $primary-base;
+    }
+  }
+}
