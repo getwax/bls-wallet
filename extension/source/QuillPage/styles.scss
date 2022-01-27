@@ -36,4 +36,27 @@
       background-color: $primary-base;
     }
   }
+
+  .password-creation-form {
+    .password-meter {
+      display: inline-block;
+      background-color: grey;
+      color: white;
+      transition: width 200ms ease;
+    }
+
+    .password-confirm-field {
+      &.correct {
+        background-color: green;
+      }
+
+      &.incorrect {
+        background-color: red;
+      }
+
+      &.incomplete {
+        background-color: yellow;
+      }
+    }
+  }
 }
