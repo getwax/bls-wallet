@@ -16,7 +16,7 @@ const PasswordCreationPanel: React.FunctionComponent<{
         you have more wallets.
       </span>
     </div>
-    <div className="h-32 ">
+    <div className="h-40">
       <input type="text" placeholder="Nickname" className="input" />
       <div className="bg-grey-200 p-4 mt-4 text-[10pt] rounded-md flex gap-4">
         <Info className="icon-md text-blue-500 mt-1" />

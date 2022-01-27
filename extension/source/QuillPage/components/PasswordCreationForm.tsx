@@ -1,8 +1,8 @@
+import { Info } from 'phosphor-react';
 import * as React from 'react';
 import measurePasswordStrength, {
   PasswordStrength,
 } from '../../helpers/measurePasswordStrength';
-import QuickRow from './QuickRow';
 
 const passwordCommentaryMap: Record<PasswordStrength['descriptor'], string> = {
   'Very weak': 'Please consider using a stronger password.',
@@ -10,119 +10,115 @@ const passwordCommentaryMap: Record<PasswordStrength['descriptor'], string> = {
   Average:
     "This password is about average, which isn't great for protecting assets.",
   Good: 'This is a relatively good password, but could be more secure.',
-  Strong: '',
+  Strong: 'Looks like a good password!',
 };
 
-const PasswordStrengthMeter: React.FunctionComponent<{ strength: number }> = ({
-  strength,
-}) => {
+const PasswordStrengthMeter: React.FunctionComponent<{
+  strength: PasswordStrength;
+}> = ({ strength }) => {
   const [color, setColor] = React.useState('bg-alert-500');
 
   const getColor = (level: number) => {
-    if (level < 50) {
+    if (level < 6) {
       return 'bg-alert-500';
     }
-    if (level >= 50 && level < 75) {
+    if (level < 9) {
+      return 'bg-neutral-400';
+    }
+    if (level < 12) {
       return 'bg-neutral-500';
     }
     return 'bg-positive-500';
   };
 
   React.useEffect(() => {
-    setColor(getColor(strength));
+    setColor(getColor(strength.guessesLog10));
   }, [strength]);
 
-  return (
-    <div className="mt-4 text-grey-500">
-      Password strength
-      <div
-        className={`h-1 my-2 w-full rounded-md ${color}`}
-        style={{ width: `${strength}%` }}
-      />
-    </div>
-  );
+  if (strength.fillRatio !== 0) {
+    return (
+      <div className="mt-4 text-grey-500">
+        Password strength
+        <div
+          className={`h-1 my-2 w-full transition-all rounded-md ${color}`}
+          style={{ width: `${strength.fillRatio * 100}%` }}
+        />
+        <div className="bg-grey-200 p-4 mt-4 text-[10pt] rounded-md flex gap-4">
+          <Info className="icon-md text-blue-500 mt-1" />
+          <div className="align-text-top">
+            {passwordCommentaryMap[strength.descriptor]}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return <></>;
 };
 
 const PasswordCreationForm: React.FunctionComponent<{
   onPasswordUpdate: (password: string | undefined) => void;
-}> = ({ onPasswordUpdate }) => (
+}> = ({ onPasswordUpdate }) => {
   const [password, setPassword] = React.useState<string>();
 
   const [passwordFieldValue, setPasswordFieldValue] = React.useState('');
   const [confirmPasswordFieldValue, setConfirmPasswordFieldValue] =
     React.useState('');
-  
+
   function handleFieldsChange(newPassword: string, newConfirmPassword: string) {
-      if (newPassword !== passwordFieldValue) {
-        setPasswordFieldValue(newPassword);
-      }
-  
-      if (newConfirmPassword !== confirmPasswordFieldValue) {
-        setConfirmPasswordFieldValue(newConfirmPassword);
-      }
-  
-      const newResultPassword =
-        newPassword === newConfirmPassword ? newPassword : undefined;
-  
-      if (newResultPassword !== password) {
-        setPassword(newResultPassword);
-        onPasswordUpdate(newResultPassword);
-      }
+    if (newPassword !== passwordFieldValue) {
+      setPasswordFieldValue(newPassword);
     }
 
-    const passwordStrength = measurePasswordStrength(passwordFieldValue);
+    if (newConfirmPassword !== confirmPasswordFieldValue) {
+      setConfirmPasswordFieldValue(newConfirmPassword);
+    }
 
-    const confirmFieldClasses = ['password-confirm-field'];
-  
+    const newResultPassword =
+      newPassword === newConfirmPassword ? newPassword : undefined;
+
+    if (newResultPassword !== password) {
+      setPassword(newResultPassword);
+      onPasswordUpdate(newResultPassword);
+    }
+  }
+
+  const passwordStrength = measurePasswordStrength(passwordFieldValue);
+
+  const getConfirmPasswordClass = () => {
     if (confirmPasswordFieldValue === '') {
-      confirmFieldClasses.push('empty');
-    } else if (confirmPasswordFieldValue === passwordFieldValue) {
-      confirmFieldClasses.push('correct');
-    } else if (passwordFieldValue.startsWith(confirmPasswordFieldValue)) {
-      confirmFieldClasses.push('incomplete');
-    } else {
-      confirmFieldClasses.push('incorrect');
+      return '';
     }
+    if (confirmPasswordFieldValue === passwordFieldValue) {
+      return 'border-2 border-positive-500 bg-positive-500 focus:border-positive-500';
+    }
+    return 'border-2 border-alert-500 bg-alert-500 focus:border-alert-500';
+  };
 
-  <div className="password-creation-form quick-column">
-    <div className="flex flex-col">
-      <input type="password" placeholder="Password" className="input" onInput={(e) => {
+  return (
+    <div>
+      <div className="flex flex-col">
+        <input
+          type="password"
+          placeholder="Password"
+          onInput={(e) => {
             const newPassword = (e.target as HTMLInputElement).value;
             handleFieldsChange(newPassword, confirmPasswordFieldValue);
-          }} />
-      <input
-        type="password"
-        placeholder="Confirm password"
-        className="input mt-2 disabled:input-filled"
-        onInput={(e) => {
-          const newConfirmPassword = (e.target as HTMLInputElement).value;
-          handleFieldsChange(passwordFieldValue, newConfirmPassword);
-        }}
-      />
-      <PasswordStrengthMeter strength={100} />
-      <QuickRow>
-          <div>Password strength</div>
-          <div>{passwordStrength.descriptor}</div>
-        </QuickRow>
-        <div>
-          <div
-            className="password-meter"
-            style={{
-              width: `${passwordStrength.fillRatio * 100}%`,
-            }}
-          >
-            &nbsp;
-          </div>
-          <div>
-            Fill width: {(passwordStrength.fillRatio * 100).toFixed(1)}%
-          </div>
-        </div>
-        <div>
-          {passwordFieldValue &&
-            passwordCommentaryMap[passwordStrength.descriptor]}
-        </div>
+          }}
+        />
+        <input
+          type="password"
+          placeholder="Confirm password"
+          className={`mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25 ${getConfirmPasswordClass()}`}
+          disabled={!passwordFieldValue}
+          onInput={(e) => {
+            const newConfirmPassword = (e.target as HTMLInputElement).value;
+            handleFieldsChange(passwordFieldValue, newConfirmPassword);
+          }}
+        />
+        <PasswordStrengthMeter strength={passwordStrength} />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default PasswordCreationForm;
