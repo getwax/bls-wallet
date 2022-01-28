@@ -6,7 +6,7 @@ import OnboardingInfoPanel from './OnboardingInfoPanel';
 const OnboardingPage: React.FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
-  <div className="onboarding-page quick-row" style={{ height: '100vh' }}>
+  <div className="flex h-screen">
     <OnboardingInfoPanel pageIndex={pageIndex} />
     <OnboardingActionPanel pageIndex={pageIndex} />
   </div>

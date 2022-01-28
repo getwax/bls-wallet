@@ -3,8 +3,6 @@ import { ArrowRight, Eye, EyeClosed } from 'phosphor-react';
 
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
-import QuickColumn from './QuickColumn';
-import QuickRow from './QuickRow';
 
 const ViewSecretPhrasePanel: React.FunctionComponent<{
   secretPhrase: string[];
@@ -19,35 +17,41 @@ const ViewSecretPhrasePanel: React.FunctionComponent<{
   }
 
   return (
-    <div className="view-secret-phrase-panel">
-      <div className="instructions-text">
-        <h3>
+    <div className="w-[28rem]">
+      <div className="mb-10">
+        <div className="font-bold">
           Congratulations!
           <br />
           You have created a wallet.
-        </h3>
-        <p>
+        </div>
+        <span>
           Below is your secret recovery phrase, which you will need when
           restoring your wallets should you lose access.
-        </p>
+        </span>
       </div>
       {expanded && (
-        <div className="secret-phrase-box">
+        <div>
           {Range(4).map((i) => (
-            <QuickRow key={`row${i}`}>
+            <div
+              className="flex justify-between text-left gap-2"
+              key={`row${i}`}
+            >
               {Range(3).map((j) => (
-                <QuickColumn key={`column${j}`}>
+                <div
+                  className="bg-grey-200 w-1/3 mb-2 py-2 px-4 rounded-md hover:bg-grey-300"
+                  key={`column${j}`}
+                >
                   {3 * i + j + 1}. {secretPhrase[3 * i + j]}
-                </QuickColumn>
+                </div>
               ))}
-            </QuickRow>
+            </div>
           ))}
         </div>
       )}
-      <div style={{ display: 'inline-block' }}>
+      <div className="flex gap-2 mt-6">
         <Button
           onPress={() => setExpanded(!expanded)}
-          className="btn-secondary"
+          className="btn-secondary w-1/2"
           icon={
             !expanded ? (
               <Eye className="icon-md" />
@@ -61,7 +65,7 @@ const ViewSecretPhrasePanel: React.FunctionComponent<{
         {expanded && (
           <Button
             onPress={onComplete}
-            className="btn-primary"
+            className="btn-primary w-1/2"
             icon={<ArrowRight className="icon-md" />}
           >
             Review secret phrase

@@ -27,7 +27,7 @@
 
   // secondary buttons
   .btn-secondary {
-    @apply btn bg-white text-black active:bg-grey-200;
+    @apply btn bg-white text-black border border-grey-400 active:bg-grey-200;
   }
 
   .btn-secondary-alert {
@@ -62,5 +62,9 @@
 
   .icon-lg {
     @apply h-8 w-8;
+  }
+
+  input {
+    @apply w-full border border-grey-300 focus:border-grey-500 rounded-md py-2 px-3 disabled:bg-grey-300;
   }
 }

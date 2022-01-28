@@ -1,11 +1,48 @@
-import { ArrowRight } from 'phosphor-react';
 import * as React from 'react';
 
+import { ArrowRight } from 'phosphor-react';
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
-import QuickRow from './QuickRow';
 
-type ReviewWordState = 'partial' | 'correct' | 'incorrect';
+const WordInReview: React.FunctionComponent<{
+  index: number;
+  sampleIndex: number;
+  word: string;
+  handleGuess: (index: number, isCorrect: boolean) => void;
+}> = ({ index, sampleIndex, word, handleGuess }) => {
+  const [guess, setGuess] = React.useState('');
+
+  React.useEffect(() => {
+    const isCorrect = guess === word;
+    handleGuess(index, isCorrect);
+    // eslint-disable-next-line
+  }, [guess]);
+
+  const getConfirmWordClass = () => {
+    if (guess === '') {
+      return '';
+    }
+    if (guess === word) {
+      return 'border-2 border-positive-500 bg-positive-500 focus:border-positive-500';
+    }
+    if (word.startsWith(guess)) {
+      return 'border-2 border-neutral-500 bg-neutral-500 focus:border-neutral-500';
+    }
+    return 'border-2 border-alert-500 bg-alert-500 focus:border-alert-500';
+  };
+
+  return (
+    <input
+      type="text"
+      className={`mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25 ${getConfirmWordClass()}`}
+      placeholder={`Secret word ${sampleIndex + 1} ${word}`}
+      onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+        const userEntry = e.target.value.toLowerCase();
+        setGuess(userEntry);
+      }}
+    />
+  );
+};
 
 const ReviewSecretPhrasePanel: React.FunctionComponent<{
   secretPhrase: string[];
@@ -14,81 +51,59 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
   onComplete: () => void;
 }> = ({ secretPhrase, sampleIndexes = [0, 3, 9, 11], onBack, onComplete }) => {
   const len = sampleIndexes.length;
-  const correctSamples = sampleIndexes.map((i) => secretPhrase[i]);
 
-  const [reviewWordStates, setReviewWordStates] = React.useState<
-    ReviewWordState[]
-  >(Range(len).map(() => 'partial'));
+  const [reviewWordStates, setReviewWordStates] = React.useState<boolean[]>(
+    Range(len).map(() => false),
+  );
 
-  const allCorrect = reviewWordStates.every((s) => s === 'correct');
+  const [allCorrect, setAllCorrect] = React.useState<boolean>(false);
+
+  const handleGuess = (index: number, isCorrect: boolean) => {
+    const snapshot = reviewWordStates;
+    snapshot[index] = isCorrect;
+    setReviewWordStates(snapshot);
+    setAllCorrect(reviewWordStates.every((item) => item === true));
+  };
 
   return (
-    <div>
-      <div className="instructions-text">
-        <p>
-          Ok, this is the last step and then you can get started with Quill!.
+    <div className="w-[28rem]">
+      <div className="mb-10">
+        <div className="font-bold">
+          Ok, last step before you get started with Quill!
+        </div>
+        <span>
           Let&apos;s check a few words from your secret phrase to make extra
           sure you&apos;ve got it.
-        </p>
+        </span>
       </div>
-      <div className="review-secret-phrase-box">
-        {Range(4).map((i) => (
-          <div key={`s${i}`}>
-            <input
-              className={reviewWordStates[i]}
-              type="text"
-              placeholder={`Secret word ${sampleIndexes[i] + 1}`}
-              onInput={(e) => {
-                const userEntry = (
-                  e.target as HTMLInputElement
-                ).value.toLowerCase();
 
-                const correctEntry = correctSamples[i].toLowerCase();
+      {Range(4).map((i) => (
+        <WordInReview
+          handleGuess={handleGuess}
+          index={i}
+          sampleIndex={sampleIndexes[i]}
+          word={secretPhrase[i].toLowerCase()}
+          key={`s${i}`}
+        />
+      ))}
 
-                const currentState = reviewWordStates[i];
-                let newState: ReviewWordState;
-
-                if (userEntry === correctEntry) {
-                  newState = 'correct';
-                } else if (correctEntry.startsWith(userEntry)) {
-                  newState = 'partial';
-                } else {
-                  newState = 'incorrect';
-                }
-
-                if (newState !== currentState) {
-                  const newReviewWordStates = reviewWordStates.slice();
-                  newReviewWordStates[i] = newState;
-                  setReviewWordStates(newReviewWordStates);
-                }
-              }}
-            />
-            {
-              // Just printing the className applied to the fields for debug
-              // purposes here. Remove this when the fields are styled
-              // accordingly.
-              reviewWordStates[i]
-            }
-          </div>
-        ))}
-      </div>
-      <div className="explainer-box">
+      <div className="mt-2 text-grey-500">
         You must correctly enter your secret phrase words before you can
         proceed.
       </div>
       <div>
-        <QuickRow>
-          <Button className="btn-secondary" onPress={onBack} highlight={false}>
+        <div className="flex gap-2 mt-6">
+          <Button className="btn-secondary w-1/2" onPress={onBack}>
             Back
           </Button>
           <Button
-            className={allCorrect ? 'btn-primary' : 'btn-disabled'}
+            className={`w-1/2 ${allCorrect ? 'btn-primary' : 'btn-disabled'}`}
             onPress={() => allCorrect && onComplete()}
             icon={<ArrowRight className="icon-md" />}
           >
             Confirm secret phrase
           </Button>
-        </QuickRow>
+        </div>
       </div>
     </div>
   );

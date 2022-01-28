@@ -11,24 +11,26 @@ const PasswordCreationPanel: React.FunctionComponent<{
 
   return (
     <>
-      <div className="instructions-text">
-        <h3>Let&apos;s start by setting a password.</h3>
-        <p>
+      <div className="mb-10">
+        <div className="font-bold">Let&apos;s start by setting a password.</div>
+        <span>
           Occasionally we will ask you for this to prevent unwanted access of
           your wallets.
-        </p>
+        </span>
       </div>
-      <PasswordCreationForm onPasswordUpdate={setPassword} />
-      <div>
-        <div style={{ display: 'inline-block' }}>
-          <Button
-            className={password === undefined ? 'btn-disabled' : 'btn-primary'}
-            onPress={() => password && onComplete()}
-            icon={<ArrowRight className="icon-md" />}
-          >
-            Continue
-          </Button>
-        </div>
+      <div className="h-40">
+        <PasswordCreationForm onPasswordUpdate={setPassword} />
+      </div>
+      <div className="py-24 float-right">
+        <Button
+          className={`w-32 ${
+            password === undefined ? 'btn-disabled' : 'btn-primary'
+          }`}
+          onPress={() => password && onComplete()}
+          icon={<ArrowRight className="icon-md" />}
+        >
+          Continue
+        </Button>
       </div>
     </>
   );

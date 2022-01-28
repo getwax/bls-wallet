@@ -21,42 +21,4 @@
       flex-basis: 0;
     }
   }
-
-  .onboarding-info-panel {
-    background-color: $primary-base;
-    color: $tone-white;
-  }
-
-  .workflow-numbers {
-    .number {
-      cursor: pointer;
-    }
-
-    .highlight {
-      background-color: $primary-base;
-    }
-  }
-
-  .password-creation-form {
-    .password-meter {
-      display: inline-block;
-      background-color: grey;
-      color: white;
-      transition: width 200ms ease;
-    }
-
-    .password-confirm-field {
-      &.correct {
-        background-color: green;
-      }
-
-      &.incorrect {
-        background-color: red;
-      }
-
-      &.incomplete {
-        background-color: yellow;
-      }
-    }
-  }
 }
