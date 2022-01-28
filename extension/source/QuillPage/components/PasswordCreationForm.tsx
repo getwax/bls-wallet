@@ -113,8 +113,8 @@ const PasswordCreationForm: React.FunctionComponent<{
           placeholder="Confirm password"
           className={`mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25 ${getConfirmPasswordClass()}`}
           disabled={!passwordFieldValue}
-          onInput={(e) => {
-            const newConfirmPassword = (e.target as HTMLInputElement).value;
+          onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const newConfirmPassword = e.target.value;
             handleFieldsChange(passwordFieldValue, newConfirmPassword);
           }}
         />
