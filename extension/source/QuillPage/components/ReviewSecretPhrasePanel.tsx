@@ -36,8 +36,8 @@ const WordInReview: React.FunctionComponent<{
       type="text"
       className={`mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25 ${getConfirmWordClass()}`}
       placeholder={`Secret word ${sampleIndex + 1} ${word}`}
-      onInput={(e) => {
-        const userEntry = (e.target as HTMLInputElement).value.toLowerCase();
+      onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+        const userEntry = e.target.value.toLowerCase();
         setGuess(userEntry);
       }}
     />
