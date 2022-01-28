@@ -232,12 +232,11 @@ contract VerificationGateway
         // revert if signature not verified
         verify(bundle);
 
-        IWallet wallet;
         uint256 opLength = bundle.operations.length;
         successes = new bool[](opLength);
         results = new bytes[][](opLength);
         for (uint256 i = 0; i<opLength; i++) {
-            wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
+            IWallet wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
 
             // check nonce then perform action
             if (bundle.operations[i].nonce == wallet.nonce()) {
