@@ -237,8 +237,7 @@ contract VerificationGateway
         successes = new bool[](opLength);
         results = new bytes[][](opLength);
         for (uint256 i = 0; i<opLength; i++) {
-            // create wallet if not found
-            wallet = createNewWallet(bundle.senderPublicKeys[i]);
+            wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
 
             // check nonce then perform action
             if (bundle.operations[i].nonce == wallet.nonce()) {
@@ -259,9 +258,10 @@ contract VerificationGateway
     }
 
     /**
-    Create a new wallet if not found for the given bls public key.
+    Gets the wallet contract associated with the public key, creating it if
+    needed.
      */
-    function createNewWallet(
+    function getOrCreateWallet(
         uint256[BLS_KEY_LEN] calldata publicKey
     ) private returns (IWallet) {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
