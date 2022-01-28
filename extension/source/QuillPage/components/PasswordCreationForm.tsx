@@ -103,8 +103,8 @@ const PasswordCreationForm: React.FunctionComponent<{
         <input
           type="password"
           placeholder="Password"
-          onInput={(e) => {
-            const newPassword = (e.target as HTMLInputElement).value;
+          onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const newPassword = e.target.value;
             handleFieldsChange(newPassword, confirmPasswordFieldValue);
           }}
         />
