@@ -38,7 +38,6 @@ describe("WalletActions", async function () {
   });
 
   let fx: Fixture;
-  let th: TokenHelper;
   beforeEach(async function () {
     if (network.name === "rinkarby") {
       fx = await Fixture.create(Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
@@ -208,7 +207,7 @@ describe("WalletActions", async function () {
   });
 
   it("should process individual calls", async function () {
-    th = new TokenHelper(fx);
+    const th = new TokenHelper(fx);
     const wallets = await th.walletTokenSetup();
 
     // check each wallet has start amount
@@ -234,8 +233,108 @@ describe("WalletActions", async function () {
     }
   });
 
+  it("should allow other operations when one fails", async () => {
+    const th = new TokenHelper(fx);
+    const [sender1, sender2, recipient] = await th.walletTokenSetup();
+
+    await (
+      await fx.verificationGateway.processBundle(
+        fx.blsWalletSigner.aggregate([
+          sender1.sign({
+            nonce: await sender1.Nonce(),
+            actions: [
+              {
+                ethValue: 0,
+                contractAddress: th.testToken.address,
+                encodedFunction: th.testToken.interface.encodeFunctionData(
+                  "transfer",
+                  [
+                    recipient.address,
+
+                    // Should fail because it's more than the sender has
+                    th.userStartAmount.add(1),
+                  ],
+                ),
+              },
+            ],
+          }),
+          sender2.sign({
+            nonce: await sender2.Nonce(),
+            actions: [
+              {
+                ethValue: 0,
+                contractAddress: th.testToken.address,
+                encodedFunction: th.testToken.interface.encodeFunctionData(
+                  "transfer",
+                  [
+                    recipient.address,
+
+                    // Should succeed (should not be affected by other operation
+                    // in bundle)
+                    th.userStartAmount,
+                  ],
+                ),
+              },
+            ],
+          }),
+        ]),
+      )
+    ).wait();
+
+    const recipientBalance = await th.testToken.balanceOf(recipient.address);
+
+    // Should have exactly double the starting amount by receiving all of
+    // sender2's tokens.
+    expect(recipientBalance.eq(th.userStartAmount.mul(2)));
+  });
+
+  it("should prevent other actions within an operation when one fails", async () => {
+    const th = new TokenHelper(fx);
+    const [sender, recipient] = await th.walletTokenSetup();
+
+    await (
+      await fx.verificationGateway.processBundle(
+        sender.sign({
+          nonce: await sender.Nonce(),
+          actions: [
+            // Try to send ourselves a lot of tokens from address zero, which
+            // obviously shouldn't work.
+            {
+              ethValue: 0,
+              contractAddress: th.testToken.address,
+              encodedFunction: th.testToken.interface.encodeFunctionData(
+                "transferFrom",
+                [
+                  ethers.constants.AddressZero,
+                  sender.address,
+                  ethers.constants.MaxUint256,
+                ],
+              ),
+            },
+
+            // Send tokens to recipient.
+            {
+              ethValue: 0,
+              contractAddress: th.testToken.address,
+              encodedFunction: th.testToken.interface.encodeFunctionData(
+                "transfer",
+                [recipient.address, th.userStartAmount],
+              ),
+            },
+          ],
+        }),
+      )
+    ).wait();
+
+    const recipientBalance = await th.testToken.balanceOf(recipient.address);
+
+    // Should be unchanged because the operation that would have added tokens
+    // also contained a transferFrom from the zero address.
+    expect(recipientBalance.eq(th.userStartAmount));
+  });
+
   it("should airdrop (multicall)", async function () {
-    th = new TokenHelper(fx);
+    const th = new TokenHelper(fx);
 
     const wallets = await fx.createBLSWallets();
     const testToken = await TokenHelper.deployTestToken();
