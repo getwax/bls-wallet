@@ -32,24 +32,6 @@
         bottom: 12px;
       }
     }
-
-    .welcome-screen {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-
-      .body {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-  
-        > * {
-          display: flex;
-          justify-content: center;
-        }
-      }
-    }
   
     .wallet-home-screen {
       .field-list {

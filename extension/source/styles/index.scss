@@ -1,0 +1,70 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-black;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply text-white py-2 px-4 rounded;
+    cursor: pointer;
+  }
+
+  // primary buttons
+  .btn-primary {
+    @apply btn bg-blue-500 active:bg-blue-700;
+  }
+
+  .btn-primary-alert {
+    @apply btn bg-alert-500 active:bg-alert-600;
+  }
+
+  // secondary buttons
+  .btn-secondary {
+    @apply btn bg-white text-black border border-grey-400 active:bg-grey-200;
+  }
+
+  .btn-secondary-alert {
+    @apply btn bg-alert-300 text-black active:bg-alert-400;
+  }
+
+  // tertiary buttons
+  .btn-tertiary {
+    @apply text-blue-700 active:text-blue-900;
+  }
+
+  .btn-tertiary-alert {
+    @apply text-alert-600;
+  }
+
+  .btn-disabled {
+    @apply btn bg-grey-400 text-grey-700;
+  }
+
+  .btn-loading {
+    @apply btn bg-grey-500 text-grey-700;
+  }
+
+  // icons
+  .icon-sm {
+    @apply h-3 w-3;
+  }
+
+  .icon-md {
+    @apply h-5 w-5;
+  }
+
+  .icon-lg {
+    @apply h-8 w-8;
+  }
+
+  input {
+    @apply w-full border border-grey-300 focus:border-grey-500 rounded-md py-2 px-3 disabled:bg-grey-300;
+  }
+}

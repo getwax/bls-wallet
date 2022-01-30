@@ -27,8 +27,8 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
         <LargeQuillHeading />
         <div className="body">
           <Button
+            className={this.state.pasteText === '' ? 'btn-primary' : 'btn'}
             onPress={() => this.props.app.createPrivateKey()}
-            highlight={this.state.pasteText === ''}
           >
             Create BLS Key
           </Button>
@@ -48,10 +48,10 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
               style={this.state.pasteText === '' ? { display: 'none' } : {}}
             >
               <Button
+                className="btn-primary"
                 onPress={() =>
                   this.props.app.loadPrivateKey(this.state.pasteText)
                 }
-                highlight={true}
               >
                 Restore
               </Button>

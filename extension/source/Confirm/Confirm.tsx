@@ -51,10 +51,12 @@ const Confirm: FunctionComponent = () => {
               <div className="data">{data}</div>
             </div>
 
-            <Button highlight onPress={() => respondTx('Yes')}>
+            <Button className="btn-primary" onPress={() => respondTx('Yes')}>
               Confirm
             </Button>
-            <Button onPress={() => respondTx('No')}>Reject</Button>
+            <Button className="btn-secondary" onPress={() => respondTx('No')}>
+              Reject
+            </Button>
           </>
         )}
       </div>

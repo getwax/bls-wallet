@@ -2,7 +2,7 @@ import { ReactElement } from 'react';
 import { runtime } from 'webextension-polyfill';
 
 const LargeQuillHeading = (): ReactElement => (
-  <div className="large-quill-heading">
+  <div className="flex py-9 justify-center">
     <img
       src={runtime.getURL('assets/logo-with-text.svg')}
       alt="Quill"

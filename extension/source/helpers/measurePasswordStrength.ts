@@ -1,6 +1,6 @@
 import zxcvbn from 'zxcvbn';
 
-type PasswordStrength = {
+export type PasswordStrength = {
   guessesLog10: number;
   descriptor: 'Very weak' | 'Weak' | 'Average' | 'Good' | 'Strong';
   fillRatio: number;

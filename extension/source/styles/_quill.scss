@@ -144,17 +144,6 @@
     &.loading {
       filter: grayscale(50%);
     }
-
-    .icon-button-content {
-      display: flex;
-      flex-direction: row;
-      gap: 4px;
-
-      .icon-button-icon {
-        width: 24px;
-        height: 23px;
-      }
-    }
   }
 
   .section:not(:first-child) {
@@ -175,22 +164,6 @@
     border: 2px solid $tone-grey-lightest;
     border-radius: 5px;
     padding: 12px;
-
-    &::placeholder {
-      color: $tone-grey-light;
-    }
-
-    caret-color: $primary-base;
-
-    &:focus {
-      border-color: $primary-light;
-    }
-  }
-
-  input[type=text] {
-    border: 2px solid $tone-grey-lightest;
-    border-radius: 5px;
-    padding: 2px;
 
     &::placeholder {
       color: $tone-grey-light;
