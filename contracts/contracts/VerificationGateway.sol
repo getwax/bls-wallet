@@ -232,21 +232,12 @@ contract VerificationGateway
         // revert if signature not verified
         verify(bundle);
 
-        bytes32 publicKeyHash;
-        IWallet wallet;
         uint256 opLength = bundle.operations.length;
         successes = new bool[](opLength);
         results = new bytes[][](opLength);
         for (uint256 i = 0; i<opLength; i++) {
+            IWallet wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
 
-            // create wallet if not found
-            createNewWallet(bundle.senderPublicKeys[i]);
-
-            // calculate public key hash
-            publicKeyHash = keccak256(abi.encodePacked(
-                bundle.senderPublicKeys[i]
-            ));
-            wallet = walletFromHash(publicKeyHash);
             // check nonce then perform action
             if (bundle.operations[i].nonce == wallet.nonce()) {
                 // request wallet perform operation
@@ -266,11 +257,12 @@ contract VerificationGateway
     }
 
     /**
-    Create a new wallet if not found for the given bls public key.
+    Gets the wallet contract associated with the public key, creating it if
+    needed.
      */
-    function createNewWallet(
+    function getOrCreateWallet(
         uint256[BLS_KEY_LEN] calldata publicKey
-    ) private {
+    ) private returns (IWallet) {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
         address blsWallet = address(walletFromHash(publicKeyHash));
         // wallet with publicKeyHash doesn't exist at expected create2 address
@@ -286,6 +278,7 @@ contract VerificationGateway
                 publicKey
             );
         }
+        return IWallet(blsWallet);
     }
 
     function hasCode(address a) private view returns (bool) {
