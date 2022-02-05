@@ -1,5 +1,6 @@
 import {
   createIdRemapMiddleware,
+  createLoggerMiddleware,
   createStreamMiddleware,
   getRpcPromiseCallback,
   JRPCEngine,
@@ -24,11 +25,7 @@ import {
   SendCallBack,
 } from './interfaces';
 import messages from './messages';
-import {
-  createErrorMiddleware,
-  createLoggerMiddleware,
-  logStreamDisconnectWarning,
-} from './utils';
+import { createErrorMiddleware, logStreamDisconnectWarning } from './utils';
 
 /**
  * @param {Object} connectionStream - A Node.js duplex stream
@@ -102,7 +99,7 @@ abstract class BaseProvider<U extends BaseProviderState>
     const rpcEngine = new JRPCEngine();
     rpcEngine.push(createIdRemapMiddleware());
     rpcEngine.push(createErrorMiddleware());
-    rpcEngine.push(createLoggerMiddleware({ origin: window.location.origin }));
+    rpcEngine.push(createLoggerMiddleware(console));
     rpcEngine.push(jsonRpcConnection.middleware);
     this._rpcEngine = rpcEngine;
 

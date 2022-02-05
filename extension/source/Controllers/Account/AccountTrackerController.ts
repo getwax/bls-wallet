@@ -1,5 +1,5 @@
 import { Mutex } from 'async-mutex';
-import EthQuery from '../EthQuery';
+import EthQuery from '../rpcHelpers/EthQuery';
 import BaseController from '../BaseController';
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';

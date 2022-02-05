@@ -1,7 +1,7 @@
 import type { Block } from '@ethersproject/providers';
 import { JRPCEngine, JRPCMiddleware } from '@toruslabs/openlogin-jrpc';
 import { Mutex } from 'async-mutex';
-import EthQuery from '../EthQuery';
+import EthQuery from '../rpcHelpers/EthQuery';
 
 import BaseController from '../BaseController';
 import {

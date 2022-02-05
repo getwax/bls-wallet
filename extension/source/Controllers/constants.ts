@@ -1,3 +1,5 @@
+import { BaseConfig, BaseState } from './interfaces';
+
 export const CHAINS = {
   MAINNET: 'mainnet',
   RINKEBY: 'rinkeby',
@@ -110,3 +112,34 @@ export const SUPPORTED_NETWORKS = {
     networkKey: CHAINS.GOERLI,
   } as ProviderConfig,
 } as const;
+
+export const ENVIRONMENT_TYPE = {
+  POPUP: 'popup',
+  NOTIFICATION: 'notification',
+  FULLSCREEN: 'fullscreen',
+  BACKGROUND: 'background',
+} as const;
+
+export type EnvironmentType =
+  typeof ENVIRONMENT_TYPE[keyof typeof ENVIRONMENT_TYPE];
+
+export const DEFAULT_STATE = {
+  AccountTrackerState: { accounts: {} },
+  KeyringControllerState: { wallets: [] },
+  CurrencyControllerState: {
+    conversionDate: Date.now().toString(),
+    conversionRate: 0,
+    currentCurrency: 'usd',
+    nativeCurrency: 'eth',
+    ticker: 'eth',
+  },
+  NetworkControllerState: {
+    chainId: SUPPORTED_NETWORKS[CHAINS.MAINNET].chainId,
+    properties: {},
+    providerConfig: SUPPORTED_NETWORKS[CHAINS.MAINNET],
+  },
+  PreferencesControllerState: {
+    identities: {},
+    selectedAddress: '',
+  },
+};
