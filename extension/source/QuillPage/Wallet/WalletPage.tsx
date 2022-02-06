@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Navigation } from './Navigation';
+import { WalletsWrapper } from './Wallets/WalletWrapper';
 
 interface IRoutes {
   name: string;
@@ -13,7 +14,7 @@ const routes: IRoutes[] = [
   {
     name: 'wallets',
     path: '/',
-    summaryComponent: <div>Wallet Summary</div>,
+    summaryComponent: <WalletsWrapper />,
     detailComponent: <div>Wallets Detail</div>,
   },
   {
@@ -45,7 +46,7 @@ export const WalletPage: React.FunctionComponent = () => {
 
         <div className="flex-grow flex">
           {/* summary pane */}
-          <div className="w-1/3 bg-grey-100 border-x border-grey-300">
+          <div className="w-1/3 bg-grey-100 border-x border-grey-300 p-8 overflow-y-scroll">
             <Routes>
               {routes.map((item) => (
                 <Route
@@ -58,7 +59,7 @@ export const WalletPage: React.FunctionComponent = () => {
           </div>
 
           {/* details pane */}
-          <div className="w-2/3">
+          <div className="w-2/3 p-8">
             <Routes>
               {routes.map((item) => (
                 <Route
