@@ -40,7 +40,7 @@ export const Navigation: React.FunctionComponent = () => {
   };
 
   return (
-    <div className="flex flex-col border-r border-grey-300 w-52 px-4 py-12">
+    <div className="flex flex-col w-52 px-4 py-12">
       <QuillHeading />
       <div className="mt-8 flex flex-col gap-4 justify-items-center">
         {navigationTargets.map((item) => {
