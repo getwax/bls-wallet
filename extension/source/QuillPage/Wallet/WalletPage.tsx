@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
+import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
 import { WalletsWrapper } from './Wallets/WalletWrapper';
 
@@ -27,7 +28,7 @@ const routes: IRoutes[] = [
   {
     name: 'contacts',
     path: '/contacts',
-    summaryComponent: <div>contacts summary</div>,
+    summaryComponent: <ContactsWrapper />,
     detailComponent: <div>contacts detail</div>,
   },
   {
