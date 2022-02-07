@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
+import { SettingsWrapper } from './Settings/SettingsWrapper';
 import { WalletsWrapper } from './Wallets/WalletWrapper';
 
 interface IRoutes {
@@ -34,7 +35,7 @@ const routes: IRoutes[] = [
   {
     name: 'settings',
     path: '/settings',
-    summaryComponent: <div>settings summary</div>,
+    summaryComponent: <SettingsWrapper />,
     detailComponent: <div>settings detail</div>,
   },
 ];
