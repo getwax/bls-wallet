@@ -165,12 +165,13 @@ contract VerificationGateway
         wallet.setAnyPending();
 
         // ensure wallet has pre-approved encodedFunction
-        bytes32 approvedFunction = wallet.approvedProxyAdminFunctionHash();
-        bool matchesApproved = keccak256(encodedFunction) == approvedFunction;
+        bytes32 approvedFunctionHash = wallet.approvedProxyAdminFunctionHash();
+        bytes32 encodedFunctionHash = keccak256(encodedFunction);
+        bool matchesApproved = encodedFunctionHash == approvedFunctionHash;
 
         if (matchesApproved == false) {
             // prepare for a future call
-            wallet.setProxyAdminFunctionHash(keccak256(encodedFunction));
+            wallet.setProxyAdminFunctionHash(encodedFunctionHash);
         }
         else {
             // call approved function
