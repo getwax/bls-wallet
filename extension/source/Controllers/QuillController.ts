@@ -78,7 +78,7 @@ export interface QuillControllerConfig extends BaseConfig {
 
 const PROVIDER = 'quill-provider';
 
-export default class TorusController extends BaseController<
+export default class QuillController extends BaseController<
   QuillControllerConfig,
   QuillControllerState
 > {
@@ -97,8 +97,8 @@ export default class TorusController extends BaseController<
 
   private preferencesController!: PreferencesController;
 
-  getRequestAccountTabIds: () => Record<number, boolean>;
-  getOpenMetamaskTabsIds: () => Record<number, boolean>;
+  getRequestAccountTabIds: () => Record<string, number>;
+  getOpenQuillTabsIds: () => Record<number, boolean>;
 
   //   private txController!: TransactionController;
 
@@ -171,8 +171,8 @@ export default class TorusController extends BaseController<
     config: Partial<QuillControllerConfig>;
     state: Partial<QuillControllerState>;
     opts: {
-      getRequestAccountTabIds: () => Record<number, boolean>;
-      getOpenMetamaskTabsIds: () => Record<number, boolean>;
+      getRequestAccountTabIds: () => Record<string, number>;
+      getOpenQuillTabsIds: () => Record<number, boolean>;
     };
   }): void {
     console.log(config, state, 'restoring config & state');
@@ -180,7 +180,7 @@ export default class TorusController extends BaseController<
     this.configure(config, true, true);
     this.update(state, true);
     this.getRequestAccountTabIds = opts.getRequestAccountTabIds;
-    this.getOpenMetamaskTabsIds = opts.getOpenMetamaskTabsIds;
+    this.getOpenQuillTabsIds = opts.getOpenQuillTabsIds;
     this.networkController = new NetworkController({
       config: this.config.NetworkControllerConfig,
       state: this.state.NetworkControllerState,
@@ -278,7 +278,7 @@ export default class TorusController extends BaseController<
       ),
 
       getRequestAccountTabIds: this.getRequestAccountTabIds,
-      getOpenMetamaskTabsIds: this.getOpenMetamaskTabsIds,
+      getOpenMetamaskTabsIds: this.getOpenQuillTabsIds,
 
       // network management
       setProviderConfig:

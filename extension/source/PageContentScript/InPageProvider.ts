@@ -43,11 +43,6 @@ class QuillInPageProvider extends BaseProvider<InPageProviderState> {
     hasEmittedConnection: false,
   };
 
-  tryWindowHandle: (
-    payload: UnValidatedJsonRpcRequest | UnValidatedJsonRpcRequest[],
-    cb: (...args: any[]) => void,
-  ) => void;
-
   constructor(
     connectionStream: Duplex,
     {
@@ -165,7 +160,7 @@ class QuillInPageProvider extends BaseProvider<InPageProviderState> {
         return;
       }
     }
-    this.tryWindowHandle(tempPayload, cb);
+    this._rpcEngine.handle(payload as JRPCRequest<unknown>, cb);
   }
 
   /**

@@ -205,7 +205,7 @@ abstract class BaseProvider<U extends BaseProviderState>
    * required events. Idempotent.
    *
    * @param chainId - The ID of the newly connected chain.
-   * @emits TorusInPageProvider#connect
+   * @emits BaseProvider#connect
    */
   protected abstract _handleConnect(...args: any[]): void;
 
@@ -218,7 +218,7 @@ abstract class BaseProvider<U extends BaseProviderState>
    *
    * @param isRecoverable - Whether the disconnection is recoverable.
    * @param errorMessage - A custom error message.
-   * @emits TorusInpageProvider#disconnect
+   * @emits BaseProvider#disconnect
    */
   protected abstract _handleDisconnect(
     isRecoverable: boolean,
@@ -228,7 +228,7 @@ abstract class BaseProvider<U extends BaseProviderState>
   /**
    * Called when connection is lost to critical streams.
    *
-   * @emits TorusInpageProvider#disconnect
+   * @emits BaseProvider#disconnect
    */
   protected _handleStreamDisconnect(streamName: string, error: Error): void {
     logStreamDisconnectWarning(streamName, error, this);

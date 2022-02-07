@@ -79,6 +79,15 @@ function setupController(initState: unknown): void {
     config: DEFAULT_CONFIG,
   });
 
+  controller.init({
+    state: initState as QuillControllerState,
+    config: DEFAULT_CONFIG,
+    opts: {
+      getRequestAccountTabIds: () => requestAccountTabIds,
+      getOpenQuillTabsIds: () => openQuillTabsIDs,
+    },
+  });
+
   // setup state persistence
   pump(
     new ControllerStoreStream(controller),

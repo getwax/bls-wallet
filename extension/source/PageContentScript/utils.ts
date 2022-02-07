@@ -6,7 +6,6 @@ import {
   SafeEventEmitter,
 } from '@toruslabs/openlogin-jrpc';
 import { ethErrors } from 'eth-rpc-errors';
-import { LoggerMiddlewareOptions } from './interfaces';
 
 /**
  * json-rpc-engine middleware that logs RPC errors and and validates req.method.
@@ -15,7 +14,11 @@ import { LoggerMiddlewareOptions } from './interfaces';
  * @returns  json-rpc-engine middleware function
  */
 export function createErrorMiddleware(): JRPCMiddleware<unknown, unknown> {
-  return (req, res, next) => {
+  return (
+    req: JRPCRequest<unknown>,
+    res: JRPCResponse<unknown>,
+    next: JRPCEngineNextCallback,
+  ) => {
     // json-rpc-engine will terminate the request when it notices this error
     if (typeof req.method !== 'string' || !req.method) {
       res.error = ethErrors.rpc.invalidRequest({
@@ -29,7 +32,7 @@ export function createErrorMiddleware(): JRPCMiddleware<unknown, unknown> {
       if (!error) {
         return done();
       }
-      console.error(`Torus - RPC Error: ${error.message}`, error);
+      console.error(`Quill - RPC Error: ${error.message}`, error);
       return done();
     });
   };
@@ -49,7 +52,7 @@ export function logStreamDisconnectWarning(
   error: Error,
   emitter: SafeEventEmitter,
 ): void {
-  let warningMsg = `Torus: Lost connection to "${remoteLabel}".`;
+  let warningMsg = `Quill: Lost connection to "${remoteLabel}".`;
   if (error?.stack) {
     warningMsg += `\n${error.stack}`;
   }

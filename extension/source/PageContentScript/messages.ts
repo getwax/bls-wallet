@@ -1,10 +1,10 @@
 const messages = {
   errors: {
-    disconnected: (): string => 'Torus: Lost connection to Torus.',
+    disconnected: (): string => 'Quill: Lost connection to Quill.',
     permanentlyDisconnected: (): string =>
-      'Torus: Disconnected from iframe. Page reload required.',
+      'Quill: Disconnected from iframe. Page reload required.',
     unsupportedSync: (method: string): string =>
-      `Torus: The Torus Ethereum provider does not support synchronous methods like ${method} without a callback parameter.`,
+      `Quill: The Quill Ethereum provider does not support synchronous methods like ${method} without a callback parameter.`,
     invalidDuplexStream: (): string =>
       'Must provide a Node.js-style duplex stream.',
     invalidOptions: (maxEventListeners: number): string =>
@@ -22,7 +22,7 @@ const messages = {
   },
   info: {
     connected: (chainId: string): string =>
-      `Torus: Connected to chain with ID "${chainId}".`,
+      `Quill: Connected to chain with ID "${chainId}".`,
   },
   warnings: {},
 };
