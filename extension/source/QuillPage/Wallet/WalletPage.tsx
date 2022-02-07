@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
+import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { Navigation } from './Navigation';
 import { WalletsWrapper } from './Wallets/WalletWrapper';
 
@@ -20,7 +21,7 @@ const routes: IRoutes[] = [
   {
     name: 'connections',
     path: '/connections',
-    summaryComponent: <div>connections summary</div>,
+    summaryComponent: <ConnectionsWrapper />,
     detailComponent: <div>connections detail</div>,
   },
   {
