@@ -35,9 +35,9 @@ interface IWallet {
     // checks any pending variables and sets them if past their timestamp
     function setAnyPending() external;
 
-    function setProxyAdminFunction(bytes memory) external;
-    function approvedProxyAdminFunction() external view returns (bytes memory);
-    function clearApprovedProxyAdminFunction() external;
+    function setProxyAdminFunctionHash(bytes32) external;
+    function approvedProxyAdminFunctionHash() external view returns (bytes32);
+    function clearApprovedProxyAdminFunctionHash() external;
 }
 
 /** Interface for bls-specific functions
