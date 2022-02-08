@@ -14,6 +14,7 @@ import { ethErrors } from 'eth-rpc-errors';
 import { isDuplexStream } from 'is-stream';
 import pump, { Callback } from 'pump';
 import type { Duplex } from 'readable-stream';
+import { PROVIDER } from '../common/constants';
 
 import {
   SafeEventEmitterProvider,
@@ -44,10 +45,7 @@ abstract class BaseProvider<U extends BaseProviderState>
 
   constructor(
     connectionStream: Duplex,
-    {
-      maxEventListeners = 100,
-      jsonRpcStreamName = 'provider',
-    }: ProviderOptions,
+    { maxEventListeners = 100, jsonRpcStreamName = PROVIDER }: ProviderOptions,
   ) {
     super();
     if (!isDuplexStream(connectionStream)) {

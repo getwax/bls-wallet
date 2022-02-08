@@ -3,6 +3,7 @@ import { EthereumRpcError } from 'eth-rpc-errors';
 import dequal from 'fast-deep-equal';
 import type { Duplex } from 'readable-stream';
 import {
+  PROVIDER,
   PROVIDER_JRPC_METHODS,
   PROVIDER_NOTIFICATIONS,
 } from '../common/constants';
@@ -42,10 +43,7 @@ class QuillInPageProvider extends BaseProvider<InPageProviderState> {
 
   constructor(
     connectionStream: Duplex,
-    {
-      maxEventListeners = 100,
-      jsonRpcStreamName = 'provider',
-    }: ProviderOptions,
+    { maxEventListeners = 100, jsonRpcStreamName = PROVIDER }: ProviderOptions,
   ) {
     super(connectionStream, { maxEventListeners, jsonRpcStreamName });
 
