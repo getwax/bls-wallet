@@ -17,8 +17,8 @@ contract BLSWallet is Initializable, IBLSWallet
     bytes32 public recoveryHash;
     bytes32 pendingRecoveryHash;
     uint256 pendingRecoveryHashTime;
-    bytes public approvedProxyAdminFunction;
-    bytes pendingPAFunction;
+    bytes32 public approvedProxyAdminFunctionHash;
+    bytes32 pendingPAFunctionHash;
     uint256 pendingPAFunctionTime;
 
     // BLS variables
@@ -38,8 +38,8 @@ contract BLSWallet is Initializable, IBLSWallet
     event PendingGatewaySet(
         address pendingGateway
     );
-    event PendingProxyAdminFunctionSet(
-        bytes pendingProxyAdminFunction
+    event PendingProxyAdminFunctionHashSet(
+        bytes32 pendingProxyAdminFunctionHash
     );
 
     event RecoveryHashUpdated(
@@ -54,8 +54,8 @@ contract BLSWallet is Initializable, IBLSWallet
         address oldGateway,
         address newGateway
     );
-    event ProxyAdminFunctionApproved(
-        bytes approvedProxyAdmin
+    event ProxyAdminFunctionHashApproved(
+        bytes32 approvedProxyAdminHash
     );
 
     function initialize(
@@ -131,10 +131,10 @@ contract BLSWallet is Initializable, IBLSWallet
     /**
     Prepare wallet with desired implementation contract to upgrade to.
     */
-    function setProxyAdminFunction(bytes calldata encodedFunction) public onlyTrustedGateway {
-        pendingPAFunction = encodedFunction;
+    function setProxyAdminFunctionHash(bytes32 encodedFunctionHash) public onlyTrustedGateway {
+        pendingPAFunctionHash = encodedFunctionHash;
         pendingPAFunctionTime = block.timestamp + 604800; // 1 week from now
-        emit PendingProxyAdminFunctionSet(pendingPAFunction);
+        emit PendingProxyAdminFunctionHashSet(encodedFunctionHash);
     }
 
     /**
@@ -162,10 +162,10 @@ contract BLSWallet is Initializable, IBLSWallet
             emit GatewayUpdated(previousGateway, trustedBLSGateway);
         }
         if (block.timestamp > pendingPAFunctionTime) {
-            approvedProxyAdminFunction = pendingPAFunction;
+            approvedProxyAdminFunctionHash = pendingPAFunctionHash;
             pendingPAFunctionTime = type(uint256).max;
-            pendingPAFunction = new bytes(0);
-            emit ProxyAdminFunctionApproved(approvedProxyAdminFunction);
+            pendingPAFunctionHash = 0;
+            emit ProxyAdminFunctionHashApproved(approvedProxyAdminFunctionHash);
         }
     }
 
@@ -186,7 +186,7 @@ contract BLSWallet is Initializable, IBLSWallet
         pendingGatewayTime = type(uint256).max;
         pendingBLSGateway = address(0);
         pendingPAFunctionTime = type(uint256).max;
-        pendingPAFunction = new bytes(0);
+        pendingPAFunctionHash = 0;
     }
 
     /**
@@ -239,8 +239,8 @@ contract BLSWallet is Initializable, IBLSWallet
         }
     }
 
-    function clearApprovedProxyAdminFunction() public onlyTrustedGateway {
-        approvedProxyAdminFunction = new bytes(0);
+    function clearApprovedProxyAdminFunctionHash() public onlyTrustedGateway {
+        approvedProxyAdminFunctionHash = 0;
     }
 
     /**
