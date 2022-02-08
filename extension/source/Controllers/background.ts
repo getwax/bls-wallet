@@ -18,9 +18,7 @@ import QuillController, {
 import { DEFAULT_STATE, ENVIRONMENT_TYPE } from './constants';
 import ControllerStoreStream from './streamHelpers/ControllerStoreStream';
 import ControllerStreamSink from './streamHelpers/ControllerStreamSink';
-import PortDuplexStream from './streamHelpers/PortStream';
-
-/* eslint-enable import/first */
+import PortDuplexStream from '../common/PortStream';
 
 // const notificationManager = new NotificationManager();
 

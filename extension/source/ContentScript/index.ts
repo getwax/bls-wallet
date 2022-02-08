@@ -5,13 +5,8 @@ import {
 } from '@toruslabs/openlogin-jrpc';
 import pump from 'pump';
 import { runtime } from 'webextension-polyfill';
-import PortDuplexStream from './PortStream';
-
-const CONTENT_SCRIPT = 'quill-contentscript';
-const INPAGE = 'quill-inpage';
-const PROVIDER = 'quill-provider';
-
-export {};
+import { CONTENT_SCRIPT, INPAGE, PROVIDER } from '../common/constants';
+import PortDuplexStream from '../common/PortStream';
 
 function canInjectScript() {
   if (window.document.doctype?.name !== 'html') return false;

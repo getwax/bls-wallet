@@ -1,4 +1,4 @@
-import { JRPCRequest, SafeEventEmitter } from '@toruslabs/openlogin-jrpc';
+import type { JRPCRequest, SafeEventEmitter } from '@toruslabs/openlogin-jrpc';
 
 export interface ProviderOptions {
   /**
@@ -53,14 +53,4 @@ export type InPageWalletProviderState = {
   accounts: string[];
   chainId: string;
   isUnlocked: boolean;
-};
-
-export const PROVIDER_JRPC_METHODS = {
-  GET_PROVIDER_STATE: 'wallet_get_provider_state',
-};
-
-export const PROVIDER_NOTIFICATIONS = {
-  ACCOUNTS_CHANGED: 'wallet_accounts_changed',
-  CHAIN_CHANGED: 'wallet_chain_changed',
-  UNLOCK_STATE_CHANGED: 'wallet_unlock_state_changed',
 };

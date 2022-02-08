@@ -27,11 +27,6 @@ import {
 import messages from './messages';
 import { createErrorMiddleware, logStreamDisconnectWarning } from './utils';
 
-/**
- * @param {Object} connectionStream - A Node.js duplex stream
- * @param {Object} opts - An options bag
- * @param {number} opts.maxEventListeners - The maximum number of event listeners
- */
 abstract class BaseProvider<U extends BaseProviderState>
   extends SafeEventEmitter
   implements SafeEventEmitterProvider

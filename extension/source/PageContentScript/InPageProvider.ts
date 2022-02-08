@@ -1,25 +1,22 @@
-import { JRPCRequest, JRPCSuccess } from '@toruslabs/openlogin-jrpc';
+import type { JRPCRequest, JRPCSuccess } from '@toruslabs/openlogin-jrpc';
 import { EthereumRpcError } from 'eth-rpc-errors';
 import dequal from 'fast-deep-equal';
 import type { Duplex } from 'readable-stream';
+import {
+  PROVIDER_JRPC_METHODS,
+  PROVIDER_NOTIFICATIONS,
+} from '../common/constants';
 
 import BaseProvider from './BaseProvider';
 import {
   InPageProviderState,
   InPageWalletProviderState,
   ProviderOptions,
-  PROVIDER_JRPC_METHODS,
-  PROVIDER_NOTIFICATIONS,
   RequestArguments,
   UnValidatedJsonRpcRequest,
 } from './interfaces';
 import messages from './messages';
 
-/**
- * @param {Object} connectionStream - A Node.js duplex stream
- * @param {Object} opts - An options bag
- * @param {number} opts.maxEventListeners - The maximum number of event listeners
- */
 class QuillInPageProvider extends BaseProvider<InPageProviderState> {
   /**
    * The chain ID of the currently connected Ethereum chain.
