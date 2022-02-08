@@ -56,7 +56,7 @@ const networkConfigPath =
   path.join(__dirname, '..', 'contracts', 'networks', 'local.json');
 
 module.exports = {
-  devtool: false, // https://github.com/webpack/webpack/issues/1194#issuecomment-560382342
+  devtool: 'source-map', // https://github.com/webpack/webpack/issues/1194#issuecomment-560382342
 
   stats: {
     all: false,
@@ -69,7 +69,7 @@ module.exports = {
 
   entry: {
     manifest: path.join(sourcePath, 'manifest.json'),
-    background: path.join(sourcePath, 'Background', 'index.ts'),
+    background: path.join(sourcePath, 'Controllers', 'background.ts'),
     contentScript: path.join(sourcePath, 'ContentScript', 'index.ts'),
     pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),

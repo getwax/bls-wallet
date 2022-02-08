@@ -54,7 +54,10 @@ async function initialize(): Promise<void> {
 async function loadStateFromPersistence(): Promise<QuillControllerState> {
   // read from disk
   // first from preferred, async API:
-  versionedData = (await localStore.get()) || cloneDeep(DEFAULT_STATE);
+  const storedData = await localStore.get();
+  console.log('storedData', storedData);
+  versionedData =
+    Object.keys(storedData).length > 0 ? storedData : cloneDeep(DEFAULT_STATE);
 
   localStore.set(versionedData);
   // return just the data
@@ -71,6 +74,7 @@ function setupController(initState: unknown): void {
   //
   // MetaMask Controller
   //
+  console.log(initState, 'initstate');
 
   const controller = new QuillController({
     // initial state
@@ -223,11 +227,15 @@ function setupController(initState: unknown): void {
         const tabId = remotePort.sender.tab.id;
         const url = new URL(remotePort.sender.url);
         const { origin } = url;
+        console.log('logging request 1', requestAccountTabIds);
 
         if (!tabId) return;
         remotePort.onMessage.addListener((msg) => {
+          console.log('logging request 2', requestAccountTabIds);
+
           if (msg.data && msg.data.method === 'eth_requestAccounts') {
             requestAccountTabIds[origin] = tabId;
+            console.log('logging request 3', requestAccountTabIds);
           }
         });
       }

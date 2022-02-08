@@ -97,7 +97,9 @@ export default class CurrencyController extends BaseController<
       nativeCurrency = this.getNativeCurrency();
       const apiUrl = `${
         this.config.api
-      }/currency?fsym=${nativeCurrency.toUpperCase()}&tsyms=${currentCurrency.toUpperCase()}`;
+      }?fsym=${nativeCurrency.toUpperCase()}&tsyms=${currentCurrency.toUpperCase()}&api_key=${
+        process.env.CRYPTO_COMPARE_API_KEY
+      }`;
       let response: Response;
       try {
         response = await fetch(apiUrl);

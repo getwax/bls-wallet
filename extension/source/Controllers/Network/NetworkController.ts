@@ -191,9 +191,9 @@ export default class NetworkController
     networkMiddleware: JRPCMiddleware<unknown, unknown>;
     blockTracker: PollingBlockTracker;
   }): void {
-    const casperMiddleware = createWalletMiddleware(this._baseProviderHandlers);
+    const walletMiddleware = createWalletMiddleware(this._baseProviderHandlers);
     const engine = new JRPCEngine();
-    engine.push(casperMiddleware);
+    engine.push(walletMiddleware);
     engine.push(networkMiddleware);
     const provider = providerFromEngine(engine);
     this.setProvider({ provider, blockTracker });

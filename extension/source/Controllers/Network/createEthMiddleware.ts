@@ -5,6 +5,7 @@ import {
   JRPCRequest,
   JRPCResponse,
 } from '@toruslabs/openlogin-jrpc';
+import { PROVIDER_JRPC_METHODS } from '../../common/constants';
 
 export interface IProviderHandlers {
   version: string;
@@ -68,7 +69,7 @@ export function createWalletMiddleware({
     eth_accounts: createAsyncMiddleware(lookupAccounts),
     eth_coinbase: createAsyncMiddleware(lookupDefaultAccount),
     eth_requestAccounts: createAsyncMiddleware(requestAccountsFromProvider),
-    wallet_get_provider_state: createAsyncMiddleware(
+    [PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE]: createAsyncMiddleware(
       getProviderStateFromController,
     ),
   });

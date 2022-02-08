@@ -48,10 +48,13 @@ import PollingBlockTracker from './Block/PollingBlockTracker';
 import { createOriginMiddleware } from './Network/createOriginMiddleware';
 import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import createMetaRPCHandler from './streamHelpers/MetaRPCHandler';
-import { PROVIDER_NOTIFICATIONS } from '../PageContentScript/interfaces';
+import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 
 export const DEFAULT_CONFIG = {
-  //   CurrencyControllerConfig: { api: configuration.api, pollInterval: 600_000 },
+  CurrencyControllerConfig: {
+    api: 'https://min-api.cryptocompare.com/data/price',
+    pollInterval: 600_000,
+  },
   NetworkControllerConfig: {
     providerConfig: SUPPORTED_NETWORKS[CHAINS.MAINNET],
   },
@@ -327,7 +330,7 @@ export default class QuillController extends BaseController<
   setSelectedAccount(address: string): void {
     this.preferencesController.setSelectedAddress(address);
     this.notifyAllConnections({
-      method: 'accountsChanged',
+      method: PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED,
       params: [address],
     });
   }
@@ -412,6 +415,7 @@ export default class QuillController extends BaseController<
     // setup json rpc engine stack
     const engine = new JRPCEngine();
     const { provider } = this;
+    console.log('setting up provider engine', origin, provider);
 
     // create filter polyfill middleware
     // const filterMiddleware = createFilterMiddleware({ provider, blockTracker });

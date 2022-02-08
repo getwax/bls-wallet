@@ -3,7 +3,7 @@ import { Component, ReactElement } from 'react';
 import Button from '../components/Button';
 import { PageEvents } from '../components/Page';
 import getPropOrUndefined from '../helpers/getPropOrUndefined';
-import QuillEthereumProvider from '../PageContentScript/QuillEthereumProvider';
+import type QuillEthereumProvider from '../PageContentScript/InPageProvider';
 
 type Props = { events: PageEvents };
 

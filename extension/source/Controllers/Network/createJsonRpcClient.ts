@@ -51,6 +51,7 @@ export function createJsonRpcClient(providerConfig: ProviderConfig): {
   blockTracker: PollingBlockTracker;
 } {
   const { chainId, rpcTarget } = providerConfig;
+  console.log('using provider', providerConfig, rpcTarget);
   const fetchMiddleware = createFetchMiddleware({ rpcTarget });
   const blockProvider = providerFromMiddleware(
     fetchMiddleware as JRPCMiddleware<string[], unknown>,
