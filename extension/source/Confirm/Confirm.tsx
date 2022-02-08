@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { FunctionComponent, useEffect, useState } from 'react';
+import { FunctionComponent, useEffect, useMemo, useState } from 'react';
 import { runtime } from 'webextension-polyfill';
 import TaskQueue from '../common/TaskQueue';
 
@@ -17,7 +17,7 @@ const Confirm: FunctionComponent = () => {
 
   const { loading, method } = useInputDecode(data, to);
 
-  const cleanupTasks = React.useMemo(() => new TaskQueue(), []);
+  const cleanupTasks = useMemo(() => new TaskQueue(), []);
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;

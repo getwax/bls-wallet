@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { Component, ReactElement } from 'react';
 import App from '../../App';
 import formatBalance from '../helpers/formatBalance';
 
@@ -14,14 +14,14 @@ const initialState: State = {
   contractAddressText: '',
 };
 
-export default class TransactionTab extends React.Component<Props, State> {
+export default class TransactionTab extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
     this.state = initialState;
   }
 
-  render(): React.ReactElement {
+  render(): ReactElement {
     return (
       <div className="transaction-tab">
         <div className="balance">

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { ReactElement } from 'react';
 import { runtime, tabs } from 'webextension-polyfill';
 
 import { CREATE_TX_URL } from '../../env';
@@ -21,7 +21,7 @@ type Props = {
   app: App;
 };
 
-const WalletHomeScreen = ({ app }: Props): React.ReactElement => (
+const WalletHomeScreen = ({ app }: Props): ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
       <CompactQuillHeading />
@@ -65,7 +65,7 @@ const WalletHomeScreen = ({ app }: Props): React.ReactElement => (
 
 export default WalletHomeScreen;
 
-const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
+const BLSKeyField = ({ app }: Props): ReactElement | null => {
   const publicKey = app.PublicKey();
   if (!publicKey) {
     return null;
@@ -120,7 +120,7 @@ const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
   );
 };
 
-const NetworkField = (): React.ReactElement => (
+const NetworkField = (): ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
@@ -150,7 +150,7 @@ const AddressField = (props: {
   app: App;
   address: string;
   nonce?: string;
-}): React.ReactElement => (
+}): ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
@@ -179,7 +179,7 @@ const AddressField = (props: {
   </div>
 );
 
-const WalletContent = ({ app }: Props): React.ReactElement => {
+const WalletContent = ({ app }: Props): ReactElement => {
   if (!app.state.walletAddress.value) {
     return <></>;
   }
@@ -210,7 +210,7 @@ const KeyIcon = (props: {
   src: string;
   text: string;
   onAction: () => void;
-}): React.ReactElement => (
+}): ReactElement => (
   <div className="key-icon" style={{ width: '22px', height: '22px' }}>
     <img
       src={props.src}
@@ -230,7 +230,7 @@ const KeyIcon = (props: {
 const DeleteKeyPrompt = (props: {
   app: App;
   close: () => void;
-}): React.ReactElement => (
+}): ReactElement => (
   <div className="delete-key-prompt">
     <div>
       Are you sure that you want to delete this key? You can only restore your
@@ -255,7 +255,7 @@ const DeleteKeyPrompt = (props: {
 const CopyPrivateKeyPrompt = (props: {
   app: App;
   close: () => void;
-}): React.ReactElement => (
+}): ReactElement => (
   <div className="delete-key-prompt">
     <div>
       You should make sure you store your private key somewhere safe. If you

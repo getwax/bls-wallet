@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 import { runtime } from 'webextension-polyfill';
 import { ArrowRight } from 'phosphor-react';
 import Button from '../../components/Button';
@@ -6,7 +6,7 @@ import Carousel from './Carousel';
 
 import LargeQuillHeading from './LargeQuillHeading';
 
-const WelcomeScreen: React.FunctionComponent = () => (
+const WelcomeScreen: FunctionComponent = () => (
   <div>
     <LargeQuillHeading />
     <Carousel

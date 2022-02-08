@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
 import OnboardingPage from './components/OnboardingPage';
 
@@ -8,7 +8,7 @@ const pageNumber = Number(
   new URL(window.location.href).searchParams.get('p') ?? '1',
 );
 
-const QuillPage: React.FunctionComponent = () => (
+const QuillPage: FunctionComponent = () => (
   <OnboardingPage pageIndex={pageNumber - 1} />
 );
 

@@ -1,6 +1,6 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
-const QuickRow: React.FunctionComponent = (props) => (
+const QuickRow: FunctionComponent = (props) => (
   <div className="quick-row">{props.children}</div>
 );
 

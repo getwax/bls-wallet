@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * @file The entry point for the web extension singleton process.
  */
@@ -310,6 +311,8 @@ function setupController(initState: unknown): void {
     // updateBadge();
   }
 
+  rejectUnapprovedNotifications();
+
   // return Promise.resolve();
 }
 
@@ -359,6 +362,9 @@ async function openPopup() {
     }, 1000);
   });
 }
+
+// TODO: remove this later
+if (process.env.NODE_ENV === 'random') openPopup();
 
 // On first install, open a new tab with MetaMask
 runtime.onInstalled.addListener(({ reason }) => {

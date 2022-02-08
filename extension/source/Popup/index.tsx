@@ -1,6 +1,5 @@
 import { Aggregator } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
-import * as React from 'react';
 import ReactDOM from 'react-dom';
 import { storage } from 'webextension-polyfill';
 

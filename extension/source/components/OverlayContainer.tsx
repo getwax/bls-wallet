@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { Component, ReactElement, ReactNode } from 'react';
 import delay from '../helpers/delay';
 import type { PageEvents, PageOverlay } from './Page';
 
@@ -9,7 +9,7 @@ type Props = {
 type State = {
   activeCount: number;
   presentCount: number;
-  overlayRenders: React.ReactElement[];
+  overlayRenders: ReactElement[];
 };
 
 const initialState: State = {
@@ -18,7 +18,7 @@ const initialState: State = {
   overlayRenders: [],
 };
 
-export default class OverlayContainer extends React.Component<Props, State> {
+export default class OverlayContainer extends Component<Props, State> {
   targetState = initialState;
 
   constructor(props: Props) {
@@ -73,7 +73,7 @@ export default class OverlayContainer extends React.Component<Props, State> {
     super.setState(this.targetState);
   }
 
-  render(): React.ReactNode {
+  render(): ReactNode {
     const currentRender = this.state.overlayRenders.slice(-1)[0];
 
     if (currentRender === undefined) {

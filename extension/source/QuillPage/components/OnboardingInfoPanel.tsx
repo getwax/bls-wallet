@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 import { runtime } from 'webextension-polyfill';
 import LogoFooter from './LogoFooter';
 
@@ -38,7 +38,7 @@ const info = [
   },
 ];
 
-const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
+const OnboardingInfoPanel: FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
   <div className="bg-blue-500 flex flex-col w-2/5">

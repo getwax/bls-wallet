@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { Component, ReactElement, ReactNode } from 'react';
 
 import Button from './Button';
 // import DefaultScreen from '../Popup/components/DefaultScreen';
@@ -12,14 +12,14 @@ type Props = {
 };
 
 type State = {
-  screens: React.ReactElement[];
+  screens: ReactElement[];
 };
 
 const initialState: State = {
   screens: [],
 };
 
-export default class ScreenContainer extends React.Component<Props, State> {
+export default class ScreenContainer extends Component<Props, State> {
   targetState = initialState;
 
   constructor(props: Props) {
@@ -34,7 +34,7 @@ export default class ScreenContainer extends React.Component<Props, State> {
     this.props.events.on('screen', this.onScreen);
   }
 
-  onScreen = async (screen: React.ReactElement): Promise<void> => {
+  onScreen = async (screen: ReactElement): Promise<void> => {
     this.setTarget({
       screens: [...this.targetState.screens, screen],
     });
@@ -59,7 +59,7 @@ export default class ScreenContainer extends React.Component<Props, State> {
     });
   }
 
-  render(): React.ReactNode {
+  render(): ReactNode {
     const currentScreen =
       this.state.screens.slice(-1)[0] ?? this.props.children;
 

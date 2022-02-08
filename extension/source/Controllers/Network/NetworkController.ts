@@ -233,6 +233,10 @@ export default class NetworkController
     this._provider = provider;
     provider.setMaxListeners(10);
     this._blockTracker = blockTracker;
+    console.log(
+      this._blockTracker,
+      'set block tracker after switching network',
+    );
     this.ethQuery = new EthQuery(provider);
   }
 

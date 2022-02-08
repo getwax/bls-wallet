@@ -1,5 +1,3 @@
-import { BaseConfig, BaseState } from './interfaces';
-
 export const CHAINS = {
   MAINNET: 'mainnet',
   RINKEBY: 'rinkeby',

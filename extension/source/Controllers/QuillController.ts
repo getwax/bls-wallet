@@ -158,6 +158,7 @@ export default class QuillController extends BaseController<
    */
   set isClientOpen(open: boolean) {
     this._isClientOpen = open;
+    console.log(this._isClientOpen, 'set client open status');
   }
 
   /**
@@ -480,7 +481,7 @@ export default class QuillController extends BaseController<
       version: '1.0.0',
       // account management
       requestAccounts: async (req) => {
-        const accounts = await this.requestAccounts(req);
+        const accounts = await this.requestAccounts();
         this.notifyConnections((req as any).origin, {
           method: PROVIDER_NOTIFICATIONS.UNLOCK_STATE_CHANGED,
           params: {
@@ -510,7 +511,7 @@ export default class QuillController extends BaseController<
     return providerProxy;
   }
 
-  private async requestAccounts(req: JRPCRequest<unknown>): Promise<string[]> {
+  private async requestAccounts(): Promise<string[]> {
     // If we have a selected address, return it
     // TODO: Add support for permissions controller
     if (this.selectedAddress) {

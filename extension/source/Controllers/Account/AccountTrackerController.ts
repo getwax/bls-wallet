@@ -79,6 +79,7 @@ class AccountTrackerController
       this.syncAccounts();
       this.refresh();
     });
+    console.log(this.provider, 'eth provider in account tracker');
   }
 
   syncAccounts(): void {

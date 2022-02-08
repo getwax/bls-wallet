@@ -1,11 +1,11 @@
-import * as React from 'react';
+import { ReactElement } from 'react';
 
 import App from '../../App';
 import CompactQuillHeading from '../../components/CompactQuillHeading';
 import Tabs from './Tabs';
 import TransactionTab from './TransactionTab';
 
-const TransactionsScreen = (props: { app: App }): React.ReactElement => (
+const TransactionsScreen = (props: { app: App }): ReactElement => (
   <div className="transactions-screen">
     <CompactQuillHeading />
     <Tabs

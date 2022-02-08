@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { Component, ReactNode } from 'react';
 import TaskQueue from '../common/TaskQueue';
 
 import type App from '../App';
@@ -22,7 +22,7 @@ type State = {
 
 const useNewUI = true;
 
-export default class Popup extends React.Component<Props, State> {
+export default class Popup extends Component<Props, State> {
   cleanupTasks = new TaskQueue();
 
   constructor(props: Props) {
@@ -46,7 +46,7 @@ export default class Popup extends React.Component<Props, State> {
     this.cleanupTasks.run();
   }
 
-  render(): React.ReactNode {
+  render(): ReactNode {
     if (!this.state.app) {
       return (
         <div className="popup">

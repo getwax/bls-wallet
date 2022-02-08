@@ -1,7 +1,7 @@
-import * as React from 'react';
+import { ReactElement } from 'react';
 
 export const overrideScreenEnabled = false;
 
-const OverrideScreen = (): React.ReactElement => <>Override screen</>;
+const OverrideScreen = (): ReactElement => <>Override screen</>;
 
 export default OverrideScreen;
