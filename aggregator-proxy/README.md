@@ -1,5 +1,16 @@
 # Aggregator Proxy
 
+[![npm version](https://img.shields.io/npm/v/bls-wallet-aggregator-proxy)](https://www.npmjs.com/package/bls-wallet-aggregator-proxy)
+
+This package makes it easy to provide an aggregator by proxying another. The primary use-case is to expose a free aggregator based on one that requires payment by augmenting the bundles with transactions that pay `tx.origin`.
+
+## Setup
+
+```sh
+npm install bls-wallet-aggregator-proxy
+yarn install bls-wallet-aggregator-proxy
+```
+
 ## Usage
 
 ```ts
@@ -9,7 +20,7 @@ import {
   // AggregatorProxyCallback,
   // ^ Alternatively, for manual control, import AggregatorProxyCallback to
   // just generate the req,res callback for use with http.createServer
-} from 'aggregator-proxy';
+} from 'bls-wallet-aggregator-proxy';
 
 runAggregatorProxy(
   'https://arbitrum-testnet.blswallet.org',

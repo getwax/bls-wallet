@@ -1,5 +1,7 @@
 # BLS Wallet Clients
 
+[![npm version](https://img.shields.io/npm/v/bls-wallet-clients)](https://www.npmjs.com/package/bls-wallet-clients)
+
 *Client libraries for interacting with BLS Wallet components*
 
 ## Network Config
@@ -18,20 +20,20 @@ const netCfg: NetworkConfig = await getConfig(
 
 ## Aggregator
 
-Exposes typed functions for interacting with the Aggregator's HTTP api.
+Exposes typed functions for interacting with the Aggregator's HTTP API.
 
 ```ts
 import { Aggregator } from 'bls-wallet-clients';
 
 const aggregator = new Aggregator('https://rinkarby.blswallet.org');
 
-await aggregator.addTransaction(...);
+await aggregator.add(...);
 ```
 
 ## BlsWalletWrapper
 
 Wraps a BLS wallet, storing the private key and providing `.sign(...)` to
-produce a `Bundle`, that can be used with `aggregator.addTransaction(...)`.
+produce a `Bundle`, that can be used with `aggregator.add(...)`.
 
 ```ts
 import { BlsWalletWrapper } from 'bls-wallet-clients';
@@ -46,16 +48,19 @@ const bundle = wallet.sign({
   nonce: await wallet.Nonce(),
   actions: [
     {
-      contract: someToken, // An ethers.Contract
-      method: 'transfer',
-      args: [recipientAddress, ethers.utils.parseUnits('1', 18)],
+      ethValue: 0,
+      contractAddress: someToken.address, // An ethers.Contract
+      encodedFunction: someToken.interface.encodeFunctionData(
+        "transfer",
+        ["0x...some address...", ethers.BigNumber.from(1).pow(18)],
+      ),
     },
     // Additional actions can go here. When using multiple actions, they'll
     // either all succeed or all fail.
   ],
 });
 
-await aggregator.addTransaction(bundle);
+await aggregator.add(bundle);
 ```
 
 ## VerificationGateway

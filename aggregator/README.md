@@ -8,7 +8,7 @@ Verification Gateway.
 
 ## Installation
 
-Install [Deno](deno.land).
+Install [Deno](deno.land)
 
 ### Configuration
 
@@ -167,6 +167,12 @@ You need to reload modules (`-r`):
 ```sh
 deno run -r --allow-net --allow-env --allow-read --unstable ./programs/aggregator.ts
 ```
+
+#### Transaction reverted: function call to a non-contract account
+
+- Is `./contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol`'s `COST_ESTIMATOR_ADDRESS` set to the right precompile cost estimator's contract address?
+- Are the BLS Wallet contracts deployed on the correct network?
+- Is `NETWORK_CONFIG_PATH` in `.env` set to the right config?
 
 ### Notable Components
 
