@@ -29,7 +29,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
   return (
     <div
       className={`p-4 rounded-lg
-      ${expanded && 'border-2 border-blue-500 shadow-shadow-xl'}
+      ${expanded && 'bg-white border-2 border-blue-500 shadow-xl'}
     `}
     >
       <div className="flex place-items-center gap-4 ">

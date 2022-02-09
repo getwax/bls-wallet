@@ -23,7 +23,7 @@ export const SettingsWrapper: React.FunctionComponent = () => {
   return (
     <div className="">
       <div className="flex justify-between place-items-center">
-        <div className="text-body">Connections</div>
+        <div className="text-body">Settings</div>
       </div>
 
       <div className="flex flex-col gap-4 mt-8">

@@ -23,7 +23,7 @@ export const ContactsWrapper: React.FunctionComponent = () => {
   return (
     <div className="">
       <div className="flex justify-between place-items-center">
-        <div className="text-body">Connections</div>
+        <div className="text-body">Contacts</div>
       </div>
 
       <div className="flex flex-col gap-6 mt-8">
