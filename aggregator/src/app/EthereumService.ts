@@ -6,6 +6,8 @@ import {
   delay,
   ethers,
   initBlsWalletSigner,
+  Utilities,
+  Utilities__factory,
   VerificationGateway,
   // deno-lint-ignore camelcase
   VerificationGateway__factory,
@@ -30,17 +32,24 @@ export type CreateWalletResult = {
 
 export default class EthereumService {
   verificationGateway: VerificationGateway;
+  utilities: Utilities;
 
   constructor(
     public emit: (evt: AppEvent) => void,
     public wallet: Wallet,
     public blsWalletSigner: BlsWalletSigner,
     verificationGatewayAddress: string,
+    utilitiesAddress: string,
     public nextNonce: number,
   ) {
     this.verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       this.wallet,
+    );
+
+    this.utilities = Utilities__factory.connect(
+      utilitiesAddress,
+      this.wallet.provider,
     );
   }
 
@@ -52,6 +61,7 @@ export default class EthereumService {
   static async create(
     emit: (evt: AppEvent) => void,
     verificationGatewayAddress: string,
+    utilitiesAddress: string,
     aggPrivateKey: string,
   ): Promise<EthereumService> {
     const wallet = EthereumService.Wallet(aggPrivateKey);
@@ -64,6 +74,7 @@ export default class EthereumService {
       wallet,
       blsWalletSigner,
       verificationGatewayAddress,
+      utilitiesAddress,
       nextNonce,
     );
   }
