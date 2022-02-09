@@ -13,8 +13,9 @@ export const SettingsSummary: React.FunctionComponent<ISettingsSummary> = ({
 }) => {
   return (
     <div
-      className={`p-4 rounded-lg bg-white border
-      ${expanded && 'border-2 border-blue-500 shadow-shadow-xl'}
+      className={`p-4 rounded-lg bg-white border ${
+        expanded && 'bg-white border-2 border-blue-500 shadow-shadow-xl'
+      }
     `}
     >
       <div className="flex place-items-center gap-4">
