@@ -1,8 +1,10 @@
 import {
+  BaseContract,
   BigNumber,
   BlsWalletSigner,
   BlsWalletWrapper,
   Bundle,
+  BytesLike,
   delay,
   ethers,
   initBlsWalletSigner,
@@ -19,6 +21,8 @@ import TransactionFailure from "./TransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import toPublicKeyShort from "./helpers/toPublicKeyShort.ts";
+import AsyncReturnType from "../helpers/AsyncReturnType.ts";
+import ExplicitAny from "../helpers/ExplicitAny.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -29,6 +33,25 @@ export type CreateWalletResult = {
   address?: string;
   failures: TransactionFailure[];
 };
+
+type Call = Parameters<Utilities["functions"]["performSequence"]>[0][number];
+
+type CallHelper<T> = {
+  value: Call;
+  resultDecoder: (result: BytesLike) => T;
+};
+
+type MapCallHelpers<T extends unknown[]> = (
+  T extends [infer First, ...infer Rest]
+    ? [CallHelper<First>, ...MapCallHelpers<Rest>]
+    : []
+);
+
+type MapCallHelperReturns<T> = T extends CallHelper<unknown>[]
+  ? (T extends [CallHelper<infer First>, ...infer Rest]
+    ? [First, ...MapCallHelperReturns<Rest>]
+    : [])
+  : never;
 
 export default class EthereumService {
   verificationGateway: VerificationGateway;
@@ -124,6 +147,50 @@ export default class EthereumService {
     }
 
     return failures;
+  }
+
+  Call<
+    Contract extends BaseContract,
+    Method extends keyof Contract["functions"],
+  >(
+    contract: Contract,
+    method: Method,
+    args: Parameters<Contract["functions"][Method]>,
+  ): CallHelper<AsyncReturnType<Contract["functions"][Method]>> {
+    return {
+      value: {
+        contractAddress: contract.address,
+        encodedFunction: contract.interface.encodeFunctionData(
+          method as ExplicitAny,
+          args,
+        ),
+      },
+      resultDecoder: (data) =>
+        contract.interface.decodeFunctionResult(
+          method as ExplicitAny,
+          data,
+        ) as AsyncReturnType<
+          Contract["functions"][Method]
+        >,
+    };
+  }
+
+  async callStaticSequence<Calls extends CallHelper<unknown>[]>(
+    ...calls: Calls
+  ): Promise<MapCallHelperReturns<Calls>> {
+    const rawResults = await this.utilities.callStatic.performSequence(
+      calls.map((c) => c.value),
+    );
+
+    const results = rawResults.map(([success, result], i) => {
+      if (!success) {
+        throw new Error(`Failed ${i}`); // FIXME: Represent errors
+      }
+
+      return calls[i].resultDecoder(result);
+    });
+
+    return results as MapCallHelperReturns<Calls>;
   }
 
   async checkBundle(bundle: Bundle) {
