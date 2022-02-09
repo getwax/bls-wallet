@@ -12,8 +12,8 @@ Fixture.test("EthereumService submits mint action", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, 7],
         ),
@@ -36,8 +36,8 @@ Fixture.test("EthereumService submits transfer action", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "transfer",
           [wallets[1].address, 1],
         ),
@@ -64,8 +64,8 @@ Fixture.test("EthereumService submits aggregated bundle", async (fx) => {
       actions: [
         {
           ethValue: 0,
-          contractAddress: fx.testErc20.contract.address,
-          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
             "mint",
             [wallet.address, 3],
           ),
@@ -77,8 +77,8 @@ Fixture.test("EthereumService submits aggregated bundle", async (fx) => {
       actions: [
         {
           ethValue: 0,
-          contractAddress: fx.testErc20.contract.address,
-          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
             "mint",
             [wallet.address, 5],
           ),
@@ -108,8 +108,8 @@ Fixture.test("EthereumService submits large aggregate mint bundle", async (fx) =
           // TODO (merge-ok): Add single operation multi-action variation of this test
           {
             ethValue: 0,
-            contractAddress: fx.testErc20.contract.address,
-            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
               "mint",
               [wallet.address, 1],
             ),
@@ -139,8 +139,8 @@ Fixture.test("EthereumService sends large aggregate transfer bundle", async (fx)
         actions: [
           {
             ethValue: 0,
-            contractAddress: fx.testErc20.contract.address,
-            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
               "transfer",
               [recvWallet.address, 1],
             ),
@@ -172,8 +172,8 @@ Fixture.test(
             actions: [
               {
                 ethValue: 0,
-                contractAddress: fx.testErc20.contract.address,
-                encodedFunction: fx.testErc20.contract.interface
+                contractAddress: fx.testErc20.address,
+                encodedFunction: fx.testErc20.interface
                   .encodeFunctionData(
                     "mint",
                     [wallet.address, "1"],
@@ -205,7 +205,7 @@ Fixture.test(
 
 //     const txs = Range(2).map((i) =>
 //       wallet.sign({
-//         contract: fx.testErc20.contract,
+//         contract: fx.testErc20,
 //         method: "mint",
 //         args: [wallet.address, "1"],
 //         nonce: walletNonce.add(i),

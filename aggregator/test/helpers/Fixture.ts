@@ -3,6 +3,8 @@ import {
   BlsWalletSigner,
   BlsWalletWrapper,
   ethers,
+  MockERC20,
+  MockERC20__factory,
   NetworkConfig,
   QueryClient,
 } from "../../deps.ts";
@@ -16,7 +18,6 @@ import TestClock from "./TestClock.ts";
 import * as env from "../env.ts";
 import AdminWallet from "../../src/chain/AdminWallet.ts";
 import AppEvent from "../../src/app/AppEvent.ts";
-import MockErc20 from "./MockErc20.ts";
 import nil, { isNotNil } from "../../src/helpers/nil.ts";
 import getNetworkConfig from "../../src/helpers/getNetworkConfig.ts";
 import BundleService from "../../src/app/BundleService.ts";
@@ -57,6 +58,7 @@ export default class Fixture {
     const ethereumService = await EthereumService.create(
       (evt) => fx.emit(evt),
       netCfg.addresses.verificationGateway,
+      netCfg.addresses.utilities,
       env.PRIVATE_KEY_AGG,
     );
 
@@ -92,7 +94,7 @@ export default class Fixture {
   cleanupJobs: (() => void | Promise<void>)[] = [];
   clock = new TestClock();
 
-  testErc20: MockErc20;
+  testErc20: MockERC20;
   adminWallet: ethers.Wallet;
 
   private constructor(
@@ -103,9 +105,9 @@ export default class Fixture {
     public blsWalletSigner: BlsWalletSigner,
     public networkConfig: NetworkConfig,
   ) {
-    this.testErc20 = new MockErc20(
+    this.testErc20 = MockERC20__factory.connect(
       this.networkConfig.addresses.testToken,
-      this.ethereumService.wallet,
+      this.ethereumService.wallet.provider,
     );
 
     this.adminWallet = AdminWallet(
@@ -199,8 +201,8 @@ export default class Fixture {
             actions: [
               {
                 ethValue: 0,
-                contractAddress: token.contract.address,
-                encodedFunction: token.contract.interface.encodeFunctionData(
+                contractAddress: token.address,
+                encodedFunction: token.interface.encodeFunctionData(
                   "mint",
                   [wallet.address, topUp],
                 ),
@@ -215,8 +217,8 @@ export default class Fixture {
             actions: [
               {
                 ethValue: 0,
-                contractAddress: token.contract.address,
-                encodedFunction: token.contract.interface.encodeFunctionData(
+                contractAddress: token.address,
+                encodedFunction: token.interface.encodeFunctionData(
                   "transfer",
                   [this.adminWallet.address, topUp.mul(-1)],
                 ),

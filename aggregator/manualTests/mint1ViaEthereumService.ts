@@ -1,10 +1,9 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { delay, ethers } from "../deps.ts";
+import { delay, ethers, MockERC20__factory } from "../deps.ts";
 
 import EthereumService from "../src/app/EthereumService.ts";
 import * as env from "../test/env.ts";
-import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 
@@ -16,10 +15,11 @@ const ethereumService = await EthereumService.create(
     console.log(evt);
   },
   addresses.verificationGateway,
+  addresses.utilities,
   env.PRIVATE_KEY_AGG,
 );
 
-const testErc20 = new MockErc20(addresses.testToken, provider);
+const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
 const [wallet] = await TestBlsWallets(provider, 1);
 const startBalance = await testErc20.balanceOf(wallet.address);
 
@@ -27,8 +27,8 @@ const bundle = wallet.sign({
   nonce: await wallet.Nonce(),
   actions: [{
     ethValue: 0,
-    contractAddress: testErc20.contract.address,
-    encodedFunction: testErc20.contract.interface.encodeFunctionData(
+    contractAddress: testErc20.address,
+    encodedFunction: testErc20.interface.encodeFunctionData(
       "mint",
       [wallet.address, 20],
     ),

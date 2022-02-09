@@ -11,8 +11,8 @@ Fixture.test("adds valid bundle", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, 3],
         ),
@@ -37,8 +37,8 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, "3"],
         ),
@@ -72,8 +72,8 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, 3],
         ),
@@ -101,8 +101,8 @@ Fixture.test(
       actions: [
         {
           ethValue: 0,
-          contractAddress: fx.testErc20.contract.address,
-          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
             "mint",
             [wallet.address, 3],
           ),
@@ -143,8 +143,8 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, "3"],
         ),
@@ -176,7 +176,7 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
 
 //     const futureTxs = Range(5).map((i) =>
 //       wallet.sign({
-//         contract: fx.testErc20.contract,
+//         contract: fx.testErc20,
 //         method: "mint",
 //         args: [wallet.address, "3"],
 //         nonce: walletNonce.add(i + 1),
