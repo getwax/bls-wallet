@@ -190,10 +190,7 @@ export default class BundleService {
       );
 
       const { aggregateBundle, includedRows } = await this
-        .createAggregateBundle(
-          eligibleBundleRows,
-          currentBlockNumber,
-        );
+        .createAggregateBundle(eligibleBundleRows);
 
       if (!aggregateBundle || includedRows.length === 0) {
         return;
@@ -211,15 +208,12 @@ export default class BundleService {
     return submissionResult;
   }
 
-  async createAggregateBundle(
-    eligibleBundleRows: BundleRow[],
-    currentBlockNumber: BigNumber,
-  ): Promise<
-    {
+  async createAggregateBundle(eligibleBundleRows: BundleRow[]): (
+    Promise<{
       aggregateBundle: Bundle | nil;
       includedRows: BundleRow[];
-    }
-  > {
+    }>
+  ) {
     let aggregateBundle: Bundle | nil = nil;
     const includedRows: BundleRow[] = [];
     // TODO (merge-ok): Count gas instead, have idea
