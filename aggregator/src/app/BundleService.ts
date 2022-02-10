@@ -7,8 +7,13 @@ import {
   ERC20__factory,
   QueryClient,
 } from "../../deps.ts";
+
 import { IClock } from "../helpers/Clock.ts";
 import Mutex from "../helpers/Mutex.ts";
+import toShortPublicKey from "./helpers/toPublicKeyShort.ts";
+import nil from "../helpers/nil.ts";
+import Range from "../helpers/Range.ts";
+import assert from "../helpers/assert.ts";
 
 import TransactionFailure from "./TransactionFailure.ts";
 import SubmissionTimer from "./SubmissionTimer.ts";
@@ -17,9 +22,6 @@ import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable, { BundleRow } from "./BundleTable.ts";
-import toShortPublicKey from "./helpers/toPublicKeyShort.ts";
-import nil from "../helpers/nil.ts";
-import Range from "../helpers/Range.ts";
 
 export default class BundleService {
   static defaultConfig = {
@@ -253,7 +255,7 @@ export default class BundleService {
     }>
   ) {
     let aggregateBundle: Bundle | nil = nil;
-    const includedRows: BundleRow[] = [];
+    let includedRows: BundleRow[] = [];
     // TODO (merge-ok): Count gas instead, have idea
     // or way to query max gas per txn (submission).
     let actionCount = countActions(previousAggregateBundle);
@@ -273,30 +275,52 @@ export default class BundleService {
       actionCount += rowActionCount;
     }
 
+    // FIXME: measureRewards should be aware of previousAggregateBundle and
+    // avoid redundantly measuring its reward.
+    const rewards = (await this.measureRewards([
+      previousAggregateBundle,
+      ...includedRows.map((r) => r.bundle),
+    ])).slice(1);
+
+    const insufficentRewardIndex = await this.findFirstInsufficientRewardIndex(
+      previousAggregateBundle,
+      includedRows.map((r) => r.bundle),
+      rewards,
+    );
+
+    let remainingEligibleRows: BundleRow[];
+
+    if (insufficentRewardIndex !== nil) {
+      const insufficentRewardRow = includedRows[insufficentRewardIndex];
+
+      includedRows = includedRows.slice(
+        0,
+        insufficentRewardIndex,
+      );
+
+      // TODO: Should this be a task?
+      await this.handleFailedRow(
+        insufficentRewardRow,
+        await this.ethereumService.BlockNumber(),
+      );
+
+      const eligibleRowIndex = eligibleRows.indexOf(insufficentRewardRow);
+      assert(eligibleRowIndex !== -1);
+
+      remainingEligibleRows = eligibleRows.slice(includedRows.length + 1);
+    } else {
+      remainingEligibleRows = eligibleRows.slice(includedRows.length);
+    }
+
     aggregateBundle = this.blsWalletSigner.aggregate([
       previousAggregateBundle,
       ...includedRows.map((r) => r.bundle),
     ]);
 
-    const rewards = await this.measureRewards([
-      previousAggregateBundle,
-      ...includedRows.map((r) => r.bundle),
-    ]);
-
-    const requiredReward = await this.measureRequiredReward(
-      aggregateBundle,
-    );
-
-    if (bigSum(rewards).lt(requiredReward)) {
-      throw new Error("TODO: Implement this");
-    }
-
     return {
       aggregateBundle,
       includedRows,
-
-      // TODO: This will need to change
-      remainingEligibleRows: eligibleRows.slice(includedRows.length),
+      remainingEligibleRows,
     };
   }
 
@@ -357,6 +381,111 @@ export default class BundleService {
       gasEstimate.toNumber() * this.config.rewards.perGas +
       callDataSize.length * this.config.rewards.perByte
     );
+  }
+
+  /**
+   * Get a lower bound for the reward that is required for processing the
+   * bundle.
+   *
+   * This exists because it's a very good lower bound and it's very fast.
+   * Therefore, when there's an insufficient reward bundle:
+   * - This lower bound is usually enough to find it
+   * - Finding it this way is much more efficient
+   */
+  measureRequiredRewardLowerBound(bundle: Bundle) {
+    const callDataSize = this.ethereumService.verificationGateway.interface
+      .encodeFunctionData("processBundle", [bundle]);
+
+    return callDataSize.length * this.config.rewards.perByte;
+  }
+
+  async findFirstInsufficientRewardIndex(
+    previousAggregateBundle: Bundle,
+    bundles: Bundle[],
+    rewards: BigNumber[],
+  ): Promise<number | nil> {
+    if (bundles.length === 0) {
+      return nil;
+    }
+
+    const len = bundles.length;
+    assert(rewards.length === len);
+
+    // Because the required reward mostly comes from the calldata size, we can
+    // try this cheap local method first and it should work most of the time.
+    for (let i = 0; i < len; i++) {
+      const lowerBound = this.measureRequiredRewardLowerBound(bundles[i]);
+
+      if (rewards[i].lt(lowerBound)) {
+        return i;
+      }
+    }
+
+    let left = 0;
+    let leftRequiredReward = 0;
+    let right = bundles.length;
+    let rightRequiredReward: number;
+
+    // During the bisect we maintain that the culprit is a member of
+    // `bundles.slice(left, right)`.
+    //
+    // Before doing that, we must test the full list to ensure that that is
+    // actually true now. (Ie - that there is a culprit to be found.)
+
+    {
+      const reward = bigSum(rewards);
+
+      const requiredReward = await this.measureRequiredReward(
+        this.blsWalletSigner.aggregate([
+          previousAggregateBundle,
+          ...bundles,
+        ]),
+      );
+
+      if (reward.gte(requiredReward)) {
+        return nil;
+      }
+
+      rightRequiredReward = requiredReward;
+    }
+
+    // Do a bisect to narrow in on the (first) culprit.
+    while (right - left > 1) {
+      const mid = Math.floor((left + right) / 2);
+
+      const reward = bigSum(rewards.slice(0, mid));
+
+      const requiredReward = await this.measureRequiredReward(
+        this.blsWalletSigner.aggregate([
+          previousAggregateBundle,
+          ...bundles.slice(0, mid),
+        ]),
+      );
+
+      if (reward.gte(requiredReward)) {
+        left = mid;
+        leftRequiredReward = requiredReward;
+      } else {
+        right = mid;
+        rightRequiredReward = requiredReward;
+      }
+    }
+
+    assert(right - left === 1, "bisect should identify a single result");
+
+    // The bisect procedure maintains that the culprit is a member of
+    // `bundles.slice(left, right)`. That's now equivalent to `[bundles[left]]`,
+    // so `left` is our culprit index.
+
+    const bundleReward = rewards[left];
+    const bundleRequiredReward = rightRequiredReward - leftRequiredReward;
+
+    // Tracking the rewards so that we can include this assertion isn't strictly
+    // necessary. But the cost is negligible and should help troubleshooting a
+    // lot if something goes wrong.
+    assert(bundleReward.lt(bundleRequiredReward));
+
+    return left;
   }
 
   async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
