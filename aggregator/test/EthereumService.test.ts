@@ -227,3 +227,38 @@ Fixture.test(
 //     assertEquals(balance.toNumber(), 1002);
 //   },
 // );
+
+Fixture.test("callStaticSequence - correctly measures transfer", async (fx) => {
+  const [sendWallet, recvWallet] = await fx.setupWallets(2);
+  const transferAmount = 100;
+
+  const results = await fx.ethereumService.callStaticSequence(
+    fx.ethereumService.Call(fx.testErc20, "balanceOf", [
+      recvWallet.address,
+    ]),
+    fx.ethereumService.Call(
+      fx.ethereumService.verificationGateway,
+      "processBundle",
+      [sendWallet.sign({
+        nonce: await sendWallet.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
+              "transfer",
+              [recvWallet.address, transferAmount],
+            ),
+          },
+        ],
+      })],
+    ),
+    fx.ethereumService.Call(fx.testErc20, "balanceOf", [
+      recvWallet.address,
+    ]),
+  );
+
+  const [[balanceBefore], , [balanceAfter]] = results;
+
+  assertEquals(balanceAfter.sub(balanceBefore).toNumber(), transferAmount);
+});
