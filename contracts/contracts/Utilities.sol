@@ -30,4 +30,8 @@ contract Utilities {
 
     return results;
   }
+
+  function ethBalanceOf(address account) external view returns (uint256) {
+    return account.balance;
+  }
 }
