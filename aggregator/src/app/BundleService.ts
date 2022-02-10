@@ -181,7 +181,7 @@ export default class BundleService {
         this.config.bundleQueryLimit,
       );
 
-      const { aggregateBundle, includedRows, actionCount } = await this
+      const { aggregateBundle, includedRows } = await this
         .createAggregateBundle(
           eligibleBundleRows,
           currentBlockNumber,
@@ -194,7 +194,6 @@ export default class BundleService {
       await this.submitAggregateBundle(
         aggregateBundle,
         includedRows,
-        actionCount,
       );
     });
 
@@ -211,7 +210,6 @@ export default class BundleService {
     {
       aggregateBundle: Bundle | nil;
       includedRows: BundleRow[];
-      actionCount: number;
     }
   > {
     let aggregateBundle: Bundle | nil = nil;
@@ -248,7 +246,6 @@ export default class BundleService {
     return {
       aggregateBundle,
       includedRows,
-      actionCount,
     };
   }
 
@@ -269,12 +266,13 @@ export default class BundleService {
   async submitAggregateBundle(
     aggregateBundle: Bundle,
     includedRows: BundleRow[],
-    actionCount: number,
   ) {
     const maxUnconfirmedActions = (
       this.config.maxUnconfirmedAggregations *
       this.config.maxAggregationSize
     );
+
+    const actionCount = countActions(aggregateBundle);
 
     while (
       this.unconfirmedActionCount + actionCount > maxUnconfirmedActions
