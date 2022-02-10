@@ -289,8 +289,7 @@ export default class BundleService {
       this.unconfirmedRowIds.add(row.id!);
     }
 
-    // TODO (merge-ok): Use a task
-    (async () => {
+    this.addTask(async () => {
       try {
         const recpt = await this.ethereumService.submitBundle(
           aggregateBundle,
@@ -315,7 +314,7 @@ export default class BundleService {
           this.unconfirmedRowIds.delete(row.id!);
         }
       }
-    })();
+    });
   }
 
   async waitForConfirmations() {
