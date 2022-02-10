@@ -102,12 +102,12 @@ export default class BundleService {
       return;
     }
 
-    const eligibleBundleRows = await this.bundleTable.findEligible(
+    const eligibleRows = await this.bundleTable.findEligible(
       await this.ethereumService.BlockNumber(),
       this.config.bundleQueryLimit,
     );
 
-    const actionCount = eligibleBundleRows
+    const actionCount = eligibleRows
       .filter((r) => !this.unconfirmedRowIds.has(r.id!))
       .map((r) => countActions(r.bundle))
       .reduce(plus, 0);
@@ -184,13 +184,13 @@ export default class BundleService {
     const submissionResult = await this.runQueryGroup(async () => {
       const currentBlockNumber = await this.ethereumService.BlockNumber();
 
-      const eligibleBundleRows = await this.bundleTable.findEligible(
+      const eligibleRows = await this.bundleTable.findEligible(
         currentBlockNumber,
         this.config.bundleQueryLimit,
       );
 
       const { aggregateBundle, includedRows } = await this
-        .createAggregateBundle(eligibleBundleRows);
+        .createAggregateBundle(eligibleRows);
 
       if (!aggregateBundle || includedRows.length === 0) {
         return;
@@ -208,19 +208,57 @@ export default class BundleService {
     return submissionResult;
   }
 
-  async createAggregateBundle(eligibleBundleRows: BundleRow[]): (
+  async createAggregateBundle(eligibleRows: BundleRow[]): (
     Promise<{
       aggregateBundle: Bundle | nil;
       includedRows: BundleRow[];
+    }>
+  ) {
+    let aggregateBundle = this.blsWalletSigner.aggregate([]);
+    const includedRows: BundleRow[] = [];
+
+    while (eligibleRows.length > 0) {
+      const {
+        aggregateBundle: newAggregateBundle,
+        includedRows: newIncludedRows,
+        remainingEligibleRows,
+      } = await this.augmentAggregateBundle(
+        aggregateBundle,
+        eligibleRows,
+      );
+
+      aggregateBundle = newAggregateBundle;
+      includedRows.push(...newIncludedRows);
+      eligibleRows = remainingEligibleRows;
+    }
+
+    return {
+      aggregateBundle: aggregateBundle.operations.length > 0
+        ? aggregateBundle
+        : nil,
+      includedRows,
+      // TODO: Return failedRows rather than processing failures as a side
+      // effect?
+    };
+  }
+
+  async augmentAggregateBundle(
+    previousAggregateBundle: Bundle,
+    eligibleRows: BundleRow[],
+  ): (
+    Promise<{
+      aggregateBundle: Bundle;
+      includedRows: BundleRow[];
+      remainingEligibleRows: BundleRow[];
     }>
   ) {
     let aggregateBundle: Bundle | nil = nil;
     const includedRows: BundleRow[] = [];
     // TODO (merge-ok): Count gas instead, have idea
     // or way to query max gas per txn (submission).
-    let actionCount = 0;
+    let actionCount = countActions(previousAggregateBundle);
 
-    for (const row of eligibleBundleRows) {
+    for (const row of eligibleRows) {
       if (this.unconfirmedRowIds.has(row.id!)) {
         continue;
       }
@@ -235,16 +273,18 @@ export default class BundleService {
       actionCount += rowActionCount;
     }
 
-    aggregateBundle = this.blsWalletSigner.aggregate(
-      includedRows.map((r) => r.bundle),
-    );
+    aggregateBundle = this.blsWalletSigner.aggregate([
+      previousAggregateBundle,
+      ...includedRows.map((r) => r.bundle),
+    ]);
 
-    const rewards = await this.measureRewards(
-      includedRows.map((r) => r.bundle),
-    );
+    const rewards = await this.measureRewards([
+      previousAggregateBundle,
+      ...includedRows.map((r) => r.bundle),
+    ]);
 
     const requiredReward = await this.measureRequiredReward(
-      this.blsWalletSigner.aggregate(includedRows.map((r) => r.bundle)),
+      aggregateBundle,
     );
 
     if (bigSum(rewards).lt(requiredReward)) {
@@ -254,6 +294,9 @@ export default class BundleService {
     return {
       aggregateBundle,
       includedRows,
+
+      // TODO: This will need to change
+      remainingEligibleRows: eligibleRows.slice(includedRows.length),
     };
   }
 
@@ -262,6 +305,8 @@ export default class BundleService {
 
     const rewardToken = this.RewardToken();
 
+    // TODO: Test including a failing action. There probably needs to be some
+    // extra logic to handle that.
     const rawResults = await es.callStaticSequenceWithMeasure(
       // FIXME: There is a griefing attack here. A malicious user could create
       // a transfer that is conditional on tx.origin == utilities. That way it
