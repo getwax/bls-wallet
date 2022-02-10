@@ -271,7 +271,7 @@ function wrapInnermostError(error: Error): Error {
   }
 
   const wrappedError = new Error(
-    `\n  innermost error: ${currError.message}` +
+    `\n  innermost error: ${currError.stack}` +
       `\n\n  error: ${error.message}`,
   );
 
