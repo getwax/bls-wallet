@@ -11,7 +11,6 @@ import {
   Utilities,
   Utilities__factory,
   VerificationGateway,
-  // deno-lint-ignore camelcase
   VerificationGateway__factory,
   Wallet,
 } from "../../deps.ts";
@@ -41,9 +40,14 @@ type CallHelper<T> = {
   resultDecoder: (result: BytesLike) => T;
 };
 
+type CallResult<T> = (
+  | { success: true; returnValue: T }
+  | { success: false; returnValue: undefined }
+);
+
 type MapCallHelperReturns<T> = T extends CallHelper<unknown>[]
   ? (T extends [CallHelper<infer First>, ...infer Rest]
-    ? [First, ...MapCallHelperReturns<Rest>]
+    ? [CallResult<First>, ...MapCallHelperReturns<Rest>]
     : [])
   : never;
 
@@ -176,13 +180,18 @@ export default class EthereumService {
       calls.map((c) => c.value),
     );
 
-    const results = rawResults.map(([success, result], i) => {
-      if (!success) {
-        throw new Error(`Failed ${i}`); // FIXME: Represent errors
-      }
+    const results: CallResult<unknown>[] = rawResults.map(
+      ([success, result], i) => {
+        if (!success) {
+          return { success };
+        }
 
-      return calls[i].resultDecoder(result);
-    });
+        return {
+          success,
+          returnValue: calls[i].resultDecoder(result),
+        };
+      },
+    );
 
     return results as MapCallHelperReturns<Calls>;
   }
@@ -190,7 +199,10 @@ export default class EthereumService {
   async callStaticSequenceWithMeasure<MeasureCall extends CallHelper<unknown>>(
     measureCall: MeasureCall,
     calls: CallHelper<unknown>[],
-  ): Promise<ReturnType<MeasureCall["resultDecoder"]>[]> {
+  ): (Promise<{
+    measureResults: CallResult<ReturnType<MeasureCall["resultDecoder"]>>[];
+    callResults: CallResult<unknown>[];
+  }>) {
     const fullCalls: CallHelper<unknown>[] = [measureCall];
 
     for (const call of calls) {
@@ -198,13 +210,24 @@ export default class EthereumService {
       fullCalls.push(measureCall);
     }
 
-    const fullResults: unknown[] = await this.callStaticSequence(...fullCalls);
+    const fullResults: CallResult<unknown>[] = await this.callStaticSequence(
+      ...fullCalls,
+    );
 
-    const measureResults: unknown[] = fullResults.filter(
+    const measureResults: CallResult<unknown>[] = fullResults.filter(
       (_r, i) => i % 2 === 0,
     );
 
-    return measureResults as ReturnType<MeasureCall["resultDecoder"]>[];
+    const callResults = fullResults.filter(
+      (_r, i) => i % 2 === 1,
+    );
+
+    return {
+      measureResults: measureResults as CallResult<
+        ReturnType<MeasureCall["resultDecoder"]>
+      >[],
+      callResults,
+    };
   }
 
   async checkBundle(bundle: Bundle) {

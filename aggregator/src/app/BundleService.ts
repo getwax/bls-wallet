@@ -282,7 +282,7 @@ export default class BundleService {
       ...includedRows.map((r) => r.bundle),
     ])).slice(1);
 
-    const insufficentRewardIndex = await this.findFirstInsufficientRewardIndex(
+    const firstFailureIndex = await this.findFirstFailureIndex(
       previousAggregateBundle,
       includedRows.map((r) => r.bundle),
       rewards,
@@ -290,21 +290,21 @@ export default class BundleService {
 
     let remainingEligibleRows: BundleRow[];
 
-    if (insufficentRewardIndex !== nil) {
-      const insufficentRewardRow = includedRows[insufficentRewardIndex];
+    if (firstFailureIndex !== nil) {
+      const failedRow = includedRows[firstFailureIndex];
 
       includedRows = includedRows.slice(
         0,
-        insufficentRewardIndex,
+        firstFailureIndex,
       );
 
       // TODO: Should this be a task?
       await this.handleFailedRow(
-        insufficentRewardRow,
+        failedRow,
         await this.ethereumService.BlockNumber(),
       );
 
-      const eligibleRowIndex = eligibleRows.indexOf(insufficentRewardRow);
+      const eligibleRowIndex = eligibleRows.indexOf(failedRow);
       assert(eligibleRowIndex !== -1);
 
       remainingEligibleRows = eligibleRows.slice(includedRows.length + 1);
@@ -324,35 +324,44 @@ export default class BundleService {
     };
   }
 
-  async measureRewards(bundles: Bundle[]): Promise<BigNumber[]> {
+  async measureRewards(bundles: Bundle[]): Promise<{
+    success: boolean;
+    reward: BigNumber;
+  }[]> {
     const es = this.ethereumService;
 
     const rewardToken = this.RewardToken();
 
     // TODO: Test including a failing action. There probably needs to be some
     // extra logic to handle that.
-    const rawResults = await es.callStaticSequenceWithMeasure(
-      // FIXME: There is a griefing attack here. A malicious user could create
-      // a transfer that is conditional on tx.origin == utilities. That way it
-      // wouldn't actually pay in the real transaction, therefore using our
-      // aggregator to pay their gas fees for free.
-      // Actually: What is tx.origin when using callStatic?
-      rewardToken
-        ? es.Call(rewardToken, "balanceOf", [es.utilities.address])
-        : es.Call(es.utilities, "ethBalanceOf", [es.utilities.address]),
-      bundles.map((bundle) =>
-        es.Call(
-          es.verificationGateway,
-          "processBundle",
-          [bundle],
-        )
-      ),
-    );
+    const { measureResults, callResults } = await es
+      .callStaticSequenceWithMeasure(
+        // FIXME: There is a griefing attack here. A malicious user could create
+        // a transfer that is conditional on tx.origin == utilities. That way it
+        // wouldn't actually pay in the real transaction, therefore using our
+        // aggregator to pay their gas fees for free.
+        // Actually: What is tx.origin when using callStatic?
+        rewardToken
+          ? es.Call(rewardToken, "balanceOf", [es.utilities.address])
+          : es.Call(es.utilities, "ethBalanceOf", [es.utilities.address]),
+        bundles.map((bundle) =>
+          es.Call(
+            es.verificationGateway,
+            "processBundle",
+            [bundle],
+          )
+        ),
+      );
 
-    return Range(rawResults.length - 1).map((i) => {
-      const [[before], [after]] = [rawResults[i], rawResults[i + 1]];
+    return Range(bundles.length).map((i) => {
+      const [before, after] = [measureResults[i], measureResults[i + 1]];
+      assert(before.success);
+      assert(after.success);
 
-      return after.sub(before);
+      const success = callResults[i].success;
+      const reward = after.returnValue[0].sub(before.returnValue[0]);
+
+      return { success, reward };
     });
   }
 
@@ -399,10 +408,10 @@ export default class BundleService {
     return callDataSize.length * this.config.rewards.perByte;
   }
 
-  async findFirstInsufficientRewardIndex(
+  async findFirstFailureIndex(
     previousAggregateBundle: Bundle,
     bundles: Bundle[],
-    rewards: BigNumber[],
+    rewards: { success: boolean; reward: BigNumber }[],
   ): Promise<number | nil> {
     if (bundles.length === 0) {
       return nil;
@@ -411,29 +420,12 @@ export default class BundleService {
     const len = bundles.length;
     assert(rewards.length === len);
 
-    // Because the required reward mostly comes from the calldata size, we can
-    // try this cheap local method first and it should work most of the time.
-    for (let i = 0; i < len; i++) {
-      const lowerBound = this.measureRequiredRewardLowerBound(bundles[i]);
-
-      if (rewards[i].lt(lowerBound)) {
-        return i;
-      }
-    }
-
-    let left = 0;
-    let leftRequiredReward = 0;
-    let right = bundles.length;
-    let rightRequiredReward: number;
-
-    // During the bisect we maintain that the culprit is a member of
-    // `bundles.slice(left, right)`.
-    //
-    // Before doing that, we must test the full list to ensure that that is
-    // actually true now. (Ie - that there is a culprit to be found.)
-
-    {
-      const reward = bigSum(rewards);
+    const checkFirstN = async (n: number): Promise<{
+      success: boolean;
+      reward: BigNumber;
+      requiredReward: number;
+    }> => {
+      const reward = bigSum(rewards.slice(0, n).map((r) => r.reward));
 
       const requiredReward = await this.measureRequiredReward(
         this.blsWalletSigner.aggregate([
@@ -442,10 +434,67 @@ export default class BundleService {
         ]),
       );
 
-      if (reward.gte(requiredReward)) {
+      const success = reward.gte(requiredReward);
+
+      return { success, reward, requiredReward };
+    };
+
+    // This calculation is entirely local and cheap. It can find a failing
+    // bundle, but it might not be the *first* failing bundle.
+    const fastFailureIndex = (() => {
+      for (let i = 0; i < len; i++) {
+        // If the actual call failed then we consider it a failure, even if the
+        // reward is somehow met (e.g. if zero reward is required).
+        if (rewards[i].success === false) {
+          return i;
+        }
+
+        // Because the required reward mostly comes from the calldata size, this
+        // should find the first insufficient reward most of the time.
+        const lowerBound = this.measureRequiredRewardLowerBound(bundles[i]);
+
+        if (rewards[i].reward.lt(lowerBound)) {
+          return i;
+        }
+      }
+    })();
+
+    let left = 0;
+    let leftRequiredReward = 0;
+    let right: number;
+    let rightRequiredReward: number;
+
+    if (fastFailureIndex !== nil) {
+      // Having a fast failure index is not enough because it might not be the
+      // first. To establish that it really is the first, we need to ensure that
+      // all bundles up to that index are ok (indeed, this is the assumption
+      // that is relied upon outside - that the subset before the first failing
+      // index can proceed without further checking).
+
+      const { success, requiredReward } = await checkFirstN(fastFailureIndex);
+
+      if (success) {
+        return fastFailureIndex;
+      }
+
+      // In case of failure, we now know there as a failing index in a more
+      // narrow range, so we can at least restrict the bisect to this smaller
+      // range.
+      right = fastFailureIndex;
+      rightRequiredReward = requiredReward;
+    } else {
+      // If we don't have a failing index, we still need to establish that there
+      // is a failing index to be found. This is because it's a requirement of
+      // the upcoming bisect logic that there is a failing bundle in
+      // `bundles.slice(left, right)`.
+
+      const { success, requiredReward } = await checkFirstN(bundles.length);
+
+      if (success) {
         return nil;
       }
 
+      right = bundles.length;
       rightRequiredReward = requiredReward;
     }
 
@@ -453,16 +502,9 @@ export default class BundleService {
     while (right - left > 1) {
       const mid = Math.floor((left + right) / 2);
 
-      const reward = bigSum(rewards.slice(0, mid));
+      const { success, requiredReward } = await checkFirstN(mid);
 
-      const requiredReward = await this.measureRequiredReward(
-        this.blsWalletSigner.aggregate([
-          previousAggregateBundle,
-          ...bundles.slice(0, mid),
-        ]),
-      );
-
-      if (reward.gte(requiredReward)) {
+      if (success) {
         left = mid;
         leftRequiredReward = requiredReward;
       } else {
@@ -477,7 +519,7 @@ export default class BundleService {
     // `bundles.slice(left, right)`. That's now equivalent to `[bundles[left]]`,
     // so `left` is our culprit index.
 
-    const bundleReward = rewards[left];
+    const bundleReward = rewards[left].reward;
     const bundleRequiredReward = rightRequiredReward - leftRequiredReward;
 
     // Tracking the rewards so that we can include this assertion isn't strictly

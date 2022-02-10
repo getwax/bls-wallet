@@ -2,6 +2,7 @@ import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
+import assert from "../src/helpers/assert.ts";
 
 Fixture.test("EthereumService submits mint action", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
@@ -257,7 +258,13 @@ Fixture.test("callStaticSequence - correctly measures transfer", async (fx) => {
     es.Call(es.utilities, "ethBalanceOf", [recvWallet.address]),
   );
 
-  const [[balanceBefore], , [balanceAfter]] = results;
+  const [balanceResultBefore, , balanceResultAfter] = results;
+
+  assert(balanceResultBefore.success);
+  const balanceBefore = balanceResultBefore.returnValue[0];
+
+  assert(balanceResultAfter.success);
+  const balanceAfter = balanceResultAfter.returnValue[0];
 
   assertEquals(balanceAfter.sub(balanceBefore).toNumber(), transferAmount);
 });
