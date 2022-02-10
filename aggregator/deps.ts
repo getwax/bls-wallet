@@ -36,6 +36,7 @@ export type {
   BlsWalletSigner,
   Bundle,
   BundleDto,
+  ERC20,
   MockERC20,
   NetworkConfig,
   Operation,
@@ -48,6 +49,7 @@ export type {
 export {
   Aggregator as AggregatorClient,
   BlsWalletWrapper,
+  ERC20__factory,
   getConfig,
   MockERC20__factory,
   Utilities__factory,

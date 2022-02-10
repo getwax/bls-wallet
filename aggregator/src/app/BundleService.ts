@@ -3,6 +3,8 @@ import {
   BlsWalletSigner,
   Bundle,
   delay,
+  ERC20,
+  ERC20__factory,
   QueryClient,
 } from "../../deps.ts";
 import { IClock } from "../helpers/Clock.ts";
@@ -17,6 +19,7 @@ import AppEvent from "./AppEvent.ts";
 import BundleTable, { BundleRow } from "./BundleTable.ts";
 import toShortPublicKey from "./helpers/toPublicKeyShort.ts";
 import nil from "../helpers/nil.ts";
+import Range from "../helpers/Range.ts";
 
 export default class BundleService {
   static defaultConfig = {
@@ -25,6 +28,11 @@ export default class BundleService {
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
     maxEligibilityDelay: env.MAX_ELIGIBILITY_DELAY,
+    rewards: {
+      type: env.REWARD_TYPE,
+      perGas: env.REWARD_PER_GAS,
+      perByte: env.REWARD_PER_BYTE,
+    },
   };
 
   unconfirmedBundles = new Set<Bundle>();
@@ -229,24 +237,87 @@ export default class BundleService {
         break;
       }
 
-      const candidateBundle = this.blsWalletSigner.aggregate([
-        ...(aggregateBundle ? [aggregateBundle] : []),
-        row.bundle,
-      ]);
+      includedRows.push(row);
+      actionCount += rowActionCount;
+    }
 
-      if (await this.ethereumService.checkBundle(candidateBundle)) {
-        aggregateBundle = candidateBundle;
-        includedRows.push(row);
-        actionCount += rowActionCount;
-      } else {
-        await this.handleFailedRow(row, currentBlockNumber);
-      }
+    aggregateBundle = this.blsWalletSigner.aggregate(
+      includedRows.map((r) => r.bundle),
+    );
+
+    const rewards = await this.measureRewards(
+      includedRows.map((r) => r.bundle),
+    );
+
+    const requiredReward = await this.measureRequiredReward(
+      this.blsWalletSigner.aggregate(includedRows.map((r) => r.bundle)),
+    );
+
+    if (bigSum(rewards).lt(requiredReward)) {
+      throw new Error("TODO: Implement this");
     }
 
     return {
       aggregateBundle,
       includedRows,
     };
+  }
+
+  async measureRewards(bundles: Bundle[]): Promise<BigNumber[]> {
+    const es = this.ethereumService;
+
+    const rewardToken = this.RewardToken();
+
+    const rawResults = await es.callStaticSequenceWithMeasure(
+      // FIXME: There is a griefing attack here. A malicious user could create
+      // a transfer that is conditional on tx.origin == utilities. That way it
+      // wouldn't actually pay in the real transaction, therefore using our
+      // aggregator to pay their gas fees for free.
+      // Actually: What is tx.origin when using callStatic?
+      rewardToken
+        ? es.Call(rewardToken, "balanceOf", [es.utilities.address])
+        : es.Call(es.utilities, "ethBalanceOf", [es.utilities.address]),
+      bundles.map((bundle) =>
+        es.Call(
+          es.verificationGateway,
+          "processBundle",
+          [bundle],
+        )
+      ),
+    );
+
+    return Range(rawResults.length - 1).map((i) => {
+      const [[before], [after]] = [rawResults[i], rawResults[i + 1]];
+
+      return after.sub(before);
+    });
+  }
+
+  RewardToken(): ERC20 | nil {
+    const rewardType = this.config.rewards.type;
+
+    if (rewardType === "ether") {
+      return nil;
+    }
+
+    return ERC20__factory.connect(
+      rewardType.slice("token:".length),
+      this.ethereumService.wallet.provider,
+    );
+  }
+
+  async measureRequiredReward(bundle: Bundle) {
+    const gasEstimate = await this.ethereumService.verificationGateway
+      .estimateGas
+      .processBundle(bundle);
+
+    const callDataSize = this.ethereumService.verificationGateway.interface
+      .encodeFunctionData("processBundle", [bundle]);
+
+    return (
+      gasEstimate.toNumber() * this.config.rewards.perGas +
+      callDataSize.length * this.config.rewards.perByte
+    );
   }
 
   async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
@@ -341,4 +412,8 @@ function countActions(bundle: Bundle) {
 
 function plus(a: number, b: number) {
   return a + b;
+}
+
+function bigSum(values: BigNumber[]) {
+  return values.reduce((a, b) => a.add(b), BigNumber.from(0));
 }

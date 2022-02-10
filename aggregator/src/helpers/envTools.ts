@@ -39,3 +39,14 @@ export function requireIntEnv(envName: string): number {
 
   return value;
 }
+
+export function requireNumberEnv(envName: string): number {
+  const strValue = requireEnv(envName);
+  const value = Number(strValue);
+
+  if (!Number.isFinite(value)) {
+    throw new Error(`Failed to parse ${envName} as number: ${strValue}`);
+  }
+
+  return value;
+}

@@ -2,6 +2,7 @@ import {
   requireBoolEnv,
   requireEnv,
   requireIntEnv,
+  requireNumberEnv,
 } from "./helpers/envTools.ts";
 
 export const RPC_URL = requireEnv("RPC_URL");
@@ -46,3 +47,11 @@ export const MAX_UNCONFIRMED_AGGREGATIONS = requireIntEnv(
 );
 
 export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");
+
+export const REWARD_TYPE = requireEnv("REWARD_TYPE");
+export const REWARD_PER_GAS = requireNumberEnv("REWARD_PER_GAS");
+export const REWARD_PER_BYTE = requireNumberEnv("REWARD_PER_BYTE");
+
+if (!/^(ether|token:0x[0-9a-fA-F]*)$/.test(REWARD_TYPE)) {
+  throw new Error(`REWARD_TYPE has invalid format: "${REWARD_TYPE}"`);
+}

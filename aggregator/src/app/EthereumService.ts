@@ -187,6 +187,26 @@ export default class EthereumService {
     return results as MapCallHelperReturns<Calls>;
   }
 
+  async callStaticSequenceWithMeasure<MeasureCall extends CallHelper<unknown>>(
+    measureCall: MeasureCall,
+    calls: CallHelper<unknown>[],
+  ): Promise<ReturnType<MeasureCall["resultDecoder"]>[]> {
+    const fullCalls: CallHelper<unknown>[] = [measureCall];
+
+    for (const call of calls) {
+      fullCalls.push(call);
+      fullCalls.push(measureCall);
+    }
+
+    const fullResults: unknown[] = await this.callStaticSequence(...fullCalls);
+
+    const measureResults: unknown[] = fullResults.filter(
+      (_r, i) => i % 2 === 0,
+    );
+
+    return measureResults as ReturnType<MeasureCall["resultDecoder"]>[];
+  }
+
   async checkBundle(bundle: Bundle) {
     try {
       const { successes } = await this.verificationGateway.callStatic
