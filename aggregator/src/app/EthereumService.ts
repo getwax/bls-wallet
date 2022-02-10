@@ -41,12 +41,6 @@ type CallHelper<T> = {
   resultDecoder: (result: BytesLike) => T;
 };
 
-type MapCallHelpers<T extends unknown[]> = (
-  T extends [infer First, ...infer Rest]
-    ? [CallHelper<First>, ...MapCallHelpers<Rest>]
-    : []
-);
-
 type MapCallHelperReturns<T> = T extends CallHelper<unknown>[]
   ? (T extends [CallHelper<infer First>, ...infer Rest]
     ? [First, ...MapCallHelperReturns<Rest>]
