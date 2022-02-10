@@ -16,6 +16,7 @@ import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable, { BundleRow } from "./BundleTable.ts";
 import toShortPublicKey from "./helpers/toPublicKeyShort.ts";
+import nil from "../helpers/nil.ts";
 
 export default class BundleService {
   static defaultConfig = {
@@ -180,94 +181,75 @@ export default class BundleService {
         this.config.bundleQueryLimit,
       );
 
-      let aggregateBundle: Bundle | null = null;
-      const includedRows: BundleRow[] = [];
-      // TODO (merge-ok): Count gas instead, have idea
-      // or way to query max gas per txn (submission).
-      let actionCount = 0;
-
-      for (const row of eligibleBundleRows) {
-        if (this.unconfirmedRowIds.has(row.id!)) {
-          continue;
-        }
-
-        const rowActionCount = countActions(row.bundle);
-
-        if (actionCount + rowActionCount > this.config.maxAggregationSize) {
-          break;
-        }
-
-        const candidateBundle = this.blsWalletSigner.aggregate([
-          ...(aggregateBundle ? [aggregateBundle] : []),
-          row.bundle,
-        ]);
-
-        if (await this.ethereumService.checkBundle(candidateBundle)) {
-          aggregateBundle = candidateBundle;
-          includedRows.push(row);
-          actionCount += rowActionCount;
-        } else {
-          await this.handleFailedRow(row, currentBlockNumber);
-        }
-      }
+      const { aggregateBundle, includedRows, actionCount } = await this
+        .createAggregateBundle(
+          eligibleBundleRows,
+          currentBlockNumber,
+        );
 
       if (!aggregateBundle || includedRows.length === 0) {
         return;
       }
 
-      const maxUnconfirmedActions = (
-        this.config.maxUnconfirmedAggregations *
-        this.config.maxAggregationSize
+      await this.submitAggregateBundle(
+        aggregateBundle,
+        includedRows,
+        actionCount,
       );
-
-      while (
-        this.unconfirmedActionCount + actionCount > maxUnconfirmedActions
-      ) {
-        // FIXME (merge-ok): Polling
-        this.emit({ type: "waiting-unconfirmed-space" });
-        await delay(1000);
-      }
-
-      this.unconfirmedActionCount += actionCount;
-      this.unconfirmedBundles.add(aggregateBundle);
-
-      for (const row of includedRows) {
-        this.unconfirmedRowIds.add(row.id!);
-      }
-
-      // TODO (merge-ok): Use a task
-      (async () => {
-        try {
-          const recpt = await this.ethereumService.submitBundle(
-            aggregateBundle,
-            Infinity,
-            300,
-          );
-
-          this.emit({
-            type: "submission-confirmed",
-            data: {
-              rowIds: includedRows.map((row) => row.id),
-              blockNumber: recpt.blockNumber,
-            },
-          });
-
-          await this.bundleTable.remove(...includedRows);
-        } finally {
-          this.unconfirmedActionCount -= actionCount;
-          this.unconfirmedBundles.delete(aggregateBundle);
-
-          for (const row of includedRows) {
-            this.unconfirmedRowIds.delete(row.id!);
-          }
-        }
-      })();
     });
 
     this.submissionsInProgress--;
     this.addTask(() => this.tryAggregating());
 
     return submissionResult;
+  }
+
+  async createAggregateBundle(
+    eligibleBundleRows: BundleRow[],
+    currentBlockNumber: BigNumber,
+  ): Promise<
+    {
+      aggregateBundle: Bundle | nil;
+      includedRows: BundleRow[];
+      actionCount: number;
+    }
+  > {
+    let aggregateBundle: Bundle | nil = nil;
+    const includedRows: BundleRow[] = [];
+    // TODO (merge-ok): Count gas instead, have idea
+    // or way to query max gas per txn (submission).
+    let actionCount = 0;
+
+    for (const row of eligibleBundleRows) {
+      if (this.unconfirmedRowIds.has(row.id!)) {
+        continue;
+      }
+
+      const rowActionCount = countActions(row.bundle);
+
+      if (actionCount + rowActionCount > this.config.maxAggregationSize) {
+        break;
+      }
+
+      const candidateBundle = this.blsWalletSigner.aggregate([
+        ...(aggregateBundle ? [aggregateBundle] : []),
+        row.bundle,
+      ]);
+
+      if (await this.ethereumService.checkBundle(candidateBundle)) {
+        aggregateBundle = candidateBundle;
+        includedRows.push(row);
+        actionCount += rowActionCount;
+      } else {
+        await this.handleFailedRow(row, currentBlockNumber);
+      }
+    }
+
+    return {
+      aggregateBundle,
+      includedRows,
+      actionCount,
+    };
   }
 
   async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
@@ -282,6 +264,60 @@ export default class BundleService {
     }
 
     this.unconfirmedRowIds.delete(row.id!);
+  }
+
+  async submitAggregateBundle(
+    aggregateBundle: Bundle,
+    includedRows: BundleRow[],
+    actionCount: number,
+  ) {
+    const maxUnconfirmedActions = (
+      this.config.maxUnconfirmedAggregations *
+      this.config.maxAggregationSize
+    );
+
+    while (
+      this.unconfirmedActionCount + actionCount > maxUnconfirmedActions
+    ) {
+      // FIXME (merge-ok): Polling
+      this.emit({ type: "waiting-unconfirmed-space" });
+      await delay(1000);
+    }
+
+    this.unconfirmedActionCount += actionCount;
+    this.unconfirmedBundles.add(aggregateBundle);
+
+    for (const row of includedRows) {
+      this.unconfirmedRowIds.add(row.id!);
+    }
+
+    // TODO (merge-ok): Use a task
+    (async () => {
+      try {
+        const recpt = await this.ethereumService.submitBundle(
+          aggregateBundle,
+          Infinity,
+          300,
+        );
+
+        this.emit({
+          type: "submission-confirmed",
+          data: {
+            rowIds: includedRows.map((row) => row.id),
+            blockNumber: recpt.blockNumber,
+          },
+        });
+
+        await this.bundleTable.remove(...includedRows);
+      } finally {
+        this.unconfirmedActionCount -= actionCount;
+        this.unconfirmedBundles.delete(aggregateBundle);
+
+        for (const row of includedRows) {
+          this.unconfirmedRowIds.delete(row.id!);
+        }
+      }
+    })();
   }
 
   async waitForConfirmations() {
