@@ -237,27 +237,24 @@ Fixture.test("callStaticSequence - correctly measures transfer", async (fx) => {
     value: transferAmount,
   })).wait();
 
-  const results = await fx.ethereumService.callStaticSequence(
-    fx.ethereumService.Call(fx.ethereumService.utilities, "ethBalanceOf", [
-      recvWallet.address,
-    ]),
-    fx.ethereumService.Call(
-      fx.ethereumService.verificationGateway,
-      "processBundle",
-      [sendWallet.sign({
-        nonce: await sendWallet.Nonce(),
-        actions: [
-          {
-            ethValue: transferAmount,
-            contractAddress: recvWallet.address,
-            encodedFunction: [],
-          },
-        ],
-      })],
-    ),
-    fx.ethereumService.Call(fx.ethereumService.utilities, "ethBalanceOf", [
-      recvWallet.address,
-    ]),
+  const bundle = sendWallet.sign({
+    nonce: await sendWallet.Nonce(),
+    actions: [
+      {
+        ethValue: transferAmount,
+        contractAddress: recvWallet.address,
+        encodedFunction: [],
+      },
+    ],
+  });
+
+  // Aliasing this because it's used a lot in the next statement
+  const es = fx.ethereumService;
+
+  const results = await es.callStaticSequence(
+    es.Call(es.utilities, "ethBalanceOf", [recvWallet.address]),
+    es.Call(es.verificationGateway, "processBundle", [bundle]),
+    es.Call(es.utilities, "ethBalanceOf", [recvWallet.address]),
   );
 
   const [[balanceBefore], , [balanceAfter]] = results;
