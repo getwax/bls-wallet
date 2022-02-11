@@ -1,4 +1,4 @@
-import { BigNumber } from "@ethersproject/bignumber";
+import { BigNumber } from "ethers";
 import { VerificationGateway } from "../../typechain";
 
 export type Bundle = Parameters<VerificationGateway["processBundle"]>[0];
