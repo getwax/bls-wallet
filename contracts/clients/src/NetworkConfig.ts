@@ -15,6 +15,7 @@ export type NetworkConfig = {
     verificationGateway: string;
     blsLibrary: string;
     blsExpander: string;
+    utilities: string;
     testToken: string;
   };
   /**
@@ -59,6 +60,7 @@ export function validateConfig(cfg: any): NetworkConfig {
       verificationGateway: assertString(cfg.addresses.verificationGateway),
       blsLibrary: assertString(cfg.addresses.blsLibrary),
       blsExpander: assertString(cfg.addresses.blsExpander),
+      utilities: assertString(cfg.addresses.utilities),
       testToken: assertString(cfg.addresses.testToken),
     },
     auxiliary: {

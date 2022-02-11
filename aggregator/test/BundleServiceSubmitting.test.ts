@@ -21,8 +21,8 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, 1],
         ),
@@ -61,8 +61,8 @@ Fixture.test("submits a full submission without delay", async (fx) => {
       actions: [
         {
           ethValue: 0,
-          contractAddress: fx.testErc20.contract.address,
-          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
             "mint",
             [wallet.address, 1],
           ),
@@ -104,8 +104,8 @@ Fixture.test(
         actions: [
           {
             ethValue: 0,
-            contractAddress: fx.testErc20.contract.address,
-            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
               "mint",
               [wallet.address, 1],
             ),
@@ -158,8 +158,8 @@ Fixture.test(
         actions: [
           {
             ethValue: 0,
-            contractAddress: fx.testErc20.contract.address,
-            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
               "mint",
               [wallet.address, 1],
             ),
@@ -236,8 +236,8 @@ Fixture.test("retains failing bundle when its eligibility delay is smaller than 
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, 1],
         ),
@@ -273,8 +273,8 @@ Fixture.test("removes failing bundle when its eligibility delay is larger than M
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, 1],
         ),
