@@ -334,7 +334,7 @@ export default class BundleService {
 
     // TODO: Test including a failing action. There probably needs to be some
     // extra logic to handle that.
-    const { measureResults, callResults } = await es
+    const { measureResults, callResults: processBundleResults } = await es
       .callStaticSequenceWithMeasure(
         // FIXME: There is a griefing attack here. A malicious user could create
         // a transfer that is conditional on tx.origin == utilities. That way it
@@ -358,7 +358,20 @@ export default class BundleService {
       assert(before.success);
       assert(after.success);
 
-      const success = callResults[i].success;
+      const bundleResult = processBundleResults[i];
+
+      let success: boolean;
+
+      if (bundleResult.success) {
+        const [operationResults] = bundleResult.returnValue;
+
+        // We require that at least one operation succeeds, even though
+        // processBundle doesn't revert in this case.
+        success = operationResults.some((opSuccess) => opSuccess === true);
+      } else {
+        success = false;
+      }
+
       const reward = after.returnValue[0].sub(before.returnValue[0]);
 
       return { success, reward };

@@ -51,6 +51,17 @@ type MapCallHelperReturns<T> = T extends CallHelper<unknown>[]
     : [])
   : never;
 
+// It appears that ethers' callStatic with unwrap single element arrays.
+// However, when passing the bytes into decodeFunctionResult, this unwrap
+// doesn't happen. The result is always an array, so we can fix this
+// inconsistency by wrapping the type in an array if it's not already an array.
+type EnforceArray<T> = T extends unknown[] ? T : [T];
+
+type DecodeReturnType<
+  Contract extends BaseContract,
+  Method extends keyof Contract["callStatic"],
+> = EnforceArray<AsyncReturnType<Contract["callStatic"][Method]>>;
+
 export default class EthereumService {
   verificationGateway: VerificationGateway;
   utilities: Utilities;
@@ -154,7 +165,7 @@ export default class EthereumService {
     contract: Contract,
     method: Method,
     args: Parameters<Contract["callStatic"][Method]>,
-  ): CallHelper<AsyncReturnType<Contract["callStatic"][Method]>> {
+  ): CallHelper<DecodeReturnType<Contract, Method>> {
     return {
       value: {
         contractAddress: contract.address,
@@ -167,9 +178,7 @@ export default class EthereumService {
         contract.interface.decodeFunctionResult(
           method as ExplicitAny,
           data,
-        ) as AsyncReturnType<
-          Contract["callStatic"][Method]
-        >,
+        ) as DecodeReturnType<Contract, Method>,
     };
   }
 
@@ -196,12 +205,12 @@ export default class EthereumService {
     return results as MapCallHelperReturns<Calls>;
   }
 
-  async callStaticSequenceWithMeasure<MeasureCall extends CallHelper<unknown>>(
-    measureCall: MeasureCall,
-    calls: CallHelper<unknown>[],
+  async callStaticSequenceWithMeasure<Measure, CallReturn>(
+    measureCall: CallHelper<Measure>,
+    calls: CallHelper<CallReturn>[],
   ): (Promise<{
-    measureResults: CallResult<ReturnType<MeasureCall["resultDecoder"]>>[];
-    callResults: CallResult<unknown>[];
+    measureResults: CallResult<Measure>[];
+    callResults: CallResult<CallReturn>[];
   }>) {
     const fullCalls: CallHelper<unknown>[] = [measureCall];
 
@@ -223,10 +232,8 @@ export default class EthereumService {
     );
 
     return {
-      measureResults: measureResults as CallResult<
-        ReturnType<MeasureCall["resultDecoder"]>
-      >[],
-      callResults,
+      measureResults: measureResults as CallResult<Measure>[],
+      callResults: callResults as CallResult<CallReturn>[],
     };
   }
 
