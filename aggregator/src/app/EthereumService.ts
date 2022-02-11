@@ -33,7 +33,7 @@ export type CreateWalletResult = {
   failures: TransactionFailure[];
 };
 
-type Call = Parameters<Utilities["functions"]["performSequence"]>[0][number];
+type Call = Parameters<Utilities["callStatic"]["performSequence"]>[0][number];
 
 type CallHelper<T> = {
   value: Call;
@@ -149,12 +149,12 @@ export default class EthereumService {
 
   Call<
     Contract extends BaseContract,
-    Method extends keyof Contract["functions"],
+    Method extends keyof Contract["callStatic"],
   >(
     contract: Contract,
     method: Method,
-    args: Parameters<Contract["functions"][Method]>,
-  ): CallHelper<AsyncReturnType<Contract["functions"][Method]>> {
+    args: Parameters<Contract["callStatic"][Method]>,
+  ): CallHelper<AsyncReturnType<Contract["callStatic"][Method]>> {
     return {
       value: {
         contractAddress: contract.address,
@@ -168,7 +168,7 @@ export default class EthereumService {
           method as ExplicitAny,
           data,
         ) as AsyncReturnType<
-          Contract["functions"][Method]
+          Contract["callStatic"][Method]
         >,
     };
   }
