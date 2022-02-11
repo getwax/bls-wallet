@@ -120,6 +120,8 @@ export default class Fixture {
     return this.rng.seed("blsPrivateKey", ...extraSeeds).address();
   }
 
+  // FIXME: Tests shouldn't allow BundleService.defaultConfig because it reads
+  // from the environment.
   async createBundleService(config = BundleService.defaultConfig) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
     existingClient = createQueryClient(this.emit, existingClient);
