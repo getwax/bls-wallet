@@ -215,8 +215,7 @@ export default class EthereumService {
     const fullCalls: CallHelper<unknown>[] = [measureCall];
 
     for (const call of calls) {
-      fullCalls.push(call);
-      fullCalls.push(measureCall);
+      fullCalls.push(call, measureCall);
     }
 
     const fullResults: CallResult<unknown>[] = await this.callStaticSequence(
