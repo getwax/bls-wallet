@@ -13,6 +13,12 @@ contract AggregatorUtilities {
     bytes returnValue;
   }
 
+  /// @notice Perform a sequence of function calls returning all the results.
+  ///         This is useful for inspecting side effects. In particular,
+  ///         functions that contain a token or eth transfer can be measured
+  ///         by sandwiching the function between balance calls.
+  /// @param calls The function calls to perform.
+  /// @return The results of each function call.
   function performSequence(
     FunctionCall[] calldata calls
   ) external returns (FunctionResult[] memory) {
@@ -31,6 +37,11 @@ contract AggregatorUtilities {
     return results;
   }
 
+  /// @notice Retrieve the eth balance of the nominated account. This is useful
+  ///         in combination with performSequence above because it allows this
+  ///         operation to be represented as a function call.
+  /// @param account Account address
+  /// @return Eth balance of the account
   function ethBalanceOf(address account) external view returns (uint256) {
     return account.balance;
   }
