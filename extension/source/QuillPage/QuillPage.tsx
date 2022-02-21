@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
 import OnboardingPage from './components/OnboardingPage';
 import { WalletPage } from './Wallet/WalletPage';
@@ -11,7 +11,7 @@ const pageNumber = Number(
 
 const onboardingComplete = true;
 
-const QuillPage: React.FunctionComponent = () => {
+const QuillPage: FunctionComponent = () => {
   if (!onboardingComplete) {
     return <OnboardingPage pageIndex={pageNumber - 1} />;
   }

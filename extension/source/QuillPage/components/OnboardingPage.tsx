@@ -1,9 +1,9 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
 import OnboardingActionPanel from './OnboardingActionPanel';
 import OnboardingInfoPanel from './OnboardingInfoPanel';
 
-const OnboardingPage: React.FunctionComponent<{ pageIndex: number }> = ({
+const OnboardingPage: FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
   <div className="flex h-screen">

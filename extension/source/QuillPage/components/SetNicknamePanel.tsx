@@ -1,9 +1,9 @@
 import { ArrowRight, Info } from 'phosphor-react';
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
 import Button from '../../components/Button';
 
-const PasswordCreationPanel: React.FunctionComponent<{
+const PasswordCreationPanel: FunctionComponent<{
   onComplete: () => void;
 }> = ({ onComplete }) => (
   <>

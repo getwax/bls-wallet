@@ -16,16 +16,22 @@
       }
     ],
     "@babel/typescript",
-    "@babel/react"
+    ["@babel/react", { "runtime": "automatic" }]
   ],
   "plugins": [
     ["@babel/plugin-proposal-class-properties"],
-    ["@babel/plugin-transform-destructuring", {
-      "useBuiltIns": true
-    }],
-    ["@babel/plugin-proposal-object-rest-spread", {
-      "useBuiltIns": true
-    }],
+    [
+      "@babel/plugin-transform-destructuring",
+      {
+        "useBuiltIns": true
+      }
+    ],
+    [
+      "@babel/plugin-proposal-object-rest-spread",
+      {
+        "useBuiltIns": true
+      }
+    ],
     [
       // Polyfills the runtime needed for async/await and generators
       "@babel/plugin-transform-runtime",

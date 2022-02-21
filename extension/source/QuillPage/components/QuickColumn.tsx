@@ -1,6 +1,6 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
-const QuickColumn: React.FunctionComponent = (props) => (
+const QuickColumn: FunctionComponent = (props) => (
   <div className="quick-column">{props.children}</div>
 );
 

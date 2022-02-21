@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import React, { useEffect, useState } from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { FunctionComponent, useEffect, useMemo, useState } from 'react';
+import { runtime } from 'webextension-polyfill';
 import TaskQueue from '../common/TaskQueue';
 
 // components, styles and UI
@@ -9,7 +9,7 @@ import CompactQuillHeading from '../components/CompactQuillHeading';
 import { useInputDecode } from '../hooks/useInputDecode';
 import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
 
-const Confirm: React.FunctionComponent = () => {
+const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string>();
   const [to, setTo] = useState<string>('0x');
   const [value, setValue] = useState<string>('0');
@@ -17,7 +17,7 @@ const Confirm: React.FunctionComponent = () => {
 
   const { loading, method } = useInputDecode(data, to);
 
-  const cleanupTasks = React.useMemo(() => new TaskQueue(), []);
+  const cleanupTasks = useMemo(() => new TaskQueue(), []);
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;
@@ -30,7 +30,7 @@ const Confirm: React.FunctionComponent = () => {
   }, [cleanupTasks]);
 
   const respondTx = (result: string) => {
-    browser.runtime.sendMessage(undefined, { id, result });
+    runtime.sendMessage(undefined, { id, result });
   };
 
   return (

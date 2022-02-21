@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { FunctionComponent, useState, useEffect } from 'react';
 import { Mutex } from 'async-mutex';
 
 import delay from '../../helpers/delay';
@@ -11,7 +11,7 @@ const positionMap = {
   right: 71 + 516,
 };
 
-const ImageSlider: React.FunctionComponent<{
+const ImageSlider: FunctionComponent<{
   url: string;
   position: 'left' | 'middle' | 'right';
   resetting: boolean;
@@ -30,19 +30,18 @@ const ImageSlider: React.FunctionComponent<{
   );
 };
 
-const Carousel: React.FunctionComponent<{
+const Carousel: FunctionComponent<{
   images: string[];
 }> = ({ images }) => {
-  const [imageAIndex, setImageAIndex] = React.useState(0);
-  const [imageAPosition, setImageAPosition] =
-    React.useState<Position>('middle');
+  const [imageAIndex, setImageAIndex] = useState(0);
+  const [imageAPosition, setImageAPosition] = useState<Position>('middle');
 
-  const [imageBIndex, setImageBIndex] = React.useState(1);
-  const [imageBPosition, setImageBPosition] = React.useState<Position>('right');
+  const [imageBIndex, setImageBIndex] = useState(1);
+  const [imageBPosition, setImageBPosition] = useState<Position>('right');
 
-  const [resetting, setResetting] = React.useState(false);
-  const [transitionMutex] = React.useState(new Mutex());
-  const [intervalId, setIntervalId] = React.useState(-1);
+  const [resetting, setResetting] = useState(false);
+  const [transitionMutex] = useState(new Mutex());
+  const [intervalId, setIntervalId] = useState(-1);
 
   const transitionImage = async (index: number) => {
     const releaseMutex = await transitionMutex.acquire();
@@ -66,7 +65,7 @@ const Carousel: React.FunctionComponent<{
     releaseMutex();
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('Running useEffect');
     let index = 0;
     setIntervalId(

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { Component, ReactNode } from 'react';
 import App from '../../App';
 import Button from '../../components/Button';
 
@@ -12,7 +12,7 @@ type State = {
   pasteText: string;
 };
 
-export default class KeyEntryScreen extends React.Component<Props, State> {
+export default class KeyEntryScreen extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -21,7 +21,7 @@ export default class KeyEntryScreen extends React.Component<Props, State> {
     };
   }
 
-  render(): React.ReactNode {
+  render(): ReactNode {
     return (
       <div className="key-entry-screen">
         <LargeQuillHeading />

@@ -1,11 +1,11 @@
-import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { FunctionComponent } from 'react';
+import { runtime } from 'webextension-polyfill';
 
-const LogoFooter: React.FunctionComponent = () => (
+const LogoFooter: FunctionComponent = () => (
   <div
     className="h-16 flex place-items-center"
     style={{
-      background: `center no-repeat url(${browser.runtime.getURL(
+      background: `center no-repeat url(${runtime.getURL(
         'assets/logo-with-text-white.svg',
       )})`,
     }}

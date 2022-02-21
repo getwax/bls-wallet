@@ -1,10 +1,10 @@
-import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { ReactElement } from 'react';
+import { runtime } from 'webextension-polyfill';
 
-const LargeQuillHeading = (): React.ReactElement => (
+const LargeQuillHeading = (): ReactElement => (
   <div className="flex py-9 justify-center">
     <img
-      src={browser.runtime.getURL('assets/logo-with-text.svg')}
+      src={runtime.getURL('assets/logo-with-text.svg')}
       alt="Quill"
       width="100"
       height="35"

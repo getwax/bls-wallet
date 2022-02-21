@@ -1,14 +1,14 @@
-import * as React from 'react';
+import { FunctionComponent, useState } from 'react';
 import { ArrowRight, Eye, EyeClosed } from 'phosphor-react';
 
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
 
-const ViewSecretPhrasePanel: React.FunctionComponent<{
+const ViewSecretPhrasePanel: FunctionComponent<{
   secretPhrase: string[];
   onComplete: () => void;
 }> = ({ secretPhrase, onComplete }) => {
-  const [expanded, setExpanded] = React.useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const classes = ['view-secret-phrase-panel'];
 

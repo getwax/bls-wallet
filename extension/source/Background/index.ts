@@ -1,6 +1,6 @@
 import 'emoji-log';
-import { browser } from 'webextension-polyfill-ts';
-import { Aggregator /* , initBlsWalletSigner */ } from 'bls-wallet-clients';
+import { runtime, storage } from 'webextension-polyfill';
+import { Aggregator } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 
 import App from '../App';
@@ -13,12 +13,12 @@ import { AGGREGATOR_URL /* , NETWORK_CONFIG */, CHAIN_RPC_URL } from '../env';
   const app = new App(
     new Aggregator(AGGREGATOR_URL),
     new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL),
-    browser.storage.local,
+    storage.local,
   );
 
   const requestHandler = RequestHandler(app);
 
-  browser.runtime.onMessage.addListener(async (request, _sender) => {
+  runtime.onMessage.addListener(async (request, _sender) => {
     // TODO:
     // - send acks
     // - change target to quillEthereumProvider

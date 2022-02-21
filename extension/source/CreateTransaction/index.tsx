@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 
-import * as React from 'react';
 import ReactDOM from 'react-dom';
 
 import CreateTransaction from './CreateTransaction';

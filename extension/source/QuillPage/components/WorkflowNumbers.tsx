@@ -1,8 +1,8 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
 import Range from '../../helpers/Range';
 
-const WorkflowNumbers: React.FunctionComponent<{
+const WorkflowNumbers: FunctionComponent<{
   current: number;
   max: number;
 }> = ({ current, max }) => (
