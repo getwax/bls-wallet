@@ -57,16 +57,13 @@ module.exports = {
       large: "24pt",
     },
     boxShadow: {
-      "shadow-sm":
-        "0px 0px 1px rgba(0, 41, 120, 0.05), 0px 0.5px 2px rgba(30, 126, 229, 0.1);",
       shadow:
         "0px 0px 1px rgba(0, 41, 120, 0.05), 0px 2px 4px rgba(30, 126, 229, 0.1);",
-      "shadow-md":
-        "0px 0px 2px rgba(0, 41, 120, 0.05), 0px 4px 8px rgba(30, 126, 229, 0.1);",
-      "shadow-lg":
-        "0px 2px 4px rgba(0, 41, 120, 0.05), 0px 8px 16px rgba(30, 126, 229, 0.1)",
-      "shadow-xl": "0px 10px 30px rgba(30, 126, 229, 0.1)",
-      "shadow-2xl":
+      sm: "0px 0px 1px rgba(0, 41, 120, 0.05), 0px 0.5px 2px rgba(30, 126, 229, 0.1);",
+      md: "0px 0px 2px rgba(0, 41, 120, 0.05), 0px 4px 8px rgba(30, 126, 229, 0.1);",
+      lg: "0px 2px 4px rgba(0, 41, 120, 0.05), 0px 8px 16px rgba(30, 126, 229, 0.1)",
+      xl: "0px 10px 30px rgba(30, 126, 229, 0.1)",
+      "2xl":
         "0px 2px 8px rgba(0, 41, 120, 0.05), 0px 20px 32px rgba(30, 126, 229, 0.1)",
     },
   },
