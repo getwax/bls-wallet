@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 pragma abicoder v2;
 
-contract Utilities {
+contract AggregatorUtilities {
   struct FunctionCall {
     address contractAddress;
     bytes encodedFunction;

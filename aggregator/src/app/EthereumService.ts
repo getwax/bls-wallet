@@ -8,8 +8,8 @@ import {
   delay,
   ethers,
   initBlsWalletSigner,
-  Utilities,
-  Utilities__factory,
+  AggregatorUtilities,
+  AggregatorUtilities__factory,
   VerificationGateway,
   VerificationGateway__factory,
   Wallet,
@@ -33,7 +33,7 @@ export type CreateWalletResult = {
   failures: TransactionFailure[];
 };
 
-type Call = Parameters<Utilities["callStatic"]["performSequence"]>[0][number];
+type Call = Parameters<AggregatorUtilities["callStatic"]["performSequence"]>[0][number];
 
 type CallHelper<T> = {
   value: Call;
@@ -64,7 +64,7 @@ type DecodeReturnType<
 
 export default class EthereumService {
   verificationGateway: VerificationGateway;
-  utilities: Utilities;
+  utilities: AggregatorUtilities;
 
   constructor(
     public emit: (evt: AppEvent) => void,
@@ -79,7 +79,7 @@ export default class EthereumService {
       this.wallet,
     );
 
-    this.utilities = Utilities__factory.connect(
+    this.utilities = AggregatorUtilities__factory.connect(
       utilitiesAddress,
       this.wallet.provider,
     );
