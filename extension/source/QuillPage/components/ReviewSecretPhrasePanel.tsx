@@ -1,18 +1,18 @@
-import * as React from 'react';
+import { FunctionComponent, useState, useEffect, ChangeEvent } from 'react';
 
 import { ArrowRight } from 'phosphor-react';
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
 
-const WordInReview: React.FunctionComponent<{
+const WordInReview: FunctionComponent<{
   index: number;
   sampleIndex: number;
   word: string;
   handleGuess: (index: number, isCorrect: boolean) => void;
 }> = ({ index, sampleIndex, word, handleGuess }) => {
-  const [guess, setGuess] = React.useState('');
+  const [guess, setGuess] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     const isCorrect = guess === word;
     handleGuess(index, isCorrect);
     // eslint-disable-next-line
@@ -36,7 +36,7 @@ const WordInReview: React.FunctionComponent<{
       type="text"
       className={`mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25 ${getConfirmWordClass()}`}
       placeholder={`Secret word ${sampleIndex + 1} ${word}`}
-      onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+      onInput={(e: ChangeEvent<HTMLInputElement>) => {
         const userEntry = e.target.value.toLowerCase();
         setGuess(userEntry);
       }}
@@ -44,7 +44,7 @@ const WordInReview: React.FunctionComponent<{
   );
 };
 
-const ReviewSecretPhrasePanel: React.FunctionComponent<{
+const ReviewSecretPhrasePanel: FunctionComponent<{
   secretPhrase: string[];
   sampleIndexes?: number[];
   onBack: () => void;
@@ -52,11 +52,11 @@ const ReviewSecretPhrasePanel: React.FunctionComponent<{
 }> = ({ secretPhrase, sampleIndexes = [0, 3, 9, 11], onBack, onComplete }) => {
   const len = sampleIndexes.length;
 
-  const [reviewWordStates, setReviewWordStates] = React.useState<boolean[]>(
+  const [reviewWordStates, setReviewWordStates] = useState<boolean[]>(
     Range(len).map(() => false),
   );
 
-  const [allCorrect, setAllCorrect] = React.useState<boolean>(false);
+  const [allCorrect, setAllCorrect] = useState<boolean>(false);
 
   const handleGuess = (index: number, isCorrect: boolean) => {
     const snapshot = reviewWordStates;

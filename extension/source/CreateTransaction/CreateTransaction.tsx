@@ -1,18 +1,18 @@
 import { ethers } from 'ethers';
-import * as React from 'react';
+import { Component, ReactElement } from 'react';
 import Button from '../components/Button';
 import { PageEvents } from '../components/Page';
 import getPropOrUndefined from '../helpers/getPropOrUndefined';
-import QuillEthereumProvider from '../PageContentScript/QuillEthereumProvider';
+import type QuillEthereumProvider from '../PageContentScript/QuillEthereumProvider';
 
 type Props = { events: PageEvents };
 
-export default class CreateTransaction extends React.Component<Props> {
+export default class CreateTransaction extends Component<Props> {
   amountRef?: HTMLInputElement;
   recipientRef?: HTMLInputElement;
   dataRef?: HTMLInputElement;
 
-  render(): React.ReactElement {
+  render(): ReactElement {
     return (
       <div className="create-transaction">
         <div className="section">

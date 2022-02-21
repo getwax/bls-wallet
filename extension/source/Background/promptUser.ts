@@ -1,4 +1,4 @@
-import { browser } from 'webextension-polyfill-ts';
+import { windows, runtime } from 'webextension-polyfill';
 import TaskQueue from '../common/TaskQueue';
 import generateRandomHex from '../helpers/generateRandomHex';
 import getPropOrUndefined from '../helpers/getPropOrUndefined';
@@ -12,7 +12,7 @@ export default function promptUser(opt: {
     const id = generateRandomHex(256);
 
     (async () => {
-      const lastWin = await browser.windows.getLastFocused();
+      const lastWin = await windows.getLastFocused();
 
       const popupWidth = 359;
       let left: number | undefined;
@@ -21,8 +21,8 @@ export default function promptUser(opt: {
         left = lastWin.left + lastWin.width - popupWidth - 20;
       }
 
-      const popup = await browser.windows.create({
-        url: browser.runtime.getURL(`confirm.html?${opt.promptText}&id=${id}`),
+      const popup = await windows.create({
+        url: runtime.getURL(`confirm.html?${opt.promptText}&id=${id}`),
         type: 'popup',
         width: popupWidth,
         height: 500,
@@ -31,7 +31,7 @@ export default function promptUser(opt: {
 
       cleanupTasks.push(() => {
         if (popup.id !== undefined) {
-          browser.windows.remove(popup.id);
+          windows.remove(popup.id);
         }
       });
 
@@ -41,10 +41,10 @@ export default function promptUser(opt: {
         }
       }
 
-      browser.windows.onRemoved.addListener(onRemovedListener);
+      windows.onRemoved.addListener(onRemovedListener);
 
       cleanupTasks.push(() => {
-        browser.windows.onRemoved.removeListener(onRemovedListener);
+        windows.onRemoved.removeListener(onRemovedListener);
       });
 
       function messageListener(message: unknown) {
@@ -55,7 +55,7 @@ export default function promptUser(opt: {
         resolve(getPropOrUndefined(message, 'result') as string);
       }
 
-      browser.runtime.onMessage.addListener(messageListener);
+      runtime.onMessage.addListener(messageListener);
     })();
   });
 

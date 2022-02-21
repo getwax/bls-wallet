@@ -1,14 +1,14 @@
 import { IconProps } from 'phosphor-react';
-import * as React from 'react';
+import { ReactElement, ReactNode } from 'react';
 
 const Button = (props: {
   className?: string;
   onPress: () => void;
   highlight?: boolean; // TODO - remove dependency
   loading?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
   icon?: IconProps;
-}): React.ReactElement => {
+}): ReactElement => {
   return (
     <div
       className={

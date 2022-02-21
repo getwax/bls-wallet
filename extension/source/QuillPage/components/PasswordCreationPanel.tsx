@@ -1,13 +1,13 @@
 import { ArrowRight } from 'phosphor-react';
-import * as React from 'react';
+import { FunctionComponent, useState } from 'react';
 
 import Button from '../../components/Button';
 import PasswordCreationForm from './PasswordCreationForm';
 
-const PasswordCreationPanel: React.FunctionComponent<{
+const PasswordCreationPanel: FunctionComponent<{
   onComplete: () => void;
 }> = ({ onComplete }) => {
-  const [password, setPassword] = React.useState<string>();
+  const [password, setPassword] = useState<string>();
 
   return (
     <>

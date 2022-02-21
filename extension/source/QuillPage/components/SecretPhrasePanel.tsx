@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { FunctionComponent, useState } from 'react';
 
 import ReviewSecretPhrasePanel from './ReviewSecretPhrasePanel';
 import ViewSecretPhrasePanel from './ViewSecretPhrasePanel';
@@ -18,11 +18,11 @@ const exampleSecretPhrase = [
   'Power',
 ];
 
-const SecretPhrasePanel: React.FunctionComponent<{
+const SecretPhrasePanel: FunctionComponent<{
   secretPhrase?: string[];
   onComplete?: () => void;
 }> = ({ secretPhrase = exampleSecretPhrase, onComplete = () => {} }) => {
-  const [inReview, setInReview] = React.useState(false);
+  const [inReview, setInReview] = useState(false);
 
   if (!inReview) {
     return (
