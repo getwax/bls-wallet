@@ -1,13 +1,16 @@
 import {
+  BaseContract,
   BigNumber,
   BlsWalletSigner,
   BlsWalletWrapper,
   Bundle,
+  BytesLike,
   delay,
   ethers,
   initBlsWalletSigner,
+  AggregatorUtilities,
+  AggregatorUtilities__factory,
   VerificationGateway,
-  // deno-lint-ignore camelcase
   VerificationGateway__factory,
   Wallet,
 } from "../../deps.ts";
@@ -17,6 +20,8 @@ import TransactionFailure from "./TransactionFailure.ts";
 import assert from "../helpers/assert.ts";
 import AppEvent from "./AppEvent.ts";
 import toPublicKeyShort from "./helpers/toPublicKeyShort.ts";
+import AsyncReturnType from "../helpers/AsyncReturnType.ts";
+import ExplicitAny from "../helpers/ExplicitAny.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -28,19 +33,55 @@ export type CreateWalletResult = {
   failures: TransactionFailure[];
 };
 
+type Call = Parameters<AggregatorUtilities["callStatic"]["performSequence"]>[0][number];
+
+type CallHelper<T> = {
+  value: Call;
+  resultDecoder: (result: BytesLike) => T;
+};
+
+type CallResult<T> = (
+  | { success: true; returnValue: T }
+  | { success: false; returnValue: undefined }
+);
+
+type MapCallHelperReturns<T> = T extends CallHelper<unknown>[]
+  ? (T extends [CallHelper<infer First>, ...infer Rest]
+    ? [CallResult<First>, ...MapCallHelperReturns<Rest>]
+    : [])
+  : never;
+
+// It appears that ethers' callStatic with unwrap single element arrays.
+// However, when passing the bytes into decodeFunctionResult, this unwrap
+// doesn't happen. The result is always an array, so we can fix this
+// inconsistency by wrapping the type in an array if it's not already an array.
+type EnforceArray<T> = T extends unknown[] ? T : [T];
+
+type DecodeReturnType<
+  Contract extends BaseContract,
+  Method extends keyof Contract["callStatic"],
+> = EnforceArray<AsyncReturnType<Contract["callStatic"][Method]>>;
+
 export default class EthereumService {
   verificationGateway: VerificationGateway;
+  utilities: AggregatorUtilities;
 
   constructor(
     public emit: (evt: AppEvent) => void,
     public wallet: Wallet,
     public blsWalletSigner: BlsWalletSigner,
     verificationGatewayAddress: string,
+    utilitiesAddress: string,
     public nextNonce: number,
   ) {
     this.verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       this.wallet,
+    );
+
+    this.utilities = AggregatorUtilities__factory.connect(
+      utilitiesAddress,
+      this.wallet.provider,
     );
   }
 
@@ -52,6 +93,7 @@ export default class EthereumService {
   static async create(
     emit: (evt: AppEvent) => void,
     verificationGatewayAddress: string,
+    utilitiesAddress: string,
     aggPrivateKey: string,
   ): Promise<EthereumService> {
     const wallet = EthereumService.Wallet(aggPrivateKey);
@@ -64,6 +106,7 @@ export default class EthereumService {
       wallet,
       blsWalletSigner,
       verificationGatewayAddress,
+      utilitiesAddress,
       nextNonce,
     );
   }
@@ -113,6 +156,84 @@ export default class EthereumService {
     }
 
     return failures;
+  }
+
+  Call<
+    Contract extends BaseContract,
+    Method extends keyof Contract["callStatic"],
+  >(
+    contract: Contract,
+    method: Method,
+    args: Parameters<Contract["callStatic"][Method]>,
+  ): CallHelper<DecodeReturnType<Contract, Method>> {
+    return {
+      value: {
+        contractAddress: contract.address,
+        encodedFunction: contract.interface.encodeFunctionData(
+          method as ExplicitAny,
+          args,
+        ),
+      },
+      resultDecoder: (data) =>
+        contract.interface.decodeFunctionResult(
+          method as ExplicitAny,
+          data,
+        ) as DecodeReturnType<Contract, Method>,
+    };
+  }
+
+  async callStaticSequence<Calls extends CallHelper<unknown>[]>(
+    ...calls: Calls
+  ): Promise<MapCallHelperReturns<Calls>> {
+    const rawResults = await this.utilities.callStatic.performSequence(
+      calls.map((c) => c.value),
+    );
+
+    const results: CallResult<unknown>[] = rawResults.map(
+      ([success, result], i) => {
+        if (!success) {
+          return { success };
+        }
+
+        return {
+          success,
+          returnValue: calls[i].resultDecoder(result),
+        };
+      },
+    );
+
+    return results as MapCallHelperReturns<Calls>;
+  }
+
+  async callStaticSequenceWithMeasure<Measure, CallReturn>(
+    measureCall: CallHelper<Measure>,
+    calls: CallHelper<CallReturn>[],
+  ): (Promise<{
+    measureResults: CallResult<Measure>[];
+    callResults: CallResult<CallReturn>[];
+  }>) {
+    const fullCalls: CallHelper<unknown>[] = [measureCall];
+
+    for (const call of calls) {
+      fullCalls.push(call, measureCall);
+    }
+
+    const fullResults: CallResult<unknown>[] = await this.callStaticSequence(
+      ...fullCalls,
+    );
+
+    const measureResults: CallResult<unknown>[] = fullResults.filter(
+      (_r, i) => i % 2 === 0,
+    );
+
+    const callResults = fullResults.filter(
+      (_r, i) => i % 2 === 1,
+    );
+
+    return {
+      measureResults: measureResults as CallResult<Measure>[],
+      callResults: callResults as CallResult<CallReturn>[],
+    };
   }
 
   async checkBundle(bundle: Bundle) {

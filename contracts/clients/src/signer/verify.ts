@@ -2,10 +2,16 @@ import { BigNumber } from "ethers";
 import * as hubbleBls from "../../deps/hubble-bls";
 
 import encodeMessageForSigning from "./encodeMessageForSigning";
-import { Bundle } from "./types";
+import type { Bundle } from "./types";
+import isValidEmptyBundle from "./isValidEmptyBundle";
 
 export default (domain: Uint8Array, chainId: number) =>
   (bundle: Bundle): boolean => {
+    // hubbleBls verifier incorrectly rejects empty bundles
+    if (isValidEmptyBundle(bundle)) {
+      return true;
+    }
+
     const verifier = new hubbleBls.signer.BlsVerifier(domain);
 
     return verifier.verifyMultiple(

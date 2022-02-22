@@ -2,6 +2,7 @@ import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
+import assert from "../src/helpers/assert.ts";
 
 Fixture.test("EthereumService submits mint action", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
@@ -12,8 +13,8 @@ Fixture.test("EthereumService submits mint action", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "mint",
           [wallet.address, 7],
         ),
@@ -36,8 +37,8 @@ Fixture.test("EthereumService submits transfer action", async (fx) => {
     actions: [
       {
         ethValue: 0,
-        contractAddress: fx.testErc20.contract.address,
-        encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "transfer",
           [wallets[1].address, 1],
         ),
@@ -64,8 +65,8 @@ Fixture.test("EthereumService submits aggregated bundle", async (fx) => {
       actions: [
         {
           ethValue: 0,
-          contractAddress: fx.testErc20.contract.address,
-          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
             "mint",
             [wallet.address, 3],
           ),
@@ -77,8 +78,8 @@ Fixture.test("EthereumService submits aggregated bundle", async (fx) => {
       actions: [
         {
           ethValue: 0,
-          contractAddress: fx.testErc20.contract.address,
-          encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
             "mint",
             [wallet.address, 5],
           ),
@@ -108,8 +109,8 @@ Fixture.test("EthereumService submits large aggregate mint bundle", async (fx) =
           // TODO (merge-ok): Add single operation multi-action variation of this test
           {
             ethValue: 0,
-            contractAddress: fx.testErc20.contract.address,
-            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
               "mint",
               [wallet.address, 1],
             ),
@@ -139,8 +140,8 @@ Fixture.test("EthereumService sends large aggregate transfer bundle", async (fx)
         actions: [
           {
             ethValue: 0,
-            contractAddress: fx.testErc20.contract.address,
-            encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
               "transfer",
               [recvWallet.address, 1],
             ),
@@ -172,8 +173,8 @@ Fixture.test(
             actions: [
               {
                 ethValue: 0,
-                contractAddress: fx.testErc20.contract.address,
-                encodedFunction: fx.testErc20.contract.interface
+                contractAddress: fx.testErc20.address,
+                encodedFunction: fx.testErc20.interface
                   .encodeFunctionData(
                     "mint",
                     [wallet.address, "1"],
@@ -205,7 +206,7 @@ Fixture.test(
 
 //     const txs = Range(2).map((i) =>
 //       wallet.sign({
-//         contract: fx.testErc20.contract,
+//         contract: fx.testErc20,
 //         method: "mint",
 //         args: [wallet.address, "1"],
 //         nonce: walletNonce.add(i),
@@ -227,3 +228,43 @@ Fixture.test(
 //     assertEquals(balance.toNumber(), 1002);
 //   },
 // );
+
+Fixture.test("callStaticSequence - correctly measures transfer", async (fx) => {
+  const [sendWallet, recvWallet] = await fx.setupWallets(2);
+  const transferAmount = 5;
+
+  await (await fx.adminWallet.sendTransaction({
+    to: sendWallet.address,
+    value: transferAmount,
+  })).wait();
+
+  const bundle = sendWallet.sign({
+    nonce: await sendWallet.Nonce(),
+    actions: [
+      {
+        ethValue: transferAmount,
+        contractAddress: recvWallet.address,
+        encodedFunction: [],
+      },
+    ],
+  });
+
+  // Aliasing this because it's used a lot in the next statement
+  const es = fx.ethereumService;
+
+  const results = await es.callStaticSequence(
+    es.Call(es.utilities, "ethBalanceOf", [recvWallet.address]),
+    es.Call(es.verificationGateway, "processBundle", [bundle]),
+    es.Call(es.utilities, "ethBalanceOf", [recvWallet.address]),
+  );
+
+  const [balanceResultBefore, , balanceResultAfter] = results;
+
+  assert(balanceResultBefore.success);
+  const balanceBefore = balanceResultBefore.returnValue[0];
+
+  assert(balanceResultAfter.success);
+  const balanceAfter = balanceResultAfter.returnValue[0];
+
+  assertEquals(balanceAfter.sub(balanceBefore).toNumber(), transferAmount);
+});

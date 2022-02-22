@@ -178,4 +178,27 @@ describe("index", () => {
       ].join(""),
     );
   });
+
+  it("aggregates an empty bundle", async () => {
+    const { aggregate } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+    });
+
+    const emptyBundle = aggregate([]);
+    const emptyBundle2 = aggregate([emptyBundle]);
+
+    expect(emptyBundle2.operations.length).to.equal(0);
+  });
+
+  it("verifies an empty bundle", async () => {
+    const { aggregate, verify } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+    });
+
+    const emptyBundle = aggregate([]);
+
+    expect(verify(emptyBundle)).to.equal(true);
+  });
 });

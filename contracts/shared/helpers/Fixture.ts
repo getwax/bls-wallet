@@ -38,6 +38,7 @@ export default class Fixture {
 
     public blsLibrary: BLSOpen,
     public blsExpander: Contract,
+    public utilities: Contract,
 
     public BLSWallet: ContractFactory,
     public blsWalletSigner: BlsWalletSigner,
@@ -85,6 +86,9 @@ export default class Fixture {
       ),
     );
 
+    // deploy utilities
+    const utilities = await create2Fixture.create2Contract("AggregatorUtilities");
+
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 
     const lazyBlsWallets = Range(blsWalletCount).map((i) => {
@@ -124,6 +128,7 @@ export default class Fixture {
       verificationGateway,
       bls,
       blsExpander,
+      utilities,
       BLSWallet,
       await initBlsWalletSigner({ chainId }),
     );

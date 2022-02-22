@@ -13,8 +13,8 @@ const bundle = wallet.sign({
   nonce: await wallet.Nonce(),
   actions: [{
     ethValue: 0,
-    contractAddress: fx.testErc20.contract.address,
-    encodedFunction: fx.testErc20.contract.interface.encodeFunctionData(
+    contractAddress: fx.testErc20.address,
+    encodedFunction: fx.testErc20.interface.encodeFunctionData(
       "mint",
       [wallet.address, 20],
     ),

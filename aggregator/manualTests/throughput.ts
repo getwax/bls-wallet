@@ -6,11 +6,11 @@ import {
   BlsWalletWrapper,
   delay,
   ethers,
+  MockERC20__factory,
 } from "../deps.ts";
 
 import * as env from "../test/env.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
-import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 
@@ -35,7 +35,7 @@ const { addresses } = await getNetworkConfig();
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 const adminWallet = AdminWallet(provider);
 
-const testErc20 = new MockErc20(addresses.testToken, provider);
+const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
 
 const client = new AggregatorClient(env.ORIGIN);
 
@@ -49,7 +49,7 @@ const [recvWallet, ...sendWallets] = await TestBlsWallets(
 log("Checking/minting test tokens...");
 
 for (const wallet of sendWallets) {
-  const testErc20 = new MockErc20(
+  const testErc20 = MockERC20__factory.connect(
     addresses.testToken,
     adminWallet,
   );
@@ -99,9 +99,9 @@ pollingLoop(() => {
       nonce,
       actions: [{
         ethValue: 0,
-        contractAddress: testErc20.contract.address,
-        encodedFunction: testErc20.contract.interface.encodeFunctionData(
-          "trasnfer",
+        contractAddress: testErc20.address,
+        encodedFunction: testErc20.interface.encodeFunctionData(
+          "transfer",
           [recvWallet.address, 1],
         ),
       }],
