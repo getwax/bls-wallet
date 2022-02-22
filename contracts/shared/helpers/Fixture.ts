@@ -87,7 +87,7 @@ export default class Fixture {
     );
 
     // deploy utilities
-    const utilities = await create2Fixture.create2Contract("Utilities");
+    const utilities = await create2Fixture.create2Contract("AggregatorUtilities");
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 

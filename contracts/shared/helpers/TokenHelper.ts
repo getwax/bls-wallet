@@ -11,7 +11,8 @@ export default class TokenHelper {
   testToken: Contract | undefined;
   constructor(public fx: Fixture) {
     this.userStartAmount = TokenHelper.initialSupply.div(
-      fx.lazyBlsWallets.length,
+      // +1 to keep some tokens for the aggregator
+      fx.lazyBlsWallets.length + 1,
     );
     this.testToken = undefined;
   }

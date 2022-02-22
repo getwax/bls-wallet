@@ -1,11 +1,11 @@
-import * as React from 'react';
+import { FunctionComponent } from 'react';
 
 import PasswordCreationPanel from './PasswordCreationPanel';
 import SecretPhrasePanel from './SecretPhrasePanel';
 import SetNicknamePanel from './SetNicknamePanel';
 import WorkflowNumbers from './WorkflowNumbers';
 
-const OnboardingActionPanel: React.FunctionComponent<{ pageIndex: number }> = ({
+const OnboardingActionPanel: FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
   <div className="h-screen p-32 flex flex-col flex-grow space-y-16 items-center">

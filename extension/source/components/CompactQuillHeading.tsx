@@ -1,10 +1,10 @@
-import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import type { ReactElement } from 'react';
+import { runtime } from 'webextension-polyfill';
 
-const CompactQuillHeading = (): React.ReactElement => (
+const CompactQuillHeading = (): ReactElement => (
   <div className="compact-quill-heading">
     <img
-      src={browser.runtime.getURL('assets/logo.svg')}
+      src={runtime.getURL('assets/logo.svg')}
       alt="Quill"
       width="58"
       height="40"

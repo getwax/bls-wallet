@@ -6,8 +6,8 @@ import { VerificationGateway__factory } from "../typechain/factories/Verificatio
 import type { VerificationGateway } from "../typechain/VerificationGateway";
 
 // eslint-disable-next-line camelcase
-import { Utilities__factory } from "../typechain/factories/Utilities__factory";
-import type { Utilities } from "../typechain/Utilities";
+import { AggregatorUtilities__factory } from "../typechain/factories/AggregatorUtilities__factory";
+import type { AggregatorUtilities } from "../typechain/AggregatorUtilities";
 
 // eslint-disable-next-line camelcase
 import { ERC20__factory } from "../typechain/factories/ERC20__factory";
@@ -31,8 +31,8 @@ export {
   VerificationGateway__factory,
   VerificationGateway,
   // eslint-disable-next-line camelcase
-  Utilities__factory,
-  Utilities,
+  AggregatorUtilities__factory,
+  AggregatorUtilities,
   // eslint-disable-next-line camelcase
   ERC20__factory,
   ERC20,

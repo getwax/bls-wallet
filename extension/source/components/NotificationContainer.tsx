@@ -1,5 +1,4 @@
-import * as React from 'react';
-
+import { Component, ReactNode } from 'react';
 import delay from '../helpers/delay';
 import type { PageEvents } from './Page';
 
@@ -23,10 +22,7 @@ const initialState: State = {
   text: '',
 };
 
-export default class NotificationContainer extends React.Component<
-  Props,
-  State
-> {
+export default class NotificationContainer extends Component<Props, State> {
   targetState = initialState;
 
   constructor(props: Props) {
@@ -63,7 +59,7 @@ export default class NotificationContainer extends React.Component<
     super.setState(this.targetState);
   }
 
-  render(): React.ReactNode {
+  render(): ReactNode {
     const classes = ['notification', this.state.level];
 
     if (this.state.activeCount > 0) {

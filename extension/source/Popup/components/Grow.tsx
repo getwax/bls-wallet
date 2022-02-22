@@ -1,5 +1,5 @@
-import * as React from 'react';
+import { ReactElement } from 'react';
 
-const Grow = (): React.ReactElement => <div className="grow" />;
+const Grow = (): ReactElement => <div className="grow" />;
 
 export default Grow;

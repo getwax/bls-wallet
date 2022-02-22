@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { ReactElement } from 'react';
+import { runtime, tabs } from 'webextension-polyfill';
 
 import { CREATE_TX_URL } from '../../env';
 import assertExists from '../../helpers/assertExists';
@@ -21,7 +21,7 @@ type Props = {
   app: App;
 };
 
-const WalletHomeScreen = ({ app }: Props): React.ReactElement => (
+const WalletHomeScreen = ({ app }: Props): ReactElement => (
   <div className="wallet-home-screen">
     <div className="section">
       <CompactQuillHeading />
@@ -65,7 +65,7 @@ const WalletHomeScreen = ({ app }: Props): React.ReactElement => (
 
 export default WalletHomeScreen;
 
-const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
+const BLSKeyField = ({ app }: Props): ReactElement | null => {
   const publicKey = app.PublicKey();
   if (!publicKey) {
     return null;
@@ -75,7 +75,7 @@ const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
     <div>
       <div style={{ width: '17px' }}>
         <img
-          src={browser.runtime.getURL('assets/key.svg')}
+          src={runtime.getURL('assets/key.svg')}
           alt="key"
           width="14"
           height="15"
@@ -98,7 +98,7 @@ const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
       </div>
       <div className="field-trailer">
         <KeyIcon
-          src={browser.runtime.getURL('assets/download.svg')}
+          src={runtime.getURL('assets/download.svg')}
           text="Backup private key"
           onAction={() =>
             app.pageEvents.emit('overlay', (close) => (
@@ -107,7 +107,7 @@ const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
           }
         />
         <KeyIcon
-          src={browser.runtime.getURL('assets/trashcan.svg')}
+          src={runtime.getURL('assets/trashcan.svg')}
           text="Delete BLS key"
           onAction={() =>
             app.pageEvents.emit('overlay', (close) => (
@@ -120,11 +120,11 @@ const BLSKeyField = ({ app }: Props): React.ReactElement | null => {
   );
 };
 
-const NetworkField = (): React.ReactElement => (
+const NetworkField = (): ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
-        src={browser.runtime.getURL('assets/network.svg')}
+        src={runtime.getURL('assets/network.svg')}
         alt="network"
         width="14"
         height="15"
@@ -134,7 +134,7 @@ const NetworkField = (): React.ReactElement => (
     <select
       className="field-value grow"
       style={{
-        backgroundImage: `url("${browser.runtime.getURL(
+        backgroundImage: `url("${runtime.getURL(
           'assets/selector-down-arrow.svg',
         )}")`,
       }}
@@ -150,11 +150,11 @@ const AddressField = (props: {
   app: App;
   address: string;
   nonce?: string;
-}): React.ReactElement => (
+}): ReactElement => (
   <div>
     <div style={{ width: '17px' }}>
       <img
-        src={browser.runtime.getURL('assets/address.svg')}
+        src={runtime.getURL('assets/address.svg')}
         alt="address"
         width="14"
         height="15"
@@ -179,7 +179,7 @@ const AddressField = (props: {
   </div>
 );
 
-const WalletContent = ({ app }: Props): React.ReactElement => {
+const WalletContent = ({ app }: Props): ReactElement => {
   if (!app.state.walletAddress.value) {
     return <></>;
   }
@@ -195,7 +195,7 @@ const WalletContent = ({ app }: Props): React.ReactElement => {
       <Button
         className="btn-primary"
         onPress={() => {
-          browser.tabs.create({
+          tabs.create({
             url: CREATE_TX_URL || 'createTransaction.html',
           });
         }}
@@ -210,7 +210,7 @@ const KeyIcon = (props: {
   src: string;
   text: string;
   onAction: () => void;
-}): React.ReactElement => (
+}): ReactElement => (
   <div className="key-icon" style={{ width: '22px', height: '22px' }}>
     <img
       src={props.src}
@@ -230,7 +230,7 @@ const KeyIcon = (props: {
 const DeleteKeyPrompt = (props: {
   app: App;
   close: () => void;
-}): React.ReactElement => (
+}): ReactElement => (
   <div className="delete-key-prompt">
     <div>
       Are you sure that you want to delete this key? You can only restore your
@@ -255,7 +255,7 @@ const DeleteKeyPrompt = (props: {
 const CopyPrivateKeyPrompt = (props: {
   app: App;
   close: () => void;
-}): React.ReactElement => (
+}): ReactElement => (
   <div className="delete-key-prompt">
     <div>
       You should make sure you store your private key somewhere safe. If you

@@ -165,21 +165,19 @@ contract VerificationGateway
         wallet.setAnyPending();
 
         // ensure wallet has pre-approved encodedFunction
-        bytes memory approvedFunction = wallet.approvedProxyAdminFunction();
-        bool matchesApproved = (encodedFunction.length == approvedFunction.length);
-        for (uint i=0; matchesApproved && i<approvedFunction.length; i++) {
-            matchesApproved = (encodedFunction[i] == approvedFunction[i]);
-        }
+        bytes32 approvedFunctionHash = wallet.approvedProxyAdminFunctionHash();
+        bytes32 encodedFunctionHash = keccak256(encodedFunction);
+        bool matchesApproved = encodedFunctionHash == approvedFunctionHash;
 
         if (matchesApproved == false) {
             // prepare for a future call
-            wallet.setProxyAdminFunction(encodedFunction);
+            wallet.setProxyAdminFunctionHash(encodedFunctionHash);
         }
         else {
             // call approved function
             (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
             require(success, "VG: call to proxy admin failed");
-            wallet.clearApprovedProxyAdminFunction();
+            wallet.clearApprovedProxyAdminFunctionHash();
         }
     }
 

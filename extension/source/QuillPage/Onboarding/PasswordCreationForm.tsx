@@ -1,5 +1,5 @@
 import { Info } from 'phosphor-react';
-import * as React from 'react';
+import { FunctionComponent, useState, useEffect, ChangeEvent } from 'react';
 import measurePasswordStrength, {
   PasswordStrength,
 } from '../../helpers/measurePasswordStrength';
@@ -13,10 +13,10 @@ const passwordCommentaryMap: Record<PasswordStrength['descriptor'], string> = {
   Strong: 'Looks like a good password!',
 };
 
-const PasswordStrengthMeter: React.FunctionComponent<{
+const PasswordStrengthMeter: FunctionComponent<{
   strength: PasswordStrength;
 }> = ({ strength }) => {
-  const [color, setColor] = React.useState('bg-alert-500');
+  const [color, setColor] = useState('bg-alert-500');
 
   const getColor = (level: number) => {
     if (level < 6) {
@@ -31,7 +31,7 @@ const PasswordStrengthMeter: React.FunctionComponent<{
     return 'bg-positive-500';
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     setColor(getColor(strength.guessesLog10));
   }, [strength]);
 
@@ -55,14 +55,14 @@ const PasswordStrengthMeter: React.FunctionComponent<{
   return <></>;
 };
 
-const PasswordCreationForm: React.FunctionComponent<{
+const PasswordCreationForm: FunctionComponent<{
   onPasswordUpdate: (password: string | undefined) => void;
 }> = ({ onPasswordUpdate }) => {
-  const [password, setPassword] = React.useState<string>();
+  const [password, setPassword] = useState<string>();
 
-  const [passwordFieldValue, setPasswordFieldValue] = React.useState('');
+  const [passwordFieldValue, setPasswordFieldValue] = useState('');
   const [confirmPasswordFieldValue, setConfirmPasswordFieldValue] =
-    React.useState('');
+    useState('');
 
   function handleFieldsChange(newPassword: string, newConfirmPassword: string) {
     if (newPassword !== passwordFieldValue) {
@@ -103,7 +103,7 @@ const PasswordCreationForm: React.FunctionComponent<{
         <input
           type="password"
           placeholder="Password"
-          onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+          onInput={(e: ChangeEvent<HTMLInputElement>) => {
             const newPassword = e.target.value;
             handleFieldsChange(newPassword, confirmPasswordFieldValue);
           }}
@@ -113,7 +113,7 @@ const PasswordCreationForm: React.FunctionComponent<{
           placeholder="Confirm password"
           className={`mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25 ${getConfirmPasswordClass()}`}
           disabled={!passwordFieldValue}
-          onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+          onInput={(e: ChangeEvent<HTMLInputElement>) => {
             const newConfirmPassword = e.target.value;
             handleFieldsChange(passwordFieldValue, newConfirmPassword);
           }}

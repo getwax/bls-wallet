@@ -1,8 +1,8 @@
-import * as React from 'react';
+import { Component, ReactElement, ReactNode } from 'react';
 import defineAction from '../../helpers/defineAction';
 
 type Props = {
-  content: [string, React.ReactElement][];
+  content: [string, ReactElement][];
   defaultTab?: string;
 };
 
@@ -10,14 +10,14 @@ type State = {
   selectedTab: string;
 };
 
-export default class Tabs extends React.Component<Props, State> {
+export default class Tabs extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
     this.state = { selectedTab: props.defaultTab ?? props.content[0][0] };
   }
 
-  render(): React.ReactNode {
+  render(): ReactNode {
     const selectedContent = this.props.content.find(
       ([tabName]) => tabName === this.state.selectedTab,
     )?.[1];

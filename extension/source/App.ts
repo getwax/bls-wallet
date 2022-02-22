@@ -4,7 +4,7 @@ import { BlsWalletWrapper } from 'bls-wallet-clients';
 import type { Aggregator } from 'bls-wallet-clients';
 import type { ethers } from 'ethers';
 import type TypedEventEmitter from 'typed-emitter';
-import { browser } from 'webextension-polyfill-ts';
+import { storage } from 'webextension-polyfill';
 
 import { PRIVATE_KEY_STORAGE_KEY } from './env';
 import generateRandomHex from './helpers/generateRandomHex';
@@ -39,7 +39,7 @@ export default class App {
   constructor(
     public aggregator: Aggregator,
     public provider: ethers.providers.Provider,
-    public storage: typeof browser.storage.local,
+    public _storage: typeof storage.local,
   ) {
     this.state = {
       walletAddress: {
@@ -53,7 +53,7 @@ export default class App {
   }
 
   setupStorage(): void {
-    type Listener = Parameters<typeof browser.storage.onChanged.addListener>[0];
+    type Listener = Parameters<typeof storage.onChanged.addListener>[0];
 
     const listener: Listener = (changes, areaName) => {
       if (areaName !== 'local') {
@@ -69,13 +69,13 @@ export default class App {
       this.setState({ privateKey: pkChange.newValue });
     };
 
-    browser.storage.onChanged.addListener(listener);
+    storage.onChanged.addListener(listener);
 
     this.cleanupTasks.push(() => {
-      browser.storage.onChanged.removeListener(listener);
+      storage.onChanged.removeListener(listener);
     });
 
-    browser.storage.local.get(PRIVATE_KEY_STORAGE_KEY).then((results) => {
+    storage.local.get(PRIVATE_KEY_STORAGE_KEY).then((results) => {
       if (PRIVATE_KEY_STORAGE_KEY in results) {
         this.setState({ privateKey: results[PRIVATE_KEY_STORAGE_KEY] });
       }
@@ -130,9 +130,9 @@ export default class App {
     // wallet
     if (this.state.privateKey !== oldPrivateKey) {
       if (this.state.privateKey === undefined) {
-        browser.storage.local.remove(PRIVATE_KEY_STORAGE_KEY);
+        storage.local.remove(PRIVATE_KEY_STORAGE_KEY);
       } else {
-        browser.storage.local.set({
+        storage.local.set({
           [PRIVATE_KEY_STORAGE_KEY]: this.state.privateKey,
         });
       }

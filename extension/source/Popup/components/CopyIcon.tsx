@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import type { ReactElement } from 'react';
+import { runtime } from 'webextension-polyfill';
 
 import '../styles.scss';
 
-const CopyIcon = (): React.ReactElement => (
+const CopyIcon = (): ReactElement => (
   <div style={{ position: 'relative', width: '16px', height: '16px' }}>
     <img
-      src={browser.runtime.getURL('assets/copy.svg')}
+      src={runtime.getURL('assets/copy.svg')}
       alt="copy"
       width="16"
       height="16"

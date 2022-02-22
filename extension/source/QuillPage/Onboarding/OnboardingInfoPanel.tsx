@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { browser } from 'webextension-polyfill-ts';
+import { FunctionComponent } from 'react';
+import { runtime } from 'webextension-polyfill';
 import LogoFooter from './LogoFooter';
 
 const info = [
@@ -13,7 +13,7 @@ const info = [
     heading: 'What is under the hood?',
     description: `Quill is on the cutting edge, leveraging the newest Ethereum
   technologies to give you fast and low-cost transactions,
-  directly in your browser.`,
+  directly in your browser`,
   },
   {
     heading: 'How do I keep my wallets secure?',
@@ -38,14 +38,14 @@ const info = [
   },
 ];
 
-const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
+const OnboardingInfoPanel: FunctionComponent<{ pageIndex: number }> = ({
   pageIndex,
 }) => (
   <div className="bg-blue-500 flex flex-col w-2/5">
     <div
       className="h-screen p-32 flex flex-col justify-between"
       style={{
-        background: `center no-repeat url(${browser.runtime.getURL(
+        background: `center no-repeat url(${runtime.getURL(
           'assets/info-panel-pretty-curve.svg',
         )})`,
       }}
@@ -53,7 +53,7 @@ const OnboardingInfoPanel: React.FunctionComponent<{ pageIndex: number }> = ({
       <div
         className="h-64 w-full rounded-md"
         style={{
-          background: `url(${browser.runtime.getURL(
+          background: `url(${runtime.getURL(
             `assets/onboarding-art-${pageIndex + 1}.svg`,
           )}) no-repeat center`,
         }}
