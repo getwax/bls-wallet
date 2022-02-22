@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -66,5 +66,9 @@
 
   input {
     @apply w-full border border-grey-300 focus:border-grey-500 rounded-md py-2 px-3 disabled:bg-grey-300;
+  }
+
+  th {
+    font-weight: normal;
   }
 }
