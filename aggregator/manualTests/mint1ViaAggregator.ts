@@ -1,17 +1,21 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { AggregatorClient, delay, ethers } from "../deps.ts";
+import {
+  AggregatorClient,
+  delay,
+  ethers,
+  MockERC20__factory,
+} from "../deps.ts";
 
 import assert from "../src/helpers/assert.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 import * as env from "../test/env.ts";
-import MockErc20 from "../test/helpers/MockErc20.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 
 const { addresses } = await getNetworkConfig();
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
-const testErc20 = new MockErc20(addresses.testToken, provider);
+const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
 const client = new AggregatorClient(env.ORIGIN);
 
 const [wallet] = await TestBlsWallets(provider, 1);
@@ -21,8 +25,8 @@ const bundle = wallet.sign({
   nonce: await wallet.Nonce(),
   actions: [{
     ethValue: 0,
-    contractAddress: testErc20.contract.address,
-    encodedFunction: testErc20.contract.interface.encodeFunctionData(
+    contractAddress: testErc20.address,
+    encodedFunction: testErc20.interface.encodeFunctionData(
       "mint",
       [wallet.address, 1],
     ),

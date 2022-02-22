@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react';
 
-import OnboardingPage from './components/OnboardingPage';
+import OnboardingPage from './Onboarding/OnboardingPage';
 import { WalletPage } from './Wallet/WalletPage';
 
 // Note: This is for demo purposes only while building the ui. This is not how

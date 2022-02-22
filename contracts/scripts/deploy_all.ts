@@ -55,6 +55,7 @@ async function main() {
       blsLibrary: fx.blsLibrary.address,
       verificationGateway: fx.verificationGateway.address,
       blsExpander: fx.blsExpander.address,
+      utilities: fx.utilities.address,
       testToken,
     },
     auxiliary: {

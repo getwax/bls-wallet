@@ -4,6 +4,7 @@ import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
 import { SettingsWrapper } from './Settings/SettingsWrapper';
+import { WalletDetail } from './Wallets/WalletDetail';
 import { WalletsWrapper } from './Wallets/WalletWrapper';
 
 interface IRoutes {
@@ -18,7 +19,7 @@ const routes: IRoutes[] = [
     name: 'wallets',
     path: '/',
     summaryComponent: <WalletsWrapper />,
-    detailComponent: <div>Wallets Detail</div>,
+    detailComponent: <WalletDetail />,
   },
   {
     name: 'connections',
@@ -62,7 +63,7 @@ export const WalletPage: React.FunctionComponent = () => {
           </div>
 
           {/* details pane */}
-          <div className="w-2/3 p-8">
+          <div className="w-2/3 p-8 overflow-y-scroll">
             <Routes>
               {routes.map((item) => (
                 <Route
