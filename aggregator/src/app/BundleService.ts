@@ -336,11 +336,6 @@ export default class BundleService {
     // extra logic to handle that.
     const { measureResults, callResults: processBundleResults } = await es
       .callStaticSequenceWithMeasure(
-        // FIXME: There is a griefing attack here. A malicious user could create
-        // a transfer that is conditional on tx.origin == utilities. That way it
-        // wouldn't actually pay in the real transaction, therefore using our
-        // aggregator to pay their gas fees for free.
-        // Actually: What is tx.origin when using callStatic?
         rewardToken
           ? es.Call(rewardToken, "balanceOf", [es.utilities.address])
           : es.Call(es.utilities, "ethBalanceOf", [es.utilities.address]),

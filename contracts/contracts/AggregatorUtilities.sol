@@ -45,4 +45,8 @@ contract AggregatorUtilities {
   function ethBalanceOf(address account) external view returns (uint256) {
     return account.balance;
   }
+
+  function getTxOrigin() external view returns (address) {
+    return tx.origin;
+  }
 }

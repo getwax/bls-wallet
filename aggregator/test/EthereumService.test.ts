@@ -268,3 +268,13 @@ Fixture.test("callStaticSequence - correctly measures transfer", async (fx) => {
 
   assertEquals(balanceAfter.sub(balanceBefore).toNumber(), transferAmount);
 });
+
+Fixture.test("callStaticSequence - tx.origin is the aggregator", async (fx) => {
+  const es = fx.ethereumService;
+
+  const [result] = await es.callStaticSequence(
+    es.Call(es.utilities, "getTxOrigin", []),
+  );
+
+  assertEquals(result.returnValue?.[0], es.wallet.address);
+});
