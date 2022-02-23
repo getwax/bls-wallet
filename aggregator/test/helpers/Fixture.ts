@@ -28,6 +28,20 @@ type ExplicitAny = any;
 
 let existingClient: QueryClient | nil = nil;
 
+export const bundleServiceDefaultTestConfig:
+  typeof BundleService.defaultConfig = {
+    bundleQueryLimit: 100,
+    maxAggregationSize: 12,
+    maxAggregationDelayMillis: 5000,
+    maxUnconfirmedAggregations: 3,
+    maxEligibilityDelay: 300,
+    rewards: {
+      type: "ether",
+      perGas: 0,
+      perByte: 0,
+    },
+  };
+
 export default class Fixture {
   static test(
     name: string,
@@ -120,9 +134,7 @@ export default class Fixture {
     return this.rng.seed("blsPrivateKey", ...extraSeeds).address();
   }
 
-  // FIXME: Tests shouldn't allow BundleService.defaultConfig because it reads
-  // from the environment.
-  async createBundleService(config = BundleService.defaultConfig) {
+  async createBundleService(config = bundleServiceDefaultTestConfig) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
     existingClient = createQueryClient(this.emit, existingClient);
     const queryClient = existingClient;

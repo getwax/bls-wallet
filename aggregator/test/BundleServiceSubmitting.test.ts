@@ -1,13 +1,9 @@
-import BundleService from "../src/app/BundleService.ts";
 import { assertEquals, BigNumber } from "./deps.ts";
-import Fixture from "./helpers/Fixture.ts";
+import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
 const bundleServiceConfig = {
-  ...BundleService.defaultConfig,
-
-  // These may be the defaults, but they're technically env dependent, so we
-  // make sure we have these values because the tests assume them.
+  ...bundleServiceDefaultTestConfig,
   maxAggregationSize: 5,
   maxAggregationDelayMillis: 5000,
 };
