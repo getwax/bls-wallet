@@ -5,6 +5,8 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract AggregatorUtilities {
+  bytes public data;
+
   struct FunctionCall {
     address contractAddress;
     bytes encodedFunction;
@@ -55,5 +57,9 @@ contract AggregatorUtilities {
 
   function sendTokenToTxOrigin(IERC20 token, uint256 amount) external {
     token.transferFrom(msg.sender, tx.origin, amount);
+  }
+
+  function setData(bytes calldata newData) external {
+    data = newData;
   }
 }
