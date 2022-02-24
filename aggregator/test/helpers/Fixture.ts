@@ -1,5 +1,6 @@
 import {
   BigNumber,
+  BigNumberish,
   BlsWalletSigner,
   BlsWalletWrapper,
   ethers,
@@ -193,7 +194,7 @@ export default class Fixture {
       tokenBalance = 1000,
     }: {
       extraSeeds?: string[];
-      tokenBalance?: number;
+      tokenBalance?: BigNumberish;
     } = {},
   ) {
     const wallets = [];

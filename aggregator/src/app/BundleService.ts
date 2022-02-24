@@ -5,6 +5,7 @@ import {
   delay,
   ERC20,
   ERC20__factory,
+  ethers,
   QueryClient,
 } from "../../deps.ts";
 
@@ -337,8 +338,8 @@ export default class BundleService {
     const { measureResults, callResults: processBundleResults } = await es
       .callStaticSequenceWithMeasure(
         rewardToken
-          ? es.Call(rewardToken, "balanceOf", [es.utilities.address])
-          : es.Call(es.utilities, "ethBalanceOf", [es.utilities.address]),
+          ? es.Call(rewardToken, "balanceOf", [es.wallet.address])
+          : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]),
         bundles.map((bundle) =>
           es.Call(
             es.verificationGateway,
@@ -391,12 +392,14 @@ export default class BundleService {
       .estimateGas
       .processBundle(bundle);
 
-    const callDataSize = this.ethereumService.verificationGateway.interface
-      .encodeFunctionData("processBundle", [bundle]);
+    const callDataSize = ethers.utils.hexDataLength(
+      this.ethereumService.verificationGateway.interface
+        .encodeFunctionData("processBundle", [bundle]),
+    );
 
     return (
       gasEstimate.mul(this.config.rewards.perGas).add(
-        this.config.rewards.perByte.mul(callDataSize.length),
+        this.config.rewards.perByte.mul(callDataSize),
       )
     );
   }
