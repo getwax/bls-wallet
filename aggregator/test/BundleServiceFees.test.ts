@@ -2,9 +2,6 @@ import { assertEquals, BigNumber } from "./deps.ts";
 import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
 
 Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
-  // TODO: This test is a work in progress. It's failing for an unintended
-  // reason.
-
   const bundleService = await fx.createBundleService({
     ...bundleServiceDefaultTestConfig,
     rewards: {
@@ -45,7 +42,7 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
-    BigNumber.from(1001),
+    BigNumber.from(1000),
   );
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 1n);
 });

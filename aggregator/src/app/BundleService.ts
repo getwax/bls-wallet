@@ -433,12 +433,20 @@ export default class BundleService {
       reward: BigNumber;
       requiredReward: number;
     }> => {
+      if (n === 0) {
+        return {
+          success: true,
+          reward: BigNumber.from(0),
+          requiredReward: 0,
+        };
+      }
+
       const reward = bigSum(rewards.slice(0, n).map((r) => r.reward));
 
       const requiredReward = await this.measureRequiredReward(
         this.blsWalletSigner.aggregate([
           previousAggregateBundle,
-          ...bundles,
+          ...bundles.slice(0, n),
         ]),
       );
 
