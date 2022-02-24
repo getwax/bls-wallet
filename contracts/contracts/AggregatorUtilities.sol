@@ -2,6 +2,8 @@
 pragma solidity >=0.8.0 <0.9.0;
 pragma abicoder v2;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 contract AggregatorUtilities {
   struct FunctionCall {
     address contractAddress;
@@ -46,7 +48,12 @@ contract AggregatorUtilities {
     return account.balance;
   }
 
-  function getTxOrigin() external view returns (address) {
-    return tx.origin;
+  function sendEthToTxOrigin() external payable {
+    bool sent = payable(tx.origin).send(msg.value);
+    require(sent, "Failed to send Ether");
+  }
+
+  function sendTokenToTxOrigin(IERC20 token, uint256 amount) external {
+    token.transferFrom(msg.sender, tx.origin, amount);
   }
 }
