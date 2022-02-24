@@ -395,8 +395,9 @@ export default class BundleService {
       .encodeFunctionData("processBundle", [bundle]);
 
     return (
-      gasEstimate.toNumber() * this.config.rewards.perGas +
-      callDataSize.length * this.config.rewards.perByte
+      gasEstimate.mul(this.config.rewards.perGas).add(
+        this.config.rewards.perByte.mul(callDataSize.length),
+      )
     );
   }
 
@@ -413,7 +414,7 @@ export default class BundleService {
     const callDataSize = this.ethereumService.verificationGateway.interface
       .encodeFunctionData("processBundle", [bundle]);
 
-    return callDataSize.length * this.config.rewards.perByte;
+    return this.config.rewards.perByte.mul(callDataSize.length);
   }
 
   async findFirstFailureIndex(
@@ -431,13 +432,13 @@ export default class BundleService {
     const checkFirstN = async (n: number): Promise<{
       success: boolean;
       reward: BigNumber;
-      requiredReward: number;
+      requiredReward: BigNumber;
     }> => {
       if (n === 0) {
         return {
           success: true,
           reward: BigNumber.from(0),
-          requiredReward: 0,
+          requiredReward: BigNumber.from(0),
         };
       }
 
@@ -476,9 +477,9 @@ export default class BundleService {
     })();
 
     let left = 0;
-    let leftRequiredReward = 0;
+    let leftRequiredReward = BigNumber.from(0);
     let right: number;
-    let rightRequiredReward: number;
+    let rightRequiredReward: BigNumber;
 
     if (fastFailureIndex !== nil) {
       // Having a fast failure index is not enough because it might not be the
@@ -536,7 +537,7 @@ export default class BundleService {
     // so `left` is our culprit index.
 
     const bundleReward = rewards[left].reward;
-    const bundleRequiredReward = rightRequiredReward - leftRequiredReward;
+    const bundleRequiredReward = rightRequiredReward.sub(leftRequiredReward);
 
     // Tracking the rewards so that we can include this assertion isn't strictly
     // necessary. But the cost is negligible and should help troubleshooting a

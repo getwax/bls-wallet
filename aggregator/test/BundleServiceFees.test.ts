@@ -6,8 +6,8 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
     ...bundleServiceDefaultTestConfig,
     rewards: {
       type: "ether",
-      perGas: 1_000_000_000,
-      perByte: 1_000_000_000_000, // *10?
+      perGas: BigNumber.from(1_000_000_000),
+      perByte: BigNumber.from(10_000_000_000_000),
     },
   });
 

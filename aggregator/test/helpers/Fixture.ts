@@ -37,8 +37,8 @@ export const bundleServiceDefaultTestConfig:
     maxEligibilityDelay: 300,
     rewards: {
       type: "ether",
-      perGas: 0,
-      perByte: 0,
+      perGas: BigNumber.from(0),
+      perByte: BigNumber.from(0),
     },
   };
 
