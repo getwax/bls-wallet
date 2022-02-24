@@ -127,18 +127,7 @@ contract VerificationGateway
         uint256[2] calldata signature,
         uint256[BLS_KEY_LEN] calldata publicKey
     ) public {
-        uint256[2] memory addressMsg = blsLib.hashToPoint(
-            BLS_DOMAIN,
-            abi.encodePacked(msg.sender)
-        );
-        require(
-            blsLib.verifySingle(signature, publicKey, addressMsg),
-            "VG: Signature not verified for wallet address."
-        );
-        bytes32 publicKeyHash = keccak256(abi.encodePacked(
-            publicKey
-        ));
-        externalWalletsFromHash[publicKeyHash] = IWallet(msg.sender);
+        safeSetWallet(signature, publicKey, msg.sender);
     }
 
     /**
@@ -182,10 +171,18 @@ contract VerificationGateway
         }
     }
 
+    /**
+    Recovers a wallet, setting a new bls public key.
+    @param signature of message containing only the calling address
+    @param blsKeyHash calling wallet's bls public key hash
+    @param salt used in the recovery hash
+    @param newBLSKey to set as the wallet's bls public key
+     */
     function recoverWallet(
+        uint256[2] calldata signature,
         bytes32 blsKeyHash,
         bytes32 salt,
-        uint256[4] memory newBLSKey
+        uint256[BLS_KEY_LEN] calldata newBLSKey
     ) public {
         IWallet wallet = walletFromHash(blsKeyHash);
         bytes32 recoveryHash = keccak256(
@@ -194,8 +191,7 @@ contract VerificationGateway
         if (recoveryHash == wallet.recoveryHash()) {
             // override mapping of old key hash (takes precedence over create2 address)
             externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
-            bytes32 newKeyHash = keccak256(abi.encodePacked(newBLSKey));
-            externalWalletsFromHash[newKeyHash] = wallet;
+            safeSetWallet(signature, newBLSKey, address(wallet));
             wallet.recover(newBLSKey);
         }
     }
@@ -293,6 +289,31 @@ contract VerificationGateway
             );
         }
         return IWallet(blsWallet);
+    }
+
+    /**
+    @dev safely sets/overwrites the wallet for the given public key, ensuring it is properly signed
+    @param signature of message containing only the wallet address
+    @param publicKey that signed the wallet address
+    @param wallet address to set
+     */
+    function safeSetWallet(
+        uint256[2] calldata signature,
+        uint256[BLS_KEY_LEN] calldata publicKey,
+        address wallet
+    ) private {
+        uint256[2] memory addressMsg = blsLib.hashToPoint(
+            BLS_DOMAIN,
+            abi.encodePacked(wallet)
+        );
+        require(
+            blsLib.verifySingle(signature, publicKey, addressMsg),
+            "VG: Signature not verified for wallet address."
+        );
+        bytes32 publicKeyHash = keccak256(abi.encodePacked(
+            publicKey
+        ));
+        externalWalletsFromHash[publicKeyHash] = IWallet(wallet);
     }
 
     function hasCode(address a) private view returns (bool) {
