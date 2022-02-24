@@ -183,10 +183,19 @@ export default class Fixture {
   }
 
   /**
-   * Sets up wallets for testing. These wallets are also given 1000 test and
-   * reward tokens.
+   * Sets up wallets for testing. These wallets are also given test tokens.
+   * (1000 wei by default.)
    */
-  async setupWallets(count: number, ...extraSeeds: string[]) {
+  async setupWallets(
+    count: number,
+    {
+      extraSeeds = [],
+      tokenBalance = 1000,
+    }: {
+      extraSeeds?: string[];
+      tokenBalance?: number;
+    } = {},
+  ) {
     const wallets = [];
     const tokens = [this.testErc20];
 
@@ -207,7 +216,7 @@ export default class Fixture {
         // When seeding tests, we can generate wallets from previous tests, and
         // this can cause unexpected balances if we blindly mint instead of
         // doing this top-up.
-        const topUp = BigNumber.from(1000).sub(balance);
+        const topUp = BigNumber.from(tokenBalance).sub(balance);
 
         if (topUp.gt(0)) {
           return wallet.sign({
