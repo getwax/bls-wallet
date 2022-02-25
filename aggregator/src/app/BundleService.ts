@@ -197,8 +197,12 @@ export default class BundleService {
         (row) => !this.unconfirmedRowIds.has(row.id!),
       );
 
-      const { aggregateBundle, includedRows } = await this
+      const { aggregateBundle, includedRows, failedRows } = await this
         .createAggregateBundle(eligibleRows);
+
+      for (const failedRow of failedRows) {
+        await this.handleFailedRow(failedRow, currentBlockNumber);
+      }
 
       if (!aggregateBundle || includedRows.length === 0) {
         return;
@@ -220,15 +224,18 @@ export default class BundleService {
     Promise<{
       aggregateBundle: Bundle | nil;
       includedRows: BundleRow[];
+      failedRows: BundleRow[];
     }>
   ) {
     let aggregateBundle = this.blsWalletSigner.aggregate([]);
     const includedRows: BundleRow[] = [];
+    const failedRows: BundleRow[] = [];
 
     while (eligibleRows.length > 0) {
       const {
         aggregateBundle: newAggregateBundle,
         includedRows: newIncludedRows,
+        failedRows: newFailedRows,
         remainingEligibleRows,
       } = await this.augmentAggregateBundle(
         aggregateBundle,
@@ -237,6 +244,7 @@ export default class BundleService {
 
       aggregateBundle = newAggregateBundle;
       includedRows.push(...newIncludedRows);
+      failedRows.push(...newFailedRows);
       eligibleRows = remainingEligibleRows;
     }
 
@@ -245,8 +253,7 @@ export default class BundleService {
         ? aggregateBundle
         : nil,
       includedRows,
-      // TODO: Return failedRows rather than processing failures as a side
-      // effect?
+      failedRows,
     };
   }
 
@@ -257,11 +264,13 @@ export default class BundleService {
     Promise<{
       aggregateBundle: Bundle;
       includedRows: BundleRow[];
+      failedRows: BundleRow[];
       remainingEligibleRows: BundleRow[];
     }>
   ) {
     let aggregateBundle: Bundle | nil = nil;
     let includedRows: BundleRow[] = [];
+    const failedRows: BundleRow[] = [];
     // TODO (merge-ok): Count gas instead, have idea
     // or way to query max gas per txn (submission).
     let actionCount = countActions(previousAggregateBundle);
@@ -293,16 +302,11 @@ export default class BundleService {
 
     if (firstFailureIndex !== nil) {
       const failedRow = includedRows[firstFailureIndex];
+      failedRows.push(failedRow);
 
       includedRows = includedRows.slice(
         0,
         firstFailureIndex,
-      );
-
-      // TODO: Should this be a task?
-      await this.handleFailedRow(
-        failedRow,
-        await this.ethereumService.BlockNumber(),
       );
 
       const eligibleRowIndex = eligibleRows.indexOf(failedRow);
@@ -321,6 +325,7 @@ export default class BundleService {
     return {
       aggregateBundle,
       includedRows,
+      failedRows,
       remainingEligibleRows,
     };
   }
