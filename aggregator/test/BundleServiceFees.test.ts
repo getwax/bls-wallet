@@ -1,3 +1,4 @@
+import Range from "../src/helpers/Range.ts";
 import {
   assertEquals,
   BigNumber,
@@ -254,5 +255,50 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient gas-based fee", asy
   assertEquals(
     await fx.testErc20.balanceOf(wallet2.address),
     fee.mul(7), // 3 fees spent from wallet 2
+  );
+});
+
+Fixture.test("submits 1/3 bundles when bundle#3 fails the shortcut fee test but bundle#2 also fails the full fee test", async (fx) => {
+  const bundleService = await createBundleService(fx, {
+    perGas: BigNumber.from(100_000_000_000),
+  });
+
+  const [wallet] = await fx.setupWallets(2, {
+    tokenBalance: oneToken.mul(10),
+  });
+
+  const nonce = await wallet.Nonce();
+
+  const bundleFees = [
+    // Passes
+    BigNumber.from(140_000_000).mul(1e9),
+
+    // Passes shortcut test but fails full test
+    BigNumber.from(80_000_000).mul(1e9),
+
+    // Fails shortcut test
+    BigNumber.from(1),
+  ];
+
+  for (const i of Range(bundleFees.length)) {
+    const bundle = wallet.sign(
+      approveAndSendTokensToOrigin(fx, nonce.add(i), bundleFees[i]),
+    );
+
+    const failures = await bundleService.add(bundle);
+    assertEquals(failures, []);
+  }
+
+  assertEquals(await bundleService.bundleTable.count(), 3n);
+
+  fx.clock.advance(5000);
+  await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+  await bundleService.waitForConfirmations();
+
+  assertEquals(await bundleService.bundleTable.count(), 2n);
+
+  assertEquals(
+    await fx.testErc20.balanceOf(wallet.address),
+    oneToken.mul(10).sub(bundleFees[0]),
   );
 });

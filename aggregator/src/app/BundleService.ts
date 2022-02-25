@@ -411,12 +411,24 @@ export default class BundleService {
    * - Finding it this way is much more efficient
    */
   measureRequiredRewardLowerBound(bundle: Bundle) {
+    const callDataEmptyBundleSize = ethers.utils.hexDataLength(
+      this.ethereumService.verificationGateway.interface
+        .encodeFunctionData("processBundle", [
+          this.blsWalletSigner.aggregate([]),
+        ]),
+    );
+
     const callDataSize = ethers.utils.hexDataLength(
       this.ethereumService.verificationGateway.interface
         .encodeFunctionData("processBundle", [bundle]),
     );
 
-    return this.config.rewards.perByte.mul(callDataSize);
+    // We subtract the size of an empty bundle because it represents the number
+    // of *additional* bytes added when aggregating. The bundle doesn't
+    // necessarily have to pay the initial overhead to be viable.
+    const callDataMarginalSize = callDataSize - callDataEmptyBundleSize;
+
+    return this.config.rewards.perByte.mul(callDataMarginalSize);
   }
 
   async findFirstFailureIndex(
