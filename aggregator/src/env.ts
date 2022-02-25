@@ -48,10 +48,10 @@ export const MAX_UNCONFIRMED_AGGREGATIONS = requireIntEnv(
 
 export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");
 
-export const REWARD_TYPE = requireEnv("REWARD_TYPE");
-export const REWARD_PER_GAS = requireBigNumberEnv("REWARD_PER_GAS");
-export const REWARD_PER_BYTE = requireBigNumberEnv("REWARD_PER_BYTE");
+export const FEE_TYPE = requireEnv("FEE_TYPE");
+export const FEE_PER_GAS = requireBigNumberEnv("FEE_PER_GAS");
+export const FEE_PER_BYTE = requireBigNumberEnv("FEE_PER_BYTE");
 
-if (!/^(ether|token:0x[0-9a-fA-F]*)$/.test(REWARD_TYPE)) {
-  throw new Error(`REWARD_TYPE has invalid format: "${REWARD_TYPE}"`);
+if (!/^(ether|token:0x[0-9a-fA-F]*)$/.test(FEE_TYPE)) {
+  throw new Error(`FEE_TYPE has invalid format: "${FEE_TYPE}"`);
 }

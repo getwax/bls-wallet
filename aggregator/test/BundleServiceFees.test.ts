@@ -12,16 +12,16 @@ const oneToken = ethers.utils.parseUnits("1.0", 18);
 
 async function createBundleService(
   fx: Fixture,
-  rewardsOverride?: Partial<typeof bundleServiceDefaultTestConfig["rewards"]>,
+  feesOverride?: Partial<typeof bundleServiceDefaultTestConfig["fees"]>,
 ) {
   return await fx.createBundleService({
     ...bundleServiceDefaultTestConfig,
     maxAggregationSize: 24,
-    rewards: {
+    fees: {
       type: `token:${fx.testErc20.address}`,
       perGas: BigNumber.from(10_000_000_000),
       perByte: BigNumber.from(100_000_000_000_000),
-      ...rewardsOverride,
+      ...feesOverride,
     },
   });
 }

@@ -36,7 +36,7 @@ export const bundleServiceDefaultTestConfig:
     maxAggregationDelayMillis: 5000,
     maxUnconfirmedAggregations: 3,
     maxEligibilityDelay: 300,
-    rewards: {
+    fees: {
       type: "ether",
       perGas: BigNumber.from(0),
       perByte: BigNumber.from(0),

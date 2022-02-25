@@ -31,10 +31,10 @@ export default class BundleService {
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
     maxEligibilityDelay: env.MAX_ELIGIBILITY_DELAY,
-    rewards: {
-      type: env.REWARD_TYPE,
-      perGas: env.REWARD_PER_GAS,
-      perByte: env.REWARD_PER_BYTE,
+    fees: {
+      type: env.FEE_TYPE,
+      perGas: env.FEE_PER_GAS,
+      perByte: env.FEE_PER_BYTE,
     },
   };
 
@@ -286,16 +286,16 @@ export default class BundleService {
       actionCount += rowActionCount;
     }
 
-    const [previousReward, ...rewards] = (await this.measureRewards([
+    const [previousFee, ...fees] = (await this.measureFees([
       previousAggregateBundle,
       ...includedRows.map((r) => r.bundle),
     ]));
 
     const firstFailureIndex = await this.findFirstFailureIndex(
       previousAggregateBundle,
-      previousReward,
+      previousFee,
       includedRows.map((r) => r.bundle),
-      rewards,
+      fees,
     );
 
     let remainingEligibleRows: BundleRow[];
@@ -330,17 +330,17 @@ export default class BundleService {
     };
   }
 
-  async measureRewards(bundles: Bundle[]): Promise<{
+  async measureFees(bundles: Bundle[]): Promise<{
     success: boolean;
-    reward: BigNumber;
+    fee: BigNumber;
   }[]> {
     const es = this.ethereumService;
-    const rewardToken = this.RewardToken();
+    const feeToken = this.FeeToken();
 
     const { measureResults, callResults: processBundleResults } = await es
       .callStaticSequenceWithMeasure(
-        rewardToken
-          ? es.Call(rewardToken, "balanceOf", [es.wallet.address])
+        feeToken
+          ? es.Call(feeToken, "balanceOf", [es.wallet.address])
           : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]),
         bundles.map((bundle) =>
           es.Call(
@@ -370,26 +370,26 @@ export default class BundleService {
         success = false;
       }
 
-      const reward = after.returnValue[0].sub(before.returnValue[0]);
+      const fee = after.returnValue[0].sub(before.returnValue[0]);
 
-      return { success, reward };
+      return { success, fee };
     });
   }
 
-  RewardToken(): ERC20 | nil {
-    const rewardType = this.config.rewards.type;
+  FeeToken(): ERC20 | nil {
+    const feeType = this.config.fees.type;
 
-    if (rewardType === "ether") {
+    if (feeType === "ether") {
       return nil;
     }
 
     return ERC20__factory.connect(
-      rewardType.slice("token:".length),
+      feeType.slice("token:".length),
       this.ethereumService.wallet.provider,
     );
   }
 
-  async measureRequiredReward(bundle: Bundle) {
+  async measureRequiredFee(bundle: Bundle) {
     const gasEstimate = await this.ethereumService.verificationGateway
       .estimateGas
       .processBundle(bundle);
@@ -400,22 +400,22 @@ export default class BundleService {
     );
 
     return (
-      gasEstimate.mul(this.config.rewards.perGas).add(
-        this.config.rewards.perByte.mul(callDataSize),
+      gasEstimate.mul(this.config.fees.perGas).add(
+        this.config.fees.perByte.mul(callDataSize),
       )
     );
   }
 
   /**
-   * Get a lower bound for the reward that is required for processing the
+   * Get a lower bound for the fee that is required for processing the
    * bundle.
    *
    * This exists because it's a very good lower bound and it's very fast.
-   * Therefore, when there's an insufficient reward bundle:
+   * Therefore, when there's an insufficient fee bundle:
    * - This lower bound is usually enough to find it
    * - Finding it this way is much more efficient
    */
-  measureRequiredRewardLowerBound(bundle: Bundle) {
+  measureRequiredFeeLowerBound(bundle: Bundle) {
     const callDataEmptyBundleSize = ethers.utils.hexDataLength(
       this.ethereumService.verificationGateway.interface
         .encodeFunctionData("processBundle", [
@@ -433,50 +433,50 @@ export default class BundleService {
     // necessarily have to pay the initial overhead to be viable.
     const callDataMarginalSize = callDataSize - callDataEmptyBundleSize;
 
-    return this.config.rewards.perByte.mul(callDataMarginalSize);
+    return this.config.fees.perByte.mul(callDataMarginalSize);
   }
 
   async findFirstFailureIndex(
     previousAggregateBundle: Bundle,
-    previousReward: { success: boolean; reward: BigNumber },
+    previousFee: { success: boolean; fee: BigNumber },
     bundles: Bundle[],
-    rewards: { success: boolean; reward: BigNumber }[],
+    fees: { success: boolean; fee: BigNumber }[],
   ): Promise<number | nil> {
     if (bundles.length === 0) {
       return nil;
     }
 
     const len = bundles.length;
-    assert(rewards.length === len);
+    assert(fees.length === len);
 
     const checkFirstN = async (n: number): Promise<{
       success: boolean;
-      reward: BigNumber;
-      requiredReward: BigNumber;
+      fee: BigNumber;
+      requiredFee: BigNumber;
     }> => {
       if (n === 0) {
         return {
           success: true,
-          reward: BigNumber.from(0),
-          requiredReward: BigNumber.from(0),
+          fee: BigNumber.from(0),
+          requiredFee: BigNumber.from(0),
         };
       }
 
-      const reward = bigSum([
-        previousReward.reward,
-        ...rewards.slice(0, n).map((r) => r.reward),
+      const fee = bigSum([
+        previousFee.fee,
+        ...fees.slice(0, n).map((r) => r.fee),
       ]);
 
-      const requiredReward = await this.measureRequiredReward(
+      const requiredFee = await this.measureRequiredFee(
         this.blsWalletSigner.aggregate([
           previousAggregateBundle,
           ...bundles.slice(0, n),
         ]),
       );
 
-      const success = reward.gte(requiredReward);
+      const success = fee.gte(requiredFee);
 
-      return { success, reward, requiredReward };
+      return { success, fee, requiredFee };
     };
 
     // This calculation is entirely local and cheap. It can find a failing
@@ -484,25 +484,25 @@ export default class BundleService {
     const fastFailureIndex = (() => {
       for (let i = 0; i < len; i++) {
         // If the actual call failed then we consider it a failure, even if the
-        // reward is somehow met (e.g. if zero reward is required).
-        if (rewards[i].success === false) {
+        // fee is somehow met (e.g. if zero fee is required).
+        if (fees[i].success === false) {
           return i;
         }
 
-        // Because the required reward mostly comes from the calldata size, this
-        // should find the first insufficient reward most of the time.
-        const lowerBound = this.measureRequiredRewardLowerBound(bundles[i]);
+        // Because the required fee mostly comes from the calldata size, this
+        // should find the first insufficient fee most of the time.
+        const lowerBound = this.measureRequiredFeeLowerBound(bundles[i]);
 
-        if (rewards[i].reward.lt(lowerBound)) {
+        if (fees[i].fee.lt(lowerBound)) {
           return i;
         }
       }
     })();
 
     let left = 0;
-    let leftRequiredReward = BigNumber.from(0);
+    let leftRequiredFee = BigNumber.from(0);
     let right: number;
-    let rightRequiredReward: BigNumber;
+    let rightRequiredFee: BigNumber;
 
     if (fastFailureIndex !== nil) {
       // Having a fast failure index is not enough because it might not be the
@@ -511,7 +511,7 @@ export default class BundleService {
       // that is relied upon outside - that the subset before the first failing
       // index can proceed without further checking).
 
-      const { success, requiredReward } = await checkFirstN(fastFailureIndex);
+      const { success, requiredFee } = await checkFirstN(fastFailureIndex);
 
       if (success) {
         return fastFailureIndex;
@@ -521,35 +521,35 @@ export default class BundleService {
       // narrow range, so we can at least restrict the bisect to this smaller
       // range.
       right = fastFailureIndex;
-      rightRequiredReward = requiredReward;
+      rightRequiredFee = requiredFee;
     } else {
       // If we don't have a failing index, we still need to establish that there
       // is a failing index to be found. This is because it's a requirement of
       // the upcoming bisect logic that there is a failing bundle in
       // `bundles.slice(left, right)`.
 
-      const { success, requiredReward } = await checkFirstN(bundles.length);
+      const { success, requiredFee } = await checkFirstN(bundles.length);
 
       if (success) {
         return nil;
       }
 
       right = bundles.length;
-      rightRequiredReward = requiredReward;
+      rightRequiredFee = requiredFee;
     }
 
     // Do a bisect to narrow in on the (first) culprit.
     while (right - left > 1) {
       const mid = Math.floor((left + right) / 2);
 
-      const { success, requiredReward } = await checkFirstN(mid);
+      const { success, requiredFee } = await checkFirstN(mid);
 
       if (success) {
         left = mid;
-        leftRequiredReward = requiredReward;
+        leftRequiredFee = requiredFee;
       } else {
         right = mid;
-        rightRequiredReward = requiredReward;
+        rightRequiredFee = requiredFee;
       }
     }
 
@@ -559,13 +559,13 @@ export default class BundleService {
     // `bundles.slice(left, right)`. That's now equivalent to `[bundles[left]]`,
     // so `left` is our culprit index.
 
-    const bundleReward = rewards[left].reward;
-    const bundleRequiredReward = rightRequiredReward.sub(leftRequiredReward);
+    const bundleFee = fees[left].fee;
+    const bundleRequiredFee = rightRequiredFee.sub(leftRequiredFee);
 
-    // Tracking the rewards so that we can include this assertion isn't strictly
+    // Tracking the fees so that we can include this assertion isn't strictly
     // necessary. But the cost is negligible and should help troubleshooting a
     // lot if something goes wrong.
-    assert(bundleReward.lt(bundleRequiredReward));
+    assert(bundleFee.lt(bundleRequiredFee));
 
     return left;
   }
