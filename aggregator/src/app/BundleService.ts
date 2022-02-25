@@ -187,9 +187,14 @@ export default class BundleService {
     const submissionResult = await this.runQueryGroup(async () => {
       const currentBlockNumber = await this.ethereumService.BlockNumber();
 
-      const eligibleRows = await this.bundleTable.findEligible(
+      let eligibleRows = await this.bundleTable.findEligible(
         currentBlockNumber,
         this.config.bundleQueryLimit,
+      );
+
+      // Exclude rows that are already pending.
+      eligibleRows = eligibleRows.filter(
+        (row) => !this.unconfirmedRowIds.has(row.id!),
       );
 
       const { aggregateBundle, includedRows } = await this
@@ -262,10 +267,6 @@ export default class BundleService {
     let actionCount = countActions(previousAggregateBundle);
 
     for (const row of eligibleRows) {
-      if (this.unconfirmedRowIds.has(row.id!)) {
-        continue;
-      }
-
       const rowActionCount = countActions(row.bundle);
 
       if (actionCount + rowActionCount > this.config.maxAggregationSize) {
