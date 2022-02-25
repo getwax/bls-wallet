@@ -1,5 +1,6 @@
 import Range from "../src/helpers/Range.ts";
 import {
+  assert,
   assertEquals,
   BigNumber,
   BlsWalletWrapper,
@@ -95,7 +96,7 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
   assertEquals(await bundleService.bundleTable.count(), 1n);
 });
 
-Fixture.test("submits bundle with sufficient fee", async (fx) => {
+Fixture.test("submits bundle with sufficient token fee", async (fx) => {
   const bundleService = await createBundleService(fx);
 
   const [wallet] = await fx.setupWallets(1, {
@@ -124,6 +125,59 @@ Fixture.test("submits bundle with sufficient fee", async (fx) => {
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
+    BigNumber.from(0),
+  );
+});
+
+Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
+  const bundleService = await createBundleService(fx, {
+    type: "ether",
+    perByte: BigNumber.from(1),
+    perGas: BigNumber.from(1),
+  });
+
+  const fee = BigNumber.from(2_000_000); // wei
+
+  const [wallet] = await fx.setupWallets(1, { tokenBalance: 0 });
+
+  await (await fx.adminWallet.sendTransaction({
+    to: wallet.address,
+    value: fee,
+  })).wait();
+
+  const es = fx.ethereumService;
+
+  const bundle = wallet.sign({
+    nonce: await wallet.Nonce(),
+    actions: [
+      {
+        ethValue: fee,
+        contractAddress: es.utilities.address,
+        encodedFunction: es.utilities.interface.encodeFunctionData(
+          "sendEthToTxOrigin",
+        ),
+      },
+    ],
+  });
+
+  const failures = await bundleService.add(bundle);
+  assertEquals(failures, []);
+
+  assertEquals(
+    await fx.adminWallet.provider.getBalance(wallet.address),
+    fee,
+  );
+
+  assertEquals(await bundleService.bundleTable.count(), 1n);
+
+  fx.clock.advance(5000);
+  await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+  await bundleService.waitForConfirmations();
+
+  assertEquals(await bundleService.bundleTable.count(), 0n);
+
+  assertEquals(
+    await fx.adminWallet.provider.getBalance(wallet.address),
     BigNumber.from(0),
   );
 });
