@@ -1,6 +1,5 @@
 import Range from "../src/helpers/Range.ts";
 import {
-  assert,
   assertEquals,
   BigNumber,
   BlsWalletWrapper,
