@@ -330,11 +330,8 @@ export default class BundleService {
     reward: BigNumber;
   }[]> {
     const es = this.ethereumService;
-
     const rewardToken = this.RewardToken();
 
-    // TODO: Test including a failing action. There probably needs to be some
-    // extra logic to handle that.
     const { measureResults, callResults: processBundleResults } = await es
       .callStaticSequenceWithMeasure(
         rewardToken
