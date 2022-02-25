@@ -414,10 +414,12 @@ export default class BundleService {
    * - Finding it this way is much more efficient
    */
   measureRequiredRewardLowerBound(bundle: Bundle) {
-    const callDataSize = this.ethereumService.verificationGateway.interface
-      .encodeFunctionData("processBundle", [bundle]);
+    const callDataSize = ethers.utils.hexDataLength(
+      this.ethereumService.verificationGateway.interface
+        .encodeFunctionData("processBundle", [bundle]),
+    );
 
-    return this.config.rewards.perByte.mul(callDataSize.length);
+    return this.config.rewards.perByte.mul(callDataSize);
   }
 
   async findFirstFailureIndex(

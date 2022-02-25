@@ -3,15 +3,19 @@ import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
 
 const oneToken = ethers.utils.parseUnits("1.0", 18);
 
-Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
-  const bundleService = await fx.createBundleService({
+async function createBundleService(fx: Fixture) {
+  return await fx.createBundleService({
     ...bundleServiceDefaultTestConfig,
     rewards: {
-      type: "ether",
-      perGas: BigNumber.from(1_000_000_000),
-      perByte: BigNumber.from(10_000_000_000_000),
+      type: `token:${fx.testErc20.address}`,
+      perGas: BigNumber.from(10_000_000_000),
+      perByte: BigNumber.from(100_000_000_000_000),
     },
   });
+}
+
+Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
+  const bundleService = await createBundleService(fx);
 
   const [wallet] = await fx.setupWallets(1);
 
@@ -50,14 +54,7 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
 });
 
 Fixture.test("submits bundle with sufficient fee", async (fx) => {
-  const bundleService = await fx.createBundleService({
-    ...bundleServiceDefaultTestConfig,
-    rewards: {
-      type: `token:${fx.testErc20.address}`,
-      perGas: BigNumber.from(1_000_000_000),
-      perByte: BigNumber.from(10_000_000_000_000),
-    },
-  });
+  const bundleService = await createBundleService(fx);
 
   const [wallet] = await fx.setupWallets(1, {
     tokenBalance: oneToken,
