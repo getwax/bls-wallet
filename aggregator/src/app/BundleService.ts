@@ -276,15 +276,14 @@ export default class BundleService {
       actionCount += rowActionCount;
     }
 
-    // FIXME: measureRewards should be aware of previousAggregateBundle and
-    // avoid redundantly measuring its reward.
-    const rewards = (await this.measureRewards([
+    const [previousReward, ...rewards] = (await this.measureRewards([
       previousAggregateBundle,
       ...includedRows.map((r) => r.bundle),
-    ])).slice(1);
+    ]));
 
     const firstFailureIndex = await this.findFirstFailureIndex(
       previousAggregateBundle,
+      previousReward,
       includedRows.map((r) => r.bundle),
       rewards,
     );
@@ -424,6 +423,7 @@ export default class BundleService {
 
   async findFirstFailureIndex(
     previousAggregateBundle: Bundle,
+    previousReward: { success: boolean; reward: BigNumber },
     bundles: Bundle[],
     rewards: { success: boolean; reward: BigNumber }[],
   ): Promise<number | nil> {
@@ -447,7 +447,10 @@ export default class BundleService {
         };
       }
 
-      const reward = bigSum(rewards.slice(0, n).map((r) => r.reward));
+      const reward = bigSum([
+        previousReward.reward,
+        ...rewards.slice(0, n).map((r) => r.reward),
+      ]);
 
       const requiredReward = await this.measureRequiredReward(
         this.blsWalletSigner.aggregate([
