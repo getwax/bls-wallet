@@ -286,6 +286,18 @@ export default class BundleService {
       actionCount += rowActionCount;
     }
 
+    if (includedRows.length === 0) {
+      return {
+        aggregateBundle: previousAggregateBundle,
+        includedRows,
+        failedRows,
+
+        // If we're not able to include anything more, don't consider any rows
+        // eligible anymore.
+        remainingEligibleRows: [],
+      };
+    }
+
     const [previousFee, ...fees] = (await this.measureFees([
       previousAggregateBundle,
       ...includedRows.map((r) => r.bundle),
