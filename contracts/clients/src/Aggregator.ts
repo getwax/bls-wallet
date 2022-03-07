@@ -47,9 +47,13 @@ export default class Aggregator {
   }
 
   async add(bundle: Bundle): Promise<TransactionFailure[]> {
-    const result = await this.jsonPost("/bundle", bundleToDto(bundle));
+    const json: any = await this.jsonPost("/bundle", bundleToDto(bundle));
 
-    return (result as any).failures as TransactionFailure[];
+    if (json === null || typeof json !== "object" || !("failures" in json)) {
+      throw new Error(`Unexpected response: ${JSON.stringify(json)}`);
+    }
+
+    return json.failures as TransactionFailure[];
   }
 
   async estimateFee(bundle: Bundle): Promise<EstimateFeeResponse> {
@@ -75,10 +79,6 @@ export default class Aggregator {
       json = JSON.parse(text);
     } catch {
       throw new Error(`Unexpected invalid JSON response: ${text}`);
-    }
-
-    if (json === null || typeof json !== "object" || !("failures" in json)) {
-      throw new Error(`Unexpected response: ${text}`);
     }
 
     return json;
