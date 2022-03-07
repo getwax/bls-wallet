@@ -1,5 +1,6 @@
 import {
   BigNumber,
+  BigNumberish,
   BlsWalletSigner,
   BlsWalletWrapper,
   ethers,
@@ -27,6 +28,20 @@ import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
 type ExplicitAny = any;
 
 let existingClient: QueryClient | nil = nil;
+
+export const bundleServiceDefaultTestConfig:
+  typeof BundleService.defaultConfig = {
+    bundleQueryLimit: 100,
+    maxAggregationSize: 12,
+    maxAggregationDelayMillis: 5000,
+    maxUnconfirmedAggregations: 3,
+    maxEligibilityDelay: 300,
+    fees: {
+      type: "ether",
+      perGas: BigNumber.from(0),
+      perByte: BigNumber.from(0),
+    },
+  };
 
 export default class Fixture {
   static test(
@@ -120,7 +135,7 @@ export default class Fixture {
     return this.rng.seed("blsPrivateKey", ...extraSeeds).address();
   }
 
-  async createBundleService(config = BundleService.defaultConfig) {
+  async createBundleService(config = bundleServiceDefaultTestConfig) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
     existingClient = createQueryClient(this.emit, existingClient);
     const queryClient = existingClient;
@@ -169,10 +184,19 @@ export default class Fixture {
   }
 
   /**
-   * Sets up wallets for testing. These wallets are also given 1000 test and
-   * reward tokens.
+   * Sets up wallets for testing. These wallets are also given test tokens.
+   * (1000 wei by default.)
    */
-  async setupWallets(count: number, ...extraSeeds: string[]) {
+  async setupWallets(
+    count: number,
+    {
+      extraSeeds = [],
+      tokenBalance = 1000,
+    }: {
+      extraSeeds?: string[];
+      tokenBalance?: BigNumberish;
+    } = {},
+  ) {
     const wallets = [];
     const tokens = [this.testErc20];
 
@@ -193,7 +217,7 @@ export default class Fixture {
         // When seeding tests, we can generate wallets from previous tests, and
         // this can cause unexpected balances if we blindly mint instead of
         // doing this top-up.
-        const topUp = BigNumber.from(1000).sub(balance);
+        const topUp = BigNumber.from(tokenBalance).sub(balance);
 
         if (topUp.gt(0)) {
           return wallet.sign({

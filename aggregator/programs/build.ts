@@ -16,6 +16,7 @@ await ensureFreshBuildDir();
 await buildEnvironment();
 await copyTypescriptFiles();
 await buildDockerImage();
+await tarballTypescriptFiles();
 
 console.log("Aggregator build complete");
 
@@ -122,6 +123,18 @@ async function copyTypescriptFiles() {
     await Deno.mkdir(dirname(`${buildDir}/ts/${f}`), { recursive: true });
     await Deno.copyFile(f, `${buildDir}/ts/${f}`);
   }
+}
+
+async function tarballTypescriptFiles() {
+  // TypeScript insists on looking inside files that aren't explicitly imported.
+  // Therefore, after the build, we convert these files into a tarball so that
+  // we don't interfere with the main project.
+
+  const currDir = Deno.cwd();
+  Deno.chdir(buildDir);
+  await shell.run("tar", "-czf", "ts.tar.gz", "ts");
+  await shell.run("rm", "-rf", "ts");
+  Deno.chdir(currDir);
 }
 
 async function buildDockerImage() {

@@ -1,4 +1,5 @@
 import {
+  requireBigNumberEnv,
   requireBoolEnv,
   requireEnv,
   requireIntEnv,
@@ -46,3 +47,11 @@ export const MAX_UNCONFIRMED_AGGREGATIONS = requireIntEnv(
 );
 
 export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");
+
+export const FEE_TYPE = requireEnv("FEE_TYPE");
+export const FEE_PER_GAS = requireBigNumberEnv("FEE_PER_GAS");
+export const FEE_PER_BYTE = requireBigNumberEnv("FEE_PER_BYTE");
+
+if (!/^(ether|token:0x[0-9a-fA-F]*)$/.test(FEE_TYPE)) {
+  throw new Error(`FEE_TYPE has invalid format: "${FEE_TYPE}"`);
+}

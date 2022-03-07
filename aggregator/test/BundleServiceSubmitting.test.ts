@@ -1,13 +1,9 @@
-import BundleService from "../src/app/BundleService.ts";
 import { assertEquals, BigNumber } from "./deps.ts";
-import Fixture from "./helpers/Fixture.ts";
+import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
 const bundleServiceConfig = {
-  ...BundleService.defaultConfig,
-
-  // These may be the defaults, but they're technically env dependent, so we
-  // make sure we have these values because the tests assume them.
+  ...bundleServiceDefaultTestConfig,
   maxAggregationSize: 5,
   maxAggregationDelayMillis: 5000,
 };
@@ -114,13 +110,21 @@ Fixture.test(
       })
     );
 
+    // Prevent submission from triggering on max aggregation size.
+    bundleService.config.maxAggregationSize = Infinity;
+
     const failures = [];
     for (const b of bundles) {
       failures.push(await bundleService.add(b));
     }
     assertEquals(failures.flat(), []);
 
-    await bundleService.submissionTimer.waitForCompletedSubmissions(1);
+    // Restore max aggregation size for testing. (This way we hit the edge case
+    // that the aggregator has access to more actions than it can fit into a
+    // single submission, which happens but is race-dependent.)
+    bundleService.config.maxAggregationSize = 5;
+
+    await bundleService.submissionTimer.trigger();
     await bundleService.waitForConfirmations();
 
     // Check mints have occurred, ensuring a submission has occurred even though the
@@ -134,8 +138,7 @@ Fixture.test(
     const remainingBundles = await fx.allBundles(bundleService);
     assertEquals(remainingBundles.length, 2);
 
-    await fx.clock.advance(5000);
-    await bundleService.submissionTimer.waitForCompletedSubmissions(2);
+    await bundleService.submissionTimer.trigger();
     await bundleService.waitForConfirmations();
 
     assertEquals(

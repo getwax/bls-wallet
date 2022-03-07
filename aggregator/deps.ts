@@ -29,10 +29,15 @@ export {
 } from "https://esm.sh/ethers@5.5.2";
 
 import { ethers } from "https://esm.sh/ethers@5.5.2";
-export type { BaseContract, BytesLike } from "https://esm.sh/ethers@5.5.2";
+export type {
+  BaseContract,
+  BigNumberish,
+  BytesLike,
+} from "https://esm.sh/ethers@5.5.2";
 export const keccak256 = ethers.utils.keccak256;
 
 export type {
+  AggregatorUtilities,
   BlsWalletSigner,
   Bundle,
   BundleDto,
@@ -42,22 +47,21 @@ export type {
   Operation,
   PublicKey,
   Signature,
-  AggregatorUtilities,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.5.4-2c78bc0";
+} from "https://esm.sh/bls-wallet-clients@0.5.4-8c9c0ef";
 
 export {
   Aggregator as AggregatorClient,
+  AggregatorUtilities__factory,
   BlsWalletWrapper,
   ERC20__factory,
   getConfig,
   MockERC20__factory,
-  AggregatorUtilities__factory,
   VerificationGateway__factory,
-} from "https://esm.sh/bls-wallet-clients@0.5.4-2c78bc0";
+} from "https://esm.sh/bls-wallet-clients@0.5.4-8c9c0ef";
 
 // Workaround for esbuild's export-star bug
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.5.4-2c78bc0";
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.5.4-8c9c0ef";
 const {
   bundleFromDto,
   bundleToDto,

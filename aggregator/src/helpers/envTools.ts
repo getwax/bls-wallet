@@ -1,4 +1,4 @@
-import { dotEnvConfig } from "../../deps.ts";
+import { BigNumber, dotEnvConfig } from "../../deps.ts";
 
 import dotEnvPath from "./dotEnvPath.ts";
 import nil from "./nil.ts";
@@ -35,6 +35,29 @@ export function requireIntEnv(envName: string): number {
 
   if (value !== Math.round(value)) {
     throw new Error(`Failed to parse ${envName} as int: ${strValue}`);
+  }
+
+  return value;
+}
+
+export function requireBigNumberEnv(envName: string): BigNumber {
+  let strValue = requireEnv(envName);
+
+  if (/^[0-9][0-9_]*[0-9]$/.test(strValue)) {
+    strValue = strValue.replaceAll("_", "");
+  }
+
+  const value = BigNumber.from(strValue);
+
+  return value;
+}
+
+export function requireNumberEnv(envName: string): number {
+  const strValue = requireEnv(envName);
+  const value = Number(strValue);
+
+  if (!Number.isFinite(value)) {
+    throw new Error(`Failed to parse ${envName} as number: ${strValue}`);
   }
 
   return value;
