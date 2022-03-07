@@ -6,24 +6,33 @@ import {
   ethers,
   Operation,
 } from "./deps.ts";
-import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
+import Fixture, {
+  aggregationStrategyDefaultTestConfig,
+  bundleServiceDefaultTestConfig,
+} from "./helpers/Fixture.ts";
 
 const oneToken = ethers.utils.parseUnits("1.0", 18);
 
 async function createBundleService(
   fx: Fixture,
-  feesOverride?: Partial<typeof bundleServiceDefaultTestConfig["fees"]>,
+  feesOverride?: Partial<typeof aggregationStrategyDefaultTestConfig["fees"]>,
 ) {
-  return await fx.createBundleService({
-    ...bundleServiceDefaultTestConfig,
-    maxAggregationSize: 24,
-    fees: {
-      type: `token:${fx.testErc20.address}`,
-      perGas: BigNumber.from(10_000_000_000),
-      perByte: BigNumber.from(100_000_000_000_000),
-      ...feesOverride,
+  return await fx.createBundleService(
+    {
+      ...bundleServiceDefaultTestConfig,
+      maxAggregationSize: 24,
     },
-  });
+    {
+      ...aggregationStrategyDefaultTestConfig,
+      maxAggregationSize: 24,
+      fees: {
+        type: `token:${fx.testErc20.address}`,
+        perGas: BigNumber.from(10_000_000_000),
+        perByte: BigNumber.from(100_000_000_000_000),
+        ...feesOverride,
+      },
+    },
+  );
 }
 
 function approveAndSendTokensToOrigin(
