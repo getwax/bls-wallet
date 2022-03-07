@@ -23,6 +23,9 @@ import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable, { BundleRow } from "./BundleTable.ts";
+import countActions from "./helpers/countActions.ts";
+import plus from "./helpers/plus.ts";
+import bigSum from "./helpers/bigSum.ts";
 
 export default class BundleService {
   static defaultConfig = {
@@ -666,16 +669,4 @@ export default class BundleService {
       await delay(100);
     }
   }
-}
-
-function countActions(bundle: Bundle) {
-  return bundle.operations.map((op) => op.actions.length).reduce(plus, 0);
-}
-
-function plus(a: number, b: number) {
-  return a + b;
-}
-
-function bigSum(values: BigNumber[]) {
-  return values.reduce((a, b) => a.add(b), BigNumber.from(0));
 }
