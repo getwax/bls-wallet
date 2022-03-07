@@ -15,6 +15,7 @@ import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
 import { BundleRow } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
+import ClientReportableError from "./helpers/ClientReportableError.ts";
 
 export default class AggregationStrategy {
   static defaultConfig = {
@@ -95,7 +96,7 @@ export default class AggregationStrategy {
       balanceResultBefore.returnValue === undefined ||
       balanceResultAfter.returnValue === undefined
     ) {
-      throw new Error("Failed to get balance");
+      throw new ClientReportableError("Failed to get balance");
     }
 
     const balanceBefore = balanceResultBefore.returnValue[0];
@@ -104,7 +105,7 @@ export default class AggregationStrategy {
     const feeDetected = balanceAfter.sub(balanceBefore);
 
     if (bundleResult.returnValue === undefined) {
-      throw new Error("Failed to statically process bundle");
+      throw new ClientReportableError("Failed to statically process bundle");
     }
 
     const feeRequired = await this.#measureRequiredFee(bundle);
