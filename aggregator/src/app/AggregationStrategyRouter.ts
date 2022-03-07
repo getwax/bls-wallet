@@ -27,7 +27,12 @@ export default function AggregationStrategyRouter(
         throw error;
       }
 
-      ctx.response.body = result;
+      ctx.response.body = {
+        feeType: aggregationStrategy.config.fees.type,
+        feeDetected: result.feeDetected.toString(),
+        feeRequired: result.feeRequired.toString(),
+        successes: result.successes,
+      };
     }),
   );
 
