@@ -69,6 +69,55 @@ export default class AggregationStrategy {
     };
   }
 
+  async estimateFee(bundle: Bundle) {
+    const es = this.ethereumService;
+    const feeToken = this.#FeeToken();
+
+    const balanceCall = feeToken
+      ? es.Call(feeToken, "balanceOf", [es.wallet.address])
+      : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]);
+
+    const [
+      balanceResultBefore,
+      bundleResult,
+      balanceResultAfter,
+    ] = await es.callStaticSequence(
+      balanceCall,
+      es.Call(
+        es.verificationGateway,
+        "processBundle",
+        [bundle],
+      ),
+      balanceCall,
+    );
+
+    if (
+      balanceResultBefore.returnValue === undefined ||
+      balanceResultAfter.returnValue === undefined
+    ) {
+      throw new Error("Failed to get balance");
+    }
+
+    const balanceBefore = balanceResultBefore.returnValue[0];
+    const balanceAfter = balanceResultAfter.returnValue[0];
+
+    const feeDetected = balanceAfter.sub(balanceBefore);
+
+    if (bundleResult.returnValue === undefined) {
+      throw new Error("Failed to statically process bundle");
+    }
+
+    const feeRequired = await this.#measureRequiredFee(bundle);
+
+    const successes = bundleResult.returnValue.successes;
+
+    return {
+      feeDetected,
+      feeRequired,
+      successes,
+    };
+  }
+
   async #augmentAggregateBundle(
     previousAggregateBundle: Bundle,
     eligibleRows: BundleRow[],
