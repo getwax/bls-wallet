@@ -214,6 +214,10 @@ contract VerificationGateway
             (blsGateway != address(0)) && (size > 0),
             "BLSWallet: gateway address param not valid"
         );
+
+        // TODO: Require registration in new gateway
+        // TODO: Require proxy admin matches new gateway
+
         walletFromHash(hash).setTrustedGateway(blsGateway);
     }
 
