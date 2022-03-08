@@ -215,10 +215,16 @@ contract VerificationGateway
             "BLSWallet: gateway address param not valid"
         );
 
-        // TODO: Require registration in new gateway
+        IWallet wallet = walletFromHash(hash);
+
+        require(
+            VerificationGateway(blsGateway).walletFromHash(hash) == wallet,
+            "Not recognized by new gateway"
+        );
+
         // TODO: Require proxy admin matches new gateway
 
-        walletFromHash(hash).setTrustedGateway(blsGateway);
+        wallet.setTrustedGateway(blsGateway);
     }
 
     /** 
