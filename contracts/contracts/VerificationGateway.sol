@@ -222,12 +222,22 @@ contract VerificationGateway
             "Not recognized by new gateway"
         );
 
-        // TODO: Require proxy admin matches new gateway
+        ProxyAdmin currentProxyAdmin = ProxyAdmin(
+            TransparentUpgradeableProxy(payable(address(wallet))).admin()
+        );
+
+        ProxyAdmin newGatewayProxyAdmin = VerificationGateway(blsGateway)
+            .walletProxyAdmin();
+
+        require(
+            currentProxyAdmin == newGatewayProxyAdmin,
+            "Proxy admin mismatch"
+        );
 
         wallet.setTrustedGateway(blsGateway);
     }
 
-    /** 
+    /**
     Base function for verifying and processing BLS-signed transactions.
     Creates a new contract wallet per bls key if existing wallet not found.
     Can be called with a single operation with no actions.
