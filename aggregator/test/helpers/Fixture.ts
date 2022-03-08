@@ -23,6 +23,7 @@ import nil, { isNotNil } from "../../src/helpers/nil.ts";
 import getNetworkConfig from "../../src/helpers/getNetworkConfig.ts";
 import BundleService from "../../src/app/BundleService.ts";
 import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
+import AggregationStrategy from "../../src/app/AggregationStrategy.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -36,6 +37,11 @@ export const bundleServiceDefaultTestConfig:
     maxAggregationDelayMillis: 5000,
     maxUnconfirmedAggregations: 3,
     maxEligibilityDelay: 300,
+  };
+
+export const aggregationStrategyDefaultTestConfig:
+  typeof AggregationStrategy.defaultConfig = {
+    maxAggregationSize: 12,
     fees: {
       type: "ether",
       perGas: BigNumber.from(0),
@@ -135,7 +141,10 @@ export default class Fixture {
     return this.rng.seed("blsPrivateKey", ...extraSeeds).address();
   }
 
-  async createBundleService(config = bundleServiceDefaultTestConfig) {
+  async createBundleService(
+    config = bundleServiceDefaultTestConfig,
+    aggregationStrategyConfig = aggregationStrategyDefaultTestConfig,
+  ) {
     const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
     existingClient = createQueryClient(this.emit, existingClient);
     const queryClient = existingClient;
@@ -145,6 +154,12 @@ export default class Fixture {
     const tableName = `bundles_test_${suffix}`;
     const table = await BundleTable.createFresh(queryClient, tableName);
 
+    const aggregationStrategy = new AggregationStrategy(
+      this.blsWalletSigner,
+      this.ethereumService,
+      aggregationStrategyConfig,
+    );
+
     const bundleService = new BundleService(
       this.emit,
       this.clock,
@@ -153,6 +168,7 @@ export default class Fixture {
       table,
       this.blsWalletSigner,
       this.ethereumService,
+      aggregationStrategy,
       config,
     );
 

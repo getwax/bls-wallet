@@ -1,5 +1,8 @@
 import { assertEquals, BigNumber } from "./deps.ts";
-import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
+import Fixture, {
+  aggregationStrategyDefaultTestConfig,
+  bundleServiceDefaultTestConfig,
+} from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 
 const bundleServiceConfig = {
@@ -8,8 +11,17 @@ const bundleServiceConfig = {
   maxAggregationDelayMillis: 5000,
 };
 
+const aggregationStrategyConfig = {
+  ...aggregationStrategyDefaultTestConfig,
+  maxAggregationSize: 5,
+};
+
 Fixture.test("submits a single action in a timed submission", async (fx) => {
-  const bundleService = await fx.createBundleService(bundleServiceConfig);
+  const bundleService = await fx.createBundleService(
+    bundleServiceConfig,
+    aggregationStrategyConfig,
+  );
+
   const [wallet] = await fx.setupWallets(1);
 
   const bundle = wallet.sign({
@@ -47,7 +59,11 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
-  const bundleService = await fx.createBundleService(bundleServiceConfig);
+  const bundleService = await fx.createBundleService(
+    bundleServiceConfig,
+    aggregationStrategyConfig,
+  );
+
   const [wallet] = await fx.setupWallets(1);
   const walletNonce = await wallet.Nonce();
 
@@ -90,7 +106,11 @@ Fixture.test(
     "leftover bundles after delay",
   ].join(" "),
   async (fx) => {
-    const bundleService = await fx.createBundleService(bundleServiceConfig);
+    const bundleService = await fx.createBundleService(
+      bundleServiceConfig,
+      aggregationStrategyConfig,
+    );
+
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
@@ -151,7 +171,11 @@ Fixture.test(
 Fixture.test(
   "submits 3 bundles in reverse (incorrect) nonce order",
   async (fx) => {
-    const bundleService = await fx.createBundleService(bundleServiceConfig);
+    const bundleService = await fx.createBundleService(
+      bundleServiceConfig,
+      aggregationStrategyConfig,
+    );
+
     const [wallet] = await fx.setupWallets(1);
     const walletNonce = await wallet.Nonce();
 
@@ -226,10 +250,13 @@ Fixture.test(
 );
 
 Fixture.test("retains failing bundle when its eligibility delay is smaller than MAX_ELIGIBILITY_DELAY", async (fx) => {
-  const bundleService = await fx.createBundleService({
-    ...bundleServiceConfig,
-    maxEligibilityDelay: 300,
-  });
+  const bundleService = await fx.createBundleService(
+    {
+      ...bundleServiceConfig,
+      maxEligibilityDelay: 300,
+    },
+    aggregationStrategyConfig,
+  );
 
   const [wallet] = await fx.setupWallets(1);
 
@@ -263,10 +290,13 @@ Fixture.test("retains failing bundle when its eligibility delay is smaller than 
 });
 
 Fixture.test("removes failing bundle when its eligibility delay is larger than MAX_ELIGIBILITY_DELAY", async (fx) => {
-  const bundleService = await fx.createBundleService({
-    ...bundleServiceConfig,
-    maxEligibilityDelay: 300,
-  });
+  const bundleService = await fx.createBundleService(
+    {
+      ...bundleServiceConfig,
+      maxEligibilityDelay: 300,
+    },
+    aggregationStrategyConfig,
+  );
 
   const [wallet] = await fx.setupWallets(1);
 

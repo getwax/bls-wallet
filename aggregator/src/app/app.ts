@@ -14,6 +14,7 @@ import Clock from "../helpers/Clock.ts";
 import getNetworkConfig from "../helpers/getNetworkConfig.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable from "./BundleTable.ts";
+import AggregationStrategy from "./AggregationStrategy.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
   const { addresses } = await getNetworkConfig();
@@ -34,6 +35,11 @@ export default async function app(emit: (evt: AppEvent) => void) {
     env.PRIVATE_KEY_AGG,
   );
 
+  const aggregationStrategy = new AggregationStrategy(
+    ethereumService.blsWalletSigner,
+    ethereumService,
+  );
+
   const bundleService = new BundleService(
     emit,
     clock,
@@ -42,6 +48,7 @@ export default async function app(emit: (evt: AppEvent) => void) {
     bundleTable,
     ethereumService.blsWalletSigner,
     ethereumService,
+    aggregationStrategy,
   );
 
   const adminService = new AdminService(
