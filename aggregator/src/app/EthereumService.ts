@@ -74,7 +74,7 @@ export default class EthereumService {
     public blsWalletSigner: BlsWalletSigner,
     verificationGatewayAddress: string,
     utilitiesAddress: string,
-    public nextNonce: number,
+    public nextNonce: BigNumber,
   ) {
     this.verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
@@ -88,7 +88,8 @@ export default class EthereumService {
   }
 
   NextNonce() {
-    const result = this.nextNonce++;
+    const result = this.nextNonce;
+    this.nextNonce = this.nextNonce.add(1);
     return result;
   }
 
@@ -99,7 +100,7 @@ export default class EthereumService {
     aggPrivateKey: string,
   ): Promise<EthereumService> {
     const wallet = EthereumService.Wallet(aggPrivateKey);
-    const nextNonce = (await wallet.getTransactionCount());
+    const nextNonce = BigNumber.from(await wallet.getTransactionCount());
     const chainId = await wallet.getChainId();
     const blsWalletSigner = await initBlsWalletSigner({ chainId });
 
