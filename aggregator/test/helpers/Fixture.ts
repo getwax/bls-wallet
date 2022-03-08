@@ -92,6 +92,11 @@ export default class Fixture {
       chainId,
       ethereumService,
       ethereumService.blsWalletSigner,
+      new AggregationStrategy(
+        ethereumService.blsWalletSigner,
+        ethereumService,
+        aggregationStrategyDefaultTestConfig,
+      ),
       netCfg,
     );
 
@@ -124,6 +129,7 @@ export default class Fixture {
     public chainId: number,
     public ethereumService: EthereumService,
     public blsWalletSigner: BlsWalletSigner,
+    public aggregationStrategy: AggregationStrategy,
     public networkConfig: NetworkConfig,
   ) {
     this.testErc20 = MockERC20__factory.connect(
@@ -154,10 +160,14 @@ export default class Fixture {
     const tableName = `bundles_test_${suffix}`;
     const table = await BundleTable.createFresh(queryClient, tableName);
 
-    const aggregationStrategy = new AggregationStrategy(
-      this.blsWalletSigner,
-      this.ethereumService,
-      aggregationStrategyConfig,
+    const aggregationStrategy = (
+      aggregationStrategyConfig === aggregationStrategyDefaultTestConfig
+        ? this.aggregationStrategy
+        : new AggregationStrategy(
+          this.blsWalletSigner,
+          this.ethereumService,
+          aggregationStrategyConfig,
+        )
     );
 
     const bundleService = new BundleService(

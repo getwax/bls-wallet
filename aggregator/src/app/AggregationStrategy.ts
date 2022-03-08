@@ -15,6 +15,7 @@ import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
 import { BundleRow } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
+import ClientReportableError from "./helpers/ClientReportableError.ts";
 
 export default class AggregationStrategy {
   static defaultConfig = {
@@ -66,6 +67,55 @@ export default class AggregationStrategy {
         : nil,
       includedRows,
       failedRows,
+    };
+  }
+
+  async estimateFee(bundle: Bundle) {
+    const es = this.ethereumService;
+    const feeToken = this.#FeeToken();
+
+    const balanceCall = feeToken
+      ? es.Call(feeToken, "balanceOf", [es.wallet.address])
+      : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]);
+
+    const [
+      balanceResultBefore,
+      bundleResult,
+      balanceResultAfter,
+    ] = await es.callStaticSequence(
+      balanceCall,
+      es.Call(
+        es.verificationGateway,
+        "processBundle",
+        [bundle],
+      ),
+      balanceCall,
+    );
+
+    if (
+      balanceResultBefore.returnValue === undefined ||
+      balanceResultAfter.returnValue === undefined
+    ) {
+      throw new ClientReportableError("Failed to get balance");
+    }
+
+    const balanceBefore = balanceResultBefore.returnValue[0];
+    const balanceAfter = balanceResultAfter.returnValue[0];
+
+    const feeDetected = balanceAfter.sub(balanceBefore);
+
+    if (bundleResult.returnValue === undefined) {
+      throw new ClientReportableError("Failed to statically process bundle");
+    }
+
+    const feeRequired = await this.#measureRequiredFee(bundle);
+
+    const successes = bundleResult.returnValue.successes;
+
+    return {
+      feeDetected,
+      feeRequired,
+      successes,
     };
   }
 

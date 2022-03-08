@@ -26,6 +26,13 @@ export type BundleDto = {
   signature: [string, string];
 };
 
+export type EstimateFeeResponse = {
+  feeType: string;
+  feeDetected: string;
+  feeRequired: string;
+  successes: boolean[];
+};
+
 export default class Aggregator {
   origin: string;
 
@@ -40,9 +47,25 @@ export default class Aggregator {
   }
 
   async add(bundle: Bundle): Promise<TransactionFailure[]> {
-    const resp = await fetch(`${this.origin}/bundle`, {
+    const json: any = await this.jsonPost("/bundle", bundleToDto(bundle));
+
+    if (json === null || typeof json !== "object" || !("failures" in json)) {
+      throw new Error(`Unexpected response: ${JSON.stringify(json)}`);
+    }
+
+    return json.failures as TransactionFailure[];
+  }
+
+  async estimateFee(bundle: Bundle): Promise<EstimateFeeResponse> {
+    const result = await this.jsonPost("/estimateFee", bundleToDto(bundle));
+
+    return result as EstimateFeeResponse;
+  }
+
+  async jsonPost(path: string, body: unknown): Promise<unknown> {
+    const resp = await fetch(`${this.origin}${path}`, {
       method: "POST",
-      body: JSON.stringify(bundleToDto(bundle)),
+      body: JSON.stringify(body),
       headers: {
         "content-type": "application/json",
       },
@@ -58,10 +81,6 @@ export default class Aggregator {
       throw new Error(`Unexpected invalid JSON response: ${text}`);
     }
 
-    if (json === null || typeof json !== "object" || !("failures" in json)) {
-      throw new Error(`Unexpected response: ${text}`);
-    }
-
-    return json.failures;
+    return json;
   }
 }
