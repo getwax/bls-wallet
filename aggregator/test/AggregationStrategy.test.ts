@@ -1,3 +1,5 @@
+import AggregationStrategy from "../src/app/AggregationStrategy.ts";
+import { BundleRow } from "../src/app/BundleTable.ts";
 import { assertEquals, BigNumber } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
@@ -25,5 +27,85 @@ Fixture.test("zero fee estimate from default test config", async (fx) => {
     feeDetected: BigNumber.from(0),
     feeRequired: BigNumber.from(0),
     successes: [true],
+  });
+});
+
+Fixture.test("includes bundle in aggregation when estimated fee is provided", async (fx) => {
+  const [wallet] = await fx.setupWallets(1);
+
+  const aggregationStrategy = new AggregationStrategy(
+    fx.blsWalletSigner,
+    fx.ethereumService,
+    {
+      maxAggregationSize: 12,
+      fees: {
+        type: `token:${fx.testErc20.address}`,
+        perGas: BigNumber.from(1000000000),
+        perByte: BigNumber.from(10000000000000),
+      },
+    },
+  );
+
+  const nonce = await wallet.Nonce();
+
+  let bundle = wallet.sign({
+    nonce,
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
+          "mint",
+          [
+            fx.ethereumService.wallet.address,
+            // Before we know the real fee, we provide 1 wei when calling
+            // estimateFee so that the fee transfer itself can be included in
+            // the estimate.
+            1,
+          ],
+        ),
+      },
+    ],
+  });
+
+  const feeEstimation = await aggregationStrategy.estimateFee(bundle);
+
+  const safetyDivisor = 100;
+  const safetyPremium = feeEstimation.feeRequired.div(safetyDivisor);
+
+  // Due to small fluctuations is gas estimation, we add a little safety premium
+  // to the fee to increase the chance that it actually gets accepted during
+  // aggregation.
+  const safeFee = feeEstimation.feeRequired.add(safetyPremium);
+
+  assertEquals(feeEstimation.feeDetected, BigNumber.from(1));
+
+  // Redefine bundle using the estimated fee
+  bundle = wallet.sign({
+    nonce,
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
+          "mint",
+          [fx.ethereumService.wallet.address, safeFee],
+        ),
+      },
+    ],
+  });
+
+  const bundleRow: BundleRow = {
+    bundle,
+    eligibleAfter: BigNumber.from(0),
+    nextEligibilityDelay: BigNumber.from(1),
+  };
+
+  const aggregationResult = await aggregationStrategy.run([bundleRow]);
+
+  assertEquals(aggregationResult, {
+    aggregateBundle: bundle,
+    includedRows: [bundleRow],
+    failedRows: [],
   });
 });
