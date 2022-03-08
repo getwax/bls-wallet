@@ -219,7 +219,7 @@ contract VerificationGateway
 
         require(
             VerificationGateway(blsGateway).walletFromHash(hash) == wallet,
-            "Not recognized by new gateway"
+            "Not recognized"
         );
 
         ProxyAdmin currentProxyAdmin = ProxyAdmin(
