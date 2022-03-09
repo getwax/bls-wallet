@@ -4,7 +4,6 @@ import { ReactElement, ReactNode } from 'react';
 const Button = (props: {
   className?: string;
   onPress: () => void;
-  highlight?: boolean; // TODO - remove dependency
   loading?: boolean;
   children?: ReactNode;
   icon?: IconProps;
