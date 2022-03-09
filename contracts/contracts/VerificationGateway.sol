@@ -222,16 +222,11 @@ contract VerificationGateway
             "Not recognized"
         );
 
-        ProxyAdmin currentProxyAdmin = ProxyAdmin(
-            TransparentUpgradeableProxy(payable(address(wallet))).admin()
-        );
-
-        ProxyAdmin newGatewayProxyAdmin = VerificationGateway(blsGateway)
-            .walletProxyAdmin();
-
-        require(
-            currentProxyAdmin == newGatewayProxyAdmin,
-            "Proxy admin mismatch"
+        // getProxyAdmin fails if not called by the current proxy admin, so this
+        // enforces that the wallet's proxy admin matches the one in the new
+        // gateway.
+        VerificationGateway(blsGateway).walletProxyAdmin().getProxyAdmin(
+            TransparentUpgradeableProxy(payable(address(wallet)))
         );
 
         wallet.setTrustedGateway(blsGateway);
