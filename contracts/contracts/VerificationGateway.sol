@@ -214,10 +214,25 @@ contract VerificationGateway
             (blsGateway != address(0)) && (size > 0),
             "BLSWallet: gateway address param not valid"
         );
-        walletFromHash(hash).setTrustedGateway(blsGateway);
+
+        IWallet wallet = walletFromHash(hash);
+
+        require(
+            VerificationGateway(blsGateway).walletFromHash(hash) == wallet,
+            "Not recognized"
+        );
+
+        // getProxyAdmin fails if not called by the current proxy admin, so this
+        // enforces that the wallet's proxy admin matches the one in the new
+        // gateway.
+        VerificationGateway(blsGateway).walletProxyAdmin().getProxyAdmin(
+            TransparentUpgradeableProxy(payable(address(wallet)))
+        );
+
+        wallet.setTrustedGateway(blsGateway);
     }
 
-    /** 
+    /**
     Base function for verifying and processing BLS-signed transactions.
     Creates a new contract wallet per bls key if existing wallet not found.
     Can be called with a single operation with no actions.

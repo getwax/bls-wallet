@@ -33,7 +33,7 @@ describe("Deployer", async function () {
 
   beforeEach(async function () {});
 
-  it("should deploy to caculated (create2) address", async function () {
+  it("should deploy to calculated (create2) address", async function () {
     const testSalt = BigNumber.from(0);
     const initCodeHash = ethers.utils.solidityKeccak256(
       ["bytes"],

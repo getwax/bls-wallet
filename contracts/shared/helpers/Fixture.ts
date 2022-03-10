@@ -87,7 +87,9 @@ export default class Fixture {
     );
 
     // deploy utilities
-    const utilities = await create2Fixture.create2Contract("AggregatorUtilities");
+    const utilities = await create2Fixture.create2Contract(
+      "AggregatorUtilities",
+    );
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 
@@ -201,8 +203,22 @@ export default class Fixture {
     // Advance time one week
     const latestTimestamp = (await ethers.provider.getBlock("latest"))
       .timestamp;
+
     await network.provider.send("evm_setNextBlockTimestamp", [
       BigNumber.from(latestTimestamp).add(seconds).toHexString(),
     ]);
+
+    const wallet = await this.lazyBlsWallets[1]();
+
+    // Process an empty operation so that the next timestamp above actually gets
+    // into a block. This enables static calls to see the updated time.
+    await (
+      await this.verificationGateway.processBundle(
+        wallet.sign({
+          nonce: await wallet.Nonce(),
+          actions: [],
+        }),
+      )
+    ).wait();
   }
 }
