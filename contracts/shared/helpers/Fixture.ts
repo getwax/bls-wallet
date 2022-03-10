@@ -212,11 +212,13 @@ export default class Fixture {
 
     // Process an empty operation so that the next timestamp above actually gets
     // into a block. This enables static calls to see the updated time.
-    await this.verificationGateway.processBundle(
-      wallet.sign({
-        nonce: await wallet.Nonce(),
-        actions: [],
-      }),
-    );
+    await (
+      await this.verificationGateway.processBundle(
+        wallet.sign({
+          nonce: await wallet.Nonce(),
+          actions: [],
+        }),
+      )
+    ).wait();
   }
 }
