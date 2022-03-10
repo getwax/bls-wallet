@@ -5,7 +5,6 @@ import { ethers, network } from "hardhat";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import expectRevert from "../shared/helpers/expectRevert";
 import defaultDomain from "../clients/src/signer/defaultDomain";
 
 import { BigNumber } from "ethers";
@@ -196,11 +195,10 @@ describe("Recovery", async function () {
     const wallet1Key = await wallet1.PublicKey();
 
     // Attacker attempts to overwite wallet 1's public key and fails
-    await expectRevert(
+    await expect(
       fx.verificationGateway
         .connect(recoverySigner)
         .recoverWallet(signedAddress, hashAttacker, salt, wallet1Key),
-      "VG: Signature not verified for wallet address",
-    );
+    ).to.be.rejectedWith("VG: Signature not verified for wallet address");
   });
 });

@@ -1,5 +1,4 @@
 import { expect } from "chai";
-import expectRevert from "../shared/helpers/expectRevert";
 
 import { ethers, network } from "hardhat";
 
@@ -203,7 +202,7 @@ describe("WalletActions", async function () {
     await fx.verificationGateway.callStatic.verify(tx);
 
     tx.operations[0].actions[0].ethValue = parseEther("1");
-    await expectRevert(fx.verificationGateway.callStatic.verify(tx));
+    await expect(fx.verificationGateway.callStatic.verify(tx)).to.be.rejected;
   });
 
   it("should process individual calls", async function () {
@@ -439,9 +438,9 @@ describe("WalletActions", async function () {
   //   });
 
   //   // shouldn't be able to directly call transferToOrigin
-  //   expectRevert(
+  //   expect(
   //     fx.verificationGateway.contract.transferToOrigin(rewardAmountToSend, testToken.address)
-  //   );
+  //   ).to.be.rejected;
 
   //   const aggTx = fx.blsWalletSigner.aggregate([tx1, tx2]);
 
@@ -460,7 +459,7 @@ describe("WalletActions", async function () {
   //   expect(rewardIncrease).to.equal(rewardAmountToSend);
 
   //   // exception when required more than rewarded
-  //   await expectRevert(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
+  //   await expect(fx.blsExpander.callStatic.blsCallMultiCheckRewardIncrease(
   //     rewardTokenAddress,
   //     rewardAmountToSend.add(1), //require more than amount sent
   //     aggTx.subTransactions.map(tx => splitHex256(tx.publicKey)),
@@ -470,7 +469,7 @@ describe("WalletActions", async function () {
   //       atomic: tx.atomic,
   //       actions: tx.actions,
   //     })),
-  //   ));
+  //   )).to.be.rejected;
 
   //   // rewardRecipient balance increased after actioning transfer
   //   let balanceBefore = await testToken.balanceOf(fx.addresses[0]);

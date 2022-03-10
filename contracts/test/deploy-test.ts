@@ -1,5 +1,4 @@
 import { expect } from "chai";
-import expectRevert from "../shared/helpers/expectRevert";
 
 import { BigNumber, ContractFactory } from "ethers";
 import { ethers } from "hardhat";
@@ -69,8 +68,7 @@ describe("Deployer", async function () {
     const testSalt = BigNumber.from(1);
     // two identical deployment promises, ie, same create2 address
     await create2Deployer.deploy(testSalt, Create2Deployer.bytecode);
-    await expectRevert(
-      create2Deployer.deploy(testSalt, Create2Deployer.bytecode),
-    );
+    await expect(create2Deployer.deploy(testSalt, Create2Deployer.bytecode)).to
+      .be.rejected;
   });
 });
