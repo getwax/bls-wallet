@@ -15,8 +15,7 @@ const WordInReview: FunctionComponent<{
   useEffect(() => {
     const isCorrect = guess === word;
     handleGuess(index, isCorrect);
-    // eslint-disable-next-line
-  }, [guess]);
+  }, [guess, index, word, handleGuess]);
 
   const getConfirmWordClass = () => {
     if (guess === '') {
