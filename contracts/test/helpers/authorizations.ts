@@ -6,23 +6,23 @@ import {
   Signature,
 } from "../../clients/src";
 
-const PROXY_ADMIN_FUNCTION_HASH_AUTH_ID =
+export const PROXY_ADMIN_FUNCTION_HASH_AUTH_ID =
   // keccak256("proxyAdminFunctionHash")
   "0xf7f75a0694ef66d3fbc2b1c58fa96cc5a0e85d8f7ef5e4663a2c37c339b3cb9e";
 
-// const RECOVERY_HASH_AUTH_ID =
-//   // keccak256("recoveryHash")
-//   "0x27690924264ef7d5a40864fd354bdcd43328b7f9e2b82210e410627ee6f95983";
+export const RECOVERY_HASH_AUTH_ID =
+  // keccak256("recoveryHash")
+  "0x27690924264ef7d5a40864fd354bdcd43328b7f9e2b82210e410627ee6f95983";
 
-const SET_TRUSTED_GATEWAY_AUTH_ID =
+export const SET_TRUSTED_GATEWAY_AUTH_ID =
   // keccak256("setTrustedGateway")
   "0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831";
 
-const SET_EXTERNAL_WALLET_AUTH_ID =
+export const SET_EXTERNAL_WALLET_AUTH_ID =
   // keccak256("setExternalWallet")
   "0xdafdb408a06a21a633291daa7073ef64b3bbe7a6d37a2bb0b36930589bbf458a";
 
-const AUTH_DELAY =
+export const AUTH_DELAY =
   // 7 days
   604800;
 
@@ -48,7 +48,7 @@ export function authorizeSetExternalWallet(
   wallet: BlsWalletWrapper,
   signature: Signature,
   publicKey: PublicKey,
-) {
+): ActionData {
   return {
     ethValue: BigNumber.from(0),
     contractAddress: wallet.address,
@@ -69,7 +69,7 @@ export function authorizeSetExternalWallet(
 export function authorizeSetTrustedGateway(
   wallet: BlsWalletWrapper,
   newGatewayAddress: string,
-) {
+): ActionData {
   return {
     ethValue: BigNumber.from(0),
     contractAddress: wallet.address,
@@ -80,6 +80,20 @@ export function authorizeSetTrustedGateway(
         AUTH_DELAY,
         ethers.utils.defaultAbiCoder.encode(["address"], [newGatewayAddress]),
       ],
+    ),
+  };
+}
+
+export function authorizeRecoveryHash(
+  wallet: BlsWalletWrapper,
+  recoveryHash: string,
+): ActionData {
+  return {
+    ethValue: BigNumber.from(0),
+    contractAddress: wallet.address,
+    encodedFunction: wallet.walletContract.interface.encodeFunctionData(
+      "authorize",
+      [RECOVERY_HASH_AUTH_ID, AUTH_DELAY, recoveryHash],
     ),
   };
 }

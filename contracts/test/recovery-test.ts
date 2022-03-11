@@ -8,6 +8,12 @@ import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
 import { BigNumber } from "ethers";
 import { PublicKey } from "../clients/deps/hubble-bls/mcl";
+import {
+  authorizeRecoveryHash,
+  AUTH_DELAY,
+  RECOVERY_HASH_AUTH_ID,
+} from "./helpers/authorizations";
+import { BlsWalletWrapper } from "../clients/src";
 
 describe("Recovery", async function () {
   this.beforeAll(async function () {
@@ -29,7 +35,7 @@ describe("Recovery", async function () {
 
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
-  let wallet1, wallet2, walletAttacker;
+  let wallet1: BlsWalletWrapper, wallet2, walletAttacker;
   let blsWallet;
   let recoverySigner;
   let hash1, hash2;
@@ -53,24 +59,30 @@ describe("Recovery", async function () {
     );
   });
 
-  it("should update bls key", async function () {
-    const newKey: PublicKey = [1, 2, 3, 4].map(BigNumber.from);
-    const initialKey = await blsWallet.getBLSPublicKey();
-
-    await fx.call(wallet1, blsWallet, "setBLSPublicKey", [newKey], 1);
-
-    expect(await blsWallet.getBLSPublicKey()).to.eql(initialKey);
-
-    await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await (await blsWallet.setAnyPending()).wait();
-
-    expect(await blsWallet.getBLSPublicKey()).to.eql(newKey);
-  });
-
   it("should set recovery hash", async function () {
     // set instantly from 0 value
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
-    expect(await blsWallet.recoveryHash()).to.equal(recoveryHash);
+    await (
+      await fx.verificationGateway.processBundle(
+        wallet1.sign({
+          nonce: await wallet1.Nonce(),
+          actions: [authorizeRecoveryHash(wallet1, recoveryHash)],
+        }),
+      )
+    ).wait();
+
+    const authorizedRecoveryHash = (
+      await wallet1.walletContract.authorizations(
+        ethers.utils.solidityKeccak256(
+          ["bytes32", "uint256"],
+          [RECOVERY_HASH_AUTH_ID, AUTH_DELAY],
+        ),
+      )
+    ).data;
+
+    expect(authorizedRecoveryHash).to.equal(recoveryHash);
+
+    // TODO: Up to here. The next thing to do is account for newBLSKey being
+    // used in the hash instead of salt.
 
     // new value set after delay from non-zero value
     salt = "0x" + "AB".repeat(32);
