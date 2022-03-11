@@ -151,17 +151,6 @@ contract VerificationGateway
         externalWalletsFromHash[publicKeyHash] = IWallet(msg.sender);
     }
 
-    function authorizeWalletAdminCall(
-        bytes32 hash,
-        bytes32 proxyAdminFunctionHash
-    ) public onlyWallet(hash) {
-        walletFromHash(hash).authorize(
-            PROXY_ADMIN_FUNCTION_HASH_AUTH_ID,
-            AUTH_DELAY,
-            proxyAdminFunctionHash
-        );
-    }
-
     /**
     Calls to proxy admin, exclusively from a wallet. Must be called twice.
     Once to set the function in the wallet as pending, then again after the recovery time.
@@ -193,17 +182,6 @@ contract VerificationGateway
         // call approved function
         (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
         require(success, "VG: call to proxy admin failed");
-    }
-
-    function authorizeRecoverWallet(
-        bytes32 hash,
-        bytes32 recoveryHash
-    ) public onlyWallet(hash) {
-        walletFromHash(hash).authorize(
-            RECOVERY_HASH_AUTH_ID,
-            AUTH_DELAY,
-            recoveryHash
-        );
     }
 
     function recoverWallet(
@@ -331,5 +309,4 @@ contract VerificationGateway
             )
         );
     }
-
 }
