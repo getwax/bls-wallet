@@ -224,6 +224,12 @@ contract VerificationGateway
 
         IWallet wallet = walletFromHash(hash);
 
+        wallet.consumeAuthorization(
+            SET_TRUSTED_GATEWAY_AUTH_ID,
+            AUTH_DELAY,
+            keccak256(abi.encode(blsGateway))
+        );
+
         require(
             VerificationGateway(blsGateway).walletFromHash(hash) == wallet,
             "Not recognized"
