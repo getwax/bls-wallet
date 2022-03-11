@@ -36,7 +36,8 @@ contract BLSWallet is Initializable, IWallet
 
     function authorizeSetTrustedGateway(address blsGateway) public onlyThis {
         authorize(
-            AuthKey(SET_TRUSTED_GATEWAY_AUTH_ID, AUTH_DELAY),
+            SET_TRUSTED_GATEWAY_AUTH_ID,
+            AUTH_DELAY,
             keccak256(abi.encode(blsGateway))
         );
     }
@@ -46,7 +47,8 @@ contract BLSWallet is Initializable, IWallet
      */
     function setTrustedGateway(address blsGateway) public onlyThis {
         consumeAuthorization(
-            AuthKey(SET_TRUSTED_GATEWAY_AUTH_ID, 604800),
+            SET_TRUSTED_GATEWAY_AUTH_ID,
+            AUTH_DELAY,
             keccak256(abi.encode(blsGateway))
         );
 
@@ -111,34 +113,38 @@ contract BLSWallet is Initializable, IWallet
     }
 
     event AuthAdded (
-        AuthKey key,
+        bytes32 id,
+        uint256 delay,
         AuthValue value
     );
 
     event AuthConsumed (
-        AuthKey key,
+        bytes32 id,
+        uint256 delay,
         AuthValue value
     );
 
     function authorize(
-        AuthKey memory key,
+        bytes32 id,
+        uint256 delay,
         bytes32 data
-    ) public onlyTrustedGateway {
-        AuthValue memory value = AuthValue(data, block.timestamp + key.delay);
-        authorizations[keccak256(abi.encode(key))] = value;
+    ) public onlyTrusted {
+        AuthValue memory value = AuthValue(data, block.timestamp + delay);
+        authorizations[keccak256(abi.encode(id, delay))] = value;
 
-        emit AuthAdded(key, value);
+        emit AuthAdded(id, delay, value);
     }
 
-    function deauthorize(AuthKey memory key) public onlyThis {
-        delete authorizations[keccak256(abi.encode(key))];
+    function deauthorize(bytes32 id, uint256 delay) public onlyThis {
+        delete authorizations[keccak256(abi.encode(id, delay))];
     }
 
     function consumeAuthorization(
-        AuthKey memory key,
+        bytes32 id,
+        uint256 delay,
         bytes32 data
     ) public onlyTrusted {
-        bytes32 keyHash = keccak256(abi.encode(key));
+        bytes32 keyHash = keccak256(abi.encode(id, delay));
         AuthValue memory value = authorizations[keyHash];
 
         require(value.validFrom != 0, "auth not found");
@@ -147,7 +153,7 @@ contract BLSWallet is Initializable, IWallet
 
         delete authorizations[keyHash];
 
-        emit AuthConsumed(key, value);
+        emit AuthConsumed(id, delay, value);
     }
 
     modifier onlyThis() {

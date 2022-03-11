@@ -16,11 +16,6 @@ interface IWallet {
         bytes encodedFunction;
     }
 
-    struct AuthKey {
-        bytes32 id;
-        uint256 delay;
-    }
-
     struct AuthValue {
         bytes32 data;
         uint256 validFrom;
@@ -40,14 +35,16 @@ interface IWallet {
     function setTrustedGateway(address gateway) external;
 
     function authorize(
-        AuthKey memory key,
+        bytes32 id,
+        uint256 delay,
         bytes32 data
     ) external;
 
-    function deauthorize(AuthKey memory key) external;
+    function deauthorize(bytes32 id, uint256 delay) external;
 
     function consumeAuthorization(
-        AuthKey memory key,
+        bytes32 id,
+        uint256 delay,
         bytes32 data
     ) external;
 }

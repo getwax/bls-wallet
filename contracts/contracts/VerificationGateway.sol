@@ -147,21 +147,13 @@ contract VerificationGateway
         externalWalletsFromHash[publicKeyHash] = IWallet(msg.sender);
     }
 
-    function authorize(IWallet wallet, bytes32 authId, bytes32 value) internal {
-        wallet.authorize(IWallet.AuthKey(authId, AUTH_DELAY), value);
-    }
-
-    function consumeAuthorization(IWallet wallet, bytes32 authId, bytes32 value) internal {
-        wallet.consumeAuthorization(IWallet.AuthKey(authId, AUTH_DELAY), value);
-    }
-
     function authorizeWalletAdminCall(
         bytes32 hash,
         bytes32 proxyAdminFunctionHash
     ) public onlyWallet(hash) {
-        authorize(
-            walletFromHash(hash),
+        walletFromHash(hash).authorize(
             PROXY_ADMIN_FUNCTION_HASH_AUTH_ID,
+            AUTH_DELAY,
             proxyAdminFunctionHash
         );
     }
@@ -188,9 +180,9 @@ contract VerificationGateway
             );
         }
 
-        consumeAuthorization(
-            wallet,
+        wallet.consumeAuthorization(
             PROXY_ADMIN_FUNCTION_HASH_AUTH_ID,
+            AUTH_DELAY,
             keccak256(encodedFunction)
         );
 
