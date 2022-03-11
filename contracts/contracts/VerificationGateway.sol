@@ -32,6 +32,10 @@ contract VerificationGateway
         // keccak256("recoveryHash")
         = 0x27690924264ef7d5a40864fd354bdcd43328b7f9e2b82210e410627ee6f95983;
 
+    bytes32 public constant SET_TRUSTED_GATEWAY_AUTH_ID
+        // keccak256("setTrustedGateway")
+        = 0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831;
+
     IBLS public blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
     address public blsWalletLogic;
@@ -201,6 +205,38 @@ contract VerificationGateway
         externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
         bytes32 newKeyHash = keccak256(abi.encodePacked(newBLSKey));
         externalWalletsFromHash[newKeyHash] = wallet;
+    }
+
+    /**
+    Wallet can migrate to a new gateway, eg additional signature support
+     */
+    function setTrustedBLSGateway(
+        bytes32 hash,
+        address blsGateway
+    ) public onlyWallet(hash) {
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { size := extcodesize(blsGateway) }
+        require(
+            (blsGateway != address(0)) && (size > 0),
+            "BLSWallet: gateway address param not valid"
+        );
+
+        IWallet wallet = walletFromHash(hash);
+
+        require(
+            VerificationGateway(blsGateway).walletFromHash(hash) == wallet,
+            "Not recognized"
+        );
+
+        // getProxyAdmin fails if not called by the current proxy admin, so this
+        // enforces that the wallet's proxy admin matches the one in the new
+        // gateway.
+        VerificationGateway(blsGateway).walletProxyAdmin().getProxyAdmin(
+            TransparentUpgradeableProxy(payable(address(wallet)))
+        );
+
+        wallet.setTrustedGateway(blsGateway);
     }
 
     /** 

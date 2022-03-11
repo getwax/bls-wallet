@@ -18,12 +18,6 @@ contract BLSWallet is Initializable, IWallet
 
     mapping(bytes32 => IWallet.AuthValue) public authorizations;
 
-    uint256 constant AUTH_DELAY = 604800; // 7 days
-
-    bytes32 constant SET_TRUSTED_GATEWAY_AUTH_ID
-        // keccak256("setTrustedGateway")
-        = 0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831;
-
     function initialize(
         address blsGateway
     ) external initializer {
@@ -34,24 +28,10 @@ contract BLSWallet is Initializable, IWallet
     receive() external payable {}
     fallback() external payable {}
 
-    function authorizeSetTrustedGateway(address blsGateway) public onlyThis {
-        authorize(
-            SET_TRUSTED_GATEWAY_AUTH_ID,
-            AUTH_DELAY,
-            keccak256(abi.encode(blsGateway))
-        );
-    }
-
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
-    function setTrustedGateway(address blsGateway) public onlyThis {
-        consumeAuthorization(
-            SET_TRUSTED_GATEWAY_AUTH_ID,
-            AUTH_DELAY,
-            keccak256(abi.encode(blsGateway))
-        );
-
+    function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
         trustedBLSGateway = blsGateway;
     }
 
