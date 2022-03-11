@@ -104,7 +104,7 @@ describe("Upgrade", async function () {
     expect(await newBLSWallet.newData()).to.equal(wallet.address);
   });
 
-  it.only("should register with new verification gateway", async function () {
+  it("should register with new verification gateway", async function () {
     // Deploy new verification gateway
     const create2Fixture = Create2Fixture.create();
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
@@ -221,12 +221,6 @@ describe("Upgrade", async function () {
     );
 
     const blsWallet = await ethers.getContractAt("BLSWallet", walletAddress);
-    // New verification gateway pending
-    expect(await blsWallet.trustedBLSGateway()).to.equal(
-      fx.verificationGateway.address,
-    );
-    // Advance time one week
-    await fx.advanceTimeBy(safetyDelaySeconds + 1);
     // set pending
     // await (await blsWallet.setAnyPending()).wait();
     // Check new verification gateway was set

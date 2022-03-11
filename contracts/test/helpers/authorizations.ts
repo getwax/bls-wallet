@@ -78,7 +78,7 @@ export function authorizeSetTrustedGateway(
       [
         SET_TRUSTED_GATEWAY_AUTH_ID,
         AUTH_DELAY,
-        ethers.utils.keccak256(newGatewayAddress),
+        ethers.utils.defaultAbiCoder.encode(["address"], [newGatewayAddress]),
       ],
     ),
   };
