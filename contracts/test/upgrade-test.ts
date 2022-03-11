@@ -6,16 +6,18 @@ import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 
-import {
-  proxyAdminBundle,
-  proxyAdminCall,
-} from "../shared/helpers/callProxyAdmin";
 import Create2Fixture from "../shared/helpers/Create2Fixture";
-import { BLSOpen } from "../typechain";
+// eslint-disable-next-line camelcase
+import { BLSOpen, ProxyAdmin__factory } from "../typechain";
 import { BigNumber } from "ethers";
 import defaultDomain from "../clients/src/signer/defaultDomain";
 import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
 import { solidityPack } from "ethers/lib/utils";
+import {
+  authorizeProxyAdminFunction,
+  authorizeSetExternalWallet,
+  authorizeSetTrustedGateway,
+} from "./helpers/authorizations";
 
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
@@ -49,11 +51,21 @@ describe("Upgrade", async function () {
 
     const wallet = await fx.lazyBlsWallets[0]();
 
-    // prepare call
-    await proxyAdminCall(fx, wallet, "upgrade", [
-      wallet.address,
-      mockWalletUpgraded.address,
-    ]);
+    const encodedUpgradeCall =
+      ProxyAdmin__factory.createInterface().encodeFunctionData("upgrade", [
+        wallet.address,
+        mockWalletUpgraded.address,
+      ]);
+
+    // authorize call
+    await (
+      await fx.verificationGateway.processBundle(
+        wallet.sign({
+          nonce: await wallet.Nonce(),
+          actions: [authorizeProxyAdminFunction(wallet, encodedUpgradeCall)],
+        }),
+      )
+    ).wait();
 
     // Advance time one week
     const latestTimestamp = (await ethers.provider.getBlock("latest"))
@@ -65,17 +77,34 @@ describe("Upgrade", async function () {
     ]);
 
     // make call
-    await proxyAdminCall(fx, wallet, "upgrade", [
-      wallet.address,
-      mockWalletUpgraded.address,
-    ]);
+    await (
+      await fx.verificationGateway.processBundle(
+        wallet.sign({
+          nonce: await wallet.Nonce(),
+          actions: [
+            {
+              ethValue: BigNumber.from(0),
+              contractAddress: fx.verificationGateway.address,
+              encodedFunction:
+                fx.verificationGateway.interface.encodeFunctionData(
+                  "walletAdminCall",
+                  [
+                    wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
+                    encodedUpgradeCall,
+                  ],
+                ),
+            },
+          ],
+        }),
+      )
+    ).wait();
 
     const newBLSWallet = MockWalletUpgraded.attach(wallet.address);
     await (await newBLSWallet.setNewData(wallet.address)).wait();
     expect(await newBLSWallet.newData()).to.equal(wallet.address);
   });
 
-  it("should register with new verification gateway", async function () {
+  it.only("should register with new verification gateway", async function () {
     // Deploy new verification gateway
     const create2Fixture = Create2Fixture.create();
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
@@ -101,21 +130,45 @@ describe("Upgrade", async function () {
     const signedAddress = blsSigner.sign(addressMessage);
 
     const proxyAdmin2Address = await vg2.walletProxyAdmin();
-    // Get admin action to change proxy
-    const bundle = await proxyAdminBundle(fx, walletOldVg, "changeProxyAdmin", [
-      walletAddress,
-      proxyAdmin2Address,
-    ]);
-    const changeProxyAction = bundle.operations[0].actions[0];
 
-    // prepare call
-    await proxyAdminCall(fx, walletOldVg, "changeProxyAdmin", [
-      walletAddress,
-      proxyAdmin2Address,
-    ]);
+    const encodedChangeProxyAdmin =
+      ProxyAdmin__factory.createInterface().encodeFunctionData(
+        "changeProxyAdmin",
+        [walletAddress, proxyAdmin2Address],
+      );
+
+    // authorize calls
+    await (
+      await fx.verificationGateway.processBundle(
+        walletOldVg.sign({
+          nonce: await walletOldVg.Nonce(),
+          actions: [
+            authorizeSetExternalWallet(
+              walletOldVg,
+              signedAddress,
+              blsSigner.pubkey,
+            ),
+            authorizeProxyAdminFunction(walletOldVg, encodedChangeProxyAdmin),
+            authorizeSetTrustedGateway(walletOldVg, vg2.address),
+          ],
+        }),
+      )
+    ).wait();
 
     // Advance time one week
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
+
+    const changeProxyAction = {
+      ethValue: BigNumber.from(0),
+      contractAddress: fx.verificationGateway.address,
+      encodedFunction: fx.verificationGateway.interface.encodeFunctionData(
+        "walletAdminCall",
+        [
+          walletOldVg.blsWalletSigner.getPublicKeyHash(walletOldVg.privateKey),
+          encodedChangeProxyAdmin,
+        ],
+      ),
+    };
 
     const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
       walletOldVg.privateKey,
@@ -175,7 +228,7 @@ describe("Upgrade", async function () {
     // Advance time one week
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     // set pending
-    await (await blsWallet.setAnyPending()).wait();
+    // await (await blsWallet.setAnyPending()).wait();
     // Check new verification gateway was set
     expect(await blsWallet.trustedBLSGateway()).to.equal(vg2.address);
 

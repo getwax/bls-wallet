@@ -42,6 +42,12 @@ interface IWallet {
 
     function deauthorize(bytes32 id, uint256 delay) external;
 
+    function checkAuthorization(
+        bytes32 id,
+        uint256 delay,
+        bytes32 data
+    ) external;
+
     function consumeAuthorization(
         bytes32 id,
         uint256 delay,

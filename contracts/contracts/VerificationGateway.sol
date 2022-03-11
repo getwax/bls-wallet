@@ -35,6 +35,10 @@ contract VerificationGateway
     bytes32 public constant SET_TRUSTED_GATEWAY_AUTH_ID
         // keccak256("setTrustedGateway")
         = 0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831;
+    
+    bytes32 public constant SET_EXTERNAL_WALLET_AUTH_ID
+        // keccak256("setExternalWallet")
+        = 0xdafdb408a06a21a633291daa7073ef64b3bbe7a6d37a2bb0b36930589bbf458a;
 
     IBLS public blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
@@ -80,7 +84,7 @@ contract VerificationGateway
         uint256 opLength = bundle.operations.length;
         require(
             opLength == bundle.senderPublicKeys.length,
-            "VG: Sender and operation length mismatch"
+            "Sender and operation length mismatch"
         );
         uint256[2][] memory messages = new uint256[2][](opLength);
 
@@ -95,7 +99,7 @@ contract VerificationGateway
             messages
         );
 
-        require(verified, "VG: All sigs not verified");
+        require(verified, "All sigs not verified");
     }
 
     /**
@@ -147,12 +151,18 @@ contract VerificationGateway
         );
         require(
             blsLib.verifySingle(signature, publicKey, addressMsg),
-            "VG: Signature not verified for wallet address."
+            "Signature not verified for wallet address."
         );
         bytes32 publicKeyHash = keccak256(abi.encodePacked(
             publicKey
         ));
-        externalWalletsFromHash[publicKeyHash] = IWallet(msg.sender);
+        IWallet wallet = IWallet(msg.sender);
+        wallet.checkAuthorization(
+            SET_EXTERNAL_WALLET_AUTH_ID,
+            AUTH_DELAY,
+            keccak256(abi.encodePacked(signature, publicKey))
+        );
+        externalWalletsFromHash[publicKeyHash] = wallet;
     }
 
     /**
@@ -173,7 +183,7 @@ contract VerificationGateway
         for (uint256 i=0; i<32; i++) {
             require(
                 (encodedFunction[selectorOffset+i] == encodedAddress[i]),
-                "VG: first param to proxy admin is not calling wallet"
+                "first param to proxy admin is not calling wallet"
             );
         }
 
@@ -185,7 +195,7 @@ contract VerificationGateway
 
         // call approved function
         (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
-        require(success, "VG: call to proxy admin failed");
+        require(success, "call to proxy admin failed");
     }
 
     function recoverWallet(
@@ -214,20 +224,12 @@ contract VerificationGateway
         bytes32 hash,
         address blsGateway
     ) public onlyWallet(hash) {
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(blsGateway) }
-        require(
-            (blsGateway != address(0)) && (size > 0),
-            "BLSWallet: gateway address param not valid"
-        );
-
         IWallet wallet = walletFromHash(hash);
 
         wallet.consumeAuthorization(
             SET_TRUSTED_GATEWAY_AUTH_ID,
             AUTH_DELAY,
-            keccak256(abi.encode(blsGateway))
+            bytes32(uint256(uint160(blsGateway)))
         );
 
         require(
@@ -241,6 +243,10 @@ contract VerificationGateway
         VerificationGateway(blsGateway).walletProxyAdmin().getProxyAdmin(
             TransparentUpgradeableProxy(payable(address(wallet)))
         );
+
+        // This would be sensible but it's not necessary and I need to free up
+        // some contract space 😬.
+        // wallet.deauthorize(SET_EXTERNAL_WALLET_AUTH_ID, AUTH_DELAY);
 
         wallet.setTrustedGateway(blsGateway);
     }
@@ -321,7 +327,7 @@ contract VerificationGateway
     modifier onlyWallet(bytes32 hash) {
         require(
             (msg.sender == address(walletFromHash(hash))),
-            "VG: not called from wallet"
+            "not called from wallet"
         );
         _;
     }

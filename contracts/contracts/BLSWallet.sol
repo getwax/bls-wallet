@@ -110,13 +110,26 @@ contract BLSWallet is Initializable, IWallet
         bytes32 data
     ) public onlyTrusted {
         AuthValue memory value = AuthValue(data, block.timestamp + delay);
-        authorizations[keccak256(abi.encode(id, delay))] = value;
+        authorizations[keccak256(abi.encodePacked(id, delay))] = value;
 
         emit AuthAdded(id, delay, value);
     }
 
     function deauthorize(bytes32 id, uint256 delay) public onlyTrusted {
-        delete authorizations[keccak256(abi.encode(id, delay))];
+        delete authorizations[keccak256(abi.encodePacked(id, delay))];
+    }
+
+    function checkAuthorization(
+        bytes32 id,
+        uint256 delay,
+        bytes32 data
+    ) public view {
+        bytes32 keyHash = keccak256(abi.encodePacked(id, delay));
+        AuthValue memory value = authorizations[keyHash];
+
+        require(value.validFrom != 0, "auth not found");
+        require(value.data == data, "not authorized");
+        require(value.validFrom <= block.timestamp, "not authorized yet");
     }
 
     function consumeAuthorization(
@@ -124,7 +137,7 @@ contract BLSWallet is Initializable, IWallet
         uint256 delay,
         bytes32 data
     ) public onlyTrusted {
-        bytes32 keyHash = keccak256(abi.encode(id, delay));
+        bytes32 keyHash = keccak256(abi.encodePacked(id, delay));
         AuthValue memory value = authorizations[keyHash];
 
         require(value.validFrom != 0, "auth not found");
