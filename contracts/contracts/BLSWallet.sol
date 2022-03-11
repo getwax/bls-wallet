@@ -135,7 +135,7 @@ contract BLSWallet is Initializable, IWallet
         emit AuthAdded(id, delay, value);
     }
 
-    function deauthorize(bytes32 id, uint256 delay) public onlyThis {
+    function deauthorize(bytes32 id, uint256 delay) public onlyTrusted {
         delete authorizations[keccak256(abi.encode(id, delay))];
     }
 
