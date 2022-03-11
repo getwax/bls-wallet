@@ -51,4 +51,3 @@ interface IWallet {
         bytes32 data
     ) external;
 }
- 

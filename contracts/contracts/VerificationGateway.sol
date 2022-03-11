@@ -22,6 +22,12 @@ contract VerificationGateway
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_KEY_LEN = 4;
 
+    uint256 constant AUTH_DELAY = 604800; // 7 days
+
+    bytes32 constant PROXY_ADMIN_FUNCTION_HASH_AUTH_ID
+        // keccak256("proxyAdminFunctionHash")
+        = 0xf7f75a0694ef66d3fbc2b1c58fa96cc5a0e85d8f7ef5e4663a2c37c339b3cb9e;
+
     IBLS public blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
     address public blsWalletLogic;
@@ -141,6 +147,25 @@ contract VerificationGateway
         externalWalletsFromHash[publicKeyHash] = IWallet(msg.sender);
     }
 
+    function authorize(IWallet wallet, bytes32 authId, bytes32 value) internal {
+        wallet.authorize(IWallet.AuthKey(authId, AUTH_DELAY), value);
+    }
+
+    function consumeAuthorization(IWallet wallet, bytes32 authId, bytes32 value) internal {
+        wallet.consumeAuthorization(IWallet.AuthKey(authId, AUTH_DELAY), value);
+    }
+
+    function authorizeWalletAdminCall(
+        bytes32 hash,
+        bytes32 proxyAdminFunctionHash
+    ) public onlyWallet(hash) {
+        authorize(
+            walletFromHash(hash),
+            PROXY_ADMIN_FUNCTION_HASH_AUTH_ID,
+            proxyAdminFunctionHash
+        );
+    }
+
     /**
     Calls to proxy admin, exclusively from a wallet. Must be called twice.
     Once to set the function in the wallet as pending, then again after the recovery time.
@@ -163,58 +188,15 @@ contract VerificationGateway
             );
         }
 
-        wallet.setAnyPending();
-
-        // ensure wallet has pre-approved encodedFunction
-        bytes32 approvedFunctionHash = wallet.approvedProxyAdminFunctionHash();
-        bytes32 encodedFunctionHash = keccak256(encodedFunction);
-        bool matchesApproved = encodedFunctionHash == approvedFunctionHash;
-
-        if (matchesApproved == false) {
-            // prepare for a future call
-            wallet.setProxyAdminFunctionHash(encodedFunctionHash);
-        }
-        else {
-            // call approved function
-            (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
-            require(success, "VG: call to proxy admin failed");
-            wallet.clearApprovedProxyAdminFunctionHash();
-        }
-    }
-
-    function recoverWallet(
-        bytes32 blsKeyHash,
-        bytes32 salt,
-        uint256[4] memory newBLSKey
-    ) public {
-        IWallet wallet = walletFromHash(blsKeyHash);
-        bytes32 recoveryHash = keccak256(
-            abi.encodePacked(msg.sender, blsKeyHash, salt)
+        consumeAuthorization(
+            wallet,
+            PROXY_ADMIN_FUNCTION_HASH_AUTH_ID,
+            keccak256(encodedFunction)
         );
-        if (recoveryHash == wallet.recoveryHash()) {
-            // override mapping of old key hash (takes precedence over create2 address)
-            externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
-            bytes32 newKeyHash = keccak256(abi.encodePacked(newBLSKey));
-            externalWalletsFromHash[newKeyHash] = wallet;
-            wallet.recover(newBLSKey);
-        }
-    }
 
-    /**
-    Wallet can migrate to a new gateway, eg additional signature support
-     */
-    function setTrustedBLSGateway(
-        bytes32 hash,
-        address blsGateway
-    ) public onlyWallet(hash) {
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(blsGateway) }
-        require(
-            (blsGateway != address(0)) && (size > 0),
-            "BLSWallet: gateway address param not valid"
-        );
-        walletFromHash(hash).setTrustedGateway(blsGateway);
+        // call approved function
+        (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
+        require(success, "VG: call to proxy admin failed");
     }
 
     /** 
@@ -271,7 +253,6 @@ contract VerificationGateway
                 address(walletProxyAdmin),
                 getInitializeData()
             ));
-            IBLSWallet(payable(blsWallet)).latchBLSPublicKey(publicKey);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
