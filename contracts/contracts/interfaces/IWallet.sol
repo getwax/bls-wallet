@@ -5,7 +5,6 @@ pragma abicoder v2;
 /** Interface for a contract wallet that can perform Operations
  */
 interface IWallet {
-
     struct Operation {
         uint256 nonce;
         IWallet.ActionData[] actions;
@@ -15,6 +14,16 @@ interface IWallet {
         uint256 ethValue;
         address contractAddress;
         bytes encodedFunction;
+    }
+
+    struct AuthKey {
+        bytes32 id;
+        uint256 delay;
+    }
+
+    struct AuthValue {
+        bytes32 data;
+        uint256 validFrom;
     }
 
     function initialize(address gateway) external;
@@ -27,28 +36,19 @@ interface IWallet {
         bytes[] memory results
     );
 
-    function recoveryHash() external returns (bytes32);
-    function recover(uint256[4] calldata newBLSKey) external;
-
     // prepares gateway to be set (after pending timestamp)
     function setTrustedGateway(address gateway) external;
-    // checks any pending variables and sets them if past their timestamp
-    function setAnyPending() external;
 
-    function setProxyAdminFunctionHash(bytes32) external;
-    function approvedProxyAdminFunctionHash() external view returns (bytes32);
-    function clearApprovedProxyAdminFunctionHash() external;
-}
-
-/** Interface for bls-specific functions
- */
-interface IBLSWallet is IWallet {
-    // type BLSPublicKey is uint256[4]; // The underlying type for a user defined value type has to be an elementary value type.
-
-    function latchBLSPublicKey(
-        uint256[4] memory blsKey
+    function authorize(
+        AuthKey memory key,
+        bytes32 data
     ) external;
 
-    function getBLSPublicKey() external view returns (uint256[4] memory);
- }
+    function deauthorize(AuthKey memory key) external;
+
+    function consumeAuthorization(
+        AuthKey memory key,
+        bytes32 data
+    ) external;
+}
  

@@ -11,182 +11,37 @@ import "./interfaces/IWallet.sol";
 /** Minimal upgradable smart contract wallet.
     Generic calls can only be requested by its trusted gateway.
  */
-contract BLSWallet is Initializable, IBLSWallet
+contract BLSWallet is Initializable, IWallet
 {
     uint256 public nonce;
-    bytes32 public recoveryHash;
-    bytes32 pendingRecoveryHash;
-    uint256 pendingRecoveryHashTime;
-    bytes32 public approvedProxyAdminFunctionHash;
-    bytes32 pendingPAFunctionHash;
-    uint256 pendingPAFunctionTime;
-
-    // BLS variables
-    uint256[4] public blsPublicKey;
-    uint256[4] pendingBLSPublicKey;
-    uint256 pendingBLSPublicKeyTime;
     address public trustedBLSGateway;
-    address pendingBLSGateway;
-    uint256 pendingGatewayTime;
 
-    event PendingRecoveryHashSet(
-        bytes32 pendingRecoveryHash
-    );
-    event PendingBLSKeySet(
-        uint256[4] pendingBLSKey
-    );
-    event PendingGatewaySet(
-        address pendingGateway
-    );
-    event PendingProxyAdminFunctionHashSet(
-        bytes32 pendingProxyAdminFunctionHash
-    );
-
-    event RecoveryHashUpdated(
-        bytes32 oldHash,
-        bytes32 newHash
-    );
-    event BLSKeySet(
-        uint256[4] oldBLSKey,
-        uint256[4] newBLSKey
-    );
-    event GatewayUpdated(
-        address oldGateway,
-        address newGateway
-    );
-    event ProxyAdminFunctionHashApproved(
-        bytes32 approvedProxyAdminHash
-    );
+    mapping(bytes32 => IWallet.AuthValue) public authorizations;
 
     function initialize(
         address blsGateway
     ) external initializer {
         nonce = 0;
         trustedBLSGateway = blsGateway;
-        pendingGatewayTime = type(uint256).max;
-        pendingPAFunctionTime = type(uint256).max;
-    }
-
-    /** */
-    function latchBLSPublicKey(
-        uint256[4] memory blsKey
-    ) public onlyTrustedGateway {
-        require(isZeroBLSKey(blsPublicKey), "BLSWallet: public key already set");
-        blsPublicKey = blsKey;
-    }
-
-    function isZeroBLSKey(uint256[4] memory blsKey) public pure returns (bool) {
-        bool isZero = true;
-        for (uint256 i=0; isZero && i<4; i++) {
-            isZero = (blsKey[i] == 0);
-        }
-        return isZero;
     }
 
     receive() external payable {}
     fallback() external payable {}
 
     /**
-    BLS public key format, contract can be upgraded for other types
-     */
-    function getBLSPublicKey() external view returns (uint256[4] memory) {
-        return blsPublicKey;
-    }
-
-    /**
-    Wallet can update its recovery hash
-     */
-    function setRecoveryHash(bytes32 hash) public onlyThis {
-        if (recoveryHash == bytes32(0)) {
-            recoveryHash = hash;
-            clearPendingRecoveryHash();
-            emit RecoveryHashUpdated(bytes32(0), recoveryHash);
-        }
-        else {
-            pendingRecoveryHash = hash;
-            pendingRecoveryHashTime = block.timestamp + 604800; // 1 week from now
-            emit PendingRecoveryHashSet(pendingRecoveryHash);
-        }
-    }
-
-    /**
-    Wallet can update its BLS key
-     */
-    function setBLSPublicKey(uint256[4] memory blsKey) public onlyThis {
-        require(isZeroBLSKey(blsKey) == false, "BLSWallet: blsKey must be non-zero");
-        pendingBLSPublicKey = blsKey;
-        pendingBLSPublicKeyTime = block.timestamp + 604800; // 1 week from now
-        emit PendingBLSKeySet(pendingBLSPublicKey);
-    }
-
-    /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
-    function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
-        pendingBLSGateway = blsGateway;
-        pendingGatewayTime = block.timestamp + 604800; // 1 week from now
-        emit PendingGatewaySet(pendingBLSGateway);
-    }
+    function setTrustedGateway(address blsGateway) public {
+        consumeAuthorization(
+            AuthKey(
+                // keccak256("setTrustedGateway")
+                0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831,
+                604800 // 7 days
+            ),
+            keccak256(abi.encode(blsGateway))
+        );
 
-    /**
-    Prepare wallet with desired implementation contract to upgrade to.
-    */
-    function setProxyAdminFunctionHash(bytes32 encodedFunctionHash) public onlyTrustedGateway {
-        pendingPAFunctionHash = encodedFunctionHash;
-        pendingPAFunctionTime = block.timestamp + 604800; // 1 week from now
-        emit PendingProxyAdminFunctionHashSet(encodedFunctionHash);
-    }
-
-    /**
-    Set results of any pending set operation if their respective timestamp has elapsed.
-     */
-    function setAnyPending() public {
-        if (block.timestamp > pendingRecoveryHashTime) {
-            bytes32 previousRecoveryHash = recoveryHash;
-            recoveryHash = pendingRecoveryHash;
-            clearPendingRecoveryHash();
-            emit RecoveryHashUpdated(previousRecoveryHash, recoveryHash);
-        }
-        if (block.timestamp > pendingBLSPublicKeyTime) {
-            uint256[4] memory previousBLSPublicKey = blsPublicKey;
-            blsPublicKey = pendingBLSPublicKey;
-            pendingBLSPublicKeyTime = type(uint256).max;
-            pendingBLSPublicKey = [0,0,0,0];
-            emit BLSKeySet(previousBLSPublicKey, blsPublicKey);
-        }
-        if (block.timestamp > pendingGatewayTime) {
-            address previousGateway = trustedBLSGateway;
-            trustedBLSGateway = pendingBLSGateway;
-            pendingGatewayTime = type(uint256).max;
-            pendingBLSGateway = address(0);
-            emit GatewayUpdated(previousGateway, trustedBLSGateway);
-        }
-        if (block.timestamp > pendingPAFunctionTime) {
-            approvedProxyAdminFunctionHash = pendingPAFunctionHash;
-            pendingPAFunctionTime = type(uint256).max;
-            pendingPAFunctionHash = 0;
-            emit ProxyAdminFunctionHashApproved(approvedProxyAdminFunctionHash);
-        }
-    }
-
-    function clearPendingRecoveryHash() internal {
-        pendingRecoveryHashTime = type(uint256).max;
-        pendingRecoveryHash = bytes32(0);
-    }
-
-    function recover(
-        uint256[4] calldata newBLSKey
-    ) public onlyTrustedGateway {
-        // set new bls key
-        blsPublicKey = newBLSKey;
-        // clear any pending operations
-        clearPendingRecoveryHash();
-        pendingBLSPublicKeyTime = type(uint256).max;
-        pendingBLSPublicKey = [0,0,0,0];
-        pendingGatewayTime = type(uint256).max;
-        pendingBLSGateway = address(0);
-        pendingPAFunctionTime = type(uint256).max;
-        pendingPAFunctionHash = 0;
+        trustedBLSGateway = blsGateway;
     }
 
     /**
@@ -239,15 +94,51 @@ contract BLSWallet is Initializable, IBLSWallet
         }
     }
 
-    function clearApprovedProxyAdminFunctionHash() public onlyTrustedGateway {
-        approvedProxyAdminFunctionHash = 0;
-    }
-
     /**
     Consecutive nonce increment, contract can be upgraded for other types
      */
     function incrementNonce() private {
         nonce++;
+    }
+
+    event AuthAdded (
+        AuthKey key,
+        AuthValue value
+    );
+
+    event AuthConsumed (
+        AuthKey key,
+        AuthValue value
+    );
+
+    function authorize(
+        AuthKey memory key,
+        bytes32 data
+    ) public onlyTrustedGateway {
+        AuthValue memory value = AuthValue(data, block.timestamp + key.delay);
+        authorizations[keccak256(abi.encode(key))] = value;
+
+        emit AuthAdded(key, value);
+    }
+
+    function deauthorize(AuthKey memory key) public onlyThis {
+        delete authorizations[keccak256(abi.encode(key))];
+    }
+
+    function consumeAuthorization(
+        AuthKey memory key,
+        bytes32 data
+    ) public onlyTrusted {
+        bytes32 keyHash = keccak256(abi.encode(key));
+        AuthValue memory value = authorizations[keyHash];
+
+        require(value.validFrom != 0, "auth not found");
+        require(value.data == data, "not authorized");
+        require(value.validFrom <= block.timestamp, "not authorized yet");
+
+        delete authorizations[keyHash];
+
+        emit AuthConsumed(key, value);
     }
 
     modifier onlyThis() {
@@ -263,9 +154,19 @@ contract BLSWallet is Initializable, IBLSWallet
          _;
     }
 
+    modifier onlyTrusted() {
+        require(
+            (
+                msg.sender == address(this) ||
+                msg.sender == trustedBLSGateway
+            ),
+            "BLSWallet: only callable from this or trusted gateway"
+        );
+        _;
+    }
+
     modifier thisNonce(uint256 opNonce) {
         require(opNonce == nonce, "BLSWallet: only callable with current nonce");
         _;
     }
-
 }
