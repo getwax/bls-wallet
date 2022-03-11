@@ -22,13 +22,13 @@ contract VerificationGateway
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_KEY_LEN = 4;
 
-    uint256 constant AUTH_DELAY = 604800; // 7 days
+    uint256 public constant AUTH_DELAY = 604800; // 7 days
 
-    bytes32 constant PROXY_ADMIN_FUNCTION_HASH_AUTH_ID
+    bytes32 public constant PROXY_ADMIN_FUNCTION_HASH_AUTH_ID
         // keccak256("proxyAdminFunctionHash")
         = 0xf7f75a0694ef66d3fbc2b1c58fa96cc5a0e85d8f7ef5e4663a2c37c339b3cb9e;
 
-    bytes32 constant RECOVERY_HASH_AUTH_ID
+    bytes32 public constant RECOVERY_HASH_AUTH_ID
         // keccak256("recoveryHash")
         = 0x27690924264ef7d5a40864fd354bdcd43328b7f9e2b82210e410627ee6f95983;
 
