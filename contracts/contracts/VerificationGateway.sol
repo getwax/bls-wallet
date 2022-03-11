@@ -28,6 +28,10 @@ contract VerificationGateway
         // keccak256("proxyAdminFunctionHash")
         = 0xf7f75a0694ef66d3fbc2b1c58fa96cc5a0e85d8f7ef5e4663a2c37c339b3cb9e;
 
+    bytes32 constant RECOVERY_HASH_AUTH_ID
+        // keccak256("recoveryHash")
+        = 0x27690924264ef7d5a40864fd354bdcd43328b7f9e2b82210e410627ee6f95983;
+
     IBLS public blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
     address public blsWalletLogic;
@@ -189,6 +193,36 @@ contract VerificationGateway
         // call approved function
         (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
         require(success, "VG: call to proxy admin failed");
+    }
+
+    function authorizeRecoverWallet(
+        bytes32 hash,
+        bytes32 recoveryHash
+    ) public onlyWallet(hash) {
+        walletFromHash(hash).authorize(
+            RECOVERY_HASH_AUTH_ID,
+            AUTH_DELAY,
+            recoveryHash
+        );
+    }
+
+    function recoverWallet(
+        bytes32 blsKeyHash,
+        uint256[4] memory newBLSKey
+    ) public {
+        IWallet wallet = walletFromHash(blsKeyHash);
+        bytes32 recoveryHash = keccak256(
+            abi.encodePacked(msg.sender, blsKeyHash, newBLSKey)
+        );
+        wallet.consumeAuthorization(
+            RECOVERY_HASH_AUTH_ID,
+            AUTH_DELAY,
+            recoveryHash
+        );
+        // override mapping of old key hash (takes precedence over create2 address)
+        externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
+        bytes32 newKeyHash = keccak256(abi.encodePacked(newBLSKey));
+        externalWalletsFromHash[newKeyHash] = wallet;
     }
 
     /** 
