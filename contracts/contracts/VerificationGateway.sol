@@ -120,14 +120,14 @@ contract VerificationGateway
     NB: this is independent of the proxyAdmin, and if desired can be changed
     via the corresponding call.
     @dev overrides previous wallet address registered with the given public key
-    @param signature of message containing only the calling address
+    @param messageSenderSignature signature of message containing only the calling address
     @param publicKey that signed the caller's address
      */
     function setExternalWallet(
-        uint256[2] calldata signature,
+        uint256[2] calldata messageSenderSignature,
         uint256[BLS_KEY_LEN] calldata publicKey
     ) public {
-        safeSetWallet(signature, publicKey, msg.sender);
+        safeSetWallet(messageSenderSignature, publicKey, msg.sender);
     }
 
     /**
@@ -173,13 +173,13 @@ contract VerificationGateway
 
     /**
     Recovers a wallet, setting a new bls public key.
-    @param signature of message containing only the calling address
+    @param walletAddressSignature signature of message containing only the wallet address
     @param blsKeyHash calling wallet's bls public key hash
     @param salt used in the recovery hash
     @param newBLSKey to set as the wallet's bls public key
      */
     function recoverWallet(
-        uint256[2] calldata signature,
+        uint256[2] calldata walletAddressSignature,
         bytes32 blsKeyHash,
         bytes32 salt,
         uint256[BLS_KEY_LEN] calldata newBLSKey
@@ -191,7 +191,7 @@ contract VerificationGateway
         if (recoveryHash == wallet.recoveryHash()) {
             // override mapping of old key hash (takes precedence over create2 address)
             externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
-            safeSetWallet(signature, newBLSKey, address(wallet));
+            safeSetWallet(walletAddressSignature, newBLSKey, address(wallet));
             wallet.recover(newBLSKey);
         }
     }
@@ -293,12 +293,12 @@ contract VerificationGateway
 
     /**
     @dev safely sets/overwrites the wallet for the given public key, ensuring it is properly signed
-    @param signature of message containing only the wallet address
+    @param wallletAddressSignature signature of message containing only the wallet address
     @param publicKey that signed the wallet address
     @param wallet address to set
      */
     function safeSetWallet(
-        uint256[2] calldata signature,
+        uint256[2] calldata wallletAddressSignature,
         uint256[BLS_KEY_LEN] calldata publicKey,
         address wallet
     ) private {
@@ -307,7 +307,7 @@ contract VerificationGateway
             abi.encodePacked(wallet)
         );
         require(
-            blsLib.verifySingle(signature, publicKey, addressMsg),
+            blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
             "VG: Signature not verified for wallet address."
         );
         bytes32 publicKeyHash = keccak256(abi.encodePacked(

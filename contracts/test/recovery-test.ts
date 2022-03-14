@@ -111,7 +111,7 @@ describe("Recovery", async function () {
     await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
     await (await blsWallet.setAnyPending()).wait();
 
-    const signedAddress = await signWalletAddress(
+    const addressSignature = await signWalletAddress(
       wallet1.address,
       wallet2.privateKey,
     );
@@ -120,7 +120,7 @@ describe("Recovery", async function () {
     await (
       await fx.verificationGateway
         .connect(recoverySigner)
-        .recoverWallet(signedAddress, hash1, salt, safeKey)
+        .recoverWallet(addressSignature, hash1, salt, safeKey)
     ).wait();
 
     // key reset via recovery
@@ -188,7 +188,7 @@ describe("Recovery", async function () {
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await (await attackerWalletContract.setAnyPending()).wait();
 
-    const signedAddress = await signWalletAddress(
+    const addressSignature = await signWalletAddress(
       walletAttacker.address,
       walletAttacker.privateKey,
     );
@@ -198,7 +198,7 @@ describe("Recovery", async function () {
     await expect(
       fx.verificationGateway
         .connect(recoverySigner)
-        .recoverWallet(signedAddress, hashAttacker, salt, wallet1Key),
+        .recoverWallet(addressSignature, hashAttacker, salt, wallet1Key),
     ).to.be.rejectedWith("VG: Signature not verified for wallet address");
   });
 });
