@@ -13,22 +13,22 @@ const navigationTargets = [
   {
     name: 'Wallets',
     icon: <Wallet className="icon-md" />,
-    target: '/',
+    target: '/wallet',
   },
   {
     name: 'Connections',
     icon: <LinkIcon className="icon-md" />,
-    target: '/connections',
+    target: '/wallet/connections',
   },
   {
     name: 'Contacts',
     icon: <AddressBook className="icon-md" />,
-    target: '/contacts',
+    target: '/wallet/contacts',
   },
   {
     name: 'Settings',
     icon: <GearSix className="icon-md" />,
-    target: '/settings',
+    target: '/wallet/settings',
   },
 ];
 
