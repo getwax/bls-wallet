@@ -2028,6 +2028,14 @@
   dependencies:
     mkdirp "^1.0.4"
 
+"@thehubbleproject/bls@^0.5.1":
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/@thehubbleproject/bls/-/bls-0.5.1.tgz#6b0565f56fc9c8896dcf3c8f0e2214b69a06167f"
+  integrity sha512-g5zeMZ8js/yg6MjFoC+pt0eqfCL2jC46yLY1LbKNriyqftB1tE3jpG/FMMDIW3x9/yRg/AgUb8Nluqj15tQs+A==
+  dependencies:
+    ethers "^5.5.3"
+    mcl-wasm "^1.0.0"
+
 "@toruslabs/openlogin-jrpc@^1.3.3":
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/@toruslabs/openlogin-jrpc/-/openlogin-jrpc-1.3.3.tgz#cd5671b2a491281148565b9a965799bbe50a9c39"
@@ -3167,14 +3175,13 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.1.1.tgz#bf313053978b2cd4c444a48795710be05c785702"
   integrity sha512-bLG6PHOCZJKNshTjGRBvET0vTciwQE6zFKOKKXPDJfwFBd4Ac0yBfPZqcGvGJap50l7ktvlpFqc2jGVaUgbJgg==
 
-bls-wallet-clients@0.5.3:
-  version "0.5.3"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.5.3.tgz#6a9cab07082040837f57856b528f56ea3c542277"
-  integrity sha512-hKo4RQ566f3J3Wu6Z8KgRnBc6cMrweK1O7RUjQs2sXNxOze/pYvAnqnlisfU5GF9cHQTM4txykCsJdsYxCAOsg==
+bls-wallet-clients@0.5.4-f2bad77:
+  version "0.5.4-f2bad77"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.5.4-f2bad77.tgz#a052ea6447180bb0d7cb0209ebf5b1525f14ab39"
+  integrity sha512-54CZUjjoh4jDiHT6+5EtTQgLNsm/jmldmAgT2aC/l9/viGcY9st6NBTsiwwiMIwy2Cy3tMVkrHR/vOBdMcJE0g==
   dependencies:
-    ethers "^5.5.2"
-    mcl-wasm "0.7.6"
-    typescript "^4.3.5"
+    "@thehubbleproject/bls" "^0.5.1"
+    ethers "5.5.4"
 
 bluebird@^3.5.5:
   version "3.7.2"
@@ -5054,7 +5061,7 @@ ethers@5.5.4:
     "@ethersproject/web" "5.5.1"
     "@ethersproject/wordlists" "5.5.0"
 
-ethers@^5.5.2:
+ethers@^5.5.3:
   version "5.6.0"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.6.0.tgz#924eb965dc03963fad0a09ce687efdf49aca3b45"
   integrity sha512-00FP71jt6bW3ndO5DhgH9mLIZhoCGnAKFLu8qig5KmV03ubEChKf2ilB3g6fX512tTYo+tSMDJ5WpCJWdBHkBQ==
@@ -6723,10 +6730,10 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-mcl-wasm@0.7.6:
-  version "0.7.6"
-  resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-0.7.6.tgz#c1789ebda5565d49b77d2ee195ff3e4d282f1554"
-  integrity sha512-cbRl3sUOkBeRY2hsM4t1EIln2TIdQBkSiTOqNTv/4Hu5KOECnMWCgjIf+a9Ebunyn22VKqkMF3zj6ejRzz7YBw==
+mcl-wasm@^1.0.0:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-1.0.1.tgz#b1f76785be72d33b7ccb2ae6c3f4760949a8ebb7"
+  integrity sha512-LdQZnVCgrHkVyBNdBuEkhEj0WRzCxRMFRr/H9FmhqwNj1xz721nLbYEbJ19gL1Q621cyHtU51lIgqJXVlKvuzA==
 
 md5.js@^1.3.4:
   version "1.3.5"
@@ -9371,11 +9378,6 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
-
-typescript@^4.3.5:
-  version "4.6.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.6.2.tgz#fe12d2727b708f4eef40f51598b3398baa9611d4"
-  integrity sha512-HM/hFigTBHZhLXshn9sN37H085+hQGeJHJ/X7LpBWLID/fbc2acUMfU+lGD98X81sKP+pFa9f0DZmCwB9GnbAg==
 
 typescript@^4.5.3:
   version "4.5.3"
