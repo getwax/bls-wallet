@@ -64,7 +64,7 @@ export default class NetworkController
       properties: {
         EIPS: { 1559: undefined },
       },
-      providerConfig: SUPPORTED_NETWORKS[CHAINS.MAINNET],
+      providerConfig: SUPPORTED_NETWORKS[CHAINS.LOCAL],
     };
     this.initialize();
     // when a new network is set, we set to loading first and then when connection succeeds, we update the network

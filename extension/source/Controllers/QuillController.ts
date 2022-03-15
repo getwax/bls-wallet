@@ -56,7 +56,7 @@ export const DEFAULT_CONFIG = {
     pollInterval: 600_000,
   },
   NetworkControllerConfig: {
-    providerConfig: SUPPORTED_NETWORKS[CHAINS.MAINNET],
+    providerConfig: SUPPORTED_NETWORKS[CHAINS.LOCAL],
   },
   PreferencesControllerConfig: {},
 };
