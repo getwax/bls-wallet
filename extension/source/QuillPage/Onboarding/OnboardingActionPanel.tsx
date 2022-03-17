@@ -33,12 +33,7 @@ const OnboardingActionPanel: FunctionComponent = () => {
                 setParams({ p: '3' });
               }}
             />,
-            <SecretPhrasePanel
-              key={3}
-              onComplete={() => {
-                setParams({ p: '1' });
-              }}
-            />,
+            <SecretPhrasePanel key={3} />,
           ][pageIndex]
         }
       </div>

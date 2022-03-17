@@ -4,18 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import OnboardingActionPanel from './OnboardingActionPanel';
 import OnboardingInfoPanel from './OnboardingInfoPanel';
 
-const onboardingComplete = false;
-
 const OnboardingPage: FunctionComponent = () => {
-  let navigate = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // TODO - add loading state to prevent
-    // DOM loading if onboarding complete
+    const onboardingComplete =
+      // @ts-ignore
+      window.quillController.keyringController.isOnboardingComplete();
+
     if (onboardingComplete) {
       navigate('/wallet/');
     }
-  }, [onboardingComplete]);
+  }, []);
 
   return (
     <div className="flex h-screen">

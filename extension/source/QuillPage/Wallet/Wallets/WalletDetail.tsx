@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AssetsTable } from './AssetsTable';
+// import { AssetsTable } from './AssetsTable';
 
 export interface TokenData {
   token: string;
@@ -9,50 +9,50 @@ export interface TokenData {
   action: string;
 }
 
-const data: TokenData[] = [
-  {
-    token: 'ETH',
-    tokenVal: 0.835,
-    usdVal: 3398.27,
-    lastTx: '12/10/2021',
-    action: 'Transfer',
-  },
-  {
-    token: 'ENJ',
-    tokenVal: 1220.18,
-    usdVal: 398.27,
-    lastTx: '12/10/2021',
-    action: 'Transfer',
-  },
-  {
-    token: 'USDT',
-    tokenVal: 187.12,
-    usdVal: 98.27,
-    lastTx: '12/10/2021',
-    action: 'Transfer',
-  },
-  {
-    token: 'ETH',
-    tokenVal: 0.835,
-    usdVal: 3398.27,
-    lastTx: '12/10/2021',
-    action: 'Transfer',
-  },
-  {
-    token: 'DAI',
-    tokenVal: 717.64,
-    usdVal: 717.27,
-    lastTx: '12/10/2021',
-    action: 'Transfer',
-  },
-  {
-    token: 'OMG',
-    tokenVal: 371.82,
-    usdVal: 33098.27,
-    lastTx: '12/10/2021',
-    action: 'Transfer',
-  },
-];
+// const data: TokenData[] = [
+//   {
+//     token: 'ETH',
+//     tokenVal: 0.835,
+//     usdVal: 3398.27,
+//     lastTx: '12/10/2021',
+//     action: 'Transfer',
+//   },
+//   {
+//     token: 'ENJ',
+//     tokenVal: 1220.18,
+//     usdVal: 398.27,
+//     lastTx: '12/10/2021',
+//     action: 'Transfer',
+//   },
+//   {
+//     token: 'USDT',
+//     tokenVal: 187.12,
+//     usdVal: 98.27,
+//     lastTx: '12/10/2021',
+//     action: 'Transfer',
+//   },
+//   {
+//     token: 'ETH',
+//     tokenVal: 0.835,
+//     usdVal: 3398.27,
+//     lastTx: '12/10/2021',
+//     action: 'Transfer',
+//   },
+//   {
+//     token: 'DAI',
+//     tokenVal: 717.64,
+//     usdVal: 717.27,
+//     lastTx: '12/10/2021',
+//     action: 'Transfer',
+//   },
+//   {
+//     token: 'OMG',
+//     tokenVal: 371.82,
+//     usdVal: 33098.27,
+//     lastTx: '12/10/2021',
+//     action: 'Transfer',
+//   },
+// ];
 
 const tabs = [{ name: 'Assets' }, { name: 'Outbox' }, { name: 'Transactions' }];
 
@@ -83,9 +83,9 @@ export const WalletDetail: React.FunctionComponent = () => {
 
       <input placeholder="Search" />
 
-      <AssetsTable data={data} />
-      <AssetsTable data={data} />
-      <AssetsTable data={data} />
+      {/* <AssetsTable data={data} /> */}
+      {/* <AssetsTable data={data} /> */}
+      {/* <AssetsTable data={data} /> */}
     </div>
   );
 };

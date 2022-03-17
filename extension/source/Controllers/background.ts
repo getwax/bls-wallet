@@ -91,6 +91,9 @@ function setupController(initState: unknown): void {
     },
   });
 
+  // @ts-ignore
+  window.quillController = controller;
+
   // setup state persistence
   pump(
     new ControllerStoreStream(controller),

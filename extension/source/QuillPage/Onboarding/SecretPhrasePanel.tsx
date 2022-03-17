@@ -6,8 +6,7 @@ import ViewSecretPhrasePanel from './ViewSecretPhrasePanel';
 
 const SecretPhrasePanel: FunctionComponent<{
   secretPhrase?: string[];
-  onComplete?: () => void;
-}> = ({ onComplete = () => {} }) => {
+}> = () => {
   const [mnemonic, setMnemonic] = useState<string[]>([]);
 
   useEffect(() => {
@@ -30,7 +29,6 @@ const SecretPhrasePanel: FunctionComponent<{
     <ReviewSecretPhrasePanel
       secretPhrase={mnemonic}
       onBack={() => setInReview(false)}
-      onComplete={onComplete}
     />
   );
 };

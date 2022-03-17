@@ -18,6 +18,7 @@ export interface KeyringControllerConfig extends BaseConfig {
 }
 
 export interface KeyringControllerState extends BaseState {
+  HDPhrase: string;
   wallets: KeyPair[];
   chainId: string;
 }
@@ -32,6 +33,11 @@ export interface IKeyringController {
    * Creates a new key pair
    */
   createAccount(): Promise<string>;
+
+  /**
+   * Creates a Deterministic Account based on seed phrase
+   */
+  createHDAccount(): Promise<string>;
 
   /**
    * Imports a key pair

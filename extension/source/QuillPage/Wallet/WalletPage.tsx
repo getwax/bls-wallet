@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
@@ -42,6 +42,19 @@ const routes: IRoutes[] = [
 ];
 
 export const WalletPage: React.FunctionComponent = () => {
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const onboardingComplete =
+      // @ts-ignore
+      window.quillController.keyringController.isOnboardingComplete();
+    console.log(onboardingComplete);
+
+    if (!onboardingComplete) {
+      navigate('/onboarding?p=1');
+    }
+  }, []);
+
   return (
     <div className="flex h-screen">
       {/* Navigation */}
