@@ -227,10 +227,7 @@ contract VerificationGateway
             TransparentUpgradeableProxy(payable(address(wallet)))
         );
 
-        // This would be sensible but it's not necessary and I need to free up
-        // some contract space 😬.
-        // wallet.deauthorize(SET_EXTERNAL_WALLET_AUTH_ID, AUTH_DELAY);
-
+        wallet.deauthorize(SET_PUBLIC_KEY_AUTH_ID, AUTH_DELAY);
         wallet.setTrustedGateway(blsGateway);
     }
 
