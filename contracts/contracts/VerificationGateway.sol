@@ -139,13 +139,14 @@ contract VerificationGateway
      */
     function setExternalWallet(
         uint256[2] calldata messageSenderSignature,
+        bytes32 previousPublicKeyHash,
         uint256[BLS_KEY_LEN] calldata publicKey
     ) public {
         IWallet wallet = IWallet(msg.sender);
         wallet.checkAuthorization(
             SET_EXTERNAL_WALLET_AUTH_ID,
             AUTH_DELAY,
-            keccak256(abi.encodePacked(messageSenderSignature, publicKey))
+            keccak256(abi.encodePacked(messageSenderSignature, previousPublicKeyHash, publicKey))
         );
         uint256[2] memory addressMsg = blsLib.hashToPoint(
             BLS_DOMAIN,
@@ -155,6 +156,10 @@ contract VerificationGateway
             blsLib.verifySingle(messageSenderSignature, publicKey, addressMsg),
             "VG: Signature not verified for wallet address."
         );
+        if (previousPublicKeyHash != bytes32(0)) {
+            require(externalWalletsFromHash[previousPublicKeyHash] == wallet);
+            externalWalletsFromHash[previousPublicKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
+        }
         bytes32 publicKeyHash = keccak256(abi.encodePacked(
             publicKey
         ));
