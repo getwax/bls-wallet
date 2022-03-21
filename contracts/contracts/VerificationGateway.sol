@@ -32,9 +32,9 @@ contract VerificationGateway
         // keccak256("setTrustedGateway")
         = 0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831;
     
-    bytes32 public constant SET_EXTERNAL_WALLET_AUTH_ID
-        // keccak256("setExternalWallet")
-        = 0xdafdb408a06a21a633291daa7073ef64b3bbe7a6d37a2bb0b36930589bbf458a;
+    bytes32 public constant SET_PUBLIC_KEY_AUTH_ID
+        // keccak256("setPublicKey")
+        = 0xe8bc0eb87884ab91e330445c3584a50d7ddf4b568f02fbeb456a6242cce3f5d9;
 
     IBLS public blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
@@ -134,36 +134,37 @@ contract VerificationGateway
     NB: this is independent of the proxyAdmin, and if desired can be changed
     via the corresponding call.
     @dev overrides previous wallet address registered with the given public key
-    @param messageSenderSignature signature of message containing only the calling address
-    @param publicKey that signed the caller's address
+    @param messageSenderSignature signature of the calling address using the new public key
+    @param oldPublicKeyHash hash of the old public key to remove (optional - use zero if not needed)
+    @param newPublicKey the new public key
      */
-    function setExternalWallet(
+    function setPublicKey(
         uint256[2] calldata messageSenderSignature,
-        bytes32 previousPublicKeyHash,
-        uint256[BLS_KEY_LEN] calldata publicKey
+        bytes32 oldPublicKeyHash,
+        uint256[BLS_KEY_LEN] calldata newPublicKey
     ) public {
         IWallet wallet = IWallet(msg.sender);
         wallet.checkAuthorization(
-            SET_EXTERNAL_WALLET_AUTH_ID,
+            SET_PUBLIC_KEY_AUTH_ID,
             AUTH_DELAY,
-            keccak256(abi.encodePacked(messageSenderSignature, previousPublicKeyHash, publicKey))
+            keccak256(abi.encodePacked(messageSenderSignature, oldPublicKeyHash, newPublicKey))
         );
         uint256[2] memory addressMsg = blsLib.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(msg.sender)
         );
         require(
-            blsLib.verifySingle(messageSenderSignature, publicKey, addressMsg),
+            blsLib.verifySingle(messageSenderSignature, newPublicKey, addressMsg),
             "VG: Signature not verified for wallet address."
         );
-        if (previousPublicKeyHash != bytes32(0)) {
-            require(externalWalletsFromHash[previousPublicKeyHash] == wallet);
-            externalWalletsFromHash[previousPublicKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
+        if (oldPublicKeyHash != bytes32(0)) {
+            require(externalWalletsFromHash[oldPublicKeyHash] == wallet);
+            externalWalletsFromHash[oldPublicKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
         }
-        bytes32 publicKeyHash = keccak256(abi.encodePacked(
-            publicKey
+        bytes32 newPublicKeyHash = keccak256(abi.encodePacked(
+            newPublicKey
         ));
-        externalWalletsFromHash[publicKeyHash] = wallet;
+        externalWalletsFromHash[newPublicKeyHash] = wallet;
     }
 
     /**
