@@ -21,7 +21,7 @@ contract BLSWallet is Initializable, IWallet
 
     uint256 public constant AUTH_DELAY = 604800; // 7 days
 
-    bytes32 public constant SET_OWNER
+    bytes32 public constant SET_OWNER_AUTH_ID
         // keccak256("setOwner")
         = 0x8e83b6bc9dcf1c432a6983224abae519957e953d14e2d66d9d36206b86a15cce;
 
@@ -45,7 +45,7 @@ contract BLSWallet is Initializable, IWallet
     function setOwner(address newOwner) public onlyThis {
         if (owner != address(0)) {
             consumeAuthorization(
-                SET_OWNER,
+                SET_OWNER_AUTH_ID,
                 AUTH_DELAY,
                 keccak256(abi.encodePacked(newOwner))
             );

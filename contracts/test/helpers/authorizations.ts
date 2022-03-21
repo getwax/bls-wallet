@@ -1,4 +1,5 @@
 import { BigNumber, BytesLike, ethers } from "ethers";
+import { solidityKeccak256 } from "ethers/lib/utils";
 import {
   ActionData,
   BlsWalletWrapper,
@@ -10,9 +11,9 @@ export const PROXY_ADMIN_FUNCTION_HASH_AUTH_ID =
   // keccak256("proxyAdminFunctionHash")
   "0xf7f75a0694ef66d3fbc2b1c58fa96cc5a0e85d8f7ef5e4663a2c37c339b3cb9e";
 
-export const RECOVERY_HASH_AUTH_ID =
-  // keccak256("recoveryHash")
-  "0x27690924264ef7d5a40864fd354bdcd43328b7f9e2b82210e410627ee6f95983";
+export const SET_OWNER_AUTH_ID =
+  // keccak256("setOwner")
+  "0x8e83b6bc9dcf1c432a6983224abae519957e953d14e2d66d9d36206b86a15cce";
 
 export const SET_TRUSTED_GATEWAY_AUTH_ID =
   // keccak256("setTrustedGateway")
@@ -85,16 +86,20 @@ export function authorizeSetTrustedGateway(
   };
 }
 
-export function authorizeRecoveryHash(
+export function authorizeSetOwner(
   wallet: BlsWalletWrapper,
-  recoveryHash: string,
+  newOwner: string,
 ): ActionData {
   return {
     ethValue: BigNumber.from(0),
     contractAddress: wallet.address,
     encodedFunction: wallet.walletContract.interface.encodeFunctionData(
       "authorize",
-      [RECOVERY_HASH_AUTH_ID, AUTH_DELAY, recoveryHash],
+      [
+        SET_OWNER_AUTH_ID,
+        AUTH_DELAY,
+        solidityKeccak256(["address"], [newOwner]),
+      ],
     ),
   };
 }

@@ -8,15 +8,12 @@ import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import defaultDomain from "../clients/src/signer/defaultDomain";
 
 import { BigNumber } from "ethers";
-import {
-  authorizeRecoveryHash,
-  AUTH_DELAY,
-  RECOVERY_HASH_AUTH_ID,
-} from "./helpers/authorizations";
+import { authorizeSetOwner } from "./helpers/authorizations";
 import { BlsWalletWrapper } from "../clients/src";
 import { solidityPack } from "ethers/lib/utils";
 import { solG1 } from "../clients/deps/hubble-bls/mcl";
 import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 const signWalletAddress = async (
   senderAddr: string,
@@ -29,6 +26,30 @@ const signWalletAddress = async (
   );
   return blsSigner.sign(addressMessage);
 };
+
+async function setOwner(
+  fx: Fixture,
+  wallet: BlsWalletWrapper,
+  newOwner: string,
+) {
+  await (
+    await fx.verificationGateway.processBundle(
+      wallet.sign({
+        nonce: await wallet.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: wallet.address,
+            encodedFunction: wallet.walletContract.interface.encodeFunctionData(
+              "setOwner",
+              [newOwner],
+            ),
+          },
+        ],
+      }),
+    )
+  ).wait();
+}
 
 describe("Recovery", async function () {
   this.beforeAll(async function () {
@@ -52,7 +73,7 @@ describe("Recovery", async function () {
   let fx: Fixture;
   let wallet1: BlsWalletWrapper, wallet2, walletAttacker;
   let blsWallet;
-  let recoverySigner;
+  let recoverySigner: SignerWithAddress;
   let hash1, hash2;
   let salt;
   let recoveryHash;
@@ -67,49 +88,45 @@ describe("Recovery", async function () {
 
     hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
     hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
-    salt = "0x1234567812345678123456781234567812345678123456781234567812345678";
-    recoveryHash = ethers.utils.solidityKeccak256(
-      ["address", "bytes32", "bytes32"],
-      [recoverySigner.address, hash1, salt],
-    );
   });
 
-  it("should set recovery hash", async function () {
-    // set instantly from 0 value
+  it("should set owner", async function () {
+    // Owner starts as address zero (owned by noone)
+    expect(await wallet1.walletContract.owner()).to.eq(
+      ethers.constants.AddressZero,
+    );
+
+    await setOwner(fx, wallet1, recoverySigner.address);
+
+    // The first time it should work without any set up
+    expect(await wallet1.walletContract.owner()).to.eq(recoverySigner.address);
+
+    await setOwner(fx, wallet1, ethers.constants.AddressZero);
+
+    // Second time it should fail without some set-up
+    expect(await wallet1.walletContract.owner()).to.eq(recoverySigner.address);
+
     await (
       await fx.verificationGateway.processBundle(
         wallet1.sign({
           nonce: await wallet1.Nonce(),
-          actions: [authorizeRecoveryHash(wallet1, recoveryHash)],
+          actions: [authorizeSetOwner(wallet1, ethers.constants.AddressZero)],
         }),
       )
     ).wait();
 
-    const authorizedRecoveryHash = (
-      await wallet1.walletContract.authorizations(
-        ethers.utils.solidityKeccak256(
-          ["bytes32", "uint256"],
-          [RECOVERY_HASH_AUTH_ID, AUTH_DELAY],
-        ),
-      )
-    ).data;
+    await setOwner(fx, wallet1, ethers.constants.AddressZero);
 
-    expect(authorizedRecoveryHash).to.equal(recoveryHash);
+    // Auth above is necessary but it's not valid until the delay has passed
+    expect(await wallet1.walletContract.owner()).to.eq(recoverySigner.address);
 
-    // TODO: Up to here. The next thing to do is account for newBLSKey being
-    // used in the hash instead of salt.
+    await fx.advanceTimeBy(safetyDelaySeconds);
 
-    // new value set after delay from non-zero value
-    salt = "0x" + "AB".repeat(32);
-    const newRecoveryHash = ethers.utils.solidityKeccak256(
-      ["address", "bytes32", "bytes32"],
-      [recoverySigner.address, hash1, salt],
+    await setOwner(fx, wallet1, ethers.constants.AddressZero);
+
+    expect(await wallet1.walletContract.owner()).to.eq(
+      ethers.constants.AddressZero,
     );
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [newRecoveryHash], 2);
-    expect(await blsWallet.recoveryHash()).to.equal(recoveryHash);
-    await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await (await blsWallet.setAnyPending()).wait();
-    expect(await blsWallet.recoveryHash()).to.equal(newRecoveryHash);
   });
 
   it("should recover before bls key update", async function () {
