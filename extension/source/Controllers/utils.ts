@@ -1,3 +1,5 @@
+import { TransactionMeta } from './Transaction/ITransactionController';
+
 export function timeout(duration: number): Promise<void> {
   return new Promise((resolve) => {
     const timeoutRef = window.setTimeout(() => {
@@ -18,4 +20,14 @@ export const getUserLanguage = (): string => {
   userLanguage = userLanguage.split('-');
   userLanguage = userLanguage[0] || 'en';
   return userLanguage;
+};
+
+export const transactionMatchesNetwork = (
+  transaction: TransactionMeta,
+  chainId: string,
+): boolean => {
+  if (typeof transaction.chainId !== 'undefined') {
+    return transaction.chainId === chainId;
+  }
+  return false;
 };

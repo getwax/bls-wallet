@@ -1,33 +1,26 @@
-import { FunctionComponent, useState } from 'react';
+import { ethers } from 'ethers';
+import { FunctionComponent, useEffect, useState } from 'react';
 
 import ReviewSecretPhrasePanel from './ReviewSecretPhrasePanel';
 import ViewSecretPhrasePanel from './ViewSecretPhrasePanel';
 
-const exampleSecretPhrase = [
-  'Potato',
-  'Velvet',
-  'Keen',
-  'Water',
-  'Travel',
-  'Pill',
-  'Book',
-  'Photo',
-  'Image',
-  'Space',
-  'Pause',
-  'Power',
-];
-
 const SecretPhrasePanel: FunctionComponent<{
   secretPhrase?: string[];
   onComplete?: () => void;
-}> = ({ secretPhrase = exampleSecretPhrase, onComplete = () => {} }) => {
+}> = ({ onComplete = () => {} }) => {
+  const [mnemonic, setMnemonic] = useState<string[]>([]);
+
+  useEffect(() => {
+    const mnemonic = ethers.Wallet.createRandom().mnemonic.phrase;
+    setMnemonic(mnemonic.split(' '));
+  }, []);
+
   const [inReview, setInReview] = useState(false);
 
   if (!inReview) {
     return (
       <ViewSecretPhrasePanel
-        secretPhrase={secretPhrase}
+        secretPhrase={mnemonic}
         onComplete={() => setInReview(true)}
       />
     );
@@ -35,7 +28,7 @@ const SecretPhrasePanel: FunctionComponent<{
 
   return (
     <ReviewSecretPhrasePanel
-      secretPhrase={secretPhrase}
+      secretPhrase={mnemonic}
       onBack={() => setInReview(false)}
       onComplete={onComplete}
     />

@@ -138,31 +138,19 @@ contract VerificationGateway
     NB: this is independent of the proxyAdmin, and if desired can be changed
     via the corresponding call.
     @dev overrides previous wallet address registered with the given public key
-    @param signature of message containing only the calling address
+    @param messageSenderSignature signature of message containing only the calling address
     @param publicKey that signed the caller's address
      */
     function setExternalWallet(
-        uint256[2] calldata signature,
+        uint256[2] calldata messageSenderSignature,
         uint256[BLS_KEY_LEN] calldata publicKey
     ) public {
-        uint256[2] memory addressMsg = blsLib.hashToPoint(
-            BLS_DOMAIN,
-            abi.encodePacked(msg.sender)
-        );
-        require(
-            blsLib.verifySingle(signature, publicKey, addressMsg),
-            "Signature not verified for wallet address."
-        );
-        bytes32 publicKeyHash = keccak256(abi.encodePacked(
-            publicKey
-        ));
-        IWallet wallet = IWallet(msg.sender);
-        wallet.checkAuthorization(
+        IWallet(msg.sender).checkAuthorization(
             SET_EXTERNAL_WALLET_AUTH_ID,
             AUTH_DELAY,
-            keccak256(abi.encodePacked(signature, publicKey))
+            keccak256(abi.encodePacked(messageSenderSignature, publicKey))
         );
-        externalWalletsFromHash[publicKeyHash] = wallet;
+        safeSetWallet(messageSenderSignature, publicKey, msg.sender);
     }
 
     /**
@@ -198,9 +186,16 @@ contract VerificationGateway
         require(success, "call to proxy admin failed");
     }
 
+    /**
+    Recovers a wallet, setting a new bls public key.
+    @param walletAddressSignature signature of message containing only the wallet address
+    @param blsKeyHash calling wallet's bls public key hash
+    @param newBLSKey to set as the wallet's bls public key
+     */
     function recoverWallet(
+        uint256[2] calldata walletAddressSignature,
         bytes32 blsKeyHash,
-        uint256[4] memory newBLSKey
+        uint256[4] calldata newBLSKey
     ) public {
         IWallet wallet = walletFromHash(blsKeyHash);
         bytes32 recoveryHash = keccak256(
@@ -213,8 +208,7 @@ contract VerificationGateway
         );
         // override mapping of old key hash (takes precedence over create2 address)
         externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
-        bytes32 newKeyHash = keccak256(abi.encodePacked(newBLSKey));
-        externalWalletsFromHash[newKeyHash] = wallet;
+        safeSetWallet(walletAddressSignature, newBLSKey, address(wallet));
     }
 
     /**
@@ -251,7 +245,7 @@ contract VerificationGateway
         wallet.setTrustedGateway(blsGateway);
     }
 
-    /** 
+    /**
     Base function for verifying and processing BLS-signed transactions.
     Creates a new contract wallet per bls key if existing wallet not found.
     Can be called with a single operation with no actions.
@@ -311,6 +305,31 @@ contract VerificationGateway
             );
         }
         return IWallet(blsWallet);
+    }
+
+    /**
+    @dev safely sets/overwrites the wallet for the given public key, ensuring it is properly signed
+    @param wallletAddressSignature signature of message containing only the wallet address
+    @param publicKey that signed the wallet address
+    @param wallet address to set
+     */
+    function safeSetWallet(
+        uint256[2] calldata wallletAddressSignature,
+        uint256[BLS_KEY_LEN] calldata publicKey,
+        address wallet
+    ) private {
+        uint256[2] memory addressMsg = blsLib.hashToPoint(
+            BLS_DOMAIN,
+            abi.encodePacked(wallet)
+        );
+        require(
+            blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
+            "VG: Signature not verified for wallet address."
+        );
+        bytes32 publicKeyHash = keccak256(abi.encodePacked(
+            publicKey
+        ));
+        externalWalletsFromHash[publicKeyHash] = IWallet(wallet);
     }
 
     function hasCode(address a) private view returns (bool) {

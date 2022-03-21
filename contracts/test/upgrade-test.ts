@@ -18,6 +18,7 @@ import {
   authorizeSetExternalWallet,
   authorizeSetTrustedGateway,
 } from "./helpers/authorizations";
+import { ActionData } from "../clients/src";
 
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
@@ -174,34 +175,99 @@ describe("Upgrade", async function () {
       walletOldVg.privateKey,
     );
 
-    // Atomically perform actions:
+    const setExternalWalletAction: ActionData = {
+      ethValue: BigNumber.from(0),
+      contractAddress: vg2.address,
+      encodedFunction: vg2.interface.encodeFunctionData("setExternalWallet", [
+        signedAddress,
+        walletOldVg.PublicKey(),
+      ]),
+    };
+
+    const setTrustedBLSGatewayAction: ActionData = {
+      ethValue: BigNumber.from(0),
+      contractAddress: fx.verificationGateway.address,
+      encodedFunction: fx.verificationGateway.interface.encodeFunctionData(
+        "setTrustedBLSGateway",
+        [hash, vg2.address],
+      ),
+    };
+
+    // Upgrading the gateway requires these three steps:
     //  1. register external wallet in vg2
     //  2. change proxy admin to that in vg2
-    //  3. lastly, set wallet's new trusted gateway address
+    //  3. lastly, set wallet's new trusted gateway
+    //
+    // If (1) or (2) are skipped, then (3) should fail, and therefore the whole
+    // operation should fail.
+
+    {
+      // Fail if setExternalWalletAction is skipped
+
+      const { successes } =
+        await fx.verificationGateway.callStatic.processBundle(
+          walletOldVg.sign({
+            nonce: BigNumber.from(2),
+            actions: [
+              // skip: setExternalWalletAction,
+              changeProxyAction,
+              setTrustedBLSGatewayAction,
+            ],
+          }),
+        );
+
+      expect(successes).to.deep.equal([false]);
+    }
+
+    {
+      // Fail if changeProxyAction is skipped
+
+      const { successes } =
+        await fx.verificationGateway.callStatic.processBundle(
+          walletOldVg.sign({
+            nonce: BigNumber.from(2),
+            actions: [
+              setExternalWalletAction,
+              // skip: changeProxyAction,
+              setTrustedBLSGatewayAction,
+            ],
+          }),
+        );
+
+      expect(successes).to.deep.equal([false]);
+    }
+
+    {
+      // Succeed if nothing is skipped
+
+      const { successes } =
+        await fx.verificationGateway.callStatic.processBundle(
+          walletOldVg.sign({
+            nonce: BigNumber.from(2),
+            actions: [
+              setExternalWalletAction,
+              changeProxyAction,
+              setTrustedBLSGatewayAction,
+            ],
+          }),
+        );
+
+      expect(successes).to.deep.equal([true]);
+    }
+
+    expect(await vg2.walletFromHash(hash)).not.to.equal(walletAddress);
+
+    // Now actually perform the upgrade so we can perform some more detailed
+    // checks.
     await (
       await fx.verificationGateway.processBundle(
         fx.blsWalletSigner.aggregate([
           walletOldVg.sign({
             nonce: BigNumber.from(2),
             actions: [
-              {
-                ethValue: 0,
-                contractAddress: vg2.address,
-                encodedFunction: vg2.interface.encodeFunctionData(
-                  "setExternalWallet",
-                  [signedAddress, blsSigner.pubkey],
-                ),
-              },
+              setExternalWalletAction,
               changeProxyAction,
-              {
-                ethValue: 0,
-                contractAddress: fx.verificationGateway.address,
-                encodedFunction:
-                  fx.verificationGateway.interface.encodeFunctionData(
-                    "setTrustedBLSGateway",
-                    [hash, vg2.address],
-                  ),
-              },
+              setTrustedBLSGatewayAction,
             ],
           }),
         ]),
