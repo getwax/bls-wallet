@@ -39,7 +39,7 @@ library BLS {
     uint256 private constant MASK24 = 0xffffffffffffffffffffffffffffffffffffffffffffffff;
 
     // estimator address
-    address private constant COST_ESTIMATOR_ADDRESS = 0x22E4a5251C1F02de8369Dd6f192033F6CB7531A4;
+    address private constant COST_ESTIMATOR_ADDRESS = 0x57047C275bbCb44D85DFA50AD562bA968EEba95A;
 
     function verifySingle(
         uint256[2] memory signature,

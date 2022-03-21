@@ -141,12 +141,24 @@ contract VerificationGateway
         uint256[2] calldata messageSenderSignature,
         uint256[BLS_KEY_LEN] calldata publicKey
     ) public {
-        IWallet(msg.sender).checkAuthorization(
+        IWallet wallet = IWallet(msg.sender);
+        wallet.checkAuthorization(
             SET_EXTERNAL_WALLET_AUTH_ID,
             AUTH_DELAY,
             keccak256(abi.encodePacked(messageSenderSignature, publicKey))
         );
-        safeSetWallet(messageSenderSignature, publicKey, msg.sender);
+        uint256[2] memory addressMsg = blsLib.hashToPoint(
+            BLS_DOMAIN,
+            abi.encodePacked(msg.sender)
+        );
+        require(
+            blsLib.verifySingle(messageSenderSignature, publicKey, addressMsg),
+            "VG: Signature not verified for wallet address."
+        );
+        bytes32 publicKeyHash = keccak256(abi.encodePacked(
+            publicKey
+        ));
+        externalWalletsFromHash[publicKeyHash] = wallet;
     }
 
     /**
@@ -276,31 +288,6 @@ contract VerificationGateway
             );
         }
         return IWallet(blsWallet);
-    }
-
-    /**
-    @dev safely sets/overwrites the wallet for the given public key, ensuring it is properly signed
-    @param wallletAddressSignature signature of message containing only the wallet address
-    @param publicKey that signed the wallet address
-    @param wallet address to set
-     */
-    function safeSetWallet(
-        uint256[2] calldata wallletAddressSignature,
-        uint256[BLS_KEY_LEN] calldata publicKey,
-        address wallet
-    ) private {
-        uint256[2] memory addressMsg = blsLib.hashToPoint(
-            BLS_DOMAIN,
-            abi.encodePacked(wallet)
-        );
-        require(
-            blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
-            "VG: Signature not verified for wallet address."
-        );
-        bytes32 publicKeyHash = keccak256(abi.encodePacked(
-            publicKey
-        ));
-        externalWalletsFromHash[publicKeyHash] = IWallet(wallet);
     }
 
     function hasCode(address a) private view returns (bool) {
