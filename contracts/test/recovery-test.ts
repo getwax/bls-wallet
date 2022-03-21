@@ -7,8 +7,10 @@ import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunP
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import defaultDomain from "../clients/src/signer/defaultDomain";
 
-import { BigNumber } from "ethers";
-import { authorizeSetOwner } from "./helpers/authorizations";
+import {
+  authorizeSetOwner,
+  authorizeSetPublicKey,
+} from "./helpers/authorizations";
 import { BlsWalletWrapper } from "../clients/src";
 import { solidityPack } from "ethers/lib/utils";
 import { solG1 } from "../clients/deps/hubble-bls/mcl";
@@ -71,23 +73,14 @@ describe("Recovery", async function () {
 
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
-  let wallet1: BlsWalletWrapper, wallet2, walletAttacker;
-  let blsWallet;
+  let wallet1: BlsWalletWrapper, walletAttacker;
   let recoverySigner: SignerWithAddress;
-  let hash1, hash2;
-  let salt;
-  let recoveryHash;
   beforeEach(async function () {
     fx = await Fixture.create();
 
     wallet1 = await fx.lazyBlsWallets[0]();
-    wallet2 = await fx.lazyBlsWallets[1]();
     walletAttacker = await fx.lazyBlsWallets[2]();
-    blsWallet = await ethers.getContractAt("BLSWallet", wallet1.address);
     recoverySigner = (await ethers.getSigners())[1];
-
-    hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
-    hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
   });
 
   it("should set owner", async function () {
@@ -129,105 +122,106 @@ describe("Recovery", async function () {
     );
   });
 
-  it("should recover before bls key update", async function () {
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
-    const attackKey = walletAttacker.PublicKey();
+  recoveryPreventsAttackerFromChangingBlsKey({ callRecover: true });
+  recoveryPreventsAttackerFromChangingBlsKey({ callRecover: false });
 
-    // Attacker assumed to have compromised current bls key, and wishes to reset
-    // the contract's bls key to their own.
-    await fx.call(wallet1, blsWallet, "setBLSPublicKey", [attackKey], 2);
+  function recoveryPreventsAttackerFromChangingBlsKey(opt: {
+    callRecover: boolean;
+  }) {
+    it(`recovery prevents attacker from changing bls key ${JSON.stringify(
+      opt,
+    )}`, async () => {
+      const { callRecover } = opt;
 
-    await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
-    await (await blsWallet.setAnyPending()).wait();
+      await setOwner(fx, wallet1, recoverySigner.address);
+      const attackKey = walletAttacker.PublicKey();
 
-    const addressSignature = await signWalletAddress(
-      wallet1.address,
-      wallet2.privateKey,
-    );
-    const safeKey = wallet2.PublicKey();
+      // Attacker assumed to have compromised current bls key, and wishes to reset
+      // the contract's bls key to their own.
+      await fx.verificationGateway.processBundle(
+        wallet1.sign({
+          nonce: await wallet1.Nonce(),
+          actions: [
+            authorizeSetPublicKey(
+              wallet1,
+              await signWalletAddress(
+                wallet1.address,
+                walletAttacker.privateKey,
+              ),
+              wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey),
+              attackKey,
+            ),
+          ],
+        }),
+      );
 
-    await (
-      await fx.verificationGateway
-        .connect(recoverySigner)
-        .recoverWallet(addressSignature, hash1, salt, safeKey)
-    ).wait();
+      await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
 
-    // key reset via recovery
-    expect(await blsWallet.getBLSPublicKey()).to.eql(
-      safeKey.map(BigNumber.from),
-    );
+      if (callRecover) {
+        // Owner intervenes by calling recover
+        await (
+          await wallet1.walletContract.connect(recoverySigner).recover()
+        ).wait();
+      }
 
-    await fx.advanceTimeBy(safetyDelaySeconds / 2 + 1); // wait remainder the time
+      await fx.advanceTimeBy(safetyDelaySeconds / 2 + 1); // wait remainder the time
 
-    // attacker's key not set after waiting full safety delay
-    expect(await blsWallet.getBLSPublicKey()).to.eql(
-      safeKey.map(BigNumber.from),
-    );
+      try {
+        await (
+          await fx.verificationGateway.processBundle(
+            wallet1.sign({
+              nonce: await wallet1.Nonce(),
+              actions: [
+                {
+                  ethValue: 0,
+                  contractAddress: fx.verificationGateway.address,
+                  encodedFunction:
+                    fx.verificationGateway.interface.encodeFunctionData(
+                      "setPublicKey",
+                      [
+                        await signWalletAddress(
+                          wallet1.address,
+                          walletAttacker.privateKey,
+                        ),
+                        wallet1.blsWalletSigner.getPublicKeyHash(
+                          wallet1.privateKey,
+                        ),
+                        attackKey,
+                      ],
+                    ),
+                },
+              ],
+            }),
+          )
+        ).wait();
+      } catch {
+        // Currently this will throw due to a bug:
+        // https://github.com/jzaki/bls-wallet/issues/169
+        // That's not the concern right now though, the point is just that the
+        // attacker is unable to map a new public key.
+      }
 
-    let walletFromKey = await fx.verificationGateway.walletFromHash(
-      wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey),
-    );
-    expect(walletFromKey).to.not.equal(blsWallet.address);
-    walletFromKey = await fx.verificationGateway.walletFromHash(
-      walletAttacker.blsWalletSigner.getPublicKeyHash(
-        walletAttacker.privateKey,
-      ),
-    );
-    expect(walletFromKey).to.not.equal(blsWallet.address);
-    walletFromKey = await fx.verificationGateway.walletFromHash(
-      wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey),
-    );
-    expect(walletFromKey).to.equal(blsWallet.address);
+      const attackKeyWallet = await fx.verificationGateway.walletFromHash(
+        walletAttacker.blsWalletSigner.getPublicKeyHash(
+          walletAttacker.privateKey,
+        ),
+      );
 
-    // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
-    const res = await fx.callStatic(
-      wallet2,
-      fx.verificationGateway,
-      "setTrustedBLSGateway",
-      [hash2, fx.verificationGateway.address],
-      3,
-    );
-    expect(res.successes[0]).to.equal(true);
-  });
+      if (!callRecover) {
+        expect(attackKeyWallet).to.eq(wallet1.address);
+      } else {
+        expect(attackKeyWallet).not.to.eq(wallet1.address);
 
-  // https://github.com/jzaki/bls-wallet/issues/141
-  it("should NOT be able to recover to another wallet", async function () {
-    const attackerWalletContract = await ethers.getContractAt(
-      "BLSWallet",
-      walletAttacker.address,
-    );
-    const hashAttacker = walletAttacker.blsWalletSigner.getPublicKeyHash(
-      walletAttacker.privateKey,
-    );
-    const attackerRecoveryHash = ethers.utils.solidityKeccak256(
-      ["address", "bytes32", "bytes32"],
-      [recoverySigner.address, hashAttacker, salt],
-    );
-
-    // Attacker puts their wallet into recovery
-    await fx.call(
-      walletAttacker,
-      attackerWalletContract,
-      "setRecoveryHash",
-      [attackerRecoveryHash],
-      1,
-    );
-
-    // Attacker waits out safety delay
-    await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await (await attackerWalletContract.setAnyPending()).wait();
-
-    const addressSignature = await signWalletAddress(
-      walletAttacker.address,
-      walletAttacker.privateKey,
-    );
-    const wallet1Key = await wallet1.PublicKey();
-
-    // Attacker attempts to overwite wallet 1's public key and fails
-    await expect(
-      fx.verificationGateway
-        .connect(recoverySigner)
-        .recoverWallet(addressSignature, hashAttacker, salt, wallet1Key),
-    ).to.be.rejectedWith("VG: Signature not verified for wallet address");
-  });
+        // Check that we can perform operations directly on the recovered wallet
+        await (
+          await wallet1.walletContract
+            .connect(recoverySigner)
+            .performOperation({
+              nonce: await wallet1.Nonce(),
+              actions: [],
+            })
+        ).wait();
+      }
+    });
+  }
 });

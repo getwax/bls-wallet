@@ -158,7 +158,7 @@ contract VerificationGateway
             "VG: Signature not verified for wallet address."
         );
         if (oldPublicKeyHash != bytes32(0)) {
-            require(externalWalletsFromHash[oldPublicKeyHash] == wallet);
+            require(walletFromHash(oldPublicKeyHash) == wallet);
             externalWalletsFromHash[oldPublicKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
         }
         bytes32 newPublicKeyHash = keccak256(abi.encodePacked(
