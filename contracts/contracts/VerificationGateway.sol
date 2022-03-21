@@ -28,10 +28,6 @@ contract VerificationGateway
         // keccak256("proxyAdminFunctionHash")
         = 0xf7f75a0694ef66d3fbc2b1c58fa96cc5a0e85d8f7ef5e4663a2c37c339b3cb9e;
 
-    bytes32 public constant RECOVERY_HASH_AUTH_ID
-        // keccak256("recoveryHash")
-        = 0x27690924264ef7d5a40864fd354bdcd43328b7f9e2b82210e410627ee6f95983;
-
     bytes32 public constant SET_TRUSTED_GATEWAY_AUTH_ID
         // keccak256("setTrustedGateway")
         = 0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831;
@@ -184,31 +180,6 @@ contract VerificationGateway
         // call approved function
         (bool success, ) = address(walletProxyAdmin).call(encodedFunction);
         require(success, "call to proxy admin failed");
-    }
-
-    /**
-    Recovers a wallet, setting a new bls public key.
-    @param walletAddressSignature signature of message containing only the wallet address
-    @param blsKeyHash calling wallet's bls public key hash
-    @param newBLSKey to set as the wallet's bls public key
-     */
-    function recoverWallet(
-        uint256[2] calldata walletAddressSignature,
-        bytes32 blsKeyHash,
-        uint256[4] calldata newBLSKey
-    ) public {
-        IWallet wallet = walletFromHash(blsKeyHash);
-        bytes32 recoveryHash = keccak256(
-            abi.encodePacked(msg.sender, blsKeyHash, newBLSKey)
-        );
-        wallet.consumeAuthorization(
-            RECOVERY_HASH_AUTH_ID,
-            AUTH_DELAY,
-            recoveryHash
-        );
-        // override mapping of old key hash (takes precedence over create2 address)
-        externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
-        safeSetWallet(walletAddressSignature, newBLSKey, address(wallet));
     }
 
     /**

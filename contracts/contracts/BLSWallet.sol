@@ -15,8 +15,15 @@ contract BLSWallet is Initializable, IWallet
 {
     uint256 public nonce;
     address public trustedBLSGateway;
+    address public owner;
 
     mapping(bytes32 => IWallet.AuthValue) public authorizations;
+
+    uint256 public constant AUTH_DELAY = 604800; // 7 days
+
+    bytes32 public constant SET_OWNER
+        // keccak256("setOwner")
+        = 0x8e83b6bc9dcf1c432a6983224abae519957e953d14e2d66d9d36206b86a15cce;
 
     function initialize(
         address blsGateway
@@ -33,6 +40,23 @@ contract BLSWallet is Initializable, IWallet
      */
     function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
         trustedBLSGateway = blsGateway;
+    }
+
+    function setOwner(address newOwner) public onlyThis {
+        if (owner != address(0)) {
+            consumeAuthorization(
+                SET_OWNER,
+                AUTH_DELAY,
+                keccak256(abi.encodePacked(newOwner))
+            );
+        }
+
+        owner = newOwner;
+    }
+
+    function recover() public {
+        require(msg.sender == owner);
+        trustedBLSGateway = msg.sender;
     }
 
     /**
