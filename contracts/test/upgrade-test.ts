@@ -15,7 +15,7 @@ import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
 import { solidityPack } from "ethers/lib/utils";
 import {
   authorizeProxyAdminFunction,
-  authorizeSetExternalWallet,
+  authorizeSetPublicKey,
   authorizeSetTrustedGateway,
 } from "./helpers/authorizations";
 import { ActionData } from "../clients/src";
@@ -144,9 +144,10 @@ describe("Upgrade", async function () {
         walletOldVg.sign({
           nonce: await walletOldVg.Nonce(),
           actions: [
-            authorizeSetExternalWallet(
+            authorizeSetPublicKey(
               walletOldVg,
               signedAddress,
+              ethers.constants.HashZero,
               blsSigner.pubkey,
             ),
             authorizeProxyAdminFunction(walletOldVg, encodedChangeProxyAdmin),
@@ -178,8 +179,9 @@ describe("Upgrade", async function () {
     const setExternalWalletAction: ActionData = {
       ethValue: BigNumber.from(0),
       contractAddress: vg2.address,
-      encodedFunction: vg2.interface.encodeFunctionData("setExternalWallet", [
+      encodedFunction: vg2.interface.encodeFunctionData("setPublicKey", [
         signedAddress,
+        ethers.constants.HashZero,
         walletOldVg.PublicKey(),
       ]),
     };

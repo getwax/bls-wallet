@@ -18,9 +18,9 @@ export const SET_TRUSTED_GATEWAY_AUTH_ID =
   // keccak256("setTrustedGateway")
   "0xb763883050766a187f540d60588b1051834a12c4a984a0646e5e062f80efc831";
 
-export const SET_EXTERNAL_WALLET_AUTH_ID =
+export const SET_PUBLIC_KEY_AUTH_ID =
   // keccak256("setExternalWallet")
-  "0xdafdb408a06a21a633291daa7073ef64b3bbe7a6d37a2bb0b36930589bbf458a";
+  "0xe8bc0eb87884ab91e330445c3584a50d7ddf4b568f02fbeb456a6242cce3f5d9";
 
 export const AUTH_DELAY =
   // 7 days
@@ -44,10 +44,11 @@ export function authorizeProxyAdminFunction(
   };
 }
 
-export function authorizeSetExternalWallet(
+export function authorizeSetPublicKey(
   wallet: BlsWalletWrapper,
   signature: Signature,
-  publicKey: PublicKey,
+  oldPublicKeyHash: BytesLike,
+  newPublicKey: PublicKey,
 ): ActionData {
   return {
     ethValue: BigNumber.from(0),
@@ -55,11 +56,11 @@ export function authorizeSetExternalWallet(
     encodedFunction: wallet.walletContract.interface.encodeFunctionData(
       "authorize",
       [
-        SET_EXTERNAL_WALLET_AUTH_ID,
+        SET_PUBLIC_KEY_AUTH_ID,
         AUTH_DELAY,
         ethers.utils.solidityKeccak256(
-          ["uint256[2]", "uint256[4]"],
-          [signature, publicKey],
+          ["uint256[2]", "bytes32", "uint256[4]"],
+          [signature, oldPublicKeyHash, newPublicKey],
         ),
       ],
     ),
