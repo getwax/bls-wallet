@@ -10,8 +10,8 @@ const SecretPhrasePanel: FunctionComponent<{
   const [mnemonic, setMnemonic] = useState<string[]>([]);
 
   useEffect(() => {
-    const mnemonic = ethers.Wallet.createRandom().mnemonic.phrase;
-    setMnemonic(mnemonic.split(' '));
+    const mnemonicPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
+    setMnemonic(mnemonicPhrase.split(' '));
   }, []);
 
   const [inReview, setInReview] = useState(false);

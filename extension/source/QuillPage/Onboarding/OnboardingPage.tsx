@@ -8,14 +8,14 @@ const OnboardingPage: FunctionComponent = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const onboardingComplete =
-      // @ts-ignore
-      window.quillController.keyringController.isOnboardingComplete();
+    const onboardingComplete = window
+      .KeyringController()
+      .isOnboardingComplete();
 
     if (onboardingComplete) {
       navigate('/wallet/');
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="flex h-screen">

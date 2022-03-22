@@ -96,7 +96,8 @@ export default class QuillController extends BaseController<
 
   private accountTracker!: AccountTrackerController;
 
-  private keyringController!: KeyringController;
+  // TODO (merge-ok) Revert to private with better access pattern.
+  public keyringController!: KeyringController;
 
   private preferencesController!: PreferencesController;
 

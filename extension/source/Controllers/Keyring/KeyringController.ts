@@ -45,13 +45,12 @@ export default class KeyringController
   };
 
   async createHDAccount(): Promise<string> {
-    const mnemonic = this.state.HDPhrase;
-
-    if (mnemonic === '') {
+    if (this.state.HDPhrase === '') {
       const { phrase } = ethers.Wallet.createRandom().mnemonic;
       this.setHDPhrase(phrase);
     }
 
+    const mnemonic = this.state.HDPhrase;
     const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
     const partialPath = "m/44'/60'/0'/0/";

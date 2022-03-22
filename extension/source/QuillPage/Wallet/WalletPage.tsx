@@ -45,15 +45,15 @@ export const WalletPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    const onboardingComplete =
-      // @ts-ignore
-      window.quillController.keyringController.isOnboardingComplete();
-    console.log(onboardingComplete);
+    const onboardingComplete = window
+      .KeyringController()
+      .isOnboardingComplete();
+    console.debug('onboardingComplete', onboardingComplete);
 
     if (!onboardingComplete) {
       navigate('/onboarding?p=1');
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="flex h-screen">

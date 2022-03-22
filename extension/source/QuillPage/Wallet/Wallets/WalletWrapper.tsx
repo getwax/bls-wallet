@@ -18,13 +18,12 @@ export const WalletsWrapper: FunctionComponent = () => {
   useEffect(() => {
     setLoading(true);
 
-    // @ts-ignore
-    const wallets = window.quillController.keyringController.getAccounts();
+    const accounts = window.KeyringController().getAccounts();
 
     setWallets(
-      wallets.map((wallet: string, index: number) => {
+      accounts.map((address: string, index: number) => {
         return {
-          address: wallet,
+          address,
           name: `wallet ${index}`,
           ether: 0,
           networks: 1,
@@ -33,8 +32,6 @@ export const WalletsWrapper: FunctionComponent = () => {
       }),
     );
     setLoading(false);
-
-    // @ts-ignore
   }, []);
 
   return (
@@ -43,9 +40,7 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="text-body">Wallets</div>
         <Button
           onPress={async () => {
-            // @ts-ignore
-            await window.quillController.keyringController.createHDAccount();
-            // @ts-ignore
+            await window.KeyringController().createHDAccount();
             window.location.reload();
           }}
           children={'Add Wallet'}
