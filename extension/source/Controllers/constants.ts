@@ -4,6 +4,7 @@ export const CHAINS = {
   KOVAN: 'kovan',
   ROPSTEN: 'ropsten',
   GOERLI: 'goerli',
+  LOCAL: 'local',
 } as const;
 
 export type ChainType = typeof CHAINS[keyof typeof CHAINS];
@@ -56,6 +57,7 @@ export const CHAIN_ID_NETWORK_MAP = {
   '0X2a': CHAINS.KOVAN,
   '0x3': CHAINS.ROPSTEN,
   '0x5': CHAINS.GOERLI,
+  '0x539': CHAINS.LOCAL,
 } as const;
 
 export const SUPPORTED_NETWORKS = {
@@ -109,6 +111,16 @@ export const SUPPORTED_NETWORKS = {
     tickerName: 'Ethereum',
     networkKey: CHAINS.GOERLI,
   } as ProviderConfig,
+  [CHAINS.LOCAL]: {
+    blockExplorerUrl: 'N/A',
+    chainId: '0x539',
+    displayName: 'Local Network',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
+    rpcTarget: process.env.CHAIN_RPC_URL,
+    ticker: 'ETH',
+    tickerName: 'Ethereum',
+    networkKey: CHAINS.LOCAL,
+  } as ProviderConfig,
 } as const;
 
 export const ENVIRONMENT_TYPE = {
@@ -132,9 +144,9 @@ export const DEFAULT_STATE = {
     ticker: 'eth',
   },
   NetworkControllerState: {
-    chainId: SUPPORTED_NETWORKS[CHAINS.MAINNET].chainId,
+    chainId: SUPPORTED_NETWORKS[CHAINS.LOCAL].chainId,
     properties: {},
-    providerConfig: SUPPORTED_NETWORKS[CHAINS.MAINNET],
+    providerConfig: SUPPORTED_NETWORKS[CHAINS.LOCAL],
   },
   PreferencesControllerState: {
     identities: {},

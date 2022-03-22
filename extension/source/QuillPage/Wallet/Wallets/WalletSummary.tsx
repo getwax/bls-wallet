@@ -3,10 +3,10 @@ import Blockies from 'react-blockies';
 import {
   Copy,
   PaperPlaneTilt,
-  CurrencyDollar,
-  ShareNetwork,
-  PokerChip,
-  Circle,
+  // CurrencyDollar,
+  // ShareNetwork,
+  // PokerChip,
+  // Circle,
 } from 'phosphor-react';
 import Button from '../../../components/Button';
 import { IWallet } from './WalletWrapper';
@@ -82,7 +82,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             />
           </div>
 
-          <div className="mt-4 flex flex-col gap-1">
+          {/* <div className="mt-4 flex flex-col gap-1">
             <div className="flex gap-2 place-items-center">
               <CurrencyDollar className="text-blue-400 icon-md" /> USD $
               {wallet.ether * 3000.1}
@@ -95,9 +95,9 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
               <PokerChip className="text-blue-400 icon-md" /> {wallet.tokens}{' '}
               Tokens
             </div>
-          </div>
+          </div> */}
 
-          <div className="mt-4 flex flex-col gap-3">
+          {/* <div className="mt-4 flex flex-col gap-3">
             <div className="bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2 place-items-center rounded-md">
               <Circle weight="fill" fill="#689F38" />
               Uniswap
@@ -110,7 +110,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
               <Circle weight="fill" fill="#F44336" />
               Sushi
             </div>
-          </div>
+          </div> */}
         </div>
       )}
     </div>

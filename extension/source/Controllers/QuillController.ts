@@ -56,7 +56,7 @@ export const DEFAULT_CONFIG = {
     pollInterval: 600_000,
   },
   NetworkControllerConfig: {
-    providerConfig: SUPPORTED_NETWORKS[CHAINS.MAINNET],
+    providerConfig: SUPPORTED_NETWORKS[CHAINS.LOCAL],
   },
   PreferencesControllerConfig: {},
 };
@@ -96,7 +96,8 @@ export default class QuillController extends BaseController<
 
   private accountTracker!: AccountTrackerController;
 
-  private keyringController!: KeyringController;
+  // TODO (merge-ok) Revert to private with better access pattern.
+  public keyringController!: KeyringController;
 
   private preferencesController!: PreferencesController;
 

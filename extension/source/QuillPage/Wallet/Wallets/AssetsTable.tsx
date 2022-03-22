@@ -133,9 +133,9 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
             }}
             className="text-blue-500"
           >
-            {[5, 10, 20, 50].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize} results
+            {[5, 10, 20, 50].map((size) => (
+              <option key={size} value={size}>
+                {size} results
               </option>
             ))}
           </select>

@@ -10,8 +10,8 @@ const WorkflowNumbers: FunctionComponent<{
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const currentPage = Number(params.get('p'));
-    setCurrentPage(currentPage);
+    const page = Number(params.get('p'));
+    setCurrentPage(page);
   }, [params]);
 
   function onSelect(index: number) {

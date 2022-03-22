@@ -1,6 +1,7 @@
 import { FunctionComponent, useState, useEffect, ChangeEvent } from 'react';
 
 import { ArrowRight } from 'phosphor-react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
 
@@ -47,8 +48,7 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   secretPhrase: string[];
   sampleIndexes?: number[];
   onBack: () => void;
-  onComplete: () => void;
-}> = ({ secretPhrase, sampleIndexes = [0, 3, 9, 11], onBack, onComplete }) => {
+}> = ({ secretPhrase, sampleIndexes = [0, 3, 9, 11], onBack }) => {
   const len = sampleIndexes.length;
 
   const [reviewWordStates, setReviewWordStates] = useState<boolean[]>(
@@ -62,6 +62,14 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
     snapshot[index] = isCorrect;
     setReviewWordStates(snapshot);
     setAllCorrect(reviewWordStates.every((item) => item === true));
+  };
+
+  const navigate = useNavigate();
+
+  const setHDWalletPhrase = async () => {
+    window.KeyringController().setHDPhrase(secretPhrase.join(' '));
+    window.KeyringController().createHDAccount();
+    navigate('/wallet');
   };
 
   return (
@@ -97,7 +105,7 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
           </Button>
           <Button
             className={`w-1/2 ${allCorrect ? 'btn-primary' : 'btn-disabled'}`}
-            onPress={() => allCorrect && onComplete()}
+            onPress={() => allCorrect && setHDWalletPhrase()}
             icon={<ArrowRight className="icon-md" />}
           >
             Confirm secret phrase

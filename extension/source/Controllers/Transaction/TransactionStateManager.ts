@@ -1,4 +1,4 @@
-import { keyBy, mapValues, omitBy, pickBy, sortBy } from 'lodash-es';
+import { keyBy, /*mapValues*/, omitBy, pickBy, sortBy } from 'lodash-es';
 
 import BaseController from '../BaseController';
 import { transactionMatchesNetwork } from '../utils';
@@ -219,7 +219,7 @@ export class BaseTransactionStateManager extends BaseController<
   }
 
   getTransactions({
-    searchCriteria = {},
+    // searchCriteria = {},
     initialList = undefined,
     filterToCurrentNetwork = true,
   }: {
@@ -236,9 +236,9 @@ export class BaseTransactionStateManager extends BaseController<
     // with the provided value". To conform this object to be only methods, we
     // mapValues (lodash) such that every value on the object is a method that
     // returns a boolean.
-    const predicateMethods: unknown = mapValues(searchCriteria, (predicate) =>
-      typeof predicate === 'function' ? predicate : (v: any) => v === predicate,
-    );
+    // const predicateMethods: unknown = mapValues(searchCriteria, (predicate) =>
+    //   typeof predicate === 'function' ? predicate : (v: any) => v === predicate,
+    // );
 
     // If an initial list is provided we need to change it back into an object
     // first, so that it matches the shape of our state. This is done by the

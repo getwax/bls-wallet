@@ -25,12 +25,39 @@ export default class KeyringController
     super({ config, state });
     this.defaultState = {
       wallets: state.wallets ?? [],
+      HDPhrase: state.HDPhrase ?? '',
     } as KeyringControllerState;
     this.initialize();
   }
 
   getAccounts(): string[] {
     return this.state.wallets.map((x) => x.address);
+  }
+
+  setHDPhrase(phrase: string) {
+    this.update({
+      HDPhrase: phrase,
+    });
+  }
+
+  isOnboardingComplete = (): boolean => {
+    return this.state.HDPhrase !== '';
+  };
+
+  async createHDAccount(): Promise<string> {
+    if (this.state.HDPhrase === '') {
+      const { phrase } = ethers.Wallet.createRandom().mnemonic;
+      this.setHDPhrase(phrase);
+    }
+
+    const mnemonic = this.state.HDPhrase;
+    const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
+
+    const partialPath = "m/44'/60'/0'/0/";
+    const path = partialPath + this.state.wallets.length;
+
+    const { privateKey } = node.derivePath(path);
+    return this._createAccountAndUpdate(privateKey);
   }
 
   async createAccount(): Promise<string> {
