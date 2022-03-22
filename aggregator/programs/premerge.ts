@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write
+#!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write --allow-env
 
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";

@@ -1,8 +1,6 @@
-import { BigNumber, ethers } from "../../deps.ts";
+import { BigNumber, keccak256 } from "../../deps.ts";
 
 import words from "./words.ts";
-
-const { keccak256 } = ethers.utils;
 
 function byteToHex(byte: number): string {
   return byte.toString(16).padStart(2, "0");

@@ -6,8 +6,8 @@ import {
   ContractFactory,
   BigNumber,
   BigNumberish,
+  providers,
 } from "ethers";
-import { Provider } from "@ethersproject/abstract-provider";
 
 import {
   BlsWalletWrapper,
@@ -27,7 +27,7 @@ export default class Fixture {
 
   private constructor(
     public chainId: number,
-    public provider: Provider,
+    public provider: providers.Provider,
 
     public signers: Signer[],
     public addresses: string[],

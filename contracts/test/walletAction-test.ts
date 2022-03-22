@@ -6,12 +6,10 @@ import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber } from "ethers";
-import { parseEther } from "@ethersproject/units";
+import { parseEther, solidityPack } from "ethers/lib/utils";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 // import splitHex256 from "../shared/helpers/splitHex256";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import { solidityPack } from "ethers/lib/utils";
-const utils = ethers.utils;
 
 describe("WalletActions", async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
@@ -27,7 +25,7 @@ describe("WalletActions", async function () {
       await (
         await fundedSigner.sendTransaction({
           to: defaultDeployerAddress(),
-          value: utils.parseEther("1"),
+          value: parseEther("1"),
         })
       ).wait();
 
@@ -87,7 +85,7 @@ describe("WalletActions", async function () {
 
     const walletBalanceBefore = await fx.provider.getBalance(wallet.address);
 
-    const ethToTransfer = utils.parseEther("0.0001");
+    const ethToTransfer = parseEther("0.0001");
 
     await fx.signers[0].sendTransaction({
       to: wallet.address,
@@ -102,7 +100,7 @@ describe("WalletActions", async function () {
     // send money to sender bls wallet
     const sendWallet = await fx.lazyBlsWallets[0]();
     const recvWallet = await fx.lazyBlsWallets[1]();
-    const ethToTransfer = utils.parseEther("0.0001");
+    const ethToTransfer = parseEther("0.0001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
       value: ethToTransfer,
@@ -145,7 +143,7 @@ describe("WalletActions", async function () {
   it("should send ETH with function call", async function () {
     // send money to sender bls wallet
     const sendWallet = await fx.lazyBlsWallets[0]();
-    const ethToTransfer = utils.parseEther("0.001");
+    const ethToTransfer = parseEther("0.001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
       value: ethToTransfer,

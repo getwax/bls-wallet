@@ -1,7 +1,7 @@
 import { signer, mcl } from "@thehubbleproject/bls";
 
 export default (signerFactory: signer.BlsSignerFactory, domain: Uint8Array) =>
-  (privateKey: string): string => {
+  (message: string, privateKey: string): mcl.solG1 => {
     const signer = signerFactory.getSigner(domain, privateKey);
-    return mcl.dumpG2(signer.pubkey);
+    return signer.sign(message);
   };

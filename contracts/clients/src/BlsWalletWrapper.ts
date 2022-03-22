@@ -7,6 +7,7 @@ import {
   Bundle,
   Operation,
   PublicKey,
+  Signature,
 } from "./signer";
 
 import {
@@ -48,8 +49,10 @@ export default class BlsWalletWrapper {
       signerOrProvider,
     );
 
-    const proxyAdminAddress = await verificationGateway.walletProxyAdmin();
-    const blsWalletLogicAddress = await verificationGateway.blsWalletLogic();
+    const [proxyAdminAddress, blsWalletLogicAddress] = await Promise.all([
+      verificationGateway.walletProxyAdmin(),
+      verificationGateway.blsWalletLogic(),
+    ]);
 
     const initFunctionParams =
       BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
@@ -162,6 +165,11 @@ export default class BlsWalletWrapper {
   /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
   sign(operation: Operation): Bundle {
     return this.blsWalletSigner.sign(operation, this.privateKey);
+  }
+
+  /** Sign a message */
+  signMessage(message: string): Signature {
+    return this.blsWalletSigner.signMessage(message, this.privateKey);
   }
 
   /**
