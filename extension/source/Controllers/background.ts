@@ -16,6 +16,7 @@ import QuillController, {
   QuillControllerState,
 } from './QuillController';
 import { DEFAULT_STATE, ENVIRONMENT_TYPE } from './constants';
+import { getDefaultProviderConfig } from './utils';
 import ControllerStoreStream from './streamHelpers/ControllerStoreStream';
 import ControllerStreamSink from './streamHelpers/ControllerStreamSink';
 import PortDuplexStream from '../common/PortStream';
@@ -63,8 +64,21 @@ async function loadStateFromPersistence(): Promise<QuillControllerState> {
   // first from preferred, async API:
   const storedData = await localStore.get();
   console.log('storedData', storedData);
-  versionedData =
-    Object.keys(storedData).length > 0 ? storedData : cloneDeep(DEFAULT_STATE);
+
+  if (Object.keys(storedData).length > 0) {
+    versionedData = storedData;
+  } else {
+    const providerConfig = getDefaultProviderConfig();
+    versionedData = cloneDeep({
+      ...DEFAULT_STATE,
+      // Override with default config from env chainid
+      NetworkControllerState: {
+        ...DEFAULT_STATE.NetworkControllerState,
+        chainId: providerConfig.chainId,
+        providerConfig,
+      },
+    });
+  }
 
   localStore.set(versionedData);
   // return just the data
