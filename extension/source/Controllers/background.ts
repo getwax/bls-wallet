@@ -77,6 +77,10 @@ async function loadStateFromPersistence(): Promise<QuillControllerState> {
         chainId: providerConfig.chainId,
         providerConfig,
       },
+      KeyringControllerState: {
+        ...DEFAULT_STATE.KeyringControllerState,
+        chainId: providerConfig.chainId,
+      },
     });
   }
 
