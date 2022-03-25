@@ -24,6 +24,9 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
+  "resolutions": {
+    "ethers": "5.5.4"
+  },
   "dependencies": {
     "@babel/runtime": "^7.16.3",
     "@ethereumjs/tx": "^3.5.0",

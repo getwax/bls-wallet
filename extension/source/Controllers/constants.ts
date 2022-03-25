@@ -1,11 +1,20 @@
+import toHex from '../helpers/toHex';
+
 export const CHAINS = {
-  MAINNET: 'mainnet',
-  RINKEBY: 'rinkeby',
-  KOVAN: 'kovan',
-  ROPSTEN: 'ropsten',
-  GOERLI: 'goerli',
+  ARBITRUM_RINKEBY: 'arbitrum-rinkeby',
+  ARBITRUM: 'arbitrum',
+  OPTIMISM_KOVAN: 'optimism-kovan',
+  OPTIMISM: 'optimism',
   LOCAL: 'local',
-} as const;
+};
+
+export const CHAINIDS = {
+  ARBITRUM_RINKEBY: toHex(421611),
+  ARBITRUM: toHex(42161),
+  OPTIMISM_KOVAN: toHex(69),
+  OPTIMISM: toHex(10),
+  LOCAL: toHex(31337),
+};
 
 export type ChainType = typeof CHAINS[keyof typeof CHAINS];
 
@@ -52,83 +61,72 @@ export interface ProviderConfig {
 }
 
 export const CHAIN_ID_NETWORK_MAP = {
-  '0x1': CHAINS.MAINNET,
-  '0x4': CHAINS.RINKEBY,
-  '0X2a': CHAINS.KOVAN,
-  '0x3': CHAINS.ROPSTEN,
-  '0x5': CHAINS.GOERLI,
-  '0x539': CHAINS.LOCAL,
-} as const;
+  [CHAINIDS.ARBITRUM_RINKEBY]: CHAINS.ARBITRUM_RINKEBY,
+  [CHAINIDS.ARBITRUM]: CHAINS.ARBITRUM,
+  [CHAINIDS.OPTIMISM_KOVAN]: CHAINS.OPTIMISM_KOVAN,
+  [CHAINIDS.OPTIMISM]: CHAINS.OPTIMISM,
+  [CHAINIDS.LOCAL]: CHAINS.LOCAL,
+};
 
-export const SUPPORTED_NETWORKS = {
-  [CHAINS.MAINNET]: {
-    blockExplorerUrl: 'https://etherscan.io',
-    chainId: '0x1',
-    displayName: 'Main Ethereum Network',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
-    rpcTarget: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+export const SUPPORTED_NETWORKS: Record<string, ProviderConfig> = {
+  [CHAINS.ARBITRUM_RINKEBY]: {
+    blockExplorerUrl: 'https://rinkeby-explorer.arbitrum.io',
+    chainId: CHAINIDS.ARBITRUM_RINKEBY,
+    displayName: 'Arbitrum Test Network',
+    logo: '',
+    rpcTarget: 'https://rinkeby.arbitrum.io/rpc',
+    ticker: 'ARETH',
+    tickerName: 'Arbitrum Ethereum',
+    networkKey: CHAINS.ARBITRUM_RINKEBY,
+  },
+  [CHAINS.ARBITRUM]: {
+    blockExplorerUrl: 'https://explorer.arbitrum.io',
+    chainId: CHAINIDS.ARBITRUM,
+    displayName: 'Arbitrum One',
+    logo: '',
+    rpcTarget: `https://arb1.arbitrum.io/rpc`,
     ticker: 'ETH',
     tickerName: 'Ethereum',
-    networkKey: CHAINS.MAINNET,
-  } as ProviderConfig,
-  [CHAINS.RINKEBY]: {
-    blockExplorerUrl: 'https://rinkeby.etherscan.io',
-    chainId: '0x4',
-    displayName: 'Rinkeby Test Network',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
-    rpcTarget: `https://rinkeby.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+    networkKey: CHAINS.ARBITRUM,
+  },
+  [CHAINS.OPTIMISM_KOVAN]: {
+    blockExplorerUrl: 'https://kovan-optimistic.etherscan.io',
+    chainId: CHAINIDS.OPTIMISM_KOVAN,
+    displayName: 'Optimism Test Network',
+    logo: '',
+    rpcTarget: 'https://kovan.optimism.io',
+    ticker: 'KOR',
+    tickerName: '?',
+    networkKey: CHAINS.OPTIMISM_KOVAN,
+  },
+  [CHAINS.OPTIMISM]: {
+    blockExplorerUrl: 'https://optimistic.etherscan.io',
+    chainId: CHAINIDS.OPTIMISM,
+    displayName: 'Optimism',
+    logo: '',
+    rpcTarget: 'https://mainnet.optimism.io',
     ticker: 'ETH',
     tickerName: 'Ethereum',
-    networkKey: CHAINS.RINKEBY,
-  } as ProviderConfig,
-  [CHAINS.KOVAN]: {
-    blockExplorerUrl: 'https://kovan.etherscan.io',
-    chainId: '0x4',
-    displayName: 'Kovan Test Network',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
-    rpcTarget: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-    ticker: 'ETH',
-    tickerName: 'Ethereum',
-    networkKey: CHAINS.KOVAN,
-  } as ProviderConfig,
-  [CHAINS.ROPSTEN]: {
-    blockExplorerUrl: 'https://ropsten.etherscan.io',
-    chainId: '0x3',
-    displayName: 'Ropsten Test Network',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
-    rpcTarget: `https://ropsten.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-    ticker: 'ETH',
-    tickerName: 'Ethereum',
-    networkKey: CHAINS.ROPSTEN,
-  } as ProviderConfig,
-  [CHAINS.GOERLI]: {
-    blockExplorerUrl: 'https://goerli.etherscan.io',
-    chainId: '0x5',
-    displayName: 'Goerli Test Network',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
-    rpcTarget: `https://goerli.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
-    ticker: 'ETH',
-    tickerName: 'Ethereum',
-    networkKey: CHAINS.GOERLI,
-  } as ProviderConfig,
+    networkKey: CHAINS.OPTIMISM,
+  },
   [CHAINS.LOCAL]: {
     blockExplorerUrl: 'N/A',
-    chainId: '0x539',
+    chainId: CHAINIDS.LOCAL,
     displayName: 'Local Network',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Ethereum-icon-purple.svg',
-    rpcTarget: process.env.CHAIN_RPC_URL,
+    logo: '',
+    rpcTarget: 'http://localhost:8545',
     ticker: 'ETH',
     tickerName: 'Ethereum',
     networkKey: CHAINS.LOCAL,
-  } as ProviderConfig,
-} as const;
+  },
+};
 
 export const ENVIRONMENT_TYPE = {
   POPUP: 'popup',
   NOTIFICATION: 'notification',
   FULLSCREEN: 'fullscreen',
   BACKGROUND: 'background',
-} as const;
+};
 
 export type EnvironmentType =
   typeof ENVIRONMENT_TYPE[keyof typeof ENVIRONMENT_TYPE];

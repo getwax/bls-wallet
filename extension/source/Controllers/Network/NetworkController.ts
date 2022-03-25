@@ -10,9 +10,10 @@ import {
 } from '../Block/IBlockTrackerController';
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';
-import { CHAINS, ProviderConfig, SUPPORTED_NETWORKS } from '../constants';
+import { ProviderConfig } from '../constants';
 import createEventEmitterProxy from '../createEventEmitterProxy';
 import createSwappableProxy from '../createSwappableProxy';
+import { getDefaultProviderConfig } from '../utils';
 import {
   createWalletMiddleware,
   IProviderHandlers,
@@ -64,7 +65,7 @@ export default class NetworkController
       properties: {
         EIPS: { 1559: undefined },
       },
-      providerConfig: SUPPORTED_NETWORKS[CHAINS.LOCAL],
+      providerConfig: getDefaultProviderConfig(),
     };
     this.initialize();
     // when a new network is set, we set to loading first and then when connection succeeds, we update the network

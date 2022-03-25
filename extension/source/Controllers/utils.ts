@@ -1,3 +1,9 @@
+import { DEFAULT_CHAIN_ID_HEX } from '../env';
+import {
+  ProviderConfig,
+  CHAIN_ID_NETWORK_MAP,
+  SUPPORTED_NETWORKS,
+} from './constants';
 import { TransactionMeta } from './Transaction/ITransactionController';
 
 export function timeout(duration: number): Promise<void> {
@@ -12,14 +18,9 @@ export function timeout(duration: number): Promise<void> {
 export const createRandomId = (): string => Math.random().toString(36).slice(2);
 
 export const getUserLanguage = (): string => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let userLanguage =
-    (window.navigator as any).userLanguage ||
-    window.navigator.language ||
-    'en-US';
-  userLanguage = userLanguage.split('-');
-  userLanguage = userLanguage[0] || 'en';
-  return userLanguage;
+  const navLang = window.navigator.language || 'en-US';
+  const preLang = navLang.split('-');
+  return preLang[0] || 'en';
 };
 
 export const transactionMatchesNetwork = (
@@ -30,4 +31,23 @@ export const transactionMatchesNetwork = (
     return transaction.chainId === chainId;
   }
   return false;
+};
+
+export const getDefaultProviderConfig = (): ProviderConfig => {
+  const networkName = CHAIN_ID_NETWORK_MAP[DEFAULT_CHAIN_ID_HEX];
+  if (!networkName) {
+    throw new Error(
+      `supported network not found for chainid ${DEFAULT_CHAIN_ID_HEX}`,
+    );
+  }
+  const config = SUPPORTED_NETWORKS[networkName];
+  if (!config) {
+    throw new Error(`netowrk config not found for network ${networkName}`);
+  }
+  return config;
+};
+
+export const getRPCURL = (chainId: string): string => {
+  const name = CHAIN_ID_NETWORK_MAP[chainId];
+  return SUPPORTED_NETWORKS[name].rpcTarget;
 };

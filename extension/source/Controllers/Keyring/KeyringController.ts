@@ -7,7 +7,8 @@ import {
   KeyringControllerConfig,
   KeyringControllerState,
 } from './IKeyringController';
-import { NETWORK_CONFIG, CHAIN_RPC_URL } from '../../env';
+import { NETWORK_CONFIG } from '../../env';
+import { getRPCURL } from '../utils';
 
 export default class KeyringController
   extends BaseController<KeyringControllerConfig, KeyringControllerState>
@@ -114,21 +115,23 @@ export default class KeyringController
     return keyPair.privateKey;
   }
 
+  private _createProvider(): ethers.providers.Provider {
+    return new ethers.providers.JsonRpcProvider(getRPCURL(this.state.chainId));
+  }
+
   private _getContractWalletAddress(privateKey: string): Promise<string> {
-    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
-      provider,
+      this._createProvider(),
     );
   }
 
   private async _getBLSWallet(privateKey: string): Promise<BlsWalletWrapper> {
-    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
     return BlsWalletWrapper.connect(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
-      provider,
+      this._createProvider(),
     );
   }
 }

@@ -11,8 +11,12 @@ import type { Duplex } from 'readable-stream';
 
 import { Runtime } from 'webextension-polyfill';
 import { BigNumber } from 'ethers';
-import { createRandomId, getUserLanguage } from './utils';
-import { CHAINS, ProviderConfig, SUPPORTED_NETWORKS } from './constants';
+import {
+  createRandomId,
+  getDefaultProviderConfig,
+  getUserLanguage,
+} from './utils';
+import { ProviderConfig } from './constants';
 import BaseController from './BaseController';
 import NetworkController from './Network/NetworkController';
 import CurrencyController from './Currency/CurrencyController';
@@ -56,7 +60,7 @@ export const DEFAULT_CONFIG = {
     pollInterval: 600_000,
   },
   NetworkControllerConfig: {
-    providerConfig: SUPPORTED_NETWORKS[CHAINS.LOCAL],
+    providerConfig: getDefaultProviderConfig(),
   },
   PreferencesControllerConfig: {},
 };
