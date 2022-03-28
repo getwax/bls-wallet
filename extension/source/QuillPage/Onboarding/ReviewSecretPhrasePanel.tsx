@@ -69,6 +69,10 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   const setHDWalletPhrase = async () => {
     window.KeyringController().setHDPhrase(secretPhrase.join(' '));
     window.KeyringController().createHDAccount();
+
+    const accounts = window.KeyringController().getAccounts();
+    window.QuillController().getApi().setSelectedAddress(accounts[0]);
+
     navigate('/wallet');
   };
 
