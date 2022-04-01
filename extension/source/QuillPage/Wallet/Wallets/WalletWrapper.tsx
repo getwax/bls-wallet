@@ -15,6 +15,10 @@ export const WalletsWrapper: FunctionComponent = () => {
   const [wallets, setWallets] = useState<IWallet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const setSelectedAddress = (address: string) => {
+    window.QuillController().getApi().setSelectedAddress(address);
+  };
+
   useEffect(() => {
     setLoading(true);
 
@@ -32,6 +36,8 @@ export const WalletsWrapper: FunctionComponent = () => {
       }),
     );
     setLoading(false);
+
+    setSelectedAddress(accounts[0]);
   }, []);
 
   return (
@@ -54,7 +60,10 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="flex flex-col gap-6 mt-8">
           {wallets.map((wallet, index) => (
             <WalletSummary
-              onClick={() => setSelected(index)}
+              onClick={() => {
+                setSelected(index);
+                setSelectedAddress(wallet.address);
+              }}
               key={wallet.name}
               wallet={wallet}
               expanded={index === selected}
