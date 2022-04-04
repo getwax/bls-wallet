@@ -16,7 +16,7 @@ type TransactionFailure =
   | { type: 'unpredictable-gas-limit'; description: string }
   | { type: 'invalid-creation'; description: string };
 
-type SendTransactionParams = {
+export type SendTransactionParams = {
   from: string;
   to: string;
   gas?: BigNumberish;

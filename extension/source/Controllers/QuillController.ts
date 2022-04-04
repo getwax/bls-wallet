@@ -30,7 +30,10 @@ import {
   providerAsMiddleware,
   SafeEventEmitterProvider,
 } from './Network/INetworkController';
-import { IProviderHandlers } from './Network/createEthMiddleware';
+import {
+  IProviderHandlers,
+  SendTransactionParams,
+} from './Network/createEthMiddleware';
 import {
   AddressPreferences,
   PreferencesConfig,
@@ -518,23 +521,23 @@ export default class QuillController extends BaseController<
       },
 
       submitBatch: async (req: any) => {
-        const params = req.params[0];
+        const params: SendTransactionParams = req.params[0];
 
         const nonce = await this.keyringController.getNonce(params.from);
         const tx = {
           nonce: nonce.toString(),
           actions: [
             {
-              ethValue: params?.value.toString(),
-              contractAddress: params?.to.toString(),
-              encodedFunction: params?.data.toString(),
+              ethValue: params.value.toString(),
+              contractAddress: params.to,
+              encodedFunction: params.data,
             },
           ],
         };
 
         const bundle = await this.keyringController.signTransactions(
           params.from,
-          tx as any,
+          tx,
         );
         const agg = new Aggregator(AGGREGATOR_URL);
         return agg.add(bundle);
