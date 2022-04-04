@@ -11,6 +11,7 @@ import type { Duplex } from 'readable-stream';
 
 import { Runtime } from 'webextension-polyfill';
 import { BigNumber } from 'ethers';
+import { Aggregator } from 'bls-wallet-clients';
 import {
   createRandomId,
   getDefaultProviderConfig,
@@ -29,7 +30,10 @@ import {
   providerAsMiddleware,
   SafeEventEmitterProvider,
 } from './Network/INetworkController';
-import { IProviderHandlers } from './Network/createEthMiddleware';
+import {
+  IProviderHandlers,
+  SendTransactionParams,
+} from './Network/createEthMiddleware';
 import {
   AddressPreferences,
   PreferencesConfig,
@@ -53,6 +57,7 @@ import { createOriginMiddleware } from './Network/createOriginMiddleware';
 import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import createMetaRPCHandler from './streamHelpers/MetaRPCHandler';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
+import { AGGREGATOR_URL } from '../env';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -513,6 +518,29 @@ export default class QuillController extends BaseController<
           chainId: this.networkController.state.chainId,
           isUnlocked: !!this.selectedAddress,
         };
+      },
+
+      submitBatch: async (req: any) => {
+        const params: SendTransactionParams = req.params[0];
+
+        const nonce = await this.keyringController.getNonce(params.from);
+        const tx = {
+          nonce: nonce.toString(),
+          actions: [
+            {
+              ethValue: params.value.toString(),
+              contractAddress: params.to,
+              encodedFunction: params.data,
+            },
+          ],
+        };
+
+        const bundle = await this.keyringController.signTransactions(
+          params.from,
+          tx,
+        );
+        const agg = new Aggregator(AGGREGATOR_URL);
+        return agg.add(bundle);
       },
     };
     const providerProxy =
