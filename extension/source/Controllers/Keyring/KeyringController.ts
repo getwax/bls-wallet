@@ -91,6 +91,12 @@ export default class KeyringController
     return wallet.sign(tx);
   }
 
+  async getNonce(address: string) {
+    const privKey = this._getPrivateKeyFor(address);
+    const wallet = await this._getBLSWallet(privKey);
+    return wallet.Nonce();
+  }
+
   async _createAccountAndUpdate(privateKey: string): Promise<string> {
     const address = await this._getContractWalletAddress(privateKey);
 
@@ -110,7 +116,10 @@ export default class KeyringController
   }
 
   private _getPrivateKeyFor(address: string): string {
-    const keyPair = this.state.wallets.find((x) => x.address === address);
+    const checksummedAddress = ethers.utils.getAddress(address);
+    const keyPair = this.state.wallets.find(
+      (x) => x.address === checksummedAddress,
+    );
     if (!keyPair) throw new Error('key does not exist');
     return keyPair.privateKey;
   }
