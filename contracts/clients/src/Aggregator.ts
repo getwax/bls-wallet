@@ -46,14 +46,20 @@ export default class Aggregator {
     this.origin = new URL(url).origin;
   }
 
-  async add(bundle: Bundle): Promise<TransactionFailure[]> {
+  async add(
+    bundle: Bundle,
+  ): Promise<{ id: string } | { failures: TransactionFailure[] }> {
     const json: any = await this.jsonPost("/bundle", bundleToDto(bundle));
 
-    if (json === null || typeof json !== "object" || !("failures" in json)) {
+    if (
+      json === null ||
+      typeof json !== "object" ||
+      (!("failures" in json) && !("id" in json))
+    ) {
       throw new Error(`Unexpected response: ${JSON.stringify(json)}`);
     }
 
-    return json.failures as TransactionFailure[];
+    return json;
   }
 
   async estimateFee(bundle: Bundle): Promise<EstimateFeeResponse> {
