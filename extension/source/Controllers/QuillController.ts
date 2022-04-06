@@ -58,6 +58,7 @@ import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import createMetaRPCHandler from './streamHelpers/MetaRPCHandler';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 import { AGGREGATOR_URL } from '../env';
+import knownTransactions from './knownTransactions';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -545,6 +546,11 @@ export default class QuillController extends BaseController<
         if ('failures' in result) {
           throw new Error(JSON.stringify(result.failures));
         }
+
+        knownTransactions[result.id] = {
+          ...params,
+          nonce: nonce.toString(),
+        };
 
         return result.id;
       },

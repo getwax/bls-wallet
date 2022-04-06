@@ -9,6 +9,7 @@ import {
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
+import knownTransactions from '../knownTransactions';
 import { createFetchMiddleware } from './createFetchMiddleware';
 import { providerFromMiddleware } from './INetworkController';
 
@@ -46,6 +47,42 @@ export function createProviderConfigMiddleware(
   };
 }
 
+function mockGetTransactionByHashMiddleware(): JRPCMiddleware<
+  unknown,
+  unknown
+> {
+  return (
+    req: JRPCRequest<unknown>,
+    res: JRPCResponse<unknown>,
+    next: JRPCEngineNextCallback,
+    end: JRPCEngineEndCallback,
+  ) => {
+    if (req.method === 'eth_getTransactionByHash') {
+      const hash: string = (req.params as any)[0];
+
+      if (hash in knownTransactions) {
+        const knownTx = knownTransactions[hash];
+
+        // Here we're just relaying the information that we already know
+        // internally about the transaction. ethers needs this response to
+        // function properly.
+        res.result = {
+          hash,
+          from: knownTx.from,
+          nonce: knownTx.nonce,
+          value: knownTx.value,
+          gasLimit: '0x0',
+          data: knownTx.data,
+        };
+
+        return end();
+      }
+    }
+
+    return next();
+  };
+}
+
 export function createJsonRpcClient(providerConfig: ProviderConfig): {
   networkMiddleware: JRPCMiddleware<unknown, unknown>;
   blockTracker: PollingBlockTracker;
@@ -64,6 +101,7 @@ export function createJsonRpcClient(providerConfig: ProviderConfig): {
   const networkMiddleware = mergeMiddleware([
     createChainIdMiddleware(chainId),
     createProviderConfigMiddleware(providerConfig),
+    mockGetTransactionByHashMiddleware(),
     fetchMiddleware as JRPCMiddleware<unknown, unknown>,
   ]);
   return { networkMiddleware, blockTracker };
