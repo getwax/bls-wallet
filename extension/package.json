@@ -34,7 +34,7 @@
     "advanced-css-reset": "^1.2.2",
     "async-mutex": "^0.3.2",
     "axios": "^0.25.0",
-    "bls-wallet-clients": "0.5.4-f2bad77",
+    "bls-wallet-clients": "0.6.0-45def92",
     "dotenv-webpack": "^7.0.3",
     "emoji-log": "^1.0.2",
     "end-of-stream": "^1.4.4",

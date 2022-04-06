@@ -540,7 +540,13 @@ export default class QuillController extends BaseController<
           tx,
         );
         const agg = new Aggregator(AGGREGATOR_URL);
-        return agg.add(bundle);
+        const result = await agg.add(bundle);
+
+        if ('failures' in result) {
+          throw new Error(JSON.stringify(result.failures));
+        }
+
+        return result.id;
       },
     };
     const providerProxy =
