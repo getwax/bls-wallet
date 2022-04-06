@@ -10,13 +10,13 @@ export default function BundleRouter(bundleService: BundleService) {
   router.post(
     "bundle",
     BundleHandler(async (ctx, bun) => {
-      const failures = await bundleService.add(bun);
+      const result = await bundleService.add(bun);
 
-      if (failures.length > 0) {
-        return failRequest(ctx, failures);
+      if ("failures" in result) {
+        return failRequest(ctx, result.failures);
       }
 
-      ctx.response.body = { failures: [] };
+      ctx.response.body = result;
     }),
   );
 

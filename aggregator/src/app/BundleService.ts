@@ -16,7 +16,7 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
-import BundleTable, { BundleRow } from "./BundleTable.ts";
+import BundleTable, { BundleRow, makeId } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
@@ -32,7 +32,7 @@ export default class BundleService {
 
   unconfirmedBundles = new Set<Bundle>();
   unconfirmedActionCount = 0;
-  unconfirmedRowIds = new Set<number>();
+  unconfirmedRowIds = new Set<string>();
 
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
@@ -104,7 +104,7 @@ export default class BundleService {
     );
 
     const actionCount = eligibleRows
-      .filter((r) => !this.unconfirmedRowIds.has(r.id!))
+      .filter((r) => !this.unconfirmedRowIds.has(r.id))
       .map((r) => countActions(r.bundle))
       .reduce(plus, 0);
 
@@ -126,15 +126,19 @@ export default class BundleService {
     );
   }
 
-  async add(bundle: Bundle): Promise<TransactionFailure[]> {
+  async add(
+    bundle: Bundle,
+  ): Promise<{ id: string } | { failures: TransactionFailure[] }> {
     if (bundle.operations.length !== bundle.senderPublicKeys.length) {
-      return [
-        {
-          type: "invalid-format",
-          description:
-            "number of operations does not match number of public keys",
-        },
-      ];
+      return {
+        failures: [
+          {
+            type: "invalid-format",
+            description:
+              "number of operations does not match number of public keys",
+          },
+        ],
+      };
     }
 
     const signedCorrectly = this.blsWalletSigner.verify(bundle);
@@ -151,11 +155,14 @@ export default class BundleService {
     failures.push(...await this.ethereumService.checkNonces(bundle));
 
     if (failures.length > 0) {
-      return failures;
+      return { failures };
     }
 
     return await this.runQueryGroup(async () => {
+      const id = makeId();
+
       await this.bundleTable.add({
+        id,
         bundle,
         eligibleAfter: await this.ethereumService.BlockNumber(),
         nextEligibilityDelay: BigNumber.from(1),
@@ -170,7 +177,7 @@ export default class BundleService {
 
       this.addTask(() => this.tryAggregating());
 
-      return [];
+      return { id };
     });
   }
 
@@ -187,7 +194,7 @@ export default class BundleService {
 
       // Exclude rows that are already pending.
       eligibleRows = eligibleRows.filter(
-        (row) => !this.unconfirmedRowIds.has(row.id!),
+        (row) => !this.unconfirmedRowIds.has(row.id),
       );
 
       const { aggregateBundle, includedRows, failedRows } = await this
@@ -224,7 +231,7 @@ export default class BundleService {
       await this.bundleTable.remove(row);
     }
 
-    this.unconfirmedRowIds.delete(row.id!);
+    this.unconfirmedRowIds.delete(row.id);
   }
 
   async submitAggregateBundle(
@@ -250,7 +257,7 @@ export default class BundleService {
     this.unconfirmedBundles.add(aggregateBundle);
 
     for (const row of includedRows) {
-      this.unconfirmedRowIds.add(row.id!);
+      this.unconfirmedRowIds.add(row.id);
     }
 
     this.addTask(async () => {
@@ -275,7 +282,7 @@ export default class BundleService {
         this.unconfirmedBundles.delete(aggregateBundle);
 
         for (const row of includedRows) {
-          this.unconfirmedRowIds.delete(row.id!);
+          this.unconfirmedRowIds.delete(row.id);
         }
       }
     });

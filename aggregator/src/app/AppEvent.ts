@@ -1,7 +1,5 @@
 import { HTTPMethods } from "../../deps.ts";
 
-type RowId = number | undefined;
-
 type AppEvent = (
   | { type: "listening"; data: { port: number } }
   | { type: "db-query"; data: { sql: string; params: unknown[] } }
@@ -18,10 +16,10 @@ type AppEvent = (
       error: Error;
     };
   }
-  | { type: "submission-sent"; data: { rowIds: RowId[] } }
+  | { type: "submission-sent"; data: { rowIds: string[] } }
   | {
     type: "submission-confirmed";
-    data: { rowIds: RowId[]; blockNumber: number };
+    data: { rowIds: string[]; blockNumber: number };
   }
   | { type: "warning"; data: string }
   | {

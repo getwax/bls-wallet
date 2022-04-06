@@ -6,6 +6,7 @@ import {
   Constraint,
   CreateTableMode,
   DataType,
+  ethers,
   QueryClient,
   QueryTable,
   TableOptions,
@@ -22,23 +23,29 @@ import { parseBundleDto } from "./parsers.ts";
  * custom classes like BigNumber.
  */
 type RawRow = {
-  id?: number;
+  id: string;
   bundle: string;
   eligibleAfter: string;
   nextEligibilityDelay: string;
 };
 
 type Row = {
-  id?: number;
+  id: string;
   bundle: Bundle;
   eligibleAfter: BigNumber;
   nextEligibilityDelay: BigNumber;
 };
 
+export function makeId() {
+  const buf = new Uint8Array(32);
+  crypto.getRandomValues(buf);
+  return ethers.utils.hexlify(buf);
+}
+
 export type BundleRow = Row;
 
 const tableOptions: TableOptions = {
-  id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
+  id: { type: DataType.VarChar, constraint: Constraint.PrimaryKey },
   bundle: { type: DataType.VarChar },
   eligibleAfter: { type: DataType.VarChar },
   nextEligibilityDelay: { type: DataType.VarChar },
@@ -61,14 +68,11 @@ function fromRawRow(rawRow: RawRow): Row {
 
 function toRawRow(row: Row): RawRow {
   const rawRow: RawRow = {
+    id: row.id,
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
   };
-
-  if ("id" in row) {
-    rawRow.id = row.id;
-  }
 
   return rawRow;
 }
@@ -105,16 +109,6 @@ export default class BundleTable {
 
   async add(...rows: Row[]) {
     await this.queryTable.insert(...rows.map(toRawRow));
-  }
-
-  async addWithNewId(...rows: Row[]) {
-    const rowsWithoutIds = rows.map((row) => {
-      const withoutId = { ...row };
-      delete withoutId.id;
-      return withoutId;
-    });
-
-    return await this.add(...rowsWithoutIds);
   }
 
   async update(row: Row) {
