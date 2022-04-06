@@ -1,5 +1,5 @@
+import { signer } from "@thehubbleproject/bls";
 import { BigNumber } from "ethers";
-import * as hubbleBls from "../../deps/hubble-bls";
 
 import type { Bundle, Signature } from "./types";
 
@@ -8,7 +8,7 @@ export default function isValidEmptyBundle(bundle: Bundle) {
     return false;
   }
 
-  const correctEmptySignature = hubbleBls.signer.aggregate([]);
+  const correctEmptySignature = signer.aggregate([]);
 
   if (!signaturesEqual(bundle.signature, correctEmptySignature)) {
     return false;

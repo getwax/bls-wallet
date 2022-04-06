@@ -1,4 +1,4 @@
-import type { Block } from '@ethersproject/providers';
+import { providers } from 'ethers';
 import { JRPCEngine, JRPCMiddleware } from '@toruslabs/openlogin-jrpc';
 import { Mutex } from 'async-mutex';
 import EthQuery from '../rpcHelpers/EthQuery';
@@ -10,9 +10,10 @@ import {
 } from '../Block/IBlockTrackerController';
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';
-import { CHAINS, ProviderConfig, SUPPORTED_NETWORKS } from '../constants';
+import { ProviderConfig } from '../constants';
 import createEventEmitterProxy from '../createEventEmitterProxy';
 import createSwappableProxy from '../createSwappableProxy';
+import { getDefaultProviderConfig } from '../utils';
 import {
   createWalletMiddleware,
   IProviderHandlers,
@@ -64,7 +65,7 @@ export default class NetworkController
       properties: {
         EIPS: { 1559: undefined },
       },
-      providerConfig: SUPPORTED_NETWORKS[CHAINS.MAINNET],
+      providerConfig: getDefaultProviderConfig(),
     };
     this.initialize();
     // when a new network is set, we set to loading first and then when connection succeeds, we update the network
@@ -155,7 +156,7 @@ export default class NetworkController
     if (EIPS[1559] !== undefined) {
       return EIPS[1559];
     }
-    const latestBlock = await this.ethQuery.request<Block>({
+    const latestBlock = await this.ethQuery.request<providers.Block>({
       method: 'eth_getBlockByNumber',
       params: ['latest', false],
     });

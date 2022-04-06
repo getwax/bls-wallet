@@ -1,4 +1,4 @@
-import { signer } from "../../deps/hubble-bls";
+import { signer } from "@thehubbleproject/bls";
 
 import aggregate from "./aggregate";
 import defaultDomain from "./defaultDomain";
@@ -7,6 +7,7 @@ import getPublicKeyHash from "./getPublicKeyHash";
 import getPublicKeyStr from "./getPublicKeyStr";
 import AsyncReturnType from "./helpers/AsyncReturnType";
 import sign from "./sign";
+import signMessage from "./signMessage";
 import verify from "./verify";
 
 export * from "./types";
@@ -35,6 +36,7 @@ export async function initBlsWalletSigner({
     getPublicKeyHash: getPublicKeyHash(signerFactory, domain),
     getPublicKeyStr: getPublicKeyStr(signerFactory, domain),
     sign: sign(signerFactory, domain, chainId),
+    signMessage: signMessage(signerFactory, domain),
     verify: verify(domain, chainId),
   };
 }

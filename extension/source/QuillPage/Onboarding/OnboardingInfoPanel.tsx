@@ -40,7 +40,7 @@ const info = [
 ];
 
 const OnboardingInfoPanel: FunctionComponent = () => {
-  const [params, _] = useSearchParams();
+  const [params] = useSearchParams();
   const [pageIndex, setPageIndex] = useState(0);
 
   useEffect(() => {

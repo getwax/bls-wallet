@@ -110,7 +110,7 @@ And then update this value in `./extension/.env`.
 ```
 ...
 
-CHAIN_RPC_URL=https://rinkeby.arbitrum.io/rpc
+DEFAULT_CHAIN_ID=421611
 ...
 ```
 

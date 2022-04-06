@@ -16,9 +16,17 @@ import QuillController, {
   QuillControllerState,
 } from './QuillController';
 import { DEFAULT_STATE, ENVIRONMENT_TYPE } from './constants';
+import { getDefaultProviderConfig } from './utils';
 import ControllerStoreStream from './streamHelpers/ControllerStoreStream';
 import ControllerStreamSink from './streamHelpers/ControllerStreamSink';
 import PortDuplexStream from '../common/PortStream';
+
+window.QuillController = () => {
+  throw new Error('window.QuillController not initialized');
+};
+window.KeyringController = () => {
+  throw new Error('window.KeyringController not initialized');
+};
 
 // const notificationManager = new NotificationManager();
 
@@ -56,8 +64,25 @@ async function loadStateFromPersistence(): Promise<QuillControllerState> {
   // first from preferred, async API:
   const storedData = await localStore.get();
   console.log('storedData', storedData);
-  versionedData =
-    Object.keys(storedData).length > 0 ? storedData : cloneDeep(DEFAULT_STATE);
+
+  if (Object.keys(storedData).length > 0) {
+    versionedData = storedData;
+  } else {
+    const providerConfig = getDefaultProviderConfig();
+    versionedData = cloneDeep({
+      ...DEFAULT_STATE,
+      // Override with default config from env chainid
+      NetworkControllerState: {
+        ...DEFAULT_STATE.NetworkControllerState,
+        chainId: providerConfig.chainId,
+        providerConfig,
+      },
+      KeyringControllerState: {
+        ...DEFAULT_STATE.KeyringControllerState,
+        chainId: providerConfig.chainId,
+      },
+    });
+  }
 
   localStore.set(versionedData);
   // return just the data
@@ -90,6 +115,9 @@ function setupController(initState: unknown): void {
       getOpenQuillTabsIds: () => openQuillTabsIDs,
     },
   });
+
+  window.QuillController = () => controller;
+  window.KeyringController = () => controller.keyringController;
 
   // setup state persistence
   pump(

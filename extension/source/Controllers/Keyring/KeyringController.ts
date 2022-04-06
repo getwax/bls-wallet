@@ -7,7 +7,8 @@ import {
   KeyringControllerConfig,
   KeyringControllerState,
 } from './IKeyringController';
-import { NETWORK_CONFIG, CHAIN_RPC_URL } from '../../env';
+import { NETWORK_CONFIG } from '../../env';
+import { getRPCURL } from '../utils';
 
 export default class KeyringController
   extends BaseController<KeyringControllerConfig, KeyringControllerState>
@@ -25,12 +26,39 @@ export default class KeyringController
     super({ config, state });
     this.defaultState = {
       wallets: state.wallets ?? [],
+      HDPhrase: state.HDPhrase ?? '',
     } as KeyringControllerState;
     this.initialize();
   }
 
   getAccounts(): string[] {
     return this.state.wallets.map((x) => x.address);
+  }
+
+  setHDPhrase(phrase: string) {
+    this.update({
+      HDPhrase: phrase,
+    });
+  }
+
+  isOnboardingComplete = (): boolean => {
+    return this.state.HDPhrase !== '';
+  };
+
+  async createHDAccount(): Promise<string> {
+    if (this.state.HDPhrase === '') {
+      const { phrase } = ethers.Wallet.createRandom().mnemonic;
+      this.setHDPhrase(phrase);
+    }
+
+    const mnemonic = this.state.HDPhrase;
+    const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
+
+    const partialPath = "m/44'/60'/0'/0/";
+    const path = partialPath + this.state.wallets.length;
+
+    const { privateKey } = node.derivePath(path);
+    return this._createAccountAndUpdate(privateKey);
   }
 
   async createAccount(): Promise<string> {
@@ -63,6 +91,12 @@ export default class KeyringController
     return wallet.sign(tx);
   }
 
+  async getNonce(address: string) {
+    const privKey = this._getPrivateKeyFor(address);
+    const wallet = await this._getBLSWallet(privKey);
+    return wallet.Nonce();
+  }
+
   async _createAccountAndUpdate(privateKey: string): Promise<string> {
     const address = await this._getContractWalletAddress(privateKey);
 
@@ -82,26 +116,31 @@ export default class KeyringController
   }
 
   private _getPrivateKeyFor(address: string): string {
-    const keyPair = this.state.wallets.find((x) => x.address === address);
+    const checksummedAddress = ethers.utils.getAddress(address);
+    const keyPair = this.state.wallets.find(
+      (x) => x.address === checksummedAddress,
+    );
     if (!keyPair) throw new Error('key does not exist');
     return keyPair.privateKey;
   }
 
+  private _createProvider(): ethers.providers.Provider {
+    return new ethers.providers.JsonRpcProvider(getRPCURL(this.state.chainId));
+  }
+
   private _getContractWalletAddress(privateKey: string): Promise<string> {
-    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
-      provider,
+      this._createProvider(),
     );
   }
 
   private async _getBLSWallet(privateKey: string): Promise<BlsWalletWrapper> {
-    const provider = new ethers.providers.JsonRpcProvider(CHAIN_RPC_URL);
     return BlsWalletWrapper.connect(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
-      provider,
+      this._createProvider(),
     );
   }
 }

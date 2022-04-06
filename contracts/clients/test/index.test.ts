@@ -1,15 +1,12 @@
 import "source-map-support/register";
 
-import * as ethers from "ethers";
 import { BigNumber } from "ethers";
+import { keccak256, arrayify } from "ethers/lib/utils";
 import { expect } from "chai";
 
 import { initBlsWalletSigner, Bundle, Operation } from "../src/signer";
 
 import Range from "./helpers/Range";
-
-const keccak256 = ethers.utils.keccak256;
-const arrayify = ethers.utils.arrayify;
 
 const domain = arrayify(keccak256("0xfeedbee5"));
 const weiPerToken = BigNumber.from(10).pow(18);
@@ -57,8 +54,8 @@ describe("index", () => {
     const bundle = sign(bundleTemplate, privateKey);
 
     expect(bundle.signature).to.deep.equal([
-      "0x0058b38298f3c486223de7c61f461ff3b47530d2619a383e49b298a56249e4fb",
-      "0x0bf8beb03979073e57656af0a5bab043fe2d6bf4cbbf600f6a7190ce95fcf69c",
+      "0x0f8af80a400b731f4f2ddcd29816f296cca75e34816d466512a703631de3bb69",
+      "0x023d76b485531a8dbc087b2d6f25563ad7f6d81d25f5f123186d0ec26da5e2d0",
     ]);
 
     expect(verify(bundle)).to.equal(true);
@@ -103,8 +100,8 @@ describe("index", () => {
     const bundle2 = aggregate([bundle1, bundle1]);
 
     expect(bundle2.signature).to.deep.equal([
-      "0x091727df1b9834b31111c1d5c1e15989350de678232e46898c1c3c788e3c26ab",
-      "0x1f69e3373d329564e875a1401c0b7a4a6f7ab3e9cf93ef73b59a1feb3286e693",
+      "0x0008678ea56953fdca1b007b2685d3ed164b11de015f0a87ee844860c8e6cf30",
+      "0x2bc51003125b2da84a01e639c3c2be270a9b93ed82498bffbead65c6f07df708",
     ]);
 
     expect(verify(bundle2)).to.equal(true);
@@ -171,10 +168,10 @@ describe("index", () => {
     expect(getPublicKeyStr(samples.privateKey)).to.equal(
       [
         "0x",
-        "0127eaaf599e0e5997ebff004ae96b61afef4c35d9d67277ebd32a08bc42e2eb",
-        "01dc98a8d2e5ac73933935dbb2888c6719914e86f14de30bf441b951867e27cd",
-        "2f29d73e617ee30597f79b3fe567a11eb3bea1a2625ccb3fcb9635edf1d2f429",
-        "27fac8b975dd299618e7f48753fdfa492f11f701445cdd7c3ca98bf5c386ec65",
+        "027c3c0483be2722a29a0229bef64b2d8c1f8d4e954b0203d01ce342608b6eb8",
+        "060c1136ac3aef9ba4b2a0272920fba5528f6e97b376c511bc746e47414a0d04",
+        "11a697990758be620b0f09d3ad5bebe359964b74a29b89bdeb60671d243997fa",
+        "2075298b12a51948b7a40dc69bdc91698ed95e5d2a69d04845af64aaf2eb1537",
       ].join(""),
     );
   });

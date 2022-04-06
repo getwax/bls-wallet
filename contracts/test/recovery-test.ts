@@ -1,27 +1,25 @@
 import { expect } from "chai";
-
+import { BigNumber } from "ethers";
+import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
+import { PublicKey, BlsWalletWrapper, Signature } from "../clients";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import defaultDomain from "../clients/src/signer/defaultDomain";
-
-import { BigNumber } from "ethers";
-import { solidityPack } from "ethers/lib/utils";
-import { PublicKey, solG1 } from "../clients/deps/hubble-bls/mcl";
-import { BlsSignerFactory } from "../clients/deps/hubble-bls/signer";
 
 const signWalletAddress = async (
+  fx: Fixture,
   senderAddr: string,
   signerPrivKey: string,
-): Promise<solG1> => {
+): Promise<Signature> => {
   const addressMessage = solidityPack(["address"], [senderAddr]);
-  const blsSigner = (await BlsSignerFactory.new()).getSigner(
-    defaultDomain,
+  const wallet = await BlsWalletWrapper.connect(
     signerPrivKey,
+    fx.verificationGateway.address,
+    fx.provider,
   );
-  return blsSigner.sign(addressMessage);
+  return wallet.signMessage(addressMessage);
 };
 
 describe("Recovery", async function () {
@@ -69,7 +67,12 @@ describe("Recovery", async function () {
   });
 
   it("should update bls key", async function () {
-    const newKey: PublicKey = [1, 2, 3, 4].map(BigNumber.from);
+    const newKey: PublicKey = [
+      BigNumber.from(1),
+      BigNumber.from(2),
+      BigNumber.from(3),
+      BigNumber.from(4),
+    ];
     const initialKey = await blsWallet.getBLSPublicKey();
 
     await fx.call(wallet1, blsWallet, "setBLSPublicKey", [newKey], 1);
@@ -112,6 +115,7 @@ describe("Recovery", async function () {
     await (await blsWallet.setAnyPending()).wait();
 
     const addressSignature = await signWalletAddress(
+      fx,
       wallet1.address,
       wallet2.privateKey,
     );
@@ -189,6 +193,7 @@ describe("Recovery", async function () {
     await (await attackerWalletContract.setAnyPending()).wait();
 
     const addressSignature = await signWalletAddress(
+      fx,
       walletAttacker.address,
       walletAttacker.privateKey,
     );

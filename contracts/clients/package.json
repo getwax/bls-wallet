@@ -17,15 +17,15 @@
     "publish-experimental-dry-run": "node scripts/showVersion.js >.version && npm version $(node scripts/showBaseVersion.js)-$(git rev-parse HEAD | head -c7) --allow-same-version && npm publish --tag experimental --dry-run && npm version $(cat .version) && rm .version"
   },
   "dependencies": {
-    "ethers": "^5.5.2",
-    "mcl-wasm": "0.7.6",
-    "typescript": "^4.3.5"
+    "@thehubbleproject/bls": "^0.5.1",
+    "ethers": "5.5.4"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.21",
-    "@types/mocha": "^9.0.0",
-    "chai": "^4.3.4",
-    "mocha": "^9.0.3",
-    "source-map-support": "^0.5.20"
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^9.1.0",
+    "chai": "^4.3.6",
+    "mocha": "^9.2.2",
+    "source-map-support": "^0.5.21",
+    "typescript": "^4.6.2"
   }
 }

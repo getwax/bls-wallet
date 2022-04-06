@@ -6,13 +6,12 @@ import ViewSecretPhrasePanel from './ViewSecretPhrasePanel';
 
 const SecretPhrasePanel: FunctionComponent<{
   secretPhrase?: string[];
-  onComplete?: () => void;
-}> = ({ onComplete = () => {} }) => {
+}> = () => {
   const [mnemonic, setMnemonic] = useState<string[]>([]);
 
   useEffect(() => {
-    const mnemonic = ethers.Wallet.createRandom().mnemonic.phrase;
-    setMnemonic(mnemonic.split(' '));
+    const mnemonicPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
+    setMnemonic(mnemonicPhrase.split(' '));
   }, []);
 
   const [inReview, setInReview] = useState(false);
@@ -30,7 +29,6 @@ const SecretPhrasePanel: FunctionComponent<{
     <ReviewSecretPhrasePanel
       secretPhrase={mnemonic}
       onBack={() => setInReview(false)}
-      onComplete={onComplete}
     />
   );
 };
