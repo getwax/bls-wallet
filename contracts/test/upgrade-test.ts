@@ -4,7 +4,7 @@ import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
 import { BLSOpen } from "../typechain";
-import { ActionData, BlsWalletWrapper } from "../clients";
+import { ActionData, BlsWalletWrapper } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
