@@ -6,6 +6,8 @@ import {
   JRPCResponse,
   mergeMiddleware,
 } from '@toruslabs/openlogin-jrpc';
+import { Aggregator } from 'bls-wallet-clients';
+import { AGGREGATOR_URL } from '../../env';
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
@@ -83,6 +85,49 @@ function mockGetTransactionByHashMiddleware(): JRPCMiddleware<
   };
 }
 
+function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
+  return async (
+    req: JRPCRequest<unknown>,
+    res: JRPCResponse<unknown>,
+    next: JRPCEngineNextCallback,
+    end: JRPCEngineEndCallback,
+  ) => {
+    if (req.method === 'eth_getTransactionReceipt') {
+      const hash: string = (req.params as any)[0];
+
+      if (hash in knownTransactions) {
+        const knownTx = knownTransactions[hash];
+
+        const aggregator = new Aggregator(AGGREGATOR_URL);
+        const bundleReceipt = await aggregator.lookupReceipt(hash);
+
+        if (bundleReceipt === undefined) {
+          res.result = null;
+          return end();
+        }
+
+        res.result = {
+          transactionHash: hash,
+          transactionIndex: bundleReceipt.transactionIndex,
+          blockHash: bundleReceipt.blockHash,
+          blockNumber: bundleReceipt.blockNumber,
+          from: knownTx.from,
+          to: knownTx.to,
+          logs: [],
+          cumulativeGasUsed: '0x0',
+          gasUsed: '0x0',
+          status: '0x1',
+          effectiveGasPrice: '0x0',
+        };
+
+        return end();
+      }
+    }
+
+    return next();
+  };
+}
+
 export function createJsonRpcClient(providerConfig: ProviderConfig): {
   networkMiddleware: JRPCMiddleware<unknown, unknown>;
   blockTracker: PollingBlockTracker;
@@ -102,6 +147,7 @@ export function createJsonRpcClient(providerConfig: ProviderConfig): {
     createChainIdMiddleware(chainId),
     createProviderConfigMiddleware(providerConfig),
     mockGetTransactionByHashMiddleware(),
+    createAggregatorMiddleware(),
     fetchMiddleware as JRPCMiddleware<unknown, unknown>,
   ]);
   return { networkMiddleware, blockTracker };
