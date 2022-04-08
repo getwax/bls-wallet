@@ -33,6 +33,12 @@ export type EstimateFeeResponse = {
   successes: boolean[];
 };
 
+export type BundleReceipt = {
+  transactionIndex: string;
+  blockHash: string;
+  blockNumber: string;
+};
+
 export default class Aggregator {
   origin: string;
 
@@ -66,6 +72,14 @@ export default class Aggregator {
     const result = await this.jsonPost("/estimateFee", bundleToDto(bundle));
 
     return result as EstimateFeeResponse;
+  }
+
+  async lookupReceipt(id: string): Promise<BundleReceipt> {
+    const responseJson = await (
+      await fetch(`${this.origin}/bundleReceipt/${id}`)
+    ).json();
+
+    return responseJson;
   }
 
   async jsonPost(path: string, body: unknown): Promise<unknown> {
