@@ -74,12 +74,14 @@ export default class Aggregator {
     return result as EstimateFeeResponse;
   }
 
-  async lookupReceipt(id: string): Promise<BundleReceipt> {
-    const responseJson = await (
-      await fetch(`${this.origin}/bundleReceipt/${id}`)
-    ).json();
+  async lookupReceipt(id: string): Promise<BundleReceipt | undefined> {
+    const response = await fetch(`${this.origin}/bundleReceipt/${id}`);
 
-    return responseJson;
+    if (response.status === 404) {
+      return undefined;
+    }
+
+    return await response.json();
   }
 
   async jsonPost(path: string, body: unknown): Promise<unknown> {
