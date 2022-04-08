@@ -202,7 +202,7 @@ contract BLSWallet is Initializable, IBLSWallet
         try this._performOperation(op) returns (
             bytes[] memory _results
         ) {
-            success = (_results.length > 0); // false when no actions given
+            success = true;
             results = _results;
         }
         catch {
