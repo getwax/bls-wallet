@@ -12,9 +12,9 @@ import {
   TableOptions,
   unsketchify,
 } from "../../deps.ts";
-import assert from "../helpers/assert.ts";
 
 import assertExists from "../helpers/assertExists.ts";
+import nil from "../helpers/nil.ts";
 import { parseBundleDto } from "./parsers.ts";
 
 /**
@@ -112,7 +112,6 @@ export default class BundleTable {
   }
 
   async update(row: Row) {
-    assert(row.id !== undefined);
     await this.queryTable.where({ id: row.id }).update(toRawRow(row));
   }
 

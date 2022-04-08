@@ -1,6 +1,7 @@
 import { Router } from "../../deps.ts";
 import failRequest from "./helpers/failRequest.ts";
 import BundleHandler from "./helpers/BundleHandler.ts";
+import nil from "../helpers/nil.ts";
 
 import BundleService from "./BundleService.ts";
 
@@ -18,6 +19,20 @@ export default function BundleRouter(bundleService: BundleService) {
 
       ctx.response.body = result;
     }),
+  );
+
+  router.get(
+    "bundleReceipt/:id",
+    async (ctx) => {
+      const receipt = await bundleService.lookupReceipt(ctx.params.id!);
+
+      if (receipt === nil) {
+        ctx.response.status = 404;
+        return;
+      }
+
+      ctx.response.body = receipt;
+    },
   );
 
   return router;

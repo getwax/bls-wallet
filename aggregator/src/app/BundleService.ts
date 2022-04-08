@@ -3,6 +3,7 @@ import {
   BlsWalletSigner,
   Bundle,
   delay,
+  ethers,
   QueryClient,
 } from "../../deps.ts";
 
@@ -20,6 +21,7 @@ import BundleTable, { BundleRow, makeId } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
+import nil from "../helpers/nil.ts";
 
 export default class BundleService {
   static defaultConfig = {
@@ -33,6 +35,12 @@ export default class BundleService {
   unconfirmedBundles = new Set<Bundle>();
   unconfirmedActionCount = 0;
   unconfirmedRowIds = new Set<string>();
+
+  // TODO: Use database table?
+  confirmedBundles = new Map<string, {
+    bundle: Bundle,
+    receipt: ethers.ContractReceipt,
+  }>();
 
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
@@ -181,6 +189,22 @@ export default class BundleService {
     });
   }
 
+  async lookupReceipt(id: string) {
+    const confirmation = this.confirmedBundles.get(id);
+
+    if (!confirmation) {
+      return nil;
+    }
+
+    const receipt = confirmation.receipt;
+
+    return {
+      transactionIndex: receipt.transactionIndex,
+      blockHash: receipt.blockHash,
+      blockNumber: receipt.blockNumber,
+    };
+  }
+
   async runSubmission() {
     this.submissionsInProgress++;
 
@@ -262,17 +286,30 @@ export default class BundleService {
 
     this.addTask(async () => {
       try {
-        const recpt = await this.ethereumService.submitBundle(
+        const receipt = await this.ethereumService.submitBundle(
           aggregateBundle,
           Infinity,
           300,
         );
 
+        for (const row of includedRows) {
+          this.confirmedBundles.set(row.id, {
+            bundle: row.bundle,
+            receipt,
+          });
+        }
+
+        setTimeout(() => {
+          for (const row of includedRows) {
+            this.confirmedBundles.delete(row.id);
+          }
+        }, 5 * 60_000);
+
         this.emit({
           type: "submission-confirmed",
           data: {
             rowIds: includedRows.map((row) => row.id),
-            blockNumber: recpt.blockNumber,
+            blockNumber: receipt.blockNumber,
           },
         });
 
