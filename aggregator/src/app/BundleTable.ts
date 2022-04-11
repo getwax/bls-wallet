@@ -14,7 +14,6 @@ import {
 } from "../../deps.ts";
 
 import assertExists from "../helpers/assertExists.ts";
-import nil from "../helpers/nil.ts";
 import { parseBundleDto } from "./parsers.ts";
 
 /**

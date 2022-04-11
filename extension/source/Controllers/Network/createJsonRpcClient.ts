@@ -60,7 +60,12 @@ function mockGetTransactionByHashMiddleware(): JRPCMiddleware<
     end: JRPCEngineEndCallback,
   ) => {
     if (req.method === 'eth_getTransactionByHash') {
-      const hash: string = (req.params as any)[0];
+      if (!Array.isArray(req.params)) {
+        throw new Error(
+          'mockGetTransactionByHashMiddleware: req.params not array',
+        );
+      }
+      const hash: string = req.params[0];
 
       if (hash in knownTransactions) {
         const knownTx = knownTransactions[hash];
@@ -93,7 +98,10 @@ function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
     end: JRPCEngineEndCallback,
   ) => {
     if (req.method === 'eth_getTransactionReceipt') {
-      const hash: string = (req.params as any)[0];
+      if (!Array.isArray(req.params)) {
+        throw new Error('createAggregatorMiddleware: req.params not array');
+      }
+      const hash: string = req.params[0];
 
       if (hash in knownTransactions) {
         const knownTx = knownTransactions[hash];

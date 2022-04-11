@@ -189,6 +189,8 @@ export default class BundleService {
     });
   }
 
+  // TODO (merge-ok) Remove lint ignore when this hits db
+  // deno-lint-ignore require-await
   async lookupReceipt(id: string) {
     const confirmation = this.confirmedBundles.get(id);
 
@@ -298,12 +300,6 @@ export default class BundleService {
             receipt,
           });
         }
-
-        setTimeout(() => {
-          for (const row of includedRows) {
-            this.confirmedBundles.delete(row.id);
-          }
-        }, 5 * 60_000);
 
         this.emit({
           type: "submission-confirmed",
