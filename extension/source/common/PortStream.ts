@@ -71,7 +71,7 @@ export default class PortDuplexStream extends Duplex {
       } else {
         this._port.postMessage(msg);
       }
-    } catch (error) {
+    } catch {
       return cb(new Error('PortDuplexStream - disconnected'));
     }
     return cb();

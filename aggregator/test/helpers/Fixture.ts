@@ -198,15 +198,10 @@ export default class Fixture {
     }
   }
 
-  async allBundles(
+  allBundles(
     bundleService: BundleService,
   ): Promise<BundleRow[]> {
-    const removeId = (row: BundleRow) => {
-      delete row.id;
-      return row;
-    };
-
-    return (await bundleService.bundleTable.all()).map(removeId);
+    return bundleService.bundleTable.all();
   }
 
   /**

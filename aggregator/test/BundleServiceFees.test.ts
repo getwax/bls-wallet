@@ -1,6 +1,7 @@
 import Range from "../src/helpers/Range.ts";
 import {
   assertEquals,
+  assertBundleSucceeds,
   BigNumber,
   BlsWalletWrapper,
   ethers,
@@ -84,8 +85,7 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
     ],
   });
 
-  const failures = await bundleService.add(bundle);
-  assertEquals(failures, []);
+  assertBundleSucceeds(await bundleService.add(bundle));
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
@@ -115,8 +115,7 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
     approveAndSendTokensToOrigin(fx, await wallet.Nonce(), oneToken),
   );
 
-  const failures = await bundleService.add(bundle);
-  assertEquals(failures, []);
+  assertBundleSucceeds(await bundleService.add(bundle));
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
@@ -168,8 +167,7 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
     ],
   });
 
-  const failures = await bundleService.add(bundle);
-  assertEquals(failures, []);
+  assertBundleSucceeds(await bundleService.add(bundle));
 
   assertEquals(
     await fx.adminWallet.provider.getBalance(wallet.address),
@@ -209,8 +207,7 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
       approveAndSendTokensToOrigin(fx, nonce, fee),
     );
 
-    const failures = await bundleService.add(bundle);
-    assertEquals(failures, []);
+    assertBundleSucceeds(await bundleService.add(bundle));
   }
 
   // 6 good bundles from wallet 1 (each pays one token)
@@ -276,8 +273,7 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient gas-based fee", asy
       approveAndSendTokensToOrigin(fx, nonce, fee),
     );
 
-    const failures = await bundleService.add(bundle);
-    assertEquals(failures, []);
+    assertBundleSucceeds(await bundleService.add(bundle));
   }
 
   // 6 good bundles from wallet 1 (each pays one token)
@@ -347,8 +343,7 @@ Fixture.test("submits 1/3 bundles when bundle#3 fails the shortcut fee test but 
       approveAndSendTokensToOrigin(fx, nonce.add(i), bundleFees[i]),
     );
 
-    const failures = await bundleService.add(bundle);
-    assertEquals(failures, []);
+    assertBundleSucceeds(await bundleService.add(bundle));
   }
 
   assertEquals(await bundleService.bundleTable.count(), 3n);

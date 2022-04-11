@@ -23,7 +23,7 @@ const bundle = wallet.sign({
 
 console.log("sending", bundle);
 
-const failures = await client.add(bundle);
-if (failures.length) {
-  throw new Error(failures.join(", "));
+const res = await client.add(bundle);
+if ("failures" in res) {
+  throw new Error(res.failures.join(", "));
 }

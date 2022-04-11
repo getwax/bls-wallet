@@ -7,7 +7,6 @@ import {
   MockERC20__factory,
 } from "../deps.ts";
 
-import assert from "../src/helpers/assert.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 import * as env from "../test/env.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
@@ -40,10 +39,12 @@ console.log({ feeEstimation });
 
 console.log("Sending mint bundle to aggregator");
 
-const failures = await client.add(bundle);
-assert(failures.length === 0, failures.map((f) => f.description).join(", "));
+const res = await client.add(bundle);
+if ("failures" in res) {
+  throw new Error(res.failures.map((f) => f.description).join(", "));
+}
 
-console.log("Success response from aggregator");
+console.log("Success response from aggregator", res.id);
 
 while (true) {
   const balance = (await testErc20.balanceOf(wallet.address));

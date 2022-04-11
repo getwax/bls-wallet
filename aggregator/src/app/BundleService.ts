@@ -23,6 +23,8 @@ import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
 
+export type AddBundleResponse = { id: string } | { failures: TransactionFailure[] };
+
 export default class BundleService {
   static defaultConfig = {
     bundleQueryLimit: env.BUNDLE_QUERY_LIMIT,
@@ -36,7 +38,7 @@ export default class BundleService {
   unconfirmedActionCount = 0;
   unconfirmedRowIds = new Set<string>();
 
-  // TODO: Use database table?
+  // TODO (merge-ok) use database table in the future to persist
   confirmedBundles = new Map<string, {
     bundle: Bundle,
     receipt: ethers.ContractReceipt,
@@ -136,7 +138,7 @@ export default class BundleService {
 
   async add(
     bundle: Bundle,
-  ): Promise<{ id: string } | { failures: TransactionFailure[] }> {
+  ): Promise<AddBundleResponse> {
     if (bundle.operations.length !== bundle.senderPublicKeys.length) {
       return {
         failures: [
