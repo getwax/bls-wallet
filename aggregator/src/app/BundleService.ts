@@ -17,13 +17,13 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
-import BundleTable, { BundleRow, makeId } from "./BundleTable.ts";
+import BundleTable, { BundleRow, makeHash } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
 
-export type AddBundleResponse = { id: string } | { failures: TransactionFailure[] };
+export type AddBundleResponse = { hash: string } | { failures: TransactionFailure[] };
 
 export default class BundleService {
   static defaultConfig = {
@@ -36,7 +36,7 @@ export default class BundleService {
 
   unconfirmedBundles = new Set<Bundle>();
   unconfirmedActionCount = 0;
-  unconfirmedRowIds = new Set<string>();
+  unconfirmedRowIds = new Set<number>();
 
   // TODO (merge-ok) use database table in the future to persist
   confirmedBundles = new Map<string, {
@@ -169,10 +169,10 @@ export default class BundleService {
     }
 
     return await this.runQueryGroup(async () => {
-      const id = makeId();
+      const hash = makeHash();
 
       await this.bundleTable.add({
-        id,
+        hash,
         bundle,
         eligibleAfter: await this.ethereumService.BlockNumber(),
         nextEligibilityDelay: BigNumber.from(1),
@@ -181,20 +181,21 @@ export default class BundleService {
       this.emit({
         type: "bundle-added",
         data: {
+          hash,
           publicKeyShorts: bundle.senderPublicKeys.map(toShortPublicKey),
         },
       });
 
       this.addTask(() => this.tryAggregating());
 
-      return { id };
+      return { hash };
     });
   }
 
   // TODO (merge-ok) Remove lint ignore when this hits db
   // deno-lint-ignore require-await
-  async lookupReceipt(id: string) {
-    const confirmation = this.confirmedBundles.get(id);
+  async lookupReceipt(hash: string) {
+    const confirmation = this.confirmedBundles.get(hash);
 
     if (!confirmation) {
       return nil;
@@ -297,7 +298,7 @@ export default class BundleService {
         );
 
         for (const row of includedRows) {
-          this.confirmedBundles.set(row.id, {
+          this.confirmedBundles.set(row.hash, {
             bundle: row.bundle,
             receipt,
           });
@@ -306,7 +307,8 @@ export default class BundleService {
         this.emit({
           type: "submission-confirmed",
           data: {
-            rowIds: includedRows.map((row) => row.id),
+            hash: receipt.transactionHash,
+            bundleHashes: includedRows.map((row) => row.hash),
             blockNumber: receipt.blockNumber,
           },
         });

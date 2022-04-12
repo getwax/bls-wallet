@@ -20,7 +20,7 @@ export function assertBundleSucceeds(res: AddBundleResponse) {
 }
 
 export function assertBundleFails(res: AddBundleResponse) {
-  if ("id" in res) {
+  if ("hash" in res) {
     throw new AssertionError("expected bundle to fail");
   }
 }

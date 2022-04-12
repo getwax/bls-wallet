@@ -16,15 +16,16 @@ type AppEvent = (
       error: Error;
     };
   }
-  | { type: "submission-sent"; data: { rowIds: string[] } }
+  | { type: "submission-sent"; data: { hash: string } }
   | {
     type: "submission-confirmed";
-    data: { rowIds: string[]; blockNumber: number };
+    data: { hash: string; bundleHashes: string[], blockNumber: number };
   }
   | { type: "warning"; data: string }
   | {
     type: "bundle-added";
     data: {
+      hash: string;
       publicKeyShorts: string[];
     };
   }

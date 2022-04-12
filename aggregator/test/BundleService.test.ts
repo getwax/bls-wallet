@@ -56,7 +56,7 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
   assertEquals(await bundleService.bundleTable.count(), 0n);
 
   const res = await bundleService.add(tx);
-  if ("id" in res) {
+  if ("hash" in res) {
     throw new Error("expected bundle to fail");
   }
   assertEquals(res.failures.map((f) => f.type), ["invalid-signature"]);
@@ -86,7 +86,7 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
   assertEquals(await bundleService.bundleTable.count(), 0n);
 
   const res = await bundleService.add(tx);
-  if ("id" in res) {
+  if ("hash" in res) {
     throw new Error("expected bundle to fail");
   }
   assertEquals(res.failures.map((f) => f.type), ["duplicate-nonce"]);
@@ -128,7 +128,7 @@ Fixture.test(
     assertEquals(await bundleService.bundleTable.count(), 0n);
 
     const res = await bundleService.add(tx);
-    if ("id" in res) {
+    if ("hash" in res) {
       throw new Error("expected bundle to fail");
     }
 

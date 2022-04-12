@@ -22,20 +22,25 @@ import { parseBundleDto } from "./parsers.ts";
  * custom classes like BigNumber.
  */
 type RawRow = {
-  id: string;
+  id: number;
+  hash: string;
   bundle: string;
   eligibleAfter: string;
   nextEligibilityDelay: string;
 };
 
 type Row = {
-  id: string;
+  id: number;
+  hash: string;
   bundle: Bundle;
   eligibleAfter: BigNumber;
   nextEligibilityDelay: BigNumber;
 };
 
-export function makeId() {
+type InsertRow = Omit<Row, "id">;
+type InsertRawRow = Omit<RawRow, "id">;
+
+export function makeHash() {
   const buf = new Uint8Array(32);
   crypto.getRandomValues(buf);
   return ethers.utils.hexlify(buf);
@@ -44,7 +49,8 @@ export function makeId() {
 export type BundleRow = Row;
 
 const tableOptions: TableOptions = {
-  id: { type: DataType.VarChar, constraint: Constraint.PrimaryKey },
+  id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
+  hash: { type: DataType.VarChar },
   bundle: { type: DataType.VarChar },
   eligibleAfter: { type: DataType.VarChar },
   nextEligibilityDelay: { type: DataType.VarChar },
@@ -58,22 +64,29 @@ function fromRawRow(rawRow: RawRow): Row {
   }
 
   return {
-    id: rawRow.id,
+    ...rawRow,
     bundle: bundleFromDto(parseResult.success),
     eligibleAfter: BigNumber.from(rawRow.eligibleAfter),
     nextEligibilityDelay: BigNumber.from(rawRow.nextEligibilityDelay),
   };
 }
 
-function toRawRow(row: Row): RawRow {
-  const rawRow: RawRow = {
-    id: row.id,
+function toInsertRawRow(row: InsertRow): InsertRawRow {
+  return {
+    ...row,
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
   };
+}
 
-  return rawRow;
+function toRawRow(row: Row): RawRow {
+  return {
+    ...row,
+    bundle: JSON.stringify(bundleToDto(row.bundle)),
+    eligibleAfter: toUint256Hex(row.eligibleAfter),
+    nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
+  };
 }
 
 export default class BundleTable {
@@ -106,8 +119,8 @@ export default class BundleTable {
     return table;
   }
 
-  async add(...rows: Row[]) {
-    await this.queryTable.insert(...rows.map(toRawRow));
+  async add(...rows: InsertRow[]) {
+    await this.queryTable.insert(...rows.map(toInsertRawRow));
   }
 
   async update(row: Row) {

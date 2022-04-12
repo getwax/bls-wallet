@@ -31,7 +31,8 @@ function test(name: string, fn: (bundleTable: BundleTable) => Promise<void>) {
 
 const sampleRows: BundleRow[] = [
   {
-    id: "0x0",
+    id: 0,
+    hash: "0x0",
     bundle: {
       senderPublicKeys: [["0x01", "0x02", "0x03", "0x04"]],
       operations: [
