@@ -547,12 +547,12 @@ export default class QuillController extends BaseController<
           throw new Error(JSON.stringify(result.failures));
         }
 
-        knownTransactions[result.id] = {
+        knownTransactions[result.hash] = {
           ...params,
           nonce: nonce.toString(),
         };
 
-        return result.id;
+        return result.hash;
       },
     };
     const providerProxy =

@@ -54,13 +54,13 @@ export default class Aggregator {
 
   async add(
     bundle: Bundle,
-  ): Promise<{ id: string } | { failures: TransactionFailure[] }> {
+  ): Promise<{ hash: string } | { failures: TransactionFailure[] }> {
     const json: any = await this.jsonPost("/bundle", bundleToDto(bundle));
 
     if (
       json === null ||
       typeof json !== "object" ||
-      (!("failures" in json) && !("id" in json))
+      (!("failures" in json) && !("hash" in json))
     ) {
       throw new Error(`Unexpected response: ${JSON.stringify(json)}`);
     }
@@ -74,8 +74,8 @@ export default class Aggregator {
     return result as EstimateFeeResponse;
   }
 
-  async lookupReceipt(id: string): Promise<BundleReceipt | undefined> {
-    const response = await fetch(`${this.origin}/bundleReceipt/${id}`);
+  async lookupReceipt(hash: string): Promise<BundleReceipt | undefined> {
+    const response = await fetch(`${this.origin}/bundleReceipt/${hash}`);
 
     if (response.status === 404) {
       return undefined;
