@@ -44,7 +44,7 @@ if ("failures" in res) {
   throw new Error(res.failures.map((f) => f.description).join(", "));
 }
 
-console.log("Success response from aggregator", res.id);
+console.log("Success response from aggregator", res.hash);
 
 while (true) {
   const balance = (await testErc20.balanceOf(wallet.address));
