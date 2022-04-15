@@ -33,6 +33,12 @@ export type EstimateFeeResponse = {
   successes: boolean[];
 };
 
+export type BundleReceipt = {
+  transactionIndex: string;
+  blockHash: string;
+  blockNumber: string;
+};
+
 export default class Aggregator {
   origin: string;
 
@@ -46,20 +52,36 @@ export default class Aggregator {
     this.origin = new URL(url).origin;
   }
 
-  async add(bundle: Bundle): Promise<TransactionFailure[]> {
+  async add(
+    bundle: Bundle,
+  ): Promise<{ hash: string } | { failures: TransactionFailure[] }> {
     const json: any = await this.jsonPost("/bundle", bundleToDto(bundle));
 
-    if (json === null || typeof json !== "object" || !("failures" in json)) {
+    if (
+      json === null ||
+      typeof json !== "object" ||
+      (!("failures" in json) && !("hash" in json))
+    ) {
       throw new Error(`Unexpected response: ${JSON.stringify(json)}`);
     }
 
-    return json.failures as TransactionFailure[];
+    return json;
   }
 
   async estimateFee(bundle: Bundle): Promise<EstimateFeeResponse> {
     const result = await this.jsonPost("/estimateFee", bundleToDto(bundle));
 
     return result as EstimateFeeResponse;
+  }
+
+  async lookupReceipt(hash: string): Promise<BundleReceipt | undefined> {
+    const response = await fetch(`${this.origin}/bundleReceipt/${hash}`);
+
+    if (response.status === 404) {
+      return undefined;
+    }
+
+    return await response.json();
   }
 
   async jsonPost(path: string, body: unknown): Promise<unknown> {

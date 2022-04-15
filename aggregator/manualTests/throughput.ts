@@ -107,8 +107,8 @@ pollingLoop(() => {
       }],
     });
 
-    client.add(bundle).then((failures) => {
-      if (failures.length > 0) {
+    const res = client.add(bundle).then((failures) => {
+      if ("failures" in res) {
         console.log({ failures });
       }
 

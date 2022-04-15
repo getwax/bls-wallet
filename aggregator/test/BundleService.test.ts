@@ -1,4 +1,4 @@
-import { assertEquals, Operation } from "./deps.ts";
+import { assertEquals, assertBundleSucceeds, Operation } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 
@@ -22,8 +22,7 @@ Fixture.test("adds valid bundle", async (fx) => {
 
   assertEquals(await bundleService.bundleTable.count(), 0n);
 
-  const failures = await bundleService.add(tx);
-  assertEquals(failures, []);
+  assertBundleSucceeds(await bundleService.add(tx));
 
   assertEquals(await bundleService.bundleTable.count(), 1n);
 });
@@ -56,8 +55,11 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
 
   assertEquals(await bundleService.bundleTable.count(), 0n);
 
-  const failures = await bundleService.add(tx);
-  assertEquals(failures.map((f) => f.type), ["invalid-signature"]);
+  const res = await bundleService.add(tx);
+  if ("hash" in res) {
+    throw new Error("expected bundle to fail");
+  }
+  assertEquals(res.failures.map((f) => f.type), ["invalid-signature"]);
 
   // Bundle table remains empty
   assertEquals(await bundleService.bundleTable.count(), 0n);
@@ -83,8 +85,11 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
 
   assertEquals(await bundleService.bundleTable.count(), 0n);
 
-  const failures = await bundleService.add(tx);
-  assertEquals(failures.map((f) => f.type), ["duplicate-nonce"]);
+  const res = await bundleService.add(tx);
+  if ("hash" in res) {
+    throw new Error("expected bundle to fail");
+  }
+  assertEquals(res.failures.map((f) => f.type), ["duplicate-nonce"]);
 
   // Bundle table remains empty
   assertEquals(await bundleService.bundleTable.count(), 0n);
@@ -122,10 +127,13 @@ Fixture.test(
 
     assertEquals(await bundleService.bundleTable.count(), 0n);
 
-    const failures = await bundleService.add(tx);
+    const res = await bundleService.add(tx);
+    if ("hash" in res) {
+      throw new Error("expected bundle to fail");
+    }
 
     assertEquals(
-      failures.map((f) => f.type).sort(),
+      res.failures.map((f) => f.type).sort(),
       ["duplicate-nonce", "invalid-signature"],
     );
 
@@ -154,8 +162,7 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
 
   assertEquals(await bundleService.bundleTable.count(), 0n);
 
-  const failures = await bundleService.add(tx);
-  assertEquals(failures, []);
+  assertBundleSucceeds(await bundleService.add(tx));
 
   assertEquals(await bundleService.bundleTable.count(), 1n);
 });

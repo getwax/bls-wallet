@@ -31,6 +31,8 @@ function test(name: string, fn: (bundleTable: BundleTable) => Promise<void>) {
 
 const sampleRows: BundleRow[] = [
   {
+    id: 0,
+    hash: "0x0",
     bundle: {
       senderPublicKeys: [["0x01", "0x02", "0x03", "0x04"]],
       operations: [
@@ -65,5 +67,5 @@ test("Has one transaction after adding transaction", async (table) => {
 test("Can retrieve transaction", async (table) => {
   await table.add(sampleRows[0]);
 
-  assertEquals(await table.all(), [{ ...sampleRows[0], id: 1 }]);
+  assertEquals(await table.all(), [{ ...sampleRows[0] }]);
 });

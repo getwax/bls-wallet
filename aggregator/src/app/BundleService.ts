@@ -3,6 +3,7 @@ import {
   BlsWalletSigner,
   Bundle,
   delay,
+  ethers,
   QueryClient,
 } from "../../deps.ts";
 
@@ -16,10 +17,13 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
-import BundleTable, { BundleRow } from "./BundleTable.ts";
+import BundleTable, { BundleRow, makeHash } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
+import nil from "../helpers/nil.ts";
+
+export type AddBundleResponse = { hash: string } | { failures: TransactionFailure[] };
 
 export default class BundleService {
   static defaultConfig = {
@@ -33,6 +37,12 @@ export default class BundleService {
   unconfirmedBundles = new Set<Bundle>();
   unconfirmedActionCount = 0;
   unconfirmedRowIds = new Set<number>();
+
+  // TODO (merge-ok) use database table in the future to persist
+  confirmedBundles = new Map<string, {
+    bundle: Bundle,
+    receipt: ethers.ContractReceipt,
+  }>();
 
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
@@ -104,7 +114,7 @@ export default class BundleService {
     );
 
     const actionCount = eligibleRows
-      .filter((r) => !this.unconfirmedRowIds.has(r.id!))
+      .filter((r) => !this.unconfirmedRowIds.has(r.id))
       .map((r) => countActions(r.bundle))
       .reduce(plus, 0);
 
@@ -126,15 +136,19 @@ export default class BundleService {
     );
   }
 
-  async add(bundle: Bundle): Promise<TransactionFailure[]> {
+  async add(
+    bundle: Bundle,
+  ): Promise<AddBundleResponse> {
     if (bundle.operations.length !== bundle.senderPublicKeys.length) {
-      return [
-        {
-          type: "invalid-format",
-          description:
-            "number of operations does not match number of public keys",
-        },
-      ];
+      return {
+        failures: [
+          {
+            type: "invalid-format",
+            description:
+              "number of operations does not match number of public keys",
+          },
+        ],
+      };
     }
 
     const signedCorrectly = this.blsWalletSigner.verify(bundle);
@@ -151,11 +165,14 @@ export default class BundleService {
     failures.push(...await this.ethereumService.checkNonces(bundle));
 
     if (failures.length > 0) {
-      return failures;
+      return { failures };
     }
 
     return await this.runQueryGroup(async () => {
+      const hash = makeHash();
+
       await this.bundleTable.add({
+        hash,
         bundle,
         eligibleAfter: await this.ethereumService.BlockNumber(),
         nextEligibilityDelay: BigNumber.from(1),
@@ -164,14 +181,33 @@ export default class BundleService {
       this.emit({
         type: "bundle-added",
         data: {
+          hash,
           publicKeyShorts: bundle.senderPublicKeys.map(toShortPublicKey),
         },
       });
 
       this.addTask(() => this.tryAggregating());
 
-      return [];
+      return { hash };
     });
+  }
+
+  // TODO (merge-ok) Remove lint ignore when this hits db
+  // deno-lint-ignore require-await
+  async lookupReceipt(hash: string) {
+    const confirmation = this.confirmedBundles.get(hash);
+
+    if (!confirmation) {
+      return nil;
+    }
+
+    const receipt = confirmation.receipt;
+
+    return {
+      transactionIndex: receipt.transactionIndex,
+      blockHash: receipt.blockHash,
+      blockNumber: receipt.blockNumber,
+    };
   }
 
   async runSubmission() {
@@ -187,7 +223,7 @@ export default class BundleService {
 
       // Exclude rows that are already pending.
       eligibleRows = eligibleRows.filter(
-        (row) => !this.unconfirmedRowIds.has(row.id!),
+        (row) => !this.unconfirmedRowIds.has(row.id),
       );
 
       const { aggregateBundle, includedRows, failedRows } = await this
@@ -224,7 +260,7 @@ export default class BundleService {
       await this.bundleTable.remove(row);
     }
 
-    this.unconfirmedRowIds.delete(row.id!);
+    this.unconfirmedRowIds.delete(row.id);
   }
 
   async submitAggregateBundle(
@@ -250,22 +286,30 @@ export default class BundleService {
     this.unconfirmedBundles.add(aggregateBundle);
 
     for (const row of includedRows) {
-      this.unconfirmedRowIds.add(row.id!);
+      this.unconfirmedRowIds.add(row.id);
     }
 
     this.addTask(async () => {
       try {
-        const recpt = await this.ethereumService.submitBundle(
+        const receipt = await this.ethereumService.submitBundle(
           aggregateBundle,
           Infinity,
           300,
         );
 
+        for (const row of includedRows) {
+          this.confirmedBundles.set(row.hash, {
+            bundle: row.bundle,
+            receipt,
+          });
+        }
+
         this.emit({
           type: "submission-confirmed",
           data: {
-            rowIds: includedRows.map((row) => row.id),
-            blockNumber: recpt.blockNumber,
+            hash: receipt.transactionHash,
+            bundleHashes: includedRows.map((row) => row.hash),
+            blockNumber: receipt.blockNumber,
           },
         });
 
@@ -275,7 +319,7 @@ export default class BundleService {
         this.unconfirmedBundles.delete(aggregateBundle);
 
         for (const row of includedRows) {
-          this.unconfirmedRowIds.delete(row.id!);
+          this.unconfirmedRowIds.delete(row.id);
         }
       }
     });

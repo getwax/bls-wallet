@@ -1,4 +1,4 @@
-import { keyBy, /*mapValues*/, omitBy, pickBy, sortBy } from 'lodash-es';
+import { keyBy, /* mapValues, */ omitBy, pickBy, sortBy } from 'lodash-es';
 
 import BaseController from '../BaseController';
 import { transactionMatchesNetwork } from '../utils';

@@ -1,4 +1,4 @@
-import { assertEquals, BigNumber } from "./deps.ts";
+import { assertEquals, assertBundleSucceeds, BigNumber } from "./deps.ts";
 import Fixture, {
   aggregationStrategyDefaultTestConfig,
   bundleServiceDefaultTestConfig,
@@ -38,8 +38,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     ],
   });
 
-  const failures = await bundleService.add(bundle);
-  assertEquals(failures, []);
+  assertBundleSucceeds(await bundleService.add(bundle));
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
@@ -83,11 +82,9 @@ Fixture.test("submits a full submission without delay", async (fx) => {
     })
   );
 
-  const failures = [];
   for (const b of bundles) {
-    failures.push(await bundleService.add(b));
+    assertBundleSucceeds(await bundleService.add(b));
   }
-  assertEquals(failures.flat(), []);
 
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
   await bundleService.waitForConfirmations();
@@ -133,11 +130,9 @@ Fixture.test(
     // Prevent submission from triggering on max aggregation size.
     bundleService.config.maxAggregationSize = Infinity;
 
-    const failures = [];
     for (const b of bundles) {
-      failures.push(await bundleService.add(b));
+      assertBundleSucceeds(await bundleService.add(b));
     }
-    assertEquals(failures.flat(), []);
 
     // Restore max aggregation size for testing. (This way we hit the edge case
     // that the aggregator has access to more actions than it can fit into a
@@ -195,11 +190,9 @@ Fixture.test(
       })
     );
 
-    const failures = [];
     for (const b of bundles) {
-      failures.push(await bundleService.add(b));
+      assertBundleSucceeds(await bundleService.add(b));
     }
-    assertEquals(failures.flat(), []);
 
     await bundleService.submissionTimer.trigger();
     await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -277,9 +270,9 @@ Fixture.test("retains failing bundle when its eligibility delay is smaller than 
 
   // "failing" above refers to execution, which doesn't cause failure to simply
   // add it to the service
-  const failures = await bundleService.add(bundle);
+  const res = await bundleService.add(bundle);
   await bundleService.runPendingTasks();
-  assertEquals(failures, []);
+  assertBundleSucceeds(res);
 
   assertEquals(await bundleService.bundleTable.count(), 1n);
 
@@ -317,9 +310,9 @@ Fixture.test("removes failing bundle when its eligibility delay is larger than M
 
   // "failing" above refers to execution, which doesn't cause failure to simply
   // add it to the service
-  const failures = await bundleService.add(bundle);
+  const res = await bundleService.add(bundle);
   await bundleService.runPendingTasks();
-  assertEquals(failures, []);
+  assertBundleSucceeds(res);
 
   assertEquals(await bundleService.bundleTable.count(), 1n);
 

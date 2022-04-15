@@ -1,6 +1,7 @@
 import { Router } from "../../deps.ts";
 import failRequest from "./helpers/failRequest.ts";
 import BundleHandler from "./helpers/BundleHandler.ts";
+import nil from "../helpers/nil.ts";
 
 import BundleService from "./BundleService.ts";
 
@@ -10,14 +11,28 @@ export default function BundleRouter(bundleService: BundleService) {
   router.post(
     "bundle",
     BundleHandler(async (ctx, bun) => {
-      const failures = await bundleService.add(bun);
+      const result = await bundleService.add(bun);
 
-      if (failures.length > 0) {
-        return failRequest(ctx, failures);
+      if ("failures" in result) {
+        return failRequest(ctx, result.failures);
       }
 
-      ctx.response.body = { failures: [] };
+      ctx.response.body = result;
     }),
+  );
+
+  router.get(
+    "bundleReceipt/:hash",
+    async (ctx) => {
+      const receipt = await bundleService.lookupReceipt(ctx.params.hash!);
+
+      if (receipt === nil) {
+        ctx.response.status = 404;
+        return;
+      }
+
+      ctx.response.body = receipt;
+    },
   );
 
   return router;

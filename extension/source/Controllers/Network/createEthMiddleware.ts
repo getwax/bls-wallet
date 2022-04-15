@@ -8,20 +8,12 @@ import {
 import { BigNumberish, BytesLike } from 'ethers';
 import { PROVIDER_JRPC_METHODS } from '../../common/constants';
 
-type TransactionFailure =
-  | { type: 'invalid-format'; description: string }
-  | { type: 'invalid-signature'; description: string }
-  | { type: 'duplicate-nonce'; description: string }
-  | { type: 'insufficient-reward'; description: string }
-  | { type: 'unpredictable-gas-limit'; description: string }
-  | { type: 'invalid-creation'; description: string };
-
 export type SendTransactionParams = {
   from: string;
   to: string;
   gas?: BigNumberish;
   gasPrice?: BigNumberish;
-  value: BigNumberish;
+  value?: BigNumberish;
   data: BytesLike;
 };
 
@@ -32,9 +24,7 @@ export interface IProviderHandlers {
   getProviderState: (
     req: JRPCRequest<unknown>,
   ) => Promise<{ accounts: string[]; chainId: string; isUnlocked: boolean }>;
-  submitBatch: (
-    req: JRPCRequest<SendTransactionParams>,
-  ) => Promise<TransactionFailure[]>;
+  submitBatch: (req: JRPCRequest<SendTransactionParams>) => Promise<string>;
 }
 
 export function createWalletMiddleware({

@@ -96,6 +96,8 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
   });
 
   const bundleRow: BundleRow = {
+    id: 0,
+    hash: "0x0",
     bundle,
     eligibleAfter: BigNumber.from(0),
     nextEligibilityDelay: BigNumber.from(1),

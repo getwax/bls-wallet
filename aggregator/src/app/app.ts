@@ -1,4 +1,4 @@
-import { Application } from "../../deps.ts";
+import { Application, oakCors } from "../../deps.ts";
 
 import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
@@ -64,6 +64,7 @@ export default async function app(emit: (evt: AppEvent) => void) {
   ];
 
   const app = new Application();
+  app.use(oakCors()); // Enables CORS for all routes
 
   app.use(async (ctx, next) => {
     const startTime = Date.now();

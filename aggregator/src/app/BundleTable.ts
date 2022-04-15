@@ -6,12 +6,12 @@ import {
   Constraint,
   CreateTableMode,
   DataType,
+  ethers,
   QueryClient,
   QueryTable,
   TableOptions,
   unsketchify,
 } from "../../deps.ts";
-import assert from "../helpers/assert.ts";
 
 import assertExists from "../helpers/assertExists.ts";
 import { parseBundleDto } from "./parsers.ts";
@@ -22,23 +22,35 @@ import { parseBundleDto } from "./parsers.ts";
  * custom classes like BigNumber.
  */
 type RawRow = {
-  id?: number;
+  id: number;
+  hash: string;
   bundle: string;
   eligibleAfter: string;
   nextEligibilityDelay: string;
 };
 
 type Row = {
-  id?: number;
+  id: number;
+  hash: string;
   bundle: Bundle;
   eligibleAfter: BigNumber;
   nextEligibilityDelay: BigNumber;
 };
 
+type InsertRow = Omit<Row, "id">;
+type InsertRawRow = Omit<RawRow, "id">;
+
+export function makeHash() {
+  const buf = new Uint8Array(32);
+  crypto.getRandomValues(buf);
+  return ethers.utils.hexlify(buf);
+}
+
 export type BundleRow = Row;
 
 const tableOptions: TableOptions = {
   id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
+  hash: { type: DataType.VarChar },
   bundle: { type: DataType.VarChar },
   eligibleAfter: { type: DataType.VarChar },
   nextEligibilityDelay: { type: DataType.VarChar },
@@ -52,25 +64,29 @@ function fromRawRow(rawRow: RawRow): Row {
   }
 
   return {
-    id: rawRow.id,
+    ...rawRow,
     bundle: bundleFromDto(parseResult.success),
     eligibleAfter: BigNumber.from(rawRow.eligibleAfter),
     nextEligibilityDelay: BigNumber.from(rawRow.nextEligibilityDelay),
   };
 }
 
-function toRawRow(row: Row): RawRow {
-  const rawRow: RawRow = {
+function toInsertRawRow(row: InsertRow): InsertRawRow {
+  return {
+    ...row,
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
   };
+}
 
-  if ("id" in row) {
-    rawRow.id = row.id;
-  }
-
-  return rawRow;
+function toRawRow(row: Row): RawRow {
+  return {
+    ...row,
+    bundle: JSON.stringify(bundleToDto(row.bundle)),
+    eligibleAfter: toUint256Hex(row.eligibleAfter),
+    nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
+  };
 }
 
 export default class BundleTable {
@@ -103,22 +119,11 @@ export default class BundleTable {
     return table;
   }
 
-  async add(...rows: Row[]) {
-    await this.queryTable.insert(...rows.map(toRawRow));
-  }
-
-  async addWithNewId(...rows: Row[]) {
-    const rowsWithoutIds = rows.map((row) => {
-      const withoutId = { ...row };
-      delete withoutId.id;
-      return withoutId;
-    });
-
-    return await this.add(...rowsWithoutIds);
+  async add(...rows: InsertRow[]) {
+    await this.queryTable.insert(...rows.map(toInsertRawRow));
   }
 
   async update(row: Row) {
-    assert(row.id !== undefined);
     await this.queryTable.where({ id: row.id }).update(toRawRow(row));
   }
 

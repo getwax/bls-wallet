@@ -2,6 +2,7 @@ export { delay } from "https://deno.land/std@0.103.0/async/delay.ts";
 export { parse as parseArgs } from "https://deno.land/std@0.103.0/flags/mod.ts";
 export { exists } from "https://deno.land/std@0.103.0/fs/mod.ts";
 export { dirname } from "https://deno.land/std@0.103.0/path/mod.ts";
+export { oakCors } from "https://deno.land/x/cors@v1.2.0/mod.ts";
 
 import { config as dotEnvConfig } from "https://deno.land/x/dotenv@v2.0.0/mod.ts";
 export { dotEnvConfig };
@@ -48,7 +49,7 @@ export type {
   PublicKey,
   Signature,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.5.4-f2bad77";
+} from "https://esm.sh/bls-wallet-clients@0.6.0-6abef92";
 
 export {
   Aggregator as AggregatorClient,
@@ -58,10 +59,10 @@ export {
   getConfig,
   MockERC20__factory,
   VerificationGateway__factory,
-} from "https://esm.sh/bls-wallet-clients@0.5.4-f2bad77";
+} from "https://esm.sh/bls-wallet-clients@0.6.0-6abef92";
 
 // Workaround for esbuild's export-star bug
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.5.4-f2bad77";
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.6.0-6abef92";
 const {
   bundleFromDto,
   bundleToDto,

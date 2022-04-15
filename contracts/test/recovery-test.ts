@@ -3,7 +3,7 @@ import { BigNumber } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import { PublicKey, BlsWalletWrapper, Signature } from "../clients";
+import { PublicKey, BlsWalletWrapper, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
