@@ -42,7 +42,7 @@ export const getDefaultProviderConfig = (): ProviderConfig => {
   }
   const config = SUPPORTED_NETWORKS[networkName];
   if (!config) {
-    throw new Error(`netowrk config not found for network ${networkName}`);
+    throw new Error(`network config not found for network ${networkName}`);
   }
   return config;
 };
@@ -51,3 +51,17 @@ export const getRPCURL = (chainId: string): string => {
   const name = CHAIN_ID_NETWORK_MAP[chainId];
   return SUPPORTED_NETWORKS[name].rpcTarget;
 };
+
+// We should be able to just use JRPCRequest<T>,
+// But this is ok for now.
+export const getFirstReqParam = <T>(req: any): T => {
+  if (!Array.isArray(req.params)) {
+    throw new Error(
+      'req.params not array',
+    );
+  }
+  if (!req.params.length) {
+    throw new Error('req.params empty');
+  }
+  return req.params[0];
+}

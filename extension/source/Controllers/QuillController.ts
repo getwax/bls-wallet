@@ -15,6 +15,7 @@ import { Aggregator } from 'bls-wallet-clients';
 import {
   createRandomId,
   getDefaultProviderConfig,
+  getFirstReqParam,
   getUserLanguage,
 } from './utils';
 import { ProviderConfig } from './constants';
@@ -522,22 +523,23 @@ export default class QuillController extends BaseController<
       },
 
       submitBatch: async (req: any) => {
-        const params: SendTransactionParams = req.params[0];
+        const txParams = getFirstReqParam<SendTransactionParams>(req);
 
-        const nonce = await this.keyringController.getNonce(params.from);
+        const nonce = await this.keyringController.getNonce(txParams.from);
+        const ethValue = txParams.value?.toString() ?? 0;
         const tx = {
           nonce: nonce.toString(),
           actions: [
             {
-              ethValue: params.value.toString(),
-              contractAddress: params.to,
-              encodedFunction: params.data,
+              ethValue,
+              contractAddress: txParams.to,
+              encodedFunction: txParams.data,
             },
           ],
         };
 
         const bundle = await this.keyringController.signTransactions(
-          params.from,
+          txParams.from,
           tx,
         );
         const agg = new Aggregator(AGGREGATOR_URL);
@@ -548,8 +550,9 @@ export default class QuillController extends BaseController<
         }
 
         knownTransactions[result.hash] = {
-          ...params,
+          ...txParams,
           nonce: nonce.toString(),
+          value: ethValue,
         };
 
         return result.hash;

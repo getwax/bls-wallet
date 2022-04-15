@@ -12,6 +12,7 @@ import { AGGREGATOR_URL } from '../../env';
 import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
 import knownTransactions from '../knownTransactions';
+import { getFirstReqParam } from '../utils';
 import { createFetchMiddleware } from './createFetchMiddleware';
 import { providerFromMiddleware } from './INetworkController';
 
@@ -60,12 +61,7 @@ function mockGetTransactionByHashMiddleware(): JRPCMiddleware<
     end: JRPCEngineEndCallback,
   ) => {
     if (req.method === 'eth_getTransactionByHash') {
-      if (!Array.isArray(req.params)) {
-        throw new Error(
-          'mockGetTransactionByHashMiddleware: req.params not array',
-        );
-      }
-      const hash: string = req.params[0];
+      const hash = getFirstReqParam<string>(req);
 
       if (hash in knownTransactions) {
         const knownTx = knownTransactions[hash];
@@ -81,7 +77,6 @@ function mockGetTransactionByHashMiddleware(): JRPCMiddleware<
           gasLimit: '0x0',
           data: knownTx.data,
         };
-
         return end();
       }
     }
@@ -98,10 +93,7 @@ function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
     end: JRPCEngineEndCallback,
   ) => {
     if (req.method === 'eth_getTransactionReceipt') {
-      if (!Array.isArray(req.params)) {
-        throw new Error('createAggregatorMiddleware: req.params not array');
-      }
-      const hash: string = req.params[0];
+      const hash = getFirstReqParam<string>(req);
 
       if (hash in knownTransactions) {
         const knownTx = knownTransactions[hash];

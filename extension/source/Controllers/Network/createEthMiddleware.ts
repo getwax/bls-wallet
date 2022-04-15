@@ -13,7 +13,7 @@ export type SendTransactionParams = {
   to: string;
   gas?: BigNumberish;
   gasPrice?: BigNumberish;
-  value: BigNumberish;
+  value?: BigNumberish;
   data: BytesLike;
 };
 

@@ -1,9 +1,11 @@
+import { BigNumberish } from 'ethers';
 import { SendTransactionParams } from './Network/createEthMiddleware';
 
 const knownTransactions: Record<
   string,
   SendTransactionParams & {
     nonce: string;
+    value: BigNumberish;
   }
 > = {};
 
