@@ -56,12 +56,20 @@ export const getRPCURL = (chainId: string): string => {
 // But this is ok for now.
 export const getFirstReqParam = <T>(req: any): T => {
   if (!Array.isArray(req.params)) {
-    throw new Error(
-      'req.params not array',
-    );
+    throw new Error('req.params not array');
   }
   if (!req.params.length) {
     throw new Error('req.params empty');
   }
   return req.params[0];
-}
+};
+
+export const getAllReqParam = <T>(req: any): T => {
+  if (!Array.isArray(req.params)) {
+    throw new Error('req.params not array');
+  }
+  if (!req.params.length) {
+    throw new Error('req.params empty');
+  }
+  return req.params;
+};
