@@ -59,6 +59,7 @@ import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import createMetaRPCHandler from './streamHelpers/MetaRPCHandler';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 import { AGGREGATOR_URL } from '../env';
+import knownTransactions from './knownTransactions';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -547,11 +548,11 @@ export default class QuillController extends BaseController<
           throw new Error(JSON.stringify(result.failures));
         }
 
-        // knownTransactions[result.hash] = {
-        //   ...txParams[0],
-        //   nonce: nonce.toString(),
-        //   value: ethValue,
-        // };
+        knownTransactions[result.hash] = {
+          ...txParams[0],
+          nonce: nonce.toString(),
+          value: txParams[0].value || '0',
+        };
 
         return result.hash;
       },
