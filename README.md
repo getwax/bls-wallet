@@ -6,6 +6,8 @@ An Ethereum Layer 2 smart contract wallet that uses [BLS signatures](https://en.
 
 See each component's directory `README` for more details.
 
+![System Overview](images/system-overview.svg)
+
 ### Aggregator
 
 Service which aggregates BLS wallet transactions.
