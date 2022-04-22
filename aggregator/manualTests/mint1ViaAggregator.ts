@@ -32,10 +32,10 @@ const bundle = wallet.sign({
   }],
 });
 
-console.log("Calling estimateFee");
+// console.log("Calling estimateFee");
 
-const feeEstimation = await client.estimateFee(bundle);
-console.log({ feeEstimation });
+// const feeEstimation = await client.estimateFee(bundle);
+// console.log({ feeEstimation });
 
 console.log("Sending mint bundle to aggregator");
 

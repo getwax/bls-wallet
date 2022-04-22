@@ -83,7 +83,19 @@ export default class Create2Fixture {
 
     // If contract doesn't exist at expected address, deploy it there
     if ((await ethers.provider.getCode(contractAddress)) === "0x") {
-      await (await create2Deployer.deploy(salt, initCode)).wait();
+      const receipt = await (
+        await create2Deployer.deploy(salt, initCode)
+      ).wait();
+
+      console.log(
+        [
+          `Deployed ${contractName}`,
+          `using ${receipt.gasUsed.toString()} gas:`,
+          contractAddress,
+        ].join(" "),
+      );
+    } else {
+      console.log(`${contractName} already deployed: ${contractAddress}`);
     }
 
     return factory.attach(contractAddress);

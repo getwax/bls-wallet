@@ -1,18 +1,19 @@
 {
     "parameters": {},
     "addresses": {
-        "create2Deployer": "0x036d996D6855B83cd80142f2933d8C2617dA5617",
-        "precompileCostEstimator": "0x22E4a5251C1F02de8369Dd6f192033F6CB7531A4",
-        "blsLibrary": "0x52ED3BAF9F4b60c67D2796e8ED5f35AfA3c4938a",
-        "verificationGateway": "0x115A6d451f50D9E683be5DFaee9a1A22d96BD7a4",
-        "blsExpander": "0xa89ac804aCF9D38B6b8827ba596678FAC23616FC",
-        "testToken": "0x8b20135a1C7ad0B069ac0Be5640b84E1481B8854"
+        "create2Deployer": "0xc1326d37b446bC7df7b36348C963BFcc8eF98Ce3",
+        "precompileCostEstimator": "0x7a89f10F307Bd51b81eF8D1B2c5fa74c7E2d006D",
+        "blsLibrary": "0x6F6a92362EA4299B5668dC4A75282bBFd42D4804",
+        "verificationGateway": "0x697B3E6258B08201d316b31D69805B5F666b62C8",
+        "blsExpander": "0xaf6E02eAf7855D587ffDE5c424a0991570b56944",
+        "utilities": "0x5C176B9F019Bfe90cEc3b2492cC5e20f11c97855",
+        "testToken": "0x09f2C81263B8C079CcE299B4B5b4C32cba0aA0F9"
     },
     "auxiliary": {
         "chainid": 421611,
         "domain": "0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc",
-        "genesisBlock": 8006116,
-        "deployedBy": "0xf5F21252cEaEB40cAfa64D6367Ab902e3E371f3b",
-        "version": "87e115b174fd75350fadf12096e9e1e0ee047d52"
+        "genesisBlock": 11355502,
+        "deployedBy": "0xcc12Dd5DefC8BCccAbfBA4bFBFECe09B4EDBF263",
+        "version": "bea30d9171772faf855cdab909f321ce0834a495"
     }
 }
