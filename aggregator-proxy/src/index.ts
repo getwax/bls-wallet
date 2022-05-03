@@ -1,5 +1,6 @@
 import Koa from 'koa';
 import Router from '@koa/router';
+import bodyParser from 'koa-bodyparser';
 import { Bundle } from 'bls-wallet-clients';
 
 export default function aggregatorProxy(
@@ -7,10 +8,13 @@ export default function aggregatorProxy(
   bundleTransformer: (clientBundle: Bundle) => Bundle,
 ) {
   const app = new Koa();
+
   const router = new Router();
 
-  router.post('/bundle', (ctx) => {
-    // TODO: transform bundle and post to upstream aggregator
+  router.post('/bundle', bodyParser(), (ctx) => {
+    console.log(ctx.request.body);
+    ctx.status = 200;
+    ctx.body = 'todo';
   });
 
   app.use(router.routes());
