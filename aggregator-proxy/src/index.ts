@@ -1,7 +1,10 @@
 import Koa from 'koa';
 import Router from '@koa/router';
 import bodyParser from 'koa-bodyparser';
-import { Bundle } from 'bls-wallet-clients';
+import { Bundle, bundleFromDto } from 'bls-wallet-clients';
+import reporter from 'io-ts-reporters';
+
+import BundleDto from './BundleDto';
 
 export default function aggregatorProxy(
   upstreamAggregatorUrl: string,
@@ -13,8 +16,19 @@ export default function aggregatorProxy(
 
   router.post('/bundle', bodyParser(), (ctx) => {
     console.log(ctx.request.body);
+    const decodeResult = BundleDto.decode(ctx.request.body);
+
+    if ('left' in decodeResult) {
+      ctx.status = 400;
+      ctx.body = reporter.report(decodeResult);
+      return;
+    }
+
+    const clientBundle = bundleFromDto(decodeResult.right);
+    const transformedBundle = bundleTransformer(clientBundle);
+
     ctx.status = 200;
-    ctx.body = 'todo';
+    ctx.body = transformedBundle;
   });
 
   app.use(router.routes());
