@@ -1,4 +1,5 @@
 import Koa from 'koa';
+import cors from '@koa/cors';
 import Router from '@koa/router';
 import bodyParser from 'koa-bodyparser';
 import { Bundle, bundleFromDto, Aggregator } from 'bls-wallet-clients';
@@ -11,6 +12,7 @@ export default function aggregatorProxy(
   bundleTransformer: (clientBundle: Bundle) => Bundle,
 ) {
   const app = new Koa();
+  app.use(cors());
   const upstreamAggregator = new Aggregator(upstreamAggregatorUrl);
 
   const router = new Router();
