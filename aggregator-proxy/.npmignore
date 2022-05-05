@@ -1,0 +1,5 @@
+*
+!/dist/src/**/*
+!/src/**/*
+!/package.json
+!/README.md
