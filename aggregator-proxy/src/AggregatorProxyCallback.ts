@@ -12,7 +12,7 @@ import BundleDto from './BundleDto';
 
 export default function AggregatorProxyCallback(
   upstreamAggregatorUrl: string,
-  bundleTransformer: (clientBundle: Bundle) => Bundle,
+  bundleTransformer: (clientBundle: Bundle) => Bundle | Promise<Bundle>,
 ) {
   const app = new Koa();
   app.use(cors());
@@ -30,7 +30,7 @@ export default function AggregatorProxyCallback(
     }
 
     const clientBundle = bundleFromDto(decodeResult.right);
-    const transformedBundle = bundleTransformer(clientBundle);
+    const transformedBundle = await bundleTransformer(clientBundle);
 
     const addResult = await upstreamAggregator.add(transformedBundle);
 
@@ -48,7 +48,7 @@ export default function AggregatorProxyCallback(
     }
 
     const clientBundle = bundleFromDto(decodeResult.right);
-    const transformedBundle = bundleTransformer(clientBundle);
+    const transformedBundle = await bundleTransformer(clientBundle);
 
     const estimateFeeResult = await upstreamAggregator.estimateFee(transformedBundle);
 

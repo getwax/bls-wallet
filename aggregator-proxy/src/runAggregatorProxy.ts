@@ -5,7 +5,7 @@ import AggregatorProxyCallback from './AggregatorProxyCallback';
 
 export default function runAggregatorProxy(
   upstreamAggregatorUrl: string,
-  bundleTransformer: (clientBundle: Bundle) => Bundle,
+  bundleTransformer: (clientBundle: Bundle) => Bundle | Promise<Bundle>,
   port?: number,
   hostname?: string,
   listeningListener?: () => void,

@@ -13,7 +13,7 @@ import {
 
 runAggregatorProxy(
   'https://arbitrum-testnet.blswallet.org',
-  bundle => {
+  async bundle => {
     console.log('proxying bundle', JSON.stringify(bundle, null, 2));
 
     // Return a different/augmented bundle to send to the upstream aggregator
