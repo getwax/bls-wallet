@@ -1,11 +1,14 @@
 {
-  "name": "aggregator-proxy",
+  "name": "bls-wallet-aggregator-proxy",
   "version": "0.1.0",
   "main": "dist/src/index.js",
   "repository": "https://github.com/web3well/bls-wallet",
   "author": "Andrew Morris",
   "license": "MIT",
   "private": false,
+  "scripts": {
+    "build": "rm -rf dist && tsc"
+  },
   "dependencies": {
     "@koa/cors": "^3.3.0",
     "@koa/router": "^10.1.1",
