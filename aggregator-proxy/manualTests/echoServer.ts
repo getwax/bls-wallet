@@ -1,15 +1,14 @@
-import http from 'http';
+import { runAggregatorProxy } from "../src";
 
-import aggregatorProxy from "../src";
-
-const requestListener = aggregatorProxy(
-  'http://localhost:3020',
+runAggregatorProxy(
+  'https://arbitrum-testnet.blswallet.org',
   b => {
     console.log('proxying bundle', JSON.stringify(b, null, 2));
     return b;
   },
+  8080,
+  '0.0.0.0',
+  () => {
+    console.log('Proxying aggregator on port 8080');
+  },
 );
-
-http.createServer(requestListener).listen(8080, () => {
-  console.log('Proxying aggregator on port 8080');
-});
