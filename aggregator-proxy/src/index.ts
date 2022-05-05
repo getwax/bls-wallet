@@ -1,3 +1,4 @@
+import fetch from 'node-fetch';
 import Koa from 'koa';
 import cors from '@koa/cors';
 import Router from '@koa/router';
@@ -6,6 +7,8 @@ import { Bundle, bundleFromDto, Aggregator } from 'bls-wallet-clients';
 import reporter from 'io-ts-reporters';
 
 import BundleDto from './BundleDto';
+
+(globalThis as any).fetch ??= fetch;
 
 export default function aggregatorProxy(
   upstreamAggregatorUrl: string,
@@ -53,7 +56,7 @@ export default function aggregatorProxy(
     ctx.body = estimateFeeResult;
   });
 
-  router.post('/bundleReceipt/:hash', bodyParser(), async (ctx) => {
+  router.get('/bundleReceipt/:hash', bodyParser(), async (ctx) => {
     const lookupResult = await upstreamAggregator.lookupReceipt(ctx.params.hash);
 
     if (lookupResult === undefined) {
