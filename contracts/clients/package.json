@@ -4,7 +4,7 @@
   "description": "Client libraries for interacting with BLS Wallet components",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "repository": "https://github.com/jzaki/bls-wallet/tree/main/client",
+  "repository": "https://github.com/web3well/bls-wallet/tree/main/contracts/clients",
   "author": "Andrew Morris",
   "license": "MIT",
   "private": false,
