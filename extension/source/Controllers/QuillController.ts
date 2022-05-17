@@ -112,6 +112,10 @@ export default class QuillController extends BaseController<
 
   private preferencesController!: PreferencesController;
 
+  // This is just kept in memory because it supports setting the preferred
+  // aggregator for the particular tab only.
+  private tabPreferredAggregators: Record<number, string> = {};
+
   getRequestAccountTabIds: () => Record<string, number>;
   getOpenQuillTabsIds: () => Record<number, boolean>;
 
@@ -522,9 +526,16 @@ export default class QuillController extends BaseController<
         };
       },
 
+      setPreferredAggregator: async (req: any) => {
+        // eslint-disable-next-line prefer-destructuring
+        this.tabPreferredAggregators[req.tabId] = req.params[0];
+
+        return 'ok';
+      },
+
       submitBatch: async (req: any) => {
         const txParams = getAllReqParam<SendTransactionParams[]>(req);
-        const from = txParams[0].from;
+        const { from } = txParams[0];
 
         const actions = txParams.map((tx) => {
           return {
@@ -541,7 +552,9 @@ export default class QuillController extends BaseController<
         };
 
         const bundle = await this.keyringController.signTransactions(from, tx);
-        const agg = new Aggregator(AGGREGATOR_URL);
+        const aggregatorUrl =
+          this.tabPreferredAggregators[req.tabId] ?? AGGREGATOR_URL;
+        const agg = new Aggregator(aggregatorUrl);
         const result = await agg.add(bundle);
 
         if ('failures' in result) {
@@ -552,6 +565,7 @@ export default class QuillController extends BaseController<
           ...txParams[0],
           nonce: nonce.toString(),
           value: txParams[0].value || '0',
+          aggregatorUrl,
         };
 
         return result.hash;

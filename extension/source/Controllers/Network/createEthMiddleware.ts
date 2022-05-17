@@ -24,6 +24,7 @@ export interface IProviderHandlers {
   getProviderState: (
     req: JRPCRequest<unknown>,
   ) => Promise<{ accounts: string[]; chainId: string; isUnlocked: boolean }>;
+  setPreferredAggregator: (req: JRPCRequest<unknown>) => Promise<string>;
   submitBatch: (req: JRPCRequest<SendTransactionParams>) => Promise<string>;
 }
 
@@ -32,6 +33,7 @@ export function createWalletMiddleware({
   getAccounts,
   requestAccounts,
   getProviderState,
+  setPreferredAggregator,
   submitBatch,
 }: IProviderHandlers): JRPCMiddleware<string, unknown> {
   if (!getAccounts) {
@@ -75,6 +77,13 @@ export function createWalletMiddleware({
     res.result = await getProviderState(req);
   }
 
+  async function setPreferredAggregatorWrapper(
+    req: JRPCRequest<SendTransactionParams>,
+    res: JRPCResponse<unknown>,
+  ): Promise<void> {
+    res.result = await setPreferredAggregator(req);
+  }
+
   async function submitTransaction(
     req: JRPCRequest<SendTransactionParams>,
     res: JRPCResponse<unknown>,
@@ -90,6 +99,9 @@ export function createWalletMiddleware({
     eth_requestAccounts: createAsyncMiddleware(requestAccountsFromProvider),
     [PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE]: createAsyncMiddleware(
       getProviderStateFromController,
+    ),
+    eth_setPreferredAggregator: createAsyncMiddleware<any, any>(
+      setPreferredAggregatorWrapper,
     ),
     eth_sendTransaction: createAsyncMiddleware<any, any>(submitTransaction),
   });
