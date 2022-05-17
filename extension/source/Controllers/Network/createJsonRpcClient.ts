@@ -7,7 +7,6 @@ import {
   mergeMiddleware,
 } from '@toruslabs/openlogin-jrpc';
 import { Aggregator } from 'bls-wallet-clients';
-import { AGGREGATOR_URL } from '../../env';
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
@@ -98,7 +97,7 @@ function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
       if (hash in knownTransactions) {
         const knownTx = knownTransactions[hash];
 
-        const aggregator = new Aggregator(AGGREGATOR_URL);
+        const aggregator = new Aggregator(knownTx.aggregatorUrl);
         const bundleReceipt = await aggregator.lookupReceipt(hash);
 
         if (bundleReceipt === undefined) {

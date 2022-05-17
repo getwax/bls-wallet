@@ -6,6 +6,7 @@ const knownTransactions: Record<
   SendTransactionParams & {
     nonce: string;
     value: BigNumberish;
+    aggregatorUrl: string;
   }
 > = {};
 
