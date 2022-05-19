@@ -496,8 +496,8 @@ export default class QuillController extends BaseController<
     // });
   }
 
-  private initializeProvider(): SafeEventEmitterProvider {
-    const providerHandlers: IProviderHandlers = {
+  private initializeProvider() {
+    this.networkController.initializeProvider({
       // account management
       eth_requestAccounts: async (req) => {
         const accounts = await this.requestAccounts();
@@ -571,10 +571,7 @@ export default class QuillController extends BaseController<
 
         return result.hash;
       },
-    };
-    const providerProxy =
-      this.networkController.initializeProvider(providerHandlers);
-    return providerProxy;
+    });
   }
 
   private async requestAccounts(): Promise<string[]> {
