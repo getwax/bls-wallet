@@ -532,7 +532,7 @@ export default class QuillController extends BaseController<
         return 'ok';
       },
 
-      submitBatch: async (req: any) => {
+      eth_sendTransaction: async (req: any) => {
         const txParams = getAllReqParam<SendTransactionParams[]>(req);
         const { from } = txParams[0];
 

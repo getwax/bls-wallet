@@ -9,6 +9,16 @@ import { BigNumberish, BytesLike } from 'ethers';
 import { PROVIDER_JRPC_METHODS } from '../../common/constants';
 import web3_clientVersion from './web3_clientVersion';
 
+type SimpleHandler = (req: JRPCRequest<unknown>) => Promise<unknown>;
+
+function toAsyncMiddleware(method: SimpleHandler) {
+  return createAsyncMiddleware(
+    async (req: JRPCRequest<unknown>, res: JRPCResponse<unknown>) => {
+      res.result = await method(req);
+    },
+  );
+}
+
 export type SendTransactionParams = {
   from: string;
   to: string;
@@ -25,7 +35,7 @@ export interface IProviderHandlers {
     req: JRPCRequest<unknown>,
   ) => Promise<{ accounts: string[]; chainId: string; isUnlocked: boolean }>;
   setPreferredAggregator: (req: JRPCRequest<unknown>) => Promise<string>;
-  submitBatch: (req: JRPCRequest<SendTransactionParams>) => Promise<string>;
+  eth_sendTransaction: SimpleHandler;
 }
 
 export function createWalletMiddleware({
@@ -33,7 +43,7 @@ export function createWalletMiddleware({
   requestAccounts,
   getProviderState,
   setPreferredAggregator,
-  submitBatch,
+  eth_sendTransaction,
 }: IProviderHandlers): JRPCMiddleware<string, unknown> {
   if (!getAccounts) {
     throw new Error('opts.getAccounts is required');
@@ -83,13 +93,6 @@ export function createWalletMiddleware({
     res.result = await setPreferredAggregator(req);
   }
 
-  async function submitTransaction(
-    req: JRPCRequest<SendTransactionParams>,
-    res: JRPCResponse<unknown>,
-  ): Promise<void> {
-    res.result = await submitBatch(req);
-  }
-
   return createScaffoldMiddleware({
     web3_clientVersion,
     // account lookups
@@ -102,6 +105,6 @@ export function createWalletMiddleware({
     eth_setPreferredAggregator: createAsyncMiddleware<any, any>(
       setPreferredAggregatorWrapper,
     ),
-    eth_sendTransaction: createAsyncMiddleware<any, any>(submitTransaction),
+    eth_sendTransaction: toAsyncMiddleware(eth_sendTransaction),
   });
 }
