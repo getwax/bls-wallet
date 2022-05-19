@@ -499,7 +499,7 @@ export default class QuillController extends BaseController<
   private initializeProvider(): SafeEventEmitterProvider {
     const providerHandlers: IProviderHandlers = {
       // account management
-      requestAccounts: async (req) => {
+      eth_requestAccounts: async (req) => {
         const accounts = await this.requestAccounts();
         this.notifyConnections((req as any).origin, {
           method: PROVIDER_NOTIFICATIONS.UNLOCK_STATE_CHANGED,
@@ -511,7 +511,7 @@ export default class QuillController extends BaseController<
         return accounts;
       },
 
-      getAccounts: async () =>
+      eth_accounts: async () =>
         // Expose no accounts if this origin has not been approved, preventing
         // account-requiring RPC methods from completing successfully
         // only show address if account is unlocked
@@ -519,7 +519,7 @@ export default class QuillController extends BaseController<
 
       eth_coinbase: async () => this.selectedAddress || null,
 
-      getProviderState: async () => {
+      wallet_get_provider_state: async () => {
         return {
           accounts: this.selectedAddress ? [this.selectedAddress] : [],
           chainId: this.networkController.state.chainId,
@@ -527,7 +527,7 @@ export default class QuillController extends BaseController<
         };
       },
 
-      setPreferredAggregator: async (req: any) => {
+      eth_setPreferredAggregator: async (req: any) => {
         // eslint-disable-next-line prefer-destructuring
         this.tabPreferredAggregators[req.tabId] = req.params[0];
 

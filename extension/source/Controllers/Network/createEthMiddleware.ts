@@ -8,9 +8,9 @@ import {
 import { BigNumberish, BytesLike } from 'ethers';
 import web3_clientVersion from './web3_clientVersion';
 
-type SimpleHandler = (req: JRPCRequest<unknown>) => Promise<unknown>;
+type ProviderHandler = (req: JRPCRequest<unknown>) => Promise<unknown>;
 
-function toAsyncMiddleware(method: SimpleHandler) {
+function toAsyncMiddleware(method: ProviderHandler) {
   return createAsyncMiddleware(
     async (req: JRPCRequest<unknown>, res: JRPCResponse<unknown>) => {
       res.result = await method(req);
@@ -27,33 +27,17 @@ export type SendTransactionParams = {
   data: BytesLike;
 };
 
-export interface IProviderHandlers {
-  getAccounts: (req: JRPCRequest<unknown>) => Promise<string[]>;
-  eth_coinbase: SimpleHandler;
-  requestAccounts: (req: JRPCRequest<unknown>) => Promise<string[]>;
-  getProviderState: (
-    req: JRPCRequest<unknown>,
-  ) => Promise<{ accounts: string[]; chainId: string; isUnlocked: boolean }>;
-  setPreferredAggregator: (req: JRPCRequest<unknown>) => Promise<string>;
-  eth_sendTransaction: SimpleHandler;
-}
+export type IProviderHandlers = Record<string, ProviderHandler>;
 
-export function createWalletMiddleware({
-  getAccounts,
-  eth_coinbase,
-  requestAccounts,
-  getProviderState,
-  setPreferredAggregator,
-  eth_sendTransaction,
-}: IProviderHandlers): JRPCMiddleware<string, unknown> {
-  return createScaffoldMiddleware({
-    web3_clientVersion,
-    // account lookups
-    eth_accounts: toAsyncMiddleware(getAccounts),
-    eth_coinbase: toAsyncMiddleware(eth_coinbase),
-    eth_requestAccounts: toAsyncMiddleware(requestAccounts),
-    wallet_get_provider_state: toAsyncMiddleware(getProviderState),
-    eth_setPreferredAggregator: toAsyncMiddleware(setPreferredAggregator),
-    eth_sendTransaction: toAsyncMiddleware(eth_sendTransaction),
-  });
+export function createWalletMiddleware(
+  handlers: IProviderHandlers,
+): JRPCMiddleware<string, unknown> {
+  const asyncMiddlewares = Object.fromEntries(
+    Object.keys(handlers).map((method) => [
+      method,
+      toAsyncMiddleware(handlers[method]),
+    ]),
+  );
+
+  return createScaffoldMiddleware({ web3_clientVersion, ...asyncMiddlewares });
 }
