@@ -41,13 +41,13 @@ export function initializeProvider({
 }
 
 // setup background connection
-const metamaskStream = new BasePostMessageStream({
+const quillStream = new BasePostMessageStream({
   name: INPAGE,
   target: CONTENT_SCRIPT,
 });
 
 initializeProvider({
-  connectionStream: metamaskStream,
+  connectionStream: quillStream,
   // setting true will set window.ethereum to the provider
   shouldSetOnWindow: true,
 });

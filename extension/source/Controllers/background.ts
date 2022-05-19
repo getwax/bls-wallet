@@ -90,14 +90,14 @@ async function loadStateFromPersistence(): Promise<QuillControllerState> {
 }
 
 /**
- * Initializes the MetaMask Controller with any initial state and default language.
+ * Initializes the Quill Controller with any initial state and default language.
  * Configures platform-specific error reporting strategy.
  * Streams emitted state updates to platform-specific storage strategy.
  * Creates platform listeners for new Dapps/Contexts, and sets up their data connections to the controller.
  */
 function setupController(initState: unknown): void {
   //
-  // MetaMask Controller
+  // Quill Controller
   //
   console.log(initState, 'initstate');
 
@@ -125,7 +125,7 @@ function setupController(initState: unknown): void {
     // debounce(1000),
     new ControllerStreamSink(persistData),
     (error) => {
-      console.error('MetaMask - Persistence pipeline failed', error);
+      console.error('Quill - Persistence pipeline failed', error);
     },
   );
 
@@ -196,16 +196,16 @@ function setupController(initState: unknown): void {
   };
 
   /**
-   * Connects a Port to the MetaMask controller via a multiplexed duplex stream.
-   * This method identifies trusted (MetaMask) interfaces, and connects them differently from untrusted (web pages).
+   * Connects a Port to the Quill controller via a multiplexed duplex stream.
+   * This method identifies trusted (Quill) interfaces, and connects them differently from untrusted (web pages).
    *
    * @param {Port} remotePort - The port provided by a new context.
    */
   function connectRemote(remotePort: Runtime.Port) {
     const processName = remotePort.name;
-    const isMetaMaskInternalProcess = quillInternalProcessHash[processName];
+    const isQuillInternalProcess = quillInternalProcessHash[processName];
 
-    if (isMetaMaskInternalProcess) {
+    if (isQuillInternalProcess) {
       const portStream = new PortDuplexStream(remotePort);
       // communication with popup
       controller.isClientOpen = true;
@@ -400,11 +400,11 @@ async function openPopup() {
 // TODO: remove this later
 if (process.env.NODE_ENV === 'random') openPopup();
 
-// On first install, open a new tab with MetaMask
+// On first install, open a new tab with Quill
 runtime.onInstalled.addListener(({ reason }) => {
   if (
     reason === 'install' &&
-    !(process.env.METAMASK_DEBUG || process.env.IN_TEST)
+    !(process.env.QUILL_DEBUG || process.env.IN_TEST)
   ) {
     openExtensionInBrowser();
   }
