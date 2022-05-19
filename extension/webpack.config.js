@@ -181,13 +181,6 @@ module.exports = {
       filename: 'popup.html',
     }),
     new HtmlWebpackPlugin({
-      template: path.join(viewsPath, 'createTransaction.html'),
-      inject: 'body',
-      chunks: ['createTransaction'],
-      hash: true,
-      filename: 'createTransaction.html',
-    }),
-    new HtmlWebpackPlugin({
       template: path.join(viewsPath, 'confirm.html'),
       inject: 'body',
       chunks: ['confirm'],
