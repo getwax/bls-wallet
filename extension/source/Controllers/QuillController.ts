@@ -298,7 +298,7 @@ export default class QuillController extends BaseController<
       ),
 
       getRequestAccountTabIds: this.getRequestAccountTabIds,
-      getOpenMetamaskTabsIds: this.getOpenQuillTabsIds,
+      getOpenQuillTabsIds: this.getOpenQuillTabsIds,
 
       // network management
       setProviderConfig:
@@ -454,7 +454,7 @@ export default class QuillController extends BaseController<
     // logging
     engine.push(createLoggerMiddleware(console));
 
-    // forward to metamask primary provider
+    // forward to Quill primary provider
     engine.push(providerAsMiddleware(provider));
     return engine;
   }
@@ -631,7 +631,7 @@ export default class QuillController extends BaseController<
   }
 
   /**
-   * Adds a reference to a connection by origin. Ignores the 'metamask' origin.
+   * Adds a reference to a connection by origin. Ignores the 'quill' origin.
    * Caller must ensure that the returned id is stored such that the reference
    * can be deleted later.
    */
