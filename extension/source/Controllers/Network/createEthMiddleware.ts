@@ -30,6 +30,7 @@ export type SendTransactionParams = {
 
 export interface IProviderHandlers {
   getAccounts: (req: JRPCRequest<unknown>) => Promise<string[]>;
+  eth_coinbase: SimpleHandler;
   requestAccounts: (req: JRPCRequest<unknown>) => Promise<string[]>;
   getProviderState: (
     req: JRPCRequest<unknown>,
@@ -40,6 +41,7 @@ export interface IProviderHandlers {
 
 export function createWalletMiddleware({
   getAccounts,
+  eth_coinbase,
   requestAccounts,
   getProviderState,
   setPreferredAggregator,
@@ -62,14 +64,6 @@ export function createWalletMiddleware({
     res: JRPCResponse<unknown>,
   ): Promise<void> {
     res.result = await getAccounts(req);
-  }
-
-  async function lookupDefaultAccount(
-    req: JRPCRequest<unknown>,
-    res: JRPCResponse<unknown>,
-  ): Promise<void> {
-    const accounts = await getAccounts(req);
-    res.result = accounts[0] || null;
   }
 
   async function requestAccountsFromProvider(
@@ -97,7 +91,7 @@ export function createWalletMiddleware({
     web3_clientVersion,
     // account lookups
     eth_accounts: createAsyncMiddleware(lookupAccounts),
-    eth_coinbase: createAsyncMiddleware(lookupDefaultAccount),
+    eth_coinbase: toAsyncMiddleware(eth_coinbase),
     eth_requestAccounts: createAsyncMiddleware(requestAccountsFromProvider),
     [PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE]: createAsyncMiddleware(
       getProviderStateFromController,

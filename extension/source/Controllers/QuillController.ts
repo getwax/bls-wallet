@@ -517,6 +517,8 @@ export default class QuillController extends BaseController<
         // only show address if account is unlocked
         this.selectedAddress ? [this.selectedAddress] : [],
 
+      eth_coinbase: async () => this.selectedAddress || null,
+
       getProviderState: async () => {
         return {
           accounts: this.selectedAddress ? [this.selectedAddress] : [],
