@@ -31,10 +31,7 @@ import {
   providerAsMiddleware,
   SafeEventEmitterProvider,
 } from './Network/INetworkController';
-import {
-  IProviderHandlers,
-  SendTransactionParams,
-} from './Network/createEthMiddleware';
+import { SendTransactionParams } from './Network/createEthMiddleware';
 import {
   AddressPreferences,
   PreferencesConfig,
