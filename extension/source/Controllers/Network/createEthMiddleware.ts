@@ -47,58 +47,15 @@ export function createWalletMiddleware({
   setPreferredAggregator,
   eth_sendTransaction,
 }: IProviderHandlers): JRPCMiddleware<string, unknown> {
-  if (!getAccounts) {
-    throw new Error('opts.getAccounts is required');
-  }
-
-  if (!requestAccounts) {
-    throw new Error('opts.requestAccounts is required');
-  }
-
-  if (!getProviderStateFromController) {
-    throw new Error('opts.getProviderState is required');
-  }
-
-  async function lookupAccounts(
-    req: JRPCRequest<unknown>,
-    res: JRPCResponse<unknown>,
-  ): Promise<void> {
-    res.result = await getAccounts(req);
-  }
-
-  async function requestAccountsFromProvider(
-    req: JRPCRequest<unknown>,
-    res: JRPCResponse<unknown>,
-  ): Promise<void> {
-    res.result = await requestAccounts(req);
-  }
-
-  async function getProviderStateFromController(
-    req: JRPCRequest<unknown>,
-    res: JRPCResponse<unknown>,
-  ): Promise<void> {
-    res.result = await getProviderState(req);
-  }
-
-  async function setPreferredAggregatorWrapper(
-    req: JRPCRequest<SendTransactionParams>,
-    res: JRPCResponse<unknown>,
-  ): Promise<void> {
-    res.result = await setPreferredAggregator(req);
-  }
-
   return createScaffoldMiddleware({
     web3_clientVersion,
     // account lookups
-    eth_accounts: createAsyncMiddleware(lookupAccounts),
+    eth_accounts: toAsyncMiddleware(getAccounts),
     eth_coinbase: toAsyncMiddleware(eth_coinbase),
-    eth_requestAccounts: createAsyncMiddleware(requestAccountsFromProvider),
-    [PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE]: createAsyncMiddleware(
-      getProviderStateFromController,
-    ),
-    eth_setPreferredAggregator: createAsyncMiddleware<any, any>(
-      setPreferredAggregatorWrapper,
-    ),
+    eth_requestAccounts: toAsyncMiddleware(requestAccounts),
+    [PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE]:
+      toAsyncMiddleware(getProviderState),
+    eth_setPreferredAggregator: toAsyncMiddleware(setPreferredAggregator),
     eth_sendTransaction: toAsyncMiddleware(eth_sendTransaction),
   });
 }
