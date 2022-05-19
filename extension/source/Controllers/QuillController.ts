@@ -498,7 +498,6 @@ export default class QuillController extends BaseController<
 
   private initializeProvider(): SafeEventEmitterProvider {
     const providerHandlers: IProviderHandlers = {
-      version: '1.0.0',
       // account management
       requestAccounts: async (req) => {
         const accounts = await this.requestAccounts();

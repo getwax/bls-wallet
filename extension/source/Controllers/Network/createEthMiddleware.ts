@@ -7,6 +7,7 @@ import {
 } from '@toruslabs/openlogin-jrpc';
 import { BigNumberish, BytesLike } from 'ethers';
 import { PROVIDER_JRPC_METHODS } from '../../common/constants';
+import web3_clientVersion from './web3_clientVersion';
 
 export type SendTransactionParams = {
   from: string;
@@ -18,7 +19,6 @@ export type SendTransactionParams = {
 };
 
 export interface IProviderHandlers {
-  version: string;
   getAccounts: (req: JRPCRequest<unknown>) => Promise<string[]>;
   requestAccounts: (req: JRPCRequest<unknown>) => Promise<string[]>;
   getProviderState: (
@@ -29,7 +29,6 @@ export interface IProviderHandlers {
 }
 
 export function createWalletMiddleware({
-  version,
   getAccounts,
   requestAccounts,
   getProviderState,
@@ -92,7 +91,7 @@ export function createWalletMiddleware({
   }
 
   return createScaffoldMiddleware({
-    web3_clientVersion: `Quill/v${version}`,
+    web3_clientVersion,
     // account lookups
     eth_accounts: createAsyncMiddleware(lookupAccounts),
     eth_coinbase: createAsyncMiddleware(lookupDefaultAccount),
