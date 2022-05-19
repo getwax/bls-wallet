@@ -6,7 +6,6 @@ import {
   JRPCResponse,
 } from '@toruslabs/openlogin-jrpc';
 import { BigNumberish, BytesLike } from 'ethers';
-import { PROVIDER_JRPC_METHODS } from '../../common/constants';
 import web3_clientVersion from './web3_clientVersion';
 
 type SimpleHandler = (req: JRPCRequest<unknown>) => Promise<unknown>;
@@ -53,8 +52,7 @@ export function createWalletMiddleware({
     eth_accounts: toAsyncMiddleware(getAccounts),
     eth_coinbase: toAsyncMiddleware(eth_coinbase),
     eth_requestAccounts: toAsyncMiddleware(requestAccounts),
-    [PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE]:
-      toAsyncMiddleware(getProviderState),
+    wallet_get_provider_state: toAsyncMiddleware(getProviderState),
     eth_setPreferredAggregator: toAsyncMiddleware(setPreferredAggregator),
     eth_sendTransaction: toAsyncMiddleware(eth_sendTransaction),
   });
