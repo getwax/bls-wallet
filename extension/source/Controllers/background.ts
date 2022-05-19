@@ -411,7 +411,7 @@ runtime.onInstalled.addListener(({ reason }) => {
 });
 
 function openExtensionInBrowser(route = null, queryString = null) {
-  let extensionURL = runtime.getURL('home.html');
+  let extensionURL = runtime.getURL('quillPage.html#/wallet');
 
   if (route) {
     extensionURL += `#${route}`;
