@@ -2,11 +2,7 @@ import type { JRPCRequest, JRPCSuccess } from '@toruslabs/openlogin-jrpc';
 import { EthereumRpcError } from 'eth-rpc-errors';
 import dequal from 'fast-deep-equal';
 import type { Duplex } from 'readable-stream';
-import {
-  PROVIDER,
-  PROVIDER_JRPC_METHODS,
-  PROVIDER_NOTIFICATIONS,
-} from '../common/constants';
+import { PROVIDER, PROVIDER_NOTIFICATIONS } from '../common/constants';
 
 import BaseProvider from './BaseProvider';
 import {
@@ -99,7 +95,7 @@ class QuillInPageProvider extends BaseProvider<InPageProviderState> {
   async _initializeState(): Promise<void> {
     try {
       const { accounts, chainId, isUnlocked } = (await this.request({
-        method: PROVIDER_JRPC_METHODS.GET_PROVIDER_STATE,
+        method: 'wallet_get_provider_state',
         params: [],
       })) as InPageWalletProviderState;
 

@@ -31,10 +31,7 @@ import {
   providerAsMiddleware,
   SafeEventEmitterProvider,
 } from './Network/INetworkController';
-import {
-  IProviderHandlers,
-  SendTransactionParams,
-} from './Network/createEthMiddleware';
+import { SendTransactionParams } from './Network/createEthMiddleware';
 import {
   AddressPreferences,
   PreferencesConfig,
@@ -496,11 +493,10 @@ export default class QuillController extends BaseController<
     // });
   }
 
-  private initializeProvider(): SafeEventEmitterProvider {
-    const providerHandlers: IProviderHandlers = {
-      version: '1.0.0',
+  private initializeProvider() {
+    this.networkController.initializeProvider({
       // account management
-      requestAccounts: async (req) => {
+      eth_requestAccounts: async (req) => {
         const accounts = await this.requestAccounts();
         this.notifyConnections((req as any).origin, {
           method: PROVIDER_NOTIFICATIONS.UNLOCK_STATE_CHANGED,
@@ -512,13 +508,15 @@ export default class QuillController extends BaseController<
         return accounts;
       },
 
-      getAccounts: async () =>
+      eth_accounts: async () =>
         // Expose no accounts if this origin has not been approved, preventing
         // account-requiring RPC methods from completing successfully
         // only show address if account is unlocked
         this.selectedAddress ? [this.selectedAddress] : [],
 
-      getProviderState: async () => {
+      eth_coinbase: async () => this.selectedAddress || null,
+
+      wallet_get_provider_state: async () => {
         return {
           accounts: this.selectedAddress ? [this.selectedAddress] : [],
           chainId: this.networkController.state.chainId,
@@ -526,14 +524,14 @@ export default class QuillController extends BaseController<
         };
       },
 
-      setPreferredAggregator: async (req: any) => {
+      eth_setPreferredAggregator: async (req: any) => {
         // eslint-disable-next-line prefer-destructuring
         this.tabPreferredAggregators[req.tabId] = req.params[0];
 
         return 'ok';
       },
 
-      submitBatch: async (req: any) => {
+      eth_sendTransaction: async (req: any) => {
         const txParams = getAllReqParam<SendTransactionParams[]>(req);
         const { from } = txParams[0];
 
@@ -570,10 +568,7 @@ export default class QuillController extends BaseController<
 
         return result.hash;
       },
-    };
-    const providerProxy =
-      this.networkController.initializeProvider(providerHandlers);
-    return providerProxy;
+    });
   }
 
   private async requestAccounts(): Promise<string[]> {
