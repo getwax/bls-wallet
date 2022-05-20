@@ -7,7 +7,7 @@ import Carousel from './Carousel';
 import LargeQuillHeading from './LargeQuillHeading';
 
 const WelcomeScreen: FunctionComponent = () => (
-  <div>
+  <div className="welcome-screen">
     <LargeQuillHeading />
     <Carousel
       images={[

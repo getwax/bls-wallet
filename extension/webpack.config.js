@@ -31,7 +31,6 @@ const extensionReloaderPlugin =
           contentScript: 'contentScript',
           pageContentScript: 'pageContentScript',
           background: 'background',
-          extensionPage: ['popup', 'createTransaction', 'confirm'],
           quillPage: ['popup', 'quillPage', 'confirm'],
         },
       })
@@ -73,7 +72,6 @@ module.exports = {
     contentScript: path.join(sourcePath, 'ContentScript', 'index.ts'),
     pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
-    createTransaction: path.join(sourcePath, 'CreateTransaction', 'index.tsx'),
     quillPage: path.join(sourcePath, 'QuillPage', 'index.tsx'),
     confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
   },
@@ -181,13 +179,6 @@ module.exports = {
       chunks: ['popup'],
       hash: true,
       filename: 'popup.html',
-    }),
-    new HtmlWebpackPlugin({
-      template: path.join(viewsPath, 'createTransaction.html'),
-      inject: 'body',
-      chunks: ['createTransaction'],
-      hash: true,
-      filename: 'createTransaction.html',
     }),
     new HtmlWebpackPlugin({
       template: path.join(viewsPath, 'confirm.html'),
