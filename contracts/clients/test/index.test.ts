@@ -8,7 +8,7 @@ import { initBlsWalletSigner, Bundle, Operation } from "../src/signer";
 
 import Range from "./helpers/Range";
 
-const domain = arrayify(keccak256("0xfeedbee5"));
+const domain = arrayify("0x425bd46b7016e0395c00f2e05fd74f938023d31f355d5a62fb9c63756c6a5d87");
 const weiPerToken = BigNumber.from(10).pow(18);
 
 const samples = (() => {

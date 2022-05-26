@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./interfaces/IWallet.sol";
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
@@ -16,11 +17,12 @@ The gateway holds a single ProxyAdmin contract for all wallets, and can
 only called by a wallet that the VG created, and only if the first param
 is the calling wallet's address.
  */
-contract VerificationGateway
+contract VerificationGateway is EIP712
 {
-    /** Domain chosen arbitrarily */
-    bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_KEY_LEN = 4;
+
+    string public constant BLS_DOMAIN = "BLS_WALLET";
+    string public constant BLS_DOMAIN_VERSION = "1";
 
     IBLS public blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
@@ -53,7 +55,7 @@ contract VerificationGateway
     constructor(
         IBLS bls,
         address blsWalletImpl
-    ) {
+    ) EIP712(BLS_DOMAIN, BLS_DOMAIN_VERSION) {
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
         walletProxyAdmin = new ProxyAdmin();
@@ -303,7 +305,7 @@ contract VerificationGateway
         address wallet
     ) private {
         uint256[2] memory addressMsg = blsLib.hashToPoint(
-            BLS_DOMAIN,
+            _domainSeparatorV4(),
             abi.encodePacked(wallet)
         );
         require(
@@ -352,7 +354,7 @@ contract VerificationGateway
             );
         }
         return blsLib.hashToPoint(
-            BLS_DOMAIN,
+            _domainSeparatorV4(),
             abi.encodePacked(
                 block.chainid,
                 op.nonce,
@@ -361,4 +363,7 @@ contract VerificationGateway
         );
     }
 
+     function domainSeparator() public view returns (bytes32) {
+         return _domainSeparatorV4();
+     }
 }

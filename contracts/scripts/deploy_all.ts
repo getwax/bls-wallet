@@ -42,6 +42,7 @@ async function main() {
   console.log("deploying bls-wallet contracts...");
   const fx = await Fixture.create();
   const [deployedBy] = fx.addresses;
+  const domainSeparator = await fx.verificationGateway.domainSeparator();
 
   console.log("deploying test token...");
   // These can be run in parallel
@@ -61,8 +62,7 @@ async function main() {
     auxiliary: {
       chainid: fx.chainId,
       // From VerificationGateway.sol:BLS_DOMAIN
-      domain:
-        "0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc",
+      domain: domainSeparator,
       genesisBlock,
       deployedBy,
       version,
