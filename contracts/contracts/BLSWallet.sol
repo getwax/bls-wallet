@@ -73,6 +73,7 @@ contract BLSWallet is Initializable, IBLSWallet
     ) public onlyTrustedGateway {
         require(isZeroBLSKey(blsPublicKey), "BLSWallet: public key already set");
         blsPublicKey = blsKey;
+        pendingBLSPublicKeyTime = type(uint256).max;
     }
 
     function isZeroBLSKey(uint256[4] memory blsKey) public pure returns (bool) {

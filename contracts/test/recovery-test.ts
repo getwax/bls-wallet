@@ -86,7 +86,7 @@ describe("Recovery", async function () {
     expect(await blsWallet.getBLSPublicKey()).to.eql(newKey);
   });
 
-  it("should override public key after creation", async function () {
+  it("should NOT override public key after creation", async function () {
     const initialKey = await blsWallet.getBLSPublicKey();
 
     const ZERO = ethers.BigNumber.from(0);
@@ -95,7 +95,7 @@ describe("Recovery", async function () {
     await blsWallet.setAnyPending();
 
     const finalKey = await blsWallet.getBLSPublicKey();
-    expect(finalKey).to.eql([ZERO, ZERO, ZERO, ZERO]);
+    expect(finalKey).to.eql(initialKey);
   });
 
   it("should set recovery hash", async function () {
