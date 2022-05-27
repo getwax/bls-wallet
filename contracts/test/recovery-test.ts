@@ -7,6 +7,7 @@ import { PublicKey, BlsWalletWrapper, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
+import { BLSWallet } from "../typechain";
 
 const signWalletAddress = async (
   fx: Fixture,
@@ -43,7 +44,7 @@ describe("Recovery", async function () {
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
   let wallet1, wallet2, walletAttacker;
-  let blsWallet;
+  let blsWallet: BLSWallet;
   let recoverySigner;
   let hash1, hash2;
   let salt;
@@ -83,6 +84,18 @@ describe("Recovery", async function () {
     await (await blsWallet.setAnyPending()).wait();
 
     expect(await blsWallet.getBLSPublicKey()).to.eql(newKey);
+  });
+
+  it("should override public key after creation", async function () {
+    const initialKey = await blsWallet.getBLSPublicKey();
+
+    const ZERO = ethers.BigNumber.from(0);
+    expect(initialKey).to.not.eql([ZERO, ZERO, ZERO, ZERO]);
+
+    await blsWallet.setAnyPending();
+
+    const finalKey = await blsWallet.getBLSPublicKey();
+    expect(finalKey).to.eql([ZERO, ZERO, ZERO, ZERO]);
   });
 
   it("should set recovery hash", async function () {
