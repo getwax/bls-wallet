@@ -65,6 +65,8 @@ contract BLSWallet is Initializable, IBLSWallet
         trustedBLSGateway = blsGateway;
         pendingGatewayTime = type(uint256).max;
         pendingPAFunctionTime = type(uint256).max;
+        pendingRecoveryHashTime = type(uint256).max;
+        pendingBLSPublicKeyTime = type(uint256).max;
     }
 
     /** */
