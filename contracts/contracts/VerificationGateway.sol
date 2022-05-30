@@ -26,6 +26,7 @@ contract VerificationGateway
     ProxyAdmin public immutable walletProxyAdmin;
     address public blsWalletLogic;
     mapping(bytes32 => IWallet) externalWalletsFromHash;
+    mapping(address => bool) registeredWalletAddresses;
 
 
     /** Aggregated signature with corresponding senders + operations */
@@ -127,6 +128,7 @@ contract VerificationGateway
         uint256[2] calldata messageSenderSignature,
         uint256[BLS_KEY_LEN] calldata publicKey
     ) public {
+        require(!registeredWalletAddresses[msg.sender], "mapping to this wallet already exists");
         safeSetWallet(messageSenderSignature, publicKey, msg.sender);
     }
 
@@ -313,6 +315,7 @@ contract VerificationGateway
         bytes32 publicKeyHash = keccak256(abi.encodePacked(
             publicKey
         ));
+        registeredWalletAddresses[wallet] = true;
         externalWalletsFromHash[publicKeyHash] = IWallet(wallet);
     }
 
