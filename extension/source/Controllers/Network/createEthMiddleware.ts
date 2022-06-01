@@ -8,11 +8,15 @@ import {
 import { BigNumberish, BytesLike } from 'ethers';
 import web3_clientVersion from './web3_clientVersion';
 
-type ProviderHandler = (req: JRPCRequest<unknown>) => Promise<unknown>;
+type ProviderHandler<Params, Result> = (
+  req: JRPCRequest<Params>,
+) => Promise<Result>;
 
-function toAsyncMiddleware(method: ProviderHandler) {
+function toAsyncMiddleware<Params, Result>(
+  method: ProviderHandler<Params, Result>,
+) {
   return createAsyncMiddleware(
-    async (req: JRPCRequest<unknown>, res: JRPCResponse<unknown>) => {
+    async (req: JRPCRequest<Params>, res: JRPCResponse<Result>) => {
       res.result = await method(req);
     },
   );
@@ -27,7 +31,10 @@ export type SendTransactionParams = {
   data: BytesLike;
 };
 
-export type IProviderHandlers = Record<string, ProviderHandler>;
+export type IProviderHandlers = Record<
+  string,
+  ProviderHandler<unknown, unknown>
+>;
 
 export function createWalletMiddleware(
   handlers: IProviderHandlers,
