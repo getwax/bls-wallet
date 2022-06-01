@@ -17,7 +17,7 @@ export default class StorageManager {
       .local,
   ) {}
 
-  Cell<T>(key: string, type: io.Type<T>): StorageCell<T> {
+  Cell<T>(key: string, type: io.Type<T>, defaultValue: T): StorageCell<T> {
     const entry = this.cells[key];
 
     if (entry) {
@@ -33,7 +33,13 @@ export default class StorageManager {
       return entry.cell;
     }
 
-    const cell = new StorageCell(this.localStorageArea, key, type);
+    const cell = new StorageCell(
+      this.localStorageArea,
+      key,
+      type,
+      defaultValue,
+    );
+
     this.cells[key] = { cell, type };
 
     return cell;
@@ -47,7 +53,7 @@ type ChangeEvent<T> = {
   latest: Versioned<T>;
 };
 
-class StorageCell<T> {
+export class StorageCell<T> {
   events = new EventEmitter() as TypedEmitter<{
     change(changeEvent: ChangeEvent<T>): void;
   }>;
@@ -60,43 +66,24 @@ class StorageCell<T> {
     public localStorageArea: Browser.Storage.LocalStorageArea,
     public key: string,
     public type: io.Type<T>,
+    public defaultValue: T,
   ) {
     this.fullType = io.type({ version: io.number, value: type });
 
-    this.initialRead = this.fullRead().then((fullReadResult) => {
+    this.initialRead = this.#fullRead().then((fullReadResult) => {
       this.lastSeen = fullReadResult;
     });
   }
 
-  async fullRead(): Promise<Versioned<T> | undefined> {
-    const getResult = (await this.localStorageArea.get(this.key))[this.key];
-
-    if (getResult === undefined) {
-      return undefined;
-    }
-
-    if (!this.fullType.is(getResult)) {
-      throw new Error(
-        [
-          `Type mismatch at storage key ${this.key}`,
-          `contents: ${JSON.stringify(getResult)}`,
-          `expected: ${this.fullType.name}`,
-        ].join(' '),
-      );
-    }
-
-    return getResult;
-  }
-
-  async read(): Promise<T | undefined> {
-    const latest = await this.fullRead();
+  async read(): Promise<T> {
+    const latest = await this.#fullRead();
     this.#ensureVersionMatch(latest);
-    return latest?.value;
+    return latest.value;
   }
 
   async write(newValue: T): Promise<void> {
     await this.initialRead;
-    const latest = await this.fullRead();
+    const latest = await this.#fullRead();
     this.#ensureVersionMatch(latest);
 
     const newFullValue = {
@@ -140,6 +127,29 @@ class StorageCell<T> {
         return Promise.resolve({ value: undefined, done: true });
       },
     };
+  }
+
+  async #fullRead(): Promise<Versioned<T>> {
+    const getResult = (await this.localStorageArea.get(this.key))[this.key];
+
+    if (getResult === undefined) {
+      const latest = { version: 0, value: this.defaultValue };
+      this.lastSeen = latest;
+      await this.localStorageArea.set({ [this.key]: latest });
+      return latest;
+    }
+
+    if (!this.fullType.is(getResult)) {
+      throw new Error(
+        [
+          `Type mismatch at storage key ${this.key}`,
+          `contents: ${JSON.stringify(getResult)}`,
+          `expected: ${this.fullType.name}`,
+        ].join(' '),
+      );
+    }
+
+    return getResult;
   }
 
   #ensureVersionMatch(latest: Versioned<T> | undefined) {
