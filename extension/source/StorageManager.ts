@@ -1,5 +1,8 @@
+import { EventEmitter } from 'events';
+
 import * as io from 'io-ts';
 import Browser from 'webextension-polyfill';
+import TypedEmitter from 'typed-emitter';
 
 import ExplicitAny from './types/ExplicitAny';
 
@@ -9,7 +12,10 @@ export default class StorageManager {
     { cell: StorageCell<ExplicitAny>; type: io.Type<ExplicitAny> } | undefined
   > = {};
 
-  constructor(public localStorageArea: Browser.Storage.LocalStorageArea) {}
+  constructor(
+    public localStorageArea: Browser.Storage.LocalStorageArea = Browser.storage
+      .local,
+  ) {}
 
   Cell<T>(key: string, type: io.Type<T>): StorageCell<T> {
     const entry = this.cells[key];
@@ -36,9 +42,18 @@ export default class StorageManager {
 
 type Versioned<T> = { version: number; value: T };
 
+type ChangeEvent<T> = {
+  previous?: Versioned<T>;
+  latest: Versioned<T>;
+};
+
 class StorageCell<T> {
+  events = new EventEmitter() as TypedEmitter<{
+    change(changeEvent: ChangeEvent<T>): void;
+  }>;
+
   fullType: io.Type<Versioned<T>>;
-  last?: Versioned<T>;
+  lastSeen?: Versioned<T>;
   initialRead: Promise<void>;
 
   constructor(
@@ -48,8 +63,8 @@ class StorageCell<T> {
   ) {
     this.fullType = io.type({ version: io.number, value: type });
 
-    this.initialRead = this.fullRead().then((getResult) => {
-      this.last = getResult;
+    this.initialRead = this.fullRead().then((fullReadResult) => {
+      this.lastSeen = fullReadResult;
     });
   }
 
@@ -64,7 +79,7 @@ class StorageCell<T> {
       throw new Error(
         [
           `Type mismatch at storage key ${this.key}`,
-          `contents: ${getResult}`,
+          `contents: ${JSON.stringify(getResult)}`,
           `expected: ${this.fullType.name}`,
         ].join(' '),
       );
@@ -85,7 +100,7 @@ class StorageCell<T> {
     this.#ensureVersionMatch(latest);
 
     const newFullValue = {
-      version: (this.last?.version ?? 0) + 1,
+      version: (this.lastSeen?.version ?? 0) + 1,
       value: newValue,
     };
 
@@ -93,17 +108,48 @@ class StorageCell<T> {
       [this.key]: newFullValue,
     });
 
-    this.last = newFullValue;
+    const { lastSeen: previous } = this;
+    this.lastSeen = newFullValue;
+
+    this.events.emit('change', { previous, latest: newFullValue });
+  }
+
+  [Symbol.asyncIterator](): AsyncIterator<T> {
+    let lastProvidedVersion = -1;
+    let cleanup = () => {};
+
+    return {
+      next: () =>
+        new Promise((resolve) => {
+          if (this.lastSeen && this.lastSeen.version > lastProvidedVersion) {
+            lastProvidedVersion = this.lastSeen.version;
+            resolve({ value: this.lastSeen.value, done: false });
+            return;
+          }
+
+          const changeHandler = ({ latest }: ChangeEvent<T>) => {
+            lastProvidedVersion = latest.version;
+            resolve({ value: latest.value });
+          };
+
+          this.events.once('change', changeHandler);
+          cleanup = () => this.events.off('change', changeHandler);
+        }),
+      return: () => {
+        cleanup();
+        return Promise.resolve({ value: undefined, done: true });
+      },
+    };
   }
 
   #ensureVersionMatch(latest: Versioned<T> | undefined) {
-    if (latest?.version !== this.last?.version) {
+    if (latest?.version !== this.lastSeen?.version) {
       throw new Error(
         [
-          "Latest version doesn't match last read. This is a problem because",
+          "Latest version doesn't match last seen. This is a problem because",
           'we assume that we have exclusive access to storage - we only want',
           'to overwrite our own changes, not changes made elsewhere.',
-          `${JSON.stringify({ last: this.last, latest })}`,
+          `${JSON.stringify({ lastSeen: this.lastSeen, latest })}`,
         ].join(' '),
       );
     }
