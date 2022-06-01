@@ -53,12 +53,21 @@ type ChangeEvent<T> = {
   latest: Versioned<T>;
 };
 
-export class StorageCell<T> {
-  events = new EventEmitter() as TypedEmitter<{
-    change(changeEvent: ChangeEvent<T>): void;
-  }>;
+type ChangeEmitter<T> = TypedEmitter<{
+  change(changeEvent: ChangeEvent<T>): void;
+}>;
 
-  fullType: io.Type<Versioned<T>>;
+type IReadableCell<T> = {
+  events: ChangeEmitter<T>;
+  read(): Promise<T>;
+  versionedRead(): Promise<Versioned<T>>;
+  [Symbol.asyncIterator](): AsyncIterator<T>;
+};
+
+export class StorageCell<T> implements IReadableCell<T> {
+  events = new EventEmitter() as ChangeEmitter<T>;
+
+  versionedType: io.Type<Versioned<T>>;
   lastSeen?: Versioned<T>;
   initialRead: Promise<void>;
 
@@ -68,37 +77,37 @@ export class StorageCell<T> {
     public type: io.Type<T>,
     public defaultValue: T,
   ) {
-    this.fullType = io.type({ version: io.number, value: type });
+    this.versionedType = io.type({ version: io.number, value: type });
 
-    this.initialRead = this.#fullRead().then((fullReadResult) => {
-      this.lastSeen = fullReadResult;
+    this.initialRead = this.versionedRead().then((versionedReadResult) => {
+      this.lastSeen = versionedReadResult;
     });
   }
 
   async read(): Promise<T> {
-    const latest = await this.#fullRead();
+    const latest = await this.versionedRead();
     this.#ensureVersionMatch(latest);
     return latest.value;
   }
 
   async write(newValue: T): Promise<void> {
     await this.initialRead;
-    const latest = await this.#fullRead();
+    const latest = await this.versionedRead();
     this.#ensureVersionMatch(latest);
 
-    const newFullValue = {
+    const newVersionedValue = {
       version: (this.lastSeen?.version ?? 0) + 1,
       value: newValue,
     };
 
     await this.localStorageArea.set({
-      [this.key]: newFullValue,
+      [this.key]: newVersionedValue,
     });
 
     const { lastSeen: previous } = this;
-    this.lastSeen = newFullValue;
+    this.lastSeen = newVersionedValue;
 
-    this.events.emit('change', { previous, latest: newFullValue });
+    this.events.emit('change', { previous, latest: newVersionedValue });
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
@@ -129,7 +138,7 @@ export class StorageCell<T> {
     };
   }
 
-  async #fullRead(): Promise<Versioned<T>> {
+  async versionedRead(): Promise<Versioned<T>> {
     const getResult = (await this.localStorageArea.get(this.key))[this.key];
 
     if (getResult === undefined) {
@@ -139,12 +148,12 @@ export class StorageCell<T> {
       return latest;
     }
 
-    if (!this.fullType.is(getResult)) {
+    if (!this.versionedType.is(getResult)) {
       throw new Error(
         [
           `Type mismatch at storage key ${this.key}`,
           `contents: ${JSON.stringify(getResult)}`,
-          `expected: ${this.fullType.name}`,
+          `expected: ${this.versionedType.name}`,
         ].join(' '),
       );
     }
@@ -163,5 +172,36 @@ export class StorageCell<T> {
         ].join(' '),
       );
     }
+  }
+}
+
+class ReadableCellIterator<T> implements AsyncIterator<T> {
+  lastProvidedVersion = -1;
+  cleanup = () => {};
+
+  constructor(public cell: IReadableCell<T>) {}
+
+  async next() {
+    const versionedReadResult = await this.cell.versionedRead();
+
+    if (versionedReadResult.version > this.lastProvidedVersion) {
+      this.lastProvidedVersion = versionedReadResult.version;
+      return { value: versionedReadResult.value, done: false };
+    }
+
+    return new Promise<IteratorResult<T>>((resolve) => {
+      const changeHandler = ({ latest }: ChangeEvent<T>) => {
+        this.lastProvidedVersion = latest.version;
+        resolve({ value: latest.value });
+      };
+
+      this.cell.events.once('change', changeHandler);
+      this.cleanup = () => this.cell.events.off('change', changeHandler);
+    });
+  }
+
+  async return() {
+    this.cleanup();
+    return { value: undefined, done: true as const };
   }
 }
