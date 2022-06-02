@@ -7,6 +7,7 @@ import ExplicitAny from '../types/ExplicitAny';
 import CellIterator from './CellIterator';
 import { IReadableCell, CellEmitter } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
+import recordKeys from './recordKeys';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -65,15 +66,6 @@ export class FormulaCell<
   [Symbol.asyncIterator](): AsyncIterator<T> {
     return new CellIterator<T>(this);
   }
-}
-
-/**
- * Wrapper around Object.keys which uses keyof to get the accurate key type.
- * (The builtin typing for Object.keys unnecessarily widens the type to
- * string[].)
- */
-function recordKeys<R extends Record<string, unknown>>(record: R): (keyof R)[] {
-  return Object.keys(record) as (keyof R)[];
 }
 
 type AsyncIteratee<I extends AsyncIterable<unknown>> = I extends AsyncIterable<

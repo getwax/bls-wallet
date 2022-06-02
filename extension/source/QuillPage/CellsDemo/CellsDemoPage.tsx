@@ -1,14 +1,23 @@
 import { FunctionComponent, useContext } from 'react';
-import useReadableCell from '../../cells/useReadableCell';
+import { CellDisplay } from './CellDisplay';
 import CellsDemoContext from './CellsDemoContext';
 
 export const CellsDemoPage: FunctionComponent = () => {
   const ctx = useContext(CellsDemoContext);
-  const ab = useReadableCell(ctx.ab);
+  const { ab } = ctx;
 
   exposeConsoleCtx(ctx);
 
-  return <>ab: {ab}</>;
+  return (
+    <div
+      style={{
+        padding: '2em',
+        zoom: '300%',
+      }}
+    >
+      <CellDisplay cells={{ ab }} />
+    </div>
+  );
 };
 
 function exposeConsoleCtx(ctx: unknown) {
