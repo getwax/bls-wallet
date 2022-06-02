@@ -13,7 +13,7 @@ const Button = (props: {
       className={
         props.loading
           ? 'btn-loading'
-          : `flex gap-2 items-center ${props.className}`
+          : `flex gap-2 items-center select-none ${props.className}`
       }
       onClick={props.onPress}
       onKeyDown={(evt) => {

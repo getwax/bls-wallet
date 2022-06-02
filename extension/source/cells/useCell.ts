@@ -27,5 +27,5 @@ export default function useCell<C extends ICell<unknown>>(cellParam: C) {
     };
   }, [cell]);
 
-  return [value, (newValue: T) => cell.write(newValue)];
+  return [value, (newValue: T) => cell.write(newValue)] as const;
 }

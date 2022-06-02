@@ -1,6 +1,7 @@
 import { FunctionComponent, useContext } from 'react';
 import { CellDisplay } from './CellDisplay';
 import CellsDemoContext from './CellsDemoContext';
+import { Counter } from './Counter';
 
 export const CellsDemoPage: FunctionComponent = () => {
   const ctx = useContext(CellsDemoContext);
@@ -12,9 +13,15 @@ export const CellsDemoPage: FunctionComponent = () => {
     <div
       style={{
         padding: '2em',
-        zoom: '300%',
+        fontSize: '3em',
+        lineHeight: '1em',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1em',
       }}
     >
+      <Counter label="a" cell={ctx.a} />
+      <Counter label="b" cell={ctx.b} />
       <CellDisplay cells={{ ab }} />
     </div>
   );
