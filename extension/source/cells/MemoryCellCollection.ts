@@ -1,15 +1,14 @@
 import * as io from 'io-ts';
-import Browser from 'webextension-polyfill';
-
 import assert from '../helpers/assert';
+
 import CellCollection from './CellCollection';
 
-export default function ExtensionLocalStorage(
-  localStorageArea = Browser.storage.local,
+export default function MemoryCellCollection(
+  memory: Record<string, unknown> = {},
 ) {
   return new CellCollection({
     async read<T>(key: string, type: io.Type<T>): Promise<T | undefined> {
-      const readResult = (await localStorageArea.get(key))[key];
+      const readResult = memory[key];
 
       if (readResult !== undefined) {
         assert(type.is(readResult));
@@ -23,16 +22,11 @@ export default function ExtensionLocalStorage(
       type: io.Type<T>,
       value: T | undefined,
     ): Promise<void> {
-      if (value === undefined) {
-        localStorageArea.remove(key);
-        return;
+      if (value !== undefined) {
+        assert(type.is(value));
       }
 
-      assert(type.is(value));
-
-      localStorageArea.set({
-        [key]: value,
-      });
+      memory[key] = value;
     },
   });
 }

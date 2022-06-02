@@ -125,26 +125,26 @@ export class CollectionCell<T> implements ICell<T> {
   }
 
   async versionedRead(): Promise<Versioned<T>> {
-    const getResult = await this.asyncStorage.read(this.key, this.type);
+    const readResult = await this.asyncStorage.read(this.key, this.type);
 
-    if (getResult === undefined) {
+    if (readResult === undefined) {
       const latest = { version: 0, value: this.defaultValue };
       this.lastSeen = latest;
       await this.asyncStorage.write(this.key, this.versionedType, latest);
       return latest;
     }
 
-    if (!this.versionedType.is(getResult)) {
+    if (!this.versionedType.is(readResult)) {
       throw new Error(
         [
           `Type mismatch at storage key ${this.key}`,
-          `contents: ${JSON.stringify(getResult)}`,
+          `contents: ${JSON.stringify(readResult)}`,
           `expected: ${this.versionedType.name}`,
         ].join(' '),
       );
     }
 
-    return getResult;
+    return readResult;
   }
 
   #ensureVersionMatch(latest: Versioned<T> | undefined) {
