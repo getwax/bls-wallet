@@ -1,14 +1,17 @@
-import { BaseConfig, BaseState } from '../interfaces';
+import * as io from 'io-ts';
 
-export interface CurrencyControllerState extends BaseState {
-  currentCurrency: string;
-  conversionRate: number;
-  conversionDate: string;
-  nativeCurrency: string;
-  ticker: string;
-}
+import { BaseConfig } from '../interfaces';
+
+export const CurrencyControllerState = io.type({
+  currentCurrency: io.string,
+  conversionRate: io.number,
+  conversionDate: io.string,
+  nativeCurrency: io.string,
+});
+
+export type CurrencyControllerState = io.TypeOf<typeof CurrencyControllerState>;
 
 export interface CurrencyControllerConfig extends BaseConfig {
   pollInterval: number;
-  api: string;
+  api?: string;
 }

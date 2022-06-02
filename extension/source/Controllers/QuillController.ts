@@ -208,10 +208,10 @@ export default class QuillController extends BaseController<
       state: this.state.NetworkControllerState,
     });
     this.initializeProvider();
-    this.currencyController = new CurrencyController({
-      config: this.config.CurrencyControllerConfig,
-      state: this.state.CurrencyControllerState,
-    });
+    this.currencyController = new CurrencyController(
+      this.config.CurrencyControllerConfig,
+      this.storage,
+    );
     this.currencyController.updateConversionRate();
     this.currencyController.scheduleConversionInterval();
 
@@ -293,8 +293,8 @@ export default class QuillController extends BaseController<
     return {
       // etc
       getState: () => this.state,
-      setCurrentCurrency:
-        currencyController.setCurrentCurrency.bind(currencyController),
+      setCurrentCurrency: (currentCurrency) =>
+        currencyController.update({ currentCurrency }),
       setCurrentLocale: preferencesController.setUserLocale.bind(
         preferencesController,
       ),
@@ -356,9 +356,9 @@ export default class QuillController extends BaseController<
   async setDefaultCurrency(currency: string): Promise<void> {
     const { ticker } = this.networkController.getProviderConfig();
     // This is ETH
-    this.currencyController.setNativeCurrency(ticker);
+    this.currencyController.update({ nativeCurrency: ticker });
     // This is USD
-    this.currencyController.setCurrentCurrency(currency);
+    this.currencyController.update({ currentCurrency: currency });
     await this.currencyController.updateConversionRate();
     this.preferencesController.setSelectedCurrency(currency);
   }
@@ -465,10 +465,6 @@ export default class QuillController extends BaseController<
     // Listen to controller changes
     this.preferencesController.on('store', (state) => {
       this.update({ PreferencesControllerState: state });
-    });
-
-    this.currencyController.on('store', (state) => {
-      this.update({ CurrencyControllerState: state });
     });
 
     this.networkController.on('store', (state) => {
