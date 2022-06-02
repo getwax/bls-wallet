@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react';
+import AsyncReturnType from '../types/AsyncReturnType';
 
-import ICell, { ChangeEvent } from './ICell';
+import ICell from './ICell';
 
-export default function useCell<T>(cell: ICell<T>) {
+export default function useCell<C extends ICell<unknown>>(cellParam: C) {
+  type T = AsyncReturnType<C['read']>;
+  const cell = cellParam as ICell<T>;
+
   const [value, setValue] = useState<T>();
 
   useEffect(() => {
-    const changeHandler = ({ latest }: ChangeEvent<T>) => {
-      setValue(latest);
-    };
+    let ended = false;
 
-    cell.events.on('change', changeHandler);
+    (async () => {
+      for await (const v of cell) {
+        if (ended) {
+          break;
+        }
+
+        setValue(v);
+      }
+    })();
+
     return () => {
-      cell.events.off('change', changeHandler);
+      ended = true;
     };
   }, [cell]);
 

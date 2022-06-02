@@ -1,18 +1,31 @@
 import { useEffect, useState } from 'react';
+import AsyncReturnType from '../types/AsyncReturnType';
 
-import { ChangeEvent, IReadableCell } from './ICell';
+import { IReadableCell } from './ICell';
 
-export default function useReadableCell<T>(cell: IReadableCell<T>) {
+export default function useReadableCell<C extends IReadableCell<unknown>>(
+  cellParam: C,
+): AsyncReturnType<C['read']> | undefined {
+  type T = AsyncReturnType<C['read']>;
+  const cell = cellParam as IReadableCell<T>;
+
   const [value, setValue] = useState<T>();
 
   useEffect(() => {
-    const changeHandler = ({ latest }: ChangeEvent<T>) => {
-      setValue(latest);
-    };
+    let ended = false;
 
-    cell.events.on('change', changeHandler);
+    (async () => {
+      for await (const v of cell) {
+        if (ended) {
+          break;
+        }
+
+        setValue(v);
+      }
+    })();
+
     return () => {
-      cell.events.off('change', changeHandler);
+      ended = true;
     };
   }, [cell]);
 
