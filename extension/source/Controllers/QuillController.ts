@@ -597,12 +597,14 @@ export default class QuillController extends BaseController<
       quill_write: async (key, value) => {
         const cell = this.storage.Cell(key, io.unknown, value);
         await cell.write(value);
-        return undefined;
       },
 
       quill_remove: async (key) => {
         await this.storage.remove(key);
-        return undefined;
+      },
+
+      quill_setSelectedAddress: async (newSelectedAddress) => {
+        this.preferencesController.setSelectedAddress(newSelectedAddress);
       },
     };
 

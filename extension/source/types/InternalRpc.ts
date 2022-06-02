@@ -19,12 +19,17 @@ export const InternalRpcMap = {
 
   quill_write: {
     params: io.tuple([/* key */ io.string, /* value */ io.unknown]),
-    output: io.undefined,
+    output: io.void,
   },
 
   quill_remove: {
     params: io.tuple([/* key */ io.string]),
-    output: io.undefined,
+    output: io.void,
+  },
+
+  quill_setSelectedAddress: {
+    params: io.tuple([/* newSelectedAddress */ io.string]),
+    output: io.void,
   },
 };
 

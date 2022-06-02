@@ -1,5 +1,6 @@
 import { FunctionComponent, useEffect, useState } from 'react';
 import Button from '../../../components/Button';
+import QuillContext from '../../QuillContext';
 import { WalletSummary } from './WalletSummary';
 
 export interface IWallet {
@@ -11,12 +12,14 @@ export interface IWallet {
 }
 
 export const WalletsWrapper: FunctionComponent = () => {
+  const quillCtx = QuillContext.use();
+
   const [selected, setSelected] = useState<number>(0);
   const [wallets, setWallets] = useState<IWallet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const setSelectedAddress = (address: string) => {
-    window.QuillController().getApi().setSelectedAddress(address);
+    quillCtx.internalRpc.quill_setSelectedAddress(address);
   };
 
   useEffect(() => {
