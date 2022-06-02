@@ -6,6 +6,11 @@ import TypedEmitter from 'typed-emitter';
 
 import ExplicitAny from '../types/ExplicitAny';
 import AsyncReturnType from '../types/AsyncReturnType';
+import ICell, {
+  ChangeEvent,
+  IReadableCell,
+  ReadableCellEmitter,
+} from './ICell';
 
 export default class ExtensionLocalStorage {
   cells: Record<
@@ -59,29 +64,11 @@ export default class ExtensionLocalStorage {
 
 type Versioned<T> = { version: number; value: T };
 
-type ChangeEvent<T> = {
-  previous?: T;
-  latest: T;
-};
-
-type ReadableCellEmitter<T> = TypedEmitter<{
-  change(changeEvent: ChangeEvent<T>): void;
-  end(): void;
-}>;
-
-type IReadableCell<T> = {
-  events: ReadableCellEmitter<T>;
-  ended: boolean;
-  read(): Promise<T>;
-  hasChanged(previous: T | undefined, latest: T): boolean;
-  [Symbol.asyncIterator](): AsyncIterator<T>;
-};
-
 function defaultHasChanged<T>(previous: T | undefined, latest: T) {
   return JSON.stringify(previous) !== JSON.stringify(latest);
 }
 
-export class ExtensionLocalCell<T> implements IReadableCell<T> {
+export class ExtensionLocalCell<T> implements ICell<T> {
   events = new EventEmitter() as ReadableCellEmitter<T>;
   ended = false;
 
@@ -94,7 +81,7 @@ export class ExtensionLocalCell<T> implements IReadableCell<T> {
     public key: string,
     public type: io.Type<T>,
     public defaultValue: T,
-    public hasChanged: IReadableCell<T>['hasChanged'] = defaultHasChanged,
+    public hasChanged: ICell<T>['hasChanged'] = defaultHasChanged,
   ) {
     this.versionedType = io.type({ version: io.number, value: type });
 
