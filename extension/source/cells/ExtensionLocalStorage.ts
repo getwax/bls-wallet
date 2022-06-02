@@ -6,11 +6,8 @@ import TypedEmitter from 'typed-emitter';
 
 import ExplicitAny from '../types/ExplicitAny';
 import AsyncReturnType from '../types/AsyncReturnType';
-import ICell, {
-  ChangeEvent,
-  IReadableCell,
-  ReadableCellEmitter,
-} from './ICell';
+import ICell, { IReadableCell, ReadableCellEmitter } from './ICell';
+import CellIterator from './CellIterator';
 
 export default class ExtensionLocalStorage {
   cells: Record<
@@ -122,7 +119,7 @@ export class ExtensionLocalCell<T> implements ICell<T> {
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
-    return new ReadableCellIterator(this);
+    return new CellIterator(this);
   }
 
   async versionedRead(): Promise<Versioned<T>> {
@@ -159,57 +156,6 @@ export class ExtensionLocalCell<T> implements ICell<T> {
         ].join(' '),
       );
     }
-  }
-}
-
-class ReadableCellIterator<T> implements AsyncIterator<T> {
-  lastProvided?: T;
-  cleanup = () => {};
-
-  constructor(public cell: IReadableCell<T>) {}
-
-  async next() {
-    const latestRead = await this.cell.read();
-
-    if (
-      this.lastProvided === undefined ||
-      this.cell.hasChanged(this.lastProvided, latestRead)
-    ) {
-      this.lastProvided = latestRead;
-      return { value: latestRead, done: false };
-    }
-
-    if (this.cell.ended) {
-      return { value: undefined, done: true as const };
-    }
-
-    return new Promise<IteratorResult<T>>((resolve) => {
-      const changeHandler = ({ latest }: ChangeEvent<T>) => {
-        this.cleanup();
-        this.lastProvided = latest;
-        resolve({ value: latest });
-      };
-
-      this.cell.events.once('change', changeHandler);
-
-      const endHandler = () => {
-        this.cleanup();
-        resolve({ value: undefined, done: true });
-      };
-
-      this.cell.events.on('end', endHandler);
-
-      this.cleanup = () => {
-        this.cell.events.off('change', changeHandler);
-        this.cell.events.off('end', endHandler);
-        this.cleanup = () => {};
-      };
-    });
-  }
-
-  async return() {
-    this.cleanup();
-    return { value: undefined, done: true as const };
   }
 }
 
@@ -268,7 +214,7 @@ export class FormulaCell<
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
-    return new ReadableCellIterator<T>(this);
+    return new CellIterator<T>(this);
   }
 }
 
