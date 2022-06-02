@@ -1,7 +1,7 @@
 import TypedEmitter from 'typed-emitter';
 
 type ICell<T> = {
-  events: ReadableCellEmitter<T>;
+  events: CellEmitter<T>;
   ended: boolean;
   read(): Promise<T>;
   write(newValue: T): Promise<void>;
@@ -16,7 +16,7 @@ export type ChangeEvent<T> = {
   latest: T;
 };
 
-export type ReadableCellEmitter<T> = TypedEmitter<{
+export type CellEmitter<T> = TypedEmitter<{
   change(changeEvent: ChangeEvent<T>): void;
   end(): void;
 }>;

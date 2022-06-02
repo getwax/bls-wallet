@@ -2,11 +2,11 @@ import { EventEmitter } from 'events';
 import assert from '../helpers/assert';
 import CellIterator from './CellIterator';
 
-import ICell, { ReadableCellEmitter } from './ICell';
+import ICell, { CellEmitter } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
 
 export default class MemoryCell<T> implements ICell<T> {
-  events = new EventEmitter() as ReadableCellEmitter<T>;
+  events = new EventEmitter() as CellEmitter<T>;
   ended = false;
 
   constructor(

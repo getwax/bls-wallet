@@ -4,7 +4,7 @@ import * as io from 'io-ts';
 import Browser from 'webextension-polyfill';
 
 import ExplicitAny from '../types/ExplicitAny';
-import ICell, { ReadableCellEmitter } from './ICell';
+import ICell, { CellEmitter } from './ICell';
 import CellIterator from './CellIterator';
 import jsonHasChanged from './jsonHasChanged';
 import assert from '../helpers/assert';
@@ -62,7 +62,7 @@ export default class ExtensionLocalStorage {
 type Versioned<T> = { version: number; value: T };
 
 export class ExtensionLocalCell<T> implements ICell<T> {
-  events = new EventEmitter() as ReadableCellEmitter<T>;
+  events = new EventEmitter() as CellEmitter<T>;
   ended = false;
 
   versionedType: io.Type<Versioned<T>>;

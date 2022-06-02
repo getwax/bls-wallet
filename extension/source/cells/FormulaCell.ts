@@ -5,7 +5,7 @@ import TypedEmitter from 'typed-emitter';
 import AsyncReturnType from '../types/AsyncReturnType';
 import ExplicitAny from '../types/ExplicitAny';
 import CellIterator from './CellIterator';
-import { IReadableCell, ReadableCellEmitter } from './ICell';
+import { IReadableCell, CellEmitter } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
@@ -17,7 +17,7 @@ export class FormulaCell<
   T,
 > implements IReadableCell<T>
 {
-  events = new EventEmitter() as ReadableCellEmitter<T>;
+  events = new EventEmitter() as CellEmitter<T>;
 
   valuePromise: Promise<T>;
   lastProvidedValue?: T;
