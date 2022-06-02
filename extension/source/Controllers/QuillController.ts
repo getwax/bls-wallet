@@ -8,6 +8,7 @@ import {
 } from '@toruslabs/openlogin-jrpc';
 import pump from 'pump';
 import type { Duplex } from 'readable-stream';
+import * as io from 'io-ts';
 
 import { Runtime } from 'webextension-polyfill';
 import { BigNumber } from 'ethers';
@@ -57,6 +58,7 @@ import createMetaRPCHandler from './streamHelpers/MetaRPCHandler';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
+import CellCollection from '../cells/CellCollection';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -118,13 +120,16 @@ export default class QuillController extends BaseController<
 
   //   private txController!: TransactionController;
 
-  constructor({
-    config,
-    state,
-  }: {
-    config: Partial<QuillControllerConfig>;
-    state: Partial<QuillControllerState>;
-  }) {
+  constructor(
+    {
+      config,
+      state,
+    }: {
+      config: Partial<QuillControllerConfig>;
+      state: Partial<QuillControllerState>;
+    },
+    public storage: CellCollection,
+  ) {
     super({ config, state });
   }
 
@@ -567,6 +572,44 @@ export default class QuillController extends BaseController<
         };
 
         return result.hash;
+      },
+
+      quill_read: async (req: any) => {
+        if (req.origin !== window.location.origin) {
+          return;
+        }
+
+        const [key, defaultValue, minVersion] = req.params;
+        const cell = this.storage.Cell(key, io.unknown, defaultValue);
+
+        for await (const value of cell) {
+          const version = cell.lastSeen?.version ?? 0;
+
+          if (minVersion === undefined || version >= minVersion) {
+            return { version, value };
+          }
+        }
+
+        return 'ended';
+      },
+
+      quill_write: async (req: any) => {
+        if (req.origin !== window.location.origin) {
+          return;
+        }
+
+        const [key, value] = req.params;
+        const cell = this.storage.Cell(key, io.unknown, value);
+        await cell.write(value);
+      },
+
+      quill_remove: async (req: any) => {
+        if (req.origin !== window.location.origin) {
+          return;
+        }
+
+        const [key] = req.params;
+        await this.storage.remove(key);
       },
     });
   }

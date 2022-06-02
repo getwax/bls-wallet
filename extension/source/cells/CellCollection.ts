@@ -43,12 +43,13 @@ export default class CellCollection {
   async remove(key: string) {
     const cell = this.cells[key];
     cell?.end();
+    delete this.cells[key];
 
     await this.asyncStorage.write(key, io.undefined, undefined);
   }
 }
 
-type Versioned<T> = { version: number; value: T };
+export type Versioned<T> = { version: number; value: T };
 
 export class CollectionCell<T> implements ICell<T> {
   events = new EventEmitter() as CellEmitter<T>;
@@ -110,6 +111,7 @@ export class CollectionCell<T> implements ICell<T> {
 
   async write(newValue: T): Promise<void> {
     assert(!this.ended);
+    assert(this.type.is(newValue));
 
     await this.initialRead;
     const latest = await this.versionedRead();
