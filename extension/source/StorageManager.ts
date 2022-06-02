@@ -5,6 +5,7 @@ import Browser from 'webextension-polyfill';
 import TypedEmitter from 'typed-emitter';
 
 import ExplicitAny from './types/ExplicitAny';
+import AsyncReturnType from './types/AsyncReturnType';
 
 export default class StorageManager {
   cells: Record<
@@ -17,7 +18,12 @@ export default class StorageManager {
       .local,
   ) {}
 
-  Cell<T>(key: string, type: io.Type<T>, defaultValue: T): StorageCell<T> {
+  Cell<T>(
+    key: string,
+    type: io.Type<T>,
+    defaultValue: T,
+    hasChanged = defaultHasChanged,
+  ): StorageCell<T> {
     const entry = this.cells[key];
 
     if (entry) {
@@ -38,6 +44,7 @@ export default class StorageManager {
       key,
       type,
       defaultValue,
+      hasChanged,
     );
 
     this.cells[key] = { cell, type };
@@ -49,23 +56,30 @@ export default class StorageManager {
 type Versioned<T> = { version: number; value: T };
 
 type ChangeEvent<T> = {
-  previous?: Versioned<T>;
-  latest: Versioned<T>;
+  previous?: T;
+  latest: T;
 };
 
-type ChangeEmitter<T> = TypedEmitter<{
+type ReadableCellEmitter<T> = TypedEmitter<{
   change(changeEvent: ChangeEvent<T>): void;
+  end(): void;
 }>;
 
 type IReadableCell<T> = {
-  events: ChangeEmitter<T>;
+  events: ReadableCellEmitter<T>;
+  ended: boolean;
   read(): Promise<T>;
-  versionedRead(): Promise<Versioned<T>>;
+  hasChanged(previous: T | undefined, latest: T): boolean;
   [Symbol.asyncIterator](): AsyncIterator<T>;
 };
 
+function defaultHasChanged<T>(previous: T | undefined, latest: T) {
+  return JSON.stringify(previous) !== JSON.stringify(latest);
+}
+
 export class StorageCell<T> implements IReadableCell<T> {
-  events = new EventEmitter() as ChangeEmitter<T>;
+  events = new EventEmitter() as ReadableCellEmitter<T>;
+  ended = false;
 
   versionedType: io.Type<Versioned<T>>;
   lastSeen?: Versioned<T>;
@@ -76,6 +90,7 @@ export class StorageCell<T> implements IReadableCell<T> {
     public key: string,
     public type: io.Type<T>,
     public defaultValue: T,
+    public hasChanged: IReadableCell<T>['hasChanged'] = defaultHasChanged,
   ) {
     this.versionedType = io.type({ version: io.number, value: type });
 
@@ -107,35 +122,16 @@ export class StorageCell<T> implements IReadableCell<T> {
     const { lastSeen: previous } = this;
     this.lastSeen = newVersionedValue;
 
-    this.events.emit('change', { previous, latest: newVersionedValue });
+    if (this.hasChanged(previous?.value, newValue)) {
+      this.events.emit('change', {
+        previous: previous?.value,
+        latest: newVersionedValue.value,
+      });
+    }
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
-    let lastProvidedVersion = -1;
-    let cleanup = () => {};
-
-    return {
-      next: () =>
-        new Promise((resolve) => {
-          if (this.lastSeen && this.lastSeen.version > lastProvidedVersion) {
-            lastProvidedVersion = this.lastSeen.version;
-            resolve({ value: this.lastSeen.value, done: false });
-            return;
-          }
-
-          const changeHandler = ({ latest }: ChangeEvent<T>) => {
-            lastProvidedVersion = latest.version;
-            resolve({ value: latest.value });
-          };
-
-          this.events.once('change', changeHandler);
-          cleanup = () => this.events.off('change', changeHandler);
-        }),
-      return: () => {
-        cleanup();
-        return Promise.resolve({ value: undefined, done: true });
-      },
-    };
+    return new ReadableCellIterator(this);
   }
 
   async versionedRead(): Promise<Versioned<T>> {
@@ -176,27 +172,47 @@ export class StorageCell<T> implements IReadableCell<T> {
 }
 
 class ReadableCellIterator<T> implements AsyncIterator<T> {
-  lastProvidedVersion = -1;
+  lastProvided?: T;
   cleanup = () => {};
 
   constructor(public cell: IReadableCell<T>) {}
 
   async next() {
-    const versionedReadResult = await this.cell.versionedRead();
+    const latestRead = await this.cell.read();
 
-    if (versionedReadResult.version > this.lastProvidedVersion) {
-      this.lastProvidedVersion = versionedReadResult.version;
-      return { value: versionedReadResult.value, done: false };
+    if (
+      this.lastProvided === undefined ||
+      this.cell.hasChanged(this.lastProvided, latestRead)
+    ) {
+      this.lastProvided = latestRead;
+      return { value: latestRead, done: false };
+    }
+
+    if (this.cell.ended) {
+      return { value: undefined, done: true as const };
     }
 
     return new Promise<IteratorResult<T>>((resolve) => {
       const changeHandler = ({ latest }: ChangeEvent<T>) => {
-        this.lastProvidedVersion = latest.version;
-        resolve({ value: latest.value });
+        this.cleanup();
+        this.lastProvided = latest;
+        resolve({ value: latest });
       };
 
       this.cell.events.once('change', changeHandler);
-      this.cleanup = () => this.cell.events.off('change', changeHandler);
+
+      const endHandler = () => {
+        this.cleanup();
+        resolve({ value: undefined, done: true });
+      };
+
+      this.cell.events.on('end', endHandler);
+
+      this.cleanup = () => {
+        this.cell.events.off('change', changeHandler);
+        this.cell.events.off('end', endHandler);
+        this.cleanup = () => {};
+      };
     });
   }
 
@@ -204,4 +220,202 @@ class ReadableCellIterator<T> implements AsyncIterator<T> {
     this.cleanup();
     return { value: undefined, done: true as const };
   }
+}
+
+type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
+  [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
+};
+
+export class FormulaCell<
+  InputCells extends Record<string, IReadableCell<unknown>>,
+  T,
+> implements IReadableCell<T>
+{
+  events = new EventEmitter() as ReadableCellEmitter<T>;
+
+  valuePromise: Promise<T>;
+  lastProvidedValue?: T;
+  ended = false;
+
+  constructor(
+    public inputCells: InputCells,
+    public formula: (inputValues: InputValues<InputCells>) => T,
+    public hasChanged = defaultHasChanged,
+  ) {
+    this.valuePromise = new Promise((resolve) => {
+      this.events.once('change', ({ latest }) => resolve(latest));
+    });
+
+    (async () => {
+      for await (const inputValues of toIterableOfRecords(inputCells)) {
+        if (this.ended) {
+          break;
+        }
+
+        const latest = formula(inputValues as InputValues<InputCells>);
+        this.valuePromise = Promise.resolve(latest);
+
+        if (hasChanged(this.lastProvidedValue, latest)) {
+          this.events.emit('change', {
+            previous: this.lastProvidedValue,
+            latest,
+          });
+        }
+      }
+
+      this.end();
+    })();
+  }
+
+  end() {
+    this.ended = true;
+    this.events.emit('end');
+  }
+
+  async read(): Promise<T> {
+    return await this.valuePromise;
+  }
+
+  [Symbol.asyncIterator](): AsyncIterator<T> {
+    return new ReadableCellIterator<T>(this);
+  }
+}
+
+/**
+ * Wrapper around Object.keys which uses keyof to get the accurate key type.
+ * (The builtin typing for Object.keys unnecessarily widens the type to
+ * string[].)
+ */
+function recordKeys<R extends Record<string, unknown>>(record: R): (keyof R)[] {
+  return Object.keys(record) as (keyof R)[];
+}
+
+function mapValues<Input, Output, InputRecord extends Record<string, Input>>(
+  inputs: InputRecord,
+  mapper: (input: Input, key: keyof InputRecord) => Output,
+): Record<keyof InputRecord, Output> {
+  const res = {} as Record<keyof InputRecord, Output>;
+
+  for (const key of recordKeys(inputs)) {
+    res[key] = mapper(inputs[key], key);
+  }
+
+  return res;
+}
+
+/**
+ * Like Promise.all but for a record of promises instead of an array of
+ * promises.
+ */
+async function promiseRecordAll<R extends Record<string, Promise<unknown>>>(
+  record: R,
+): Promise<{ [K in keyof R]: Awaited<R[K]> }> {
+  const res = {} as { [K in keyof R]: Awaited<R[K]> };
+
+  await Promise.all(
+    recordKeys(record).map(async (key) => {
+      res[key] = (await record[key]) as ExplicitAny;
+    }),
+  );
+
+  return res;
+}
+
+async function asyncMapValues<
+  Input,
+  Output,
+  InputRecord extends Record<string, Input>,
+>(
+  inputs: InputRecord,
+  asyncMapper: (input: Input, key: keyof InputRecord) => Promise<Output>,
+): Promise<Record<keyof InputRecord, Output>> {
+  const promiseRecord = mapValues(inputs, asyncMapper);
+  return await promiseRecordAll(promiseRecord);
+}
+
+type AsyncIteratee<I extends AsyncIterable<unknown>> = I extends AsyncIterable<
+  infer T
+>
+  ? T
+  : never;
+
+function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
+  recordOfIterables: R,
+): AsyncIterable<{ [K in keyof R]: AsyncIteratee<R[K]> }> {
+  return {
+    [Symbol.asyncIterator]() {
+      const latest = {} as { [K in keyof R]: AsyncIteratee<R[K]> };
+      let providedFirstValue = false;
+      let keysFilled = 0;
+      const keysNeeded = recordKeys(recordOfIterables).length;
+      let ended = false;
+      let cleanup = () => {};
+
+      const events = new EventEmitter() as TypedEmitter<{
+        updated(): void;
+        end(): void;
+      }>;
+
+      function end() {
+        events.emit('end');
+        cleanup();
+        ended = true;
+      }
+
+      for (const key of recordKeys(recordOfIterables)) {
+        // eslint-disable-next-line no-loop-func
+        (async () => {
+          for await (const value of recordOfIterables[key]) {
+            if (ended) {
+              break;
+            }
+
+            if (!(key in latest)) {
+              keysFilled += 1;
+            }
+
+            latest[key] = value as ExplicitAny;
+
+            if (keysFilled === keysNeeded) {
+              events.emit('updated');
+            }
+          }
+        })();
+      }
+
+      return {
+        async next() {
+          if (!providedFirstValue && keysFilled === keysNeeded) {
+            providedFirstValue = true;
+            return { value: latest };
+          }
+
+          return new Promise<IteratorResult<typeof latest>>((resolve) => {
+            const updatedHandler = () => {
+              cleanup();
+              resolve({ value: latest });
+            };
+
+            events.on('updated', updatedHandler);
+
+            const endHandler = () => {
+              cleanup();
+              resolve({ value: undefined, done: true });
+            };
+
+            events.on('end', endHandler);
+
+            cleanup = () => {
+              events.off('updated', updatedHandler);
+              events.off('end', endHandler);
+            };
+          });
+        },
+        async return(): Promise<IteratorResult<typeof latest>> {
+          end();
+          return { value: undefined, done: true };
+        },
+      };
+    },
+  };
 }
