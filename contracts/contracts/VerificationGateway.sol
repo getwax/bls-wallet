@@ -89,31 +89,6 @@ contract VerificationGateway
     @param hash BLS public key hash used as salt for create2
     @return BLSWallet at calculated address (if code exists), otherwise zero address
      */
-    // function walletFromHash(bytes32 hash) public view returns (IWallet) {
-        //return wallet of hash registered explicitly
-        // if (externalWalletsFromHash[hash] != IWallet(address(0))) {
-        //     return externalWalletsFromHash[hash];
-        // }
-
-        // address walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
-        //     bytes1(0xff),
-        //     address(this),
-        //     hash,
-        //     keccak256(abi.encodePacked(
-        //         type(TransparentUpgradeableProxy).creationCode,
-        //         abi.encode(
-        //             address(blsWalletLogic),
-        //             address(walletProxyAdmin),
-        //             getInitializeData()
-        //         )
-        //     ))
-        // )))));
-    //     IWallet walletAddress = registeredWalletFromHash[hash];
-    //     if (!hasCode(address(walletAddress))) {
-    //         walletAddress = IWallet(address(0));
-    //     }
-    //     return walletAddress;
-    // }
 
     /**
     If an existing wallet contract wishes to be called by this verification
