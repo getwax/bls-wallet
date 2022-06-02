@@ -4,10 +4,10 @@ import * as io from 'io-ts';
 import Browser from 'webextension-polyfill';
 import TypedEmitter from 'typed-emitter';
 
-import ExplicitAny from './types/ExplicitAny';
-import AsyncReturnType from './types/AsyncReturnType';
+import ExplicitAny from '../types/ExplicitAny';
+import AsyncReturnType from '../types/AsyncReturnType';
 
-export default class StorageManager {
+export default class ExtensionLocalStorage {
   cells: Record<
     string,
     { cell: StorageCell<ExplicitAny>; type: io.Type<ExplicitAny> } | undefined
