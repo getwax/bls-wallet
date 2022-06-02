@@ -10,14 +10,7 @@ import assert from '../helpers/assert';
 import IAsyncStorage from './IAsyncStorage';
 
 export default class CellCollection {
-  cells: Record<
-    string,
-    | {
-        cell: CollectionCell<ExplicitAny>;
-        type: io.Type<ExplicitAny>;
-      }
-    | undefined
-  > = {};
+  cells: Record<string, CollectionCell<ExplicitAny> | undefined> = {};
 
   constructor(public asyncStorage: IAsyncStorage) {}
 
@@ -27,22 +20,14 @@ export default class CellCollection {
     defaultValue: T,
     hasChanged = jsonHasChanged,
   ): CollectionCell<T> {
-    const entry = this.cells[key];
+    let cell = this.cells[key];
 
-    if (entry) {
-      if (entry.type.name !== type.name) {
-        throw new Error(
-          [
-            'Tried to get existing storage cell with a different type',
-            `(type: ${type.name}, existing: ${entry.type.name})`,
-          ].join(' '),
-        );
-      }
-
-      return entry.cell;
+    if (cell) {
+      cell.applyType(type);
+      return cell;
     }
 
-    const cell = new CollectionCell(
+    cell = new CollectionCell(
       this.asyncStorage,
       key,
       type,
@@ -50,17 +35,14 @@ export default class CellCollection {
       hasChanged,
     );
 
-    this.cells[key] = { cell, type };
+    this.cells[key] = cell;
 
     return cell;
   }
 
   async remove(key: string) {
-    const entry = this.cells[key];
-
-    if (entry) {
-      entry.cell.end();
-    }
+    const cell = this.cells[key];
+    cell?.end();
 
     await this.asyncStorage.write(key, io.undefined, undefined);
   }
@@ -88,6 +70,36 @@ export class CollectionCell<T> implements ICell<T> {
     this.initialRead = this.versionedRead().then((versionedReadResult) => {
       this.lastSeen = versionedReadResult;
     });
+  }
+
+  applyType<X>(type: io.Type<X>) {
+    if (type === io.unknown) {
+      return;
+    }
+
+    if (this.type !== io.unknown && this.type.name !== type.name) {
+      throw new Error(
+        [
+          'Tried to get existing storage cell with a different type',
+          `(type: ${type.name}, existing: ${this.type.name})`,
+        ].join(' '),
+      );
+    }
+
+    if (this.lastSeen && !type.is(this.lastSeen.value)) {
+      throw new Error(
+        [
+          `Type mismatch at storage key ${this.key}`,
+          `contents: ${JSON.stringify(this.lastSeen.value)}`,
+          `expected: ${type.name}`,
+        ].join(' '),
+      );
+    }
+
+    if (this.type === io.unknown) {
+      this.type = type as unknown as io.Type<T>;
+      this.versionedType = io.type({ version: io.number, value: this.type });
+    }
   }
 
   async read(): Promise<T> {
