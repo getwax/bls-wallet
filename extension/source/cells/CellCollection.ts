@@ -54,6 +54,16 @@ export default class CellCollection {
 
     return cell;
   }
+
+  async remove(key: string) {
+    const entry = this.cells[key];
+
+    if (entry) {
+      entry.cell.end();
+    }
+
+    await this.asyncStorage.write(key, io.undefined, undefined);
+  }
 }
 
 type Versioned<T> = { version: number; value: T };
