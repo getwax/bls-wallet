@@ -149,7 +149,10 @@ export class CollectionCell<T> implements ICell<T> {
   }
 
   async versionedRead(): Promise<Versioned<T>> {
-    const readResult = await this.asyncStorage.read(this.key, this.type);
+    const readResult = await this.asyncStorage.read(
+      this.key,
+      this.versionedType,
+    );
 
     if (readResult === undefined) {
       const latest = { version: 0, value: this.defaultValue };
