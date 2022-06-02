@@ -16,12 +16,12 @@ type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
 export class FormulaCell<
   InputCells extends Record<string, IReadableCell<unknown>>,
   T,
-> implements IReadableCell<T>
+> implements IReadableCell<Awaited<T>>
 {
-  events = new EventEmitter() as CellEmitter<T>;
+  events = new EventEmitter() as CellEmitter<Awaited<T>>;
 
-  valuePromise: Promise<T>;
-  lastProvidedValue?: T;
+  valuePromise: Promise<Awaited<T>>;
+  lastProvidedValue?: Awaited<T>;
   ended = false;
 
   constructor(
@@ -39,7 +39,7 @@ export class FormulaCell<
           break;
         }
 
-        const latest = formula(inputValues as InputValues<InputCells>);
+        const latest = await formula(inputValues as InputValues<InputCells>);
         this.valuePromise = Promise.resolve(latest);
 
         if (hasChanged(this.lastProvidedValue, latest)) {
@@ -59,12 +59,12 @@ export class FormulaCell<
     this.ended = true;
   }
 
-  async read(): Promise<T> {
+  async read(): Promise<Awaited<T>> {
     return await this.valuePromise;
   }
 
-  [Symbol.asyncIterator](): AsyncIterator<T> {
-    return new CellIterator<T>(this);
+  [Symbol.asyncIterator](): AsyncIterator<Awaited<T>> {
+    return new CellIterator<Awaited<T>>(this);
   }
 }
 
@@ -80,7 +80,8 @@ function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
   return {
     [Symbol.asyncIterator]() {
       const latest = {} as { [K in keyof R]: AsyncIteratee<R[K]> };
-      let providedFirstValue = false;
+      let latestVersion = 0;
+      let providedVersion = 0;
       let keysFilled = 0;
       const keysNeeded = recordKeys(recordOfIterables).length;
       let ended = false;
@@ -112,6 +113,7 @@ function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
             latest[key] = value as ExplicitAny;
 
             if (keysFilled === keysNeeded) {
+              latestVersion += 1;
               events.emit('updated');
             }
           }
@@ -120,14 +122,15 @@ function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
 
       return {
         async next() {
-          if (!providedFirstValue && keysFilled === keysNeeded) {
-            providedFirstValue = true;
+          if (latestVersion > providedVersion) {
+            providedVersion = latestVersion;
             return { value: latest };
           }
 
           return new Promise<IteratorResult<typeof latest>>((resolve) => {
             const updatedHandler = () => {
               cleanup();
+              providedVersion = latestVersion;
               resolve({ value: latest });
             };
 

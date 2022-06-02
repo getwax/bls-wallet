@@ -5,7 +5,7 @@ import { Counter } from './Counter';
 
 export const CellsDemoPage: FunctionComponent = () => {
   const ctx = useContext(CellsDemoContext);
-  const { ab } = ctx;
+  const { ab, abSlow } = ctx;
 
   exposeConsoleCtx(ctx);
 
@@ -22,7 +22,7 @@ export const CellsDemoPage: FunctionComponent = () => {
     >
       <Counter label="a" cell={ctx.a} />
       <Counter label="b" cell={ctx.b} />
-      <CellDisplay cells={{ ab }} />
+      <CellDisplay cells={{ ab, abSlow }} />
     </div>
   );
 };
