@@ -10,7 +10,11 @@ import AsyncReturnType from '../types/AsyncReturnType';
 export default class ExtensionLocalStorage {
   cells: Record<
     string,
-    { cell: StorageCell<ExplicitAny>; type: io.Type<ExplicitAny> } | undefined
+    | {
+        cell: ExtensionLocalCell<ExplicitAny>;
+        type: io.Type<ExplicitAny>;
+      }
+    | undefined
   > = {};
 
   constructor(
@@ -23,7 +27,7 @@ export default class ExtensionLocalStorage {
     type: io.Type<T>,
     defaultValue: T,
     hasChanged = defaultHasChanged,
-  ): StorageCell<T> {
+  ): ExtensionLocalCell<T> {
     const entry = this.cells[key];
 
     if (entry) {
@@ -39,7 +43,7 @@ export default class ExtensionLocalStorage {
       return entry.cell;
     }
 
-    const cell = new StorageCell(
+    const cell = new ExtensionLocalCell(
       this.localStorageArea,
       key,
       type,
@@ -77,7 +81,7 @@ function defaultHasChanged<T>(previous: T | undefined, latest: T) {
   return JSON.stringify(previous) !== JSON.stringify(latest);
 }
 
-export class StorageCell<T> implements IReadableCell<T> {
+export class ExtensionLocalCell<T> implements IReadableCell<T> {
   events = new EventEmitter() as ReadableCellEmitter<T>;
   ended = false;
 
