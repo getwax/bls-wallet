@@ -8,6 +8,8 @@ import ExplicitAny from '../types/ExplicitAny';
 import AsyncReturnType from '../types/AsyncReturnType';
 import ICell, { IReadableCell, ReadableCellEmitter } from './ICell';
 import CellIterator from './CellIterator';
+import jsonHasChanged from './jsonHasChanged';
+import assert from '../helpers/assert';
 
 export default class ExtensionLocalStorage {
   cells: Record<
@@ -28,7 +30,7 @@ export default class ExtensionLocalStorage {
     key: string,
     type: io.Type<T>,
     defaultValue: T,
-    hasChanged = defaultHasChanged,
+    hasChanged = jsonHasChanged,
   ): ExtensionLocalCell<T> {
     const entry = this.cells[key];
 
@@ -61,10 +63,6 @@ export default class ExtensionLocalStorage {
 
 type Versioned<T> = { version: number; value: T };
 
-function defaultHasChanged<T>(previous: T | undefined, latest: T) {
-  return JSON.stringify(previous) !== JSON.stringify(latest);
-}
-
 export class ExtensionLocalCell<T> implements ICell<T> {
   events = new EventEmitter() as ReadableCellEmitter<T>;
   ended = false;
@@ -78,7 +76,7 @@ export class ExtensionLocalCell<T> implements ICell<T> {
     public key: string,
     public type: io.Type<T>,
     public defaultValue: T,
-    public hasChanged: ICell<T>['hasChanged'] = defaultHasChanged,
+    public hasChanged: ICell<T>['hasChanged'] = jsonHasChanged,
   ) {
     this.versionedType = io.type({ version: io.number, value: type });
 
@@ -94,6 +92,8 @@ export class ExtensionLocalCell<T> implements ICell<T> {
   }
 
   async write(newValue: T): Promise<void> {
+    assert(!this.ended);
+
     await this.initialRead;
     const latest = await this.versionedRead();
     this.#ensureVersionMatch(latest);
@@ -116,6 +116,11 @@ export class ExtensionLocalCell<T> implements ICell<T> {
         latest: newVersionedValue.value,
       });
     }
+  }
+
+  end() {
+    this.events.emit('end');
+    this.ended = true;
   }
 
   [Symbol.asyncIterator](): AsyncIterator<T> {
@@ -177,7 +182,7 @@ export class FormulaCell<
   constructor(
     public inputCells: InputCells,
     public formula: (inputValues: InputValues<InputCells>) => T,
-    public hasChanged = defaultHasChanged,
+    public hasChanged = jsonHasChanged,
   ) {
     this.valuePromise = new Promise((resolve) => {
       this.events.once('change', ({ latest }) => resolve(latest));
@@ -205,8 +210,8 @@ export class FormulaCell<
   }
 
   end() {
-    this.ended = true;
     this.events.emit('end');
+    this.ended = true;
   }
 
   async read(): Promise<T> {
