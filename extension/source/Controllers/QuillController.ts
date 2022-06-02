@@ -59,6 +59,10 @@ import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
+import assert from '../helpers/assert';
+import InternalRpc, { InternalRpcMap } from '../types/InternalRpc';
+import mapValues from '../cells/mapValues';
+import ExplicitAny from '../types/ExplicitAny';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -570,12 +574,13 @@ export default class QuillController extends BaseController<
         return result.hash;
       },
 
-      quill_read: async (req: any) => {
-        if (req.origin !== window.location.origin) {
-          return;
-        }
+      ...this.makeInternalRpc(),
+    });
+  }
 
-        const [key, defaultValue, minVersion] = req.params;
+  private makeInternalRpc(): Record<string, unknown> {
+    const methods: InternalRpc = {
+      quill_read: async (key, defaultValue, minVersion) => {
         const cell = this.storage.Cell(key, io.unknown, defaultValue);
 
         for await (const value of cell) {
@@ -589,24 +594,25 @@ export default class QuillController extends BaseController<
         return 'ended';
       },
 
-      quill_write: async (req: any) => {
-        if (req.origin !== window.location.origin) {
-          return;
-        }
-
-        const [key, value] = req.params;
+      quill_write: async (key, value) => {
         const cell = this.storage.Cell(key, io.unknown, value);
         await cell.write(value);
+        return undefined;
       },
 
-      quill_remove: async (req: any) => {
-        if (req.origin !== window.location.origin) {
-          return;
-        }
-
-        const [key] = req.params;
+      quill_remove: async (key) => {
         await this.storage.remove(key);
+        return undefined;
       },
+    };
+
+    return mapValues(methods, (method, methodName) => (req: any) => {
+      if (req.origin !== window.location.origin) {
+        return;
+      }
+
+      assert(InternalRpcMap[methodName].params.is(req.params));
+      return (method as ExplicitAny)(...req.params);
     });
   }
 
