@@ -290,49 +290,6 @@ function recordKeys<R extends Record<string, unknown>>(record: R): (keyof R)[] {
   return Object.keys(record) as (keyof R)[];
 }
 
-function mapValues<Input, Output, InputRecord extends Record<string, Input>>(
-  inputs: InputRecord,
-  mapper: (input: Input, key: keyof InputRecord) => Output,
-): Record<keyof InputRecord, Output> {
-  const res = {} as Record<keyof InputRecord, Output>;
-
-  for (const key of recordKeys(inputs)) {
-    res[key] = mapper(inputs[key], key);
-  }
-
-  return res;
-}
-
-/**
- * Like Promise.all but for a record of promises instead of an array of
- * promises.
- */
-async function promiseRecordAll<R extends Record<string, Promise<unknown>>>(
-  record: R,
-): Promise<{ [K in keyof R]: Awaited<R[K]> }> {
-  const res = {} as { [K in keyof R]: Awaited<R[K]> };
-
-  await Promise.all(
-    recordKeys(record).map(async (key) => {
-      res[key] = (await record[key]) as ExplicitAny;
-    }),
-  );
-
-  return res;
-}
-
-async function asyncMapValues<
-  Input,
-  Output,
-  InputRecord extends Record<string, Input>,
->(
-  inputs: InputRecord,
-  asyncMapper: (input: Input, key: keyof InputRecord) => Promise<Output>,
-): Promise<Record<keyof InputRecord, Output>> {
-  const promiseRecord = mapValues(inputs, asyncMapper);
-  return await promiseRecordAll(promiseRecord);
-}
-
 type AsyncIteratee<I extends AsyncIterable<unknown>> = I extends AsyncIterable<
   infer T
 >
