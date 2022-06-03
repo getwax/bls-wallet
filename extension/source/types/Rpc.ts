@@ -40,6 +40,11 @@ export const rpcMap = {
       params: io.tuple([/* newSelectedAddress */ io.string]),
       output: io.void,
     },
+
+    quill_createHDAccount: {
+      params: emptyTuple,
+      output: io.string,
+    },
   },
 };
 

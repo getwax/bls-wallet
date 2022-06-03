@@ -51,7 +51,7 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="text-body">Wallets</div>
         <Button
           onPress={async () => {
-            await window.KeyringController().createHDAccount();
+            await quillCtx.rpc.private.quill_createHDAccount();
             window.location.reload();
           }}
           children={'Add Wallet'}

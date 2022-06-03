@@ -625,6 +625,10 @@ export default class QuillController extends BaseController<
       quill_setSelectedAddress: async (newSelectedAddress) => {
         this.preferencesController.setSelectedAddress(newSelectedAddress);
       },
+
+      quill_createHDAccount: async () => {
+        return this.keyringController.createHDAccount();
+      },
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
