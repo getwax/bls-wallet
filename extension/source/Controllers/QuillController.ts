@@ -60,9 +60,9 @@ import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
 import assert from '../helpers/assert';
-import InternalRpc, { InternalRpcMap } from '../types/InternalRpc';
 import mapValues from '../cells/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
+import Rpc, { rpcMap } from '../types/Rpc';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -574,12 +574,33 @@ export default class QuillController extends BaseController<
         return result.hash;
       },
 
-      ...this.makeInternalRpc(),
+      ...this.makePublicRpc(),
+      ...this.makePrivateRpc(),
     });
   }
 
-  private makeInternalRpc(): Record<string, unknown> {
-    const methods: InternalRpc = {
+  private makePublicRpc(): Record<string, unknown> {
+    type MethodsWithOrigin = {
+      [M in keyof Rpc['public']]: (
+        origin: string,
+        params: Parameters<Rpc['public'][M]>,
+      ) => ReturnType<Rpc['public'][M]>;
+    };
+
+    const methods: MethodsWithOrigin = {
+      example: async (_origin, [msg]) => {
+        console.log(msg);
+      },
+    };
+
+    return mapValues(methods, (method, methodName) => (req: any) => {
+      assert(rpcMap.public[methodName].params.is(req.params));
+      return (method as ExplicitAny)(req.origin, req.params);
+    });
+  }
+
+  private makePrivateRpc(): Record<string, unknown> {
+    const methods: Rpc['private'] = {
       quill_read: async (key, defaultValue, minVersion) => {
         const cell = this.storage.Cell(key, io.unknown, defaultValue);
 
@@ -613,7 +634,7 @@ export default class QuillController extends BaseController<
         return;
       }
 
-      assert(InternalRpcMap[methodName].params.is(req.params));
+      assert(rpcMap.private[methodName].params.is(req.params));
       return (method as ExplicitAny)(...req.params);
     });
   }

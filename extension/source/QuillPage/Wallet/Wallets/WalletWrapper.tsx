@@ -19,7 +19,7 @@ export const WalletsWrapper: FunctionComponent = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const setSelectedAddress = (address: string) => {
-    quillCtx.internalRpc.quill_setSelectedAddress(address);
+    quillCtx.rpc.private.quill_setSelectedAddress(address);
   };
 
   useEffect(() => {

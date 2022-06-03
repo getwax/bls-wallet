@@ -4,19 +4,28 @@ import assert from '../helpers/assert';
 
 import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
 import ExplicitAny from '../types/ExplicitAny';
-import InternalRpc, { InternalRpcMap } from '../types/InternalRpc';
+import Rpc, { rpcMap } from '../types/Rpc';
 
 export default class QuillContext {
-  internalRpc: InternalRpc;
+  rpc: Rpc;
 
   constructor(public ethereum: QuillInPageProvider) {
-    this.internalRpc = mapValues(InternalRpcMap, ({ output }, method) => {
-      return async (...params: unknown[]) => {
-        const response = await this.ethereum.request({ method, params });
-        assert(output.is(response));
-        return response as ExplicitAny;
-      };
-    });
+    this.rpc = {
+      public: mapValues(rpcMap.public, ({ output }, method) => {
+        return async (...params: unknown[]) => {
+          const response = await this.ethereum.request({ method, params });
+          assert(output.is(response));
+          return response as ExplicitAny;
+        };
+      }),
+      private: mapValues(rpcMap.private, ({ output }, method) => {
+        return async (...params: unknown[]) => {
+          const response = await this.ethereum.request({ method, params });
+          assert(output.is(response));
+          return response as ExplicitAny;
+        };
+      }),
+    };
   }
 
   private static context = createContext<QuillContext>({} as QuillContext);
