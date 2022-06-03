@@ -14,7 +14,7 @@ import {
 } from './interfaces';
 import messages from './messages';
 
-class QuillInPageProvider extends BaseProvider<InPageProviderState> {
+export class QuillInPageProvider extends BaseProvider<InPageProviderState> {
   /**
    * The chain ID of the currently connected Ethereum chain.
    * See [chainId.network]{@link https://chainid.network} for more information.

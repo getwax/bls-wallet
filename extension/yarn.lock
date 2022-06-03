@@ -5033,6 +5033,11 @@ fork-ts-checker-webpack-plugin@^6.5.0:
     semver "^7.3.2"
     tapable "^1.0.0"
 
+fp-ts@^2.12.1:
+  version "2.12.1"
+  resolved "https://registry.yarnpkg.com/fp-ts/-/fp-ts-2.12.1.tgz#e389488bfd1507af06bd5965e97367edcd4fabad"
+  integrity sha512-oxvgqUYR6O9VkKXrxkJ0NOyU0FrE705MeqgBUMEPWyTu6Pwn768cJbHChw2XOBlgFLKfIHxjr2OOBFpv2mUGZw==
+
 fraction.js@^4.1.2:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/fraction.js/-/fraction.js-4.1.2.tgz#13e420a92422b6cf244dff8690ed89401029fbe8"
@@ -5616,6 +5621,11 @@ interpret@^2.2.0:
   version "2.2.0"
   resolved "https://registry.npmjs.org/interpret/-/interpret-2.2.0.tgz"
   integrity sha512-Ju0Bz/cEia55xDwUWEa8+olFpCiQoypjnQySseKtmjNrnps3P+xfpUmGr90T7yjlVJmOtybRvPXhKMbHr+fWnw==
+
+io-ts@^2.2.16:
+  version "2.2.16"
+  resolved "https://registry.yarnpkg.com/io-ts/-/io-ts-2.2.16.tgz#597dffa03db1913fc318c9c6df6931cb4ed808b2"
+  integrity sha512-y5TTSa6VP6le0hhmIyN0dqEXkrZeJLeC5KApJq6VLci3UEKF80lZ+KuoUs02RhBxNWlrqSNxzfI7otLX1Euv8Q==
 
 is-absolute-url@^2.0.0:
   version "2.1.0"
