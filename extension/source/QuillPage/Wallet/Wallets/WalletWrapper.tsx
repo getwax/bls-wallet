@@ -23,24 +23,26 @@ export const WalletsWrapper: FunctionComponent = () => {
   };
 
   useEffect(() => {
-    setLoading(true);
+    (async () => {
+      setLoading(true);
 
-    const accounts = window.KeyringController().getAccounts();
+      const accounts = await quillCtx.rpc.public.eth_accounts();
 
-    setWallets(
-      accounts.map((address: string, index: number) => {
-        return {
-          address,
-          name: `wallet ${index}`,
-          ether: 0,
-          networks: 1,
-          tokens: 0,
-        };
-      }),
-    );
-    setLoading(false);
+      setWallets(
+        accounts.map((address: string, index: number) => {
+          return {
+            address,
+            name: `wallet ${index}`,
+            ether: 0,
+            networks: 1,
+            tokens: 0,
+          };
+        }),
+      );
+      setLoading(false);
 
-    setSelectedAddress(accounts[0]);
+      setSelectedAddress(accounts[0]);
+    })();
   }, []);
 
   return (
