@@ -581,7 +581,13 @@ export default class QuillController extends BaseController<
     };
 
     const methods: MethodsWithOrigin = {
-      eth_accounts: async (_origin) => {
+      eth_accounts: async (origin) => {
+        if (origin === window.location.origin) {
+          return this.keyringController.state.wallets.map(
+            ({ address }) => address,
+          );
+        }
+
         // Expose no accounts if this origin has not been approved, preventing
         // account-requiring RPC methods from completing successfully
         // only show address if account is unlocked
