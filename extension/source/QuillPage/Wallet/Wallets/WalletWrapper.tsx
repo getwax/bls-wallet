@@ -18,10 +18,6 @@ export const WalletsWrapper: FunctionComponent = () => {
   const [wallets, setWallets] = useState<IWallet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const setSelectedAddress = (address: string) => {
-    quillCtx.rpc.private.quill_setSelectedAddress(address);
-  };
-
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -41,9 +37,9 @@ export const WalletsWrapper: FunctionComponent = () => {
       );
       setLoading(false);
 
-      setSelectedAddress(accounts[0]);
+      quillCtx.rpc.private.quill_setSelectedAddress(accounts[0]);
     })();
-  }, []);
+  }, [quillCtx]);
 
   return (
     <div className="">
@@ -67,7 +63,7 @@ export const WalletsWrapper: FunctionComponent = () => {
             <WalletSummary
               onClick={() => {
                 setSelected(index);
-                setSelectedAddress(wallet.address);
+                quillCtx.rpc.private.quill_setSelectedAddress(wallet.address);
               }}
               key={wallet.name}
               wallet={wallet}

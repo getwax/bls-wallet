@@ -45,6 +45,11 @@ export const rpcMap = {
       params: emptyTuple,
       output: io.string,
     },
+
+    quill_isOnboardingComplete: {
+      params: emptyTuple,
+      output: io.boolean,
+    },
   },
 };
 

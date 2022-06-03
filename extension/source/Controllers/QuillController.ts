@@ -629,6 +629,10 @@ export default class QuillController extends BaseController<
       quill_createHDAccount: async () => {
         return this.keyringController.createHDAccount();
       },
+
+      quill_isOnboardingComplete: async () => {
+        return this.keyringController.isOnboardingComplete();
+      },
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
