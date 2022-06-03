@@ -37,7 +37,9 @@ export const WalletsWrapper: FunctionComponent = () => {
       );
       setLoading(false);
 
-      quillCtx.rpc.private.quill_setSelectedAddress(accounts[0]);
+      if (accounts[0]) {
+        quillCtx.rpc.private.quill_setSelectedAddress(accounts[0]);
+      }
     })();
   }, [quillCtx]);
 

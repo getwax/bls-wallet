@@ -591,8 +591,9 @@ export default class QuillController extends BaseController<
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
-      assert(rpcMap.public[methodName].params.is(req.params));
-      return (method as ExplicitAny)(req.origin, req.params);
+      const params = req.params ?? [];
+      assert(rpcMap.public[methodName].params.is(params));
+      return (method as ExplicitAny)(req.origin, params);
     });
   }
 
@@ -600,6 +601,7 @@ export default class QuillController extends BaseController<
     const methods: Rpc['private'] = {
       quill_setSelectedAddress: async (newSelectedAddress) => {
         this.preferencesController.setSelectedAddress(newSelectedAddress);
+        return 'ok';
       },
 
       quill_createHDAccount: async () => {
@@ -611,7 +613,8 @@ export default class QuillController extends BaseController<
       },
 
       quill_setHDPhrase: async (phrase) => {
-        return this.keyringController.setHDPhrase(phrase);
+        this.keyringController.setHDPhrase(phrase);
+        return 'ok';
       },
     };
 
@@ -620,8 +623,9 @@ export default class QuillController extends BaseController<
         return;
       }
 
-      assert(rpcMap.private[methodName].params.is(req.params));
-      return (method as ExplicitAny)(...req.params);
+      const params = req.params ?? [];
+      assert(rpcMap.private[methodName].params.is(params));
+      return (method as ExplicitAny)(...params);
     });
   }
 

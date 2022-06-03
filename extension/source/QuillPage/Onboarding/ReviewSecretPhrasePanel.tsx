@@ -71,10 +71,8 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
 
   const setHDWalletPhrase = async () => {
     await quillCtx.rpc.private.quill_setHDPhrase(secretPhrase.join(' '));
-    await quillCtx.rpc.private.quill_createHDAccount();
-
-    const accounts = await quillCtx.rpc.public.eth_accounts();
-    await quillCtx.rpc.private.quill_setSelectedAddress(accounts[0]);
+    const address = await quillCtx.rpc.private.quill_createHDAccount();
+    await quillCtx.rpc.private.quill_setSelectedAddress(address);
 
     navigate('/wallet');
   };

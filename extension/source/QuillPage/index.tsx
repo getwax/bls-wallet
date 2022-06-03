@@ -1,19 +1,20 @@
 import '../ContentScript';
-import '../PageContentScript';
+import '../styles/index.scss';
+import './styles.scss';
 
 import ReactDOM from 'react-dom';
 
 import QuillPage from './QuillPage';
 import QuillContext from './QuillContext';
+import getWindowEthereum from './getWindowEthereum';
 
-import '../styles/index.scss';
-import './styles.scss';
+getWindowEthereum().then((ethereum) => {
+  const quillContext = new QuillContext(ethereum);
 
-const quillContext = new QuillContext((window as any).ethereum);
-
-ReactDOM.render(
-  <QuillContext.Provider value={quillContext}>
-    <QuillPage />
-  </QuillContext.Provider>,
-  document.getElementById('quill-page-root'),
-);
+  ReactDOM.render(
+    <QuillContext.Provider value={quillContext}>
+      <QuillPage />
+    </QuillContext.Provider>,
+    document.getElementById('quill-page-root'),
+  );
+});
