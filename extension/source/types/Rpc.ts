@@ -1,11 +1,13 @@
 import * as io from 'io-ts';
+
+import emptyTuple from './emptyTuple';
 import optional from './optional';
 
 export const rpcMap = {
   public: {
-    example: {
-      params: io.tuple([io.string]),
-      output: io.void,
+    eth_accounts: {
+      params: emptyTuple,
+      output: io.array(io.string),
     },
   },
   private: {

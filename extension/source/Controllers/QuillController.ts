@@ -513,12 +513,6 @@ export default class QuillController extends BaseController<
         return accounts;
       },
 
-      eth_accounts: async () =>
-        // Expose no accounts if this origin has not been approved, preventing
-        // account-requiring RPC methods from completing successfully
-        // only show address if account is unlocked
-        this.selectedAddress ? [this.selectedAddress] : [],
-
       eth_coinbase: async () => this.selectedAddress || null,
 
       wallet_get_provider_state: async () => {
@@ -588,8 +582,12 @@ export default class QuillController extends BaseController<
     };
 
     const methods: MethodsWithOrigin = {
-      example: async (_origin, [msg]) => {
-        console.log(msg);
+      eth_accounts: async (_origin) => {
+        // Expose no accounts if this origin has not been approved, preventing
+        // account-requiring RPC methods from completing successfully
+        // only show address if account is unlocked
+        // FIXME: The comment above is not yet implemented.
+        return this.selectedAddress ? [this.selectedAddress] : [];
       },
     };
 
