@@ -38,7 +38,7 @@ export const rpcMap = {
 
     quill_setSelectedAddress: {
       params: io.tuple([/* newSelectedAddress */ io.string]),
-      output: io.void,
+      output: io.literal('ok'),
     },
 
     quill_createHDAccount: {
@@ -49,6 +49,11 @@ export const rpcMap = {
     quill_isOnboardingComplete: {
       params: emptyTuple,
       output: io.boolean,
+    },
+
+    quill_setHDPhrase: {
+      params: io.tuple([io.string]),
+      output: io.literal('ok'),
     },
   },
 };

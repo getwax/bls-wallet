@@ -582,7 +582,13 @@ export default class QuillController extends BaseController<
     };
 
     const methods: MethodsWithOrigin = {
-      eth_accounts: async (_origin) => {
+      eth_accounts: async (origin) => {
+        if (origin === window.location.origin) {
+          return this.keyringController.state.wallets.map(
+            ({ address }) => address,
+          );
+        }
+
         // Expose no accounts if this origin has not been approved, preventing
         // account-requiring RPC methods from completing successfully
         // only show address if account is unlocked
@@ -592,8 +598,9 @@ export default class QuillController extends BaseController<
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
-      assert(rpcMap.public[methodName].params.is(req.params));
-      return (method as ExplicitAny)(req.origin, req.params);
+      const params = req.params ?? [];
+      assert(rpcMap.public[methodName].params.is(params));
+      return (method as ExplicitAny)(req.origin, params);
     });
   }
 
@@ -624,6 +631,7 @@ export default class QuillController extends BaseController<
 
       quill_setSelectedAddress: async (newSelectedAddress) => {
         this.preferencesController.setSelectedAddress(newSelectedAddress);
+        return 'ok';
       },
 
       quill_createHDAccount: async () => {
@@ -633,6 +641,11 @@ export default class QuillController extends BaseController<
       quill_isOnboardingComplete: async () => {
         return this.keyringController.isOnboardingComplete();
       },
+
+      quill_setHDPhrase: async (phrase) => {
+        this.keyringController.setHDPhrase(phrase);
+        return 'ok';
+      },
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
@@ -640,8 +653,9 @@ export default class QuillController extends BaseController<
         return;
       }
 
-      assert(rpcMap.private[methodName].params.is(req.params));
-      return (method as ExplicitAny)(...req.params);
+      const params = req.params ?? [];
+      assert(rpcMap.private[methodName].params.is(params));
+      return (method as ExplicitAny)(...params);
     });
   }
 

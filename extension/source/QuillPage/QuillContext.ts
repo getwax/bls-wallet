@@ -11,20 +11,28 @@ export default class QuillContext {
 
   constructor(public ethereum: QuillInPageProvider) {
     this.rpc = {
-      public: mapValues(rpcMap.public, ({ output }, method) => {
-        return async (...params: unknown[]) => {
-          const response = await this.ethereum.request({ method, params });
-          assert(output.is(response));
-          return response as ExplicitAny;
-        };
-      }),
-      private: mapValues(rpcMap.private, ({ output }, method) => {
-        return async (...params: unknown[]) => {
-          const response = await this.ethereum.request({ method, params });
-          assert(output.is(response));
-          return response as ExplicitAny;
-        };
-      }),
+      public: mapValues(
+        rpcMap.public,
+        ({ params: paramsType, output }, method) => {
+          return async (...params: unknown[]) => {
+            assert(paramsType.is(params));
+            const response = await this.ethereum.request({ method, params });
+            assert(output.is(response));
+            return response as ExplicitAny;
+          };
+        },
+      ),
+      private: mapValues(
+        rpcMap.private,
+        ({ params: paramsType, output }, method) => {
+          return async (...params: unknown[]) => {
+            assert(paramsType.is(params));
+            const response = await this.ethereum.request({ method, params });
+            assert(output.is(response));
+            return response as ExplicitAny;
+          };
+        },
+      ),
     };
   }
 
