@@ -24,6 +24,11 @@ export const rpcMap = {
       params: emptyTuple,
       output: io.boolean,
     },
+
+    quill_setHDPhrase: {
+      params: io.tuple([io.string]),
+      output: io.void,
+    },
   },
 };
 

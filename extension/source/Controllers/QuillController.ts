@@ -609,6 +609,10 @@ export default class QuillController extends BaseController<
       quill_isOnboardingComplete: async () => {
         return this.keyringController.isOnboardingComplete();
       },
+
+      quill_setHDPhrase: async (phrase) => {
+        return this.keyringController.setHDPhrase(phrase);
+      },
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
