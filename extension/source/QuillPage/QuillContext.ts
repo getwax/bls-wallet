@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import mapValues from '../cells/mapValues';
+import mapValues from '../helpers/mapValues';
 import assert from '../helpers/assert';
 
 import { QuillInPageProvider } from '../PageContentScript/InPageProvider';

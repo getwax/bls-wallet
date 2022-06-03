@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'react';
 
 import { IReadableCell } from '../../cells/ICell';
-import mapValues from '../../cells/mapValues';
+import mapValues from '../../helpers/mapValues';
 import useReadableCell from '../../cells/useReadableCell';
 
 export const CellDisplay: FunctionComponent<{

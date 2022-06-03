@@ -7,7 +7,7 @@ import ExplicitAny from '../types/ExplicitAny';
 import CellIterator from './CellIterator';
 import { IReadableCell, CellEmitter } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
-import recordKeys from './recordKeys';
+import recordKeys from '../helpers/recordKeys';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;

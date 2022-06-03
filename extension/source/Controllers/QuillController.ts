@@ -60,7 +60,7 @@ import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
 import assert from '../helpers/assert';
-import mapValues from '../cells/mapValues';
+import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
 
