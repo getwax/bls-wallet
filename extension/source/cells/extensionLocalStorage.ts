@@ -1,38 +1,45 @@
+import { EventEmitter } from 'events';
+
 import * as io from 'io-ts';
 import Browser from 'webextension-polyfill';
 
 import assert from '../helpers/assert';
 import CellCollection from './CellCollection';
+import IAsyncStorage from './IAsyncStorage';
 
-export default function ExtensionLocalStorage(
-  localStorageArea = Browser.storage.local,
-) {
-  return new CellCollection({
-    async read<T>(key: string, type: io.Type<T>): Promise<T | undefined> {
-      const readResult = (await localStorageArea.get(key))[key];
+const events = new EventEmitter() as IAsyncStorage['events'];
 
-      if (readResult !== undefined) {
-        assert(type.is(readResult));
-      }
+Browser.storage.onChanged.addListener((changes) => {
+  events.emit('change', Object.keys(changes));
+});
 
-      return readResult;
-    },
+export default new CellCollection({
+  async read<T>(key: string, type: io.Type<T>): Promise<T | undefined> {
+    const readResult = (await Browser.storage.local.get(key))[key];
 
-    async write<T>(
-      key: string,
-      type: io.Type<T>,
-      value: T | undefined,
-    ): Promise<void> {
-      if (value === undefined) {
-        localStorageArea.remove(key);
-        return;
-      }
+    if (readResult !== undefined) {
+      assert(type.is(readResult));
+    }
 
-      assert(type.is(value));
+    return readResult;
+  },
 
-      localStorageArea.set({
-        [key]: value,
-      });
-    },
-  });
-}
+  async write<T>(
+    key: string,
+    type: io.Type<T>,
+    value: T | undefined,
+  ): Promise<void> {
+    if (value === undefined) {
+      Browser.storage.local.remove(key);
+      return;
+    }
+
+    assert(type.is(value));
+
+    Browser.storage.local.set({
+      [key]: value,
+    });
+  },
+
+  events,
+});

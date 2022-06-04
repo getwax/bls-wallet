@@ -20,7 +20,7 @@ import { getDefaultProviderConfig } from './utils';
 import ControllerStoreStream from './streamHelpers/ControllerStoreStream';
 import ControllerStreamSink from './streamHelpers/ControllerStreamSink';
 import PortDuplexStream from '../common/PortStream';
-import ExtensionLocalStorage from '../cells/ExtensionLocalStorage';
+import extensionLocalStorage from '../cells/extensionLocalStorage';
 
 // const notificationManager = new NotificationManager();
 
@@ -94,8 +94,6 @@ function setupController(initState: unknown): void {
   // Quill Controller
   //
   console.log(initState, 'initstate');
-
-  const extensionLocalStorage = ExtensionLocalStorage();
 
   const controller = new QuillController(
     {
