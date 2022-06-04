@@ -12,16 +12,31 @@ import IAsyncStorage from './IAsyncStorage';
 export default class CellCollection {
   cells: Record<string, CollectionCell<ExplicitAny> | undefined> = {};
 
-  constructor(public asyncStorage: IAsyncStorage) {
-    asyncStorage.events.on('change', (keys) => {
-      for (const key of keys) {
-        const cell = this.cells[key];
+  #asyncStorageChangeHandler = (keys: string[]) => {
+    for (const key of keys) {
+      const cell = this.cells[key];
 
-        if (cell) {
-          cell.versionedRead();
-        }
+      if (cell) {
+        cell.versionedRead();
       }
-    });
+    }
+  };
+
+  constructor(public asyncStorage: IAsyncStorage) {
+    asyncStorage.events.on('change', this.#asyncStorageChangeHandler);
+  }
+
+  /**
+   * A `CellCollection` is usually intended to live for the life of your
+   * application. In that case, calling .end is not required. However, if you're
+   * doing something different and you'd like to clean up the change event
+   * handler, this will take care of that.
+   */
+  end() {
+    this.asyncStorage.events.removeListener(
+      'change',
+      this.#asyncStorageChangeHandler,
+    );
   }
 
   Cell<T>(
