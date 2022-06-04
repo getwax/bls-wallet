@@ -1,7 +1,7 @@
 import { ChangeEvent, IReadableCell } from './ICell';
 
 export default class CellIterator<T> implements AsyncIterator<T> {
-  lastProvided?: T;
+  lastProvided?: { value: T };
   cleanup = () => {};
 
   constructor(public cell: IReadableCell<T>) {}
@@ -11,9 +11,9 @@ export default class CellIterator<T> implements AsyncIterator<T> {
 
     if (
       this.lastProvided === undefined ||
-      this.cell.hasChanged(this.lastProvided, latestRead)
+      this.cell.hasChanged(this.lastProvided.value, latestRead)
     ) {
-      this.lastProvided = latestRead;
+      this.lastProvided = { value: latestRead };
       return { value: latestRead, done: false };
     }
 
@@ -24,7 +24,7 @@ export default class CellIterator<T> implements AsyncIterator<T> {
     return new Promise<IteratorResult<T>>((resolve) => {
       const changeHandler = ({ latest }: ChangeEvent<T>) => {
         this.cleanup();
-        this.lastProvided = latest;
+        this.lastProvided = { value: latest };
         resolve({ value: latest });
       };
 
