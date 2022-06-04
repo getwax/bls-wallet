@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import AsyncReturnType from '../types/AsyncReturnType';
 
-import ICell from './ICell';
+import { IReadableCell } from './ICell';
 
-export default function useCell<C extends ICell<unknown>>(cellParam: C) {
+export default function useCell<C extends IReadableCell<unknown>>(cell: C) {
+  return useCellWithFallback(cell, undefined);
+}
+
+export function useCellWithFallback<C extends IReadableCell<unknown>, F>(
+  cellParam: C,
+  initialValue: F,
+) {
   type T = AsyncReturnType<C['read']>;
-  const cell = cellParam as ICell<T>;
+  const cell = cellParam as IReadableCell<T>;
 
-  const [value, setValue] = useState<T>();
+  const [value, setValue] = useState<T | F>(initialValue);
 
   useEffect(() => {
     let ended = false;
@@ -27,5 +34,5 @@ export default function useCell<C extends ICell<unknown>>(cellParam: C) {
     };
   }, [cell]);
 
-  return [value, (newValue: T) => cell.write(newValue)] as const;
+  return value;
 }
