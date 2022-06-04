@@ -12,7 +12,17 @@ import IAsyncStorage from './IAsyncStorage';
 export default class CellCollection {
   cells: Record<string, CollectionCell<ExplicitAny> | undefined> = {};
 
-  constructor(public asyncStorage: IAsyncStorage) {}
+  constructor(public asyncStorage: IAsyncStorage) {
+    asyncStorage.events.on('change', (keys) => {
+      for (const key of keys) {
+        const cell = this.cells[key];
+
+        if (cell) {
+          cell.versionedRead();
+        }
+      }
+    });
+  }
 
   Cell<T>(
     key: string,
@@ -105,7 +115,6 @@ export class CollectionCell<T> implements ICell<T> {
 
   async read(): Promise<T> {
     const latest = await this.versionedRead();
-    this.#ensureVersionMatch(latest);
     return latest.value;
   }
 
@@ -114,13 +123,17 @@ export class CollectionCell<T> implements ICell<T> {
     assert(this.type.is(newValue));
 
     await this.initialRead;
-    const latest = await this.versionedRead();
-    this.#ensureVersionMatch(latest);
 
     const newVersionedValue = {
       version: (this.lastSeen?.version ?? 0) + 1,
       value: newValue,
     };
+
+    const latest = await this.versionedRead();
+
+    if (!(newVersionedValue.version > latest.version)) {
+      throw new Error('Rejecting write which is not newer than remote');
+    }
 
     await this.asyncStorage.write(
       this.key,
@@ -152,14 +165,7 @@ export class CollectionCell<T> implements ICell<T> {
     const readResult = await this.asyncStorage.read(
       this.key,
       this.versionedType,
-    );
-
-    if (readResult === undefined) {
-      const latest = { version: 0, value: this.defaultValue };
-      this.lastSeen = latest;
-      await this.asyncStorage.write(this.key, this.versionedType, latest);
-      return latest;
-    }
+    ) ?? { version: 0, value: this.defaultValue };
 
     if (!this.versionedType.is(readResult)) {
       throw new Error(
@@ -171,19 +177,15 @@ export class CollectionCell<T> implements ICell<T> {
       );
     }
 
-    return readResult;
-  }
-
-  #ensureVersionMatch(latest: Versioned<T> | undefined) {
-    if (latest?.version !== this.lastSeen?.version) {
-      throw new Error(
-        [
-          "Latest version doesn't match last seen. This is a problem because",
-          'we assume that we have exclusive access to storage - we only want',
-          'to overwrite our own changes, not changes made elsewhere.',
-          `${JSON.stringify({ lastSeen: this.lastSeen, latest })}`,
-        ].join(' '),
-      );
+    if (this.hasChanged(this.lastSeen?.value, readResult.value)) {
+      this.events.emit('change', {
+        previous: this.lastSeen?.value,
+        latest: readResult.value,
+      });
     }
+
+    this.lastSeen = readResult;
+
+    return readResult;
   }
 }
