@@ -8,21 +8,25 @@ export const Counter: FunctionComponent<{
   label: string;
   cell: ICell<number>;
 }> = ({ label, cell }) => {
-  const [value, setValue] = useCell(cell);
+  const value = useCell(cell);
+
+  if (value === undefined) {
+    return <></>;
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
       <div>{label}: </div>
       <Button
         className="btn-secondary"
-        onPress={() => value !== undefined && setValue(value - 1)}
+        onPress={() => value !== undefined && cell.write(value - 1)}
       >
         -
       </Button>
       <div>{value}</div>
       <Button
         className="btn-secondary"
-        onPress={() => value !== undefined && setValue(value + 1)}
+        onPress={() => value !== undefined && cell.write(value + 1)}
       >
         +
       </Button>
