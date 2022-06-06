@@ -123,3 +123,32 @@ import { initBlsWalletSigner } from "bls-wallet-clients";
   // Send bundle to an aggregator or use it with VerificationGateway directly.
 })();
 ```
+
+## Local Development
+
+### Setup
+
+```sh
+yarn install
+```
+
+### Build
+
+```sh
+yarn build
+```
+
+### Tests
+
+```sh
+yarn test
+```
+
+### Use in Extension or another project
+
+```sh
+yarn build
+yarn link
+cd other/project/dir
+yarn "link bls-wallet-clients"
+```

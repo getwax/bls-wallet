@@ -11,8 +11,9 @@
   "scripts": {
     "build": "rm -rf dist && mkdir dist && cp -rH typechain dist/typechain && find ./dist/typechain -type f \\! -name '*.d.ts' -name '*.ts' -delete && tsc",
     "watch": "tsc -w",
+    "pretest": "yarn build",
     "test": "mocha dist/**/*.test.js",
-    "premerge": "yarn build && yarn test",
+    "premerge": "yarn test",
     "publish-experimental": "node scripts/showVersion.js >.version && npm version $(node scripts/showBaseVersion.js)-$(git rev-parse HEAD | head -c7) --allow-same-version && npm publish --tag experimental && npm version $(cat .version) && rm .version",
     "publish-experimental-dry-run": "node scripts/showVersion.js >.version && npm version $(node scripts/showBaseVersion.js)-$(git rev-parse HEAD | head -c7) --allow-same-version && npm publish --tag experimental --dry-run && npm version $(cat .version) && rm .version"
   },
