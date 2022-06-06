@@ -61,7 +61,7 @@ export const CellsDemoPage: FunctionComponent = () => {
       <table>
         <tbody>
           <tr>
-            <td style={{ width: '380px' }}>page</td>
+            <td style={{ width: '380px', height: '4em' }}>page</td>
             <td>
               <Selector
                 options={['math', 'blockNumber', 'balance']}

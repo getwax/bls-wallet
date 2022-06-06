@@ -14,15 +14,14 @@ const Selector: FunctionComponent<{
 
   return (
     <select
+      value={selectionValue}
       onChange={(evt) => {
         selection.write(options[evt.target.selectedIndex]);
       }}
       style={{ border: '1px solid black' }}
     >
       {options.map((option) => (
-        <option selected={selectionValue === option} key={option}>
-          {option}
-        </option>
+        <option key={option}>{option}</option>
       ))}
     </select>
   );
