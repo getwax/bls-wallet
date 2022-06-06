@@ -5,10 +5,13 @@ import TypedEmitter from 'typed-emitter';
 import AsyncReturnType from '../types/AsyncReturnType';
 import ExplicitAny from '../types/ExplicitAny';
 import CellIterator from './CellIterator';
-import { IReadableCell, CellEmitter } from './ICell';
+import { IReadableCell, ChangeEvent } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
 import recordKeys from '../helpers/recordKeys';
 import MemoryCell from './MemoryCell';
+import AsyncIteratee from './AsyncIteratee';
+import Stoppable from './Stoppable';
+import nextEvent from './nextEvent';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -19,7 +22,11 @@ export class FormulaCell<
   T,
 > implements IReadableCell<Awaited<T>>
 {
-  events = new EventEmitter() as CellEmitter<Awaited<T>>;
+  events = new EventEmitter() as TypedEmitter<{
+    change(changeEvent: ChangeEvent<T>): void;
+    end(): void;
+    'zero-iterators'(): void;
+  }>;
 
   lastProvidedValue?: Awaited<T>;
   iterationCell?: MemoryCell<'pending' | { value: Awaited<T> }>;
@@ -49,7 +56,7 @@ export class FormulaCell<
         return iterationState.value;
       }
     } finally {
-      this.iteratorCount -= 1;
+      this.decrementIterators();
     }
 
     throw new Error('Inputs ended');
@@ -61,10 +68,18 @@ export class FormulaCell<
     const iterator = new CellIterator<Awaited<T>>(this);
 
     iterator.events.on('finished', () => {
-      this.iteratorCount -= 1;
+      this.decrementIterators();
     });
 
     return iterator;
+  }
+
+  decrementIterators() {
+    this.iteratorCount -= 1;
+
+    if (this.iteratorCount === 0) {
+      this.events.emit('zero-iterators');
+    }
   }
 
   iterateInputs() {
@@ -92,11 +107,16 @@ export class FormulaCell<
     const { iterationCell } = this;
 
     (async () => {
-      for await (const inputValues of toIterableOfRecords(this.inputCells)) {
-        if (this.ended || this.iteratorCount === 0) {
-          break;
-        }
+      const stoppableSequence = new Stoppable(
+        toIterableOfRecords(this.inputCells),
+      );
 
+      Promise.race([
+        nextEvent(this.events, 'zero-iterators'),
+        nextEvent(this.events, 'end'),
+      ]).then(() => stoppableSequence.stop());
+
+      for await (const inputValues of stoppableSequence) {
         const latest = await this.formula(
           inputValues as InputValues<InputCells>,
         );
@@ -123,12 +143,6 @@ export class FormulaCell<
   }
 }
 
-type AsyncIteratee<I extends AsyncIterable<unknown>> = I extends AsyncIterable<
-  infer T
->
-  ? T
-  : never;
-
 function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
   recordOfIterables: R,
 ): AsyncIterable<{ [K in keyof R]: AsyncIteratee<R[K]> }> {
@@ -139,7 +153,6 @@ function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
       let providedVersion = 0;
       let keysFilled = 0;
       const keysNeeded = recordKeys(recordOfIterables).length;
-      let ended = false;
       let cleanup = () => {};
 
       const events = new EventEmitter() as TypedEmitter<{
@@ -147,20 +160,20 @@ function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
         end(): void;
       }>;
 
+      const endedPromise = nextEvent(events, 'end');
+
       function end() {
         events.emit('end');
         cleanup();
-        ended = true;
       }
 
       for (const key of recordKeys(recordOfIterables)) {
         // eslint-disable-next-line no-loop-func
         (async () => {
-          for await (const value of recordOfIterables[key]) {
-            if (ended) {
-              break;
-            }
+          const stoppableSequence = new Stoppable(recordOfIterables[key]);
+          endedPromise.then(() => stoppableSequence.stop());
 
+          for await (const value of stoppableSequence) {
             if (!(key in latest)) {
               keysFilled += 1;
             }
