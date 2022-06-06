@@ -8,7 +8,6 @@ import {
 } from '@toruslabs/openlogin-jrpc';
 import pump from 'pump';
 import type { Duplex } from 'readable-stream';
-import * as io from 'io-ts';
 
 import { Runtime } from 'webextension-polyfill';
 import { BigNumber } from 'ethers';
@@ -606,29 +605,6 @@ export default class QuillController extends BaseController<
 
   private makePrivateRpc(): Record<string, unknown> {
     const methods: Rpc['private'] = {
-      quill_read: async (key, defaultValue, minVersion) => {
-        const cell = this.storage.Cell(key, io.unknown, defaultValue);
-
-        for await (const value of cell) {
-          const version = cell.lastSeen?.version ?? 0;
-
-          if (minVersion === undefined || version >= minVersion) {
-            return { version, value };
-          }
-        }
-
-        return 'ended';
-      },
-
-      quill_write: async (key, value) => {
-        const cell = this.storage.Cell(key, io.unknown, value);
-        await cell.write(value);
-      },
-
-      quill_remove: async (key) => {
-        await this.storage.remove(key);
-      },
-
       quill_setSelectedAddress: async (newSelectedAddress) => {
         this.preferencesController.setSelectedAddress(newSelectedAddress);
         return 'ok';
