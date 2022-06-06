@@ -1,3 +1,4 @@
+import * as io from 'io-ts';
 import { createContext, useContext } from 'react';
 import { ethers } from 'ethers';
 
@@ -9,13 +10,15 @@ import Rpc, { rpcMap } from '../types/Rpc';
 import TimeCell from './TimeCell';
 import approximate from './approximate';
 import { FormulaCell } from '../cells/FormulaCell';
-import { IReadableCell } from '../cells/ICell';
+import ICell, { IReadableCell } from '../cells/ICell';
+import elcc from '../cells/extensionLocalCellCollection';
 
 export default class QuillContext {
   ethersProvider: ethers.providers.Provider;
   rpc: Rpc;
   time = TimeCell(100);
   blockNumber: IReadableCell<number>;
+  theme: ICell<string>;
 
   constructor(public ethereum: QuillInPageProvider) {
     this.ethersProvider = new ethers.providers.Web3Provider(ethereum);
@@ -54,6 +57,8 @@ export default class QuillContext {
         );
       },
     );
+
+    this.theme = elcc.Cell('theme', io.string, 'light');
   }
 
   private static context = createContext<QuillContext>({} as QuillContext);

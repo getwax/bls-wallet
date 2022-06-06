@@ -65,7 +65,7 @@ export const CellsDemoPage: FunctionComponent = () => {
             <td style={{ width: '380px', height: '4em' }}>page</td>
             <td>
               <Selector
-                options={['math', 'blockNumber', 'balance']}
+                options={['math', 'blockNumber', 'balance', 'settings']}
                 selection={cells.page}
               />
             </td>
@@ -85,25 +85,19 @@ export const CellsDemoPage: FunctionComponent = () => {
                 </td>
               </tr>
               <tr>
-                <td>includeSlow: </td>
-                <td>
-                  <CheckBox cell={cells.includeSlow} />
-                </td>
-              </tr>
-              <tr>
                 <td>ab: </td>
                 <td>
                   <DisplayJson cell={cells.ab} />
                 </td>
               </tr>
-              {includeSlowValue && (
-                <tr>
-                  <td>abSlow: </td>
-                  <td>
-                    <DisplayJson cell={cells.abSlow} />
-                  </td>
-                </tr>
-              )}
+              <tr>
+                <td>
+                  abSlow: <CheckBox cell={cells.includeSlow} />
+                </td>
+                <td>
+                  {includeSlowValue && <DisplayJson cell={cells.abSlow} />}
+                </td>
+              </tr>
             </>
           )}
           {pageValue === 'blockNumber' && (
@@ -125,6 +119,19 @@ export const CellsDemoPage: FunctionComponent = () => {
             </>
           )}
           {pageValue === 'balance' && <BalanceWidget />}
+          {pageValue === 'settings' && (
+            <>
+              <tr>
+                <td>Theme</td>
+                <td>
+                  <Selector
+                    options={['light', 'dark']}
+                    selection={quillCtx.theme}
+                  />
+                </td>
+              </tr>
+            </>
+          )}
         </tbody>
       </table>
     </div>

@@ -14,6 +14,7 @@ const CheckBox: FunctionComponent<{ cell: ICell<boolean> }> = ({ cell }) => {
       type="checkbox"
       checked={value}
       onChange={() => cell.write(!value)}
+      style={{ width: 'initial' }}
     />
   );
 };
