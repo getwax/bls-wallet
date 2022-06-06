@@ -109,7 +109,7 @@ export const CellsDemoPage: FunctionComponent = () => {
           {pageValue === 'blockNumber' && (
             <>
               <tr>
-                <td>c:&nbsp;</td>
+                <td>components:&nbsp;</td>
                 <td>
                   <Counter cell={cells.c} />
                 </td>
