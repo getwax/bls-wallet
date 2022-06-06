@@ -1,7 +1,8 @@
 import { createContext, useContext } from 'react';
+import { ethers } from 'ethers';
+
 import mapValues from '../helpers/mapValues';
 import assert from '../helpers/assert';
-
 import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
@@ -11,11 +12,14 @@ import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 
 export default class QuillContext {
+  ethersProvider: ethers.providers.Provider;
   rpc: Rpc;
   time = TimeCell(100);
   blockNumber: IReadableCell<number>;
 
   constructor(public ethereum: QuillInPageProvider) {
+    this.ethersProvider = new ethers.providers.Web3Provider(ethereum);
+
     this.rpc = {
       public: mapValues(
         rpcMap.public,

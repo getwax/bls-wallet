@@ -11,11 +11,14 @@ import QuillContext from '../QuillContext';
 import CheckBox from './CheckBox';
 import { Counter } from './Counter';
 import { Display } from './Display';
+import Selector from './Selector';
 
 export const CellsDemoPage: FunctionComponent = () => {
   const quillCtx = QuillContext.use();
 
   const cells = useMemo(() => {
+    const page = new MemoryCell('math');
+
     const a = elcc.Cell('a', io.number, 3);
     const b = new MemoryCell(5);
     const c = new MemoryCell(0);
@@ -33,13 +36,18 @@ export const CellsDemoPage: FunctionComponent = () => {
       return res;
     });
 
-    return { a, b, c, includeSlow, ab, abSlow };
+    return { page, a, b, c, includeSlow, ab, abSlow };
   }, []);
 
   (window as any).cells = cells;
 
   const includeSlowValue = useCell(cells.includeSlow);
   const cValue = useCell(cells.c);
+  const pageValue = useCell(cells.page);
+
+  if (pageValue === undefined) {
+    return <></>;
+  }
 
   return (
     <div
@@ -53,51 +61,68 @@ export const CellsDemoPage: FunctionComponent = () => {
       <table>
         <tbody>
           <tr>
-            <td>a:&nbsp;</td>
+            <td style={{ width: '380px' }}>page</td>
             <td>
-              <Counter cell={cells.a} />
+              <Selector
+                options={['math', 'blockNumber', 'balance']}
+                selection={cells.page}
+              />
             </td>
           </tr>
-          <tr>
-            <td>b:&nbsp;</td>
-            <td>
-              <Counter cell={cells.b} />
-            </td>
-          </tr>
-          <tr>
-            <td>includeSlow: </td>
-            <td>
-              <CheckBox cell={cells.includeSlow} />
-            </td>
-          </tr>
-          <tr>
-            <td>ab: </td>
-            <td>
-              <Display cell={cells.ab} />
-            </td>
-          </tr>
-          {includeSlowValue && (
-            <tr>
-              <td>abSlow: </td>
-              <td>
-                <Display cell={cells.abSlow} />
-              </td>
-            </tr>
+          {pageValue === 'math' && (
+            <>
+              <tr>
+                <td>a:&nbsp;</td>
+                <td>
+                  <Counter cell={cells.a} />
+                </td>
+              </tr>
+              <tr>
+                <td>b:&nbsp;</td>
+                <td>
+                  <Counter cell={cells.b} />
+                </td>
+              </tr>
+              <tr>
+                <td>includeSlow: </td>
+                <td>
+                  <CheckBox cell={cells.includeSlow} />
+                </td>
+              </tr>
+              <tr>
+                <td>ab: </td>
+                <td>
+                  <Display cell={cells.ab} />
+                </td>
+              </tr>
+              {includeSlowValue && (
+                <tr>
+                  <td>abSlow: </td>
+                  <td>
+                    <Display cell={cells.abSlow} />
+                  </td>
+                </tr>
+              )}
+            </>
           )}
-          <tr>
-            <td>c:&nbsp;</td>
-            <td>
-              <Counter cell={cells.c} />
-            </td>
-          </tr>
-          {Range(cValue ?? 0).map((i) => (
-            <tr key={i}>
-              <td>blockNumber: </td>
-              <td>
-                <Display cell={quillCtx.blockNumber} />
-              </td>
-            </tr>
-          ))}
+          {pageValue === 'blockNumber' && (
+            <>
+              <tr>
+                <td>c:&nbsp;</td>
+                <td>
+                  <Counter cell={cells.c} />
+                </td>
+              </tr>
+              {Range(cValue ?? 0).map((i) => (
+                <tr key={i}>
+                  <td>blockNumber: </td>
+                  <td>
+                    <Display cell={quillCtx.blockNumber} />
+                  </td>
+                </tr>
+              ))}
+            </>
+          )}
         </tbody>
       </table>
     </div>
