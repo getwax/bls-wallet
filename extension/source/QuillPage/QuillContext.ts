@@ -10,15 +10,24 @@ import Rpc, { rpcMap } from '../types/Rpc';
 import TimeCell from './TimeCell';
 import approximate from './approximate';
 import { FormulaCell } from '../cells/FormulaCell';
-import ICell, { IReadableCell } from '../cells/ICell';
 import elcc from '../cells/extensionLocalCellCollection';
 
 export default class QuillContext {
   ethersProvider: ethers.providers.Provider;
   rpc: Rpc;
+
+  Cell = elcc.Cell.bind(elcc);
   time = TimeCell(100);
-  blockNumber: IReadableCell<number>;
-  theme: ICell<string>;
+
+  blockNumber = new FormulaCell(
+    { _: approximate(this.time, 5000) },
+    async () => {
+      console.log('getting block number');
+      return Number(await this.ethereum.request({ method: 'eth_blockNumber' }));
+    },
+  );
+
+  theme = this.Cell('theme', io.string, 'light');
 
   constructor(public ethereum: QuillInPageProvider) {
     this.ethersProvider = new ethers.providers.Web3Provider(ethereum);
@@ -47,18 +56,6 @@ export default class QuillContext {
         },
       ),
     };
-
-    this.blockNumber = new FormulaCell(
-      { _: approximate(this.time, 5000) },
-      async () => {
-        console.log('getting block number');
-        return Number(
-          await this.ethereum.request({ method: 'eth_blockNumber' }),
-        );
-      },
-    );
-
-    this.theme = elcc.Cell('theme', io.string, 'light');
   }
 
   private static context = createContext<QuillContext>({} as QuillContext);

@@ -1,7 +1,6 @@
 import * as io from 'io-ts';
 
 import { FunctionComponent, useMemo } from 'react';
-import elcc from '../../cells/extensionLocalCellCollection';
 import { FormulaCell } from '../../cells/FormulaCell';
 import MemoryCell from '../../cells/MemoryCell';
 import useCell from '../../cells/useCell';
@@ -15,12 +14,12 @@ import { DisplayJson } from './DisplayJson';
 import Selector from './Selector';
 
 export const CellsDemoPage: FunctionComponent = () => {
-  const quillCtx = QuillContext.use();
+  const quill = QuillContext.use();
 
   const cells = useMemo(() => {
     const page = new MemoryCell('math');
 
-    const a = elcc.Cell('a', io.number, 3);
+    const a = quill.Cell('a', io.number, 3);
     const b = new MemoryCell(5);
     const c = new MemoryCell(0);
     const includeSlow = new MemoryCell(true);
@@ -38,7 +37,7 @@ export const CellsDemoPage: FunctionComponent = () => {
     });
 
     return { page, a, b, c, includeSlow, ab, abSlow };
-  }, []);
+  }, [quill]);
 
   (window as any).cells = cells;
 
@@ -112,7 +111,7 @@ export const CellsDemoPage: FunctionComponent = () => {
                 <tr key={i}>
                   <td>blockNumber: </td>
                   <td>
-                    <DisplayJson cell={quillCtx.blockNumber} />
+                    <DisplayJson cell={quill.blockNumber} />
                   </td>
                 </tr>
               ))}
@@ -126,7 +125,7 @@ export const CellsDemoPage: FunctionComponent = () => {
                 <td>
                   <Selector
                     options={['light', 'dark']}
-                    selection={quillCtx.theme}
+                    selection={quill.theme}
                   />
                 </td>
               </tr>
