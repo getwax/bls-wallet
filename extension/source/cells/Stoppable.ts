@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { once } from 'lodash-es';
 import TypedEmitter from 'typed-emitter';
-import raceWithEvent from './raceEvent';
+import raceWithEvent from './raceWithEvent';
 
 export default class Stoppable<T> {
   stopped = false;

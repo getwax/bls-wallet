@@ -8,15 +8,19 @@ export default class CellIterator<T> implements AsyncIterator<T> {
   cleanup = () => {};
   endHandler = () => {};
 
+  endListener = () => {
+    this.endHandler();
+  };
+
   events = new EventEmitter() as TypedEmitter<{
     finished(): void;
   }>;
 
   constructor(public cell: IReadableCell<T>) {
-    this.cell.events.once('end', this.endHandler);
+    this.cell.events.once('end', this.endListener);
 
     this.cleanup = () => {
-      this.cell.events.off('end', this.endHandler);
+      this.cell.events.off('end', this.endListener);
     };
   }
 
@@ -51,7 +55,7 @@ export default class CellIterator<T> implements AsyncIterator<T> {
 
       this.cleanup = () => {
         this.cell.events.off('change', changeHandler);
-        this.cell.events.off('end', this.endHandler);
+        this.cell.events.off('end', this.endListener);
         this.cleanup = () => {};
       };
     });

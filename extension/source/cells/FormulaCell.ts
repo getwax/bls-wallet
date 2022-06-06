@@ -114,10 +114,16 @@ export class FormulaCell<
         toIterableOfRecords(this.inputCells),
       );
 
-      Promise.race([
-        nextEvent(this.events, 'zero-iterators'),
-        nextEvent(this.events, 'end'),
-      ]).then(() => stoppableSequence.stop());
+      {
+        const handler = () => {
+          stoppableSequence.stop();
+          this.events.off('zero-iterators', handler);
+          this.events.off('end', handler);
+        };
+
+        this.events.once('zero-iterators', handler);
+        this.events.once('end', handler);
+      }
 
       for await (const inputValues of stoppableSequence) {
         const latest = await this.formula(
