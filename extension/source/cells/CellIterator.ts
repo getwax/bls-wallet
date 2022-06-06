@@ -6,12 +6,19 @@ import { ChangeEvent, IReadableCell } from './ICell';
 export default class CellIterator<T> implements AsyncIterator<T> {
   lastProvided?: { value: T };
   cleanup = () => {};
+  endHandler = () => {};
 
   events = new EventEmitter() as TypedEmitter<{
     finished(): void;
   }>;
 
-  constructor(public cell: IReadableCell<T>) {}
+  constructor(public cell: IReadableCell<T>) {
+    this.cell.events.once('end', this.endHandler);
+
+    this.cleanup = () => {
+      this.cell.events.off('end', this.endHandler);
+    };
+  }
 
   async next() {
     const latestRead = await this.cell.read();
@@ -37,16 +44,14 @@ export default class CellIterator<T> implements AsyncIterator<T> {
 
       this.cell.events.once('change', changeHandler);
 
-      const endHandler = () => {
+      this.endHandler = () => {
         this.cleanup();
         resolve({ value: undefined, done: true });
       };
 
-      this.cell.events.on('end', endHandler);
-
       this.cleanup = () => {
         this.cell.events.off('change', changeHandler);
-        this.cell.events.off('end', endHandler);
+        this.cell.events.off('end', this.endHandler);
         this.cleanup = () => {};
       };
     });
