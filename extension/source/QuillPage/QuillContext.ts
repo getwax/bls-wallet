@@ -5,9 +5,15 @@ import assert from '../helpers/assert';
 import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
+import TimeCell from './TimeCell';
+import approximate from './approximate';
+import { FormulaCell } from '../cells/FormulaCell';
+import { IReadableCell } from '../cells/ICell';
 
 export default class QuillContext {
   rpc: Rpc;
+  time = TimeCell(100);
+  blockNumber: IReadableCell<number>;
 
   constructor(public ethereum: QuillInPageProvider) {
     this.rpc = {
@@ -34,6 +40,16 @@ export default class QuillContext {
         },
       ),
     };
+
+    this.blockNumber = new FormulaCell(
+      { _: approximate(this.time, 5000) },
+      async () => {
+        console.log('getting block number');
+        return Number(
+          await this.ethereum.request({ method: 'eth_blockNumber' }),
+        );
+      },
+    );
   }
 
   private static context = createContext<QuillContext>({} as QuillContext);

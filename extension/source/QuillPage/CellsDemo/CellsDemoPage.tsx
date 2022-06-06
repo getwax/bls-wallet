@@ -6,14 +6,19 @@ import { FormulaCell } from '../../cells/FormulaCell';
 import MemoryCell from '../../cells/MemoryCell';
 import useCell from '../../cells/useCell';
 import delay from '../../helpers/delay';
+import Range from '../../helpers/Range';
+import QuillContext from '../QuillContext';
 import CheckBox from './CheckBox';
 import { Counter } from './Counter';
 import { Display } from './Display';
 
 export const CellsDemoPage: FunctionComponent = () => {
+  const quillCtx = QuillContext.use();
+
   const cells = useMemo(() => {
     const a = elcc.Cell('a', io.number, 3);
     const b = new MemoryCell(5);
+    const c = new MemoryCell(0);
     const includeSlow = new MemoryCell(true);
 
     // eslint-disable-next-line @typescript-eslint/no-shadow
@@ -28,12 +33,13 @@ export const CellsDemoPage: FunctionComponent = () => {
       return res;
     });
 
-    return { a, b, includeSlow, ab, abSlow };
+    return { a, b, c, includeSlow, ab, abSlow };
   }, []);
 
   (window as any).cells = cells;
 
   const includeSlowValue = useCell(cells.includeSlow);
+  const cValue = useCell(cells.c);
 
   return (
     <div
@@ -78,6 +84,20 @@ export const CellsDemoPage: FunctionComponent = () => {
               </td>
             </tr>
           )}
+          <tr>
+            <td>c:&nbsp;</td>
+            <td>
+              <Counter cell={cells.c} />
+            </td>
+          </tr>
+          {Range(cValue ?? 0).map((i) => (
+            <tr key={i}>
+              <td>blockNumber: </td>
+              <td>
+                <Display cell={quillCtx.blockNumber} />
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

@@ -36,7 +36,10 @@ export class FormulaCell<
   constructor(
     public inputCells: InputCells,
     public formula: (inputValues: InputValues<InputCells>) => T,
-    public hasChanged = jsonHasChanged,
+    public hasChanged: (
+      previous: Awaited<T> | undefined,
+      latest: Awaited<T>,
+    ) => boolean = jsonHasChanged,
   ) {}
 
   end() {
@@ -128,6 +131,8 @@ export class FormulaCell<
             previous: this.lastProvidedValue,
             latest,
           });
+
+          this.lastProvidedValue = latest;
         }
       }
 
