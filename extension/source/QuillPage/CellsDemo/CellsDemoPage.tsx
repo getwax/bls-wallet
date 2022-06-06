@@ -1,4 +1,7 @@
+import * as io from 'io-ts';
+
 import { FunctionComponent, useMemo } from 'react';
+import elcc from '../../cells/extensionLocalCellCollection';
 import { FormulaCell } from '../../cells/FormulaCell';
 import MemoryCell from '../../cells/MemoryCell';
 import useCell from '../../cells/useCell';
@@ -9,7 +12,7 @@ import { Display } from './Display';
 
 export const CellsDemoPage: FunctionComponent = () => {
   const cells = useMemo(() => {
-    const a = new MemoryCell(3);
+    const a = elcc.Cell('a', io.number, 3);
     const b = new MemoryCell(5);
     const includeSlow = new MemoryCell(true);
 
@@ -27,6 +30,8 @@ export const CellsDemoPage: FunctionComponent = () => {
 
     return { a, b, includeSlow, ab, abSlow };
   }, []);
+
+  (window as any).cells = cells;
 
   const includeSlowValue = useCell(cells.includeSlow);
 
