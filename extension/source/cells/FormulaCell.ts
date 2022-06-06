@@ -8,6 +8,7 @@ import CellIterator from './CellIterator';
 import { IReadableCell, CellEmitter } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
 import recordKeys from '../helpers/recordKeys';
+import MemoryCell from './MemoryCell';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -20,39 +21,16 @@ export class FormulaCell<
 {
   events = new EventEmitter() as CellEmitter<Awaited<T>>;
 
-  valuePromise: Promise<Awaited<T>>;
   lastProvidedValue?: Awaited<T>;
+  iterationCell?: MemoryCell<'pending' | { value: Awaited<T> }>;
   ended = false;
+  iteratorCount = 0;
 
   constructor(
     public inputCells: InputCells,
     public formula: (inputValues: InputValues<InputCells>) => T,
     public hasChanged = jsonHasChanged,
-  ) {
-    this.valuePromise = new Promise((resolve) => {
-      this.events.once('change', ({ latest }) => resolve(latest));
-    });
-
-    (async () => {
-      for await (const inputValues of toIterableOfRecords(inputCells)) {
-        if (this.ended) {
-          break;
-        }
-
-        const latest = await formula(inputValues as InputValues<InputCells>);
-        this.valuePromise = Promise.resolve(latest);
-
-        if (hasChanged(this.lastProvidedValue, latest)) {
-          this.events.emit('change', {
-            previous: this.lastProvidedValue,
-            latest,
-          });
-        }
-      }
-
-      this.end();
-    })();
-  }
+  ) {}
 
   end() {
     this.events.emit('end');
@@ -60,11 +38,88 @@ export class FormulaCell<
   }
 
   async read(): Promise<Awaited<T>> {
-    return await this.valuePromise;
+    const iterationCell = this.iterateInputs();
+
+    try {
+      for await (const iterationState of iterationCell) {
+        if (iterationState === 'pending') {
+          continue;
+        }
+
+        return iterationState.value;
+      }
+    } finally {
+      this.iteratorCount -= 1;
+    }
+
+    throw new Error('Inputs ended');
   }
 
   [Symbol.asyncIterator](): AsyncIterator<Awaited<T>> {
-    return new CellIterator<Awaited<T>>(this);
+    this.iterateInputs();
+
+    const iterator = new CellIterator<Awaited<T>>(this);
+
+    iterator.events.on('finished', () => {
+      this.iteratorCount -= 1;
+    });
+
+    return iterator;
+  }
+
+  iterateInputs() {
+    this.iteratorCount += 1;
+
+    if (this.iterationCell) {
+      return this.iterationCell;
+    }
+
+    this.iterationCell = new MemoryCell<'pending' | { value: Awaited<T> }>(
+      'pending',
+      (previous, latest) => {
+        if (previous === undefined) {
+          return true;
+        }
+
+        if (previous === 'pending' || latest === 'pending') {
+          return previous !== latest;
+        }
+
+        return this.hasChanged(previous.value, latest.value);
+      },
+    );
+
+    const { iterationCell } = this;
+
+    (async () => {
+      for await (const inputValues of toIterableOfRecords(this.inputCells)) {
+        if (this.ended || this.iteratorCount === 0) {
+          break;
+        }
+
+        const latest = await this.formula(
+          inputValues as InputValues<InputCells>,
+        );
+
+        iterationCell.write({ value: latest });
+
+        if (this.hasChanged(this.lastProvidedValue, latest)) {
+          this.events.emit('change', {
+            previous: this.lastProvidedValue,
+            latest,
+          });
+        }
+      }
+
+      iterationCell.end();
+      this.iterationCell = undefined;
+
+      if (this.iteratorCount > 0) {
+        this.end();
+      }
+    })();
+
+    return iterationCell;
   }
 }
 

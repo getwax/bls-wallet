@@ -1,8 +1,15 @@
+import { EventEmitter } from 'events';
+import TypedEmitter from 'typed-emitter';
+
 import { ChangeEvent, IReadableCell } from './ICell';
 
 export default class CellIterator<T> implements AsyncIterator<T> {
   lastProvided?: { value: T };
   cleanup = () => {};
+
+  events = new EventEmitter() as TypedEmitter<{
+    finished(): void;
+  }>;
 
   constructor(public cell: IReadableCell<T>) {}
 
@@ -47,6 +54,7 @@ export default class CellIterator<T> implements AsyncIterator<T> {
 
   async return() {
     this.cleanup();
+    this.events.emit('finished');
     return { value: undefined, done: true as const };
   }
 }
