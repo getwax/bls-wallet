@@ -8,9 +8,10 @@ import useCell from '../../cells/useCell';
 import delay from '../../helpers/delay';
 import Range from '../../helpers/Range';
 import QuillContext from '../QuillContext';
+import BalanceWidget from './BalanceWidget';
 import CheckBox from './CheckBox';
 import { Counter } from './Counter';
-import { Display } from './Display';
+import { DisplayJson } from './DisplayJson';
 import Selector from './Selector';
 
 export const CellsDemoPage: FunctionComponent = () => {
@@ -92,14 +93,14 @@ export const CellsDemoPage: FunctionComponent = () => {
               <tr>
                 <td>ab: </td>
                 <td>
-                  <Display cell={cells.ab} />
+                  <DisplayJson cell={cells.ab} />
                 </td>
               </tr>
               {includeSlowValue && (
                 <tr>
                   <td>abSlow: </td>
                   <td>
-                    <Display cell={cells.abSlow} />
+                    <DisplayJson cell={cells.abSlow} />
                   </td>
                 </tr>
               )}
@@ -117,12 +118,13 @@ export const CellsDemoPage: FunctionComponent = () => {
                 <tr key={i}>
                   <td>blockNumber: </td>
                   <td>
-                    <Display cell={quillCtx.blockNumber} />
+                    <DisplayJson cell={quillCtx.blockNumber} />
                   </td>
                 </tr>
               ))}
             </>
           )}
+          {pageValue === 'balance' && <BalanceWidget />}
         </tbody>
       </table>
     </div>
