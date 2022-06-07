@@ -118,7 +118,6 @@ describe("WalletActions", async function () {
       actions: [
         {
           ethValue: ethToTransfer,
-          // TODO: Does wallet contract need to exist?
           contractAddress: recvWallet.walletContract.address,
           encodedFunction: "0x",
         },

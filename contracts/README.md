@@ -91,10 +91,6 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 For each network, the deployer contract can be deployed with the following script (only needed once)
 `DEPLOY_DEPLOYER=true yarn hardhat run scripts/deploy-deployer.ts --network <network-name>`
 
-
-## Arbitrum
-
-
 ## Optimism's L2 (paused)
 - clone https://github.com/ethereum-optimism/optimism
 - follow instructions (using latest version of docker)
