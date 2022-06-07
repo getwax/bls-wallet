@@ -10,6 +10,7 @@ import QuillContext from '../QuillContext';
 import BalanceWidget from './BalanceWidget';
 import CheckBox from './CheckBox';
 import { Counter } from './Counter';
+import DemoTable from './DemoTable';
 import { DisplayJson } from './DisplayJson';
 import Selector from './Selector';
 
@@ -50,89 +51,73 @@ export const CellsDemoPage: FunctionComponent = () => {
   }
 
   return (
-    <div
-      style={{
-        padding: '2em',
-        fontSize: '3em',
-        lineHeight: '1.5em',
-        fontFamily: 'monospace',
-      }}
-    >
-      <table>
-        <tbody>
+    <DemoTable>
+      <tr>
+        <td style={{ height: '3em' }}>page</td>
+        <td>
+          <Selector
+            options={['math', 'blockNumber', 'balance', 'settings']}
+            selection={cells.page}
+          />
+        </td>
+      </tr>
+      {pageValue === 'math' && (
+        <>
           <tr>
-            <td style={{ width: '380px', height: '4em' }}>page</td>
+            <td>a:&nbsp;</td>
             <td>
-              <Selector
-                options={['math', 'blockNumber', 'balance', 'settings']}
-                selection={cells.page}
-              />
+              <Counter cell={cells.a} />
             </td>
           </tr>
-          {pageValue === 'math' && (
-            <>
-              <tr>
-                <td>a:&nbsp;</td>
-                <td>
-                  <Counter cell={cells.a} />
-                </td>
-              </tr>
-              <tr>
-                <td>b:&nbsp;</td>
-                <td>
-                  <Counter cell={cells.b} />
-                </td>
-              </tr>
-              <tr>
-                <td>ab: </td>
-                <td>
-                  <DisplayJson cell={cells.ab} />
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  abSlow: <CheckBox cell={cells.includeSlow} />
-                </td>
-                <td>
-                  {includeSlowValue && <DisplayJson cell={cells.abSlow} />}
-                </td>
-              </tr>
-            </>
-          )}
-          {pageValue === 'blockNumber' && (
-            <>
-              <tr>
-                <td>components:&nbsp;</td>
-                <td>
-                  <Counter cell={cells.c} />
-                </td>
-              </tr>
-              {Range(cValue ?? 0).map((i) => (
-                <tr key={i}>
-                  <td>blockNumber: </td>
-                  <td>
-                    <DisplayJson cell={quill.blockNumber} />
-                  </td>
-                </tr>
-              ))}
-            </>
-          )}
-          {pageValue === 'balance' && <BalanceWidget />}
-          {pageValue === 'settings' && (
-            <>
-              <tr>
-                <td>Theme</td>
-                <td>
-                  <Selector
-                    options={['light', 'dark']}
-                    selection={quill.theme}
-                  />
-                </td>
-              </tr>
-            </>
-          )}
-        </tbody>
-      </table>
-    </div>
+          <tr>
+            <td>b:&nbsp;</td>
+            <td>
+              <Counter cell={cells.b} />
+            </td>
+          </tr>
+          <tr>
+            <td>ab: </td>
+            <td>
+              <DisplayJson cell={cells.ab} />
+            </td>
+          </tr>
+          <tr>
+            <td>
+              abSlow: <CheckBox cell={cells.includeSlow} />
+            </td>
+            <td>{includeSlowValue && <DisplayJson cell={cells.abSlow} />}</td>
+          </tr>
+        </>
+      )}
+      {pageValue === 'blockNumber' && (
+        <>
+          <tr>
+            <td>components:&nbsp;</td>
+            <td>
+              <Counter cell={cells.c} />
+            </td>
+          </tr>
+          {Range(cValue ?? 0).map((i) => (
+            <tr key={i}>
+              <td>blockNumber: </td>
+              <td>
+                <DisplayJson cell={quill.blockNumber} />
+              </td>
+            </tr>
+          ))}
+        </>
+      )}
+      {pageValue === 'balance' && <BalanceWidget />}
+      {pageValue === 'settings' && (
+        <>
+          <tr>
+            <td>Theme</td>
+            <td>
+              <Selector options={['light', 'dark']} selection={quill.theme} />
+            </td>
+          </tr>
+        </>
+      )}
+    </DemoTable>
   );
 };

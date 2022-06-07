@@ -279,4 +279,15 @@
   .themable2.dark-theme {
     filter: unquote("hue-rotate(180deg)");
   }
+
+  .demo-table {
+    td:nth-child(2) {
+      display: flex;
+      flex-direction: row;
+    }
+
+    td {
+      vertical-align: top;
+    }
+  }
 }
