@@ -5,6 +5,7 @@ import * as shell from "./aggregator/programs/helpers/shell.ts";
 
 const components = [
   { name: "aggregator", skipYarn: true },
+  { name: "aggregator-proxy" },
   { name: "contracts" },
   { name: "contracts/clients" },
   { name: "extension" },
