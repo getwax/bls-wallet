@@ -4,7 +4,7 @@ import { ArrowRight } from 'phosphor-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
-import QuillContext from '../QuillContext';
+import { useQuill } from '../QuillContext';
 
 const WordInReview: FunctionComponent<{
   index: number;
@@ -50,7 +50,7 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   sampleIndexes?: number[];
   onBack: () => void;
 }> = ({ secretPhrase, sampleIndexes = [0, 3, 9, 11], onBack }) => {
-  const quillCtx = QuillContext.use();
+  const { rpc } = useQuill();
 
   const len = sampleIndexes.length;
 
@@ -70,9 +70,9 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   const navigate = useNavigate();
 
   const setHDWalletPhrase = async () => {
-    await quillCtx.rpc.private.quill_setHDPhrase(secretPhrase.join(' '));
-    const address = await quillCtx.rpc.private.quill_createHDAccount();
-    await quillCtx.rpc.private.quill_setSelectedAddress(address);
+    await rpc.private.quill_setHDPhrase(secretPhrase.join(' '));
+    const address = await rpc.private.quill_createHDAccount();
+    await rpc.private.quill_setSelectedAddress(address);
 
     navigate('/wallet');
   };

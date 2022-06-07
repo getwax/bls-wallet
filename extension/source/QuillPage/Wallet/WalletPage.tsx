@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
-import QuillContext from '../QuillContext';
+import { useQuill } from '../QuillContext';
 import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
@@ -11,8 +11,8 @@ import { WalletsWrapper } from './Wallets/WalletWrapper';
 interface IRoutes {
   name: string;
   path: string;
-  summaryComponent: JSX.Element;
-  detailComponent: JSX.Element;
+  summaryComponent: React.ReactElement;
+  detailComponent: React.ReactElement;
 }
 
 const routes: IRoutes[] = [
@@ -43,20 +43,19 @@ const routes: IRoutes[] = [
 ];
 
 export const WalletPage: React.FunctionComponent = () => {
-  const quillCtx = QuillContext.use();
+  const { rpc } = useQuill();
   const navigate = useNavigate();
 
   React.useEffect(() => {
     (async () => {
-      const onboardingComplete =
-        await quillCtx.rpc.private.quill_isOnboardingComplete();
+      const onboardingComplete = await rpc.private.quill_isOnboardingComplete();
       console.debug('onboardingComplete', onboardingComplete);
 
       if (!onboardingComplete) {
         navigate('/onboarding?p=1');
       }
     })();
-  }, [navigate, quillCtx]);
+  }, [navigate, rpc]);
 
   return (
     <div className="flex h-screen">

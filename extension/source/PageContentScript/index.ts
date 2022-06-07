@@ -1,7 +1,7 @@
 import { BasePostMessageStream } from '@toruslabs/openlogin-jrpc';
 import type { Duplex } from 'readable-stream';
 import { CONTENT_SCRIPT, INPAGE } from '../common/constants';
-import QuillInPageProvider from './InPageProvider';
+import { QuillInPageProvider } from './InPageProvider';
 import { ProviderOptions } from './interfaces';
 
 interface InitializeProviderOptions extends ProviderOptions {

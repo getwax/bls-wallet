@@ -1,6 +1,6 @@
 import { FunctionComponent, useEffect, useState } from 'react';
 import Button from '../../../components/Button';
-import QuillContext from '../../QuillContext';
+import { useQuill } from '../../QuillContext';
 import { WalletSummary } from './WalletSummary';
 
 export interface IWallet {
@@ -12,7 +12,7 @@ export interface IWallet {
 }
 
 export const WalletsWrapper: FunctionComponent = () => {
-  const quillCtx = QuillContext.use();
+  const { rpc } = useQuill();
 
   const [selected, setSelected] = useState<number>(0);
   const [wallets, setWallets] = useState<IWallet[]>([]);
@@ -22,7 +22,7 @@ export const WalletsWrapper: FunctionComponent = () => {
     (async () => {
       setLoading(true);
 
-      const accounts = await quillCtx.rpc.public.eth_accounts();
+      const accounts = await rpc.public.eth_accounts();
 
       setWallets(
         accounts.map((address: string, index: number) => {
@@ -38,10 +38,10 @@ export const WalletsWrapper: FunctionComponent = () => {
       setLoading(false);
 
       if (accounts[0]) {
-        quillCtx.rpc.private.quill_setSelectedAddress(accounts[0]);
+        rpc.private.quill_setSelectedAddress(accounts[0]);
       }
     })();
-  }, [quillCtx]);
+  }, [rpc]);
 
   return (
     <div className="">
@@ -49,7 +49,7 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="text-body">Wallets</div>
         <Button
           onPress={async () => {
-            await quillCtx.rpc.private.quill_createHDAccount();
+            await rpc.private.quill_createHDAccount();
             window.location.reload();
           }}
           children={'Add Wallet'}
@@ -65,7 +65,7 @@ export const WalletsWrapper: FunctionComponent = () => {
             <WalletSummary
               onClick={() => {
                 setSelected(index);
-                quillCtx.rpc.private.quill_setSelectedAddress(wallet.address);
+                rpc.private.quill_setSelectedAddress(wallet.address);
               }}
               key={wallet.name}
               wallet={wallet}
