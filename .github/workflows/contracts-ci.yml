@@ -1,0 +1,35 @@
+name: Contracts
+
+on:
+  push:
+    paths:
+      - 'contracts/**'
+      - '!contracts/clients/**'
+
+defaults:
+  run:
+    working-directory: ./contracts
+
+env:
+  NODEJS_VERSION: 16.x
+
+jobs:
+  contracts-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/setup-contracts-clients
+      with:
+        node-version: ${{ env.NODEJS_VERSION }}
+    - run: yarn lint
+
+  contracts-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/setup-contracts-clients
+      with:
+        node-version: ${{ env.NODEJS_VERSION }}
+    - run: yarn test

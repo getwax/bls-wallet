@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "description": "BLS Wallet smart contract",
   "main": "index.js",
+  "engines": {
+    "node": ">=16.0.0",
+    "yarn": ">=1.0.0"
+  },
   "scripts": {
+    "build": "hardhat compile",
     "check-ts": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
-    "premerge": "rm -rf artifacts cache typechain && hardhat compile && yarn lint && yarn check-ts && yarn --cwd clients premerge && yarn hardhat test"
+    "test": "hardhat test",
+    "premerge": "rm -rf artifacts cache typechain && hardhat compile && lint && check-ts && yarn --cwd clients premerge && test"
   },
   "author": "James Zaki",
   "license": "MIT",

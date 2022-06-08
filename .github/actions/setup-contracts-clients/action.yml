@@ -1,0 +1,30 @@
+name: Setup Contracts & Clients
+description: Sets up contracts & clients
+
+inputs:
+  node-version:
+    description: NodeJS version to use
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: yarn
+        cache-dependency-path: | 
+          contracts/yarn.lock
+          contracts/clients/yarn.lock
+
+    - working-directory: ./contracts
+      shell: bash
+      run: |
+        cp .env.example .env
+        yarn install --frozen-lockfile
+        yarn build
+
+    - working-directory: ./contracts/clients
+      shell: bash
+      run: |
+        yarn install --frozen-lockfile
