@@ -21,13 +21,6 @@ import ControllerStoreStream from './streamHelpers/ControllerStoreStream';
 import ControllerStreamSink from './streamHelpers/ControllerStreamSink';
 import PortDuplexStream from '../common/PortStream';
 
-window.QuillController = () => {
-  throw new Error('window.QuillController not initialized');
-};
-window.KeyringController = () => {
-  throw new Error('window.KeyringController not initialized');
-};
-
 // const notificationManager = new NotificationManager();
 
 let popupIsOpen = false;
@@ -115,9 +108,6 @@ function setupController(initState: unknown): void {
       getOpenQuillTabsIds: () => openQuillTabsIDs,
     },
   });
-
-  window.QuillController = () => controller;
-  window.KeyringController = () => controller.keyringController;
 
   // setup state persistence
   pump(

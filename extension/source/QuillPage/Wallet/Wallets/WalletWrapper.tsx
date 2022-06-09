@@ -1,5 +1,6 @@
 import { FunctionComponent, useEffect, useState } from 'react';
 import Button from '../../../components/Button';
+import { useQuill } from '../../QuillContext';
 import { WalletSummary } from './WalletSummary';
 
 export interface IWallet {
@@ -11,34 +12,36 @@ export interface IWallet {
 }
 
 export const WalletsWrapper: FunctionComponent = () => {
+  const { rpc } = useQuill();
+
   const [selected, setSelected] = useState<number>(0);
   const [wallets, setWallets] = useState<IWallet[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const setSelectedAddress = (address: string) => {
-    window.QuillController().getApi().setSelectedAddress(address);
-  };
-
   useEffect(() => {
-    setLoading(true);
+    (async () => {
+      setLoading(true);
 
-    const accounts = window.KeyringController().getAccounts();
+      const accounts = await rpc.public.eth_accounts();
 
-    setWallets(
-      accounts.map((address: string, index: number) => {
-        return {
-          address,
-          name: `wallet ${index}`,
-          ether: 0,
-          networks: 1,
-          tokens: 0,
-        };
-      }),
-    );
-    setLoading(false);
+      setWallets(
+        accounts.map((address: string, index: number) => {
+          return {
+            address,
+            name: `wallet ${index}`,
+            ether: 0,
+            networks: 1,
+            tokens: 0,
+          };
+        }),
+      );
+      setLoading(false);
 
-    setSelectedAddress(accounts[0]);
-  }, []);
+      if (accounts[0]) {
+        rpc.private.quill_setSelectedAddress(accounts[0]);
+      }
+    })();
+  }, [rpc]);
 
   return (
     <div className="">
@@ -46,7 +49,7 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="text-body">Wallets</div>
         <Button
           onPress={async () => {
-            await window.KeyringController().createHDAccount();
+            await rpc.private.quill_createHDAccount();
             window.location.reload();
           }}
           children={'Add Wallet'}
@@ -62,7 +65,7 @@ export const WalletsWrapper: FunctionComponent = () => {
             <WalletSummary
               onClick={() => {
                 setSelected(index);
-                setSelectedAddress(wallet.address);
+                rpc.private.quill_setSelectedAddress(wallet.address);
               }}
               key={wallet.name}
               wallet={wallet}

@@ -57,6 +57,10 @@ import createMetaRPCHandler from './streamHelpers/MetaRPCHandler';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
+import assert from '../helpers/assert';
+import ExplicitAny from '../types/ExplicitAny';
+import Rpc, { rpcMap } from '../types/Rpc';
+import mapValues from '../helpers/mapValues';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -508,12 +512,6 @@ export default class QuillController extends BaseController<
         return accounts;
       },
 
-      eth_accounts: async () =>
-        // Expose no accounts if this origin has not been approved, preventing
-        // account-requiring RPC methods from completing successfully
-        // only show address if account is unlocked
-        this.selectedAddress ? [this.selectedAddress] : [],
-
       eth_coinbase: async () => this.selectedAddress || null,
 
       wallet_get_provider_state: async () => {
@@ -568,6 +566,72 @@ export default class QuillController extends BaseController<
 
         return result.hash;
       },
+
+      ...this.makePublicRpc(),
+      ...this.makePrivateRpc(),
+    });
+  }
+
+  private makePublicRpc(): Record<string, unknown> {
+    type MethodsWithOrigin = {
+      [M in keyof Rpc['public']]: (
+        origin: string,
+        params: Parameters<Rpc['public'][M]>,
+      ) => ReturnType<Rpc['public'][M]>;
+    };
+
+    const methods: MethodsWithOrigin = {
+      eth_accounts: async (origin) => {
+        if (origin === window.location.origin) {
+          return this.keyringController.state.wallets.map(
+            ({ address }) => address,
+          );
+        }
+
+        // TODO (merge-ok) Expose no accounts if this origin has not been approved,
+        // preventing account-requiring RPC methods from completing successfully
+        // only show address if account is unlocked
+        // https://github.com/web3well/bls-wallet/issues/224
+        return this.selectedAddress ? [this.selectedAddress] : [];
+      },
+    };
+
+    return mapValues(methods, (method, methodName) => (req: any) => {
+      const params = req.params ?? [];
+      assert(rpcMap.public[methodName].params.is(params));
+      return (method as ExplicitAny)(req.origin, params);
+    });
+  }
+
+  private makePrivateRpc(): Record<string, unknown> {
+    const methods: Rpc['private'] = {
+      quill_setSelectedAddress: async (newSelectedAddress) => {
+        this.preferencesController.setSelectedAddress(newSelectedAddress);
+        return 'ok';
+      },
+
+      quill_createHDAccount: async () => {
+        return this.keyringController.createHDAccount();
+      },
+
+      quill_isOnboardingComplete: async () => {
+        return this.keyringController.isOnboardingComplete();
+      },
+
+      quill_setHDPhrase: async (phrase) => {
+        this.keyringController.setHDPhrase(phrase);
+        return 'ok';
+      },
+    };
+
+    return mapValues(methods, (method, methodName) => (req: any) => {
+      if (req.origin !== window.location.origin) {
+        return;
+      }
+
+      const params = req.params ?? [];
+      assert(rpcMap.private[methodName].params.is(params));
+      return (method as ExplicitAny)(...params);
     });
   }
 

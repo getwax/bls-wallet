@@ -1,10 +1,8 @@
-import type QuillController from '../Controllers/QuillController';
-import type KeyringController from '../Controllers/Keyring/KeyringController';
+import { providers } from 'ethers';
+import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
 
-export declare global {
+declare global {
   interface Window {
-    // TODO (merge-ok) Remove both of these when full controller linking is completed.
-    QuillController: () => QuillController;
-    KeyringController: () => KeyringController;
+    ethereum: QuillInPageProvider | providers.ExternalProvider | undefined;
   }
 }

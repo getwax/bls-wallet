@@ -1,9 +1,8 @@
 import ReactDOM from 'react-dom';
 
-import QuillPage from './QuillPage';
-
+import '../ContentScript';
 import '../styles/index.scss';
 import './styles.scss';
-import '../Controllers/background';
+import QuillPage from './QuillPage';
 
 ReactDOM.render(<QuillPage />, document.getElementById('quill-page-root'));
