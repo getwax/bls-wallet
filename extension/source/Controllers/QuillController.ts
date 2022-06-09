@@ -588,10 +588,10 @@ export default class QuillController extends BaseController<
           );
         }
 
-        // Expose no accounts if this origin has not been approved, preventing
-        // account-requiring RPC methods from completing successfully
+        // TODO (merge-ok) Expose no accounts if this origin has not been approved,
+        // preventing account-requiring RPC methods from completing successfully
         // only show address if account is unlocked
-        // FIXME: The comment above is not yet implemented.
+        // https://github.com/web3well/bls-wallet/issues/224
         return this.selectedAddress ? [this.selectedAddress] : [];
       },
     };
