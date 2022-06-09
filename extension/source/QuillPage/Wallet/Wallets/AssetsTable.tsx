@@ -1,4 +1,6 @@
-// @ts-nocheck // TODO: fix types
+// TODO (merge-ok) Fix types, linting
+/* eslint-disable */
+// @ts-nocheck
 import * as React from 'react';
 import { useTable, usePagination } from 'react-table';
 import {

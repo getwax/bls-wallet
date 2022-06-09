@@ -62,6 +62,8 @@ const WalletTabs: React.FunctionComponent = () => {
   return (
     <div className="flex border-b border-grey-300 gap-4 mb-4">
       {tabs.map((tab) => (
+        // TODO (merge-ok) Add keyboard listener
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
         <div
           key={tab.name}
           className={`py-2 px-4 cursor-pointer ${

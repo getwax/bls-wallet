@@ -5,7 +5,7 @@ EthQuery.prototype.request = function request<T>(opts: {
   params?: unknown;
 }): Promise<T> {
   return new Promise((resolve, reject) => {
-    this.sendAsync(opts, (error, result) => {
+    this.sendAsync(opts, (error: Error, result: unknown) => {
       if (error) return reject(error);
       resolve(result as T);
     });

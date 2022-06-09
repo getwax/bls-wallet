@@ -26,5 +26,4 @@ runs:
 
     - working-directory: ./contracts/clients
       shell: bash
-      run: |
-        yarn install --frozen-lockfile
+      run: yarn install --frozen-lockfile
