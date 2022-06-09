@@ -1,4 +1,4 @@
-name: Aggregator Proxy
+name: aggregator-proxy
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Extension
+name: extension
 
 on:
   push:

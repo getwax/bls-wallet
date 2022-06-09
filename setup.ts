@@ -3,6 +3,11 @@
 import { exists } from "https://deno.land/std@0.103.0/fs/mod.ts";
 import * as shell from "./aggregator/programs/helpers/shell.ts";
 
+/**
+ * Note: This command is safe to run multiple times,
+ * such as after updating from upstream main.
+ */
+
 const components = [
   { name: "aggregator", skipYarn: true },
   { name: "aggregator-proxy" },

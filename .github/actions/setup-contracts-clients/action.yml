@@ -1,17 +1,12 @@
 name: Setup Contracts & Clients
 description: Sets up contracts & clients
 
-inputs:
-  node-version:
-    description: NodeJS version to use
-    required: true
-
 runs:
   using: composite
   steps:
     - uses: actions/setup-node@v3
       with:
-        node-version: ${{ inputs.node-version }}
+        node-version: 16.x
         cache: yarn
         cache-dependency-path: | 
           contracts/yarn.lock

@@ -1,4 +1,4 @@
-name: Clients
+name: clients
 
 on:
   push:
@@ -16,16 +16,11 @@ defaults:
   run:
     working-directory: ./contracts/clients
 
-env:
-  NODEJS_VERSION: 16.x
-
 jobs:
-  client-test:
+  test:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
     - uses: ./.github/actions/setup-contracts-clients
-      with:
-        node-version: ${{ env.NODEJS_VERSION }}
     - run: yarn test
