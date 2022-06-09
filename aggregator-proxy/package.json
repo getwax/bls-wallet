@@ -6,6 +6,10 @@
   "author": "Andrew Morris",
   "license": "MIT",
   "private": false,
+  "engines": {
+    "node": ">=16.0.0",
+    "yarn": ">=1.0.0"
+  },
   "scripts": {
     "build": "rm -rf dist && tsc"
   },

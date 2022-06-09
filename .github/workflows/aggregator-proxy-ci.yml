@@ -1,0 +1,27 @@
+name: Aggregator Proxy
+
+on:
+  push:
+    paths:
+      - 'aggregator-proxy/**'
+
+defaults:
+  run:
+    working-directory: ./aggregator-proxy
+
+env:
+  NODEJS_VERSION: 16.x
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODEJS_VERSION }}
+        cache: yarn
+        cache-dependency-path: aggregator-proxy/yarn.lock
+    - run: yarn install --frozen-lockfile
+    - run: yarn build
