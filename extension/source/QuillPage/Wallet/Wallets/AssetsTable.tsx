@@ -1,5 +1,4 @@
-// TODO (merge-ok) Fix types, linting
-/* eslint-disable */
+/* eslint @typescript-eslint/ban-ts-comment: "warn", react/jsx-key: "warn" -- TODO (merge-ok) Fix types, linting */
 // @ts-nocheck
 import * as React from 'react';
 import { useTable, usePagination } from 'react-table';

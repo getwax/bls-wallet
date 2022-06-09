@@ -77,7 +77,7 @@ const Carousel: FunctionComponent<{
 
     return () => clearInterval(intervalId);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    /* eslint react-hooks/exhaustive-deps: "warn" -- TODO (merge-ok) Add hook deps */
   }, []);
 
   return (

@@ -9,8 +9,7 @@ import {
   // Circle,
 } from 'phosphor-react';
 import Button from '../../../components/Button';
-// TODO (merge-ok) Fix import cycle
-// eslint-disable-next-line import/no-cycle
+/* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
 import { IWallet } from './WalletWrapper';
 
 interface IWalletSummary {
@@ -73,16 +72,14 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
           <div className="flex gap-2">
             <Button
               onPress={() => {}}
-              // TODO (merge-ok) Pass 'Send' as child
-              // eslint-disable-next-line react/no-children-prop
+              /* eslint react/no-children-prop: "warn" -- TODO (merge-ok) Pass 'Send' as child */
               children={'Send'}
               className="btn-primary"
               icon={<PaperPlaneTilt className="icon-md" />}
             />
             <Button
               onPress={() => {}}
-              // TODO (merge-ok) Pass 'Receive' as child
-              // eslint-disable-next-line react/no-children-prop
+              /* eslint react/no-children-prop: "warn" -- TODO (merge-ok) Pass 'Receive' as child */
               children={'Receive'}
               className="btn-secondary"
             />

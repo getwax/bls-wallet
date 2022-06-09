@@ -523,7 +523,7 @@ export default class QuillController extends BaseController<
       },
 
       eth_setPreferredAggregator: async (req: any) => {
-        // eslint-disable-next-line prefer-destructuring
+        /* eslint prefer-destructuring: "warn" -- TODO (merge-ok) Destructure properly */
         this.tabPreferredAggregators[req.tabId] = req.params[0];
 
         return 'ok';

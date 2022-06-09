@@ -208,7 +208,7 @@ export default class NetworkController
     blockTracker: PollingBlockTracker;
   }): void {
     if (this._providerProxy) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      /* eslint @typescript-eslint/ban-ts-comment: "warn" -- TODO (merge-ok) Fix typing */
       // @ts-ignore
       this._providerProxy.setTarget(provider);
     } else {
@@ -217,7 +217,7 @@ export default class NetworkController
     }
 
     if (this._blockTrackerProxy) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      /* eslint @typescript-eslint/ban-ts-comment: "warn" -- TODO (merge-ok) Fix typing */
       // @ts-ignore
       this._blockTrackerProxy.setTarget(blockTracker);
     } else {
