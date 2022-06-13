@@ -39,7 +39,11 @@ function getQuillContextValue(
     },
   );
 
-  const theme = Cell('theme', io.string, 'light');
+  // FIXME: This cell has an awkward name due to an apparent collision with
+  // theming coming from the old controller system. It should simply be named
+  // 'theme', but this requires updating the controllers, which is out of scope
+  // for now.
+  const theme = Cell('cell-based-theme', io.string, 'light');
 
   return {
     provider,
