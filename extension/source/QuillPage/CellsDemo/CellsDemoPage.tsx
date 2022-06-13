@@ -6,7 +6,7 @@ import MemoryCell from '../../cells/MemoryCell';
 import useCell from '../../cells/useCell';
 import delay from '../../helpers/delay';
 import Range from '../../helpers/Range';
-import QuillContext from '../QuillContext';
+import { useQuill } from '../QuillContext';
 import BalanceWidget from './BalanceWidget';
 import CheckBox from './CheckBox';
 import { Counter } from './Counter';
@@ -15,7 +15,7 @@ import { DisplayJson } from './DisplayJson';
 import Selector from './Selector';
 
 export const CellsDemoPage: FunctionComponent = () => {
-  const quill = QuillContext.use();
+  const quill = useQuill();
 
   const cells = useMemo(() => {
     const page = new MemoryCell('math');
@@ -40,6 +40,7 @@ export const CellsDemoPage: FunctionComponent = () => {
     return { page, a, b, c, includeSlow, ab, abSlow };
   }, [quill]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).cells = cells;
 
   const includeSlowValue = useCell(cells.includeSlow);

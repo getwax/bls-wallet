@@ -2,12 +2,12 @@ import { ethers } from 'ethers';
 import { FunctionComponent, useMemo } from 'react';
 import { FormulaCell } from '../../cells/FormulaCell';
 import MemoryCell from '../../cells/MemoryCell';
-import QuillContext from '../QuillContext';
+import { useQuill } from '../QuillContext';
 import { Display } from './Display';
 import TextBox from './TextBox';
 
 const BalanceWidget: FunctionComponent = () => {
-  const quillCtx = QuillContext.use();
+  const quillCtx = useQuill();
 
   const cells = useMemo(() => {
     const address = new MemoryCell('');

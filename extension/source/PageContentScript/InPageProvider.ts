@@ -333,5 +333,3 @@ export class QuillInPageProvider extends BaseProvider<InPageProviderState> {
     }
   }
 }
-
-export default QuillInPageProvider;

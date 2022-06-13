@@ -1,20 +1,17 @@
-import { FunctionComponent } from 'react';
+import React, { FunctionComponent } from 'react';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 
 import OnboardingPage from './Onboarding/OnboardingPage';
 import { WalletPage } from './Wallet/WalletPage';
 import { CellsDemoPage } from './CellsDemo/CellsDemoPage';
 import { CellsDemoPage2 } from './CellsDemo/CellsDemoPage2';
-import QuillContext from './QuillContext';
-import useCell from '../cells/useCell';
+import { QuillProvider } from './QuillContext';
+import Theme from './Theme';
 
 const QuillPage: FunctionComponent = () => {
-  const quillCtx = QuillContext.use();
-  const theme = useCell(quillCtx.theme);
-
   return (
-    <div className={`themable1 ${theme === 'dark' && 'dark-theme'}`}>
-      <div className={`themable2 ${theme === 'dark' && 'dark-theme'}`}>
+    <QuillProvider>
+      <Theme>
         <HashRouter>
           <Routes>
             <Route path="/onboarding" element={<OnboardingPage />} />
@@ -23,8 +20,8 @@ const QuillPage: FunctionComponent = () => {
             <Route path="/cells-demo2" element={<CellsDemoPage2 />} />
           </Routes>
         </HashRouter>
-      </div>
-    </div>
+      </Theme>
+    </QuillProvider>
   );
 };
 
