@@ -227,6 +227,7 @@ describe("Upgrade", async function () {
 
     // Direct checks corresponding to each action
     expect(await vg2.walletFromHash(hash)).to.equal(walletAddress);
+    expect(await vg2.hashFromWallet(walletAddress)).to.equal(hash);
     expect(await proxyAdmin.getProxyAdmin(walletAddress)).to.equal(
       proxyAdmin.address,
     );
@@ -266,5 +267,75 @@ describe("Upgrade", async function () {
       bundleResult.results[0][0], // first and only operation/action result
     )[0];
     expect(walletFromHashAddress).to.equal(walletAddress);
+  });
+
+  it("should change mapping of an address to hash", async function () {
+    const vg1 = fx.verificationGateway;
+
+    const lazyWallet1 = await fx.lazyBlsWallets[0]();
+    const lazyWallet2 = await fx.lazyBlsWallets[1]();
+
+    const wallet1 = await BlsWalletWrapper.connect(
+      lazyWallet1.privateKey,
+      vg1.address,
+      fx.provider,
+    );
+
+    const wallet2 = await BlsWalletWrapper.connect(
+      lazyWallet2.privateKey,
+      vg1.address,
+      fx.provider,
+    );
+
+    const hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
+
+    expect(await vg1.walletFromHash(hash1)).to.equal(wallet1.address);
+    expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash1);
+
+    // wallet 2 signs message containing address of wallet 1
+    const addressMessage = solidityPack(["address"], [wallet1.address]);
+    const addressSignature = wallet2.signMessage(addressMessage);
+
+    const setExternalWalletAction: ActionData = {
+      ethValue: BigNumber.from(0),
+      contractAddress: vg1.address,
+      encodedFunction: vg1.interface.encodeFunctionData("setExternalWallet", [
+        addressSignature,
+        wallet2.PublicKey(),
+      ]),
+    };
+
+    // wallet 1 submits a tx
+    {
+      const { successes } = await vg1.callStatic.processBundle(
+        wallet1.sign({
+          nonce: BigNumber.from(1),
+          actions: [setExternalWalletAction],
+        }),
+      );
+
+      expect(successes).to.deep.equal([true]);
+    }
+
+    await (
+      await fx.verificationGateway.processBundle(
+        fx.blsWalletSigner.aggregate([
+          wallet1.sign({
+            nonce: BigNumber.from(1),
+            actions: [setExternalWalletAction],
+          }),
+        ]),
+      )
+    ).wait();
+
+    // wallet 1's hash is pointed to null address
+    // wallet 2's hash is now pointed to wallet 1's address
+    const hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
+
+    expect(await vg1.walletFromHash(hash1)).to.equal(
+      ethers.constants.AddressZero,
+    );
+    expect(await vg1.walletFromHash(hash2)).to.equal(wallet1.address);
+    expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash2);
   });
 });

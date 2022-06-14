@@ -85,12 +85,6 @@ contract VerificationGateway
     }
 
     /**
-    Returns a BLSWallet if deployed from this contract, otherwise 0.
-    @param hash BLS public key hash used as salt for create2
-    @return BLSWallet at calculated address (if code exists), otherwise zero address
-     */
-
-    /**
     If an existing wallet contract wishes to be called by this verification
     gateway, it can directly register itself with a simple signed msg.
     NB: this is independent of the proxyAdmin, and if desired can be changed
