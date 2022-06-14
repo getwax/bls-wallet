@@ -92,4 +92,4 @@ await aggregator.add(bundle);
 
 ## More
 
-See [bls-wallet-clients](../contracts/clients/) for additional functionality.
+See [clients](../contracts/clients/) for additional functionality.
