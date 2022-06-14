@@ -23,12 +23,16 @@ export default class CurrencyController {
   ) {
     this.config = config ?? defaultConfig;
 
-    this.state = storage.Cell('CurrencyController', CurrencyControllerState, {
-      currentCurrency: 'usd',
-      conversionRate: 0,
-      conversionDate: 'N/A',
-      nativeCurrency: 'ETH',
-    });
+    this.state = storage.Cell(
+      'CurrencyController',
+      CurrencyControllerState,
+      () => ({
+        currentCurrency: 'usd',
+        conversionRate: 0,
+        conversionDate: 'N/A',
+        nativeCurrency: 'ETH',
+      }),
+    );
   }
 
   //

@@ -26,7 +26,7 @@ class AccountTrackerController
 {
   private provider: SafeEventEmitterProvider;
 
-  private blockNumber: IReadableCell<number | undefined>;
+  private blockNumber: IReadableCell<number>;
 
   private mutex = new Mutex();
 
@@ -48,7 +48,7 @@ class AccountTrackerController
     config: AccountTrackerConfig;
     state: Partial<AccountTrackerState>;
     provider: SafeEventEmitterProvider;
-    blockNumber: IReadableCell<number | undefined>;
+    blockNumber: IReadableCell<number>;
     getCurrentChainId: NetworkController['getNetworkIdentifier'];
     getIdentities: () => PreferencesState['identities'];
     onPreferencesStateChange: (

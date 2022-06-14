@@ -11,13 +11,12 @@ import CellCollection from '../cells/CellCollection';
 import ICell, { IReadableCell } from '../cells/ICell';
 import elcc from '../cells/extensionLocalCellCollection';
 import TimeCell from './TimeCell';
-import { FormulaCell } from '../cells/FormulaCell';
-import approximate from './approximate';
 import assertType from '../cells/assertType';
 import {
   defaultKeyringControllerState,
   KeyringControllerState,
 } from '../Controllers/Keyring/IKeyringController';
+import assert from '../helpers/assert';
 
 type QuillContextValue = {
   provider: QuillInPageProvider;
@@ -33,56 +32,61 @@ type QuillContextValue = {
 function getQuillContextValue(
   provider: QuillInPageProvider,
 ): QuillContextValue {
+  const rpc = {
+    public: mapValues(
+      rpcMap.public,
+      ({ params: paramsType, output }, method) => {
+        return async (...params: unknown[]) => {
+          assertType(params, paramsType);
+          const response = await provider.request({
+            method,
+            params,
+          });
+          assertType(response, output);
+          return response as ExplicitAny;
+        };
+      },
+    ),
+    private: mapValues(
+      rpcMap.private,
+      ({ params: paramsType, output }, method) => {
+        return async (...params: unknown[]) => {
+          assertType(params, paramsType as unknown as io.Type<unknown[]>);
+          const response = await provider.request({
+            method,
+            params,
+          });
+          assertType(response, output as io.Type<unknown>);
+          return response as ExplicitAny;
+        };
+      },
+    ),
+  };
+
   const Cell = elcc.Cell.bind(elcc);
   const time = TimeCell(100);
 
-  const blockNumber = new FormulaCell(
-    { _: approximate(time, 5000) },
-    async () => {
-      console.log('getting block number');
-      return Number(await provider.request({ method: 'eth_blockNumber' }));
-    },
-  );
+  const blockNumber = Cell('block-number', io.number, async () => {
+    const blockNumberStr = await provider.request({
+      method: 'eth_blockNumber',
+    });
+
+    assertType(blockNumberStr, io.string);
+    assert(Number.isFinite(Number(blockNumberStr)));
+
+    return Number(blockNumberStr);
+  });
 
   // FIXME: This cell has an awkward name due to an apparent collision with
   // theming coming from the old controller system. It should simply be named
   // 'theme', but this requires updating the controllers, which is out of scope
   // for now.
-  const theme = Cell('cell-based-theme', io.string, 'light');
+  const theme = Cell('cell-based-theme', io.string, () => 'light');
 
   return {
     provider,
     ethersProvider: new ethers.providers.Web3Provider(provider),
-    rpc: {
-      public: mapValues(
-        rpcMap.public,
-        ({ params: paramsType, output }, method) => {
-          return async (...params: unknown[]) => {
-            assertType(params, paramsType);
-            const response = await provider.request({
-              method,
-              params,
-            });
-            assertType(response, output);
-            return response as ExplicitAny;
-          };
-        },
-      ),
-      private: mapValues(
-        rpcMap.private,
-        ({ params: paramsType, output }, method) => {
-          return async (...params: unknown[]) => {
-            assertType(params, paramsType as unknown as io.Type<unknown[]>);
-            const response = await provider.request({
-              method,
-              params,
-            });
-            assertType(response, output as io.Type<unknown>);
-            return response as ExplicitAny;
-          };
-        },
-      ),
-    },
+    rpc,
     Cell,
     time,
     blockNumber,
@@ -90,7 +94,7 @@ function getQuillContextValue(
     keyring: Cell(
       'keyring-controller-state',
       KeyringControllerState,
-      defaultKeyringControllerState,
+      () => defaultKeyringControllerState,
     ),
   };
 }

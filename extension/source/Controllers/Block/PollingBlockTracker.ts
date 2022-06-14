@@ -14,7 +14,7 @@ class PollingBlockTracker extends BaseBlockTracker<
   PollingBlockTrackerConfig,
   PollingBlockTrackerState
 > {
-  blockNumber: ICell<number | undefined>;
+  blockNumber: ICell<number>;
 
   constructor({
     config,
@@ -24,7 +24,7 @@ class PollingBlockTracker extends BaseBlockTracker<
     config: Partial<PollingBlockTrackerConfig> &
       Pick<PollingBlockTrackerConfig, 'provider'>;
     state: Partial<PollingBlockTrackerState>;
-    blockNumber: ICell<number | undefined>;
+    blockNumber: ICell<number>;
   }) {
     // parse + validate args
     if (!config.provider) {

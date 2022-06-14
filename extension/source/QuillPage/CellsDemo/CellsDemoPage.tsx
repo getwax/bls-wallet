@@ -20,7 +20,7 @@ export const CellsDemoPage: FunctionComponent = () => {
   const cells = useMemo(() => {
     const page = new MemoryCell('math');
 
-    const a = quill.Cell('a', io.number, 3);
+    const a = quill.Cell('a', io.number, () => 3);
     const b = new MemoryCell(5);
     const c = new MemoryCell(0);
     const includeSlow = new MemoryCell(true);

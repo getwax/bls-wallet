@@ -130,7 +130,7 @@ function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
 
 export function createJsonRpcClient(
   providerConfig: ProviderConfig,
-  blockNumber: ICell<number | undefined>,
+  blockNumber: ICell<number>,
 ): {
   networkMiddleware: JRPCMiddleware<unknown, unknown>;
   blockTracker: PollingBlockTracker;

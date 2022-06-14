@@ -52,7 +52,7 @@ export default class NetworkController implements INetworkController {
 
   constructor(
     public state: ICell<NetworkState>,
-    public blockNumber: ICell<number | undefined>,
+    public blockNumber: ICell<number>,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-shadow
     this.chainId = new FormulaCell({ state }, ({ state }) => state.chainId);

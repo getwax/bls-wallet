@@ -43,7 +43,7 @@ export default class CellCollection {
   Cell<T>(
     key: string,
     type: io.Type<T>,
-    defaultValue: T,
+    makeDefault: () => T | Promise<Awaited<T>>,
     hasChanged = jsonHasChanged,
   ): CollectionCell<T> {
     let cell = this.cells[key];
@@ -57,7 +57,7 @@ export default class CellCollection {
       this.asyncStorage,
       key,
       type,
-      defaultValue,
+      makeDefault,
       hasChanged,
     );
 
@@ -89,7 +89,7 @@ export class CollectionCell<T> implements ICell<T> {
     public asyncStorage: IAsyncStorage,
     public key: string,
     public type: io.Type<T>,
-    public defaultValue: T,
+    public makeDefault: () => T | Promise<Awaited<T>>,
     public hasChanged: ICell<T>['hasChanged'] = jsonHasChanged,
   ) {
     this.versionedType = io.type({ version: io.number, value: type });
@@ -175,7 +175,7 @@ export class CollectionCell<T> implements ICell<T> {
     const readResult = (await this.asyncStorage.read(
       this.key,
       this.versionedType,
-    )) ?? { version: 0, value: this.defaultValue };
+    )) ?? { version: 0, value: await this.makeDefault() };
 
     if (this.hasChanged(this.lastSeen?.value, readResult.value)) {
       this.events.emit('change', {

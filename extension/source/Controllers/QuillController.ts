@@ -64,6 +64,8 @@ import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
 import assertType from '../cells/assertType';
+import delay from '../helpers/delay';
+import assert from '../helpers/assert';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -215,13 +217,22 @@ export default class QuillController extends BaseController<
       storage.Cell(
         'network-controller-state',
         NetworkState,
-        defaultNetworkState,
+        () => defaultNetworkState,
       ),
-      storage.Cell(
-        'block-number',
-        io.union([io.number, io.undefined]),
-        undefined,
-      ),
+      storage.Cell('block-number', io.number, async () => {
+        // FIXME: This is hacky. It should go away when we're finished cleaning
+        // up.
+        while (!this.networkController._blockTrackerProxy) {
+          await delay(500);
+        }
+
+        const blockNumber = Number(
+          await this.networkController._blockTrackerProxy.getLatestBlock(),
+        );
+
+        assert(Number.isFinite(blockNumber));
+        return blockNumber;
+      }),
     );
     this.initializeProvider();
     this.currencyController = new CurrencyController(
@@ -236,7 +247,7 @@ export default class QuillController extends BaseController<
       storage.Cell(
         'keyring-controller-state',
         KeyringControllerState,
-        defaultKeyringControllerState,
+        () => defaultKeyringControllerState,
       ),
     );
 
