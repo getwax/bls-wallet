@@ -116,7 +116,6 @@ function setupController(): void {
       const portStream = new PortDuplexStream(remotePort);
       // communication with popup
       controller.isClientOpen = true;
-      controller.setupTrustedCommunication(portStream, remotePort.sender);
 
       if (processName === ENVIRONMENT_TYPE.POPUP) {
         popupIsOpen = true;
