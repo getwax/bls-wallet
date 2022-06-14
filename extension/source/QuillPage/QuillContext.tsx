@@ -6,32 +6,25 @@ import getWindowQuillProvider from './getWindowQuillProvider';
 import mapValues from '../helpers/mapValues';
 import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
 import ExplicitAny from '../types/ExplicitAny';
-import Rpc, { rpcMap } from '../types/Rpc';
-import CellCollection from '../cells/CellCollection';
-import ICell, { IReadableCell } from '../cells/ICell';
+import { rpcMap } from '../types/Rpc';
+import { IReadableCell } from '../cells/ICell';
 import elcc from '../cells/extensionLocalCellCollection';
-import TimeCell from './TimeCell';
 import assertType from '../cells/assertType';
 import {
   defaultKeyringControllerState,
   KeyringControllerState,
 } from '../Controllers/Keyring/IKeyringController';
 import assert from '../helpers/assert';
+import { FormulaCell } from '../cells/FormulaCell';
+import {
+  defaultPreferencesState,
+  PreferencesState,
+} from '../Controllers/Preferences/IPreferencesController';
+import TimeCell from '../cells/TimeCell';
 
-type QuillContextValue = {
-  provider: QuillInPageProvider;
-  ethersProvider: ethers.providers.Web3Provider;
-  rpc: Rpc;
-  Cell: CellCollection['Cell'];
-  time: IReadableCell<number>;
-  blockNumber: IReadableCell<number>;
-  theme: ICell<string>;
-  keyring: IReadableCell<KeyringControllerState>;
-};
+type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
-function getQuillContextValue(
-  provider: QuillInPageProvider,
-): QuillContextValue {
+function getQuillContextValue(provider: QuillInPageProvider) {
   const rpc = {
     public: mapValues(
       rpcMap.public,
@@ -83,6 +76,18 @@ function getQuillContextValue(
   // for now.
   const theme = Cell('cell-based-theme', io.string, () => 'light');
 
+  const preferences = Cell(
+    'preferences-controller-state',
+    PreferencesState,
+    () => defaultPreferencesState,
+  );
+
+  const selectedAddress: IReadableCell<string | undefined> = new FormulaCell(
+    { preferences },
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    ({ preferences }) => preferences.selectedAddress,
+  );
+
   return {
     provider,
     ethersProvider: new ethers.providers.Web3Provider(provider),
@@ -96,6 +101,8 @@ function getQuillContextValue(
       KeyringControllerState,
       () => defaultKeyringControllerState,
     ),
+    preferences,
+    selectedAddress,
   };
 }
 
