@@ -4,7 +4,6 @@ import {
   CHAIN_ID_NETWORK_MAP,
   SUPPORTED_NETWORKS,
 } from './constants';
-import { TransactionMeta } from './Transaction/ITransactionController';
 
 export function timeout(duration: number): Promise<void> {
   return new Promise((resolve) => {
@@ -21,16 +20,6 @@ export const getUserLanguage = (): string => {
   const navLang = window.navigator.language || 'en-US';
   const preLang = navLang.split('-');
   return preLang[0] || 'en';
-};
-
-export const transactionMatchesNetwork = (
-  transaction: TransactionMeta,
-  chainId: string,
-): boolean => {
-  if (typeof transaction.chainId !== 'undefined') {
-    return transaction.chainId === chainId;
-  }
-  return false;
 };
 
 export const getDefaultProviderConfig = (): ProviderConfig => {
