@@ -2,7 +2,6 @@ import { Mutex } from 'async-mutex';
 import EthQuery from '../rpcHelpers/EthQuery';
 import BaseController from '../BaseController';
 
-import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { SafeEventEmitterProvider } from '../Network/INetworkController';
 import NetworkController from '../Network/NetworkController';
 import { PreferencesState } from '../Preferences/IPreferencesController';
@@ -12,6 +11,7 @@ import {
   AccountTrackerState,
   IAccountTrackerController,
 } from './IAccountTrackerController';
+import { IReadableCell } from '../../cells/ICell';
 
 /**
  * Tracks accounts based on blocks.
@@ -26,7 +26,7 @@ class AccountTrackerController
 {
   private provider: SafeEventEmitterProvider;
 
-  private blockTracker: PollingBlockTracker;
+  private blockNumber: IReadableCell<number | undefined>;
 
   private mutex = new Mutex();
 
@@ -40,7 +40,7 @@ class AccountTrackerController
     config,
     state,
     provider,
-    blockTracker,
+    blockNumber,
     getCurrentChainId,
     getIdentities,
     onPreferencesStateChange,
@@ -48,7 +48,7 @@ class AccountTrackerController
     config: AccountTrackerConfig;
     state: Partial<AccountTrackerState>;
     provider: SafeEventEmitterProvider;
-    blockTracker: PollingBlockTracker;
+    blockNumber: IReadableCell<number | undefined>;
     getCurrentChainId: NetworkController['getNetworkIdentifier'];
     getIdentities: () => PreferencesState['identities'];
     onPreferencesStateChange: (
@@ -64,14 +64,15 @@ class AccountTrackerController
     };
     this.initialize();
     this.provider = provider;
-    this.blockTracker = blockTracker;
+    this.blockNumber = blockNumber;
     this.ethQuery = new EthQuery(provider);
 
-    // This starts the blockTracker internal tracking
-    this.blockTracker.on('latest', (block: string) => {
-      this.configure({ _currentBlock: block });
-      this.refresh();
-    });
+    (async () => {
+      for await (const blockNumberValue of this.blockNumber) {
+        this.configure({ _currentBlock: blockNumberValue?.toString(16) });
+        this.refresh();
+      }
+    })();
 
     this.getIdentities = getIdentities;
     this.getCurrentChainId = getCurrentChainId;
@@ -122,7 +123,7 @@ class AccountTrackerController
     address: string,
     currentBlock: string,
   ): Promise<void> {
-    const currentChainId = this.getCurrentChainId();
+    const currentChainId = await this.getCurrentChainId();
     if (currentChainId === 'loading') {
       return;
     }

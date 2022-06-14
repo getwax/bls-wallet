@@ -27,6 +27,7 @@ import AccountTrackerController from './Account/AccountTrackerController';
 import KeyringController from './Keyring/KeyringController';
 import PreferencesController from './Preferences/PreferencesController';
 import {
+  defaultNetworkState,
   NetworkConfig,
   NetworkState,
   providerAsMiddleware,
@@ -210,10 +211,18 @@ export default class QuillController extends BaseController<
     this.update(state, true);
     this.getRequestAccountTabIds = opts.getRequestAccountTabIds;
     this.getOpenQuillTabsIds = opts.getOpenQuillTabsIds;
-    this.networkController = new NetworkController({
-      config: this.config.NetworkControllerConfig,
-      state: this.state.NetworkControllerState,
-    });
+    this.networkController = new NetworkController(
+      storage.Cell(
+        'network-controller-state',
+        NetworkState,
+        defaultNetworkState,
+      ),
+      storage.Cell(
+        'block-number',
+        io.union([io.number, io.undefined]),
+        undefined,
+      ),
+    );
     this.initializeProvider();
     this.currencyController = new CurrencyController(
       this.config.CurrencyControllerConfig,
@@ -240,23 +249,24 @@ export default class QuillController extends BaseController<
       provider: this.networkController._providerProxy,
       state: this.state.AccountTrackerState,
       config: this.config.AccountTrackerConfig,
-      blockTracker: this.networkController._blockTrackerProxy,
+      blockNumber: this.networkController.blockNumber,
       getIdentities: () => this.preferencesController.state.identities,
       onPreferencesStateChange: (listener) =>
         this.preferencesController.on('store', listener),
-      getCurrentChainId: () => this.networkController.state.chainId,
+      getCurrentChainId: () => this.networkController.chainId.read(),
     });
     // ensure accountTracker updates balances after network change
-    this.networkController.on('networkDidChange', async () => {
-      this.emit('networkDidChange');
-      this.accountTracker.refresh();
-      this.notifyAllConnections({
-        method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
-        params: {
-          chainId: this.networkController.state.chainId,
-        },
-      });
-    });
+
+    (async () => {
+      for await (const chainId of this.networkController.chainId) {
+        this.emit('networkDidChange');
+        this.accountTracker.refresh();
+        this.notifyAllConnections({
+          method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
+          params: { chainId },
+        });
+      }
+    })();
 
     // this.txController = new TransactionController({
     //   config: this.config.TransactionControllerConfig,
@@ -313,8 +323,8 @@ export default class QuillController extends BaseController<
       getOpenQuillTabsIds: this.getOpenQuillTabsIds,
 
       // network management
-      setProviderConfig:
-        networkController.setProviderConfig.bind(networkController),
+      setProviderConfig: (providerConfig) =>
+        networkController.update({ providerConfig }),
 
       // PreferencesController
       setSelectedAddress: preferencesController.setSelectedAddress.bind(
@@ -327,9 +337,9 @@ export default class QuillController extends BaseController<
     // TODO: show popup to user and ask for confirmation
     // const { approve = false } = result;
     // if (approve) {
-    this.networkController.setProviderConfig(
-      req.params as unknown as ProviderConfig,
-    );
+    this.networkController.update({
+      providerConfig: req.params as unknown as ProviderConfig,
+    });
     return true;
     // }
     // throw new Error('user denied provider change request');
@@ -339,8 +349,8 @@ export default class QuillController extends BaseController<
     return this.preferencesController?.getAddressState(address);
   }
 
-  getProviderConfig(): ProviderConfig {
-    return this.networkController.getProviderConfig();
+  async getProviderConfig(): Promise<ProviderConfig> {
+    return (await this.networkController.state.read()).providerConfig;
   }
 
   async addAccount(privKey: string): Promise<string> {
@@ -364,7 +374,8 @@ export default class QuillController extends BaseController<
   }
 
   async setDefaultCurrency(currency: string): Promise<void> {
-    const { ticker } = this.networkController.getProviderConfig();
+    const { ticker } = (await this.networkController.state.read())
+      .providerConfig;
     // This is ETH
     this.currencyController.update({ nativeCurrency: ticker });
     // This is USD
@@ -374,7 +385,7 @@ export default class QuillController extends BaseController<
   }
 
   setNetwork(providerConfig: ProviderConfig): void {
-    this.networkController.setProviderConfig(providerConfig);
+    this.networkController.update({ providerConfig });
   }
 
   /**
@@ -477,10 +488,6 @@ export default class QuillController extends BaseController<
       this.update({ PreferencesControllerState: state });
     });
 
-    this.networkController.on('store', (state) => {
-      this.update({ NetworkControllerState: state });
-    });
-
     this.accountTracker.on('store', (state) => {
       this.update({ AccountTrackerState: state });
     });
@@ -520,7 +527,7 @@ export default class QuillController extends BaseController<
       wallet_get_provider_state: async () => {
         return {
           accounts: this.selectedAddress ? [this.selectedAddress] : [],
-          chainId: this.networkController.state.chainId,
+          chainId: (await this.networkController.state.read()).chainId,
           isUnlocked: !!this.selectedAddress,
         };
       },

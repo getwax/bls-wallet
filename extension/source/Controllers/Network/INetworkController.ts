@@ -1,3 +1,5 @@
+import * as io from 'io-ts';
+
 import {
   JRPCEngine,
   JRPCMiddleware,
@@ -6,49 +8,53 @@ import {
   SafeEventEmitter,
 } from '@toruslabs/openlogin-jrpc';
 import { ProviderConfig } from '../constants';
+import { getDefaultProviderConfig } from '../utils';
 
-import { BaseConfig, BaseState, IController } from '../interfaces';
+export const NetworkProperties = io.intersection([
+  io.record(io.string, io.unknown),
+  io.type({
+    // undefined means we have not checked yet. (true or false means property is set)
+    EIPS: io.record(io.string, io.union([io.boolean, io.undefined])),
+  }),
+]);
 
 /**
  * Custom network properties
  * @example isEIP1559Compatible: true etc.
  */
-export interface NetworkProperties {
-  [key: string]: number | string | boolean | unknown;
+export type NetworkProperties = io.TypeOf<typeof NetworkProperties>;
 
-  EIPS: {
-    // undefined means we have not checked yet. (true or false means property is set)
-    [key: string | number]: boolean | undefined;
-  };
-}
+export const NetworkState = io.type({
+  chainId: io.string,
+  providerConfig: ProviderConfig,
+  properties: NetworkProperties,
+});
 
 /**
  *
  */
-export interface NetworkState extends BaseState {
-  /**
-   * Chain Id for the current network
-   */
-  chainId: string;
-  providerConfig: ProviderConfig;
-  properties: NetworkProperties;
-}
+export type NetworkState = io.TypeOf<typeof NetworkState>;
 
-export interface NetworkConfig extends BaseConfig {
-  providerConfig: ProviderConfig;
-}
+export const defaultNetworkState: NetworkState = {
+  chainId: 'loading',
+  properties: {
+    EIPS: { 1559: undefined },
+  },
+  providerConfig: getDefaultProviderConfig(),
+};
 
-export interface INetworkController<C, S> extends IController<C, S> {
+export const NetworkConfig = io.type({
+  providerConfig: ProviderConfig,
+});
+
+export type NetworkConfig = io.TypeOf<typeof NetworkConfig>;
+
+export interface INetworkController {
   /**
    * Gets the chainId of the network
    */
-  getNetworkIdentifier(): string;
+  getNetworkIdentifier(): Promise<string>;
 
-  /**
-   * Sets provider for the current network controller
-   * @param providerConfig - Provider config object
-   */
-  setProviderConfig(providerConfig: ProviderConfig): void;
   /**
    * Connects to the rpcUrl for the current selected provider
    */

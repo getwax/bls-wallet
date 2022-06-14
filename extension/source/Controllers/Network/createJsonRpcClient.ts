@@ -7,6 +7,7 @@ import {
   mergeMiddleware,
 } from '@toruslabs/openlogin-jrpc';
 import { Aggregator } from 'bls-wallet-clients';
+import ICell from '../../cells/ICell';
 
 import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
@@ -127,7 +128,10 @@ function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
   };
 }
 
-export function createJsonRpcClient(providerConfig: ProviderConfig): {
+export function createJsonRpcClient(
+  providerConfig: ProviderConfig,
+  blockNumber: ICell<number | undefined>,
+): {
   networkMiddleware: JRPCMiddleware<unknown, unknown>;
   blockTracker: PollingBlockTracker;
 } {
@@ -140,6 +144,7 @@ export function createJsonRpcClient(providerConfig: ProviderConfig): {
   const blockTracker = new PollingBlockTracker({
     config: { provider: blockProvider },
     state: {},
+    blockNumber,
   });
 
   const networkMiddleware = mergeMiddleware([

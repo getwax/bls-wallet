@@ -3,7 +3,6 @@ import { JRPCEngine, JRPCMiddleware } from '@toruslabs/openlogin-jrpc';
 import { Mutex } from 'async-mutex';
 import EthQuery from '../rpcHelpers/EthQuery';
 
-import BaseController from '../BaseController';
 import {
   PollingBlockTrackerConfig,
   PollingBlockTrackerState,
@@ -13,7 +12,6 @@ import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
 import createEventEmitterProxy from '../createEventEmitterProxy';
 import createSwappableProxy from '../createSwappableProxy';
-import { getDefaultProviderConfig } from '../utils';
 import {
   createWalletMiddleware,
   IProviderHandlers,
@@ -21,18 +19,16 @@ import {
 import { createJsonRpcClient } from './createJsonRpcClient';
 import {
   INetworkController,
-  NetworkConfig,
   NetworkState,
   providerFromEngine,
   SafeEventEmitterProvider,
 } from './INetworkController';
+import ICell, { IReadableCell } from '../../cells/ICell';
+import { FormulaCell } from '../../cells/FormulaCell';
 
 // use state_get_balance for account balance
 
-export default class NetworkController
-  extends BaseController<NetworkConfig, NetworkState>
-  implements INetworkController<NetworkConfig, NetworkState>
-{
+export default class NetworkController implements INetworkController {
   name = 'NetworkController';
 
   _providerProxy: SafeEventEmitterProvider;
@@ -52,27 +48,28 @@ export default class NetworkController
 
   private _baseProviderHandlers: IProviderHandlers;
 
-  constructor({
-    config,
-    state,
-  }: {
-    config?: Partial<NetworkConfig>;
-    state?: Partial<NetworkState>;
-  }) {
-    super({ config, state });
-    this.defaultState = {
-      chainId: 'loading',
-      properties: {
-        EIPS: { 1559: undefined },
-      },
-      providerConfig: getDefaultProviderConfig(),
-    };
-    this.initialize();
+  public chainId: IReadableCell<string>;
+
+  constructor(
+    public state: ICell<NetworkState>,
+    public blockNumber: ICell<number | undefined>,
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    this.chainId = new FormulaCell({ state }, ({ state }) => state.chainId);
+
     // when a new network is set, we set to loading first and then when connection succeeds, we update the network
   }
 
-  getNetworkIdentifier(): string {
-    return this.state.chainId;
+  async getNetworkIdentifier(): Promise<string> {
+    return (await this.state.read()).chainId;
+  }
+
+  async update(stateUpdates: Partial<NetworkState>) {
+    await this.state.write({ ...(await this.state.read()), ...stateUpdates });
+
+    if ('providerConfig' in stateUpdates) {
+      this.refreshNetwork();
+    }
   }
 
   /**
@@ -93,24 +90,17 @@ export default class NetworkController
     return this._providerProxy;
   }
 
-  setProviderConfig(config: ProviderConfig): void {
-    this.update({
-      providerConfig: { ...config },
-    });
-    this.refreshNetwork();
-  }
-
-  getProviderConfig(): ProviderConfig {
-    return this.state.providerConfig;
+  async getProviderConfig(): Promise<ProviderConfig> {
+    return (await this.state.read()).providerConfig;
   }
 
   /**
    * Refreshes the current network code
    */
   async lookupNetwork(): Promise<void> {
-    const { rpcTarget, chainId } = this.getProviderConfig();
+    const { rpcTarget, chainId } = await this.getProviderConfig();
     if (!chainId || !rpcTarget || !this._provider) {
-      this.update({
+      await this.update({
         chainId: 'loading',
         properties: { EIPS: { 1559: undefined } },
       });
@@ -143,7 +133,6 @@ export default class NetworkController
           });
           // Don't need to wait for this
           this.getEIP1559Compatibility();
-          this.emit('networkDidChange');
           resolve();
         },
       );
@@ -151,7 +140,7 @@ export default class NetworkController
   }
 
   async getEIP1559Compatibility(): Promise<boolean> {
-    const { EIPS } = this.state.properties;
+    const { EIPS } = (await this.state.read()).properties;
     // log.info('checking eip 1559 compatibility', EIPS[1559])
     if (EIPS[1559] !== undefined) {
       return EIPS[1559];
@@ -170,8 +159,8 @@ export default class NetworkController
     return supportsEIP1559;
   }
 
-  private configureProvider(): void {
-    const { chainId, rpcTarget, ...rest } = this.getProviderConfig();
+  private async configureProvider() {
+    const { chainId, rpcTarget, ...rest } = await this.getProviderConfig();
     if (!chainId || !rpcTarget) {
       throw new Error(
         'chainId and rpcTarget must be provider in providerConfig',
@@ -180,8 +169,8 @@ export default class NetworkController
     this.configureStandardProvider({ chainId, rpcTarget, ...rest });
   }
 
-  private configureStandardProvider(providerConfig: ProviderConfig): void {
-    const networkClient = createJsonRpcClient(providerConfig);
+  private configureStandardProvider(providerConfig: ProviderConfig) {
+    const networkClient = createJsonRpcClient(providerConfig, this.blockNumber);
     this.setNetworkClient(networkClient);
   }
 
@@ -191,7 +180,7 @@ export default class NetworkController
   }: {
     networkMiddleware: JRPCMiddleware<unknown, unknown>;
     blockTracker: PollingBlockTracker;
-  }): void {
+  }) {
     const walletMiddleware = createWalletMiddleware(this._baseProviderHandlers);
     const engine = new JRPCEngine();
     engine.push(walletMiddleware);
@@ -206,7 +195,7 @@ export default class NetworkController
   }: {
     provider: SafeEventEmitterProvider;
     blockTracker: PollingBlockTracker;
-  }): void {
+  }) {
     if (this._providerProxy) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore

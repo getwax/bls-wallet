@@ -5,6 +5,8 @@ import {
   PollingBlockTrackerState,
 } from './IBlockTrackerController';
 import { ExtendedJsonRpcRequest } from '../Network/INetworkController';
+import ICell from '../../cells/ICell';
+import assert from '../../helpers/assert';
 
 const sec = 1000;
 
@@ -12,19 +14,25 @@ class PollingBlockTracker extends BaseBlockTracker<
   PollingBlockTrackerConfig,
   PollingBlockTrackerState
 > {
+  blockNumber: ICell<number | undefined>;
+
   constructor({
     config,
     state = {},
+    blockNumber,
   }: {
     config: Partial<PollingBlockTrackerConfig> &
       Pick<PollingBlockTrackerConfig, 'provider'>;
     state: Partial<PollingBlockTrackerState>;
+    blockNumber: ICell<number | undefined>;
   }) {
     // parse + validate args
     if (!config.provider) {
       throw new Error('PollingBlockTracker - no provider specified.');
     }
     super({ config, state });
+
+    this.blockNumber = blockNumber;
 
     // config
     this.defaultConfig = {
@@ -35,6 +43,11 @@ class PollingBlockTracker extends BaseBlockTracker<
     };
 
     this.initialize();
+
+    this.on('latest', (blockNumberStr) => {
+      assert(Number.isFinite(Number(blockNumberStr)));
+      this.blockNumber.write(Number(blockNumberStr));
+    });
   }
 
   // trigger block polling
@@ -84,6 +97,8 @@ class PollingBlockTracker extends BaseBlockTracker<
       };
 
       const res = await this.config.provider.sendAsync<[], string>(req);
+      assert(Number.isFinite(Number(res)));
+      this.blockNumber.write(Number(res));
       return res;
     } catch (error: unknown) {
       throw new Error(
