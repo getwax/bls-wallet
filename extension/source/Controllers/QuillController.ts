@@ -20,7 +20,6 @@ import {
   getUserLanguage,
 } from './utils';
 import { ProviderConfig } from './constants';
-import BaseController from './BaseController';
 import NetworkController from './Network/NetworkController';
 import CurrencyController from './Currency/CurrencyController';
 import AccountTrackerController from './Account/AccountTrackerController';
@@ -28,7 +27,6 @@ import KeyringController from './Keyring/KeyringController';
 import PreferencesController from './Preferences/PreferencesController';
 import {
   defaultNetworkState,
-  NetworkConfig,
   NetworkState,
   providerAsMiddleware,
   SafeEventEmitterProvider,
@@ -39,11 +37,7 @@ import {
   defaultPreferencesState,
   PreferencesState,
 } from './Preferences/IPreferencesController';
-import { BaseConfig, BaseState } from './interfaces';
-import {
-  CurrencyControllerConfig,
-  CurrencyControllerState,
-} from './Currency/ICurrencyController';
+import { CurrencyControllerConfig } from './Currency/ICurrencyController';
 import {
   AccountTrackerState,
   defaultAccountTrackerState,
@@ -78,27 +72,9 @@ export const DEFAULT_CONFIG = {
   PreferencesControllerConfig: {},
 };
 
-export interface QuillControllerState extends BaseState {
-  NetworkControllerState: NetworkState;
-  CurrencyControllerState: CurrencyControllerState;
-  PreferencesControllerState: Partial<PreferencesState>;
-  AccountTrackerState: AccountTrackerState;
-  KeyringControllerState: KeyringControllerState;
-  // TransactionControllerState: TransactionState;
-}
-
-export interface QuillControllerConfig extends BaseConfig {
-  NetworkControllerConfig: NetworkConfig;
-  CurrencyControllerConfig: CurrencyControllerConfig;
-  // TransactionControllerConfig: TransactionConfig;
-}
-
 const PROVIDER = 'quill-provider';
 
-export default class QuillController extends BaseController<
-  QuillControllerConfig,
-  QuillControllerState
-> {
+export default class QuillController {
   public connections: Record<string, Record<string, { engine: JRPCEngine }>> =
     {};
 
@@ -125,17 +101,9 @@ export default class QuillController extends BaseController<
   //   private txController!: TransactionController;
 
   constructor(
-    {
-      config,
-      state,
-    }: {
-      config: Partial<QuillControllerConfig>;
-      state: Partial<QuillControllerState>;
-    },
     public storage: CellCollection,
-  ) {
-    super({ config, state });
-  }
+    public currencyControllerConfig: CurrencyControllerConfig,
+  ) {}
 
   async getSelectedAddress(): Promise<string | undefined> {
     return (await this.preferencesController?.state.read()).selectedAddress;
@@ -208,23 +176,15 @@ export default class QuillController extends BaseController<
    * Always call init function before using this controller
    */
   public init({
-    config,
-    state,
     opts,
     storage,
   }: {
-    config: Partial<QuillControllerConfig>;
-    state: Partial<QuillControllerState>;
     opts: {
       getRequestAccountTabIds: () => Record<string, number>;
       getOpenQuillTabsIds: () => Record<number, boolean>;
     };
     storage: CellCollection;
   }): void {
-    console.log(config, state, 'restoring config & state');
-    this.initialize();
-    this.configure(config, true, true);
-    this.update(state, true);
     this.getRequestAccountTabIds = opts.getRequestAccountTabIds;
     this.getOpenQuillTabsIds = opts.getOpenQuillTabsIds;
     this.networkController = new NetworkController(
@@ -250,7 +210,7 @@ export default class QuillController extends BaseController<
     );
     this.initializeProvider();
     this.currencyController = new CurrencyController(
-      this.config.CurrencyControllerConfig,
+      this.currencyControllerConfig,
       this.storage,
     );
     this.currencyController.updateConversionRate();
@@ -290,7 +250,6 @@ export default class QuillController extends BaseController<
 
     (async () => {
       for await (const chainId of this.networkController.chainId) {
-        this.emit('networkDidChange');
         this.accountTracker.refresh();
         this.notifyAllConnections({
           method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
@@ -342,7 +301,6 @@ export default class QuillController extends BaseController<
 
     return {
       // etc
-      getState: () => this.state,
       setCurrentCurrency: (currentCurrency) =>
         currencyController.update({ currentCurrency }),
       setCurrentLocale: preferencesController.setUserLocale.bind(
@@ -700,21 +658,21 @@ export default class QuillController extends BaseController<
 
     // set up postStream transport
     outStream.on('data', createMetaRPCHandler(api, outStream));
-    const handleUpdate = (update: unknown) => {
-      if (outStream._writableState.ended) {
-        return;
-      }
-      // send notification to client-side
-      outStream.write({
-        jsonrpc: '2.0',
-        method: 'sendUpdate',
-        params: [update],
-      });
-    };
-    this.on('update', handleUpdate);
-    outStream.on('end', () => {
-      this.removeListener('update', handleUpdate);
-    });
+    // const handleUpdate = (update: unknown) => {
+    //   if (outStream._writableState.ended) {
+    //     return;
+    //   }
+    //   // send notification to client-side
+    //   outStream.write({
+    //     jsonrpc: '2.0',
+    //     method: 'sendUpdate',
+    //     params: [update],
+    //   });
+    // };
+    // this.on('update', handleUpdate);
+    // outStream.on('end', () => {
+    //   this.removeListener('update', handleUpdate);
+    // });
   }
 
   /**

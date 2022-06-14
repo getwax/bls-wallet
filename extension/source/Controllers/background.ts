@@ -4,21 +4,13 @@
  */
 
 import endOfStream from 'end-of-stream';
-import pump from 'pump';
 
-import { storage, runtime, Runtime, Tabs, tabs } from 'webextension-polyfill';
-import { cloneDeep } from 'lodash-es';
+import { runtime, Runtime, Tabs, tabs } from 'webextension-polyfill';
 // import NotificationManager, {
 //   NOTIFICATION_MANAGER_EVENTS,
 // } from './lib/notification-manager';
-import QuillController, {
-  DEFAULT_CONFIG,
-  QuillControllerState,
-} from './QuillController';
-import { DEFAULT_STATE, ENVIRONMENT_TYPE } from './constants';
-import { getDefaultProviderConfig } from './utils';
-import ControllerStoreStream from './streamHelpers/ControllerStoreStream';
-import ControllerStreamSink from './streamHelpers/ControllerStreamSink';
+import QuillController, { DEFAULT_CONFIG } from './QuillController';
+import { ENVIRONMENT_TYPE } from './constants';
 import PortDuplexStream from '../common/PortStream';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
 
@@ -30,10 +22,6 @@ let uiIsTriggering = false;
 const openQuillTabsIDs: Record<number, boolean> = {};
 const requestAccountTabIds: Record<string, number> = {};
 
-// state persistence
-const localStore = storage.local;
-let versionedData: any;
-
 // initialization flow
 initialize().catch(console.error);
 
@@ -41,42 +29,8 @@ initialize().catch(console.error);
  * Initializes the Quill controller, and sets up all platform configuration.
  */
 async function initialize(): Promise<void> {
-  const initState = await loadStateFromPersistence();
-  setupController(initState);
+  setupController();
   console.log('Quill initialization complete.');
-}
-
-//
-// State and Persistence
-//
-
-/**
- * Loads any stored data or the default state
- */
-async function loadStateFromPersistence(): Promise<QuillControllerState> {
-  // read from disk
-  // first from preferred, async API:
-  const storedData = await localStore.get();
-  console.log('storedData', storedData);
-
-  if (Object.keys(storedData).length > 0) {
-    versionedData = storedData;
-  } else {
-    const providerConfig = getDefaultProviderConfig();
-    versionedData = cloneDeep({
-      ...DEFAULT_STATE,
-      // Override with default config from env chainid
-      NetworkControllerState: {
-        ...DEFAULT_STATE.NetworkControllerState,
-        chainId: providerConfig.chainId,
-        providerConfig,
-      },
-    });
-  }
-
-  localStore.set(versionedData);
-  // return just the data
-  return versionedData;
 }
 
 /**
@@ -85,62 +39,24 @@ async function loadStateFromPersistence(): Promise<QuillControllerState> {
  * Streams emitted state updates to platform-specific storage strategy.
  * Creates platform listeners for new Dapps/Contexts, and sets up their data connections to the controller.
  */
-function setupController(initState: unknown): void {
+function setupController(): void {
   //
   // Quill Controller
   //
-  console.log(initState, 'initstate');
+  console.log('setupController');
 
   const controller = new QuillController(
-    {
-      // initial state
-      state: initState as QuillControllerState,
-      config: DEFAULT_CONFIG,
-    },
     extensionLocalCellCollection,
+    DEFAULT_CONFIG.CurrencyControllerConfig,
   );
 
   controller.init({
-    state: initState as QuillControllerState,
-    config: DEFAULT_CONFIG,
     opts: {
       getRequestAccountTabIds: () => requestAccountTabIds,
       getOpenQuillTabsIds: () => openQuillTabsIDs,
     },
     storage: extensionLocalCellCollection,
   });
-
-  // setup state persistence
-  pump(
-    new ControllerStoreStream(controller),
-    // debounce(1000),
-    new ControllerStreamSink(persistData),
-    (error) => {
-      console.error('Quill - Persistence pipeline failed', error);
-    },
-  );
-
-  let dataPersistenceFailing = false;
-
-  async function persistData(state: unknown) {
-    if (!state) {
-      throw new Error('Quill - updated state is missing');
-    }
-    if (localStore?.set) {
-      try {
-        await localStore.set(state as Record<string, unknown>);
-        if (dataPersistenceFailing) {
-          dataPersistenceFailing = false;
-        }
-      } catch (err) {
-        // log error so we dont break the pipeline
-        if (!dataPersistenceFailing) {
-          dataPersistenceFailing = true;
-        }
-        console.error('error setting state in local store:', err);
-      }
-    }
-  }
 
   //
   // connect to other contexts
