@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from 'react';
+import { FunctionComponent } from 'react';
 import useCell from '../../../cells/useCell';
 import Button from '../../../components/Button';
 import { useQuill } from '../../QuillContext';
@@ -16,18 +16,7 @@ export const WalletsWrapper: FunctionComponent = () => {
   const quill = useQuill();
   const { rpc } = quill;
   const keyring = useCell(quill.keyring);
-
-  const [selected, setSelected] = useState<number>(0);
-
-  useEffect(() => {
-    (async () => {
-      const accounts = await rpc.public.eth_accounts();
-
-      if (accounts[0]) {
-        rpc.private.quill_setSelectedAddress(accounts[0]);
-      }
-    })();
-  }, [rpc]);
+  const selectedAddress = useCell(quill.selectedAddress);
 
   return (
     <div className="">
@@ -49,7 +38,6 @@ export const WalletsWrapper: FunctionComponent = () => {
           {keyring.wallets.map((wallet, index) => (
             <WalletSummary
               onClick={() => {
-                setSelected(index);
                 rpc.private.quill_setSelectedAddress(wallet.address);
               }}
               key={wallet.address}
@@ -60,7 +48,7 @@ export const WalletsWrapper: FunctionComponent = () => {
                 networks: 1,
                 tokens: 0,
               }}
-              expanded={index === selected}
+              expanded={wallet.address === selectedAddress}
             />
           ))}
         </div>
