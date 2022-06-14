@@ -1,33 +1,38 @@
+import * as io from 'io-ts';
 import { Bundle, Operation } from 'bls-wallet-clients';
-import { BaseConfig, BaseState } from '../interfaces';
-import { SafeEventEmitterProvider } from '../Network/INetworkController';
 
-export type KeyPair = {
+export const KeyPair = io.type({
   /**
    * Hex string without 0x prefix
    */
-  privateKey: string;
+  privateKey: io.string,
   /**
    * Address of the deployed contract wallet
    */
-  address: string;
+  address: io.string,
+});
+
+export type KeyPair = io.TypeOf<typeof KeyPair>;
+
+export const KeyringControllerState = io.type({
+  HDPhrase: io.union([io.undefined, io.string]),
+  wallets: io.array(KeyPair),
+  chainId: io.union([io.undefined, io.string]),
+});
+
+export type KeyringControllerState = io.TypeOf<typeof KeyringControllerState>;
+
+export const defaultKeyringControllerState: KeyringControllerState = {
+  HDPhrase: undefined,
+  wallets: [],
+  chainId: undefined,
 };
-
-export interface KeyringControllerConfig extends BaseConfig {
-  provider: SafeEventEmitterProvider;
-}
-
-export interface KeyringControllerState extends BaseState {
-  HDPhrase: string;
-  wallets: KeyPair[];
-  chainId: string;
-}
 
 export interface IKeyringController {
   /**
    * Returns the addresses of all stored key pairs
    */
-  getAccounts(): string[];
+  getAccounts(): Promise<string[]>;
 
   /**
    * Creates a new key pair
@@ -49,7 +54,7 @@ export interface IKeyringController {
    * Removes a key pair
    * @param address - Address of the key pair
    */
-  removeAccount(address: string): void;
+  removeAccount(address: string): Promise<void>;
 
   /**
    * Signs a transaction of Type T

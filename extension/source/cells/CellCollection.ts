@@ -8,6 +8,7 @@ import CellIterator from './CellIterator';
 import jsonHasChanged from './jsonHasChanged';
 import assert from '../helpers/assert';
 import IAsyncStorage from './IAsyncStorage';
+import assertType from './assertType';
 
 export default class CellCollection {
   cells: Record<string, CollectionCell<ExplicitAny> | undefined> = {};
@@ -112,14 +113,8 @@ export class CollectionCell<T> implements ICell<T> {
       );
     }
 
-    if (this.lastSeen && !type.is(this.lastSeen.value)) {
-      throw new Error(
-        [
-          `Type mismatch at storage key ${this.key}`,
-          `contents: ${JSON.stringify(this.lastSeen.value)}`,
-          `expected: ${type.name}`,
-        ].join(' '),
-      );
+    if (this.lastSeen) {
+      assertType(this.lastSeen.value, type);
     }
 
     if (this.type === io.unknown) {
@@ -135,7 +130,7 @@ export class CollectionCell<T> implements ICell<T> {
 
   async write(newValue: T): Promise<void> {
     assert(!this.ended);
-    assert(this.type.is(newValue));
+    assertType(newValue, this.type);
 
     await this.initialRead;
 
@@ -177,20 +172,10 @@ export class CollectionCell<T> implements ICell<T> {
   }
 
   async versionedRead(): Promise<Versioned<T>> {
-    const readResult = await this.asyncStorage.read(
+    const readResult = (await this.asyncStorage.read(
       this.key,
       this.versionedType,
-    ) ?? { version: 0, value: this.defaultValue };
-
-    if (!this.versionedType.is(readResult)) {
-      throw new Error(
-        [
-          `Type mismatch at storage key ${this.key}`,
-          `contents: ${JSON.stringify(readResult)}`,
-          `expected: ${this.versionedType.name}`,
-        ].join(' '),
-      );
-    }
+    )) ?? { version: 0, value: this.defaultValue };
 
     if (this.hasChanged(this.lastSeen?.value, readResult.value)) {
       this.events.emit('change', {

@@ -1,3 +1,4 @@
+import * as io from 'io-ts';
 import {
   createEngineStream,
   createLoggerMiddleware,
@@ -47,7 +48,7 @@ import {
   AccountTrackerState,
 } from './Account/IAccountTrackerController';
 import {
-  KeyringControllerConfig,
+  defaultKeyringControllerState,
   KeyringControllerState,
 } from './Keyring/IKeyringController';
 import PollingBlockTracker from './Block/PollingBlockTracker';
@@ -58,10 +59,10 @@ import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
-import assert from '../helpers/assert';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
+import assertType from '../cells/assertType';
 
 export const DEFAULT_CONFIG = {
   CurrencyControllerConfig: {
@@ -88,7 +89,6 @@ export interface QuillControllerConfig extends BaseConfig {
   CurrencyControllerConfig: CurrencyControllerConfig;
   PreferencesControllerConfig: PreferencesConfig;
   AccountTrackerConfig: AccountTrackerConfig;
-  KeyringControllerConfig: KeyringControllerConfig;
   // TransactionControllerConfig: TransactionConfig;
 }
 
@@ -140,10 +140,10 @@ export default class QuillController extends BaseController<
     return this.preferencesController?.state.selectedAddress || '';
   }
 
-  get selectedPrivateKey(): string {
+  async getSelectedPrivateKey(): Promise<string> {
     const address = this.selectedAddress;
     if (!address) return '';
-    const wallet = this.keyringController.state.wallets.find(
+    const wallet = (await this.keyringController.state.read()).wallets.find(
       (x) => x.address === address,
     );
     return wallet?.privateKey || '';
@@ -173,8 +173,10 @@ export default class QuillController extends BaseController<
     return this.networkController._blockTrackerProxy;
   }
 
-  get accounts(): string[] {
-    return this.keyringController.state.wallets.map((x) => x.address);
+  async getAccounts(): Promise<string[]> {
+    return (await this.keyringController.state.read()).wallets.map(
+      (x) => x.address,
+    );
   }
 
   /**
@@ -192,6 +194,7 @@ export default class QuillController extends BaseController<
     config,
     state,
     opts,
+    storage,
   }: {
     config: Partial<QuillControllerConfig>;
     state: Partial<QuillControllerState>;
@@ -199,6 +202,7 @@ export default class QuillController extends BaseController<
       getRequestAccountTabIds: () => Record<string, number>;
       getOpenQuillTabsIds: () => Record<number, boolean>;
     };
+    storage: CellCollection;
   }): void {
     console.log(config, state, 'restoring config & state');
     this.initialize();
@@ -219,10 +223,13 @@ export default class QuillController extends BaseController<
     this.currencyController.scheduleConversionInterval();
 
     // key management
-    this.keyringController = new KeyringController({
-      config: this.config.KeyringControllerConfig,
-      state: this.state.KeyringControllerState,
-    });
+    this.keyringController = new KeyringController(
+      storage.Cell(
+        'keyring-controller-state',
+        KeyringControllerState,
+        defaultKeyringControllerState,
+      ),
+    );
 
     this.preferencesController = new PreferencesController({
       state: this.state.PreferencesControllerState,
@@ -478,10 +485,6 @@ export default class QuillController extends BaseController<
       this.update({ AccountTrackerState: state });
     });
 
-    this.keyringController.on('store', (state) => {
-      this.update({ KeyringControllerState: state });
-    });
-
     // this.txController.on('store', (state: TransactionState<Transaction>) => {
     //   this.update({ TransactionControllerState: state });
     //   Object.keys(state.transactions).forEach((txId) => {
@@ -583,7 +586,7 @@ export default class QuillController extends BaseController<
     const methods: MethodsWithOrigin = {
       eth_accounts: async (origin) => {
         if (origin === window.location.origin) {
-          return this.keyringController.state.wallets.map(
+          return (await this.keyringController.state.read()).wallets.map(
             ({ address }) => address,
           );
         }
@@ -598,7 +601,7 @@ export default class QuillController extends BaseController<
 
     return mapValues(methods, (method, methodName) => (req: any) => {
       const params = req.params ?? [];
-      assert(rpcMap.public[methodName].params.is(params));
+      assertType(params, rpcMap.public[methodName].params);
       return (method as ExplicitAny)(req.origin, params);
     });
   }
@@ -630,7 +633,12 @@ export default class QuillController extends BaseController<
       }
 
       const params = req.params ?? [];
-      assert(rpcMap.private[methodName].params.is(params));
+
+      assertType(
+        params,
+        rpcMap.private[methodName].params as unknown as io.Type<unknown[]>,
+      );
+
       return (method as ExplicitAny)(...params);
     });
   }

@@ -3,7 +3,6 @@ import React from 'react';
 import { ethers } from 'ethers';
 
 import getWindowQuillProvider from './getWindowQuillProvider';
-import assert from '../helpers/assert';
 import mapValues from '../helpers/mapValues';
 import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
 import ExplicitAny from '../types/ExplicitAny';
@@ -14,6 +13,7 @@ import elcc from '../cells/extensionLocalCellCollection';
 import TimeCell from './TimeCell';
 import { FormulaCell } from '../cells/FormulaCell';
 import approximate from './approximate';
+import assertType from '../cells/assertType';
 
 type QuillContextValue = {
   provider: QuillInPageProvider;
@@ -53,12 +53,12 @@ function getQuillContextValue(
         rpcMap.public,
         ({ params: paramsType, output }, method) => {
           return async (...params: unknown[]) => {
-            assert(paramsType.is(params));
+            assertType(params, paramsType);
             const response = await provider.request({
               method,
               params,
             });
-            assert(output.is(response));
+            assertType(response, output);
             return response as ExplicitAny;
           };
         },
@@ -67,12 +67,12 @@ function getQuillContextValue(
         rpcMap.private,
         ({ params: paramsType, output }, method) => {
           return async (...params: unknown[]) => {
-            assert(paramsType.is(params));
+            assertType(params, paramsType as unknown as io.Type<unknown[]>);
             const response = await provider.request({
               method,
               params,
             });
-            assert(output.is(response));
+            assertType(response, output as io.Type<unknown>);
             return response as ExplicitAny;
           };
         },

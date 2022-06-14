@@ -71,10 +71,6 @@ async function loadStateFromPersistence(): Promise<QuillControllerState> {
         chainId: providerConfig.chainId,
         providerConfig,
       },
-      KeyringControllerState: {
-        ...DEFAULT_STATE.KeyringControllerState,
-        chainId: providerConfig.chainId,
-      },
     });
   }
 
@@ -111,6 +107,7 @@ function setupController(initState: unknown): void {
       getRequestAccountTabIds: () => requestAccountTabIds,
       getOpenQuillTabsIds: () => openQuillTabsIDs,
     },
+    storage: extensionLocalCellCollection,
   });
 
   // setup state persistence

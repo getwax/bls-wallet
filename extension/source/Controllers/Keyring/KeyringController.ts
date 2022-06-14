@@ -1,61 +1,53 @@
 import { BlsWalletWrapper, Operation } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import generateRandomHex from '../../helpers/generateRandomHex';
-import BaseController from '../BaseController';
 import {
   IKeyringController,
-  KeyringControllerConfig,
   KeyringControllerState,
 } from './IKeyringController';
 import { NETWORK_CONFIG } from '../../env';
 import { getRPCURL } from '../utils';
+import ICell from '../../cells/ICell';
+import assert from '../../helpers/assert';
 
-export default class KeyringController
-  extends BaseController<KeyringControllerConfig, KeyringControllerState>
-  implements IKeyringController
-{
+export default class KeyringController implements IKeyringController {
   name = 'KeyringController';
 
-  constructor({
-    config,
-    state,
-  }: {
-    config: Partial<KeyringControllerConfig>;
-    state: Partial<KeyringControllerState>;
-  }) {
-    super({ config, state });
-    this.defaultState = {
-      wallets: state.wallets ?? [],
-      HDPhrase: state.HDPhrase ?? '',
-    } as KeyringControllerState;
-    this.initialize();
+  constructor(public state: ICell<KeyringControllerState>) {}
+
+  async getAccounts(): Promise<string[]> {
+    return (await this.state.read()).wallets.map((x) => x.address);
   }
 
-  getAccounts(): string[] {
-    return this.state.wallets.map((x) => x.address);
+  async setHDPhrase(phrase: string) {
+    const state = await this.state.read();
+    state.HDPhrase = phrase;
+    await this.state.write(state);
   }
 
-  setHDPhrase(phrase: string) {
-    this.update({
-      HDPhrase: phrase,
-    });
-  }
+  async requireHDPhrase() {
+    const state = await this.state.read();
+    let phrase = state.HDPhrase;
 
-  isOnboardingComplete = (): boolean => {
-    return this.state.HDPhrase !== '';
-  };
-
-  async createHDAccount(): Promise<string> {
-    if (this.state.HDPhrase === '') {
-      const { phrase } = ethers.Wallet.createRandom().mnemonic;
-      this.setHDPhrase(phrase);
+    if (phrase === undefined) {
+      phrase = ethers.Wallet.createRandom().mnemonic.phrase;
+      state.HDPhrase = phrase;
+      await this.state.write(state);
     }
 
-    const mnemonic = this.state.HDPhrase;
+    return phrase;
+  }
+
+  async isOnboardingComplete(): Promise<boolean> {
+    return (await this.state.read()).HDPhrase !== undefined;
+  }
+
+  async createHDAccount(): Promise<string> {
+    const mnemonic = await this.requireHDPhrase();
     const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
     const partialPath = "m/44'/60'/0'/0/";
-    const path = partialPath + this.state.wallets.length;
+    const path = partialPath + (await this.state.read()).wallets.length;
 
     const { privateKey } = node.derivePath(path);
     return this._createAccountAndUpdate(privateKey);
@@ -67,7 +59,7 @@ export default class KeyringController
   }
 
   async importAccount(privateKey: string): Promise<string> {
-    const existingWallet = this.state.wallets.find(
+    const existingWallet = (await this.state.read()).wallets.find(
       (x) => x.privateKey.toLowerCase() === privateKey.toLowerCase(),
     );
     if (existingWallet) return existingWallet.address;
@@ -75,24 +67,24 @@ export default class KeyringController
     return this._createAccountAndUpdate(privateKey);
   }
 
-  removeAccount(address: string): void {
-    const existingWallets = [...this.state.wallets];
-    const index = this.state.wallets.findIndex((x) => x.address === address);
+  async removeAccount(address: string) {
+    const state = await this.state.read();
+    const index = state.wallets.findIndex((x) => x.address === address);
     if (index !== -1) {
-      existingWallets.splice(index, 1);
-      this.update({ wallets: existingWallets });
+      state.wallets.splice(index, 1);
+      await this.state.write(state);
     }
   }
 
   async signTransactions(address: string, tx: Operation) {
-    const privKey = this._getPrivateKeyFor(address);
+    const privKey = await this._getPrivateKeyFor(address);
     const wallet = await this._getBLSWallet(privKey);
 
     return wallet.sign(tx);
   }
 
   async getNonce(address: string) {
-    const privKey = this._getPrivateKeyFor(address);
+    const privKey = await this._getPrivateKeyFor(address);
     const wallet = await this._getBLSWallet(privKey);
     return wallet.Nonce();
   }
@@ -101,38 +93,35 @@ export default class KeyringController
     const address = await this._getContractWalletAddress(privateKey);
 
     if (address) {
-      this.update({
-        wallets: [
-          ...this.state.wallets,
-          {
-            privateKey,
-            address,
-          },
-        ],
-      });
+      const state = await this.state.read();
+      state.wallets.push({ privateKey, address });
+      await this.state.write(state);
     }
 
     return address;
   }
 
-  private _getPrivateKeyFor(address: string): string {
+  private async _getPrivateKeyFor(address: string): Promise<string> {
     const checksummedAddress = ethers.utils.getAddress(address);
-    const keyPair = this.state.wallets.find(
+    const keyPair = (await this.state.read()).wallets.find(
       (x) => x.address === checksummedAddress,
     );
     if (!keyPair) throw new Error('key does not exist');
     return keyPair.privateKey;
   }
 
-  private _createProvider(): ethers.providers.Provider {
-    return new ethers.providers.JsonRpcProvider(getRPCURL(this.state.chainId));
+  private async _createProvider(): Promise<ethers.providers.Provider> {
+    const { chainId } = await this.state.read();
+    assert(chainId !== undefined);
+
+    return new ethers.providers.JsonRpcProvider(getRPCURL(chainId));
   }
 
-  private _getContractWalletAddress(privateKey: string): Promise<string> {
+  private async _getContractWalletAddress(privateKey: string): Promise<string> {
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
-      this._createProvider(),
+      await this._createProvider(),
     );
   }
 
@@ -140,7 +129,7 @@ export default class KeyringController
     return BlsWalletWrapper.connect(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
-      this._createProvider(),
+      await this._createProvider(),
     );
   }
 }
