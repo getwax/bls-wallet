@@ -1,10 +1,10 @@
-import { BaseConfig, BaseState, IController } from '../interfaces';
+import * as io from 'io-ts';
 
-export interface IAccountTrackerController<C, S> extends IController<C, S> {
+export interface IAccountTrackerController {
   /**
    * Syncs accounts from preferences controller
    */
-  syncAccounts(): void;
+  syncAccounts(): Promise<void>;
 
   /**
    * Refreshes the balances of all accounts
@@ -12,26 +12,30 @@ export interface IAccountTrackerController<C, S> extends IController<C, S> {
   refresh(): Promise<void>;
 }
 
-export interface AccountTrackerConfig extends BaseConfig {
-  _currentBlock?: string;
-}
+export const AccountInformation = io.type({
+  /**
+   * Hex string of an account balance in wei (base unit)
+   */
+  balance: io.string,
+});
 
 /**
  * Account information object
  */
-export interface AccountInformation {
+export type AccountInformation = io.TypeOf<typeof AccountInformation>;
+
+export const AccountTrackerState = io.type({
   /**
-   * Hex string of an account balance in wei (base unit)
+   * Map of addresses to account information
    */
-  balance: string;
-}
+  accounts: io.record(io.string, AccountInformation),
+});
 
 /**
  * Account tracker controller state
  */
-export interface AccountTrackerState extends BaseState {
-  /**
-   * Map of addresses to account information
-   */
-  accounts: { [address: string]: AccountInformation }; // address here is public address
-}
+export type AccountTrackerState = io.TypeOf<typeof AccountTrackerState>;
+
+export const defaultAccountTrackerState: AccountTrackerState = {
+  accounts: {},
+};

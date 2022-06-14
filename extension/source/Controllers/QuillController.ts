@@ -45,8 +45,8 @@ import {
   CurrencyControllerState,
 } from './Currency/ICurrencyController';
 import {
-  AccountTrackerConfig,
   AccountTrackerState,
+  defaultAccountTrackerState,
 } from './Account/IAccountTrackerController';
 import {
   defaultKeyringControllerState,
@@ -90,7 +90,6 @@ export interface QuillControllerState extends BaseState {
 export interface QuillControllerConfig extends BaseConfig {
   NetworkControllerConfig: NetworkConfig;
   CurrencyControllerConfig: CurrencyControllerConfig;
-  AccountTrackerConfig: AccountTrackerConfig;
   // TransactionControllerConfig: TransactionConfig;
 }
 
@@ -160,7 +159,8 @@ export default class QuillController extends BaseController<
 
     // Balance is a hex string in wei
     const balance =
-      this.accountTracker.state.accounts[selectedAddress]?.balance || '0x0';
+      (await this.accountTracker.state.read()).accounts[selectedAddress]
+        ?.balance || '0x0';
 
     // FIXME: This doesn't make sense since it rounds to the nearest whole ETH.
     const value = BigNumber.from(balance).div(BigNumber.from(10 ** 18));
@@ -275,8 +275,11 @@ export default class QuillController extends BaseController<
 
     this.accountTracker = new AccountTrackerController({
       provider: this.networkController._providerProxy,
-      state: this.state.AccountTrackerState,
-      config: this.config.AccountTrackerConfig,
+      state: storage.Cell(
+        'account-tracker-state',
+        AccountTrackerState,
+        () => defaultAccountTrackerState,
+      ),
       blockNumber: this.networkController.blockNumber,
       getIdentities: async () =>
         (await this.preferencesController.state.read()).identities,
@@ -314,7 +317,6 @@ export default class QuillController extends BaseController<
     // });
 
     this.networkController.lookupNetwork();
-    this.syncStore();
 
     // ensure isClientOpenAndUnlocked is updated when memState updates
     // this.subscribeEvent("update", (QuillControllerState: unknown) => this._onStateUpdate(QuillControllerState));
@@ -510,26 +512,6 @@ export default class QuillController extends BaseController<
     // forward to Quill primary provider
     engine.push(providerAsMiddleware(provider));
     return engine;
-  }
-
-  private syncStore() {
-    this.accountTracker.on('store', (state) => {
-      this.update({ AccountTrackerState: state });
-    });
-
-    // this.txController.on('store', (state: TransactionState<Transaction>) => {
-    //   this.update({ TransactionControllerState: state });
-    //   Object.keys(state.transactions).forEach((txId) => {
-    //     this.preferencesController
-    //       .patchNewTx(
-    //         state.transactions[txId],
-    //         this.preferencesController.state.selectedAddress,
-    //       )
-    //       .catch((err) => {
-    //         log.error('error while patching a new tx', err);
-    //       });
-    //   });
-    // });
   }
 
   private initializeProvider() {

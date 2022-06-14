@@ -1,17 +1,19 @@
+import * as io from 'io-ts';
+
 import { Mutex } from 'async-mutex';
 import EthQuery from '../rpcHelpers/EthQuery';
-import BaseController from '../BaseController';
 
 import { SafeEventEmitterProvider } from '../Network/INetworkController';
 import NetworkController from '../Network/NetworkController';
 import { PreferencesState } from '../Preferences/IPreferencesController';
 import {
   AccountInformation,
-  AccountTrackerConfig,
   AccountTrackerState,
   IAccountTrackerController,
 } from './IAccountTrackerController';
 import ICell, { IReadableCell } from '../../cells/ICell';
+import toHex from '../../helpers/toHex';
+import assertType from '../../cells/assertType';
 
 /**
  * Tracks accounts based on blocks.
@@ -19,12 +21,10 @@ import ICell, { IReadableCell } from '../../cells/ICell';
  * Preferences state changes also retrigger accounts update.
  * Network state changes also retrigger accounts update.
  */
-class AccountTrackerController
-  extends BaseController<AccountTrackerConfig, AccountTrackerState>
-  implements
-    IAccountTrackerController<AccountTrackerConfig, AccountTrackerState>
-{
+class AccountTrackerController implements IAccountTrackerController {
   private provider: SafeEventEmitterProvider;
+
+  public state: ICell<AccountTrackerState>;
 
   private blockNumber: IReadableCell<number>;
 
@@ -37,7 +37,6 @@ class AccountTrackerController
   private getCurrentChainId: NetworkController['getNetworkIdentifier'];
 
   constructor({
-    config,
     state,
     provider,
     blockNumber,
@@ -45,29 +44,21 @@ class AccountTrackerController
     getIdentities,
     preferences,
   }: {
-    config: AccountTrackerConfig;
-    state: Partial<AccountTrackerState>;
+    state: ICell<AccountTrackerState>;
     provider: SafeEventEmitterProvider;
     blockNumber: IReadableCell<number>;
     getCurrentChainId: NetworkController['getNetworkIdentifier'];
     getIdentities: () => Promise<PreferencesState['identities']>;
     preferences: ICell<PreferencesState>;
   }) {
-    super({ config, state });
-    this.defaultState = {
-      accounts: {},
-    };
-    this.defaultConfig = {
-      _currentBlock: '',
-    };
-    this.initialize();
     this.provider = provider;
+    this.state = state;
     this.blockNumber = blockNumber;
     this.ethQuery = new EthQuery(provider);
 
     (async () => {
-      for await (const blockNumberValue of this.blockNumber) {
-        this.configure({ _currentBlock: blockNumberValue?.toString(16) });
+      // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unused-vars
+      for await (const _ of this.blockNumber) {
         this.refresh();
       }
     })();
@@ -86,8 +77,9 @@ class AccountTrackerController
     console.log(this.provider, 'eth provider in account tracker');
   }
 
-  syncAccounts(): void {
-    const { accounts } = this.state;
+  async syncAccounts() {
+    const state = await this.state.read();
+    const { accounts } = state;
     const addresses = Object.keys(this.getIdentities());
     const existing = Object.keys(accounts);
     const newAddresses = addresses.filter(
@@ -102,15 +94,15 @@ class AccountTrackerController
     oldAddresses.forEach((address) => {
       delete accounts[address];
     });
-    this.update({ accounts: { ...accounts } });
+    await this.update({ accounts: { ...accounts } });
   }
 
   async refresh(): Promise<void> {
     const releaseLock = await this.mutex.acquire();
     try {
-      const { accounts } = this.state;
-      const currentBlock = this.config._currentBlock;
-      if (!currentBlock) return;
+      const state = await this.state.read();
+      const { accounts } = state;
+      const currentBlock = toHex(await this.blockNumber.read());
       const addresses = Object.keys(accounts);
       await Promise.all(
         addresses.map((x) => this._updateAccount(x, currentBlock)),
@@ -134,15 +126,19 @@ class AccountTrackerController
       method: 'eth_getBalance',
       params: [address, currentBlock],
     });
-    const result: AccountInformation = {
-      balance: balance as string,
-    };
+    assertType(balance, io.string);
+    const result: AccountInformation = { balance };
     // update accounts state
-    const { accounts: newAccounts } = this.state;
+    const { accounts: newAccounts } = await this.state.read();
     // only populate if the entry is still present
     if (!newAccounts[address]) return;
     newAccounts[address] = result;
     this.update({ accounts: newAccounts });
+  }
+
+  private async update(stateUpdates: Partial<AccountTrackerState>) {
+    const state = await this.state.read();
+    await this.state.write({ ...state, ...stateUpdates });
   }
 }
 
