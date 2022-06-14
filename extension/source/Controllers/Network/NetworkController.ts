@@ -3,14 +3,7 @@ import { JRPCEngine, JRPCMiddleware } from '@toruslabs/openlogin-jrpc';
 import { Mutex } from 'async-mutex';
 import EthQuery from '../rpcHelpers/EthQuery';
 
-import {
-  PollingBlockTrackerConfig,
-  PollingBlockTrackerState,
-} from '../Block/IBlockTrackerController';
-
-import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
-import createEventEmitterProxy from '../createEventEmitterProxy';
 import createSwappableProxy from '../createSwappableProxy';
 import {
   createWalletMiddleware,
@@ -33,13 +26,9 @@ export default class NetworkController implements INetworkController {
 
   _providerProxy: SafeEventEmitterProvider;
 
-  _blockTrackerProxy: PollingBlockTracker;
-
   private mutex = new Mutex();
 
   private _provider: SafeEventEmitterProvider | null = null;
-
-  private _blockTracker: PollingBlockTracker | null = null;
 
   /**
    * Initialized before our provider is created.
@@ -50,10 +39,7 @@ export default class NetworkController implements INetworkController {
 
   public chainId: IReadableCell<string>;
 
-  constructor(
-    public state: ICell<NetworkState>,
-    public blockNumber: ICell<number>,
-  ) {
+  constructor(public state: ICell<NetworkState>) {
     // eslint-disable-next-line @typescript-eslint/no-shadow
     this.chainId = new FormulaCell({ state }, ({ state }) => state.chainId);
 
@@ -170,32 +156,24 @@ export default class NetworkController implements INetworkController {
   }
 
   private configureStandardProvider(providerConfig: ProviderConfig) {
-    const networkClient = createJsonRpcClient(providerConfig, this.blockNumber);
+    const networkClient = createJsonRpcClient(providerConfig);
     this.setNetworkClient(networkClient);
   }
 
   private setNetworkClient({
     networkMiddleware,
-    blockTracker,
   }: {
     networkMiddleware: JRPCMiddleware<unknown, unknown>;
-    blockTracker: PollingBlockTracker;
   }) {
     const walletMiddleware = createWalletMiddleware(this._baseProviderHandlers);
     const engine = new JRPCEngine();
     engine.push(walletMiddleware);
     engine.push(networkMiddleware);
     const provider = providerFromEngine(engine);
-    this.setProvider({ provider, blockTracker });
+    this.setProvider({ provider });
   }
 
-  private setProvider({
-    provider,
-    blockTracker,
-  }: {
-    provider: SafeEventEmitterProvider;
-    blockTracker: PollingBlockTracker;
-  }) {
+  private setProvider({ provider }: { provider: SafeEventEmitterProvider }) {
     if (this._providerProxy) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -205,28 +183,9 @@ export default class NetworkController implements INetworkController {
         createSwappableProxy<SafeEventEmitterProvider>(provider);
     }
 
-    if (this._blockTrackerProxy) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      this._blockTrackerProxy.setTarget(blockTracker);
-    } else {
-      this._blockTrackerProxy = createEventEmitterProxy<
-        PollingBlockTrackerConfig,
-        PollingBlockTrackerState,
-        PollingBlockTracker
-      >(blockTracker, {
-        eventFilter: 'skipInternal',
-      });
-    }
-
     // set new provider and blockTracker
     this._provider = provider;
     provider.setMaxListeners(10);
-    this._blockTracker = blockTracker;
-    console.log(
-      this._blockTracker,
-      'set block tracker after switching network',
-    );
     this.ethQuery = new EthQuery(provider);
   }
 

@@ -41,7 +41,6 @@ import {
   defaultKeyringControllerState,
   KeyringControllerState,
 } from './Keyring/IKeyringController';
-import PollingBlockTracker from './Block/PollingBlockTracker';
 import { createOriginMiddleware } from './Network/createOriginMiddleware';
 import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
@@ -52,8 +51,11 @@ import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
 import assertType from '../cells/assertType';
-import delay from '../helpers/delay';
 import assert from '../helpers/assert';
+import TimeCell from '../cells/TimeCell';
+import ICell, { IReadableCell } from '../cells/ICell';
+import { FormulaCell } from '../cells/FormulaCell';
+import approximate from '../cells/approximate';
 
 const PROVIDER = 'quill-provider';
 
@@ -75,31 +77,29 @@ export default class QuillController {
 
   //   private txController!: TransactionController;
 
+  public time = TimeCell(1000);
+  public networkState: ICell<NetworkState>;
+  public blockNumber: IReadableCell<number>;
+
   constructor(
     public storage: CellCollection,
     public currencyControllerConfig: CurrencyControllerConfig,
   ) {
-    this.networkController = new NetworkController(
-      storage.Cell(
-        'network-controller-state',
-        NetworkState,
-        () => defaultNetworkState,
-      ),
-      storage.Cell('block-number', io.number, async () => {
-        // FIXME: This is hacky. It should go away when we're finished cleaning
-        // up.
-        while (!this.networkController._blockTrackerProxy) {
-          await delay(500);
-        }
-
-        const blockNumber = Number(
-          await this.networkController._blockTrackerProxy.getLatestBlock(),
-        );
-
-        assert(Number.isFinite(blockNumber));
-        return blockNumber;
-      }),
+    this.networkState = storage.Cell(
+      'network-controller-state',
+      NetworkState,
+      () => defaultNetworkState,
     );
+
+    this.blockNumber = new FormulaCell(
+      {
+        networkState: this.networkState,
+        time: approximate(this.time, 20_000),
+      },
+      () => this.fetchBlockNumber(),
+    );
+
+    this.networkController = new NetworkController(this.networkState);
 
     this.initializeProvider();
 
@@ -134,7 +134,7 @@ export default class QuillController {
         AccountTrackerState,
         () => defaultAccountTrackerState,
       ),
-      blockNumber: this.networkController.blockNumber,
+      blockNumber: this.blockNumber,
       getIdentities: async () =>
         (await this.preferencesController.state.read()).identities,
       getCurrentChainId: () => this.networkController.chainId.read(),
@@ -149,6 +149,16 @@ export default class QuillController {
           method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
           params: { chainId },
         });
+      }
+    })();
+
+    (async () => {
+      const storedBlockNumber = storage.Cell('block-number', io.number, () =>
+        this.blockNumber.read(),
+      );
+
+      for await (const blockNumber of this.blockNumber) {
+        await storedBlockNumber.write(blockNumber);
       }
     })();
 
@@ -231,10 +241,6 @@ export default class QuillController {
 
   get provider(): SafeEventEmitterProvider {
     return this.networkController._providerProxy;
-  }
-
-  get blockTracker(): PollingBlockTracker {
-    return this.networkController._blockTrackerProxy;
   }
 
   async getAccounts(): Promise<string[]> {
@@ -648,5 +654,18 @@ export default class QuillController {
         }
       });
     });
+  }
+
+  private async fetchBlockNumber() {
+    const res = await this.provider.request({
+      method: 'eth_blockNumber',
+      jsonrpc: '2.0',
+      id: createRandomId(),
+      params: [],
+    });
+    assertType(res, io.string);
+    const resNumber = Number(res);
+    assert(Number.isFinite(resNumber));
+    return resNumber;
   }
 }

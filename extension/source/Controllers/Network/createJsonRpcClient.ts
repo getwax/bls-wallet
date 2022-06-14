@@ -7,14 +7,11 @@ import {
   mergeMiddleware,
 } from '@toruslabs/openlogin-jrpc';
 import { Aggregator } from 'bls-wallet-clients';
-import ICell from '../../cells/ICell';
 
-import PollingBlockTracker from '../Block/PollingBlockTracker';
 import { ProviderConfig } from '../constants';
 import knownTransactions from '../knownTransactions';
 import { getFirstReqParam } from '../utils';
 import { createFetchMiddleware } from './createFetchMiddleware';
-import { providerFromMiddleware } from './INetworkController';
 
 export function createChainIdMiddleware(
   chainId: string,
@@ -128,24 +125,12 @@ function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
   };
 }
 
-export function createJsonRpcClient(
-  providerConfig: ProviderConfig,
-  blockNumber: ICell<number>,
-): {
+export function createJsonRpcClient(providerConfig: ProviderConfig): {
   networkMiddleware: JRPCMiddleware<unknown, unknown>;
-  blockTracker: PollingBlockTracker;
 } {
   const { chainId, rpcTarget } = providerConfig;
   console.log('using provider', providerConfig, rpcTarget);
   const fetchMiddleware = createFetchMiddleware({ rpcTarget });
-  const blockProvider = providerFromMiddleware(
-    fetchMiddleware as JRPCMiddleware<string[], unknown>,
-  );
-  const blockTracker = new PollingBlockTracker({
-    config: { provider: blockProvider },
-    state: {},
-    blockNumber,
-  });
 
   const networkMiddleware = mergeMiddleware([
     createChainIdMiddleware(chainId),
@@ -154,5 +139,5 @@ export function createJsonRpcClient(
     createAggregatorMiddleware(),
     fetchMiddleware as JRPCMiddleware<unknown, unknown>,
   ]);
-  return { networkMiddleware, blockTracker };
+  return { networkMiddleware };
 }
