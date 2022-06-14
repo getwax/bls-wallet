@@ -5,10 +5,9 @@ import {
   IKeyringController,
   KeyringControllerState,
 } from './IKeyringController';
-import { NETWORK_CONFIG } from '../../env';
+import { DEFAULT_CHAIN_ID_HEX, NETWORK_CONFIG } from '../../env';
 import { getRPCURL } from '../utils';
 import ICell from '../../cells/ICell';
-import assert from '../../helpers/assert';
 
 export default class KeyringController implements IKeyringController {
   name = 'KeyringController';
@@ -112,9 +111,12 @@ export default class KeyringController implements IKeyringController {
 
   private async _createProvider(): Promise<ethers.providers.Provider> {
     const { chainId } = await this.state.read();
-    assert(chainId !== undefined);
 
-    return new ethers.providers.JsonRpcProvider(getRPCURL(chainId));
+    return new ethers.providers.JsonRpcProvider(
+      // FIXME: We should always have a chain id, but properly tracking this is
+      // not yet set up
+      getRPCURL(chainId ?? DEFAULT_CHAIN_ID_HEX),
+    );
   }
 
   private async _getContractWalletAddress(privateKey: string): Promise<string> {
