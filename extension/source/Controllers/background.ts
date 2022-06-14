@@ -48,15 +48,11 @@ function setupController(): void {
   const controller = new QuillController(
     extensionLocalCellCollection,
     DEFAULT_CONFIG.CurrencyControllerConfig,
-  );
-
-  controller.init({
-    opts: {
+    {
       getRequestAccountTabIds: () => requestAccountTabIds,
       getOpenQuillTabsIds: () => openQuillTabsIDs,
     },
-    storage: extensionLocalCellCollection,
-  });
+  );
 
   //
   // connect to other contexts

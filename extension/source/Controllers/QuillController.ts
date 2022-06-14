@@ -79,16 +79,16 @@ export default class QuillController {
 
   private _isClientOpen = false;
 
-  private networkController!: NetworkController;
+  private networkController: NetworkController;
 
-  private currencyController!: CurrencyController;
+  private currencyController: CurrencyController;
 
-  private accountTracker!: AccountTrackerController;
+  private accountTracker: AccountTrackerController;
 
   // TODO (merge-ok) Revert to private with better access pattern.
-  public keyringController!: KeyringController;
+  public keyringController: KeyringController;
 
-  private preferencesController!: PreferencesController;
+  private preferencesController: PreferencesController;
 
   // This is just kept in memory because it supports setting the preferred
   // aggregator for the particular tab only.
@@ -102,88 +102,11 @@ export default class QuillController {
   constructor(
     public storage: CellCollection,
     public currencyControllerConfig: CurrencyControllerConfig,
-  ) {}
-
-  async getSelectedAddress(): Promise<string | undefined> {
-    return (await this.preferencesController?.state.read()).selectedAddress;
-  }
-
-  async getSelectedPrivateKey(): Promise<string | undefined> {
-    const address = await this.getSelectedAddress();
-    if (!address) return undefined;
-    const wallet = (await this.keyringController.state.read()).wallets.find(
-      (x) => x.address === address,
-    );
-    return wallet?.privateKey;
-  }
-
-  async getUserBalance(): Promise<BigNumber | undefined> {
-    const selectedAddress = await this.getSelectedAddress();
-
-    if (selectedAddress === undefined) {
-      return undefined;
-    }
-
-    // Balance is a hex string in wei
-    const balance =
-      (await this.accountTracker.state.read()).accounts[selectedAddress]
-        ?.balance || '0x0';
-
-    // FIXME: This doesn't make sense since it rounds to the nearest whole ETH.
-    const value = BigNumber.from(balance).div(BigNumber.from(10 ** 18));
-
-    return value;
-  }
-
-  async getLocale(): Promise<string | undefined> {
-    const selectedAddress = await this.getSelectedAddress();
-
-    if (selectedAddress === undefined) {
-      return undefined;
-    }
-
-    const accountPreferences = await this.getAccountPreferences(
-      selectedAddress,
-    );
-
-    return accountPreferences?.locale?.split('-')[0] || getUserLanguage();
-  }
-
-  get provider(): SafeEventEmitterProvider {
-    return this.networkController._providerProxy;
-  }
-
-  get blockTracker(): PollingBlockTracker {
-    return this.networkController._blockTrackerProxy;
-  }
-
-  async getAccounts(): Promise<string[]> {
-    return (await this.keyringController.state.read()).wallets.map(
-      (x) => x.address,
-    );
-  }
-
-  /**
-   * A method for recording whether the Quill user interface is open or not.
-   */
-  set isClientOpen(open: boolean) {
-    this._isClientOpen = open;
-    console.log(this._isClientOpen, 'set client open status');
-  }
-
-  /**
-   * Always call init function before using this controller
-   */
-  public init({
-    opts,
-    storage,
-  }: {
     opts: {
       getRequestAccountTabIds: () => Record<string, number>;
       getOpenQuillTabsIds: () => Record<number, boolean>;
-    };
-    storage: CellCollection;
-  }): void {
+    },
+  ) {
     this.getRequestAccountTabIds = opts.getRequestAccountTabIds;
     this.getOpenQuillTabsIds = opts.getOpenQuillTabsIds;
     this.networkController = new NetworkController(
@@ -287,6 +210,73 @@ export default class QuillController {
     //   }, 50);
     // }
     // this.sendUpdate = debounce(this.privateSendUpdate.bind(this), 200);
+  }
+
+  async getSelectedAddress(): Promise<string | undefined> {
+    return (await this.preferencesController?.state.read()).selectedAddress;
+  }
+
+  async getSelectedPrivateKey(): Promise<string | undefined> {
+    const address = await this.getSelectedAddress();
+    if (!address) return undefined;
+    const wallet = (await this.keyringController.state.read()).wallets.find(
+      (x) => x.address === address,
+    );
+    return wallet?.privateKey;
+  }
+
+  async getUserBalance(): Promise<BigNumber | undefined> {
+    const selectedAddress = await this.getSelectedAddress();
+
+    if (selectedAddress === undefined) {
+      return undefined;
+    }
+
+    // Balance is a hex string in wei
+    const balance =
+      (await this.accountTracker.state.read()).accounts[selectedAddress]
+        ?.balance || '0x0';
+
+    // FIXME: This doesn't make sense since it rounds to the nearest whole ETH.
+    const value = BigNumber.from(balance).div(BigNumber.from(10 ** 18));
+
+    return value;
+  }
+
+  async getLocale(): Promise<string | undefined> {
+    const selectedAddress = await this.getSelectedAddress();
+
+    if (selectedAddress === undefined) {
+      return undefined;
+    }
+
+    const accountPreferences = await this.getAccountPreferences(
+      selectedAddress,
+    );
+
+    return accountPreferences?.locale?.split('-')[0] || getUserLanguage();
+  }
+
+  get provider(): SafeEventEmitterProvider {
+    return this.networkController._providerProxy;
+  }
+
+  get blockTracker(): PollingBlockTracker {
+    return this.networkController._blockTrackerProxy;
+  }
+
+  async getAccounts(): Promise<string[]> {
+    return (await this.keyringController.state.read()).wallets.map(
+      (x) => x.address,
+    );
+  }
+
+  /**
+   * A method for recording whether the Quill user interface is open or not.
+   */
+  set isClientOpen(open: boolean) {
+    this._isClientOpen = open;
+    console.log(this._isClientOpen, 'set client open status');
   }
 
   async changeProvider<T>(req: JRPCRequest<T>): Promise<boolean> {
