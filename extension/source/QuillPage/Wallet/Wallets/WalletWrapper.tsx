@@ -36,7 +36,6 @@ export const WalletsWrapper: FunctionComponent = () => {
         <Button
           onPress={async () => {
             await rpc.private.quill_createHDAccount();
-            // window.location.reload();
           }}
           className="btn-secondary"
         >
