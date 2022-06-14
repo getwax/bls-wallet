@@ -36,7 +36,7 @@ import {
 import { SendTransactionParams } from './Network/createEthMiddleware';
 import {
   AddressPreferences,
-  PreferencesConfig,
+  defaultPreferencesState,
   PreferencesState,
 } from './Preferences/IPreferencesController';
 import { BaseConfig, BaseState } from './interfaces';
@@ -90,7 +90,6 @@ export interface QuillControllerState extends BaseState {
 export interface QuillControllerConfig extends BaseConfig {
   NetworkControllerConfig: NetworkConfig;
   CurrencyControllerConfig: CurrencyControllerConfig;
-  PreferencesControllerConfig: PreferencesConfig;
   AccountTrackerConfig: AccountTrackerConfig;
   // TransactionControllerConfig: TransactionConfig;
 }
@@ -139,33 +138,48 @@ export default class QuillController extends BaseController<
     super({ config, state });
   }
 
-  get selectedAddress(): string {
-    return this.preferencesController?.state.selectedAddress || '';
+  async getSelectedAddress(): Promise<string | undefined> {
+    return (await this.preferencesController?.state.read()).selectedAddress;
   }
 
-  async getSelectedPrivateKey(): Promise<string> {
-    const address = this.selectedAddress;
-    if (!address) return '';
+  async getSelectedPrivateKey(): Promise<string | undefined> {
+    const address = await this.getSelectedAddress();
+    if (!address) return undefined;
     const wallet = (await this.keyringController.state.read()).wallets.find(
       (x) => x.address === address,
     );
-    return wallet?.privateKey || '';
+    return wallet?.privateKey;
   }
 
-  get userBalance(): string {
+  async getUserBalance(): Promise<BigNumber | undefined> {
+    const selectedAddress = await this.getSelectedAddress();
+
+    if (selectedAddress === undefined) {
+      return undefined;
+    }
+
     // Balance is a hex string in wei
     const balance =
-      this.accountTracker.state.accounts[this.selectedAddress]?.balance ||
-      '0x0';
+      this.accountTracker.state.accounts[selectedAddress]?.balance || '0x0';
+
+    // FIXME: This doesn't make sense since it rounds to the nearest whole ETH.
     const value = BigNumber.from(balance).div(BigNumber.from(10 ** 18));
-    return value.toString();
+
+    return value;
   }
 
-  get locale(): string {
-    return (
-      this.getAccountPreferences(this.selectedAddress)?.locale?.split('-')[0] ||
-      getUserLanguage()
+  async getLocale(): Promise<string | undefined> {
+    const selectedAddress = await this.getSelectedAddress();
+
+    if (selectedAddress === undefined) {
+      return undefined;
+    }
+
+    const accountPreferences = await this.getAccountPreferences(
+      selectedAddress,
     );
+
+    return accountPreferences?.locale?.split('-')[0] || getUserLanguage();
   }
 
   get provider(): SafeEventEmitterProvider {
@@ -251,20 +265,23 @@ export default class QuillController extends BaseController<
       ),
     );
 
-    this.preferencesController = new PreferencesController({
-      state: this.state.PreferencesControllerState,
-      config: this.config.PreferencesControllerConfig,
-    });
+    const preferences = storage.Cell(
+      'preferences-controller-state',
+      PreferencesState,
+      () => defaultPreferencesState,
+    );
+
+    this.preferencesController = new PreferencesController(preferences);
 
     this.accountTracker = new AccountTrackerController({
       provider: this.networkController._providerProxy,
       state: this.state.AccountTrackerState,
       config: this.config.AccountTrackerConfig,
       blockNumber: this.networkController.blockNumber,
-      getIdentities: () => this.preferencesController.state.identities,
-      onPreferencesStateChange: (listener) =>
-        this.preferencesController.on('store', listener),
+      getIdentities: async () =>
+        (await this.preferencesController.state.read()).identities,
       getCurrentChainId: () => this.networkController.chainId.read(),
+      preferences,
     });
     // ensure accountTracker updates balances after network change
 
@@ -356,7 +373,9 @@ export default class QuillController extends BaseController<
     // throw new Error('user denied provider change request');
   }
 
-  getAccountPreferences(address: string): AddressPreferences | undefined {
+  getAccountPreferences(
+    address: string,
+  ): Promise<AddressPreferences | undefined> {
     return this.preferencesController?.getAddressState(address);
   }
 
@@ -494,11 +513,6 @@ export default class QuillController extends BaseController<
   }
 
   private syncStore() {
-    // Listen to controller changes
-    this.preferencesController.on('store', (state) => {
-      this.update({ PreferencesControllerState: state });
-    });
-
     this.accountTracker.on('store', (state) => {
       this.update({ AccountTrackerState: state });
     });
@@ -533,13 +547,15 @@ export default class QuillController extends BaseController<
         return accounts;
       },
 
-      eth_coinbase: async () => this.selectedAddress || null,
+      eth_coinbase: async () => (await this.getSelectedAddress()) || null,
 
       wallet_get_provider_state: async () => {
+        const selectedAddress = await this.getSelectedAddress();
+
         return {
-          accounts: this.selectedAddress ? [this.selectedAddress] : [],
+          accounts: selectedAddress ? [selectedAddress] : [],
           chainId: (await this.networkController.state.read()).chainId,
-          isUnlocked: !!this.selectedAddress,
+          isUnlocked: !!selectedAddress,
         };
       },
 
@@ -609,11 +625,13 @@ export default class QuillController extends BaseController<
           );
         }
 
+        const selectedAddress = await this.getSelectedAddress();
+
         // TODO (merge-ok) Expose no accounts if this origin has not been approved,
         // preventing account-requiring RPC methods from completing successfully
         // only show address if account is unlocked
         // https://github.com/web3well/bls-wallet/issues/224
-        return this.selectedAddress ? [this.selectedAddress] : [];
+        return selectedAddress ? [selectedAddress] : [];
       },
     };
 
@@ -662,10 +680,12 @@ export default class QuillController extends BaseController<
   }
 
   private async requestAccounts(): Promise<string[]> {
+    const selectedAddress = await this.getSelectedAddress();
+
     // If we have a selected address, return it
     // TODO: Add support for permissions controller
-    if (this.selectedAddress) {
-      return [this.selectedAddress];
+    if (selectedAddress) {
+      return [selectedAddress];
     }
     return [];
   }

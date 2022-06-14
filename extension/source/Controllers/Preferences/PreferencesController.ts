@@ -1,143 +1,113 @@
 import { cloneDeep } from 'lodash-es';
+import ICell from '../../cells/ICell';
+import assert from '../../helpers/assert';
 
-import BaseController from '../BaseController';
 import {
   AddressPreferences,
   Contact,
+  defaultAddressPreferences,
   IPreferencesController,
-  PreferencesConfig,
   PreferencesState,
   Theme,
 } from './IPreferencesController';
 
-export const DEFAULT_PREFERENCES = {
-  selectedCurrency: 'USD',
-  locale: 'en-US',
-  theme: 'dark',
-  contacts: [],
-  customTokens: [],
-  customNfts: [],
-} as AddressPreferences;
-
 /**
  * Controller that stores shared settings and exposes convenience methods
  */
-export default class PreferencesController
-  extends BaseController<PreferencesConfig, PreferencesState>
-  implements IPreferencesController<PreferencesConfig, PreferencesState>
-{
+export default class PreferencesController implements IPreferencesController {
   /**
    * Name of this controller used during composition
    */
   name = 'PreferencesController';
 
-  private defaultPreferences: Partial<AddressPreferences>;
+  constructor(public state: ICell<PreferencesState>) {}
 
-  /**
-   * Creates a PreferencesController instance
-   *
-   * @param config - Initial options used to configure this controller
-   * @param state - Initial state to set on this controller
-   */
-  constructor({
-    config,
-    state,
-    defaultPreferences,
-  }: {
-    config?: Partial<PreferencesConfig>;
-    state?: Partial<PreferencesState>;
-    defaultPreferences?: Partial<AddressPreferences>;
-  }) {
-    super({ config, state });
-    this.defaultState = {
-      identities: {},
-      selectedAddress: '',
-      lastErrorMessage: '',
-      lastSuccessMessage: '',
-    } as PreferencesState;
-    this.defaultConfig = {} as PreferencesConfig;
-    this.initialize();
-    this.defaultPreferences = {
-      ...DEFAULT_PREFERENCES,
-      ...defaultPreferences,
-    };
+  async getAddressState(
+    address?: string,
+  ): Promise<AddressPreferences | undefined> {
+    const state = await this.state.read();
+    const selectedAddress = address ?? state.selectedAddress;
+
+    if (selectedAddress === undefined) {
+      return undefined;
+    }
+
+    return state.identities[selectedAddress];
   }
 
-  getAddressState(address?: string): AddressPreferences | undefined {
-    const selectedAddress = address || this.state.selectedAddress;
-    return this.state.identities[selectedAddress];
-  }
-
-  createUser(params: {
+  async createUser(params: {
     selectedCurrency: string;
     theme: Theme;
     locale: string;
     address: string;
-  }): void {
+  }) {
     const { selectedCurrency, theme, locale, address } = params;
-    if (this.getAddressState(address)) return;
-    this.updateState(
+    if (await this.getAddressState(address)) return;
+    await this.updateState(
       {
         theme,
         defaultPublicAddress: address,
         selectedCurrency,
         locale,
-      } as Partial<AddressPreferences>,
+      },
       address,
     );
   }
 
-  setUserTheme(theme: Theme): void {
-    if (theme === this.getAddressState()?.theme) return;
-    this.updateState({ theme } as Partial<AddressPreferences>);
+  async setUserTheme(theme: Theme) {
+    if (theme === (await this.getAddressState())?.theme) return;
+    await this.updateState({ theme });
   }
 
-  setUserLocale(locale: string): void {
-    if (locale === this.getAddressState()?.locale) return;
-    this.updateState({ locale } as Partial<AddressPreferences>);
+  async setUserLocale(locale: string) {
+    if (locale === (await this.getAddressState())?.locale) return;
+    await this.updateState({ locale });
   }
 
-  setSelectedCurrency(selectedCurrency: string): void {
-    if (selectedCurrency === this.getAddressState()?.selectedCurrency) return;
-    this.updateState({
+  async setSelectedCurrency(selectedCurrency: string) {
+    if (selectedCurrency === (await this.getAddressState())?.selectedCurrency)
+      return;
+    await this.updateState({
       selectedCurrency,
-    } as Partial<AddressPreferences>);
+    });
   }
 
-  addContact(contact: Contact): void {
-    this.updateState({
-      contacts: [...(this.getAddressState()?.contacts || []), contact],
-    } as Partial<AddressPreferences>);
+  async addContact(contact: Contact) {
+    await this.updateState({
+      contacts: [...((await this.getAddressState())?.contacts || []), contact],
+    });
   }
 
-  deleteContact(contactPublicAddress: string): void {
-    const finalContacts = this.getAddressState()?.contacts?.filter(
+  async deleteContact(contactPublicAddress: string) {
+    const finalContacts = (await this.getAddressState())?.contacts?.filter(
       (contact) => contact.publicAddress.toLowerCase() !== contactPublicAddress,
     );
     if (finalContacts)
-      this.updateState({
+      await this.updateState({
         contacts: [...finalContacts],
-      } as Partial<AddressPreferences>);
+      });
   }
 
-  protected updateState(
+  protected async updateState(
     preferences?: Partial<AddressPreferences>,
     address?: string,
-  ): AddressPreferences {
-    const selectedAddress = address || this.state.selectedAddress;
+  ) {
+    const state = await this.state.read();
+    const selectedAddress = address ?? state.selectedAddress;
+    assert(selectedAddress !== undefined);
     const currentState =
-      this.getAddressState(selectedAddress) ||
-      cloneDeep(this.defaultPreferences);
-    const mergedState = {
+      (await this.getAddressState(selectedAddress)) ??
+      cloneDeep(defaultAddressPreferences);
+    const mergedState: AddressPreferences = {
       ...currentState,
       ...preferences,
-    } as AddressPreferences;
-    this.update({
+    };
+    await this.update({
       identities: {
-        ...this.state.identities,
+        ...(await this.state.read()).identities,
         [selectedAddress]: mergedState,
       },
-    } as PreferencesState);
+    });
     return mergedState;
   }
 
@@ -146,7 +116,12 @@ export default class PreferencesController
    *
    * @param selectedAddress - eth address
    */
-  setSelectedAddress(selectedAddress: string): void {
-    this.update({ selectedAddress } as Partial<PreferencesState>);
+  async setSelectedAddress(selectedAddress: string) {
+    await this.update({ selectedAddress } as Partial<PreferencesState>);
+  }
+
+  private async update(stateUpdates: Partial<PreferencesState>) {
+    const state = await this.state.read();
+    await this.state.write({ ...state, ...stateUpdates });
   }
 }

@@ -11,7 +11,7 @@ import {
   AccountTrackerState,
   IAccountTrackerController,
 } from './IAccountTrackerController';
-import { IReadableCell } from '../../cells/ICell';
+import ICell, { IReadableCell } from '../../cells/ICell';
 
 /**
  * Tracks accounts based on blocks.
@@ -32,7 +32,7 @@ class AccountTrackerController
 
   private ethQuery: EthQuery;
 
-  private getIdentities: () => PreferencesState['identities'];
+  private getIdentities: () => Promise<PreferencesState['identities']>;
 
   private getCurrentChainId: NetworkController['getNetworkIdentifier'];
 
@@ -43,17 +43,15 @@ class AccountTrackerController
     blockNumber,
     getCurrentChainId,
     getIdentities,
-    onPreferencesStateChange,
+    preferences,
   }: {
     config: AccountTrackerConfig;
     state: Partial<AccountTrackerState>;
     provider: SafeEventEmitterProvider;
     blockNumber: IReadableCell<number>;
     getCurrentChainId: NetworkController['getNetworkIdentifier'];
-    getIdentities: () => PreferencesState['identities'];
-    onPreferencesStateChange: (
-      listener: (preferencesState: PreferencesState) => void,
-    ) => void;
+    getIdentities: () => Promise<PreferencesState['identities']>;
+    preferences: ICell<PreferencesState>;
   }) {
     super({ config, state });
     this.defaultState = {
@@ -76,10 +74,15 @@ class AccountTrackerController
 
     this.getIdentities = getIdentities;
     this.getCurrentChainId = getCurrentChainId;
-    onPreferencesStateChange(() => {
-      this.syncAccounts();
-      this.refresh();
-    });
+
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unused-vars
+      for await (const _ of preferences) {
+        this.syncAccounts();
+        this.refresh();
+      }
+    })();
+
     console.log(this.provider, 'eth provider in account tracker');
   }
 
