@@ -41,10 +41,8 @@ export default function createEventEmitterProxy<
       .eventNames()
       .filter(eventFilter as (name: string | symbol) => boolean)
       .forEach((name: string | symbol) => {
-        getRawListeners(oldTarget, name as string).forEach(
-          // eslint-disable-next-line @typescript-eslint/ban-types
-          (handler: Function) =>
-            newTarget.on(name, handler as unknown as (...args: any[]) => void),
+        getRawListeners(oldTarget, name as string).forEach((handler: unknown) =>
+          newTarget.on(name, handler as (...args: any[]) => void),
         );
       });
 

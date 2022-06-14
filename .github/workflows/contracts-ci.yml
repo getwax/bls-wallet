@@ -1,0 +1,36 @@
+name: contracts
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'contracts/**'
+      - '!contracts/clients/**'
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'contracts/**'
+      - '!contracts/clients/**'
+
+defaults:
+  run:
+    working-directory: ./contracts
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/setup-contracts-clients
+    - run: yarn lint
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/setup-contracts-clients
+    - run: yarn test

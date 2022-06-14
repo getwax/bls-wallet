@@ -1,6 +1,7 @@
 import { FunctionComponent, useEffect, useState } from 'react';
 import Button from '../../../components/Button';
 import { useQuill } from '../../QuillContext';
+/* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
 import { WalletSummary } from './WalletSummary';
 
 export interface IWallet {
@@ -52,6 +53,7 @@ export const WalletsWrapper: FunctionComponent = () => {
             await rpc.private.quill_createHDAccount();
             window.location.reload();
           }}
+          /* eslint react/no-children-prop: "warn" -- TODO (merge-ok) Pass 'Add Wallet' as child */
           children={'Add Wallet'}
           className="btn-secondary"
         />

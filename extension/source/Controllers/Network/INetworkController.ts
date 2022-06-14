@@ -99,7 +99,6 @@ export function providerFromEngine(
     return res.result as U;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   provider.send = <T, U>(
     req: JRPCRequest<T>,
     callback: (error: any, providerRes: U | undefined) => void,

@@ -4,6 +4,7 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers } from "hardhat";
 import { Wallet } from "ethers";
 import { Create2Deployer } from "../../typechain";
+import defaultDeployerWalletHardhat from "./defaultDeployerWallet";
 
 dotenv.config();
 
@@ -11,15 +12,8 @@ export function defaultDeployerAddress(): string {
   return defaultDeployerWallet().address;
 }
 
-/**
- *
- * @returns Wallet constructed from DEPLOYER_ env vars
- */
 export function defaultDeployerWallet(): Wallet {
-  return ethers.Wallet.fromMnemonic(
-    `${process.env.DEPLOYER_MNEMONIC}`,
-    `m/44'/60'/0'/0/${process.env.DEPLOYER_SET_INDEX}`,
-  ).connect(ethers.provider);
+  return defaultDeployerWalletHardhat(ethers);
 }
 
 /**

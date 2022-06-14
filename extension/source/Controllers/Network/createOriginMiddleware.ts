@@ -13,7 +13,7 @@ export function createOriginMiddleware(options: OriginMiddlewareOptions) {
     _: JRPCResponse<unknown>,
     next: JRPCEngineNextCallback,
   ): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // TODO (merge-ok) Add JRPCRequest type with origin property added.
     (request as any).origin = options.origin;
     next();
   };
