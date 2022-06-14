@@ -132,24 +132,3 @@ export const ENVIRONMENT_TYPE = {
 
 export type EnvironmentType =
   typeof ENVIRONMENT_TYPE[keyof typeof ENVIRONMENT_TYPE];
-
-export const DEFAULT_STATE = {
-  AccountTrackerState: { accounts: {} },
-  KeyringControllerState: { wallets: [] },
-  CurrencyControllerState: {
-    conversionDate: Date.now().toString(),
-    conversionRate: 0,
-    currentCurrency: 'usd',
-    nativeCurrency: 'eth',
-    ticker: 'eth',
-  },
-  NetworkControllerState: {
-    chainId: SUPPORTED_NETWORKS[CHAINS.LOCAL].chainId,
-    properties: {},
-    providerConfig: SUPPORTED_NETWORKS[CHAINS.LOCAL],
-  },
-  PreferencesControllerState: {
-    identities: {},
-    selectedAddress: '',
-  },
-};
