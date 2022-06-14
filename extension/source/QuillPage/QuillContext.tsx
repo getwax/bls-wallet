@@ -14,6 +14,10 @@ import TimeCell from './TimeCell';
 import { FormulaCell } from '../cells/FormulaCell';
 import approximate from './approximate';
 import assertType from '../cells/assertType';
+import {
+  defaultKeyringControllerState,
+  KeyringControllerState,
+} from '../Controllers/Keyring/IKeyringController';
 
 type QuillContextValue = {
   provider: QuillInPageProvider;
@@ -23,6 +27,7 @@ type QuillContextValue = {
   time: IReadableCell<number>;
   blockNumber: IReadableCell<number>;
   theme: ICell<string>;
+  keyring: IReadableCell<KeyringControllerState>;
 };
 
 function getQuillContextValue(
@@ -82,6 +87,11 @@ function getQuillContextValue(
     time,
     blockNumber,
     theme,
+    keyring: Cell(
+      'keyring-controller-state',
+      KeyringControllerState,
+      defaultKeyringControllerState,
+    ),
   };
 }
 
