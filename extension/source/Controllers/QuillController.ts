@@ -80,35 +80,21 @@ export default class QuillController {
   private _isClientOpen = false;
 
   private networkController: NetworkController;
-
   private currencyController: CurrencyController;
-
   private accountTracker: AccountTrackerController;
-
-  // TODO (merge-ok) Revert to private with better access pattern.
-  public keyringController: KeyringController;
-
+  private keyringController: KeyringController;
   private preferencesController: PreferencesController;
 
   // This is just kept in memory because it supports setting the preferred
   // aggregator for the particular tab only.
   private tabPreferredAggregators: Record<number, string> = {};
 
-  getRequestAccountTabIds: () => Record<string, number>;
-  getOpenQuillTabsIds: () => Record<number, boolean>;
-
   //   private txController!: TransactionController;
 
   constructor(
     public storage: CellCollection,
     public currencyControllerConfig: CurrencyControllerConfig,
-    opts: {
-      getRequestAccountTabIds: () => Record<string, number>;
-      getOpenQuillTabsIds: () => Record<number, boolean>;
-    },
   ) {
-    this.getRequestAccountTabIds = opts.getRequestAccountTabIds;
-    this.getOpenQuillTabsIds = opts.getOpenQuillTabsIds;
     this.networkController = new NetworkController(
       storage.Cell(
         'network-controller-state',
@@ -130,15 +116,17 @@ export default class QuillController {
         return blockNumber;
       }),
     );
+
     this.initializeProvider();
+
     this.currencyController = new CurrencyController(
       this.currencyControllerConfig,
       this.storage,
     );
+
     this.currencyController.updateConversionRate();
     this.currencyController.scheduleConversionInterval();
 
-    // key management
     this.keyringController = new KeyringController(
       storage.Cell(
         'keyring-controller-state',
@@ -168,10 +156,10 @@ export default class QuillController {
       getCurrentChainId: () => this.networkController.chainId.read(),
       preferences,
     });
-    // ensure accountTracker updates balances after network change
 
     (async () => {
       for await (const chainId of this.networkController.chainId) {
+        // ensure accountTracker updates balances after network change
         this.accountTracker.refresh();
         this.notifyAllConnections({
           method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
