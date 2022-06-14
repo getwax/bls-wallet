@@ -2,6 +2,7 @@
   "name": "bls-wallet-extension",
   "version": "0.1.0",
   "description": "Web extension for managing a BLS wallet",
+  "license": "MIT",
   "private": true,
   "repository": "https://github.com/jzaki/bls-wallet-extension.git",
   "author": {
