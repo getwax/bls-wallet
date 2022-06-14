@@ -49,7 +49,6 @@ import {
 import PollingBlockTracker from './Block/PollingBlockTracker';
 import { createOriginMiddleware } from './Network/createOriginMiddleware';
 import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
-import createMetaRPCHandler from './streamHelpers/MetaRPCHandler';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
@@ -646,33 +645,7 @@ export default class QuillController {
     // setup multiplexing
     const mux = setupMultiplex(connectionStream);
     // connect features
-    this.setupControllerConnection(mux.createStream('controller'));
     this.setupProviderConnection(mux.createStream('provider'), sender, true);
-  }
-
-  /**
-   * A method for providing our API over a stream using JSON-RPC.
-   */
-  setupControllerConnection(outStream: Substream): void {
-    const api = this.getApi();
-
-    // set up postStream transport
-    outStream.on('data', createMetaRPCHandler(api, outStream));
-    // const handleUpdate = (update: unknown) => {
-    //   if (outStream._writableState.ended) {
-    //     return;
-    //   }
-    //   // send notification to client-side
-    //   outStream.write({
-    //     jsonrpc: '2.0',
-    //     method: 'sendUpdate',
-    //     params: [update],
-    //   });
-    // };
-    // this.on('update', handleUpdate);
-    // outStream.on('end', () => {
-    //   this.removeListener('update', handleUpdate);
-    // });
   }
 
   /**
