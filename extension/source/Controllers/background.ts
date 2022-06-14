@@ -9,10 +9,11 @@ import { runtime, Runtime, Tabs, tabs } from 'webextension-polyfill';
 // import NotificationManager, {
 //   NOTIFICATION_MANAGER_EVENTS,
 // } from './lib/notification-manager';
-import QuillController, { DEFAULT_CONFIG } from './QuillController';
+import QuillController from './QuillController';
 import { ENVIRONMENT_TYPE } from './constants';
 import PortDuplexStream from '../common/PortStream';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
+import { defaultCurrencyControllerConfig } from './Currency/ICurrencyController';
 
 // const notificationManager = new NotificationManager();
 
@@ -47,7 +48,7 @@ function setupController(): void {
 
   const controller = new QuillController(
     extensionLocalCellCollection,
-    DEFAULT_CONFIG.CurrencyControllerConfig,
+    defaultCurrencyControllerConfig,
   );
 
   //

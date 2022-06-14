@@ -13,12 +13,7 @@ import type { Duplex } from 'readable-stream';
 import { Runtime } from 'webextension-polyfill';
 import { BigNumber } from 'ethers';
 import { Aggregator } from 'bls-wallet-clients';
-import {
-  createRandomId,
-  getAllReqParam,
-  getDefaultProviderConfig,
-  getUserLanguage,
-} from './utils';
+import { createRandomId, getAllReqParam, getUserLanguage } from './utils';
 import { ProviderConfig } from './constants';
 import NetworkController from './Network/NetworkController';
 import CurrencyController from './Currency/CurrencyController';
@@ -59,17 +54,6 @@ import Rpc, { rpcMap } from '../types/Rpc';
 import assertType from '../cells/assertType';
 import delay from '../helpers/delay';
 import assert from '../helpers/assert';
-
-export const DEFAULT_CONFIG = {
-  CurrencyControllerConfig: {
-    api: 'https://min-api.cryptocompare.com/data/price',
-    pollInterval: 600_000,
-  },
-  NetworkControllerConfig: {
-    providerConfig: getDefaultProviderConfig(),
-  },
-  PreferencesControllerConfig: {},
-};
 
 const PROVIDER = 'quill-provider';
 

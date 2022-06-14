@@ -15,3 +15,8 @@ export interface CurrencyControllerConfig extends BaseConfig {
   pollInterval: number;
   api?: string;
 }
+
+export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
+  api: 'https://min-api.cryptocompare.com/data/price',
+  pollInterval: 600_000,
+};
