@@ -289,37 +289,6 @@ export default class QuillController {
     // this.sendUpdate = debounce(this.privateSendUpdate.bind(this), 200);
   }
 
-  getApi(): Record<string, (...args: any[]) => Promise<unknown> | unknown> {
-    const {
-      currencyController,
-      // keyringController,
-      networkController,
-      preferencesController,
-      // accountTracker,
-    } = this;
-
-    return {
-      // etc
-      setCurrentCurrency: (currentCurrency) =>
-        currencyController.update({ currentCurrency }),
-      setCurrentLocale: preferencesController.setUserLocale.bind(
-        preferencesController,
-      ),
-
-      getRequestAccountTabIds: this.getRequestAccountTabIds,
-      getOpenQuillTabsIds: this.getOpenQuillTabsIds,
-
-      // network management
-      setProviderConfig: (providerConfig) =>
-        networkController.update({ providerConfig }),
-
-      // PreferencesController
-      setSelectedAddress: preferencesController.setSelectedAddress.bind(
-        preferencesController,
-      ),
-    };
-  }
-
   async changeProvider<T>(req: JRPCRequest<T>): Promise<boolean> {
     // TODO: show popup to user and ask for confirmation
     // const { approve = false } = result;
