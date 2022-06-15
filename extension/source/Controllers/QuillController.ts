@@ -75,8 +75,6 @@ export default class QuillController {
   // aggregator for the particular tab only.
   private tabPreferredAggregators: Record<number, string> = {};
 
-  //   private txController!: TransactionController;
-
   public time = TimeCell(1000);
   public networkState: ICell<NetworkState>;
   public blockNumber: IReadableCell<number>;
