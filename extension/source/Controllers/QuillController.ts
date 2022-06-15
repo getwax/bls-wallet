@@ -46,11 +46,7 @@ import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
 import assertType from '../cells/assertType';
-import assert from '../helpers/assert';
 import TimeCell from '../cells/TimeCell';
-import ICell, { IReadableCell } from '../cells/ICell';
-import { FormulaCell } from '../cells/FormulaCell';
-import approximate from '../cells/approximate';
 
 const PROVIDER = 'quill-provider';
 
@@ -70,29 +66,18 @@ export default class QuillController {
   private tabPreferredAggregators: Record<number, string> = {};
 
   public time = TimeCell(1000);
-  public networkState: ICell<NetworkState>;
-  public blockNumber: IReadableCell<number>;
 
   constructor(
     public storage: CellCollection,
     public currencyControllerConfig: CurrencyControllerConfig,
   ) {
-    this.networkState = storage.Cell(
-      'network-controller-state',
-      NetworkState,
-      () => defaultNetworkState,
-    );
-
-    this.blockNumber = new FormulaCell(
-      {
-        networkState: this.networkState,
-        time: approximate(this.time, 20_000),
-      },
-      () => this.fetchBlockNumber(),
-    );
-
     this.networkController = new NetworkController(
-      this.networkState,
+      storage.Cell(
+        'network-controller-state',
+        NetworkState,
+        () => defaultNetworkState,
+      ),
+      this.time,
       this.makeEthereumMethods(),
     );
 
@@ -496,19 +481,6 @@ export default class QuillController {
     });
   }
 
-  private async fetchBlockNumber() {
-    const res = await this.networkController._providerProxy.request({
-      method: 'eth_blockNumber',
-      jsonrpc: '2.0',
-      id: createRandomId(),
-      params: [],
-    });
-    assertType(res, io.string);
-    const resNumber = Number(res);
-    assert(Number.isFinite(resNumber));
-    return resNumber;
-  }
-
   private watchThings() {
     (async () => {
       for await (const chainId of this.networkController.chainId) {
@@ -523,10 +495,10 @@ export default class QuillController {
       const storedBlockNumber = this.storage.Cell(
         'block-number',
         io.number,
-        () => this.blockNumber.read(),
+        () => this.networkController.blockNumber.read(),
       );
 
-      for await (const blockNumber of this.blockNumber) {
+      for await (const blockNumber of this.networkController.blockNumber) {
         await storedBlockNumber.write(blockNumber);
       }
     })();

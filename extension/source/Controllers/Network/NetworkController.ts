@@ -1,3 +1,4 @@
+import * as io from 'io-ts';
 import { providers } from 'ethers';
 import { JRPCEngine, JRPCMiddleware } from '@toruslabs/openlogin-jrpc';
 import { Mutex } from 'async-mutex';
@@ -18,6 +19,10 @@ import {
 } from './INetworkController';
 import ICell, { IReadableCell } from '../../cells/ICell';
 import { FormulaCell } from '../../cells/FormulaCell';
+import approximate from '../../cells/approximate';
+import { createRandomId } from '../utils';
+import assertType from '../../cells/assertType';
+import assert from '../../helpers/assert';
 
 // use state_get_balance for account balance
 
@@ -38,13 +43,23 @@ export default class NetworkController implements INetworkController {
   private _baseProviderHandlers!: IProviderHandlers;
 
   public chainId: IReadableCell<string>;
+  public blockNumber: IReadableCell<number>;
 
   constructor(
     public state: ICell<NetworkState>,
+    time: IReadableCell<number>,
     ethereumMethods: IProviderHandlers,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-shadow
     this.chainId = new FormulaCell({ state }, ({ state }) => state.chainId);
+
+    this.blockNumber = new FormulaCell(
+      {
+        networkState: state,
+        time: approximate(time, 20_000),
+      },
+      () => this.fetchBlockNumber(),
+    );
 
     this.initializeProvider(ethereumMethods);
 
@@ -201,5 +216,18 @@ export default class NetworkController implements INetworkController {
     });
     this.configureProvider();
     this.lookupNetwork();
+  }
+
+  private async fetchBlockNumber() {
+    const res = await this._providerProxy.request({
+      method: 'eth_blockNumber',
+      jsonrpc: '2.0',
+      id: createRandomId(),
+      params: [],
+    });
+    assertType(res, io.string);
+    const resNumber = Number(res);
+    assert(Number.isFinite(resNumber));
+    return resNumber;
   }
 }
