@@ -4,18 +4,13 @@
  */
 
 import endOfStream from 'end-of-stream';
-
 import { runtime, Runtime, Tabs, tabs } from 'webextension-polyfill';
-// import NotificationManager, {
-//   NOTIFICATION_MANAGER_EVENTS,
-// } from './lib/notification-manager';
+
 import QuillController from './QuillController';
 import { ENVIRONMENT_TYPE } from './constants';
 import PortDuplexStream from '../common/PortStream';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
 import { defaultCurrencyControllerConfig } from './CurrencyController';
-
-// const notificationManager = new NotificationManager();
 
 let popupIsOpen = false;
 let notificationIsOpen = false;
@@ -179,83 +174,7 @@ function setupController(): void {
     const portStream = new PortDuplexStream(remotePort);
     controller.setupUnTrustedCommunication(portStream, remotePort.sender);
   }
-
-  //
-  // User Interface setup
-  //
-
-  // notificationManager.on(
-  //   NOTIFICATION_MANAGER_EVENTS.POPUP_CLOSED,
-  //   ({ automaticallyClosed }: { automaticallyClosed: boolean }) => {
-  //     if (!automaticallyClosed) {
-  //       rejectUnapprovedNotifications();
-  //     } else if (getUnapprovedTransactionCount() > 0) {
-  //       triggerUi();
-  //     }
-  //   },
-  // );
-
-  function rejectUnapprovedNotifications() {
-    // Object.keys(
-    //   controller.txController.txStateManager.getUnapprovedTxList(),
-    // ).forEach((txId) =>
-    //   controller.txController.txStateManager.setTxStatusRejected(txId),
-    // );
-    // controller.messageManager.messages
-    //   .filter((msg) => msg.status === 'unapproved')
-    //   .forEach((tx) =>
-    //     controller.messageManager.rejectMsg(
-    //       tx.id,
-    //       REJECT_NOTFICIATION_CLOSE_SIG,
-    //     ),
-    //   );
-    // controller.personalMessageManager.messages
-    //   .filter((msg) => msg.status === 'unapproved')
-    //   .forEach((tx) =>
-    //     controller.personalMessageManager.rejectMsg(
-    //       tx.id,
-    //       REJECT_NOTFICIATION_CLOSE_SIG,
-    //     ),
-    //   );
-    // controller.typedMessageManager.messages
-    //   .filter((msg) => msg.status === 'unapproved')
-    //   .forEach((tx) =>
-    //     controller.typedMessageManager.rejectMsg(
-    //       tx.id,
-    //       REJECT_NOTFICIATION_CLOSE_SIG,
-    //     ),
-    //   );
-    // controller.decryptMessageManager.messages
-    //   .filter((msg) => msg.status === 'unapproved')
-    //   .forEach((tx) =>
-    //     controller.decryptMessageManager.rejectMsg(
-    //       tx.id,
-    //       REJECT_NOTFICIATION_CLOSE,
-    //     ),
-    //   );
-    // controller.encryptionPublicKeyManager.messages
-    //   .filter((msg) => msg.status === 'unapproved')
-    //   .forEach((tx) =>
-    //     controller.encryptionPublicKeyManager.rejectMsg(
-    //       tx.id,
-    //       REJECT_NOTFICIATION_CLOSE,
-    //     ),
-    //   );
-    // Finally, reject all approvals managed by the ApprovalController
-    // controller.approvalController.clear(
-    //   ethErrors.provider.userRejectedRequest(),
-    // );
-    // updateBadge();
-  }
-
-  rejectUnapprovedNotifications();
-
-  // return Promise.resolve();
 }
-
-//
-// Etc...
-//
 
 /**
  * Opens the browser popup for user confirmation
