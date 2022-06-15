@@ -121,18 +121,7 @@ export default class PreferencesController {
     return mergedState;
   }
 
-  /**
-   * Sets selected address
-   *
-   * @param selectedAddress - eth address
-   */
-  async setSelectedAddress(selectedAddress: string) {
-    await this.update({ selectedAddress } as Partial<
-      QuillState<'preferences'>
-    >);
-  }
-
-  private async update(stateUpdates: Partial<QuillState<'preferences'>>) {
+  async update(stateUpdates: Partial<QuillState<'preferences'>>) {
     const state = await this.state.read();
     await this.state.write({ ...state, ...stateUpdates });
   }

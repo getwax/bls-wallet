@@ -103,14 +103,6 @@ export default class QuillController {
     return address;
   }
 
-  setSelectedAccount(address: string): void {
-    this.preferencesController.setSelectedAddress(address);
-    this.notifyAllConnections({
-      method: PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED,
-      params: [address],
-    });
-  }
-
   /**
    * Used to create a multiplexed stream for connecting to an untrusted context
    * like a Dapp or other extension.
@@ -311,7 +303,9 @@ export default class QuillController {
   private makePrivateRpc(): Record<string, unknown> {
     const methods: Rpc['private'] = {
       quill_setSelectedAddress: async (newSelectedAddress) => {
-        this.preferencesController.setSelectedAddress(newSelectedAddress);
+        this.preferencesController.update({
+          selectedAddress: newSelectedAddress,
+        });
         return 'ok';
       },
 
@@ -461,6 +455,16 @@ export default class QuillController {
       for await (const userCurrency of this.currencyController.userCurrency) {
         await this.currencyController.updateConversionRate();
         this.preferencesController.setSelectedCurrency(userCurrency);
+      }
+    })();
+
+    (async () => {
+      for await (const selectedAddress of this.preferencesController
+        .selectedAddress) {
+        this.notifyAllConnections({
+          method: PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED,
+          params: [selectedAddress],
+        });
       }
     })();
   }
