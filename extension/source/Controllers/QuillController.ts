@@ -46,7 +46,9 @@ const PrivateRpcMessage = io.type({
 
 type PrivateRpcMessage = io.TypeOf<typeof PrivateRpcMessage>;
 
-export default class QuillController {
+type PrivateRpc = Rpc['private'];
+
+export default class QuillController implements PrivateRpc {
   public connections: Record<string, Record<string, { engine: JRPCEngine }>> =
     {};
 
@@ -91,12 +93,31 @@ export default class QuillController {
     this.watchThings();
   }
 
+  async setSelectedAddress(newSelectedAddress: string) {
+    this.preferencesController.update({
+      selectedAddress: newSelectedAddress,
+    });
+
+    return 'ok' as const;
+  }
+
+  async createHDAccount() {
+    return this.keyringController.createHDAccount();
+  }
+
+  async isOnboardingComplete() {
+    return this.keyringController.isOnboardingComplete();
+  }
+
+  async setHDPhrase(phrase: string) {
+    this.keyringController.setHDPhrase(phrase);
+    return 'ok' as const;
+  }
+
   handlePrivateMessage(message: unknown, _sender: Runtime.MessageSender) {
     if (!PrivateRpcMessage.is(message)) {
       return;
     }
-
-    const privateRpc = this.makePrivateRpc();
 
     assertType(message.method, PrivateRpcMethodName);
 
@@ -105,7 +126,7 @@ export default class QuillController {
       rpcMap.private[message.method].params as io.Type<ExplicitAny>,
     );
 
-    return (privateRpc[message.method] as ExplicitAny)(...message.params);
+    return (this[message.method] as ExplicitAny)(...message.params);
   }
 
   /**
@@ -322,30 +343,6 @@ export default class QuillController {
       assertType(params, rpcMap.public[methodName].params);
       return (method as ExplicitAny)(req.origin, params);
     });
-  }
-
-  private makePrivateRpc(): Rpc['private'] {
-    return {
-      setSelectedAddress: async (newSelectedAddress) => {
-        this.preferencesController.update({
-          selectedAddress: newSelectedAddress,
-        });
-        return 'ok';
-      },
-
-      createHDAccount: async () => {
-        return this.keyringController.createHDAccount();
-      },
-
-      isOnboardingComplete: async () => {
-        return this.keyringController.isOnboardingComplete();
-      },
-
-      setHDPhrase: async (phrase) => {
-        this.keyringController.setHDPhrase(phrase);
-        return 'ok';
-      },
-    };
   }
 
   /**
