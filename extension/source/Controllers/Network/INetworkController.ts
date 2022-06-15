@@ -8,7 +8,6 @@ import {
   SafeEventEmitter,
 } from '@toruslabs/openlogin-jrpc';
 import { ProviderConfig } from '../constants';
-import { getDefaultProviderConfig } from '../utils';
 
 export const NetworkProperties = io.intersection([
   io.record(io.string, io.unknown),
@@ -23,25 +22,6 @@ export const NetworkProperties = io.intersection([
  * @example isEIP1559Compatible: true etc.
  */
 export type NetworkProperties = io.TypeOf<typeof NetworkProperties>;
-
-export const NetworkState = io.type({
-  chainId: io.string,
-  providerConfig: ProviderConfig,
-  properties: NetworkProperties,
-});
-
-/**
- *
- */
-export type NetworkState = io.TypeOf<typeof NetworkState>;
-
-export const defaultNetworkState: NetworkState = {
-  chainId: 'loading',
-  properties: {
-    EIPS: { 1559: undefined },
-  },
-  providerConfig: getDefaultProviderConfig(),
-};
 
 export const NetworkConfig = io.type({
   providerConfig: ProviderConfig,

@@ -1,15 +1,12 @@
 import { cloneDeep } from 'lodash-es';
-import CellCollection from '../../cells/CellCollection';
-import ICell from '../../cells/ICell';
 import assert from '../../helpers/assert';
+import QuillCells, { QuillState } from '../../QuillCells';
 
 import {
   AddressPreferences,
   Contact,
   defaultAddressPreferences,
-  defaultPreferencesState,
   IPreferencesController,
-  PreferencesState,
   Theme,
 } from './IPreferencesController';
 
@@ -22,15 +19,7 @@ export default class PreferencesController implements IPreferencesController {
    */
   name = 'PreferencesController';
 
-  state: ICell<PreferencesState>;
-
-  constructor(storage: CellCollection) {
-    this.state = storage.Cell(
-      'preferences-controller-state',
-      PreferencesState,
-      () => defaultPreferencesState,
-    );
-  }
+  constructor(public state: QuillCells['preferences']) {}
 
   async getAddressState(
     address?: string,
@@ -127,10 +116,12 @@ export default class PreferencesController implements IPreferencesController {
    * @param selectedAddress - eth address
    */
   async setSelectedAddress(selectedAddress: string) {
-    await this.update({ selectedAddress } as Partial<PreferencesState>);
+    await this.update({ selectedAddress } as Partial<
+      QuillState<'preferences'>
+    >);
   }
 
-  private async update(stateUpdates: Partial<PreferencesState>) {
+  private async update(stateUpdates: Partial<QuillState<'preferences'>>) {
     const state = await this.state.read();
     await this.state.write({ ...state, ...stateUpdates });
   }

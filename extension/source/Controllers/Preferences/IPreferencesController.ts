@@ -78,33 +78,6 @@ export const defaultAddressPreferences: AddressPreferences = {
   customNfts: [],
 };
 
-export const PreferencesState = io.type({
-  /**
-   * Map of addresses to AddressPreferences objects
-   */
-  identities: io.record(io.string, AddressPreferences),
-  /**
-   * Current coinbase account
-   */
-  selectedAddress: io.union([io.undefined, io.string]),
-
-  lastErrorMessage: io.union([io.undefined, io.string]),
-
-  lastSuccessMessage: io.union([io.undefined, io.string]),
-});
-
-/**
- * Preferences controller state
- */
-export type PreferencesState = io.TypeOf<typeof PreferencesState>;
-
-export const defaultPreferencesState: PreferencesState = {
-  identities: {},
-  selectedAddress: undefined,
-  lastErrorMessage: undefined,
-  lastSuccessMessage: undefined,
-};
-
 export interface IPreferencesController {
   /**
    * creates a new user and stores his details

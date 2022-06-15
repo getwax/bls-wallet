@@ -1,28 +1,15 @@
 import { BlsWalletWrapper, Operation } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import generateRandomHex from '../../helpers/generateRandomHex';
-import {
-  defaultKeyringControllerState,
-  IKeyringController,
-  KeyringControllerState,
-} from './IKeyringController';
+import { IKeyringController } from './IKeyringController';
 import { DEFAULT_CHAIN_ID_HEX, NETWORK_CONFIG } from '../../env';
 import { getRPCURL } from '../utils';
-import ICell from '../../cells/ICell';
-import CellCollection from '../../cells/CellCollection';
+import QuillCells from '../../QuillCells';
 
 export default class KeyringController implements IKeyringController {
   name = 'KeyringController';
 
-  state: ICell<KeyringControllerState>;
-
-  constructor(storage: CellCollection) {
-    this.state = storage.Cell(
-      'keyring-controller-state',
-      KeyringControllerState,
-      () => defaultKeyringControllerState,
-    );
-  }
+  constructor(public state: QuillCells['keyring']) {}
 
   async getAccounts(): Promise<string[]> {
     return (await this.state.read()).wallets.map((x) => x.address);

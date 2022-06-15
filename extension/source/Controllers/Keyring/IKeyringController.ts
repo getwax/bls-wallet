@@ -1,32 +1,4 @@
-import * as io from 'io-ts';
 import { Bundle, Operation } from 'bls-wallet-clients';
-
-export const KeyPair = io.type({
-  /**
-   * Hex string without 0x prefix
-   */
-  privateKey: io.string,
-  /**
-   * Address of the deployed contract wallet
-   */
-  address: io.string,
-});
-
-export type KeyPair = io.TypeOf<typeof KeyPair>;
-
-export const KeyringControllerState = io.type({
-  HDPhrase: io.union([io.undefined, io.string]),
-  wallets: io.array(KeyPair),
-  chainId: io.union([io.undefined, io.string]),
-});
-
-export type KeyringControllerState = io.TypeOf<typeof KeyringControllerState>;
-
-export const defaultKeyringControllerState: KeyringControllerState = {
-  HDPhrase: undefined,
-  wallets: [],
-  chainId: undefined,
-};
 
 export interface IKeyringController {
   /**

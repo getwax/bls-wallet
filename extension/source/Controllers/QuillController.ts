@@ -35,6 +35,7 @@ import ExplicitAny from '../types/ExplicitAny';
 import Rpc, { rpcMap } from '../types/Rpc';
 import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
+import QuillCells from '../QuillCells';
 
 const PROVIDER = 'quill-provider';
 
@@ -54,25 +55,31 @@ export default class QuillController {
   private tabPreferredAggregators: Record<number, string> = {};
 
   public time = TimeCell(1000);
+  public cells: ReturnType<typeof QuillCells>;
 
   constructor(
     public storage: CellCollection,
     public currencyControllerConfig: CurrencyControllerConfig,
   ) {
+    this.cells = QuillCells(storage);
+
     this.networkController = new NetworkController(
-      storage,
+      this.cells.network,
       this.time,
       this.makeEthereumMethods(),
     );
 
     this.currencyController = new CurrencyController(
       this.currencyControllerConfig,
-      this.storage,
+      this.cells.preferredCurrency,
       this.networkController.ticker,
     );
 
-    this.keyringController = new KeyringController(storage);
-    this.preferencesController = new PreferencesController(storage);
+    this.keyringController = new KeyringController(this.cells.keyring);
+
+    this.preferencesController = new PreferencesController(
+      this.cells.preferences,
+    );
 
     this.networkController.lookupNetwork();
     this.watchThings();

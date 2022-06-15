@@ -15,7 +15,7 @@ export interface IWallet {
 export const WalletsWrapper: FunctionComponent = () => {
   const quill = useQuill();
   const { rpc } = quill;
-  const keyring = useCell(quill.keyring);
+  const keyring = useCell(quill.cells.keyring);
   const selectedAddress = useCell(quill.selectedAddress);
 
   return (

@@ -12,26 +12,23 @@ import {
 } from './createEthMiddleware';
 import { createJsonRpcClient } from './createJsonRpcClient';
 import {
-  defaultNetworkState,
   INetworkController,
-  NetworkState,
   providerFromEngine,
   SafeEventEmitterProvider,
 } from './INetworkController';
-import ICell, { IReadableCell } from '../../cells/ICell';
+import { IReadableCell } from '../../cells/ICell';
 import { FormulaCell } from '../../cells/FormulaCell';
 import approximate from '../../cells/approximate';
 import { createRandomId } from '../utils';
 import assertType from '../../cells/assertType';
 import assert from '../../helpers/assert';
-import CellCollection from '../../cells/CellCollection';
+import QuillCells, { QuillState } from '../../QuillCells';
 
 // use state_get_balance for account balance
 
 export default class NetworkController implements INetworkController {
   name = 'NetworkController';
 
-  state: ICell<NetworkState>;
   ticker: IReadableCell<string>;
 
   _providerProxy!: SafeEventEmitterProvider;
@@ -51,23 +48,19 @@ export default class NetworkController implements INetworkController {
   public blockNumber: IReadableCell<number>;
 
   constructor(
-    storage: CellCollection,
+    public state: QuillCells['network'],
     time: IReadableCell<number>,
     ethereumMethods: IProviderHandlers,
   ) {
-    this.state = storage.Cell(
-      'network-controller-state',
-      NetworkState,
-      () => defaultNetworkState,
-    );
-
     this.ticker = new FormulaCell(
       { state: this.state },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
       ({ state }) => state.providerConfig.ticker,
     );
 
     this.chainId = new FormulaCell(
       { state: this.state },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
       ({ state }) => state.chainId,
     );
 
@@ -88,7 +81,7 @@ export default class NetworkController implements INetworkController {
     return (await this.state.read()).chainId;
   }
 
-  async update(stateUpdates: Partial<NetworkState>) {
+  async update(stateUpdates: Partial<QuillState<'network'>>) {
     await this.state.write({ ...(await this.state.read()), ...stateUpdates });
 
     if ('providerConfig' in stateUpdates) {

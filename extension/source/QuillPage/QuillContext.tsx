@@ -10,17 +10,10 @@ import { rpcMap } from '../types/Rpc';
 import { IReadableCell } from '../cells/ICell';
 import elcc from '../cells/extensionLocalCellCollection';
 import assertType from '../cells/assertType';
-import {
-  defaultKeyringControllerState,
-  KeyringControllerState,
-} from '../Controllers/Keyring/IKeyringController';
 import assert from '../helpers/assert';
 import { FormulaCell } from '../cells/FormulaCell';
-import {
-  defaultPreferencesState,
-  PreferencesState,
-} from '../Controllers/Preferences/IPreferencesController';
 import TimeCell from '../cells/TimeCell';
+import QuillCells from '../QuillCells';
 
 type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -76,15 +69,11 @@ function getQuillContextValue(provider: QuillInPageProvider) {
   // for now.
   const theme = Cell('cell-based-theme', io.string, () => 'light');
 
-  const preferences = Cell(
-    'preferences-controller-state',
-    PreferencesState,
-    () => defaultPreferencesState,
-  );
+  // TODO: Cleanup other cells
+  const cells = QuillCells(elcc);
 
   const selectedAddress: IReadableCell<string | undefined> = new FormulaCell(
-    { preferences },
-    // eslint-disable-next-line @typescript-eslint/no-shadow
+    { preferences: cells.preferences },
     ({ preferences }) => preferences.selectedAddress,
   );
 
@@ -96,13 +85,8 @@ function getQuillContextValue(provider: QuillInPageProvider) {
     time,
     blockNumber,
     theme,
-    keyring: Cell(
-      'keyring-controller-state',
-      KeyringControllerState,
-      () => defaultKeyringControllerState,
-    ),
-    preferences,
     selectedAddress,
+    cells,
   };
 }
 

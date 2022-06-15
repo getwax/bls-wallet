@@ -1,37 +1,20 @@
-import CellCollection from '../../cells/CellCollection';
-import ICell, { IReadableCell } from '../../cells/ICell';
-import {
-  CurrencyControllerConfig,
-  CurrencyControllerState,
-  defaultCurrencyControllerState,
-} from './ICurrencyController';
+import { IReadableCell } from '../../cells/ICell';
+import QuillCells, { QuillState } from '../../QuillCells';
+import { CurrencyControllerConfig } from './ICurrencyController';
 
 export default class CurrencyController {
   private conversionInterval?: number;
-  public config: CurrencyControllerConfig;
-  public state: ICell<CurrencyControllerState>;
-  public nativeCurrency: IReadableCell<string>;
 
   constructor(
-    config: CurrencyControllerConfig,
-    storage: CellCollection,
-    nativeCurrency: IReadableCell<string>,
+    public config: CurrencyControllerConfig,
+    public state: QuillCells['preferredCurrency'],
+    public nativeCurrency: IReadableCell<string>,
   ) {
-    this.config = config;
-
-    this.state = storage.Cell(
-      'CurrencyController',
-      CurrencyControllerState,
-      () => defaultCurrencyControllerState,
-    );
-
-    this.nativeCurrency = nativeCurrency;
-
     this.updateConversionRate();
     this.scheduleConversionInterval();
   }
 
-  public async update(stateUpdates: Partial<CurrencyControllerState>) {
+  public async update(stateUpdates: Partial<QuillState<'preferredCurrency'>>) {
     await this.state.write({
       ...(await this.state.read()),
       ...stateUpdates,
@@ -39,7 +22,7 @@ export default class CurrencyController {
   }
 
   async updateConversionRate(): Promise<void> {
-    let state: CurrencyControllerState | undefined;
+    let state: QuillState<'preferredCurrency'> | undefined;
     let nativeCurrency: string | undefined;
 
     try {
