@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'react';
 
-import { IReadableCell } from '../../cells/ICell';
-import useCell from '../../cells/useCell';
+import { IReadableCell } from '../ICell';
+import useCell from '../useCell';
 
 export const DisplayJson: FunctionComponent<{
   cell: IReadableCell<unknown>;

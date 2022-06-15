@@ -1,8 +1,8 @@
 import { ethers } from 'ethers';
 import { FunctionComponent, useMemo } from 'react';
-import { FormulaCell } from '../../cells/FormulaCell';
-import MemoryCell from '../../cells/MemoryCell';
-import { useQuill } from '../QuillContext';
+import { FormulaCell } from '../FormulaCell';
+import MemoryCell from '../MemoryCell';
+import { useQuill } from '../../QuillPage/QuillContext';
 import { Display } from './Display';
 import TextBox from './TextBox';
 

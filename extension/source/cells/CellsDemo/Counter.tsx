@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'react';
 
-import ICell from '../../cells/ICell';
-import useCell from '../../cells/useCell';
+import ICell from '../ICell';
+import useCell from '../useCell';
 import Button from '../../components/Button';
 
 export const Counter: FunctionComponent<{

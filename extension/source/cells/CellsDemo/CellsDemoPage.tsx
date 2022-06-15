@@ -1,18 +1,20 @@
 import * as io from 'io-ts';
 
 import { FunctionComponent, useMemo } from 'react';
-import { FormulaCell } from '../../cells/FormulaCell';
-import MemoryCell from '../../cells/MemoryCell';
-import useCell from '../../cells/useCell';
+import { FormulaCell } from '../FormulaCell';
+import MemoryCell from '../MemoryCell';
+import useCell from '../useCell';
 import delay from '../../helpers/delay';
 import Range from '../../helpers/Range';
-import { useQuill } from '../QuillContext';
+import { useQuill } from '../../QuillPage/QuillContext';
 import BalanceWidget from './BalanceWidget';
 import CheckBox from './CheckBox';
 import { Counter } from './Counter';
 import DemoTable from './DemoTable';
 import { DisplayJson } from './DisplayJson';
 import Selector from './Selector';
+
+// Accessible at chrome-extension://<insert extension id>/cellsDemo.html
 
 export const CellsDemoPage: FunctionComponent = () => {
   const quill = useQuill();

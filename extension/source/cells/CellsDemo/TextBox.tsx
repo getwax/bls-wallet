@@ -1,6 +1,6 @@
 import { ChangeEvent, FunctionComponent } from 'react';
-import ICell from '../../cells/ICell';
-import useCell from '../../cells/useCell';
+import ICell from '../ICell';
+import useCell from '../useCell';
 
 const TextBox: FunctionComponent<{ value: ICell<string> }> = ({ value }) => {
   const valueValue = useCell(value) ?? '';
