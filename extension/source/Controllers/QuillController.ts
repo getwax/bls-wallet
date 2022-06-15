@@ -97,9 +97,6 @@ export default class QuillController {
       this.storage,
     );
 
-    this.currencyController.updateConversionRate();
-    this.currencyController.scheduleConversionInterval();
-
     this.keyringController = new KeyringController(
       storage.Cell(
         'keyring-controller-state',

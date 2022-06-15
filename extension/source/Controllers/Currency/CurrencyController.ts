@@ -27,6 +27,9 @@ export default class CurrencyController {
         nativeCurrency: 'ETH',
       }),
     );
+
+    this.updateConversionRate();
+    this.scheduleConversionInterval();
   }
 
   //
