@@ -105,13 +105,13 @@ export default class QuillController {
       ),
     );
 
-    const preferences = storage.Cell(
-      'preferences-controller-state',
-      PreferencesState,
-      () => defaultPreferencesState,
+    this.preferencesController = new PreferencesController(
+      storage.Cell(
+        'preferences-controller-state',
+        PreferencesState,
+        () => defaultPreferencesState,
+      ),
     );
-
-    this.preferencesController = new PreferencesController(preferences);
 
     this.networkController.lookupNetwork();
     this.watchThings();
