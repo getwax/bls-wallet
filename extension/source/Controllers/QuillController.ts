@@ -15,7 +15,9 @@ import { Aggregator } from 'bls-wallet-clients';
 import { createRandomId, getAllReqParam, getUserLanguage } from './utils';
 import { ProviderConfig } from './constants';
 import NetworkController from './Network/NetworkController';
-import CurrencyController from './Currency/CurrencyController';
+import CurrencyController, {
+  CurrencyControllerConfig,
+} from './CurrencyController';
 import KeyringController from './Keyring/KeyringController';
 import PreferencesController from './Preferences/PreferencesController';
 import { providerAsMiddleware } from './Network/INetworkController';
@@ -23,7 +25,6 @@ import {
   IProviderHandlers,
   SendTransactionParams,
 } from './Network/createEthMiddleware';
-import { CurrencyControllerConfig } from './Currency/ICurrencyController';
 import { createOriginMiddleware } from './Network/createOriginMiddleware';
 import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';

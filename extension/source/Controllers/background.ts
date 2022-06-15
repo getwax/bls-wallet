@@ -13,7 +13,7 @@ import QuillController from './QuillController';
 import { ENVIRONMENT_TYPE } from './constants';
 import PortDuplexStream from '../common/PortStream';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
-import { defaultCurrencyControllerConfig } from './Currency/ICurrencyController';
+import { defaultCurrencyControllerConfig } from './CurrencyController';
 
 // const notificationManager = new NotificationManager();
 

@@ -1,6 +1,15 @@
-import { IReadableCell } from '../../cells/ICell';
-import QuillCells, { QuillState } from '../../QuillCells';
-import { CurrencyControllerConfig } from './ICurrencyController';
+import { IReadableCell } from '../cells/ICell';
+import QuillCells, { QuillState } from '../QuillCells';
+
+export interface CurrencyControllerConfig {
+  pollInterval: number;
+  api?: string;
+}
+
+export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
+  api: 'https://min-api.cryptocompare.com/data/price',
+  pollInterval: 600_000,
+};
 
 export default class CurrencyController {
   private conversionInterval?: number;
