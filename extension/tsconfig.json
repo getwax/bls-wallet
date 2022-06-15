@@ -6,6 +6,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "declaration": false,
     "isolatedModules": true,
+    "strictPropertyInitialization": true,
     /* Additional Checks */
     "useDefineForClassFields": true,
     "skipLibCheck": true,

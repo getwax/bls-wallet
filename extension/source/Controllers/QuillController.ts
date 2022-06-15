@@ -141,28 +141,8 @@ export default class QuillController {
       preferences,
     });
 
-    (async () => {
-      for await (const chainId of this.networkController.chainId) {
-        // ensure accountTracker updates balances after network change
-        this.accountTracker.refresh();
-        this.notifyAllConnections({
-          method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
-          params: { chainId },
-        });
-      }
-    })();
-
-    (async () => {
-      const storedBlockNumber = storage.Cell('block-number', io.number, () =>
-        this.blockNumber.read(),
-      );
-
-      for await (const blockNumber of this.blockNumber) {
-        await storedBlockNumber.write(blockNumber);
-      }
-    })();
-
     this.networkController.lookupNetwork();
+    this.watchThings();
   }
 
   async getSelectedAddress(): Promise<string | undefined> {
@@ -626,5 +606,30 @@ export default class QuillController {
     const resNumber = Number(res);
     assert(Number.isFinite(resNumber));
     return resNumber;
+  }
+
+  private watchThings() {
+    (async () => {
+      for await (const chainId of this.networkController.chainId) {
+        // ensure accountTracker updates balances after network change
+        this.accountTracker.refresh();
+        this.notifyAllConnections({
+          method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
+          params: { chainId },
+        });
+      }
+    })();
+
+    (async () => {
+      const storedBlockNumber = this.storage.Cell(
+        'block-number',
+        io.number,
+        () => this.blockNumber.read(),
+      );
+
+      for await (const blockNumber of this.blockNumber) {
+        await storedBlockNumber.write(blockNumber);
+      }
+    })();
   }
 }

@@ -24,7 +24,7 @@ import { FormulaCell } from '../../cells/FormulaCell';
 export default class NetworkController implements INetworkController {
   name = 'NetworkController';
 
-  _providerProxy: SafeEventEmitterProvider;
+  _providerProxy!: SafeEventEmitterProvider;
 
   private mutex = new Mutex();
 
@@ -33,9 +33,9 @@ export default class NetworkController implements INetworkController {
   /**
    * Initialized before our provider is created.
    */
-  private ethQuery: EthQuery;
+  private ethQuery!: EthQuery;
 
-  private _baseProviderHandlers: IProviderHandlers;
+  private _baseProviderHandlers!: IProviderHandlers;
 
   public chainId: IReadableCell<string>;
 

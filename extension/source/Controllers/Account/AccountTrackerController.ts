@@ -58,7 +58,7 @@ class AccountTrackerController implements IAccountTrackerController {
 
     (async () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unused-vars
-      for await (const _ of this.blockNumber) {
+      for await (const _ of blockNumber) {
         this.refresh();
       }
     })();

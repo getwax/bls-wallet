@@ -7,7 +7,7 @@ import {
 } from './ICurrencyController';
 
 export default class CurrencyController {
-  private conversionInterval: number;
+  private conversionInterval?: number;
   public config: CurrencyControllerConfig;
   public state: ICell<CurrencyControllerState>;
 

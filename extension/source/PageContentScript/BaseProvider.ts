@@ -32,7 +32,7 @@ abstract class BaseProvider<U extends BaseProviderState>
   extends SafeEventEmitter
   implements SafeEventEmitterProvider
 {
-  protected _state: U;
+  protected _state!: U;
 
   _rpcEngine: JRPCEngine;
 
