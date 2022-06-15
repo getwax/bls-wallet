@@ -17,7 +17,7 @@ export default class CurrencyController {
   constructor(
     public config: CurrencyControllerConfig,
     public state: QuillCells['preferredCurrency'],
-    public nativeCurrency: IReadableCell<string>,
+    public networkCurrency: IReadableCell<string>,
   ) {
     this.updateConversionRate();
     this.scheduleConversionInterval();
@@ -32,14 +32,14 @@ export default class CurrencyController {
 
   async updateConversionRate(): Promise<void> {
     let state: QuillState<'preferredCurrency'> | undefined;
-    let nativeCurrency: string | undefined;
+    let networkCurrency: string | undefined;
 
     try {
-      nativeCurrency = await this.nativeCurrency.read();
+      networkCurrency = await this.networkCurrency.read();
       state = await this.state.read();
       const apiUrl = `${
         this.config.api
-      }?fsym=${nativeCurrency.toUpperCase()}&tsyms=${state.userCurrency.toUpperCase()}&api_key=${
+      }?fsym=${networkCurrency.toUpperCase()}&tsyms=${state.userCurrency.toUpperCase()}&api_key=${
         process.env.CRYPTO_COMPARE_API_KEY
       }`;
       let response: Response;
@@ -65,7 +65,7 @@ export default class CurrencyController {
         return;
       }
       // set conversion rate
-      // if (nativeCurrency === 'ETH') {
+      // if (networkCurrency === 'ETH') {
       // ETH
       //   this.setConversionRate(Number(parsedResponse.bid))
       //   this.setConversionDate(Number(parsedResponse.timestamp))
@@ -88,7 +88,7 @@ export default class CurrencyController {
       // reset current conversion rate
       console.warn(
         'Quill - Failed to query currency conversion:',
-        nativeCurrency,
+        networkCurrency,
         state?.userCurrency,
         error,
       );
