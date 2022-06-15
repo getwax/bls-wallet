@@ -67,4 +67,10 @@ export const PrivateRpcMethodName: io.Type<keyof RpcMap['private']> = io.union(
 
 export type PrivateRpcMethodName = io.TypeOf<typeof PrivateRpcMethodName>;
 
+export const PublicRpcMethodName: io.Type<keyof RpcMap['public']> = io.union(
+  Object.keys(rpcMap.public).map((k) => io.literal(k)) as ExplicitAny,
+);
+
+export type PublicRpcMethodName = io.TypeOf<typeof PublicRpcMethodName>;
+
 export default Rpc;

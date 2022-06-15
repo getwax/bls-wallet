@@ -31,7 +31,11 @@ import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
-import Rpc, { PrivateRpcMethodName, rpcMap } from '../types/Rpc';
+import Rpc, {
+  PrivateRpcMethodName,
+  PublicRpcMethodName,
+  rpcMap,
+} from '../types/Rpc';
 import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
@@ -46,9 +50,28 @@ const PrivateRpcMessage = io.type({
 
 type PrivateRpcMessage = io.TypeOf<typeof PrivateRpcMessage>;
 
+const PublicRpcMessage = io.type({
+  type: io.literal('quill-public-rpc'),
+  origin: io.string,
+  method: io.string,
+  params: io.array(io.unknown),
+});
+
+type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
+
+type PublicRpc = Rpc['public'];
 type PrivateRpc = Rpc['private'];
 
-export default class QuillController implements PrivateRpc {
+type PublicRpcWithOrigin = {
+  [M in keyof PublicRpc]: (
+    origin: string,
+    params: Parameters<PublicRpc[M]>,
+  ) => ReturnType<PublicRpc[M]>;
+};
+
+export default class QuillController
+  implements PublicRpcWithOrigin, PrivateRpc
+{
   public connections: Record<string, Record<string, { engine: JRPCEngine }>> =
     {};
 
@@ -93,6 +116,8 @@ export default class QuillController implements PrivateRpc {
     this.watchThings();
   }
 
+  /** Private RPC */
+
   async setSelectedAddress(newSelectedAddress: string) {
     this.preferencesController.update({
       selectedAddress: newSelectedAddress,
@@ -127,6 +152,41 @@ export default class QuillController implements PrivateRpc {
     );
 
     return (this[message.method] as ExplicitAny)(...message.params);
+  }
+
+  /** Public RPC */
+
+  // eslint-disable-next-line no-empty-pattern
+  async eth_accounts(origin: string, []) {
+    if (origin === window.location.origin) {
+      return (await this.keyringController.state.read()).wallets.map(
+        ({ address }) => address,
+      );
+    }
+
+    const selectedAddress =
+      await this.preferencesController.selectedAddress.read();
+
+    // TODO (merge-ok) Expose no accounts if this origin has not been approved,
+    // preventing account-requiring RPC methods from completing successfully
+    // only show address if account is unlocked
+    // https://github.com/web3well/bls-wallet/issues/224
+    return selectedAddress ? [selectedAddress] : [];
+  }
+
+  handlePublicMessage(message: unknown, origin: string) {
+    if (!PublicRpcMessage.is(message)) {
+      return;
+    }
+
+    assertType(message.method, PublicRpcMethodName);
+
+    assertType(
+      message.params,
+      rpcMap.public[message.method].params as io.Type<ExplicitAny>,
+    );
+
+    return (this[message.method] as ExplicitAny)(origin, message.params);
   }
 
   /**
@@ -320,22 +380,7 @@ export default class QuillController implements PrivateRpc {
     };
 
     const methods: MethodsWithOrigin = {
-      eth_accounts: async (origin) => {
-        if (origin === window.location.origin) {
-          return (await this.keyringController.state.read()).wallets.map(
-            ({ address }) => address,
-          );
-        }
-
-        const selectedAddress =
-          await this.preferencesController.selectedAddress.read();
-
-        // TODO (merge-ok) Expose no accounts if this origin has not been approved,
-        // preventing account-requiring RPC methods from completing successfully
-        // only show address if account is unlocked
-        // https://github.com/web3well/bls-wallet/issues/224
-        return selectedAddress ? [selectedAddress] : [];
-      },
+      eth_accounts: (...params) => this.eth_accounts(origin, params),
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
