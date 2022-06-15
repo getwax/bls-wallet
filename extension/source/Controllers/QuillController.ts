@@ -162,36 +162,7 @@ export default class QuillController {
       }
     })();
 
-    // this.txController = new TransactionController({
-    //   config: this.config.TransactionControllerConfig,
-    //   state: this.state.TransactionControllerState,
-    //   blockTracker: this.networkController._blockTrackerProxy,
-    //   provider: this.networkController._providerProxy,
-    //   getCurrentChainId: this.networkController.getNetworkIdentifier.bind(
-    //     this.networkController,
-    //   ),
-    //   signTransaction: this.keyringController.signTransaction.bind(
-    //     this.keyringController,
-    //   ),
-    // });
-
-    // this.txController.on(TX_EVENTS.TX_UNAPPROVED, (txMeta) => {
-    //   this.emit(TX_EVENTS.TX_UNAPPROVED, txMeta);
-    // });
-
     this.networkController.lookupNetwork();
-
-    // ensure isClientOpenAndUnlocked is updated when memState updates
-    // this.subscribeEvent("update", (QuillControllerState: unknown) => this._onStateUpdate(QuillControllerState));
-
-    // this.subscribe(this.sendUpdate.bind(this));
-
-    // if (typeof options.rehydrate === "function") {
-    //   setTimeout(() => {
-    //     options.rehydrate();
-    //   }, 50);
-    // }
-    // this.sendUpdate = debounce(this.privateSendUpdate.bind(this), 200);
   }
 
   async getSelectedAddress(): Promise<string | undefined> {
@@ -381,18 +352,6 @@ export default class QuillController {
     const engine = new JRPCEngine();
     const { provider } = this;
     console.log('setting up provider engine', origin, provider);
-
-    // create filter polyfill middleware
-    // const filterMiddleware = createFilterMiddleware({ provider, blockTracker });
-
-    // create subscription polyfill middleware
-    // const subscriptionManager = createSubscriptionManager({
-    //   provider,
-    //   blockTracker,
-    // });
-    // subscriptionManager.events.on('notification', (message) =>
-    //   engine.emit('notification', message),
-    // );
 
     // append origin to each request
     engine.push(createOriginMiddleware({ origin }));
