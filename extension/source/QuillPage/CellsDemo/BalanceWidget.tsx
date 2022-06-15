@@ -17,10 +17,6 @@ const BalanceWidget: FunctionComponent = () => {
       // eslint-disable-next-line @typescript-eslint/no-shadow
       async ({ address }) => {
         const addressError = (() => {
-          if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
-            return new Error('Invalid address');
-          }
-
           try {
             // Handles mixed case checksums
             ethers.utils.getAddress(address);
