@@ -82,7 +82,6 @@ export default class QuillController {
       this.cells.preferences,
     );
 
-    this.networkController.lookupNetwork();
     this.watchThings();
   }
 
