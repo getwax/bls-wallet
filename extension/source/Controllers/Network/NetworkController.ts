@@ -12,6 +12,7 @@ import {
 } from './createEthMiddleware';
 import { createJsonRpcClient } from './createJsonRpcClient';
 import {
+  defaultNetworkState,
   INetworkController,
   NetworkState,
   providerFromEngine,
@@ -23,11 +24,14 @@ import approximate from '../../cells/approximate';
 import { createRandomId } from '../utils';
 import assertType from '../../cells/assertType';
 import assert from '../../helpers/assert';
+import CellCollection from '../../cells/CellCollection';
 
 // use state_get_balance for account balance
 
 export default class NetworkController implements INetworkController {
   name = 'NetworkController';
+
+  state: ICell<NetworkState>;
 
   _providerProxy!: SafeEventEmitterProvider;
 
@@ -46,16 +50,24 @@ export default class NetworkController implements INetworkController {
   public blockNumber: IReadableCell<number>;
 
   constructor(
-    public state: ICell<NetworkState>,
+    storage: CellCollection,
     time: IReadableCell<number>,
     ethereumMethods: IProviderHandlers,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    this.chainId = new FormulaCell({ state }, ({ state }) => state.chainId);
+    this.state = storage.Cell(
+      'network-controller-state',
+      NetworkState,
+      () => defaultNetworkState,
+    );
+
+    this.chainId = new FormulaCell(
+      { state: this.state },
+      ({ state }) => state.chainId,
+    );
 
     this.blockNumber = new FormulaCell(
       {
-        networkState: state,
+        networkState: this.state,
         time: approximate(time, 20_000),
       },
       () => this.fetchBlockNumber(),

@@ -1,4 +1,5 @@
 import { cloneDeep } from 'lodash-es';
+import CellCollection from '../../cells/CellCollection';
 import ICell from '../../cells/ICell';
 import assert from '../../helpers/assert';
 
@@ -6,6 +7,7 @@ import {
   AddressPreferences,
   Contact,
   defaultAddressPreferences,
+  defaultPreferencesState,
   IPreferencesController,
   PreferencesState,
   Theme,
@@ -20,7 +22,15 @@ export default class PreferencesController implements IPreferencesController {
    */
   name = 'PreferencesController';
 
-  constructor(public state: ICell<PreferencesState>) {}
+  state: ICell<PreferencesState>;
+
+  constructor(storage: CellCollection) {
+    this.state = storage.Cell(
+      'preferences-controller-state',
+      PreferencesState,
+      () => defaultPreferencesState,
+    );
+  }
 
   async getAddressState(
     address?: string,

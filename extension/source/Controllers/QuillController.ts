@@ -18,24 +18,12 @@ import NetworkController from './Network/NetworkController';
 import CurrencyController from './Currency/CurrencyController';
 import KeyringController from './Keyring/KeyringController';
 import PreferencesController from './Preferences/PreferencesController';
-import {
-  defaultNetworkState,
-  NetworkState,
-  providerAsMiddleware,
-} from './Network/INetworkController';
+import { providerAsMiddleware } from './Network/INetworkController';
 import {
   IProviderHandlers,
   SendTransactionParams,
 } from './Network/createEthMiddleware';
-import {
-  defaultPreferencesState,
-  PreferencesState,
-} from './Preferences/IPreferencesController';
 import { CurrencyControllerConfig } from './Currency/ICurrencyController';
-import {
-  defaultKeyringControllerState,
-  KeyringControllerState,
-} from './Keyring/IKeyringController';
 import { createOriginMiddleware } from './Network/createOriginMiddleware';
 import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import { PROVIDER_NOTIFICATIONS } from '../common/constants';
@@ -72,11 +60,7 @@ export default class QuillController {
     public currencyControllerConfig: CurrencyControllerConfig,
   ) {
     this.networkController = new NetworkController(
-      storage.Cell(
-        'network-controller-state',
-        NetworkState,
-        () => defaultNetworkState,
-      ),
+      storage,
       this.time,
       this.makeEthereumMethods(),
     );
@@ -86,21 +70,8 @@ export default class QuillController {
       this.storage,
     );
 
-    this.keyringController = new KeyringController(
-      storage.Cell(
-        'keyring-controller-state',
-        KeyringControllerState,
-        () => defaultKeyringControllerState,
-      ),
-    );
-
-    this.preferencesController = new PreferencesController(
-      storage.Cell(
-        'preferences-controller-state',
-        PreferencesState,
-        () => defaultPreferencesState,
-      ),
-    );
+    this.keyringController = new KeyringController(storage);
+    this.preferencesController = new PreferencesController(storage);
 
     this.networkController.lookupNetwork();
     this.watchThings();
