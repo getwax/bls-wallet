@@ -261,7 +261,8 @@ export default class QuillController {
     this.networkController.initializeProvider({
       // account management
       eth_requestAccounts: async (req) => {
-        const accounts = await this.requestAccounts();
+        const selectedAddress = await this.getSelectedAddress();
+        const accounts = selectedAddress ? [selectedAddress] : [];
         this.notifyConnections((req as any).origin, {
           method: PROVIDER_NOTIFICATIONS.UNLOCK_STATE_CHANGED,
           params: {
@@ -402,17 +403,6 @@ export default class QuillController {
 
       return (method as ExplicitAny)(...params);
     });
-  }
-
-  private async requestAccounts(): Promise<string[]> {
-    const selectedAddress = await this.getSelectedAddress();
-
-    // If we have a selected address, return it
-    // TODO: Add support for permissions controller
-    if (selectedAddress) {
-      return [selectedAddress];
-    }
-    return [];
   }
 
   /**
