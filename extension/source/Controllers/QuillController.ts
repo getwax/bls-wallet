@@ -16,14 +16,12 @@ import { createRandomId, getAllReqParam, getUserLanguage } from './utils';
 import { ProviderConfig } from './constants';
 import NetworkController from './Network/NetworkController';
 import CurrencyController from './Currency/CurrencyController';
-import AccountTrackerController from './Account/AccountTrackerController';
 import KeyringController from './Keyring/KeyringController';
 import PreferencesController from './Preferences/PreferencesController';
 import {
   defaultNetworkState,
   NetworkState,
   providerAsMiddleware,
-  SafeEventEmitterProvider,
 } from './Network/INetworkController';
 import { SendTransactionParams } from './Network/createEthMiddleware';
 import {
@@ -31,10 +29,6 @@ import {
   PreferencesState,
 } from './Preferences/IPreferencesController';
 import { CurrencyControllerConfig } from './Currency/ICurrencyController';
-import {
-  AccountTrackerState,
-  defaultAccountTrackerState,
-} from './Account/IAccountTrackerController';
 import {
   defaultKeyringControllerState,
   KeyringControllerState,
@@ -65,7 +59,6 @@ export default class QuillController {
 
   private networkController: NetworkController;
   private currencyController: CurrencyController;
-  private accountTracker: AccountTrackerController;
   private keyringController: KeyringController;
   private preferencesController: PreferencesController;
 
@@ -123,39 +116,12 @@ export default class QuillController {
 
     this.preferencesController = new PreferencesController(preferences);
 
-    this.accountTracker = new AccountTrackerController({
-      provider: this.networkController._providerProxy,
-      state: storage.Cell(
-        'account-tracker-state',
-        AccountTrackerState,
-        () => defaultAccountTrackerState,
-      ),
-      blockNumber: this.blockNumber,
-      getIdentities: async () =>
-        (await this.preferencesController.state.read()).identities,
-      getCurrentChainId: () => this.networkController.chainId.read(),
-      preferences,
-    });
-
     this.networkController.lookupNetwork();
     this.watchThings();
   }
 
   async getSelectedAddress(): Promise<string | undefined> {
     return (await this.preferencesController?.state.read()).selectedAddress;
-  }
-
-  async getSelectedPrivateKey(): Promise<string | undefined> {
-    const address = await this.getSelectedAddress();
-    if (!address) return undefined;
-    const wallet = (await this.keyringController.state.read()).wallets.find(
-      (x) => x.address === address,
-    );
-    return wallet?.privateKey;
-  }
-
-  get provider(): SafeEventEmitterProvider {
-    return this.networkController._providerProxy;
   }
 
   /**
@@ -207,10 +173,6 @@ export default class QuillController {
     this.currencyController.update({ currentCurrency: currency });
     await this.currencyController.updateConversionRate();
     this.preferencesController.setSelectedCurrency(currency);
-  }
-
-  setNetwork(providerConfig: ProviderConfig): void {
-    this.networkController.update({ providerConfig });
   }
 
   /**
@@ -278,7 +240,7 @@ export default class QuillController {
   }): JRPCEngine {
     // setup json rpc engine stack
     const engine = new JRPCEngine();
-    const { provider } = this;
+    const provider = this.networkController._providerProxy;
     console.log('setting up provider engine', origin, provider);
 
     // append origin to each request
@@ -544,7 +506,7 @@ export default class QuillController {
   }
 
   private async fetchBlockNumber() {
-    const res = await this.provider.request({
+    const res = await this.networkController._providerProxy.request({
       method: 'eth_blockNumber',
       jsonrpc: '2.0',
       id: createRandomId(),
@@ -559,8 +521,6 @@ export default class QuillController {
   private watchThings() {
     (async () => {
       for await (const chainId of this.networkController.chainId) {
-        // ensure accountTracker updates balances after network change
-        this.accountTracker.refresh();
         this.notifyAllConnections({
           method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
           params: { chainId },
