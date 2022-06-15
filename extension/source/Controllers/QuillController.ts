@@ -23,7 +23,10 @@ import {
   NetworkState,
   providerAsMiddleware,
 } from './Network/INetworkController';
-import { SendTransactionParams } from './Network/createEthMiddleware';
+import {
+  IProviderHandlers,
+  SendTransactionParams,
+} from './Network/createEthMiddleware';
 import {
   defaultPreferencesState,
   PreferencesState,
@@ -88,9 +91,10 @@ export default class QuillController {
       () => this.fetchBlockNumber(),
     );
 
-    this.networkController = new NetworkController(this.networkState);
-
-    this.initializeProvider();
+    this.networkController = new NetworkController(
+      this.networkState,
+      this.makeEthereumMethods(),
+    );
 
     this.currencyController = new CurrencyController(
       this.currencyControllerConfig,
@@ -254,8 +258,8 @@ export default class QuillController {
     return engine;
   }
 
-  private initializeProvider() {
-    this.networkController.initializeProvider({
+  private makeEthereumMethods(): IProviderHandlers {
+    return {
       // account management
       eth_requestAccounts: async (req) => {
         const selectedAddress = await this.getSelectedAddress();
@@ -329,7 +333,7 @@ export default class QuillController {
 
       ...this.makePublicRpc(),
       ...this.makePrivateRpc(),
-    });
+    };
   }
 
   private makePublicRpc(): Record<string, unknown> {

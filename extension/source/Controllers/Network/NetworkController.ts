@@ -39,9 +39,14 @@ export default class NetworkController implements INetworkController {
 
   public chainId: IReadableCell<string>;
 
-  constructor(public state: ICell<NetworkState>) {
+  constructor(
+    public state: ICell<NetworkState>,
+    ethereumMethods: IProviderHandlers,
+  ) {
     // eslint-disable-next-line @typescript-eslint/no-shadow
     this.chainId = new FormulaCell({ state }, ({ state }) => state.chainId);
+
+    this.initializeProvider(ethereumMethods);
 
     // when a new network is set, we set to loading first and then when connection succeeds, we update the network
   }
