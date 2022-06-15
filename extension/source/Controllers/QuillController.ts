@@ -111,13 +111,6 @@ export default class QuillController {
     });
   }
 
-  async setDefaultCurrency(currency: string): Promise<void> {
-    // This is USD
-    this.currencyController.update({ userCurrency: currency });
-    await this.currencyController.updateConversionRate();
-    this.preferencesController.setSelectedCurrency(currency);
-  }
-
   /**
    * Used to create a multiplexed stream for connecting to an untrusted context
    * like a Dapp or other extension.
@@ -461,6 +454,13 @@ export default class QuillController {
 
       for await (const blockNumber of this.networkController.blockNumber) {
         await storedBlockNumber.write(blockNumber);
+      }
+    })();
+
+    (async () => {
+      for await (const userCurrency of this.currencyController.userCurrency) {
+        await this.currencyController.updateConversionRate();
+        this.preferencesController.setSelectedCurrency(userCurrency);
       }
     })();
   }

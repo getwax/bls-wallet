@@ -1,3 +1,4 @@
+import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import QuillCells, { QuillState } from '../QuillCells';
 
@@ -14,11 +15,19 @@ export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
 export default class CurrencyController {
   private conversionInterval?: number;
 
+  userCurrency: IReadableCell<string>;
+
   constructor(
     public config: CurrencyControllerConfig,
     public state: QuillCells['preferredCurrency'],
     public networkCurrency: IReadableCell<string>,
   ) {
+    this.userCurrency = new FormulaCell(
+      { state },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      ({ state }) => state.userCurrency,
+    );
+
     this.updateConversionRate();
     this.scheduleConversionInterval();
   }
