@@ -11,7 +11,6 @@ import pump from 'pump';
 import type { Duplex } from 'readable-stream';
 
 import { Runtime } from 'webextension-polyfill';
-import { BigNumber } from 'ethers';
 import { Aggregator } from 'bls-wallet-clients';
 import { createRandomId, getAllReqParam, getUserLanguage } from './utils';
 import { ProviderConfig } from './constants';
@@ -28,7 +27,6 @@ import {
 } from './Network/INetworkController';
 import { SendTransactionParams } from './Network/createEthMiddleware';
 import {
-  AddressPreferences,
   defaultPreferencesState,
   PreferencesState,
 } from './Preferences/IPreferencesController';
@@ -156,46 +154,8 @@ export default class QuillController {
     return wallet?.privateKey;
   }
 
-  async getUserBalance(): Promise<BigNumber | undefined> {
-    const selectedAddress = await this.getSelectedAddress();
-
-    if (selectedAddress === undefined) {
-      return undefined;
-    }
-
-    // Balance is a hex string in wei
-    const balance =
-      (await this.accountTracker.state.read()).accounts[selectedAddress]
-        ?.balance || '0x0';
-
-    // FIXME: This doesn't make sense since it rounds to the nearest whole ETH.
-    const value = BigNumber.from(balance).div(BigNumber.from(10 ** 18));
-
-    return value;
-  }
-
-  async getLocale(): Promise<string | undefined> {
-    const selectedAddress = await this.getSelectedAddress();
-
-    if (selectedAddress === undefined) {
-      return undefined;
-    }
-
-    const accountPreferences = await this.getAccountPreferences(
-      selectedAddress,
-    );
-
-    return accountPreferences?.locale?.split('-')[0] || getUserLanguage();
-  }
-
   get provider(): SafeEventEmitterProvider {
     return this.networkController._providerProxy;
-  }
-
-  async getAccounts(): Promise<string[]> {
-    return (await this.keyringController.state.read()).wallets.map(
-      (x) => x.address,
-    );
   }
 
   /**
@@ -216,16 +176,6 @@ export default class QuillController {
     return true;
     // }
     // throw new Error('user denied provider change request');
-  }
-
-  getAccountPreferences(
-    address: string,
-  ): Promise<AddressPreferences | undefined> {
-    return this.preferencesController?.getAddressState(address);
-  }
-
-  async getProviderConfig(): Promise<ProviderConfig> {
-    return (await this.networkController.state.read()).providerConfig;
   }
 
   async addAccount(privKey: string): Promise<string> {
