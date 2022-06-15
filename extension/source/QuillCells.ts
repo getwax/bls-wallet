@@ -49,12 +49,12 @@ function QuillCells(storage: CellCollection) {
     preferredCurrency: storage.Cell(
       'preferredCurrency',
       io.type({
-        currentCurrency: io.string,
+        userCurrency: io.string,
         conversionRate: io.number,
         conversionDate: io.string,
       }),
       () => ({
-        currentCurrency: 'usd',
+        userCurrency: 'usd',
         conversionRate: 0,
         conversionDate: 'N/A',
       }),

@@ -39,7 +39,7 @@ export default class CurrencyController {
       state = await this.state.read();
       const apiUrl = `${
         this.config.api
-      }?fsym=${nativeCurrency.toUpperCase()}&tsyms=${state.currentCurrency.toUpperCase()}&api_key=${
+      }?fsym=${nativeCurrency.toUpperCase()}&tsyms=${state.userCurrency.toUpperCase()}&api_key=${
         process.env.CRYPTO_COMPARE_API_KEY
       }`;
       let response: Response;
@@ -70,11 +70,11 @@ export default class CurrencyController {
       //   this.setConversionRate(Number(parsedResponse.bid))
       //   this.setConversionDate(Number(parsedResponse.timestamp))
       // } else
-      if (parsedResponse[state.currentCurrency.toUpperCase()]) {
+      if (parsedResponse[state.userCurrency.toUpperCase()]) {
         // ETC
         this.update({
           conversionRate: Number(
-            parsedResponse[state.currentCurrency.toUpperCase()],
+            parsedResponse[state.userCurrency.toUpperCase()],
           ),
           conversionDate: (Date.now() / 1000).toString(),
         });
@@ -89,7 +89,7 @@ export default class CurrencyController {
       console.warn(
         'Quill - Failed to query currency conversion:',
         nativeCurrency,
-        state?.currentCurrency,
+        state?.userCurrency,
         error,
       );
 
@@ -101,7 +101,7 @@ export default class CurrencyController {
       // throw error
       console.error(
         error,
-        `CurrencyController - Failed to query rate for currency "${state?.currentCurrency}"`,
+        `CurrencyController - Failed to query rate for currency "${state?.userCurrency}"`,
       );
     }
   }

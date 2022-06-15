@@ -113,7 +113,7 @@ export default class QuillController {
 
   async setDefaultCurrency(currency: string): Promise<void> {
     // This is USD
-    this.currencyController.update({ currentCurrency: currency });
+    this.currencyController.update({ userCurrency: currency });
     await this.currencyController.updateConversionRate();
     this.preferencesController.setSelectedCurrency(currency);
   }
