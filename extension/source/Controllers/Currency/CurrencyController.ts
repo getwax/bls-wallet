@@ -4,6 +4,7 @@ import {
   CurrencyControllerConfig,
   CurrencyControllerState,
   defaultCurrencyControllerConfig,
+  defaultCurrencyControllerState,
 } from './ICurrencyController';
 
 export default class CurrencyController {
@@ -20,12 +21,7 @@ export default class CurrencyController {
     this.state = storage.Cell(
       'CurrencyController',
       CurrencyControllerState,
-      () => ({
-        currentCurrency: 'usd',
-        conversionRate: 0,
-        conversionDate: 'N/A',
-        nativeCurrency: 'ETH',
-      }),
+      () => defaultCurrencyControllerState,
     );
 
     this.updateConversionRate();

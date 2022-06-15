@@ -1,7 +1,5 @@
 import * as io from 'io-ts';
 
-import { BaseConfig } from '../interfaces';
-
 export const CurrencyControllerState = io.type({
   currentCurrency: io.string,
   conversionRate: io.number,
@@ -11,7 +9,14 @@ export const CurrencyControllerState = io.type({
 
 export type CurrencyControllerState = io.TypeOf<typeof CurrencyControllerState>;
 
-export interface CurrencyControllerConfig extends BaseConfig {
+export const defaultCurrencyControllerState: CurrencyControllerState = {
+  currentCurrency: 'usd',
+  conversionRate: 0,
+  conversionDate: 'N/A',
+  nativeCurrency: 'ETH',
+};
+
+export interface CurrencyControllerConfig {
   pollInterval: number;
   api?: string;
 }
