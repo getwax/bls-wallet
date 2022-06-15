@@ -18,7 +18,7 @@ import NetworkController from './Network/NetworkController';
 import CurrencyController, {
   CurrencyControllerConfig,
 } from './CurrencyController';
-import KeyringController from './Keyring/KeyringController';
+import KeyringController from './KeyringController';
 import PreferencesController from './Preferences/PreferencesController';
 import { providerAsMiddleware } from './Network/INetworkController';
 import {

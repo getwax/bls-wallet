@@ -1,16 +1,18 @@
 import { BlsWalletWrapper, Operation } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
-import generateRandomHex from '../../helpers/generateRandomHex';
-import { IKeyringController } from './IKeyringController';
-import { DEFAULT_CHAIN_ID_HEX, NETWORK_CONFIG } from '../../env';
-import { getRPCURL } from '../utils';
-import QuillCells from '../../QuillCells';
+import generateRandomHex from '../helpers/generateRandomHex';
+import { DEFAULT_CHAIN_ID_HEX, NETWORK_CONFIG } from '../env';
+import { getRPCURL } from './utils';
+import QuillCells from '../QuillCells';
 
-export default class KeyringController implements IKeyringController {
+export default class KeyringController {
   name = 'KeyringController';
 
   constructor(public state: QuillCells['keyring']) {}
 
+  /**
+   * Returns the addresses of all stored key pairs
+   */
   async getAccounts(): Promise<string[]> {
     return (await this.state.read()).wallets.map((x) => x.address);
   }
@@ -38,6 +40,9 @@ export default class KeyringController implements IKeyringController {
     return (await this.state.read()).HDPhrase !== undefined;
   }
 
+  /**
+   * Creates a Deterministic Account based on seed phrase
+   */
   async createHDAccount(): Promise<string> {
     const mnemonic = await this.requireHDPhrase();
     const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
@@ -49,11 +54,18 @@ export default class KeyringController implements IKeyringController {
     return this._createAccountAndUpdate(privateKey);
   }
 
+  /**
+   * Creates a new key pair
+   */
   async createAccount(): Promise<string> {
     const privateKey = generateRandomHex(256);
     return this._createAccountAndUpdate(privateKey);
   }
 
+  /**
+   * Imports a key pair
+   * @param privateKey - Hex string without 0x prefix
+   */
   async importAccount(privateKey: string): Promise<string> {
     const existingWallet = (await this.state.read()).wallets.find(
       (x) => x.privateKey.toLowerCase() === privateKey.toLowerCase(),
@@ -63,6 +75,10 @@ export default class KeyringController implements IKeyringController {
     return this._createAccountAndUpdate(privateKey);
   }
 
+  /**
+   * Removes a key pair
+   * @param address - Address of the key pair
+   */
   async removeAccount(address: string) {
     const state = await this.state.read();
     const index = state.wallets.findIndex((x) => x.address === address);
@@ -72,6 +88,11 @@ export default class KeyringController implements IKeyringController {
     }
   }
 
+  /**
+   * Signs a transaction of Type T
+   * @param address - account to sign the tx with
+   * @param tx - Transaction to sign
+   */
   async signTransactions(address: string, tx: Operation) {
     const privKey = await this._getPrivateKeyFor(address);
     const wallet = await this._getBLSWallet(privKey);
