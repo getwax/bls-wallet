@@ -8,7 +8,7 @@ import IAsyncStorage from './IAsyncStorage';
 
 const events = new EventEmitter() as IAsyncStorage['events'];
 
-window.addEventListener('storage', evt => {
+window.addEventListener('storage', (evt) => {
   if (evt.key !== null) {
     events.emit('change', [evt.key]);
   }
