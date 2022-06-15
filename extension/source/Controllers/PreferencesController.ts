@@ -104,6 +104,9 @@ export default class PreferencesController {
   ) {
     const state = await this.state.read();
     const selectedAddress = address ?? state.selectedAddress;
+    if (selectedAddress === undefined) {
+      return;
+    }
     assert(selectedAddress !== undefined);
     const currentState =
       (await this.getAddressState(selectedAddress)) ??
@@ -118,7 +121,6 @@ export default class PreferencesController {
         [selectedAddress]: mergedState,
       },
     });
-    return mergedState;
   }
 
   async update(stateUpdates: Partial<QuillState<'preferences'>>) {
