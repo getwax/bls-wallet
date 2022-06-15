@@ -3,7 +3,6 @@ import ICell, { IReadableCell } from '../../cells/ICell';
 import {
   CurrencyControllerConfig,
   CurrencyControllerState,
-  defaultCurrencyControllerConfig,
   defaultCurrencyControllerState,
 } from './ICurrencyController';
 
@@ -14,11 +13,11 @@ export default class CurrencyController {
   public nativeCurrency: IReadableCell<string>;
 
   constructor(
-    config: CurrencyControllerConfig | undefined,
+    config: CurrencyControllerConfig,
     storage: CellCollection,
     nativeCurrency: IReadableCell<string>,
   ) {
-    this.config = config ?? defaultCurrencyControllerConfig;
+    this.config = config;
 
     this.state = storage.Cell(
       'CurrencyController',
@@ -31,10 +30,6 @@ export default class CurrencyController {
     this.updateConversionRate();
     this.scheduleConversionInterval();
   }
-
-  //
-  // PUBLIC METHODS
-  //
 
   public async update(stateUpdates: Partial<CurrencyControllerState>) {
     await this.state.write({
