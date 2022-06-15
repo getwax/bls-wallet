@@ -3,14 +3,8 @@ import ICell from '../../cells/ICell';
 import {
   CurrencyControllerConfig,
   CurrencyControllerState,
+  defaultCurrencyControllerConfig,
 } from './ICurrencyController';
-
-// every ten minutes
-const POLLING_INTERVAL = 600_000;
-
-const defaultConfig: CurrencyControllerConfig = {
-  pollInterval: POLLING_INTERVAL,
-};
 
 export default class CurrencyController {
   private conversionInterval: number;
@@ -21,7 +15,7 @@ export default class CurrencyController {
     config: CurrencyControllerConfig | undefined,
     storage: CellCollection,
   ) {
-    this.config = config ?? defaultConfig;
+    this.config = config ?? defaultCurrencyControllerConfig;
 
     this.state = storage.Cell(
       'CurrencyController',
