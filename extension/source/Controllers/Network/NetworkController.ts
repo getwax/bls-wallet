@@ -32,6 +32,7 @@ export default class NetworkController implements INetworkController {
   name = 'NetworkController';
 
   state: ICell<NetworkState>;
+  ticker: IReadableCell<string>;
 
   _providerProxy!: SafeEventEmitterProvider;
 
@@ -58,6 +59,11 @@ export default class NetworkController implements INetworkController {
       'network-controller-state',
       NetworkState,
       () => defaultNetworkState,
+    );
+
+    this.ticker = new FormulaCell(
+      { state: this.state },
+      ({ state }) => state.providerConfig.ticker,
     );
 
     this.chainId = new FormulaCell(

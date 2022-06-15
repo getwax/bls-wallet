@@ -1,5 +1,5 @@
 import CellCollection from '../../cells/CellCollection';
-import ICell from '../../cells/ICell';
+import ICell, { IReadableCell } from '../../cells/ICell';
 import {
   CurrencyControllerConfig,
   CurrencyControllerState,
@@ -11,10 +11,12 @@ export default class CurrencyController {
   private conversionInterval?: number;
   public config: CurrencyControllerConfig;
   public state: ICell<CurrencyControllerState>;
+  public nativeCurrency: IReadableCell<string>;
 
   constructor(
     config: CurrencyControllerConfig | undefined,
     storage: CellCollection,
+    nativeCurrency: IReadableCell<string>,
   ) {
     this.config = config ?? defaultCurrencyControllerConfig;
 
@@ -23,6 +25,8 @@ export default class CurrencyController {
       CurrencyControllerState,
       () => defaultCurrencyControllerState,
     );
+
+    this.nativeCurrency = nativeCurrency;
 
     this.updateConversionRate();
     this.scheduleConversionInterval();
@@ -41,12 +45,14 @@ export default class CurrencyController {
 
   async updateConversionRate(): Promise<void> {
     let state: CurrencyControllerState | undefined;
+    let nativeCurrency: string | undefined;
 
     try {
+      nativeCurrency = await this.nativeCurrency.read();
       state = await this.state.read();
       const apiUrl = `${
         this.config.api
-      }?fsym=${state.nativeCurrency.toUpperCase()}&tsyms=${state.currentCurrency.toUpperCase()}&api_key=${
+      }?fsym=${nativeCurrency.toUpperCase()}&tsyms=${state.currentCurrency.toUpperCase()}&api_key=${
         process.env.CRYPTO_COMPARE_API_KEY
       }`;
       let response: Response;
@@ -95,7 +101,7 @@ export default class CurrencyController {
       // reset current conversion rate
       console.warn(
         'Quill - Failed to query currency conversion:',
-        state?.nativeCurrency,
+        nativeCurrency,
         state?.currentCurrency,
         error,
       );

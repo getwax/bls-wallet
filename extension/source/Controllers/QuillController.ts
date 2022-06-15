@@ -68,6 +68,7 @@ export default class QuillController {
     this.currencyController = new CurrencyController(
       this.currencyControllerConfig,
       this.storage,
+      this.networkController.ticker,
     );
 
     this.keyringController = new KeyringController(storage);
@@ -122,10 +123,6 @@ export default class QuillController {
   }
 
   async setDefaultCurrency(currency: string): Promise<void> {
-    const { ticker } = (await this.networkController.state.read())
-      .providerConfig;
-    // This is ETH
-    this.currencyController.update({ nativeCurrency: ticker });
     // This is USD
     this.currencyController.update({ currentCurrency: currency });
     await this.currencyController.updateConversionRate();

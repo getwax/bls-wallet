@@ -4,7 +4,6 @@ export const CurrencyControllerState = io.type({
   currentCurrency: io.string,
   conversionRate: io.number,
   conversionDate: io.string,
-  nativeCurrency: io.string,
 });
 
 export type CurrencyControllerState = io.TypeOf<typeof CurrencyControllerState>;
@@ -13,7 +12,6 @@ export const defaultCurrencyControllerState: CurrencyControllerState = {
   currentCurrency: 'usd',
   conversionRate: 0,
   conversionDate: 'N/A',
-  nativeCurrency: 'ETH',
 };
 
 export interface CurrencyControllerConfig {
