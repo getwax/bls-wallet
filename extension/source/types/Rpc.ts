@@ -1,5 +1,6 @@
 import * as io from 'io-ts';
 
+import assert from '../helpers/assert';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
 
@@ -32,6 +33,18 @@ export const rpcMap = {
     },
   },
 };
+
+const publicMethodNames = Object.keys(rpcMap.public);
+const privateMethodNames = Object.keys(rpcMap.private);
+
+const overlappingMethodNames = publicMethodNames.filter((publicMethodName) =>
+  privateMethodNames.includes(publicMethodName),
+);
+
+// Check that public & private rpc don't overlap. This is relevant to security
+// because QuillController assumes that private methods can only be called
+// privately.
+assert(overlappingMethodNames.length === 0);
 
 export type RpcMap = typeof rpcMap;
 
