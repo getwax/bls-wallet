@@ -24,7 +24,7 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="text-body">Wallets</div>
         <Button
           onPress={async () => {
-            await rpc.private.quill_createHDAccount();
+            await rpc.private.createHDAccount();
           }}
           className="btn-secondary"
         >
@@ -38,7 +38,7 @@ export const WalletsWrapper: FunctionComponent = () => {
           {keyring.wallets.map((wallet, index) => (
             <WalletSummary
               onClick={() => {
-                rpc.private.quill_setSelectedAddress(wallet.address);
+                rpc.private.setSelectedAddress(wallet.address);
               }}
               key={wallet.address}
               wallet={{

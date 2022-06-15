@@ -326,22 +326,22 @@ export default class QuillController {
 
   private makePrivateRpc(): Rpc['private'] {
     return {
-      quill_setSelectedAddress: async (newSelectedAddress) => {
+      setSelectedAddress: async (newSelectedAddress) => {
         this.preferencesController.update({
           selectedAddress: newSelectedAddress,
         });
         return 'ok';
       },
 
-      quill_createHDAccount: async () => {
+      createHDAccount: async () => {
         return this.keyringController.createHDAccount();
       },
 
-      quill_isOnboardingComplete: async () => {
+      isOnboardingComplete: async () => {
         return this.keyringController.isOnboardingComplete();
       },
 
-      quill_setHDPhrase: async (phrase) => {
+      setHDPhrase: async (phrase) => {
         this.keyringController.setHDPhrase(phrase);
         return 'ok';
       },

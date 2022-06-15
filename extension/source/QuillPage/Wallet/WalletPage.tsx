@@ -48,7 +48,7 @@ export const WalletPage: React.FunctionComponent = () => {
 
   React.useEffect(() => {
     (async () => {
-      const onboardingComplete = await rpc.private.quill_isOnboardingComplete();
+      const onboardingComplete = await rpc.private.isOnboardingComplete();
       console.debug('onboardingComplete', onboardingComplete);
 
       if (!onboardingComplete) {

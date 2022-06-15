@@ -11,22 +11,22 @@ export const rpcMap = {
     },
   },
   private: {
-    quill_setSelectedAddress: {
+    setSelectedAddress: {
       params: io.tuple([/* newSelectedAddress */ io.string]),
       output: io.literal('ok'),
     },
 
-    quill_createHDAccount: {
+    createHDAccount: {
       params: emptyTuple,
       output: io.string,
     },
 
-    quill_isOnboardingComplete: {
+    isOnboardingComplete: {
       params: emptyTuple,
       output: io.boolean,
     },
 
-    quill_setHDPhrase: {
+    setHDPhrase: {
       params: io.tuple([io.string]),
       output: io.literal('ok'),
     },

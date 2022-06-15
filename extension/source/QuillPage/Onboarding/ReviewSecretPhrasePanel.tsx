@@ -70,9 +70,9 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   const navigate = useNavigate();
 
   const setHDWalletPhrase = async () => {
-    await rpc.private.quill_setHDPhrase(secretPhrase.join(' '));
-    const address = await rpc.private.quill_createHDAccount();
-    await rpc.private.quill_setSelectedAddress(address);
+    await rpc.private.setHDPhrase(secretPhrase.join(' '));
+    const address = await rpc.private.createHDAccount();
+    await rpc.private.setSelectedAddress(address);
 
     navigate('/wallet');
   };
