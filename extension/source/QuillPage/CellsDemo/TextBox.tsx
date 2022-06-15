@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react';
+import { ChangeEvent, FunctionComponent } from 'react';
 import ICell from '../../cells/ICell';
 import useCell from '../../cells/useCell';
 
@@ -9,7 +9,9 @@ const TextBox: FunctionComponent<{ value: ICell<string> }> = ({ value }) => {
     <input
       type="text"
       value={valueValue}
-      onInput={(evt) => value.write((evt.target as HTMLInputElement).value)}
+      onInput={(evt: ChangeEvent<HTMLInputElement>) =>
+        value.write(evt.target.value)
+      }
     />
   );
 };
