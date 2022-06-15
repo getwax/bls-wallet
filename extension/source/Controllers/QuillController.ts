@@ -31,12 +31,20 @@ import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
-import Rpc, { rpcMap } from '../types/Rpc';
+import Rpc, { PrivateRpcMethodName, rpcMap } from '../types/Rpc';
 import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 
 const PROVIDER = 'quill-provider';
+
+const PrivateRpcMessage = io.type({
+  type: io.literal('quill-private-rpc'),
+  method: io.string,
+  params: io.array(io.unknown),
+});
+
+type PrivateRpcMessage = io.TypeOf<typeof PrivateRpcMessage>;
 
 export default class QuillController {
   public connections: Record<string, Record<string, { engine: JRPCEngine }>> =
@@ -54,7 +62,7 @@ export default class QuillController {
   private tabPreferredAggregators: Record<number, string> = {};
 
   public time = TimeCell(1000);
-  public cells: ReturnType<typeof QuillCells>;
+  public cells: QuillCells;
 
   constructor(
     public storage: CellCollection,
@@ -81,6 +89,23 @@ export default class QuillController {
     );
 
     this.watchThings();
+  }
+
+  handlePrivateMessage(message: unknown, _sender: Runtime.MessageSender) {
+    if (!PrivateRpcMessage.is(message)) {
+      return;
+    }
+
+    const privateRpc = this.makePrivateRpc();
+
+    assertType(message.method, PrivateRpcMethodName);
+
+    assertType(
+      message.params,
+      rpcMap.private[message.method].params as io.Type<ExplicitAny>,
+    );
+
+    return (privateRpc[message.method] as ExplicitAny)(...message.params);
   }
 
   /**
@@ -262,7 +287,6 @@ export default class QuillController {
       },
 
       ...this.makePublicRpc(),
-      ...this.makePrivateRpc(),
     };
   }
 
@@ -300,8 +324,8 @@ export default class QuillController {
     });
   }
 
-  private makePrivateRpc(): Record<string, unknown> {
-    const methods: Rpc['private'] = {
+  private makePrivateRpc(): Rpc['private'] {
+    return {
       quill_setSelectedAddress: async (newSelectedAddress) => {
         this.preferencesController.update({
           selectedAddress: newSelectedAddress,
@@ -322,21 +346,6 @@ export default class QuillController {
         return 'ok';
       },
     };
-
-    return mapValues(methods, (method, methodName) => (req: any) => {
-      if (req.origin !== window.location.origin) {
-        return;
-      }
-
-      const params = req.params ?? [];
-
-      assertType(
-        params,
-        rpcMap.private[methodName].params as unknown as io.Type<unknown[]>,
-      );
-
-      return (method as ExplicitAny)(...params);
-    });
   }
 
   /**

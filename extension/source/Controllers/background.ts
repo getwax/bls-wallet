@@ -51,6 +51,10 @@ function setupController(): void {
     defaultCurrencyControllerConfig,
   );
 
+  runtime.onMessage.addListener((message, sender) => {
+    return controller.handlePrivateMessage(message, sender);
+  });
+
   //
   // connect to other contexts
   //

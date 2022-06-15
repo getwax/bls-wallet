@@ -2,6 +2,7 @@ import * as io from 'io-ts';
 import React from 'react';
 import { ethers } from 'ethers';
 
+import Browser from 'webextension-polyfill';
 import getWindowQuillProvider from './getWindowQuillProvider';
 import mapValues from '../helpers/mapValues';
 import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
@@ -38,7 +39,8 @@ function getQuillContextValue(provider: QuillInPageProvider) {
       ({ params: paramsType, output }, method) => {
         return async (...params: unknown[]) => {
           assertType(params, paramsType as unknown as io.Type<unknown[]>);
-          const response = await provider.request({
+          const response = await Browser.runtime.sendMessage(undefined, {
+            type: 'quill-private-rpc',
             method,
             params,
           });

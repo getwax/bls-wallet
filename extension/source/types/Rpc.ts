@@ -1,6 +1,7 @@
 import * as io from 'io-ts';
 
 import emptyTuple from './emptyTuple';
+import ExplicitAny from './ExplicitAny';
 
 export const rpcMap = {
   public: {
@@ -46,5 +47,11 @@ type Rpc = {
     ) => Promise<io.TypeOf<RpcMap['private'][K]['output']>>;
   };
 };
+
+export const PrivateRpcMethodName: io.Type<keyof RpcMap['private']> = io.union(
+  Object.keys(rpcMap.private).map((k) => io.literal(k)) as ExplicitAny,
+);
+
+export type PrivateRpcMethodName = io.TypeOf<typeof PrivateRpcMethodName>;
 
 export default Rpc;
