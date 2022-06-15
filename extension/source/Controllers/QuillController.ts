@@ -19,7 +19,7 @@ import CurrencyController, {
   CurrencyControllerConfig,
 } from './CurrencyController';
 import KeyringController from './KeyringController';
-import PreferencesController from './Preferences/PreferencesController';
+import PreferencesController from './PreferencesController';
 import { providerAsMiddleware } from './Network/INetworkController';
 import {
   IProviderHandlers,
