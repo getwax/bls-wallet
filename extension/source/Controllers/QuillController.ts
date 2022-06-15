@@ -3,7 +3,6 @@ import {
   createEngineStream,
   createLoggerMiddleware,
   JRPCEngine,
-  JRPCRequest,
   setupMultiplex,
   Substream,
 } from '@toruslabs/openlogin-jrpc';
@@ -13,7 +12,6 @@ import type { Duplex } from 'readable-stream';
 import { Runtime } from 'webextension-polyfill';
 import { Aggregator } from 'bls-wallet-clients';
 import { createRandomId, getAllReqParam, getUserLanguage } from './utils';
-import { ProviderConfig } from './constants';
 import NetworkController from './Network/NetworkController';
 import CurrencyController, {
   CurrencyControllerConfig,
@@ -85,28 +83,12 @@ export default class QuillController {
     this.watchThings();
   }
 
-  async getSelectedAddress(): Promise<string | undefined> {
-    return (await this.preferencesController?.state.read()).selectedAddress;
-  }
-
   /**
    * A method for recording whether the Quill user interface is open or not.
    */
   set isClientOpen(open: boolean) {
     this._isClientOpen = open;
     console.log(this._isClientOpen, 'set client open status');
-  }
-
-  async changeProvider<T>(req: JRPCRequest<T>): Promise<boolean> {
-    // TODO: show popup to user and ask for confirmation
-    // const { approve = false } = result;
-    // if (approve) {
-    this.networkController.update({
-      providerConfig: req.params as unknown as ProviderConfig,
-    });
-    return true;
-    // }
-    // throw new Error('user denied provider change request');
   }
 
   async addAccount(privKey: string): Promise<string> {
@@ -222,7 +204,8 @@ export default class QuillController {
     return {
       // account management
       eth_requestAccounts: async (req) => {
-        const selectedAddress = await this.getSelectedAddress();
+        const selectedAddress =
+          await this.preferencesController.selectedAddress.read();
         const accounts = selectedAddress ? [selectedAddress] : [];
         this.notifyConnections((req as any).origin, {
           method: PROVIDER_NOTIFICATIONS.UNLOCK_STATE_CHANGED,
@@ -234,10 +217,12 @@ export default class QuillController {
         return accounts;
       },
 
-      eth_coinbase: async () => (await this.getSelectedAddress()) || null,
+      eth_coinbase: async () =>
+        (await this.preferencesController.selectedAddress.read()) || null,
 
       wallet_get_provider_state: async () => {
-        const selectedAddress = await this.getSelectedAddress();
+        const selectedAddress =
+          await this.preferencesController.selectedAddress.read();
 
         return {
           accounts: selectedAddress ? [selectedAddress] : [],
@@ -312,7 +297,8 @@ export default class QuillController {
           );
         }
 
-        const selectedAddress = await this.getSelectedAddress();
+        const selectedAddress =
+          await this.preferencesController.selectedAddress.read();
 
         // TODO (merge-ok) Expose no accounts if this origin has not been approved,
         // preventing account-requiring RPC methods from completing successfully

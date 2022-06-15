@@ -30,6 +30,9 @@ export default class NetworkController implements INetworkController {
   name = 'NetworkController';
 
   ticker: IReadableCell<string>;
+  chainId: IReadableCell<string>;
+  blockNumber: IReadableCell<number>;
+  providerConfig: IReadableCell<ProviderConfig>;
 
   _providerProxy!: SafeEventEmitterProvider;
 
@@ -43,9 +46,6 @@ export default class NetworkController implements INetworkController {
   private ethQuery!: EthQuery;
 
   private _baseProviderHandlers!: IProviderHandlers;
-
-  public chainId: IReadableCell<string>;
-  public blockNumber: IReadableCell<number>;
 
   constructor(
     public state: QuillCells['network'],
@@ -72,7 +72,15 @@ export default class NetworkController implements INetworkController {
       () => this.fetchBlockNumber(),
     );
 
+    this.providerConfig = new FormulaCell(
+      { state: this.state },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      ({ state }) => state.providerConfig,
+    );
+
     this.initializeProvider(ethereumMethods);
+
+    this.watchThings();
 
     // when a new network is set, we set to loading first and then when connection succeeds, we update the network
   }
@@ -83,10 +91,6 @@ export default class NetworkController implements INetworkController {
 
   async update(stateUpdates: Partial<QuillState<'network'>>) {
     await this.state.write({ ...(await this.state.read()), ...stateUpdates });
-
-    if ('providerConfig' in stateUpdates) {
-      this.refreshNetwork();
-    }
   }
 
   /**
@@ -107,15 +111,11 @@ export default class NetworkController implements INetworkController {
     return this._providerProxy;
   }
 
-  async getProviderConfig(): Promise<ProviderConfig> {
-    return (await this.state.read()).providerConfig;
-  }
-
   /**
    * Refreshes the current network code
    */
   async lookupNetwork(): Promise<void> {
-    const { rpcTarget, chainId } = await this.getProviderConfig();
+    const { rpcTarget, chainId } = await this.providerConfig.read();
     if (!chainId || !rpcTarget || !this._provider) {
       await this.update({
         chainId: 'loading',
@@ -177,7 +177,7 @@ export default class NetworkController implements INetworkController {
   }
 
   private async configureProvider() {
-    const { chainId, rpcTarget, ...rest } = await this.getProviderConfig();
+    const { chainId, rpcTarget, ...rest } = await this.providerConfig.read();
     if (!chainId || !rpcTarget) {
       throw new Error(
         'chainId and rpcTarget must be provider in providerConfig',
@@ -240,5 +240,14 @@ export default class NetworkController implements INetworkController {
     const resNumber = Number(res);
     assert(Number.isFinite(resNumber));
     return resNumber;
+  }
+
+  private watchThings() {
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unused-vars
+      for await (const _ of this.providerConfig) {
+        this.refreshNetwork();
+      }
+    })();
   }
 }
