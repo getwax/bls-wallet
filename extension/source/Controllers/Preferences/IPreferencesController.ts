@@ -77,26 +77,3 @@ export const defaultAddressPreferences: AddressPreferences = {
   customTokens: [],
   customNfts: [],
 };
-
-export interface IPreferencesController {
-  /**
-   * creates a new user and stores his details
-   * @param address - address of the user
-   *
-   */
-  createUser(
-    params: { address: string } & Partial<AddressPreferences>,
-  ): Promise<void>;
-
-  /**
-   * Gets the preferences state of specified address
-   * @defaultValue - By default it will return selected address preferences
-   */
-  getAddressState(address?: string): Promise<AddressPreferences | undefined>;
-
-  /**
-   * Sets the selected address in state
-   * @param selectedAddress - Sets the provided address as currently selected address
-   */
-  setSelectedAddress(selectedAddress: string): Promise<void>;
-}

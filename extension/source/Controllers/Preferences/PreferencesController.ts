@@ -6,14 +6,13 @@ import {
   AddressPreferences,
   Contact,
   defaultAddressPreferences,
-  IPreferencesController,
   Theme,
 } from './IPreferencesController';
 
 /**
  * Controller that stores shared settings and exposes convenience methods
  */
-export default class PreferencesController implements IPreferencesController {
+export default class PreferencesController {
   /**
    * Name of this controller used during composition
    */
@@ -21,6 +20,10 @@ export default class PreferencesController implements IPreferencesController {
 
   constructor(public state: QuillCells['preferences']) {}
 
+  /**
+   * Gets the preferences state of specified address
+   * @defaultValue - By default it will return selected address preferences
+   */
   async getAddressState(
     address?: string,
   ): Promise<AddressPreferences | undefined> {
@@ -34,6 +37,11 @@ export default class PreferencesController implements IPreferencesController {
     return state.identities[selectedAddress];
   }
 
+  /**
+   * creates a new user and stores his details
+   * @param address - address of the user
+   *
+   */
   async createUser(params: {
     selectedCurrency: string;
     theme: Theme;
