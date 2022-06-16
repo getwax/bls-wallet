@@ -32,8 +32,12 @@ import CellCollection from '../cells/CellCollection';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, {
+  PrivateRpc,
+  PrivateRpcMessage,
   PrivateRpcMethodName,
+  PublicRpcMessage,
   PublicRpcMethodName,
+  PublicRpcWithOrigin,
   rpcMap,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
@@ -41,33 +45,6 @@ import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 
 const PROVIDER = 'quill-provider';
-
-const PrivateRpcMessage = io.type({
-  type: io.literal('quill-private-rpc'),
-  method: io.string,
-  params: io.array(io.unknown),
-});
-
-type PrivateRpcMessage = io.TypeOf<typeof PrivateRpcMessage>;
-
-const PublicRpcMessage = io.type({
-  type: io.literal('quill-public-rpc'),
-  origin: io.string,
-  method: io.string,
-  params: io.array(io.unknown),
-});
-
-type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
-
-type PublicRpc = Rpc['public'];
-type PrivateRpc = Rpc['private'];
-
-type PublicRpcWithOrigin = {
-  [M in keyof PublicRpc]: (
-    origin: string,
-    params: Parameters<PublicRpc[M]>,
-  ) => ReturnType<PublicRpc[M]>;
-};
 
 export default class QuillController
   implements PublicRpcWithOrigin, PrivateRpc
@@ -151,6 +128,7 @@ export default class QuillController
       rpcMap.private[message.method].params as io.Type<ExplicitAny>,
     );
 
+    // TODO: Handle exceptions
     return (this[message.method] as ExplicitAny)(...message.params);
   }
 
@@ -186,6 +164,7 @@ export default class QuillController
       rpcMap.public[message.method].params as io.Type<ExplicitAny>,
     );
 
+    // TODO: Handle exceptions
     return (this[message.method] as ExplicitAny)(
       message.origin,
       message.params,

@@ -73,4 +73,40 @@ export const PublicRpcMethodName: io.Type<keyof RpcMap['public']> = io.union(
 
 export type PublicRpcMethodName = io.TypeOf<typeof PublicRpcMethodName>;
 
+export const PrivateRpcMessage = io.type({
+  type: io.literal('quill-private-rpc'),
+  method: io.string,
+  params: io.array(io.unknown),
+});
+
+export type PrivateRpcMessage = io.TypeOf<typeof PrivateRpcMessage>;
+
+export const PublicRpcMessage = io.type({
+  type: io.literal('quill-public-rpc'),
+  id: io.string,
+  origin: io.string,
+  method: io.string,
+  params: io.array(io.unknown),
+});
+
+export type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
+
+export const PublicRpcResponse = io.type({
+  type: io.literal('quill-public-rpc-response'),
+  id: io.string,
+  response: io.unknown,
+});
+
+export type PublicRpcResponse = io.TypeOf<typeof PublicRpcResponse>;
+
+export type PublicRpc = Rpc['public'];
+export type PrivateRpc = Rpc['private'];
+
+export type PublicRpcWithOrigin = {
+  [M in keyof PublicRpc]: (
+    origin: string,
+    params: Parameters<PublicRpc[M]>,
+  ) => ReturnType<PublicRpc[M]>;
+};
+
 export default Rpc;

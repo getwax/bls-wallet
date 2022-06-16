@@ -49,6 +49,10 @@ function setupController(): void {
     return quillController.handlePrivateMessage(message);
   });
 
+  runtime.onMessage.addListener((message, _sender) => {
+    return quillController.handlePublicMessage(message);
+  });
+
   //
   // connect to other contexts
   //

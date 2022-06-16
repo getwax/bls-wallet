@@ -7,6 +7,28 @@ import pump from 'pump';
 import { runtime } from 'webextension-polyfill';
 import { CONTENT_SCRIPT, INPAGE, PROVIDER } from '../common/constants';
 import PortDuplexStream from '../common/PortStream';
+import { PublicRpcMessage, PublicRpcResponse } from '../types/Rpc';
+
+window.addEventListener('message', async (evt) => {
+  const data = {
+    ...evt.data,
+    origin: window.location.origin,
+  };
+
+  if (!PublicRpcMessage.is(data)) {
+    return;
+  }
+
+  const response = await runtime.sendMessage(data);
+
+  const reply: PublicRpcResponse = {
+    type: 'quill-public-rpc-response',
+    id: data.id,
+    response,
+  };
+
+  window.postMessage(reply, '*');
+});
 
 function canInjectScript() {
   if (window.document.doctype?.name !== 'html') return false;
