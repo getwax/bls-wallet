@@ -51,7 +51,6 @@ import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
 import toOkError, { Result } from '../helpers/toOkError';
-import assert from '../helpers/assert';
 
 const PROVIDER = 'quill-provider';
 
@@ -240,18 +239,13 @@ export default class QuillController
     const enabledEvents = new Set<BroadcastEventName>();
 
     port.onMessage.addListener((message) => {
-      if (isType(message, SetEventEnabledMessage)) {
-        if (message.enabled) {
-          enabledEvents.add(message.eventName);
-        } else {
-          enabledEvents.delete(message.eventName);
-        }
-      }
+      assertType(message, SetEventEnabledMessage);
 
-      assert(
-        false,
-        `Unexpected message on quill-events-port: ${JSON.stringify(message)}`,
-      );
+      if (message.enabled) {
+        enabledEvents.add(message.eventName);
+      } else {
+        enabledEvents.delete(message.eventName);
+      }
     });
 
     const broadcastListener = (broadcast: Broadcast) => {
