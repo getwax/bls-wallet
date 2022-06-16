@@ -10,7 +10,6 @@ import { ENVIRONMENT_TYPE } from './constants';
 import PortDuplexStream from '../common/PortStream';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
 import { defaultCurrencyControllerConfig } from './CurrencyController';
-import assert from '../helpers/assert';
 
 let popupIsOpen = false;
 let notificationIsOpen = false;
@@ -46,41 +45,9 @@ function setupController(): void {
     defaultCurrencyControllerConfig,
   );
 
-  runtime.onMessage.addListener((message, _sender) => {
-    const maybePromise = quillController.handlePrivateMessage(message);
-
-    if (maybePromise === undefined) {
-      return;
-    }
-
-    return (async () => {
-      try {
-        return { ok: await maybePromise };
-      } catch (error) {
-        console.error(error);
-        assert(error instanceof Error);
-        return { error: { message: error.message, stack: error.stack } };
-      }
-    })();
-  });
-
-  runtime.onMessage.addListener((message, _sender) => {
-    const maybePromise = quillController.handlePublicMessage(message);
-
-    if (maybePromise === undefined) {
-      return;
-    }
-
-    return (async () => {
-      try {
-        return { ok: await maybePromise };
-      } catch (error) {
-        console.error(error);
-        assert(error instanceof Error);
-        return { error: { message: error.message, stack: error.stack } };
-      }
-    })();
-  });
+  runtime.onMessage.addListener((message, _sender) =>
+    quillController.handleRpcMessage(message),
+  );
 
   //
   // connect to other contexts

@@ -45,6 +45,7 @@ import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
+import toOkError, { Result } from '../helpers/toOkError';
 
 const PROVIDER = 'quill-provider';
 
@@ -118,22 +119,6 @@ export default class QuillController
     return 'ok' as const;
   }
 
-  handlePrivateMessage(message: unknown): Promise<unknown> | undefined {
-    if (!PrivateRpcMessage.is(message)) {
-      return;
-    }
-
-    assertType(message.method, PrivateRpcMethodName);
-
-    assertType(
-      message.params,
-      rpcMap.private[message.method].params as io.Type<ExplicitAny>,
-    );
-
-    // TODO: Handle exceptions
-    return (this[message.method] as ExplicitAny)(...message.params);
-  }
-
   /** Public RPC */
 
   // eslint-disable-next-line no-empty-pattern
@@ -174,27 +159,49 @@ export default class QuillController
     throw new Error('Unexpected end of this.cells.preferences');
   }
 
-  handlePublicMessage(message: unknown): Promise<unknown> | undefined {
-    if (!PublicRpcMessage.is(message)) {
-      return;
+  handleRpcMessage(message: unknown): Promise<Result<unknown>> | undefined {
+    if (PublicRpcMessage.is(message)) {
+      return toOkError(
+        (async () => {
+          if (isType(message.method, PublicRpcMethodName)) {
+            assertType(message.method, PublicRpcMethodName);
+
+            assertType(
+              message.params,
+              rpcMap.public[message.method].params as io.Type<ExplicitAny>,
+            );
+
+            return (this[message.method] as ExplicitAny)(
+              message.origin,
+              message.params,
+            );
+          }
+
+          return this.networkController.fetch(message);
+        })(),
+      );
     }
 
-    if (isType(message.method, PublicRpcMethodName)) {
-      assertType(message.method, PublicRpcMethodName);
+    if (PrivateRpcMessage.is(message)) {
+      return toOkError(
+        (async () => {
+          assertType(message.method, PrivateRpcMethodName);
 
-      assertType(
-        message.params,
-        rpcMap.public[message.method].params as io.Type<ExplicitAny>,
-      );
+          assertType(
+            message.params,
+            rpcMap.private[message.method].params as io.Type<ExplicitAny>,
+          );
 
-      // TODO: Handle exceptions
-      return (this[message.method] as ExplicitAny)(
-        message.origin,
-        message.params,
+          return (this[message.method] as ExplicitAny)(...message.params);
+        })(),
       );
     }
 
-    return this.networkController.fetch(message);
+    // It's important to return undefined synchronously because messages can
+    // have multiple handlers and if you return a promise you are taking
+    // ownership of replying to that message. If multiple handlers return
+    // promises then the browser will just provide the caller with null.
+    return undefined;
   }
 
   /**
