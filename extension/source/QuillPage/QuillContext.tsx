@@ -114,7 +114,7 @@ type Props = {
   children: React.ReactNode;
 };
 
-export function QuillProvider({ children }: Props) {
+export function QuillContextProvider({ children }: Props) {
   const [ctxVal, setCtxVal] = React.useState<QuillContextValue | undefined>();
 
   React.useEffect(() => {

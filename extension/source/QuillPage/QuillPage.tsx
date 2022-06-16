@@ -5,12 +5,12 @@ import OnboardingPage from './Onboarding/OnboardingPage';
 import { WalletPage } from './Wallet/WalletPage';
 import { CellsDemoPage } from './CellsDemo/CellsDemoPage';
 import { CellsDemoPage2 } from './CellsDemo/CellsDemoPage2';
-import { QuillProvider } from './QuillContext';
+import { QuillContextProvider } from './QuillContext';
 import Theme from './Theme';
 
 const QuillPage: FunctionComponent = () => {
   return (
-    <QuillProvider>
+    <QuillContextProvider>
       <Theme>
         <HashRouter>
           <Routes>
@@ -21,7 +21,7 @@ const QuillPage: FunctionComponent = () => {
           </Routes>
         </HashRouter>
       </Theme>
-    </QuillProvider>
+    </QuillContextProvider>
   );
 };
 
