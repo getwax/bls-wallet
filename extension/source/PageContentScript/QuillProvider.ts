@@ -16,6 +16,7 @@ export default class QuillProvider /* TODO: extends EventEmitter */ {
   // be deprecated).
 
   isQuill = true;
+  id = createRandomId();
   breakOnAssertionFailures = false;
 
   constructor() {
@@ -30,6 +31,11 @@ export default class QuillProvider /* TODO: extends EventEmitter */ {
     const message: Omit<PublicRpcMessage, 'origin'> = {
       type: 'quill-public-rpc',
       id,
+      providerId: this.id,
+      // Note: We do not set the origin here because our code is co-mingled with
+      // the dApp and is therefore untrusted. Instead, the content script will
+      // add the origin before passing it along to the background script.
+      // origin: window.location.origin,
       method: body.method,
       params: body.params ?? [],
     };

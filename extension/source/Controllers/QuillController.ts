@@ -34,6 +34,7 @@ import CellCollection from '../cells/CellCollection';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, {
+  EventsPortInfo,
   Notification,
   NotificationEventName,
   PrivateRpc,
@@ -169,40 +170,36 @@ export default class QuillController
 
   handleMessage(message: unknown): Promise<Result<unknown>> | undefined {
     if (PublicRpcMessage.is(message)) {
-      return toOkError(
-        (async () => {
-          if (isType(message.method, PublicRpcMethodName)) {
-            assertType(message.method, PublicRpcMethodName);
-
-            assertType(
-              message.params,
-              rpcMap.public[message.method].params as io.Type<ExplicitAny>,
-            );
-
-            return (this[message.method] as ExplicitAny)(
-              message.origin,
-              message.params,
-            );
-          }
-
-          return this.networkController.fetch(message);
-        })(),
-      );
-    }
-
-    if (PrivateRpcMessage.is(message)) {
-      return toOkError(
-        (async () => {
-          assertType(message.method, PrivateRpcMethodName);
+      return toOkError(async () => {
+        if (isType(message.method, PublicRpcMethodName)) {
+          assertType(message.method, PublicRpcMethodName);
 
           assertType(
             message.params,
-            rpcMap.private[message.method].params as io.Type<ExplicitAny>,
+            rpcMap.public[message.method].params as io.Type<ExplicitAny>,
           );
 
-          return (this[message.method] as ExplicitAny)(...message.params);
-        })(),
-      );
+          return (this[message.method] as ExplicitAny)(
+            message.origin,
+            message.params,
+          );
+        }
+
+        return this.networkController.fetch(message);
+      });
+    }
+
+    if (PrivateRpcMessage.is(message)) {
+      return toOkError(async () => {
+        assertType(message.method, PrivateRpcMethodName);
+
+        assertType(
+          message.params,
+          rpcMap.private[message.method].params as io.Type<ExplicitAny>,
+        );
+
+        return (this[message.method] as ExplicitAny)(...message.params);
+      });
     }
 
     // It's important to return undefined synchronously because messages can
@@ -213,24 +210,13 @@ export default class QuillController
   }
 
   handlePort(port: Runtime.Port) {
-    let portInfo: QuillEventsPort;
+    const parseResult = toOkError(() => JSON.parse(port.name) as unknown);
 
-    try {
-      portInfo = JSON.parse(port.name);
-    } catch {
+    if ('error' in parseResult || !isType(parseResult.ok, EventsPortInfo)) {
       return;
     }
 
-    const QuillEventsPort = io.type({
-      type: io.literal('quill-events-port'),
-      origin: io.string,
-    });
-
-    type QuillEventsPort = io.TypeOf<typeof QuillEventsPort>;
-
-    if (!isType(portInfo, QuillEventsPort)) {
-      return;
-    }
+    const eventsPortInfo = parseResult.ok;
 
     const SetEventEnabledMessage = io.type({
       type: io.literal('set-event-enabled'),
@@ -252,7 +238,8 @@ export default class QuillController
 
     const notificationListener = (notification: Notification) => {
       const originMatch =
-        notification.origin === '*' || notification.origin === portInfo.origin;
+        notification.origin === '*' ||
+        notification.origin === eventsPortInfo.origin;
 
       if (originMatch && enabledEvents.has(notification.eventName)) {
         port.postMessage(notification);

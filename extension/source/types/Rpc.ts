@@ -104,10 +104,19 @@ export type PrivateRpcMessage = io.TypeOf<typeof PrivateRpcMessage>;
 export const PublicRpcMessage = io.type({
   type: io.literal('quill-public-rpc'),
   id: io.string,
+  providerId: io.string,
   origin: io.string,
   method: io.string,
   params: io.array(io.unknown),
 });
+
+export const EventsPortInfo = io.type({
+  type: io.literal('quill-events-port'),
+  providerId: io.string,
+  origin: io.string,
+});
+
+export type EventsPortInfo = io.TypeOf<typeof EventsPortInfo>;
 
 export type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
 

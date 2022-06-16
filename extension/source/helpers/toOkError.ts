@@ -4,29 +4,59 @@ export type Result<T> =
   | { ok: T }
   | { error: { message: string; stack: string | undefined } };
 
+export type ToOkErrorReturn<T> = T extends PromiseLike<infer PT>
+  ? Promise<Result<PT>>
+  : Result<T>;
+
 /**
- * Transforms a promise that might reject into one that always resolves:
- * - with { ok: (resolved value) } if resolved, or
- * - with { error: { message, stack } } if rejected
+ * Obtains the result of a task without throwing by instead wrapping it as:
+ * - { ok: (resolved value) } if resolved, or
+ * - { error: { message, stack } } if rejected.
+ *
+ * Also handles promises by returning a promise that always resolves as above.
  */
-export default async function toOkError<T>(
-  promise: Promise<T>,
+export default function toOkError<T>(
+  task: () => T,
   log = true,
-): Promise<Result<T>> {
+): ToOkErrorReturn<T> {
+  let taskOutput: T;
+
   try {
-    return { ok: await promise };
+    taskOutput = task();
   } catch (error) {
-    if (log) {
-      console.error(error);
-    }
-
-    assert(error instanceof Error);
-
-    return {
-      error: {
-        message: error.message,
-        stack: error.stack,
-      },
-    };
+    return handleError(error, log) as ToOkErrorReturn<T>;
   }
+
+  const isPromiseLike =
+    typeof taskOutput === 'object' &&
+    taskOutput !== null &&
+    'then' in taskOutput &&
+    typeof (taskOutput as Record<string, unknown>).then === 'function';
+
+  if (!isPromiseLike) {
+    return { ok: taskOutput } as ToOkErrorReturn<T>;
+  }
+
+  return (async () => {
+    try {
+      return { ok: await taskOutput };
+    } catch (error) {
+      return handleError(error, log);
+    }
+  })() as ToOkErrorReturn<T>;
+}
+
+function handleError(error: unknown, log: boolean) {
+  if (log) {
+    console.error(error);
+  }
+
+  assert(error instanceof Error);
+
+  return {
+    error: {
+      message: error.message,
+      stack: error.stack,
+    },
+  };
 }
