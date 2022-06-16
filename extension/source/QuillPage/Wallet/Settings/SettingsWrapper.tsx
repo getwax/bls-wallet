@@ -23,7 +23,6 @@ const contacts: ISettings[] = [
 
 export const SettingsWrapper: React.FunctionComponent = () => {
   const { pathname } = useLocation();
-  console.log('render SettingsWrapper', { pathname });
 
   return (
     <div className="">

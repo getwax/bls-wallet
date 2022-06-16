@@ -15,6 +15,7 @@ import assert from '../helpers/assert';
 import { FormulaCell } from '../cells/FormulaCell';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
+import TransformCell from '../cells/TransformCell';
 
 type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -88,7 +89,14 @@ function getQuillContextValue(provider: QuillInPageProvider) {
     blockNumber,
     theme,
     selectedAddress,
-    cells,
+    cells: {
+      ...cells,
+      breakOnAssertionFailures: TransformCell.SubWithDefault(
+        cells.preferences,
+        'breakOnAssertionFailures',
+        false,
+      ),
+    },
   };
 }
 

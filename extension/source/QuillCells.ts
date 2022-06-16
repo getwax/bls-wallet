@@ -105,12 +105,14 @@ function QuillCells(storage: CellCollection) {
         selectedAddress: io.union([io.undefined, io.string]),
         lastErrorMessage: io.union([io.undefined, io.string]),
         lastSuccessMessage: io.union([io.undefined, io.string]),
+        breakOnAssertionFailures: io.union([io.undefined, io.boolean]),
       }),
       () => ({
         identities: {},
         selectedAddress: undefined,
         lastErrorMessage: undefined,
         lastSuccessMessage: undefined,
+        breakOnAssertionFailures: undefined,
       }),
     ),
   };

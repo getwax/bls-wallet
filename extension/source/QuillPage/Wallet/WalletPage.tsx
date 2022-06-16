@@ -4,6 +4,7 @@ import { useQuill } from '../QuillContext';
 import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
+import DeveloperSettings from './Settings/DeveloperSettings';
 import { SettingsWrapper } from './Settings/SettingsWrapper';
 import { WalletDetail } from './Wallets/WalletDetail';
 import { WalletsWrapper } from './Wallets/WalletWrapper';
@@ -56,7 +57,7 @@ const routes: IRoutes[] = [
     name: 'developer settings',
     path: '/settings/developer',
     summaryComponent: <SettingsWrapper />,
-    detailComponent: <div>developer settings detail</div>,
+    detailComponent: <DeveloperSettings />,
   },
 ];
 
