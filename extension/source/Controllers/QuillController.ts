@@ -1,3 +1,5 @@
+import { EventEmitter } from 'events';
+
 import * as io from 'io-ts';
 import {
   createEngineStream,
@@ -11,6 +13,7 @@ import type { Duplex } from 'readable-stream';
 
 import { Runtime } from 'webextension-polyfill';
 import { Aggregator } from 'bls-wallet-clients';
+import TypedEventEmitter from 'typed-emitter';
 import { createRandomId, getAllReqParam, getUserLanguage } from './utils';
 import NetworkController from './Network/NetworkController';
 import CurrencyController, {
@@ -46,12 +49,30 @@ import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
 import toOkError, { Result } from '../helpers/toOkError';
+import assert from '../helpers/assert';
 
 const PROVIDER = 'quill-provider';
+
+const Broadcast = io.union([
+  io.type({
+    eventName: io.literal('test'),
+    value: io.number,
+  }),
+  io.type({
+    eventName: io.literal('other-test'),
+    value: io.string,
+  }),
+]);
+
+type Broadcast = io.TypeOf<typeof Broadcast>;
 
 export default class QuillController
   implements PublicRpcWithOrigin, PrivateRpc
 {
+  events = new EventEmitter() as TypedEventEmitter<{
+    broadcast(broadcast: Broadcast): void;
+  }>;
+
   public connections: Record<string, Record<string, { engine: JRPCEngine }>> =
     {};
 
@@ -202,6 +223,59 @@ export default class QuillController
     // ownership of replying to that message. If multiple handlers return
     // promises then the browser will just provide the caller with null.
     return undefined;
+  }
+
+  handlePort(port: Runtime.Port) {
+    let nameJson;
+
+    try {
+      nameJson = JSON.parse(port.name);
+    } catch {
+      return;
+    }
+
+    const QuillEventsPort = io.type({
+      type: io.literal('quill-events-port'),
+    });
+
+    if (!isType(nameJson, QuillEventsPort)) {
+      return;
+    }
+
+    const SetEventEnabledMessage = io.type({
+      type: io.literal('set-event-enabled'),
+      eventName: io.string,
+      enabled: io.boolean,
+    });
+
+    const enabledEvents = new Set<string>();
+
+    port.onMessage.addListener((message) => {
+      if (isType(message, SetEventEnabledMessage)) {
+        if (message.enabled) {
+          enabledEvents.add(message.eventName);
+        } else {
+          enabledEvents.delete(message.eventName);
+        }
+      }
+
+      assert(
+        false,
+        `Unexpected message on quill-events-port: ${JSON.stringify(message)}`,
+      );
+    });
+
+    const broadcastListener = (broadcast: Broadcast) => {
+      if (enabledEvents.has(broadcast.eventName)) {
+        port.postMessage(broadcast);
+      }
+    };
+
+    this.events.on('broadcast', broadcastListener);
+
+    port.onDisconnect.addListener(() => {
+      this.events.off('broadcast', broadcastListener);
+    });
   }
 
   /**

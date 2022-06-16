@@ -49,6 +49,10 @@ function setupController(): void {
     quillController.handleMessage(message),
   );
 
+  runtime.onConnect.addListener((port) => {
+    quillController.handlePort(port);
+  });
+
   //
   // connect to other contexts
   //
