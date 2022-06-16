@@ -28,6 +28,8 @@ export class QuillInPageProvider extends BaseProvider<InPageProviderState> {
    */
   public selectedAddress: string | null;
 
+  public breakOnAssertionFailures = false;
+
   protected static _defaultState: InPageProviderState = {
     accounts: null,
     isConnected: false,

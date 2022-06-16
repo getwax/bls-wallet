@@ -14,6 +14,13 @@ export const rpcMap = {
       params: io.tuple([io.string, io.number, io.string]),
       output: io.literal('ok'),
     },
+    quill_breakOnAssertionFailures: {
+      params: io.tuple([
+        /** differentFrom: only reply when different from this value */
+        io.union([io.undefined, io.boolean]),
+      ]),
+      output: io.boolean,
+    },
   },
   private: {
     setSelectedAddress: {

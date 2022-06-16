@@ -3,6 +3,9 @@ import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
 
 declare global {
   interface Window {
-    ethereum: QuillInPageProvider | providers.ExternalProvider | undefined;
+    ethereum?:
+      | QuillInPageProvider
+      | (providers.ExternalProvider & { breakOnAssertionFailures: boolean })
+      | { breakOnAssertionFailures: boolean };
   }
 }

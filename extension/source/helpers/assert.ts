@@ -3,8 +3,10 @@ export default function assert(
   msg?: string,
 ): asserts condition {
   if (!condition) {
-    // eslint-disable-next-line no-debugger
-    debugger;
+    if (window.ethereum?.breakOnAssertionFailures) {
+      // eslint-disable-next-line no-debugger
+      debugger;
+    }
 
     throw new Error(msg);
   }

@@ -159,6 +159,21 @@ export default class QuillController
     return 'ok' as const;
   }
 
+  async quill_breakOnAssertionFailures(
+    _origin: string,
+    [differentFrom]: Parameters<PublicRpc['quill_breakOnAssertionFailures']>,
+  ) {
+    for await (const preferences of this.cells.preferences) {
+      const setting = preferences.breakOnAssertionFailures ?? false;
+
+      if (differentFrom !== setting) {
+        return setting;
+      }
+    }
+
+    throw new Error('Unexpected end of this.cells.preferences');
+  }
+
   handlePublicMessage(message: unknown) {
     if (!PublicRpcMessage.is(message)) {
       return;
@@ -375,6 +390,8 @@ export default class QuillController
     const methods: MethodsWithOrigin = {
       eth_accounts: this.eth_accounts.bind(this),
       debugMe: this.debugMe.bind(this),
+      quill_breakOnAssertionFailures:
+        this.quill_breakOnAssertionFailures.bind(this),
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
@@ -513,6 +530,17 @@ export default class QuillController
           method: PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED,
           params: [selectedAddress],
         });
+      }
+    })();
+
+    (async () => {
+      window.ethereum ??= { breakOnAssertionFailures: false };
+
+      while (true) {
+        window.ethereum.breakOnAssertionFailures =
+          await this.quill_breakOnAssertionFailures(window.location.origin, [
+            window.ethereum.breakOnAssertionFailures,
+          ]);
       }
     })();
   }

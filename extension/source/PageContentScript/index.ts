@@ -37,6 +37,7 @@ export function initializeProvider({
 
   const provider = {
     isQuill: true,
+    breakOnAssertionFailures: false,
     request: (body: unknown) => {
       assertType(body, RequestBody);
 
@@ -69,6 +70,15 @@ export function initializeProvider({
       });
     },
   };
+
+  (async () => {
+    while (true) {
+      provider.breakOnAssertionFailures = (await provider.request({
+        method: 'quill_breakOnAssertionFailures',
+        params: [provider.breakOnAssertionFailures],
+      })) as boolean;
+    }
+  })();
 
   // const provider = new QuillInPageProvider(connectionStream, {
   //   jsonRpcStreamName,
