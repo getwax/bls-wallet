@@ -35,6 +35,7 @@ import Rpc, {
   PrivateRpc,
   PrivateRpcMessage,
   PrivateRpcMethodName,
+  PublicRpc,
   PublicRpcMessage,
   PublicRpcMethodName,
   PublicRpcWithOrigin,
@@ -151,6 +152,11 @@ export default class QuillController
     // only show address if account is unlocked
     // https://github.com/web3well/bls-wallet/issues/224
     return selectedAddress ? [selectedAddress] : [];
+  }
+
+  async debugMe(_origin: string, [a, b, c]: Parameters<PublicRpc['debugMe']>) {
+    console.log('debugMe', { a, b, c });
+    return 'ok' as const;
   }
 
   handlePublicMessage(message: unknown) {
@@ -367,12 +373,16 @@ export default class QuillController
     };
 
     const methods: MethodsWithOrigin = {
-      eth_accounts: (...params) => this.eth_accounts(origin, params),
+      eth_accounts: this.eth_accounts.bind(this),
+      debugMe: this.debugMe.bind(this),
     };
 
     return mapValues(methods, (method, methodName) => (req: any) => {
       const params = req.params ?? [];
-      assertType(params, rpcMap.public[methodName].params);
+      assertType(
+        params,
+        rpcMap.public[methodName].params as io.Type<ExplicitAny>,
+      );
       return (method as ExplicitAny)(req.origin, params);
     });
   }

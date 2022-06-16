@@ -10,6 +10,10 @@ export const rpcMap = {
       params: emptyTuple,
       output: io.array(io.string),
     },
+    debugMe: {
+      params: io.tuple([io.string, io.number, io.string]),
+      output: io.literal('ok'),
+    },
   },
   private: {
     setSelectedAddress: {

@@ -24,12 +24,12 @@ function getQuillContextValue(provider: QuillInPageProvider) {
       rpcMap.public,
       ({ params: paramsType, output }, method) => {
         return async (...params: unknown[]) => {
-          assertType(params, paramsType);
+          assertType(params, paramsType as unknown as io.Type<unknown[]>);
           const response = await provider.request({
             method,
             params,
           });
-          assertType(response, output);
+          assertType(response, output as io.Type<unknown>);
           return response as ExplicitAny;
         };
       },
