@@ -36,6 +36,7 @@ export function initializeProvider({
   });
 
   const provider = {
+    isQuill: true,
     request: (body: unknown) => {
       assertType(body, RequestBody);
 
