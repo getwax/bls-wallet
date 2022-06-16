@@ -45,6 +45,7 @@ import Rpc, {
   PublicRpcMethodName,
   PublicRpcWithOrigin,
   rpcMap,
+  SetEventEnabledMessage,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
@@ -217,12 +218,6 @@ export default class QuillController
     }
 
     const eventsPortInfo = parseResult.ok;
-
-    const SetEventEnabledMessage = io.type({
-      type: io.literal('set-event-enabled'),
-      eventName: NotificationEventName,
-      enabled: io.boolean,
-    });
 
     const enabledEvents = new Set<NotificationEventName>();
 

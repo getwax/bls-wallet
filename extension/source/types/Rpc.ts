@@ -1,4 +1,5 @@
 import * as io from 'io-ts';
+import TypedEventEmitter from 'typed-emitter';
 
 import assert from '../helpers/assert';
 import emptyTuple from './emptyTuple';
@@ -52,6 +53,10 @@ export const notificationEventMap = {
     isUnlocked: io.boolean,
   }),
   chainChanged: io.string,
+};
+
+export type NotificationEventMap = {
+  [E in NotificationEventName]: io.TypeOf<typeof notificationEventMap[E]>;
 };
 
 const publicMethodNames = Object.keys(rpcMap.public);
@@ -166,5 +171,22 @@ export const Notification: io.Type<Notification> = io.union(
     }),
   ) as ExplicitAny,
 );
+
+export type NotificationEventEmitter = new () => TypedEventEmitter<
+  {
+    [E in NotificationEventName]: (value: NotificationEventMap[E]) => void;
+  } & {
+    newListener(eventName: NotificationEventName): void;
+    removeListener(eventName: NotificationEventName): void;
+  }
+>;
+
+export const SetEventEnabledMessage = io.type({
+  type: io.literal('set-event-enabled'),
+  eventName: NotificationEventName,
+  enabled: io.boolean,
+});
+
+export type SetEventEnabledMessage = io.TypeOf<typeof SetEventEnabledMessage>;
 
 export default Rpc;
