@@ -40,13 +40,13 @@ function setupController(): void {
   //
   console.log('setupController');
 
-  const controller = new QuillController(
+  const quillController = new QuillController(
     extensionLocalCellCollection,
     defaultCurrencyControllerConfig,
   );
 
   runtime.onMessage.addListener((message, _sender) => {
-    return controller.handlePrivateMessage(message);
+    return quillController.handlePrivateMessage(message);
   });
 
   //
@@ -106,14 +106,14 @@ function setupController(): void {
     if (isQuillInternalProcess) {
       const portStream = new PortDuplexStream(remotePort);
       // communication with popup
-      controller.isClientOpen = true;
+      quillController.isClientOpen = true;
 
       if (processName === ENVIRONMENT_TYPE.POPUP) {
         popupIsOpen = true;
         endOfStream(portStream, () => {
           popupIsOpen = false;
           const isClientOpen = isClientOpenStatus();
-          controller.isClientOpen = isClientOpen;
+          quillController.isClientOpen = isClientOpen;
           onCloseEnvironmentInstances(isClientOpen, ENVIRONMENT_TYPE.POPUP);
         });
       }
@@ -124,7 +124,7 @@ function setupController(): void {
         endOfStream(portStream, () => {
           notificationIsOpen = false;
           const isClientOpen = isClientOpenStatus();
-          controller.isClientOpen = isClientOpen;
+          quillController.isClientOpen = isClientOpen;
           onCloseEnvironmentInstances(
             isClientOpen,
             ENVIRONMENT_TYPE.NOTIFICATION,
@@ -140,7 +140,7 @@ function setupController(): void {
         endOfStream(portStream, () => {
           delete openQuillTabsIDs[tabId];
           const isClientOpen = isClientOpenStatus();
-          controller.isClientOpen = isClientOpen;
+          quillController.isClientOpen = isClientOpen;
           onCloseEnvironmentInstances(
             isClientOpen,
             ENVIRONMENT_TYPE.FULLSCREEN,
@@ -171,7 +171,7 @@ function setupController(): void {
   // communication with page or other extension
   function connectExternal(remotePort: Runtime.Port) {
     const portStream = new PortDuplexStream(remotePort);
-    controller.setupUnTrustedCommunication(portStream, remotePort.sender);
+    quillController.setupUnTrustedCommunication(portStream, remotePort.sender);
   }
 }
 
