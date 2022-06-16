@@ -118,7 +118,7 @@ export default class QuillController
     return 'ok' as const;
   }
 
-  handlePrivateMessage(message: unknown) {
+  handlePrivateMessage(message: unknown): Promise<unknown> | undefined {
     if (!PrivateRpcMessage.is(message)) {
       return;
     }
@@ -174,7 +174,7 @@ export default class QuillController
     throw new Error('Unexpected end of this.cells.preferences');
   }
 
-  handlePublicMessage(message: unknown) {
+  handlePublicMessage(message: unknown): Promise<unknown> | undefined {
     if (!PublicRpcMessage.is(message)) {
       return;
     }

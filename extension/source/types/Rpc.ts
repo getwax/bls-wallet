@@ -105,7 +105,10 @@ export type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
 export const PublicRpcResponse = io.type({
   type: io.literal('quill-public-rpc-response'),
   id: io.string,
-  response: io.unknown,
+  result: io.union([
+    io.type({ ok: io.unknown }),
+    io.type({ error: io.type({ message: io.string, stack: io.string }) }),
+  ]),
 });
 
 export type PublicRpcResponse = io.TypeOf<typeof PublicRpcResponse>;

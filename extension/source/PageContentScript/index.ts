@@ -52,7 +52,7 @@ export function initializeProvider({
 
       window.postMessage(message, '*');
 
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const messageListener = (evt: MessageEvent<unknown>) => {
           if (!isType(evt.data, PublicRpcResponse)) {
             return;
@@ -63,7 +63,14 @@ export function initializeProvider({
           }
 
           window.removeEventListener('message', messageListener);
-          resolve(evt.data.response);
+
+          if ('ok' in evt.data.result) {
+            resolve(evt.data.result.ok);
+          } else if ('error' in evt.data.result) {
+            const error = new Error(evt.data.result.error.message);
+            error.stack = evt.data.result.error.stack;
+            reject(error);
+          }
         };
 
         window.addEventListener('message', messageListener);

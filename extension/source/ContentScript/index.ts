@@ -19,15 +19,32 @@ window.addEventListener('message', async (evt) => {
     return;
   }
 
-  const response = await runtime.sendMessage(data);
+  const result = await runtime.sendMessage(data);
 
-  const reply: PublicRpcResponse = {
+  if ('error' in result) {
+    const error = new Error(result.error.message);
+    error.stack = result.error.stack;
+    console.error(error);
+
+    // Being extra careful about security here - error stacks should not contain
+    // sensitive information, but they could. For this reason we log the error
+    // here in the console but do not expose it to the dApp.
+    const message =
+      'Quill RPC Error (See content script or background script for details)';
+
+    result.error = {
+      message,
+      stack: new Error(message).stack,
+    };
+  }
+
+  const response: PublicRpcResponse = {
     type: 'quill-public-rpc-response',
     id: data.id,
-    response,
+    result,
   };
 
-  window.postMessage(reply, '*');
+  window.postMessage(response, '*');
 });
 
 function canInjectScript() {
