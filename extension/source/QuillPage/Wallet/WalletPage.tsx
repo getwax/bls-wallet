@@ -52,6 +52,12 @@ const routes: IRoutes[] = [
     summaryComponent: <SettingsWrapper />,
     detailComponent: <div>security settings detail</div>,
   },
+  {
+    name: 'developer settings',
+    path: '/settings/developer',
+    summaryComponent: <SettingsWrapper />,
+    detailComponent: <div>developer settings detail</div>,
+  },
 ];
 
 export const WalletPage: React.FunctionComponent = () => {

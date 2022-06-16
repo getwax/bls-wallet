@@ -16,6 +16,9 @@ const contacts: ISettings[] = [
   {
     name: 'Security',
   },
+  {
+    name: 'Developer',
+  },
 ];
 
 export const SettingsWrapper: React.FunctionComponent = () => {
