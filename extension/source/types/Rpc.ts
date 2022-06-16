@@ -45,6 +45,11 @@ export const rpcMap = {
   },
 };
 
+export const broadcastEventMap = {
+  test: io.number,
+  'other-test': io.string,
+};
+
 const publicMethodNames = Object.keys(rpcMap.public);
 const privateMethodNames = Object.keys(rpcMap.private);
 
@@ -122,5 +127,26 @@ export type PublicRpcWithOrigin = {
     params: Parameters<PublicRpc[M]>,
   ) => ReturnType<PublicRpc[M]>;
 };
+
+export type BroadcastEventName = keyof typeof broadcastEventMap;
+
+export const BroadcastEventName: io.Type<BroadcastEventName> = io.union(
+  Object.keys(broadcastEventMap).map((eventName) =>
+    io.literal(eventName),
+  ) as ExplicitAny,
+);
+
+export type Broadcast = {
+  [E in BroadcastEventName]: {
+    eventName: E;
+    value: io.TypeOf<typeof broadcastEventMap[E]>;
+  };
+}[BroadcastEventName];
+
+export const Broadcast: io.Type<Broadcast> = io.union(
+  Object.entries(broadcastEventMap).map(([eventName, type]) =>
+    io.type({ eventName: io.literal(eventName), value: type }),
+  ) as ExplicitAny,
+);
 
 export default Rpc;

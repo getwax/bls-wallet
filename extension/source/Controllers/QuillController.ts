@@ -35,6 +35,8 @@ import CellCollection from '../cells/CellCollection';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, {
+  Broadcast,
+  BroadcastEventName,
   PrivateRpc,
   PrivateRpcMessage,
   PrivateRpcMethodName,
@@ -52,19 +54,6 @@ import toOkError, { Result } from '../helpers/toOkError';
 import assert from '../helpers/assert';
 
 const PROVIDER = 'quill-provider';
-
-const Broadcast = io.union([
-  io.type({
-    eventName: io.literal('test'),
-    value: io.number,
-  }),
-  io.type({
-    eventName: io.literal('other-test'),
-    value: io.string,
-  }),
-]);
-
-type Broadcast = io.TypeOf<typeof Broadcast>;
 
 export default class QuillController
   implements PublicRpcWithOrigin, PrivateRpc
@@ -244,11 +233,11 @@ export default class QuillController
 
     const SetEventEnabledMessage = io.type({
       type: io.literal('set-event-enabled'),
-      eventName: io.string,
+      eventName: BroadcastEventName,
       enabled: io.boolean,
     });
 
-    const enabledEvents = new Set<string>();
+    const enabledEvents = new Set<BroadcastEventName>();
 
     port.onMessage.addListener((message) => {
       if (isType(message, SetEventEnabledMessage)) {
