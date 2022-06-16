@@ -5,10 +5,7 @@ import * as io from 'io-ts';
 // import { CONTENT_SCRIPT, INPAGE } from '../common/constants';
 // import { QuillInPageProvider } from './InPageProvider';
 // import { ProviderOptions } from './interfaces';
-import assertType from '../cells/assertType';
-import isType from '../cells/isType';
-import { PublicRpcMessage, PublicRpcResponse } from '../types/Rpc';
-import { createRandomId } from '../Controllers/utils';
+import QuillProvider from './QuillProvider';
 
 // interface InitializeProviderOptions extends ProviderOptions {
 //   /**
@@ -35,57 +32,7 @@ export function initializeProvider({
     params: io.union([io.undefined, io.array(io.unknown)]),
   });
 
-  const provider = {
-    isQuill: true,
-    breakOnAssertionFailures: false,
-    request: (body: unknown) => {
-      assertType(body, RequestBody);
-
-      const id = createRandomId();
-
-      const message: Omit<PublicRpcMessage, 'origin'> = {
-        type: 'quill-public-rpc',
-        id,
-        method: body.method,
-        params: body.params ?? [],
-      };
-
-      window.postMessage(message, '*');
-
-      return new Promise((resolve, reject) => {
-        const messageListener = (evt: MessageEvent<unknown>) => {
-          if (!isType(evt.data, PublicRpcResponse)) {
-            return;
-          }
-
-          if (evt.data.id !== id) {
-            return;
-          }
-
-          window.removeEventListener('message', messageListener);
-
-          if ('ok' in evt.data.result) {
-            resolve(evt.data.result.ok);
-          } else if ('error' in evt.data.result) {
-            const error = new Error(evt.data.result.error.message);
-            error.stack = evt.data.result.error.stack;
-            reject(error);
-          }
-        };
-
-        window.addEventListener('message', messageListener);
-      });
-    },
-  };
-
-  (async () => {
-    while (true) {
-      provider.breakOnAssertionFailures = (await provider.request({
-        method: 'quill_breakOnAssertionFailures',
-        params: [provider.breakOnAssertionFailures],
-      })) as boolean;
-    }
-  })();
+  const provider = new QuillProvider();
 
   // const provider = new QuillInPageProvider(connectionStream, {
   //   jsonRpcStreamName,
