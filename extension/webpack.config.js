@@ -32,6 +32,7 @@ const extensionReloaderPlugin =
           pageContentScript: 'pageContentScript',
           background: 'background',
           quillPage: ['popup', 'quillPage', 'confirm'],
+          cellsDemo: 'cellsDemo',
         },
       })
     : () => {
@@ -73,6 +74,7 @@ module.exports = {
     pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
     quillPage: path.join(sourcePath, 'QuillPage', 'index.tsx'),
+    cellsDemo: path.join(sourcePath, 'cells', 'CellsDemo', 'index.tsx'),
     confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
   },
 
@@ -172,6 +174,13 @@ module.exports = {
       chunks: ['quillPage'],
       hash: true,
       filename: 'quillPage.html',
+    }),
+    new HtmlWebpackPlugin({
+      template: path.join(viewsPath, 'cellsDemo.html'),
+      inject: 'body',
+      chunks: ['cellsDemo'],
+      hash: true,
+      filename: 'cellsDemo.html',
     }),
     new HtmlWebpackPlugin({
       template: path.join(viewsPath, 'popup.html'),

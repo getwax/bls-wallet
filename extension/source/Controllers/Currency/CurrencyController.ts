@@ -1,4 +1,5 @@
-import BaseController from '../BaseController';
+import CellCollection from '../../cells/CellCollection';
+import ICell from '../../cells/ICell';
 import {
   CurrencyControllerConfig,
   CurrencyControllerState,
@@ -7,97 +8,48 @@ import {
 // every ten minutes
 const POLLING_INTERVAL = 600_000;
 
-export default class CurrencyController extends BaseController<
-  CurrencyControllerConfig,
-  CurrencyControllerState
-> {
-  private conversionInterval: number;
+const defaultConfig: CurrencyControllerConfig = {
+  pollInterval: POLLING_INTERVAL,
+};
 
-  constructor({
-    config = {},
-    state,
-  }: {
-    config: Partial<CurrencyControllerConfig>;
-    state?: Partial<CurrencyControllerState>;
-  }) {
-    super({ config, state });
-    this.defaultState = {
+export default class CurrencyController {
+  private conversionInterval: number;
+  public config: CurrencyControllerConfig;
+  public state: ICell<CurrencyControllerState>;
+
+  constructor(
+    config: CurrencyControllerConfig | undefined,
+    storage: CellCollection,
+  ) {
+    this.config = config ?? defaultConfig;
+
+    this.state = storage.Cell('CurrencyController', CurrencyControllerState, {
       currentCurrency: 'usd',
       conversionRate: 0,
       conversionDate: 'N/A',
       nativeCurrency: 'ETH',
-    } as CurrencyControllerState;
-
-    this.defaultConfig = {
-      pollInterval: POLLING_INTERVAL,
-    } as CurrencyControllerConfig;
-    this.initialize();
+    });
   }
 
   //
   // PUBLIC METHODS
   //
 
-  public getNativeCurrency(): string {
-    return this.state.nativeCurrency;
-  }
-
-  public setNativeCurrency(nativeCurrency: string): void {
-    this.update({
-      nativeCurrency,
-      ticker: nativeCurrency,
-    } as CurrencyControllerState);
-  }
-
-  public getCurrentCurrency(): string {
-    return this.state.currentCurrency;
-  }
-
-  public setCurrentCurrency(currentCurrency: string): void {
-    this.update({ currentCurrency } as CurrencyControllerState);
-  }
-
-  /**
-   * A getter for the conversionRate property
-   *
-   * @returns The conversion rate from ETH to the selected currency.
-   *
-   */
-  public getConversionRate(): number {
-    return this.state.conversionRate;
-  }
-
-  public setConversionRate(conversionRate: number): void {
-    this.update({ conversionRate } as CurrencyControllerState);
-  }
-
-  /**
-   * A getter for the conversionDate property
-   *
-   * @returns The date at which the conversion rate was set. Expressed in milliseconds since midnight of
-   * January 1, 1970
-   *
-   */
-  public getConversionDate(): string {
-    return this.state.conversionDate;
-  }
-
-  public setConversionDate(conversionDate: string): void {
-    this.update({ conversionDate } as CurrencyControllerState);
+  public async update(stateUpdates: Partial<CurrencyControllerState>) {
+    await this.state.write({
+      ...(await this.state.read()),
+      ...stateUpdates,
+    });
   }
 
   async updateConversionRate(): Promise<void> {
-    let currentCurrency = '';
-    let nativeCurrency = '';
-    try {
-      // fiat
-      currentCurrency = this.getCurrentCurrency();
+    let state: CurrencyControllerState | undefined;
 
-      // crypto
-      nativeCurrency = this.getNativeCurrency();
+    try {
+      state = await this.state.read();
       const apiUrl = `${
         this.config.api
-      }?fsym=${nativeCurrency.toUpperCase()}&tsyms=${currentCurrency.toUpperCase()}&api_key=${
+      }?fsym=${state.nativeCurrency.toUpperCase()}&tsyms=${state.currentCurrency.toUpperCase()}&api_key=${
         process.env.CRYPTO_COMPARE_API_KEY
       }`;
       let response: Response;
@@ -128,30 +80,38 @@ export default class CurrencyController extends BaseController<
       //   this.setConversionRate(Number(parsedResponse.bid))
       //   this.setConversionDate(Number(parsedResponse.timestamp))
       // } else
-      if (parsedResponse[currentCurrency.toUpperCase()]) {
+      if (parsedResponse[state.currentCurrency.toUpperCase()]) {
         // ETC
-        this.setConversionRate(
-          Number(parsedResponse[currentCurrency.toUpperCase()]),
-        );
-        this.setConversionDate((Date.now() / 1000).toString());
+        this.update({
+          conversionRate: Number(
+            parsedResponse[state.currentCurrency.toUpperCase()],
+          ),
+          conversionDate: (Date.now() / 1000).toString(),
+        });
       } else {
-        this.setConversionRate(0);
-        this.setConversionDate('N/A');
+        this.update({
+          conversionRate: 0,
+          conversionDate: 'N/A',
+        });
       }
     } catch (error) {
       // reset current conversion rate
       console.warn(
         'Quill - Failed to query currency conversion:',
-        nativeCurrency,
-        currentCurrency,
+        state?.nativeCurrency,
+        state?.currentCurrency,
         error,
       );
-      this.setConversionRate(0);
-      this.setConversionDate('N/A');
+
+      this.update({
+        conversionRate: 0,
+        conversionDate: 'N/A',
+      });
+
       // throw error
       console.error(
         error,
-        `CurrencyController - Failed to query rate for currency "${currentCurrency}"`,
+        `CurrencyController - Failed to query rate for currency "${state?.currentCurrency}"`,
       );
     }
   }

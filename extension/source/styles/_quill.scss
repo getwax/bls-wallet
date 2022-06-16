@@ -269,4 +269,25 @@
   .transaction-tab {
     padding: 12px 24px;
   }
+
+  .themable1.dark-theme {
+    filter: unquote("invert()");
+    background-color: white;
+    height: 100vh;
+  }
+
+  .themable2.dark-theme {
+    filter: unquote("hue-rotate(180deg)");
+  }
+
+  .demo-table {
+    td:nth-child(2) {
+      display: flex;
+      flex-direction: row;
+    }
+
+    td {
+      vertical-align: top;
+    }
+  }
 }
