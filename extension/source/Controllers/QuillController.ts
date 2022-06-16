@@ -35,8 +35,8 @@ import CellCollection from '../cells/CellCollection';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import Rpc, {
-  Broadcast,
-  BroadcastEventName,
+  Notification,
+  NotificationEventName,
   PrivateRpc,
   PrivateRpcMessage,
   PrivateRpcMethodName,
@@ -58,7 +58,7 @@ export default class QuillController
   implements PublicRpcWithOrigin, PrivateRpc
 {
   events = new EventEmitter() as TypedEventEmitter<{
-    broadcast(broadcast: Broadcast): void;
+    notification(notification: Notification): void;
   }>;
 
   public connections: Record<string, Record<string, { engine: JRPCEngine }>> =
@@ -214,29 +214,32 @@ export default class QuillController
   }
 
   handlePort(port: Runtime.Port) {
-    let nameJson;
+    let portInfo: QuillEventsPort;
 
     try {
-      nameJson = JSON.parse(port.name);
+      portInfo = JSON.parse(port.name);
     } catch {
       return;
     }
 
     const QuillEventsPort = io.type({
       type: io.literal('quill-events-port'),
+      origin: io.string,
     });
 
-    if (!isType(nameJson, QuillEventsPort)) {
+    type QuillEventsPort = io.TypeOf<typeof QuillEventsPort>;
+
+    if (!isType(portInfo, QuillEventsPort)) {
       return;
     }
 
     const SetEventEnabledMessage = io.type({
       type: io.literal('set-event-enabled'),
-      eventName: BroadcastEventName,
+      eventName: NotificationEventName,
       enabled: io.boolean,
     });
 
-    const enabledEvents = new Set<BroadcastEventName>();
+    const enabledEvents = new Set<NotificationEventName>();
 
     port.onMessage.addListener((message) => {
       assertType(message, SetEventEnabledMessage);
@@ -248,16 +251,19 @@ export default class QuillController
       }
     });
 
-    const broadcastListener = (broadcast: Broadcast) => {
-      if (enabledEvents.has(broadcast.eventName)) {
-        port.postMessage(broadcast);
+    const notificationListener = (notification: Notification) => {
+      const originMatch =
+        notification.origin === '*' || notification.origin === portInfo.origin;
+
+      if (originMatch && enabledEvents.has(notification.eventName)) {
+        port.postMessage(notification);
       }
     };
 
-    this.events.on('broadcast', broadcastListener);
+    this.events.on('notification', notificationListener);
 
     port.onDisconnect.addListener(() => {
-      this.events.off('broadcast', broadcastListener);
+      this.events.off('notification', notificationListener);
     });
   }
 
@@ -594,6 +600,8 @@ export default class QuillController
           method: PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED,
           params: [selectedAddress],
         });
+
+        this.events.emit('notification', {});
       }
     })();
 

@@ -45,9 +45,10 @@ export const rpcMap = {
   },
 };
 
-export const broadcastEventMap = {
+export const notificationEventMap = {
   test: io.number,
   'other-test': io.string,
+  accountsChanged: io.array(io.string),
 };
 
 const publicMethodNames = Object.keys(rpcMap.public);
@@ -128,24 +129,29 @@ export type PublicRpcWithOrigin = {
   ) => ReturnType<PublicRpc[M]>;
 };
 
-export type BroadcastEventName = keyof typeof broadcastEventMap;
+export type NotificationEventName = keyof typeof notificationEventMap;
 
-export const BroadcastEventName: io.Type<BroadcastEventName> = io.union(
-  Object.keys(broadcastEventMap).map((eventName) =>
+export const NotificationEventName: io.Type<NotificationEventName> = io.union(
+  Object.keys(notificationEventMap).map((eventName) =>
     io.literal(eventName),
   ) as ExplicitAny,
 );
 
-export type Broadcast = {
-  [E in BroadcastEventName]: {
+export type Notification = {
+  [E in NotificationEventName]: {
+    origin: string;
     eventName: E;
-    value: io.TypeOf<typeof broadcastEventMap[E]>;
+    value: io.TypeOf<typeof notificationEventMap[E]>;
   };
-}[BroadcastEventName];
+}[NotificationEventName];
 
-export const Broadcast: io.Type<Broadcast> = io.union(
-  Object.entries(broadcastEventMap).map(([eventName, type]) =>
-    io.type({ eventName: io.literal(eventName), value: type }),
+export const Notification: io.Type<Notification> = io.union(
+  Object.entries(notificationEventMap).map(([eventName, type]) =>
+    io.type({
+      origin: io.string,
+      eventName: io.literal(eventName),
+      value: type,
+    }),
   ) as ExplicitAny,
 );
 
