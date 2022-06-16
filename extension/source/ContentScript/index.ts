@@ -5,6 +5,7 @@ import {
 } from '@toruslabs/openlogin-jrpc';
 import pump from 'pump';
 import { runtime } from 'webextension-polyfill';
+import assertType from '../cells/assertType';
 import isType from '../cells/isType';
 import { CONTENT_SCRIPT, INPAGE, PROVIDER } from '../common/constants';
 import PortDuplexStream from '../common/PortStream';
@@ -13,6 +14,7 @@ import {
   EventsPortInfo,
   PublicRpcMessage,
   PublicRpcResponse,
+  RpcResult,
   SetEventEnabledMessage,
 } from '../types/Rpc';
 
@@ -52,6 +54,7 @@ window.addEventListener('message', async (evt) => {
   }
 
   const result = await runtime.sendMessage(data);
+  assertType(result, RpcResult);
 
   if ('error' in result) {
     const error = new Error(result.error.message);
@@ -62,7 +65,7 @@ window.addEventListener('message', async (evt) => {
     // sensitive information, but they could. For this reason we log the error
     // here in the console but do not expose it to the dApp.
     const message =
-      'Quill RPC Error (See content script or background script for details)';
+      'Quill RPC: (See content script or background script for details)';
 
     result.error = {
       message,

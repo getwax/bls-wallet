@@ -1,8 +1,6 @@
 import { softAssert } from './assert';
 
-export type Result<T> =
-  | { ok: T }
-  | { error: { message: string; stack: string | undefined } };
+export type Result<T> = { ok: T } | { error: Error };
 
 export type ToOkErrorReturn<T> = T extends PromiseLike<infer PT>
   ? Promise<Result<PT>>
@@ -15,16 +13,13 @@ export type ToOkErrorReturn<T> = T extends PromiseLike<infer PT>
  *
  * Also handles promises by returning a promise that always resolves as above.
  */
-export default function toOkError<T>(
-  task: () => T,
-  log = true,
-): ToOkErrorReturn<T> {
+export default function toOkError<T>(task: () => T): ToOkErrorReturn<T> {
   let taskOutput: T;
 
   try {
     taskOutput = task();
   } catch (error) {
-    return handleError(error, log) as ToOkErrorReturn<T>;
+    return handleError(error) as ToOkErrorReturn<T>;
   }
 
   const isPromiseLike =
@@ -41,16 +36,12 @@ export default function toOkError<T>(
     try {
       return { ok: await taskOutput };
     } catch (error) {
-      return handleError(error, log);
+      return handleError(error);
     }
   })() as ToOkErrorReturn<T>;
 }
 
-function handleError(thrownError: unknown, log: boolean) {
-  if (log) {
-    console.error(thrownError);
-  }
-
+function handleError(thrownError: unknown) {
   let error: Error;
 
   if (!(thrownError instanceof Error)) {
@@ -60,10 +51,5 @@ function handleError(thrownError: unknown, log: boolean) {
     error = thrownError;
   }
 
-  return {
-    error: {
-      message: error.message,
-      stack: error.stack,
-    },
-  };
+  return { error };
 }

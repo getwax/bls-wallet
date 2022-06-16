@@ -45,13 +45,15 @@ import Rpc, {
   PublicRpcMethodName,
   PublicRpcWithOrigin,
   rpcMap,
+  RpcResult,
   SetEventEnabledMessage,
+  toRpcResult,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
-import toOkError, { Result } from '../helpers/toOkError';
+import toOkError from '../helpers/toOkError';
 
 const PROVIDER = 'quill-provider';
 
@@ -169,7 +171,7 @@ export default class QuillController
     throw new Error('Unexpected end of this.cells.preferences');
   }
 
-  handleMessage(message: unknown): Promise<Result<unknown>> | undefined {
+  handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
     if (PublicRpcMessage.is(message)) {
       return toOkError(async () => {
         if (isType(message.method, PublicRpcMethodName)) {
@@ -187,7 +189,7 @@ export default class QuillController
         }
 
         return this.networkController.fetch(message);
-      });
+      }).then(toRpcResult);
     }
 
     if (PrivateRpcMessage.is(message)) {
@@ -200,7 +202,7 @@ export default class QuillController
         );
 
         return (this[message.method] as ExplicitAny)(...message.params);
-      });
+      }).then(toRpcResult);
     }
 
     // It's important to return undefined synchronously because messages can

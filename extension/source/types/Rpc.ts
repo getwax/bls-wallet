@@ -2,6 +2,7 @@ import * as io from 'io-ts';
 import TypedEventEmitter from 'typed-emitter';
 
 import assert from '../helpers/assert';
+import { Result } from '../helpers/toOkError';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
 
@@ -125,13 +126,39 @@ export type EventsPortInfo = io.TypeOf<typeof EventsPortInfo>;
 
 export type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
 
+export const RpcResult = io.union([
+  io.type({ ok: io.unknown }),
+  io.type({
+    error: io.type({
+      message: io.string,
+      stack: io.union([io.undefined, io.string]),
+    }),
+  }),
+]);
+
+export type RpcResult<T> =
+  | { ok: T }
+  | { error: { message: string; stack?: string } };
+
+export function toRpcResult<T>(result: Result<T>): RpcResult<T> {
+  if ('error' in result) {
+    console.error('Quill RPC:', result.error);
+
+    return {
+      error: {
+        message: `Quill RPC: ${result.error.message}`,
+        stack: result.error.stack && `Quill RPC: ${result.error.stack}`,
+      },
+    };
+  }
+
+  return result;
+}
+
 export const PublicRpcResponse = io.type({
   type: io.literal('quill-public-rpc-response'),
   id: io.string,
-  result: io.union([
-    io.type({ ok: io.unknown }),
-    io.type({ error: io.type({ message: io.string, stack: io.string }) }),
-  ]),
+  result: RpcResult,
 });
 
 export type PublicRpcResponse = io.TypeOf<typeof PublicRpcResponse>;
