@@ -43,6 +43,7 @@ import Rpc, {
 import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
+import isType from '../cells/isType';
 
 const PROVIDER = 'quill-provider';
 
@@ -157,18 +158,22 @@ export default class QuillController
       return;
     }
 
-    assertType(message.method, PublicRpcMethodName);
+    if (isType(message.method, PublicRpcMethodName)) {
+      assertType(message.method, PublicRpcMethodName);
 
-    assertType(
-      message.params,
-      rpcMap.public[message.method].params as io.Type<ExplicitAny>,
-    );
+      assertType(
+        message.params,
+        rpcMap.public[message.method].params as io.Type<ExplicitAny>,
+      );
 
-    // TODO: Handle exceptions
-    return (this[message.method] as ExplicitAny)(
-      message.origin,
-      message.params,
-    );
+      // TODO: Handle exceptions
+      return (this[message.method] as ExplicitAny)(
+        message.origin,
+        message.params,
+      );
+    }
+
+    return this.networkController.fetch(message);
   }
 
   /**

@@ -26,6 +26,12 @@ import QuillCells, { QuillState } from '../../QuillCells';
 
 // use state_get_balance for account balance
 
+type RpcMessage = {
+  method: string;
+  params: unknown[];
+  id?: string;
+};
+
 export default class NetworkController implements INetworkController {
   name = 'NetworkController';
 
@@ -176,6 +182,17 @@ export default class NetworkController implements INetworkController {
     return supportsEIP1559;
   }
 
+  async fetch(body: RpcMessage) {
+    const res = await this._providerProxy.request({
+      method: body.method,
+      jsonrpc: '2.0',
+      id: body.id,
+      params: body.params,
+    });
+
+    return res;
+  }
+
   private async configureProvider() {
     const { chainId, rpcTarget, ...rest } = await this.providerConfig.read();
     if (!chainId || !rpcTarget) {
@@ -230,9 +247,8 @@ export default class NetworkController implements INetworkController {
   }
 
   private async fetchBlockNumber() {
-    const res = await this._providerProxy.request({
+    const res = await this.fetch({
       method: 'eth_blockNumber',
-      jsonrpc: '2.0',
       id: createRandomId(),
       params: [],
     });
