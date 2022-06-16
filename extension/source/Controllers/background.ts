@@ -46,7 +46,7 @@ function setupController(): void {
   );
 
   runtime.onMessage.addListener((message, _sender) =>
-    quillController.handleRpcMessage(message),
+    quillController.handleMessage(message),
   );
 
   //

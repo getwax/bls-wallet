@@ -159,7 +159,7 @@ export default class QuillController
     throw new Error('Unexpected end of this.cells.preferences');
   }
 
-  handleRpcMessage(message: unknown): Promise<Result<unknown>> | undefined {
+  handleMessage(message: unknown): Promise<Result<unknown>> | undefined {
     if (PublicRpcMessage.is(message)) {
       return toOkError(
         (async () => {
