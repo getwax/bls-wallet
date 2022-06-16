@@ -358,6 +358,7 @@ export default class QuillController
           await this.preferencesController.selectedAddress.read();
         const accounts = selectedAddress ? [selectedAddress] : [];
         this.events.emit('notification', {
+          type: 'quill-notification',
           origin: (req as any).origin,
           eventName: 'unlockStateChanged',
           value: {
@@ -554,6 +555,7 @@ export default class QuillController
         // connect before we get the first value. (Which seems unlikely, but it
         // might be worth tidying this up anyway).
         this.events.emit('notification', {
+          type: 'quill-notification',
           origin: '*',
           eventName: 'chainChanged',
           value: chainId,
@@ -584,6 +586,7 @@ export default class QuillController
       for await (const selectedAddress of this.preferencesController
         .selectedAddress) {
         this.events.emit('notification', {
+          type: 'quill-notification',
           origin: '*',
           eventName: 'accountsChanged',
           value: selectedAddress ? [selectedAddress] : [],

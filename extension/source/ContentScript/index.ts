@@ -5,17 +5,49 @@ import {
 } from '@toruslabs/openlogin-jrpc';
 import pump from 'pump';
 import { runtime } from 'webextension-polyfill';
+import isType from '../cells/isType';
 import { CONTENT_SCRIPT, INPAGE, PROVIDER } from '../common/constants';
 import PortDuplexStream from '../common/PortStream';
-import { PublicRpcMessage, PublicRpcResponse } from '../types/Rpc';
+import { createRandomId } from '../Controllers/utils';
+import {
+  EventsPortInfo,
+  PublicRpcMessage,
+  PublicRpcResponse,
+  SetEventEnabledMessage,
+} from '../types/Rpc';
+
+const providerId = createRandomId();
+
+const eventsPortInfo: EventsPortInfo = {
+  type: 'quill-events-port',
+  providerId,
+  origin: window.location.origin,
+};
+
+const eventsPort = runtime.connect(undefined, {
+  name: JSON.stringify(eventsPortInfo),
+});
+
+eventsPort.onMessage.addListener((message) => {
+  window.postMessage(message, '*');
+});
+
+window.addEventListener('message', (evt) => {
+  if (!isType(evt.data, SetEventEnabledMessage)) {
+    return;
+  }
+
+  eventsPort.postMessage(evt.data);
+});
 
 window.addEventListener('message', async (evt) => {
   const data = {
     ...evt.data,
+    providerId,
     origin: window.location.origin,
   };
 
-  if (!PublicRpcMessage.is(data)) {
+  if (!isType(data, PublicRpcMessage)) {
     return;
   }
 

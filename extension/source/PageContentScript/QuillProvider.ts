@@ -1,14 +1,12 @@
 import { EventEmitter } from 'events';
 
 import * as io from 'io-ts';
-import { runtime } from 'webextension-polyfill';
 
 import assertType from '../cells/assertType';
 import isType from '../cells/isType';
 import { createRandomId } from '../Controllers/utils';
 import ExplicitAny from '../types/ExplicitAny';
 import {
-  EventsPortInfo,
   Notification,
   NotificationEventEmitter,
   PublicRpcMessage,
@@ -27,49 +25,40 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
   // be deprecated).
 
   isQuill = true;
-  id = createRandomId();
   breakOnAssertionFailures = false;
 
   constructor() {
     super();
 
-    const eventsPortInfo: EventsPortInfo = {
-      type: 'quill-events-port',
-      providerId: this.id,
-      origin: window.location.origin,
-    };
+    window.addEventListener('message', (evt) => {
+      if (!isType(evt.data, Notification)) {
+        return;
+      }
 
-    // FIXME: Oops, this belongs in the content script
-    const eventsPort = runtime.connect(undefined, {
-      name: JSON.stringify(eventsPortInfo),
-    });
-
-    eventsPort.onMessage.addListener((message) => {
-      assertType(message, Notification);
-      this.emit(message.eventName, message.value as ExplicitAny);
+      this.emit(evt.data.eventName, evt.data.value as ExplicitAny);
     });
 
     this.on('newListener', (eventName) => {
       if (this.listenerCount(eventName) === 0) {
         const message: SetEventEnabledMessage = {
-          type: 'set-event-enabled',
+          type: 'quill-set-event-enabled',
           eventName,
           enabled: true,
         };
 
-        eventsPort.postMessage(message);
+        window.postMessage(message, '*');
       }
     });
 
     this.on('removeListener', (eventName) => {
       if (this.listenerCount(eventName) === 0) {
         const message: SetEventEnabledMessage = {
-          type: 'set-event-enabled',
+          type: 'quill-set-event-enabled',
           eventName,
           enabled: false,
         };
 
-        eventsPort.postMessage(message);
+        window.postMessage(message, '*');
       }
     });
 
@@ -81,13 +70,14 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
 
     const id = createRandomId();
 
-    const message: Omit<PublicRpcMessage, 'origin'> = {
+    const message: Omit<PublicRpcMessage, 'providerId' | 'origin'> = {
       type: 'quill-public-rpc',
       id,
-      providerId: this.id,
-      // Note: We do not set the origin here because our code is co-mingled with
-      // the dApp and is therefore untrusted. Instead, the content script will
-      // add the origin before passing it along to the background script.
+      // Note: We do not set providerId or origin here because our code is
+      // co-mingled with the dApp and is therefore untrusted. Instead, the
+      // content script will add these fields before passing them along to the
+      // background script.
+      // providerId: this.id,
       // origin: window.location.origin,
       method: body.method,
       params: body.params ?? [],

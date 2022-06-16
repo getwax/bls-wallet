@@ -156,6 +156,7 @@ export const NotificationEventName: io.Type<NotificationEventName> = io.union(
 
 export type Notification = {
   [E in NotificationEventName]: {
+    type: 'quill-notification';
     origin: string;
     eventName: E;
     value: io.TypeOf<typeof notificationEventMap[E]>;
@@ -165,6 +166,7 @@ export type Notification = {
 export const Notification: io.Type<Notification> = io.union(
   Object.entries(notificationEventMap).map(([eventName, type]) =>
     io.type({
+      type: io.literal('quill-notification'),
       origin: io.string,
       eventName: io.literal(eventName),
       value: type,
@@ -182,7 +184,7 @@ export type NotificationEventEmitter = new () => TypedEventEmitter<
 >;
 
 export const SetEventEnabledMessage = io.type({
-  type: io.literal('set-event-enabled'),
+  type: io.literal('quill-set-event-enabled'),
   eventName: NotificationEventName,
   enabled: io.boolean,
 });
