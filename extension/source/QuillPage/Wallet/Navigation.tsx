@@ -28,7 +28,8 @@ const navigationTargets = [
   {
     name: 'Settings',
     icon: <GearSix className="icon-md" />,
-    target: '/wallet/settings',
+    target: '/wallet/settings/*',
+    link: '/wallet/settings/general',
   },
 ];
 
@@ -36,7 +37,15 @@ export const Navigation: React.FunctionComponent = () => {
   const { pathname } = useLocation();
 
   const isCurrentRoute = (target: string) => {
-    return pathname === target;
+    if (pathname === target) {
+      return true;
+    }
+
+    if (target.endsWith('/*') && pathname.startsWith(target.slice(0, -1))) {
+      return true;
+    }
+
+    return false;
   };
 
   return (
@@ -45,7 +54,7 @@ export const Navigation: React.FunctionComponent = () => {
       <div className="mt-8 flex flex-col gap-4 justify-items-center">
         {navigationTargets.map((item) => {
           return (
-            <Link to={item.target} key={item.name}>
+            <Link to={item.link ?? item.target} key={item.name}>
               <div
                 className={`flex gap-4 p-3 rounded-lg ${
                   isCurrentRoute(item.target) && 'bg-grey-200'

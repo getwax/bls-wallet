@@ -35,10 +35,22 @@ const routes: IRoutes[] = [
     detailComponent: <div>contacts detail</div>,
   },
   {
-    name: 'settings',
-    path: '/settings',
+    name: 'general settings',
+    path: '/settings/general',
     summaryComponent: <SettingsWrapper />,
-    detailComponent: <div>settings detail</div>,
+    detailComponent: <div>general settings detail</div>,
+  },
+  {
+    name: 'network settings',
+    path: '/settings/network',
+    summaryComponent: <SettingsWrapper />,
+    detailComponent: <div>network settings detail</div>,
+  },
+  {
+    name: 'security settings',
+    path: '/settings/security',
+    summaryComponent: <SettingsWrapper />,
+    detailComponent: <div>security settings detail</div>,
   },
 ];
 
