@@ -139,7 +139,7 @@ export default class QuillController
     return 'ok' as const;
   }
 
-  handlePrivateMessage(message: unknown, _sender: Runtime.MessageSender) {
+  handlePrivateMessage(message: unknown) {
     if (!PrivateRpcMessage.is(message)) {
       return;
     }
@@ -174,7 +174,7 @@ export default class QuillController
     return selectedAddress ? [selectedAddress] : [];
   }
 
-  handlePublicMessage(message: unknown, origin: string) {
+  handlePublicMessage(message: unknown) {
     if (!PublicRpcMessage.is(message)) {
       return;
     }
@@ -186,7 +186,10 @@ export default class QuillController
       rpcMap.public[message.method].params as io.Type<ExplicitAny>,
     );
 
-    return (this[message.method] as ExplicitAny)(origin, message.params);
+    return (this[message.method] as ExplicitAny)(
+      message.origin,
+      message.params,
+    );
   }
 
   /**
