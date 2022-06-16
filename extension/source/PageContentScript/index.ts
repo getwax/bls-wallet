@@ -1,5 +1,3 @@
-import * as io from 'io-ts';
-
 // import { BasePostMessageStream } from '@toruslabs/openlogin-jrpc';
 // import type { Duplex } from 'readable-stream';
 // import { CONTENT_SCRIPT, INPAGE } from '../common/constants';
@@ -27,11 +25,6 @@ export function initializeProvider({
 }: {
   shouldSetOnWindow?: boolean;
 }) {
-  const RequestBody = io.type({
-    method: io.string,
-    params: io.union([io.undefined, io.array(io.unknown)]),
-  });
-
   const provider = new QuillProvider();
 
   // const provider = new QuillInPageProvider(connectionStream, {

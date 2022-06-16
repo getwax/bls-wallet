@@ -5,7 +5,7 @@ import { ethers } from 'ethers';
 import Browser from 'webextension-polyfill';
 import getWindowQuillProvider from './getWindowQuillProvider';
 import mapValues from '../helpers/mapValues';
-import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
+import QuillProvider from '../PageContentScript/QuillProvider';
 import ExplicitAny from '../types/ExplicitAny';
 import { rpcMap } from '../types/Rpc';
 import { IReadableCell } from '../cells/ICell';
@@ -19,7 +19,7 @@ import TransformCell from '../cells/TransformCell';
 
 type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
-function getQuillContextValue(provider: QuillInPageProvider) {
+function getQuillContextValue(provider: QuillProvider) {
   const rpc = {
     public: mapValues(
       rpcMap.public,

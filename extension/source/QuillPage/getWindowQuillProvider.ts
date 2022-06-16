@@ -1,5 +1,5 @@
 import assert from '../helpers/assert';
-import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
+import QuillProvider from '../PageContentScript/QuillProvider';
 
 const ethereumInitialziedEvent = 'ethereum#initialized';
 
@@ -27,7 +27,7 @@ function waitForWindowEthererum(): Promise<void> {
   });
 }
 
-export default async function getWindowQuillProvider(): Promise<QuillInPageProvider> {
+export default async function getWindowQuillProvider(): Promise<QuillProvider> {
   if (!window.ethereum) {
     await waitForWindowEthererum();
   }

@@ -10,7 +10,7 @@ const RequestBody = io.type({
   params: io.union([io.undefined, io.array(io.unknown)]),
 });
 
-export default class QuillProvider {
+export default class QuillProvider /* TODO: extends EventEmitter */ {
   // FIXME: We should take care to underscore/make private things since this
   // will be exposed to dApps (and we don't want to create things that need to
   // be deprecated).
