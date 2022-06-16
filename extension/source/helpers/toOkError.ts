@@ -1,4 +1,4 @@
-import assert from './assert';
+import { softAssert } from './assert';
 
 export type Result<T> =
   | { ok: T }
@@ -46,12 +46,19 @@ export default function toOkError<T>(
   })() as ToOkErrorReturn<T>;
 }
 
-function handleError(error: unknown, log: boolean) {
+function handleError(thrownError: unknown, log: boolean) {
   if (log) {
-    console.error(error);
+    console.error(thrownError);
   }
 
-  assert(error instanceof Error);
+  let error: Error;
+
+  if (!(thrownError instanceof Error)) {
+    softAssert(false);
+    error = new Error(`toOkError task threw non-Error: ${thrownError}`);
+  } else {
+    error = thrownError;
+  }
 
   return {
     error: {

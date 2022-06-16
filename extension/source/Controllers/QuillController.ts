@@ -182,7 +182,7 @@ export default class QuillController
           return (this[message.method] as ExplicitAny)(
             message.origin,
             message.params,
-          );
+          ) as unknown;
         }
 
         return this.networkController.fetch(message);
