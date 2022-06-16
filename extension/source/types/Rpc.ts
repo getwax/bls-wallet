@@ -46,9 +46,12 @@ export const rpcMap = {
 };
 
 export const notificationEventMap = {
-  test: io.number,
-  'other-test': io.string,
   accountsChanged: io.array(io.string),
+  unlockStateChanged: io.type({
+    accounts: io.array(io.string),
+    isUnlocked: io.boolean,
+  }),
+  chainChanged: io.string,
 };
 
 const publicMethodNames = Object.keys(rpcMap.public);

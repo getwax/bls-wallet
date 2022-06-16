@@ -376,9 +376,10 @@ export default class QuillController
         const selectedAddress =
           await this.preferencesController.selectedAddress.read();
         const accounts = selectedAddress ? [selectedAddress] : [];
-        this.notifyConnections((req as any).origin, {
-          method: PROVIDER_NOTIFICATIONS.UNLOCK_STATE_CHANGED,
-          params: {
+        this.events.emit('notification', {
+          origin: (req as any).origin,
+          eventName: 'unlockStateChanged',
+          value: {
             accounts,
             isUnlocked: accounts.length > 0,
           },
@@ -567,9 +568,14 @@ export default class QuillController
   private watchThings() {
     (async () => {
       for await (const chainId of this.networkController.chainId) {
-        this.notifyAllConnections({
-          method: PROVIDER_NOTIFICATIONS.CHAIN_CHANGED,
-          params: { chainId },
+        // TODO: We might need to avoid emitting notifications for the first
+        // values of these cells. It would only matter if a page is able to
+        // connect before we get the first value. (Which seems unlikely, but it
+        // might be worth tidying this up anyway).
+        this.events.emit('notification', {
+          origin: '*',
+          eventName: 'chainChanged',
+          value: chainId,
         });
       }
     })();
@@ -596,12 +602,11 @@ export default class QuillController
     (async () => {
       for await (const selectedAddress of this.preferencesController
         .selectedAddress) {
-        this.notifyAllConnections({
-          method: PROVIDER_NOTIFICATIONS.ACCOUNTS_CHANGED,
-          params: [selectedAddress],
+        this.events.emit('notification', {
+          origin: '*',
+          eventName: 'accountsChanged',
+          value: selectedAddress ? [selectedAddress] : [],
         });
-
-        this.events.emit('notification', {});
       }
     })();
 
