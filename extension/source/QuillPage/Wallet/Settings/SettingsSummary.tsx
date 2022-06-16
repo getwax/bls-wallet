@@ -1,13 +1,11 @@
 import * as React from 'react';
 
 interface ISettingsSummary {
-  onClick: () => void;
   expanded?: boolean;
   name: string;
 }
 
 export const SettingsSummary: React.FunctionComponent<ISettingsSummary> = ({
-  onClick,
   expanded = false,
   name,
 }) => {
@@ -25,7 +23,6 @@ export const SettingsSummary: React.FunctionComponent<ISettingsSummary> = ({
             checked={expanded}
             readOnly
             className="h-5 w-5 cursor-pointer"
-            onClick={onClick}
           />
         </div>
 

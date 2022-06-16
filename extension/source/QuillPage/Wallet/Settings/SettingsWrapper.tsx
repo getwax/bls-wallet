@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { SettingsSummary } from './SettingsSummary';
 
 export interface ISettings {
@@ -18,7 +19,8 @@ const contacts: ISettings[] = [
 ];
 
 export const SettingsWrapper: React.FunctionComponent = () => {
-  const [selected, setSelected] = React.useState<number>(0);
+  const { pathname } = useLocation();
+  console.log('render SettingsWrapper', { pathname });
 
   return (
     <div className="">
@@ -27,14 +29,19 @@ export const SettingsWrapper: React.FunctionComponent = () => {
       </div>
 
       <div className="flex flex-col gap-4 mt-8">
-        {contacts.map((contact, index) => (
-          <SettingsSummary
-            onClick={() => setSelected(index)}
-            name={contact.name}
-            key={contact.name}
-            expanded={index === selected}
-          />
-        ))}
+        {contacts.map((contact) => {
+          const linkTo = `/wallet/settings/${contact.name.toLowerCase()}`;
+
+          return (
+            <Link to={linkTo} key={contact.name}>
+              <SettingsSummary
+                name={contact.name}
+                key={contact.name}
+                expanded={pathname === linkTo}
+              />
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
