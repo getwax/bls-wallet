@@ -58,6 +58,8 @@ import {
   const providerId = createRandomId();
 
   addInPageScript();
+
+  // TODO: Just use the port for both events and requests.
   relayRpcEvents(providerId);
   relayRpcRequests(providerId);
 })();
@@ -85,6 +87,7 @@ function relayRpcRequests(providerId: string) {
       return;
     }
 
+    // TODO: Respond from here with an error if our events port is disconnected.
     const result = await runtime.sendMessage(data);
     assertType(result, RpcResult);
 
