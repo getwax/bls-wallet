@@ -1,3 +1,5 @@
+/* eslint-disable no-empty-pattern */
+
 import { EventEmitter } from 'events';
 
 import * as io from 'io-ts';
@@ -31,16 +33,14 @@ import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
-import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
-import Rpc, {
+import {
   EventsPortInfo,
   Notification,
   NotificationEventName,
   PrivateRpc,
   PrivateRpcMessage,
   PrivateRpcMethodName,
-  PublicRpc,
   PublicRpcMessage,
   PublicRpcMethodName,
   PublicRpcWithOrigin,
@@ -57,9 +57,7 @@ import toOkError from '../helpers/toOkError';
 
 const PROVIDER = 'quill-provider';
 
-export default class QuillController
-  implements PublicRpcWithOrigin, PrivateRpc
-{
+export default class QuillController {
   events = new EventEmitter() as TypedEventEmitter<{
     notification(notification: Notification): void;
   }>;
@@ -108,85 +106,80 @@ export default class QuillController
     this.watchThings();
   }
 
-  /** Private RPC */
+  privateRpc: PrivateRpc = {
+    setSelectedAddress: async (newSelectedAddress) => {
+      this.preferencesController.update({
+        selectedAddress: newSelectedAddress,
+      });
 
-  async setSelectedAddress(newSelectedAddress: string) {
-    this.preferencesController.update({
-      selectedAddress: newSelectedAddress,
-    });
+      return 'ok';
+    },
 
-    return 'ok' as const;
-  }
+    createHDAccount: async () => {
+      return this.keyringController.createHDAccount();
+    },
 
-  async createHDAccount() {
-    return this.keyringController.createHDAccount();
-  }
+    isOnboardingComplete: async () => {
+      return this.keyringController.isOnboardingComplete();
+    },
 
-  async isOnboardingComplete() {
-    return this.keyringController.isOnboardingComplete();
-  }
+    setHDPhrase: async (phrase) => {
+      this.keyringController.setHDPhrase(phrase);
+      return 'ok';
+    },
+  };
 
-  async setHDPhrase(phrase: string) {
-    this.keyringController.setHDPhrase(phrase);
-    return 'ok' as const;
-  }
-
-  /** Public RPC */
-
-  // eslint-disable-next-line no-empty-pattern
-  async eth_accounts(origin: string, []) {
-    if (origin === window.location.origin) {
-      return (await this.keyringController.state.read()).wallets.map(
-        ({ address }) => address,
-      );
-    }
-
-    const selectedAddress =
-      await this.preferencesController.selectedAddress.read();
-
-    // TODO (merge-ok) Expose no accounts if this origin has not been approved,
-    // preventing account-requiring RPC methods from completing successfully
-    // only show address if account is unlocked
-    // https://github.com/web3well/bls-wallet/issues/224
-    return selectedAddress ? [selectedAddress] : [];
-  }
-
-  // eslint-disable-next-line no-empty-pattern
-  async eth_requestAccounts(origin: string, []) {
-    const selectedAddress =
-      await this.preferencesController.selectedAddress.read();
-    const accounts = selectedAddress ? [selectedAddress] : [];
-    this.events.emit('notification', {
-      type: 'quill-notification',
-      origin,
-      eventName: 'unlockStateChanged',
-      value: {
-        accounts,
-        isUnlocked: accounts.length > 0,
-      },
-    });
-    return accounts;
-  }
-
-  async debugMe(_origin: string, [a, b, c]: Parameters<PublicRpc['debugMe']>) {
-    console.log('debugMe', { a, b, c });
-    return 'ok' as const;
-  }
-
-  async quill_breakOnAssertionFailures(
-    _origin: string,
-    [differentFrom]: Parameters<PublicRpc['quill_breakOnAssertionFailures']>,
-  ) {
-    for await (const preferences of this.cells.preferences) {
-      const setting = preferences.breakOnAssertionFailures ?? false;
-
-      if (differentFrom !== setting) {
-        return setting;
+  publicRpc: PublicRpcWithOrigin = {
+    eth_accounts: async (origin, []) => {
+      if (origin === window.location.origin) {
+        return (await this.keyringController.state.read()).wallets.map(
+          ({ address }) => address,
+        );
       }
-    }
 
-    throw new Error('Unexpected end of this.cells.preferences');
-  }
+      const selectedAddress =
+        await this.preferencesController.selectedAddress.read();
+
+      // TODO (merge-ok) Expose no accounts if this origin has not been approved,
+      // preventing account-requiring RPC methods from completing successfully
+      // only show address if account is unlocked
+      // https://github.com/web3well/bls-wallet/issues/224
+      return selectedAddress ? [selectedAddress] : [];
+    },
+
+    eth_requestAccounts: async (origin, []) => {
+      const selectedAddress =
+        await this.preferencesController.selectedAddress.read();
+      const accounts = selectedAddress ? [selectedAddress] : [];
+      this.events.emit('notification', {
+        type: 'quill-notification',
+        origin,
+        eventName: 'unlockStateChanged',
+        value: {
+          accounts,
+          isUnlocked: accounts.length > 0,
+        },
+      });
+      return accounts;
+    },
+
+    debugMe: async (_origin, [a, b, c]) => {
+      console.log('debugMe', { a, b, c });
+      return 'ok' as const;
+    },
+
+    quill_breakOnAssertionFailures: async (_origin, [differentFrom]) => {
+      for await (const preferences of this.cells.preferences) {
+        const setting = preferences.breakOnAssertionFailures ?? false;
+
+        if (differentFrom !== setting) {
+          return setting;
+        }
+      }
+
+      throw new Error('Unexpected end of this.cells.preferences');
+    },
+  };
 
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
     if (PublicRpcMessage.is(message)) {
@@ -199,7 +192,7 @@ export default class QuillController
             rpcMap.public[message.method].params as io.Type<ExplicitAny>,
           );
 
-          return (this[message.method] as ExplicitAny)(
+          return (this.publicRpc[message.method] as ExplicitAny)(
             message.origin,
             message.params,
           ) as unknown;
@@ -218,7 +211,9 @@ export default class QuillController
           rpcMap.private[message.method].params as io.Type<ExplicitAny>,
         );
 
-        return (this[message.method] as ExplicitAny)(...message.params);
+        return (this.privateRpc[message.method] as ExplicitAny)(
+          ...message.params,
+        );
       }).then(toRpcResult);
     }
 
@@ -431,35 +426,7 @@ export default class QuillController
 
         return result.hash;
       },
-
-      ...this.makePublicRpc(),
     };
-  }
-
-  private makePublicRpc(): Record<string, unknown> {
-    type MethodsWithOrigin = {
-      [M in keyof Rpc['public']]: (
-        origin: string,
-        params: Parameters<Rpc['public'][M]>,
-      ) => ReturnType<Rpc['public'][M]>;
-    };
-
-    const methods: MethodsWithOrigin = {
-      eth_accounts: this.eth_accounts.bind(this),
-      eth_requestAccounts: this.eth_requestAccounts.bind(this),
-      debugMe: this.debugMe.bind(this),
-      quill_breakOnAssertionFailures:
-        this.quill_breakOnAssertionFailures.bind(this),
-    };
-
-    return mapValues(methods, (method, methodName) => (req: any) => {
-      const params = req.params ?? [];
-      assertType(
-        params,
-        rpcMap.public[methodName].params as io.Type<ExplicitAny>,
-      );
-      return (method as ExplicitAny)(req.origin, params);
-    });
   }
 
   /**
@@ -604,9 +571,10 @@ export default class QuillController
 
       while (true) {
         window.ethereum.breakOnAssertionFailures =
-          await this.quill_breakOnAssertionFailures(window.location.origin, [
-            window.ethereum.breakOnAssertionFailures,
-          ]);
+          await this.publicRpc.quill_breakOnAssertionFailures(
+            window.location.origin,
+            [window.ethereum.breakOnAssertionFailures],
+          );
       }
     })();
   }
