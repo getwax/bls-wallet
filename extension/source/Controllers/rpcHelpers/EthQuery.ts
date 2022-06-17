@@ -1,5 +1,7 @@
 import EthQuery from 'eth-query';
 
+// TODO: Delete
+
 EthQuery.prototype.request = function request<T>(opts: {
   method: string;
   params?: unknown;

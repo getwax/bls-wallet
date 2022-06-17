@@ -90,6 +90,9 @@ export default class QuillProvider extends (EventEmitter as new () => TypedEvent
 
   // TODO: Expose better type information
   async request(body: unknown) {
+    // TODO: Ensure all errors are EthereumRpcError, maybe making use of
+    // the ethereum-rpc-error module.
+
     assertType(body, RequestBody);
 
     const id = createRandomId();
