@@ -21,7 +21,7 @@ export default class MemoryCell<T> implements ICell<Awaited<T>> {
     return await this.#valueLike;
   }
 
-  async write(newValueLike: T): Promise<void> {
+  async write(newValueLike: T | Awaited<T>): Promise<void> {
     assert(!this.ended);
 
     const previous = await this.#valueLike;
