@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 
 import TypedEmitter from 'typed-emitter';
+import { deepCopy } from 'ethers/lib/utils';
 
 import AsyncReturnType from '../types/AsyncReturnType';
 import ExplicitAny from '../types/ExplicitAny';
@@ -126,8 +127,8 @@ export class FormulaCell<
       }
 
       for await (const inputValues of stoppableSequence) {
-        const latest = await this.formula(
-          inputValues as InputValues<InputCells>,
+        const latest = deepCopy(
+          await this.formula(inputValues as InputValues<InputCells>),
         );
 
         iterationCell.write({ value: latest });
