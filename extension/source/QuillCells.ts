@@ -1,6 +1,7 @@
 import * as io from 'io-ts';
 
 import CellCollection from './cells/CellCollection';
+import TransformCell from './cells/TransformCell';
 import { ProviderConfig } from './Controllers/constants';
 import { getDefaultProviderConfig } from './Controllers/utils';
 import AsyncReturnType from './types/AsyncReturnType';
@@ -45,7 +46,7 @@ const AddressPreferences = io.type({
 });
 
 function QuillCells(storage: CellCollection) {
-  return {
+  const rootCells = {
     preferredCurrency: storage.Cell(
       'preferredCurrency',
       io.type({
@@ -115,6 +116,26 @@ function QuillCells(storage: CellCollection) {
         breakOnAssertionFailures: undefined,
       }),
     ),
+  };
+
+  /** the cells involved in the response to quill_providerState in public rpc */
+  const providerStateCells = {
+    chainId: TransformCell.Sub(rootCells.network, 'chainId'),
+    selectedAddress: TransformCell.Sub(
+      rootCells.preferences,
+      'selectedAddress',
+    ),
+    // TODO: Deduplicate with quillPage
+    breakOnAssertionFailures: TransformCell.SubWithDefault(
+      rootCells.preferences,
+      'breakOnAssertionFailures',
+      false,
+    ),
+  };
+
+  return {
+    ...rootCells,
+    ...providerStateCells,
   };
 }
 

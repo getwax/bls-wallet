@@ -3,7 +3,7 @@ import { IReadableCell } from './ICell';
 import MemoryCell from './MemoryCell';
 
 export default function LongPollingCell<T>(
-  longPoll: (differentFrom?: { value: T }) => Promise<T>,
+  longPoll: (opt?: { differentFrom: T }) => Promise<T>,
 ): IReadableCell<T> {
   const cell = new MemoryCell(longPoll());
 
@@ -12,7 +12,7 @@ export default function LongPollingCell<T>(
       let value = await cell.read();
 
       while (true) {
-        value = await longPoll({ value });
+        value = await longPoll({ differentFrom: value });
         await cell.write(value);
       }
     } catch (error) {

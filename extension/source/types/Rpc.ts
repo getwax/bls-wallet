@@ -6,6 +6,14 @@ import { Result } from '../helpers/toOkError';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
 
+export const ProviderState = io.type({
+  chainId: io.string,
+  selectedAddress: io.union([io.undefined, io.string]),
+  breakOnAssertionFailures: io.boolean,
+});
+
+export type ProviderState = io.TypeOf<typeof ProviderState>;
+
 export const rpcMap = {
   public: {
     eth_accounts: {
@@ -40,12 +48,11 @@ export const rpcMap = {
       params: io.tuple([io.string, io.number, io.string]),
       output: io.literal('ok'),
     },
-    quill_breakOnAssertionFailures: {
+    quill_providerState: {
       params: io.tuple([
-        /** differentFrom: only reply when different from this value */
-        io.union([io.undefined, io.boolean]),
+        io.union([io.undefined, io.type({ differentFrom: ProviderState })]),
       ]),
-      output: io.boolean,
+      output: ProviderState,
     },
   },
   private: {
@@ -78,6 +85,14 @@ export const notificationEventMap = {
     isUnlocked: io.boolean,
   }),
   chainChanged: io.string,
+  connect: io.type({
+    chainId: io.string,
+  }),
+  disconnect: io.type({
+    message: io.string,
+    code: io.number,
+    data: io.unknown,
+  }),
 };
 
 export type NotificationEventMap = {

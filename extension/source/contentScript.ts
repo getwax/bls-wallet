@@ -60,6 +60,7 @@ import {
   addInPageScript();
 
   // TODO: Just use the port for both events and requests.
+  // Or: Remove events!?
   relayRpcEvents(providerId);
   relayRpcRequests(providerId);
 })();
@@ -87,7 +88,8 @@ function relayRpcRequests(providerId: string) {
       return;
     }
 
-    // TODO: Respond from here with an error if our events port is disconnected.
+    // TODO: We expect this will reject if the background script is
+    // disconnected while waiting for a reply, need to double check this
     const result = await runtime.sendMessage(data);
     assertType(result, RpcResult);
 

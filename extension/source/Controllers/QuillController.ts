@@ -26,6 +26,7 @@ import {
   PrivateRpc,
   PrivateRpcMessage,
   PrivateRpcMethodName,
+  ProviderState,
   PublicRpcMessage,
   PublicRpcMethodName,
   PublicRpcWithOrigin,
@@ -39,6 +40,9 @@ import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
 import toOkError from '../helpers/toOkError';
+import TransformCell from '../cells/TransformCell';
+import { FormulaCell } from '../cells/FormulaCell';
+import { IReadableCell } from '../cells/ICell';
 
 export default class QuillController {
   events = new EventEmitter() as TypedEventEmitter<{
@@ -81,6 +85,19 @@ export default class QuillController {
     );
 
     this.watchThings();
+  }
+
+  ProviderState(_origin: string): IReadableCell<ProviderState> {
+    // TODO: (merge-ok) This should be per-provider (or maybe per-origin)
+
+    return new FormulaCell(
+      {
+        chainId: this.cells.chainId,
+        selectedAddress: this.cells.selectedAddress,
+        breakOnAssertionFailures: this.cells.breakOnAssertionFailures,
+      },
+      (cells) => cells,
+    );
   }
 
   privateRpc: PrivateRpc = {
@@ -207,16 +224,21 @@ export default class QuillController {
       return 'ok' as const;
     },
 
-    quill_breakOnAssertionFailures: async (_origin, [differentFrom]) => {
-      for await (const preferences of this.cells.preferences) {
-        const setting = preferences.breakOnAssertionFailures ?? false;
+    quill_providerState: async (origin, [opt]) => {
+      const providerState = this.ProviderState(origin);
 
-        if (differentFrom !== setting) {
-          return setting;
+      for await (const $providerState of providerState) {
+        if (
+          opt &&
+          !providerState.hasChanged(opt.differentFrom, $providerState)
+        ) {
+          continue;
         }
+
+        return $providerState;
       }
 
-      throw new Error('Unexpected end of this.cells.preferences');
+      throw new Error('Unexpected end of providerState cell');
     },
   };
 
@@ -368,12 +390,14 @@ export default class QuillController {
     (async () => {
       window.ethereum ??= { breakOnAssertionFailures: false };
 
-      while (true) {
-        window.ethereum.breakOnAssertionFailures =
-          await this.publicRpc.quill_breakOnAssertionFailures(
-            window.location.origin,
-            [window.ethereum.breakOnAssertionFailures],
-          );
+      const breakOnAssertionFailures = TransformCell.SubWithDefault(
+        this.cells.preferences,
+        'breakOnAssertionFailures',
+        false,
+      );
+
+      for await (const brk of breakOnAssertionFailures) {
+        window.ethereum.breakOnAssertionFailures = brk;
       }
     })();
   }

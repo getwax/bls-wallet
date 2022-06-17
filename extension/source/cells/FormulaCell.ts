@@ -152,6 +152,44 @@ export class FormulaCell<
 
     return iterationCell;
   }
+
+  /** Creates an ICell for the subscript of another ICell. */
+  static Sub<Input extends Record<string, unknown>, K extends keyof Input>(
+    input: IReadableCell<Input>,
+    key: K,
+    hasChanged: (
+      previous: Input[K] | undefined,
+      latest: Input[K],
+    ) => boolean = jsonHasChanged,
+  ): IReadableCell<Input[K]> {
+    return new FormulaCell(
+      { input },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      ({ input }) => input[key],
+      hasChanged,
+    );
+  }
+
+  /** Like Sub, but also maps undefined|null to defaultValue. */
+  static SubWithDefault<
+    Input extends Record<string, unknown>,
+    K extends keyof Input,
+  >(
+    input: IReadableCell<Input>,
+    key: K,
+    defaultValue: Exclude<Input[K], undefined | null>,
+    hasChanged: (
+      previous: Input[K] | undefined,
+      latest: Input[K],
+    ) => boolean = jsonHasChanged,
+  ): IReadableCell<Exclude<Input[K], undefined | null>> {
+    return new FormulaCell(
+      { input },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      ({ input }) => input[key] ?? defaultValue,
+      hasChanged,
+    );
+  }
 }
 
 function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(

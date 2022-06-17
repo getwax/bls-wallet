@@ -3,12 +3,14 @@ import { EventEmitter } from 'events';
 import * as io from 'io-ts';
 
 import assertType from '../cells/assertType';
+import { FormulaCell } from '../cells/FormulaCell';
 import isType from '../cells/isType';
+import LongPollingCell from '../cells/LongPollingCell';
 import { createRandomId } from '../Controllers/utils';
-import ExplicitAny from '../types/ExplicitAny';
 import {
   Notification,
   NotificationEventEmitter,
+  ProviderState,
   PublicRpcMessage,
   PublicRpcResponse,
   SetEventEnabledMessage,
@@ -28,10 +30,11 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
 
     window.addEventListener('message', (evt) => {
       if (!isType(evt.data, Notification)) {
-        return;
+        // return;
       }
 
-      this.emit(evt.data.eventName, evt.data.value as ExplicitAny);
+      // TODO: Just remove the events pipeline!?
+      // this.emit(evt.data.eventName, evt.data.value as ExplicitAny);
     });
 
     this.on('newListener', (eventName) => {
@@ -58,9 +61,58 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
       }
     });
 
-    watchThings(this);
+    const state = LongPollingCell<ProviderState>(
+      (opt) =>
+        this.request({
+          method: 'quill_providerState',
+          params: [opt],
+        }) as Promise<ProviderState>, // TODO: Avoid cast
+    );
+
+    const chainId = FormulaCell.Sub(state, 'chainId');
+    const selectedAddress = FormulaCell.Sub(state, 'selectedAddress');
+
+    const breakOnAssertionFailures = FormulaCell.Sub(
+      state,
+      'breakOnAssertionFailures',
+    );
+
+    (async () => {
+      let connected = false;
+
+      for await (const $chainId of chainId) {
+        if (!connected) {
+          connected = true;
+          this.emit('connect', { chainId: $chainId });
+        }
+
+        this.emit('chainChanged', $chainId);
+      }
+
+      this.emit('disconnect', {
+        message: 'disconnected',
+        code: 4900,
+        data: undefined,
+      });
+    })();
+
+    (async () => {
+      for await (const $selectedAddress of selectedAddress) {
+        this.emit(
+          'accountsChanged',
+          $selectedAddress ? [$selectedAddress] : [],
+        );
+      }
+    })();
+
+    (async () => {
+      for await (const $breakOnAssertionFailures of breakOnAssertionFailures) {
+        this.breakOnAssertionFailures = $breakOnAssertionFailures;
+      }
+    })();
   }
 
+  // TODO: Expose better type information
   async request(body: unknown) {
     assertType(body, RequestBody);
 
@@ -105,15 +157,4 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
       window.addEventListener('message', messageListener);
     });
   }
-}
-
-function watchThings(quillProvider: QuillProvider) {
-  (async () => {
-    while (true) {
-      quillProvider.breakOnAssertionFailures = (await quillProvider.request({
-        method: 'quill_breakOnAssertionFailures',
-        params: [quillProvider.breakOnAssertionFailures],
-      })) as boolean;
-    }
-  })();
 }
