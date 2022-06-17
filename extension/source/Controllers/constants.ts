@@ -2,6 +2,8 @@ import * as io from 'io-ts';
 
 import toHex from '../helpers/toHex';
 
+// TODO: Clean this up
+
 export const CHAINS = {
   ARBITRUM_RINKEBY: 'arbitrum-rinkeby',
   ARBITRUM: 'arbitrum',
@@ -122,13 +124,3 @@ export const SUPPORTED_NETWORKS: Record<string, ProviderConfig> = {
     networkKey: CHAINS.LOCAL,
   },
 };
-
-export const ENVIRONMENT_TYPE = {
-  POPUP: 'popup',
-  NOTIFICATION: 'notification',
-  FULLSCREEN: 'fullscreen',
-  BACKGROUND: 'background',
-};
-
-export type EnvironmentType =
-  typeof ENVIRONMENT_TYPE[keyof typeof ENVIRONMENT_TYPE];

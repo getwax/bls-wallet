@@ -12,6 +12,26 @@ export const rpcMap = {
       params: emptyTuple,
       output: io.array(io.string),
     },
+    eth_coinbase: {
+      params: emptyTuple,
+      output: io.union([io.null, io.string]),
+    },
+    wallet_get_provider_state: {
+      params: emptyTuple,
+      output: io.type({
+        accounts: io.array(io.string),
+        chainId: io.string,
+        isUnlocked: io.boolean,
+      }),
+    },
+    eth_setPreferredAggregator: {
+      params: io.tuple([io.string]),
+      output: io.literal('ok'),
+    },
+    eth_sendTransaction: {
+      params: io.array(io.unknown), // TODO: SendTransactionParams
+      output: io.string,
+    },
     eth_requestAccounts: {
       params: emptyTuple,
       output: io.array(io.string),

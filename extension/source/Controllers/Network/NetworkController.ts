@@ -56,7 +56,6 @@ export default class NetworkController implements INetworkController {
   constructor(
     public state: QuillCells['network'],
     time: IReadableCell<number>,
-    ethereumMethods: IProviderHandlers,
   ) {
     this.ticker = new FormulaCell(
       { state: this.state },
@@ -84,7 +83,8 @@ export default class NetworkController implements INetworkController {
       ({ state }) => state.providerConfig,
     );
 
-    this.initializeProvider(ethereumMethods);
+    // TODO: Delete stuff?
+    this.initializeProvider({});
 
     this.watchThings();
 

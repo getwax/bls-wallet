@@ -7,17 +7,14 @@ import { Runtime } from 'webextension-polyfill';
 import { Aggregator } from 'bls-wallet-clients';
 import TypedEventEmitter from 'typed-emitter';
 
-import { getAllReqParam, getUserLanguage } from './utils';
+import { getUserLanguage } from './utils';
 import NetworkController from './Network/NetworkController';
 import CurrencyController, {
   CurrencyControllerConfig,
 } from './CurrencyController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
-import {
-  IProviderHandlers,
-  SendTransactionParams,
-} from './Network/createEthMiddleware';
+import { SendTransactionParams } from './Network/createEthMiddleware';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
@@ -54,8 +51,8 @@ export default class QuillController {
   preferencesController: PreferencesController;
 
   // This is just kept in memory because it supports setting the preferred
-  // aggregator for the particular tab only.
-  tabPreferredAggregators: Record<number, string> = {};
+  // aggregator for the particular provider only.
+  preferredAggregators: Record<string, string> = {};
 
   time = TimeCell(1000);
   cells: QuillCells;
@@ -69,7 +66,6 @@ export default class QuillController {
     this.networkController = new NetworkController(
       this.cells.network,
       this.time,
-      this.makeEthereumMethods(),
     );
 
     this.currencyController = new CurrencyController(
@@ -111,6 +107,68 @@ export default class QuillController {
   };
 
   publicRpc: PublicRpcWithOrigin = {
+    eth_coinbase: async (_origin, []) =>
+      (await this.preferencesController.selectedAddress.read()) || null,
+
+    wallet_get_provider_state: async (_origin, []) => {
+      const selectedAddress =
+        await this.preferencesController.selectedAddress.read();
+
+      return {
+        accounts: selectedAddress ? [selectedAddress] : [],
+        chainId: (await this.networkController.state.read()).chainId,
+        isUnlocked: !!selectedAddress,
+      };
+    },
+
+    eth_setPreferredAggregator: async (_origin, [preferredAggregator]) => {
+      const providerId = 'TODO';
+      this.preferredAggregators[providerId] = preferredAggregator;
+
+      return 'ok';
+    },
+
+    eth_sendTransaction: async (_origin, params) => {
+      const providerId = 'TODO';
+
+      // TODO: rtti for SendTransactionParams
+      const txParams = params as SendTransactionParams[];
+      const { from } = txParams[0];
+
+      const actions = txParams.map((tx) => {
+        return {
+          ethValue: tx.value || '0',
+          contractAddress: tx.to,
+          encodedFunction: tx.data,
+        };
+      });
+
+      const nonce = await this.keyringController.getNonce(from);
+      const tx = {
+        nonce: nonce.toString(),
+        actions,
+      };
+
+      const bundle = await this.keyringController.signTransactions(from, tx);
+      const aggregatorUrl =
+        this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
+      const agg = new Aggregator(aggregatorUrl);
+      const result = await agg.add(bundle);
+
+      if ('failures' in result) {
+        throw new Error(JSON.stringify(result.failures));
+      }
+
+      knownTransactions[result.hash] = {
+        ...txParams[0],
+        nonce: nonce.toString(),
+        value: txParams[0].value || '0',
+        aggregatorUrl,
+      };
+
+      return result.hash;
+    },
+
     eth_accounts: async (origin, []) => {
       if (origin === window.location.origin) {
         return (await this.keyringController.state.read()).wallets.map(
@@ -258,72 +316,6 @@ export default class QuillController {
       theme: 'light',
     });
     return address;
-  }
-
-  private makeEthereumMethods(): IProviderHandlers {
-    // TODO: Move these to publicRpc
-    return {
-      // account management
-
-      eth_coinbase: async () =>
-        (await this.preferencesController.selectedAddress.read()) || null,
-
-      wallet_get_provider_state: async () => {
-        const selectedAddress =
-          await this.preferencesController.selectedAddress.read();
-
-        return {
-          accounts: selectedAddress ? [selectedAddress] : [],
-          chainId: (await this.networkController.state.read()).chainId,
-          isUnlocked: !!selectedAddress,
-        };
-      },
-
-      eth_setPreferredAggregator: async (req: any) => {
-        // eslint-disable-next-line prefer-destructuring
-        this.tabPreferredAggregators[req.tabId] = req.params[0];
-
-        return 'ok';
-      },
-
-      eth_sendTransaction: async (req: any) => {
-        const txParams = getAllReqParam<SendTransactionParams[]>(req);
-        const { from } = txParams[0];
-
-        const actions = txParams.map((tx) => {
-          return {
-            ethValue: tx.value || '0',
-            contractAddress: tx.to,
-            encodedFunction: tx.data,
-          };
-        });
-
-        const nonce = await this.keyringController.getNonce(from);
-        const tx = {
-          nonce: nonce.toString(),
-          actions,
-        };
-
-        const bundle = await this.keyringController.signTransactions(from, tx);
-        const aggregatorUrl =
-          this.tabPreferredAggregators[req.tabId] ?? AGGREGATOR_URL;
-        const agg = new Aggregator(aggregatorUrl);
-        const result = await agg.add(bundle);
-
-        if ('failures' in result) {
-          throw new Error(JSON.stringify(result.failures));
-        }
-
-        knownTransactions[result.hash] = {
-          ...txParams[0],
-          nonce: nonce.toString(),
-          value: txParams[0].value || '0',
-          aggregatorUrl,
-        };
-
-        return result.hash;
-      },
-    };
   }
 
   private watchThings() {

@@ -5,15 +5,7 @@ import {
   SUPPORTED_NETWORKS,
 } from './constants';
 
-export function timeout(duration: number): Promise<void> {
-  return new Promise((resolve) => {
-    const timeoutRef = window.setTimeout(() => {
-      resolve();
-      window.clearTimeout(timeoutRef);
-    }, duration);
-  });
-}
-
+// TODO: Use a better random source, and maybe more entropy
 export const createRandomId = (): string => Math.random().toString(36).slice(2);
 
 export const getUserLanguage = (): string => {
@@ -41,8 +33,7 @@ export const getRPCURL = (chainId: string): string => {
   return SUPPORTED_NETWORKS[name].rpcTarget;
 };
 
-// We should be able to just use JRPCRequest<T>,
-// But this is ok for now.
+// TODO: delete
 export const getFirstReqParam = <T>(req: any): T => {
   if (!Array.isArray(req.params)) {
     throw new Error('req.params not array');
@@ -51,14 +42,4 @@ export const getFirstReqParam = <T>(req: any): T => {
     throw new Error('req.params empty');
   }
   return req.params[0];
-};
-
-export const getAllReqParam = <T>(req: any): T => {
-  if (!Array.isArray(req.params)) {
-    throw new Error('req.params not array');
-  }
-  if (!req.params.length) {
-    throw new Error('req.params empty');
-  }
-  return req.params;
 };
