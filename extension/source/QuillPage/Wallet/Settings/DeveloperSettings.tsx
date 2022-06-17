@@ -1,5 +1,5 @@
 import { FunctionComponent } from 'react';
-import CheckBox from '../../CellsDemo/CheckBox';
+import CheckBox from '../../../cells/components/CheckBox';
 import { useQuill } from '../../QuillContext';
 
 const DeveloperSettings: FunctionComponent = () => {
