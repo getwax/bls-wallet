@@ -1,14 +1,6 @@
-import {
-  BasePostMessageStream,
-  ObjectMultiplex,
-  Stream,
-} from '@toruslabs/openlogin-jrpc';
-import pump from 'pump';
 import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
-import { CONTENT_SCRIPT, INPAGE, PROVIDER } from './common/constants';
-import PortDuplexStream from './common/PortStream';
 import { createRandomId } from './Controllers/utils';
 import {
   EventsPortInfo,
@@ -32,6 +24,10 @@ const eventsPort = runtime.connect(undefined, {
 
 eventsPort.onMessage.addListener((message) => {
   window.postMessage(message, '*');
+});
+
+eventsPort.onDisconnect.addListener(() => {
+  console.error('Events port disconnected', eventsPortInfo);
 });
 
 window.addEventListener('message', (evt) => {
@@ -104,87 +100,6 @@ function injectScript() {
   }
 }
 
-/**
- * Sets up two-way communication streams between the
- * browser extension and local per-page browser context.
- *
- */
-async function setupStreams() {
-  // the transport-specific streams for communication between inpage and background
-  const pageStream = new BasePostMessageStream({
-    name: CONTENT_SCRIPT,
-    target: INPAGE,
-  });
-  const extensionPort = runtime.connect(undefined, {
-    name: CONTENT_SCRIPT,
-  });
-  const extensionStream = new PortDuplexStream(extensionPort);
-
-  // create and connect channel muxers
-  // so we can handle the channels individually
-  const pageMux = new ObjectMultiplex();
-  const extensionMux = new ObjectMultiplex();
-
-  pump(
-    pageMux as unknown as Stream,
-    pageStream as unknown as Stream,
-    pageMux as unknown as Stream,
-    (err) => logStreamDisconnectWarning('Quill Inpage Multiplex', err),
-  );
-  pump(
-    extensionMux as unknown as Stream,
-    extensionStream as unknown as Stream,
-    extensionMux as unknown as Stream,
-    (err) => {
-      logStreamDisconnectWarning('Quill Background Multiplex', err);
-      window.postMessage(
-        {
-          target: INPAGE, // the post-message-stream "target"
-          data: {
-            // this object gets passed to obj-multiplex
-            name: PROVIDER, // the obj-multiplex channel name
-            data: {
-              jsonrpc: '2.0',
-              method: 'QUILL_STREAM_FAILURE',
-            },
-          },
-        },
-        window.location.origin,
-      );
-    },
-  );
-
-  // forward communication across inpage-background for these channels only
-  forwardTrafficBetweenMuxes(PROVIDER, pageMux, extensionMux);
-}
-
-function forwardTrafficBetweenMuxes(
-  channelName: string,
-  muxA: ObjectMultiplex,
-  muxB: ObjectMultiplex,
-) {
-  const channelA = muxA.createStream(channelName);
-  const channelB = muxB.createStream(channelName);
-  pump(
-    channelA as unknown as Stream,
-    channelB as unknown as Stream,
-    channelA as unknown as Stream,
-    (error) =>
-      console.debug(
-        `Quill: Muxed traffic for channel "${channelName}" failed.`,
-        error,
-      ),
-  );
-}
-
-function logStreamDisconnectWarning(remoteLabel: string, error: unknown) {
-  console.debug(
-    `Quill: Content script lost connection to "${remoteLabel}".`,
-    error,
-  );
-}
-
 if (canInjectScript()) {
   injectScript();
-  setupStreams();
 }
