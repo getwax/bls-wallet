@@ -72,6 +72,7 @@ export default class QuillProvider extends (EventEmitter as new () => TypedEvent
       });
     })();
 
+    // TODO: Add .forEach to IReadable cell to simplify this use-case
     (async () => {
       for await (const $selectedAddress of selectedAddress) {
         this.emit(

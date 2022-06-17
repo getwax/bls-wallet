@@ -112,6 +112,8 @@ export default class QuillController {
   };
 
   publicRpc: PublicRpcWithOrigin = {
+    eth_chainId: async () => this.cells.chainId.read(),
+
     eth_coinbase: async (_origin, []) =>
       (await this.preferencesController.selectedAddress.read()) || null,
 

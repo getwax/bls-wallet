@@ -18,6 +18,10 @@ export type ProviderState = io.TypeOf<typeof ProviderState>;
 
 export const rpcMap = {
   public: {
+    eth_chainId: {
+      params: emptyTuple,
+      output: io.string,
+    },
     eth_accounts: {
       params: emptyTuple,
       output: io.array(io.string),

@@ -13,23 +13,6 @@ import knownTransactions from '../knownTransactions';
 import { getFirstReqParam } from '../utils';
 import { createFetchMiddleware } from './createFetchMiddleware';
 
-export function createChainIdMiddleware(
-  chainId: string,
-): JRPCMiddleware<unknown, unknown> {
-  return (
-    req: JRPCRequest<unknown>,
-    res: JRPCResponse<unknown>,
-    next: JRPCEngineNextCallback,
-    end: JRPCEngineEndCallback,
-  ) => {
-    if (req.method === 'eth_chainId') {
-      res.result = chainId;
-      return end();
-    }
-    return next();
-  };
-}
-
 export function createProviderConfigMiddleware(
   providerConfig: ProviderConfig,
 ): JRPCMiddleware<unknown, unknown> {
@@ -128,12 +111,11 @@ function createAggregatorMiddleware(): JRPCMiddleware<unknown, unknown> {
 export function createJsonRpcClient(providerConfig: ProviderConfig): {
   networkMiddleware: JRPCMiddleware<unknown, unknown>;
 } {
-  const { chainId, rpcTarget } = providerConfig;
+  const { rpcTarget } = providerConfig;
   console.log('using provider', providerConfig, rpcTarget);
   const fetchMiddleware = createFetchMiddleware({ rpcTarget });
 
   const networkMiddleware = mergeMiddleware([
-    createChainIdMiddleware(chainId),
     createProviderConfigMiddleware(providerConfig),
     mockGetTransactionByHashMiddleware(),
     createAggregatorMiddleware(),
