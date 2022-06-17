@@ -63,6 +63,8 @@ export default class QuillProvider extends (EventEmitter as new () => TypedEvent
         this.emit('chainChanged', $chainId);
       }
 
+      // FIXME: We're not reaching this because the chainId cell is not ending
+      // like it should.
       this.emit('disconnect', {
         message: 'disconnected',
         code: 4900,
