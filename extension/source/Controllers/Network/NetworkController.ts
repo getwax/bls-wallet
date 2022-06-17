@@ -186,7 +186,7 @@ export default class NetworkController implements INetworkController {
     const res = await this._providerProxy.request({
       method: body.method,
       jsonrpc: '2.0',
-      id: body.id,
+      id: body.id, // TODO: Do we need to set id if body.id is not provided?
       params: body.params,
     });
 

@@ -1,3 +1,7 @@
+// TODO: This is a hack. The only reason you might have a legitimate reason to
+// do this is if you're interacting with bad code that's not in your control.
+// That's not the case for us.
+
 export default function createSwappableProxy<T extends object>(
   initialTarget: T,
 ): T {
