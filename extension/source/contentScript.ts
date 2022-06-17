@@ -5,18 +5,18 @@ import {
 } from '@toruslabs/openlogin-jrpc';
 import pump from 'pump';
 import { runtime } from 'webextension-polyfill';
-import assertType from '../cells/assertType';
-import isType from '../cells/isType';
-import { CONTENT_SCRIPT, INPAGE, PROVIDER } from '../common/constants';
-import PortDuplexStream from '../common/PortStream';
-import { createRandomId } from '../Controllers/utils';
+import assertType from './cells/assertType';
+import isType from './cells/isType';
+import { CONTENT_SCRIPT, INPAGE, PROVIDER } from './common/constants';
+import PortDuplexStream from './common/PortStream';
+import { createRandomId } from './Controllers/utils';
 import {
   EventsPortInfo,
   PublicRpcMessage,
   PublicRpcResponse,
   RpcResult,
   SetEventEnabledMessage,
-} from '../types/Rpc';
+} from './types/Rpc';
 
 const providerId = createRandomId();
 

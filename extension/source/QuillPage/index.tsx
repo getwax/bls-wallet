@@ -1,10 +1,10 @@
 import ReactDOM from 'react-dom';
 
-import '../ContentScript';
+import '../contentScript';
 import '../styles/index.scss';
 import './styles.scss';
-import QuillPage from './QuillPage';
 import Browser from 'webextension-polyfill';
+import QuillPage from './QuillPage';
 
 (window as any).Browser ??= Browser;
 

@@ -69,7 +69,7 @@ module.exports = {
   entry: {
     manifest: path.join(sourcePath, 'manifest.json'),
     background: path.join(sourcePath, 'Controllers', 'background.ts'),
-    contentScript: path.join(sourcePath, 'ContentScript', 'index.ts'),
+    contentScript: path.join(sourcePath, 'contentScript.ts'),
     pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
     quillPage: path.join(sourcePath, 'QuillPage', 'index.tsx'),
