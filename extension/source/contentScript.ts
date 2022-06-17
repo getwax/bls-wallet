@@ -88,9 +88,22 @@ function relayRpcRequests(providerId: string) {
       return;
     }
 
-    // TODO: We expect this will reject if the background script is
-    // disconnected while waiting for a reply, need to double check this
-    const result = await runtime.sendMessage(data);
+    let result = await runtime.sendMessage(data);
+
+    if (result === undefined) {
+      const error = new Error('Quill RPC: disconnected');
+      console.error(error);
+
+      const disconnectionResult: RpcResult<unknown> = {
+        error: {
+          message: error.message,
+          stack: error.stack,
+        },
+      };
+
+      result = disconnectionResult;
+    }
+
     assertType(result, RpcResult);
 
     if ('error' in result) {
