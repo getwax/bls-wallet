@@ -3,33 +3,21 @@
 import { EventEmitter } from 'events';
 
 import * as io from 'io-ts';
-import {
-  createEngineStream,
-  createLoggerMiddleware,
-  JRPCEngine,
-  setupMultiplex,
-  Substream,
-} from '@toruslabs/openlogin-jrpc';
-import pump from 'pump';
-import type { Duplex } from 'readable-stream';
-
 import { Runtime } from 'webextension-polyfill';
 import { Aggregator } from 'bls-wallet-clients';
 import TypedEventEmitter from 'typed-emitter';
-import { createRandomId, getAllReqParam, getUserLanguage } from './utils';
+
+import { getAllReqParam, getUserLanguage } from './utils';
 import NetworkController from './Network/NetworkController';
 import CurrencyController, {
   CurrencyControllerConfig,
 } from './CurrencyController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
-import { providerAsMiddleware } from './Network/INetworkController';
 import {
   IProviderHandlers,
   SendTransactionParams,
 } from './Network/createEthMiddleware';
-import { createOriginMiddleware } from './Network/createOriginMiddleware';
-import createTabIdMiddleware from './rpcHelpers/TabIdMiddleware';
 import { AGGREGATOR_URL } from '../env';
 import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
@@ -55,29 +43,22 @@ import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
 import toOkError from '../helpers/toOkError';
 
-const PROVIDER = 'quill-provider';
-
 export default class QuillController {
   events = new EventEmitter() as TypedEventEmitter<{
     notification(notification: Notification): void;
   }>;
 
-  public connections: Record<string, Record<string, { engine: JRPCEngine }>> =
-    {};
-
-  private _isClientOpen = false;
-
-  private networkController: NetworkController;
-  private currencyController: CurrencyController;
-  private keyringController: KeyringController;
-  private preferencesController: PreferencesController;
+  networkController: NetworkController;
+  currencyController: CurrencyController;
+  keyringController: KeyringController;
+  preferencesController: PreferencesController;
 
   // This is just kept in memory because it supports setting the preferred
   // aggregator for the particular tab only.
-  private tabPreferredAggregators: Record<number, string> = {};
+  tabPreferredAggregators: Record<number, string> = {};
 
-  public time = TimeCell(1000);
-  public cells: QuillCells;
+  time = TimeCell(1000);
+  cells: QuillCells;
 
   constructor(
     public storage: CellCollection,
@@ -182,6 +163,11 @@ export default class QuillController {
   };
 
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
+    // TODO: Logging
+    // - Don't just log here, also log the same way in page (only include
+    //   messages relevant to that page)
+    // - Make this configurable in Developer Settings
+
     if (PublicRpcMessage.is(message)) {
       return toOkError(async () => {
         if (isType(message.method, PublicRpcMethodName)) {
@@ -262,14 +248,6 @@ export default class QuillController {
     });
   }
 
-  /**
-   * A method for recording whether the Quill user interface is open or not.
-   */
-  set isClientOpen(open: boolean) {
-    this._isClientOpen = open;
-    console.log(this._isClientOpen, 'set client open status');
-  }
-
   async addAccount(privKey: string): Promise<string> {
     const address = await this.keyringController.importAccount(privKey);
     const locale = getUserLanguage();
@@ -282,89 +260,8 @@ export default class QuillController {
     return address;
   }
 
-  /**
-   * Used to create a multiplexed stream for connecting to an untrusted context
-   * like a Dapp or other extension.
-   */
-  setupUnTrustedCommunication(
-    connectionStream: Duplex,
-    sender: Runtime.MessageSender | undefined,
-  ): void {
-    // connect features && for test cases
-    const quillMux = setupMultiplex(connectionStream);
-    // We create the mux so that we can handle phishing stream here
-    const providerStream = quillMux.getStream(PROVIDER);
-    this.setupProviderConnection(providerStream as Substream, sender, false);
-  }
-
-  /**
-   * A method for serving our ethereum provider over a given stream.
-   */
-  setupProviderConnection(
-    outStream: Substream,
-    sender?: Runtime.MessageSender,
-    isInternal = true,
-  ) {
-    let origin = '';
-    if (isInternal) {
-      origin = 'quill';
-    } else {
-      const senderUrl = sender?.url;
-      if (!senderUrl) throw new Error('Need a valid origin to connect to');
-      origin = new URL(senderUrl).origin;
-    }
-
-    let tabId;
-    if (sender?.tab?.id) {
-      tabId = sender.tab.id;
-    }
-
-    const engine = this.setupProviderEngine({
-      origin,
-      tabId,
-    });
-
-    // setup connection
-    const providerStream = createEngineStream({ engine });
-
-    const connectionId = this.addConnection(origin, { engine });
-
-    pump(outStream, providerStream, outStream, (err) => {
-      // handle any middleware cleanup
-      if (connectionId) this.removeConnection(origin, connectionId);
-      if (err) {
-        console.error(err);
-      }
-    });
-  }
-
-  setupProviderEngine({
-    origin,
-    tabId,
-  }: {
-    origin: string;
-    tabId?: number;
-  }): JRPCEngine {
-    // setup json rpc engine stack
-    const engine = new JRPCEngine();
-    const provider = this.networkController._providerProxy;
-    console.log('setting up provider engine', origin, provider);
-
-    // append origin to each request
-    engine.push(createOriginMiddleware({ origin }));
-    // append tabId to each request if it exists
-    if (tabId) {
-      engine.push(createTabIdMiddleware({ tabId }));
-    }
-    // logging
-    engine.push(createLoggerMiddleware(console));
-
-    // forward to Quill primary provider
-    engine.push(providerAsMiddleware(provider));
-    return engine;
-  }
-
   private makeEthereumMethods(): IProviderHandlers {
+    // TODO: Move these to publicRpc
     return {
       // account management
 
@@ -427,96 +324,6 @@ export default class QuillController {
         return result.hash;
       },
     };
-  }
-
-  /**
-   * Adds a reference to a connection by origin. Ignores the 'quill' origin.
-   * Caller must ensure that the returned id is stored such that the reference
-   * can be deleted later.
-   */
-  addConnection(
-    origin: string,
-    { engine }: { engine: JRPCEngine },
-  ): string | null {
-    if (origin === 'quill') {
-      return null;
-    }
-
-    if (!this.connections[origin]) {
-      this.connections[origin] = {};
-    }
-
-    const id = createRandomId();
-    this.connections[origin][id] = {
-      engine,
-    };
-
-    return id;
-  }
-
-  /**
-   * Deletes a reference to a connection, by origin and id.
-   * Ignores unknown origins.
-   */
-  removeConnection(origin: string, id: string) {
-    const connections = this.connections[origin];
-    if (!connections) {
-      return;
-    }
-
-    delete connections[id];
-
-    if (Object.keys(connections).length === 0) {
-      delete this.connections[origin];
-    }
-  }
-
-  /**
-   * Causes the RPC engines associated with the connections to the given origin
-   * to emit a notification event with the given payload.
-   *
-   * The caller is responsible for ensuring that only permitted notifications
-   * are sent.
-   *
-   * Ignores unknown origins.
-   */
-  notifyConnections(origin: string, payload: unknown) {
-    const connections = this.connections[origin];
-
-    if (connections) {
-      Object.values(connections).forEach((conn) => {
-        if (conn.engine) {
-          conn.engine.emit('notification', payload);
-        }
-      });
-    }
-  }
-
-  /**
-   * Causes the RPC engines associated with all connections to emit a
-   * notification event with the given payload.
-   *
-   * If the "payload" parameter is a function, the payload for each connection
-   * will be the return value of that function called with the connection's
-   * origin.
-   *
-   * The caller is responsible for ensuring that only permitted notifications
-   * are sent.
-   *
-   */
-  notifyAllConnections(payload: unknown) {
-    const getPayload =
-      typeof payload === 'function'
-        ? (origin: string) => payload(origin)
-        : () => payload;
-
-    Object.keys(this.connections).forEach((origin) => {
-      Object.values(this.connections[origin]).forEach(async (conn) => {
-        if (conn.engine) {
-          conn.engine.emit('notification', await getPayload(origin));
-        }
-      });
-    });
   }
 
   private watchThings() {
