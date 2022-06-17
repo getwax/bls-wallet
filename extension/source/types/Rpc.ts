@@ -2,6 +2,7 @@ import * as io from 'io-ts';
 
 import assert from '../helpers/assert';
 import { Result } from '../helpers/toOkError';
+import AsyncReturnType from './AsyncReturnType';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
 
@@ -38,18 +39,47 @@ export const rpcMap = {
         isUnlocked: io.boolean,
       }),
     },
-    eth_setPreferredAggregator: {
-      params: io.tuple([io.string]),
-      output: io.literal('ok'),
-    },
-    eth_sendTransaction: {
-      params: io.array(io.unknown), // TODO: SendTransactionParams
-      output: io.string,
-    },
     eth_requestAccounts: {
       params: emptyTuple,
       output: io.array(io.string),
     },
+
+    eth_sendTransaction: {
+      params: io.array(io.unknown), // TODO: SendTransactionParams
+      output: io.string,
+    },
+    eth_getTransactionByHash: {
+      params: io.tuple([io.string]),
+      output: io.type({
+        hash: io.string,
+        from: io.string,
+        nonce: io.string,
+        value: io.string,
+        gasLimit: io.string,
+        data: io.string,
+      }),
+    },
+    eth_getTransactionReceipt: {
+      params: io.tuple([io.string]),
+      output: io.type({
+        transactionHash: io.string,
+        transactionIndex: io.string,
+        blockHash: io.string,
+        blockNumber: io.string,
+        from: io.string,
+        to: io.string,
+        logs: io.array(io.unknown),
+        cumulativeGasUsed: io.string,
+        gasUsed: io.string,
+        status: io.string,
+        effectiveGasPrice: io.string,
+      }),
+    },
+    eth_setPreferredAggregator: {
+      params: io.tuple([io.string]),
+      output: io.literal('ok'),
+    },
+
     debugMe: {
       params: io.tuple([io.string, io.number, io.string]),
       output: io.literal('ok'),
@@ -182,11 +212,21 @@ export type PublicRpcResponse = io.TypeOf<typeof PublicRpcResponse>;
 export type PublicRpc = Rpc['public'];
 export type PrivateRpc = Rpc['private'];
 
-export type PublicRpcWithOrigin = {
+export type PublicRpcWithMessage = {
   [M in keyof PublicRpc]: (
-    origin: string,
+    // TODO: Change this to context which contains at least origin and
+    //       providerId
+    message: PublicRpcMessage,
     params: Parameters<PublicRpc[M]>,
   ) => ReturnType<PublicRpc[M]>;
+};
+
+type AnyAsyncFunction = (...params: ExplicitAny[]) => Promise<ExplicitAny>;
+
+export type Subset<Scope extends Record<string, AnyAsyncFunction>> = {
+  [M in keyof Scope]?: (
+    ...params: Parameters<Scope[M]>
+  ) => Promise<AsyncReturnType<Scope[M]> | undefined>;
 };
 
 export default Rpc;

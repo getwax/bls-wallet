@@ -1,7 +1,6 @@
 /* eslint-disable no-empty-pattern */
 
 import * as io from 'io-ts';
-import { Aggregator } from 'bls-wallet-clients';
 
 import { getUserLanguage } from './utils';
 import NetworkController from './Network/NetworkController';
@@ -10,9 +9,6 @@ import CurrencyController, {
 } from './CurrencyController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
-import { SendTransactionParams } from './Network/createEthMiddleware';
-import { AGGREGATOR_URL } from '../env';
-import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
 import ExplicitAny from '../types/ExplicitAny';
 import {
@@ -22,7 +18,7 @@ import {
   ProviderState,
   PublicRpcMessage,
   PublicRpcMethodName,
-  PublicRpcWithOrigin,
+  PublicRpcWithMessage,
   rpcMap,
   RpcResult,
   toRpcResult,
@@ -35,16 +31,14 @@ import toOkError from '../helpers/toOkError';
 import TransformCell from '../cells/TransformCell';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
+import AggregatorController from './AggregatorController';
 
 export default class QuillController {
   networkController: NetworkController;
   currencyController: CurrencyController;
   keyringController: KeyringController;
   preferencesController: PreferencesController;
-
-  // This is just kept in memory because it supports setting the preferred
-  // aggregator for the particular provider only.
-  preferredAggregators: Record<string, string> = {};
+  aggregatorController: AggregatorController;
 
   time = TimeCell(1000);
   cells: QuillCells;
@@ -72,10 +66,15 @@ export default class QuillController {
       this.cells.preferences,
     );
 
+    this.aggregatorController = new AggregatorController(
+      this.networkController,
+      this.keyringController,
+    );
+
     this.watchThings();
   }
 
-  ProviderState(_origin: string): IReadableCell<ProviderState> {
+  ProviderState(_message: PublicRpcMessage): IReadableCell<ProviderState> {
     // TODO: (merge-ok) This should be per-provider (or maybe per-origin)
 
     return new FormulaCell(
@@ -111,13 +110,13 @@ export default class QuillController {
     },
   };
 
-  publicRpc: PublicRpcWithOrigin = {
+  publicRpc: PublicRpcWithMessage = {
     eth_chainId: async () => this.cells.chainId.read(),
 
-    eth_coinbase: async (_origin, []) =>
+    eth_coinbase: async (_message, []) =>
       (await this.preferencesController.selectedAddress.read()) || null,
 
-    wallet_get_provider_state: async (_origin, []) => {
+    wallet_get_provider_state: async (_message, []) => {
       const selectedAddress =
         await this.preferencesController.selectedAddress.read();
 
@@ -128,56 +127,54 @@ export default class QuillController {
       };
     },
 
-    eth_setPreferredAggregator: async (_origin, [preferredAggregator]) => {
-      const providerId = 'TODO';
-      this.preferredAggregators[providerId] = preferredAggregator;
-
-      return 'ok';
+    eth_sendTransaction: async (message, params) => {
+      return this.aggregatorController.publicRpc.eth_sendTransaction(
+        message,
+        params,
+      );
     },
 
-    eth_sendTransaction: async (_origin, params) => {
-      const providerId = 'TODO';
+    eth_getTransactionByHash: async (message, params) => {
+      const aggregatorHash =
+        await this.aggregatorController.publicRpc.eth_getTransactionByHash(
+          message,
+          params,
+        );
 
-      // TODO: rtti for SendTransactionParams
-      const txParams = params as SendTransactionParams[];
-      const { from } = txParams[0];
-
-      const actions = txParams.map((tx) => {
-        return {
-          ethValue: tx.value || '0',
-          contractAddress: tx.to,
-          encodedFunction: tx.data,
-        };
-      });
-
-      const nonce = await this.keyringController.getNonce(from);
-      const tx = {
-        nonce: nonce.toString(),
-        actions,
-      };
-
-      const bundle = await this.keyringController.signTransactions(from, tx);
-      const aggregatorUrl =
-        this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
-      const agg = new Aggregator(aggregatorUrl);
-      const result = await agg.add(bundle);
-
-      if ('failures' in result) {
-        throw new Error(JSON.stringify(result.failures));
+      if (aggregatorHash !== undefined) {
+        return aggregatorHash;
       }
 
-      knownTransactions[result.hash] = {
-        ...txParams[0],
-        nonce: nonce.toString(),
-        value: txParams[0].value || '0',
-        aggregatorUrl,
-      };
-
-      return result.hash;
+      // TODO: Avoid cast. We should forward the rtti into here so that we can
+      // assert it, since networkController might respond with anything.
+      return this.networkController.fetch(message) as any;
     },
 
-    eth_accounts: async (origin, []) => {
-      if (origin === window.location.origin) {
+    eth_getTransactionReceipt: async (message, params) => {
+      const aggregatorRes =
+        await this.aggregatorController.publicRpc.eth_getTransactionReceipt(
+          message,
+          params,
+        );
+
+      if (aggregatorRes !== undefined) {
+        return aggregatorRes;
+      }
+
+      // TODO: Avoid cast. We should forward the rtti into here so that we can
+      // assert it, since networkController might respond with anything.
+      return this.networkController.fetch(message) as any;
+    },
+
+    eth_setPreferredAggregator: async (message, [preferredAggregator]) => {
+      return this.aggregatorController.publicRpc.eth_setPreferredAggregator(
+        message,
+        [preferredAggregator],
+      );
+    },
+
+    eth_accounts: async (message, []) => {
+      if (message.origin === window.location.origin) {
         return (await this.keyringController.state.read()).wallets.map(
           ({ address }) => address,
         );
@@ -193,20 +190,20 @@ export default class QuillController {
       return selectedAddress ? [selectedAddress] : [];
     },
 
-    eth_requestAccounts: async (_origin, []) => {
+    eth_requestAccounts: async (_message, []) => {
       const selectedAddress =
         await this.preferencesController.selectedAddress.read();
       const accounts = selectedAddress ? [selectedAddress] : [];
       return accounts;
     },
 
-    debugMe: async (_origin, [a, b, c]) => {
+    debugMe: async (_message, [a, b, c]) => {
       console.log('debugMe', { a, b, c });
       return 'ok' as const;
     },
 
-    quill_providerState: async (origin, [opt]) => {
-      const providerState = this.ProviderState(origin);
+    quill_providerState: async (message, [opt]) => {
+      const providerState = this.ProviderState(message);
 
       for await (const $providerState of providerState) {
         if (
@@ -240,7 +237,7 @@ export default class QuillController {
           );
 
           return (this.publicRpc[message.method] as ExplicitAny)(
-            message.origin,
+            message,
             message.params,
           ) as unknown;
         }

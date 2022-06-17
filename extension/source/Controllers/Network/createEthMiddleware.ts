@@ -25,10 +25,10 @@ function toAsyncMiddleware<Params, Result>(
 export type SendTransactionParams = {
   from: string;
   to: string;
-  gas?: BigNumberish;
-  gasPrice?: BigNumberish;
-  value?: BigNumberish;
-  data: BytesLike;
+  gas?: string;
+  gasPrice?: string;
+  value?: string;
+  data: string;
 };
 
 export type IProviderHandlers = Record<
