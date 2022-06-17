@@ -1,0 +1,47 @@
+name: Build & Upload Extension
+description: Builds & uploads extension for a broswer to a Github release
+
+inputs:
+  node-version:
+    description: 'NodeJS version to use for setup & build'
+    required: true
+  browser:
+    description: 'Which browser to build the extension for'
+    required: true
+  file-name:
+    description: 'The name of the browser asset to upload'
+    required: true
+  tag-name:
+    description: 'Tag name of the release. Commonly github.ref in an on.release workflow'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: yarn
+        cache-dependency-path: extension/yarn.lock
+
+    - working-directory: ./extension
+      shell: bash
+      run: |
+        cp .env.release .env
+        yarn install --frozen-lockfile
+    - working-directory: ./extension
+      shell: bash
+      run: |
+        CRYPTO_COMPARE_API_KEY=${CRYPTO_COMPARE_API_KEY} \
+        NETWORK_CONFIG_PATH=../contracts/networks/arbitrum-testnet.json \
+        yarn build:${{ inputs.browser }}
+    - working-directory: ./extension
+      shell: bash
+      run: mv ./extension/${{ inputs.file-name }} ./extension/quill-${{ inputs.file-name }}
+
+    - uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ inputs.tag-name }}
+        # Note: This path is from repo root
+        # working-directory is not applied 
+        files: ./extension/extension/quill-${{ inputs.file-name }}
