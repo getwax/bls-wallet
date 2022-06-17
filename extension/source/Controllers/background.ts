@@ -31,6 +31,18 @@ function setupController(): void {
     quillController.handleMessage(message),
   );
 
+  runtime.onConnect.addListener((port) => {
+    if (!port.name.startsWith('quill-provider-')) {
+      return;
+    }
+
+    console.log('Connected:', port.name);
+
+    port.onDisconnect.addListener(() => {
+      console.log('Disconnected:', port.name, port.error);
+    });
+  });
+
   // TODO: The old system that has been deleted had signs of useful ideas that
   // are not implemented in the new system.
   //

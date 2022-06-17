@@ -38,7 +38,12 @@ import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
 import { createRandomId } from './Controllers/utils';
-import { PublicRpcMessage, PublicRpcResponse, RpcResult } from './types/Rpc';
+import {
+  PublicRpcMessage,
+  PublicRpcResponse,
+  RpcResult,
+  toRpcResult,
+} from './types/Rpc';
 
 (() => {
   if (
@@ -49,10 +54,8 @@ import { PublicRpcMessage, PublicRpcResponse, RpcResult } from './types/Rpc';
     return;
   }
 
-  const providerId = createRandomId();
-
   addInPageScript();
-  relayRpcRequests(providerId);
+  relayRpcRequests();
 })();
 
 function addInPageScript() {
@@ -66,7 +69,23 @@ function addInPageScript() {
   container.removeChild(pageContentScriptTag);
 }
 
-function relayRpcRequests(providerId: string) {
+function relayRpcRequests() {
+  const providerId = createRandomId();
+
+  const port = runtime.connect(undefined, {
+    name: `quill-provider-${providerId}`,
+  });
+
+  const disconnection = new Promise<RpcResult<unknown>>((resolve) => {
+    port.onDisconnect.addListener(() => {
+      const error = new Error(
+        `Quill RPC: ${port.error?.message ?? 'disconnected'}`,
+      );
+
+      resolve(toRpcResult({ error }));
+    });
+  });
+
   window.addEventListener('message', async (evt) => {
     const data = {
       ...evt.data,
@@ -78,21 +97,10 @@ function relayRpcRequests(providerId: string) {
       return;
     }
 
-    let result = await runtime.sendMessage(data);
-
-    if (result === undefined) {
-      const error = new Error('Quill RPC: disconnected');
-      console.error(error);
-
-      const disconnectionResult: RpcResult<unknown> = {
-        error: {
-          message: error.message,
-          stack: error.stack,
-        },
-      };
-
-      result = disconnectionResult;
-    }
+    const result = await Promise.race([
+      runtime.sendMessage(data),
+      disconnection,
+    ]);
 
     assertType(result, RpcResult);
 
