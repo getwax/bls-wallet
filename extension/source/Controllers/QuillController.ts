@@ -1,11 +1,7 @@
 /* eslint-disable no-empty-pattern */
 
-import { EventEmitter } from 'events';
-
 import * as io from 'io-ts';
-import { Runtime } from 'webextension-polyfill';
 import { Aggregator } from 'bls-wallet-clients';
-import TypedEventEmitter from 'typed-emitter';
 
 import { getUserLanguage } from './utils';
 import NetworkController from './Network/NetworkController';
@@ -20,9 +16,6 @@ import knownTransactions from './knownTransactions';
 import CellCollection from '../cells/CellCollection';
 import ExplicitAny from '../types/ExplicitAny';
 import {
-  EventsPortInfo,
-  Notification,
-  NotificationEventName,
   PrivateRpc,
   PrivateRpcMessage,
   PrivateRpcMethodName,
@@ -32,7 +25,6 @@ import {
   PublicRpcWithOrigin,
   rpcMap,
   RpcResult,
-  SetEventEnabledMessage,
   toRpcResult,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
@@ -45,10 +37,6 @@ import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 
 export default class QuillController {
-  events = new EventEmitter() as TypedEventEmitter<{
-    notification(notification: Notification): void;
-  }>;
-
   networkController: NetworkController;
   currencyController: CurrencyController;
   keyringController: KeyringController;
@@ -203,19 +191,10 @@ export default class QuillController {
       return selectedAddress ? [selectedAddress] : [];
     },
 
-    eth_requestAccounts: async (origin, []) => {
+    eth_requestAccounts: async (_origin, []) => {
       const selectedAddress =
         await this.preferencesController.selectedAddress.read();
       const accounts = selectedAddress ? [selectedAddress] : [];
-      this.events.emit('notification', {
-        type: 'quill-notification',
-        origin,
-        eventName: 'unlockStateChanged',
-        value: {
-          accounts,
-          isUnlocked: accounts.length > 0,
-        },
-      });
       return accounts;
     },
 
@@ -290,44 +269,6 @@ export default class QuillController {
     return undefined;
   }
 
-  handlePort(port: Runtime.Port) {
-    const parseResult = toOkError(() => JSON.parse(port.name) as unknown);
-
-    if ('error' in parseResult || !isType(parseResult.ok, EventsPortInfo)) {
-      return;
-    }
-
-    const eventsPortInfo = parseResult.ok;
-
-    const enabledEvents = new Set<NotificationEventName>();
-
-    port.onMessage.addListener((message) => {
-      assertType(message, SetEventEnabledMessage);
-
-      if (message.enabled) {
-        enabledEvents.add(message.eventName);
-      } else {
-        enabledEvents.delete(message.eventName);
-      }
-    });
-
-    const notificationListener = (notification: Notification) => {
-      const originMatch =
-        notification.origin === '*' ||
-        notification.origin === eventsPortInfo.origin;
-
-      if (originMatch && enabledEvents.has(notification.eventName)) {
-        port.postMessage(notification);
-      }
-    };
-
-    this.events.on('notification', notificationListener);
-
-    port.onDisconnect.addListener(() => {
-      this.events.off('notification', notificationListener);
-    });
-  }
-
   async addAccount(privKey: string): Promise<string> {
     const address = await this.keyringController.importAccount(privKey);
     const locale = getUserLanguage();
@@ -341,21 +282,6 @@ export default class QuillController {
   }
 
   private watchThings() {
-    (async () => {
-      for await (const chainId of this.networkController.chainId) {
-        // TODO: We might need to avoid emitting notifications for the first
-        // values of these cells. It would only matter if a page is able to
-        // connect before we get the first value. (Which seems unlikely, but it
-        // might be worth tidying this up anyway).
-        this.events.emit('notification', {
-          type: 'quill-notification',
-          origin: '*',
-          eventName: 'chainChanged',
-          value: chainId,
-        });
-      }
-    })();
-
     (async () => {
       const storedBlockNumber = this.storage.Cell(
         'block-number',
@@ -372,18 +298,6 @@ export default class QuillController {
       for await (const userCurrency of this.currencyController.userCurrency) {
         await this.currencyController.updateConversionRate();
         this.preferencesController.setSelectedCurrency(userCurrency);
-      }
-    })();
-
-    (async () => {
-      for await (const selectedAddress of this.preferencesController
-        .selectedAddress) {
-        this.events.emit('notification', {
-          type: 'quill-notification',
-          origin: '*',
-          eventName: 'accountsChanged',
-          value: selectedAddress ? [selectedAddress] : [],
-        });
       }
     })();
 

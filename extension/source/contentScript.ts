@@ -38,13 +38,7 @@ import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
 import { createRandomId } from './Controllers/utils';
-import {
-  EventsPortInfo,
-  PublicRpcMessage,
-  PublicRpcResponse,
-  RpcResult,
-  SetEventEnabledMessage,
-} from './types/Rpc';
+import { PublicRpcMessage, PublicRpcResponse, RpcResult } from './types/Rpc';
 
 (() => {
   if (
@@ -58,10 +52,6 @@ import {
   const providerId = createRandomId();
 
   addInPageScript();
-
-  // TODO: Just use the port for both events and requests.
-  // Or: Remove events!?
-  relayRpcEvents(providerId);
   relayRpcRequests(providerId);
 })();
 
@@ -130,33 +120,5 @@ function relayRpcRequests(providerId: string) {
     };
 
     window.postMessage(response, '*');
-  });
-}
-
-function relayRpcEvents(providerId: string) {
-  const eventsPortInfo: EventsPortInfo = {
-    type: 'quill-events-port',
-    providerId,
-    origin: window.location.origin,
-  };
-
-  const eventsPort = runtime.connect(undefined, {
-    name: JSON.stringify(eventsPortInfo),
-  });
-
-  eventsPort.onMessage.addListener((message) => {
-    window.postMessage(message, '*');
-  });
-
-  eventsPort.onDisconnect.addListener(() => {
-    console.error('Events port disconnected', eventsPortInfo);
-  });
-
-  window.addEventListener('message', (evt) => {
-    if (!isType(evt.data, SetEventEnabledMessage)) {
-      return;
-    }
-
-    eventsPort.postMessage(evt.data);
   });
 }

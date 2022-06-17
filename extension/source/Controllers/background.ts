@@ -31,10 +31,6 @@ function setupController(): void {
     quillController.handleMessage(message),
   );
 
-  runtime.onConnect.addListener((port) => {
-    quillController.handlePort(port);
-  });
-
   // TODO: The old system that has been deleted had signs of useful ideas that
   // are not implemented in the new system.
   //

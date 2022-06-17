@@ -1,5 +1,4 @@
 import * as io from 'io-ts';
-import TypedEventEmitter from 'typed-emitter';
 
 import assert from '../helpers/assert';
 import { Result } from '../helpers/toOkError';
@@ -81,27 +80,6 @@ export const rpcMap = {
   },
 };
 
-export const notificationEventMap = {
-  accountsChanged: io.array(io.string),
-  unlockStateChanged: io.type({
-    accounts: io.array(io.string),
-    isUnlocked: io.boolean,
-  }),
-  chainChanged: io.string,
-  connect: io.type({
-    chainId: io.string,
-  }),
-  disconnect: io.type({
-    message: io.string,
-    code: io.number,
-    data: io.unknown,
-  }),
-};
-
-export type NotificationEventMap = {
-  [E in NotificationEventName]: io.TypeOf<typeof notificationEventMap[E]>;
-};
-
 const publicMethodNames = Object.keys(rpcMap.public);
 const privateMethodNames = Object.keys(rpcMap.private);
 
@@ -158,14 +136,6 @@ export const PublicRpcMessage = io.type({
   params: io.array(io.unknown),
 });
 
-export const EventsPortInfo = io.type({
-  type: io.literal('quill-events-port'),
-  providerId: io.string,
-  origin: io.string,
-});
-
-export type EventsPortInfo = io.TypeOf<typeof EventsPortInfo>;
-
 export type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
 
 export const RpcResult = io.union([
@@ -214,50 +184,5 @@ export type PublicRpcWithOrigin = {
     params: Parameters<PublicRpc[M]>,
   ) => ReturnType<PublicRpc[M]>;
 };
-
-export type NotificationEventName = keyof typeof notificationEventMap;
-
-export const NotificationEventName: io.Type<NotificationEventName> = io.union(
-  Object.keys(notificationEventMap).map((eventName) =>
-    io.literal(eventName),
-  ) as ExplicitAny,
-);
-
-export type Notification = {
-  [E in NotificationEventName]: {
-    type: 'quill-notification';
-    origin: string;
-    eventName: E;
-    value: io.TypeOf<typeof notificationEventMap[E]>;
-  };
-}[NotificationEventName];
-
-export const Notification: io.Type<Notification> = io.union(
-  Object.entries(notificationEventMap).map(([eventName, type]) =>
-    io.type({
-      type: io.literal('quill-notification'),
-      origin: io.string,
-      eventName: io.literal(eventName),
-      value: type,
-    }),
-  ) as ExplicitAny,
-);
-
-export type NotificationEventEmitter = new () => TypedEventEmitter<
-  {
-    [E in NotificationEventName]: (value: NotificationEventMap[E]) => void;
-  } & {
-    newListener(eventName: NotificationEventName): void;
-    removeListener(eventName: NotificationEventName): void;
-  }
->;
-
-export const SetEventEnabledMessage = io.type({
-  type: io.literal('quill-set-event-enabled'),
-  eventName: NotificationEventName,
-  enabled: io.boolean,
-});
-
-export type SetEventEnabledMessage = io.TypeOf<typeof SetEventEnabledMessage>;
 
 export default Rpc;

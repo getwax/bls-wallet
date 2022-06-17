@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 
 import * as io from 'io-ts';
+import TypedEventEmitter from 'typed-emitter';
 
 import assertType from '../cells/assertType';
 import { FormulaCell } from '../cells/FormulaCell';
@@ -8,12 +9,9 @@ import isType from '../cells/isType';
 import LongPollingCell from '../cells/LongPollingCell';
 import { createRandomId } from '../Controllers/utils';
 import {
-  Notification,
-  NotificationEventEmitter,
   ProviderState,
   PublicRpcMessage,
   PublicRpcResponse,
-  SetEventEnabledMessage,
 } from '../types/Rpc';
 
 const RequestBody = io.type({
@@ -21,45 +19,21 @@ const RequestBody = io.type({
   params: io.union([io.undefined, io.array(io.unknown)]),
 });
 
-export default class QuillProvider extends (EventEmitter as NotificationEventEmitter) {
+export default class QuillProvider extends (EventEmitter as new () => TypedEventEmitter<{
+  accountsChanged(accounts: string[]): void;
+  chainChanged(chainId: string): void;
+  connect(connection: { chainId: string }): void;
+  disconnect(disconnectionMessage: {
+    message: string;
+    code: number;
+    data?: unknown;
+  }): void;
+}>) {
   isQuill = true;
   breakOnAssertionFailures = false;
 
   constructor() {
     super();
-
-    window.addEventListener('message', (evt) => {
-      if (!isType(evt.data, Notification)) {
-        // return;
-      }
-
-      // TODO: Just remove the events pipeline!?
-      // this.emit(evt.data.eventName, evt.data.value as ExplicitAny);
-    });
-
-    this.on('newListener', (eventName) => {
-      if (this.listenerCount(eventName) === 0) {
-        const message: SetEventEnabledMessage = {
-          type: 'quill-set-event-enabled',
-          eventName,
-          enabled: true,
-        };
-
-        window.postMessage(message, '*');
-      }
-    });
-
-    this.on('removeListener', (eventName) => {
-      if (this.listenerCount(eventName) === 0) {
-        const message: SetEventEnabledMessage = {
-          type: 'quill-set-event-enabled',
-          eventName,
-          enabled: false,
-        };
-
-        window.postMessage(message, '*');
-      }
-    });
 
     const state = LongPollingCell<ProviderState>(
       (opt) =>
