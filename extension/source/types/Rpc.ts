@@ -6,6 +6,9 @@ import { Result } from '../helpers/toOkError';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
 
+// TODO: Make a tuple wrapper handling empty and also preventing accidental
+// undefineds
+
 export const ProviderState = io.type({
   chainId: io.string,
   selectedAddress: io.union([io.undefined, io.string]),
@@ -50,7 +53,7 @@ export const rpcMap = {
     },
     quill_providerState: {
       params: io.tuple([
-        io.union([io.undefined, io.type({ differentFrom: ProviderState })]),
+        io.union([io.null, io.type({ differentFrom: ProviderState })]),
       ]),
       output: ProviderState,
     },

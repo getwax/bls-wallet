@@ -65,7 +65,7 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
       (opt) =>
         this.request({
           method: 'quill_providerState',
-          params: [opt],
+          params: [opt ?? null],
         }) as Promise<ProviderState>, // TODO: Avoid cast
     );
 
