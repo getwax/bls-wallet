@@ -151,6 +151,23 @@ export default class QuillController
     return selectedAddress ? [selectedAddress] : [];
   }
 
+  // eslint-disable-next-line no-empty-pattern
+  async eth_requestAccounts(origin: string, []) {
+    const selectedAddress =
+      await this.preferencesController.selectedAddress.read();
+    const accounts = selectedAddress ? [selectedAddress] : [];
+    this.events.emit('notification', {
+      type: 'quill-notification',
+      origin,
+      eventName: 'unlockStateChanged',
+      value: {
+        accounts,
+        isUnlocked: accounts.length > 0,
+      },
+    });
+    return accounts;
+  }
+
   async debugMe(_origin: string, [a, b, c]: Parameters<PublicRpc['debugMe']>) {
     console.log('debugMe', { a, b, c });
     return 'ok' as const;
@@ -355,21 +372,6 @@ export default class QuillController
   private makeEthereumMethods(): IProviderHandlers {
     return {
       // account management
-      eth_requestAccounts: async (req) => {
-        const selectedAddress =
-          await this.preferencesController.selectedAddress.read();
-        const accounts = selectedAddress ? [selectedAddress] : [];
-        this.events.emit('notification', {
-          type: 'quill-notification',
-          origin: (req as any).origin,
-          eventName: 'unlockStateChanged',
-          value: {
-            accounts,
-            isUnlocked: accounts.length > 0,
-          },
-        });
-        return accounts;
-      },
 
       eth_coinbase: async () =>
         (await this.preferencesController.selectedAddress.read()) || null,
@@ -444,6 +446,7 @@ export default class QuillController
 
     const methods: MethodsWithOrigin = {
       eth_accounts: this.eth_accounts.bind(this),
+      eth_requestAccounts: this.eth_requestAccounts.bind(this),
       debugMe: this.debugMe.bind(this),
       quill_breakOnAssertionFailures:
         this.quill_breakOnAssertionFailures.bind(this),
