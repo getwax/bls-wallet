@@ -20,10 +20,6 @@ const RequestBody = io.type({
 });
 
 export default class QuillProvider extends (EventEmitter as NotificationEventEmitter) {
-  // FIXME: We should take care to underscore/make private things since this
-  // will be exposed to dApps (and we don't want to create things that need to
-  // be deprecated).
-
   isQuill = true;
   breakOnAssertionFailures = false;
 
@@ -62,7 +58,7 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
       }
     });
 
-    this.watchThings();
+    watchThings(this);
   }
 
   async request(body: unknown) {
@@ -109,15 +105,15 @@ export default class QuillProvider extends (EventEmitter as NotificationEventEmi
       window.addEventListener('message', messageListener);
     });
   }
+}
 
-  watchThings() {
-    (async () => {
-      while (true) {
-        this.breakOnAssertionFailures = (await this.request({
-          method: 'quill_breakOnAssertionFailures',
-          params: [this.breakOnAssertionFailures],
-        })) as boolean;
-      }
-    })();
-  }
+function watchThings(quillProvider: QuillProvider) {
+  (async () => {
+    while (true) {
+      quillProvider.breakOnAssertionFailures = (await quillProvider.request({
+        method: 'quill_breakOnAssertionFailures',
+        params: [quillProvider.breakOnAssertionFailures],
+      })) as boolean;
+    }
+  })();
 }
