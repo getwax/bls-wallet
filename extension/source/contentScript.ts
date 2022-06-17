@@ -93,9 +93,9 @@ function relayRpcRequests(providerId: string) {
       error.stack = result.error.stack;
       console.error(error);
 
-      // Being extra careful about security here - error stacks should not contain
-      // sensitive information, but they could. For this reason we log the error
-      // here in the console but do not expose it to the dApp.
+      // Being extra careful about security here - error stacks should not
+      // contain sensitive information, but they could. For this reason we log
+      // the error here in the console but do not expose it to the dApp.
       const message =
         'Quill RPC: (See content script or background script for details)';
 
