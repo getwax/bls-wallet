@@ -4,9 +4,6 @@ import * as io from 'io-ts';
 
 import { getUserLanguage } from './utils';
 import NetworkController from './Network/NetworkController';
-import CurrencyController, {
-  CurrencyControllerConfig,
-} from './CurrencyController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
 import CellCollection from '../cells/CellCollection';
@@ -30,20 +27,24 @@ import TransformCell from '../cells/TransformCell';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import AggregatorController from './AggregatorController';
+import CurrencyConversionCell, {
+  CurrencyConversionConfig,
+} from './CurrencyConversionCell';
 
 export default class QuillController {
   networkController: NetworkController;
-  currencyController: CurrencyController;
   keyringController: KeyringController;
   preferencesController: PreferencesController;
   aggregatorController: AggregatorController;
+
+  currencyConversion: IReadableCell<number | undefined>;
 
   time = TimeCell(1000);
   cells: QuillCells;
 
   constructor(
     public storage: CellCollection,
-    public currencyControllerConfig: CurrencyControllerConfig,
+    public currencyConversionConfig: CurrencyConversionConfig,
   ) {
     this.cells = QuillCells(storage);
 
@@ -56,8 +57,8 @@ export default class QuillController {
       this.cells.preferences,
     );
 
-    this.currencyController = new CurrencyController(
-      this.currencyControllerConfig,
+    this.currencyConversion = CurrencyConversionCell(
+      this.currencyConversionConfig,
       this.preferencesController.preferredCurrency,
       this.networkController.ticker,
       this.time,

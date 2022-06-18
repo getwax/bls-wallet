@@ -2,7 +2,6 @@ import { runtime, tabs } from 'webextension-polyfill';
 
 import QuillController from './QuillController';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
-import { defaultCurrencyControllerConfig } from './CurrencyController';
 
 // initialization flow
 initialize().catch(console.error);
@@ -22,10 +21,10 @@ async function initialize(): Promise<void> {
  * Creates platform listeners for new Dapps/Contexts, and sets up their data connections to the controller.
  */
 function setupController(): void {
-  const quillController = new QuillController(
-    extensionLocalCellCollection,
-    defaultCurrencyControllerConfig,
-  );
+  const quillController = new QuillController(extensionLocalCellCollection, {
+    api: 'https://min-api.cryptocompare.com/data/price',
+    pollInterval: 600_000,
+  });
 
   runtime.onMessage.addListener((message, _sender) => {
     const response = quillController.handleMessage(message);
