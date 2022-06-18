@@ -4,7 +4,7 @@ import QuillCells, { QuillState } from '../QuillCells';
 
 export interface CurrencyControllerConfig {
   pollInterval: number;
-  api?: string;
+  api: string;
 }
 
 export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
