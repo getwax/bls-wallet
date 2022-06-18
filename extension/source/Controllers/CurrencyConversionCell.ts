@@ -1,15 +1,13 @@
 import approximate from '../cells/approximate';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
+import { CRYPTO_COMPARE_API_KEY } from '../env';
 import assert from '../helpers/assert';
-import { requireEnv } from '../helpers/envTools';
 
 export type CurrencyConversionConfig = {
   api: string;
   pollInterval: number;
 };
-
-const CRYPTO_COMPARE_API_KEY = requireEnv('CRYPTO_COMPARE_API_KEY');
 
 export default function CurrencyConversionCell(
   config: CurrencyConversionConfig,

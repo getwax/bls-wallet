@@ -21,3 +21,7 @@ export const CREATE_TX_URL = requireEnv(process.env.CREATE_TX_URL);
 export const NETWORK_CONFIG = validateConfig(
   JSON.parse(requireEnv(process.env.NETWORK_CONFIG)),
 );
+
+export const CRYPTO_COMPARE_API_KEY = requireEnv(
+  process.env.CRYPTO_COMPARE_API_KEY,
+);
