@@ -2,17 +2,35 @@ import * as io from 'io-ts';
 import deepEqual from 'fast-deep-equal';
 
 import assert from '../helpers/assert';
-import ICell from '../cells/ICell';
+import ICell, { IReadableCell } from '../cells/ICell';
 import TransformCell from '../cells/TransformCell';
+import { FormulaCell } from '../cells/FormulaCell';
 
 /**
  * Controller that stores shared settings and exposes convenience methods
  */
 export default class PreferencesController {
   identities: ICell<Preferences['identities']>;
+  preferredCurrency: IReadableCell<string | undefined>;
 
   constructor(public state: ICell<Preferences>) {
     this.identities = TransformCell.Sub(state, 'identities');
+
+    this.preferredCurrency = new FormulaCell(
+      { preferences: state },
+      ({ preferences }) => {
+        const { selectedAddress, identities } = preferences;
+
+        if (selectedAddress === undefined) {
+          return undefined;
+        }
+
+        const identity = identities[selectedAddress];
+        assert(identity !== undefined);
+
+        return identity.preferredCurrency;
+      },
+    );
   }
 
   AddressPreferences(address: string): ICell<AddressPreferences | undefined> {

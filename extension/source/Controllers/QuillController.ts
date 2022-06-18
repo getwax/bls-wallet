@@ -52,9 +52,13 @@ export default class QuillController {
       this.time,
     );
 
+    this.preferencesController = new PreferencesController(
+      this.cells.preferences,
+    );
+
     this.currencyController = new CurrencyController(
       this.currencyControllerConfig,
-      this.cells.preferredCurrency,
+      this.preferencesController.preferredCurrency,
       this.networkController.ticker,
       this.time,
     );
@@ -62,10 +66,6 @@ export default class QuillController {
     this.keyringController = new KeyringController(
       this.cells.keyring,
       this.networkController.provider,
-    );
-
-    this.preferencesController = new PreferencesController(
-      this.cells.preferences,
     );
 
     this.aggregatorController = new AggregatorController(
@@ -277,14 +277,6 @@ export default class QuillController {
 
       for await (const blockNumber of this.networkController.blockNumber) {
         await storedBlockNumber.write(blockNumber);
-      }
-    })();
-
-    (async () => {
-      for await (const preferredCurrency of this.cells.preferredCurrency) {
-        await this.preferencesController
-          .SelectedPreferences()
-          .update({ preferredCurrency });
       }
     })();
 

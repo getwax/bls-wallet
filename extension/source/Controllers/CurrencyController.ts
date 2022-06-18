@@ -17,11 +17,11 @@ export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
 };
 
 export default class CurrencyController {
-  conversionRate: IReadableCell<number>;
+  conversionRate: IReadableCell<number | undefined>;
 
   constructor(
     public config: CurrencyControllerConfig,
-    public preferredCurrency: IReadableCell<string>,
+    public preferredCurrency: IReadableCell<string | undefined>,
     public networkCurrency: IReadableCell<string>,
     public time: IReadableCell<number>,
   ) {
@@ -39,8 +39,12 @@ export default class CurrencyController {
 
   async fetchConversionRate(
     networkCurrency: string,
-    preferredCurrency: string,
-  ): Promise<number> {
+    preferredCurrency: string | undefined,
+  ): Promise<number | undefined> {
+    if (preferredCurrency === undefined) {
+      return undefined;
+    }
+
     const apiUrl = new URL(this.config.api);
     apiUrl.searchParams.append('fsym', networkCurrency.toUpperCase());
     apiUrl.searchParams.append('tsyms', preferredCurrency.toUpperCase());

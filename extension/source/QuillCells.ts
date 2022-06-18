@@ -10,11 +10,6 @@ import AsyncReturnType from './types/AsyncReturnType';
 
 function QuillCells(storage: CellCollection) {
   const rootCells = {
-    preferredCurrency: storage.Cell(
-      'preferredCurrency',
-      io.string,
-      () => 'USD',
-    ),
     keyring: storage.Cell(
       'keyring',
       io.type({
