@@ -1,4 +1,4 @@
-import { BlsWalletWrapper, Operation } from 'bls-wallet-clients';
+import { BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
@@ -13,11 +13,19 @@ export default class KeyringController {
     public provider: IReadableCell<SafeEventEmitterProvider | undefined>,
   ) {}
 
+  async lookupWallet(address: string): Promise<BlsWalletWrapper> {
+    return BlsWalletWrapper.connect(
+      await this.lookupPrivateKey(address),
+      NETWORK_CONFIG.addresses.verificationGateway,
+      await this.EthersProvider(),
+    );
+  }
+
+  // FIXME: This should be part of the default initialization instead
   async requireHDPhrase() {
     let { HDPhrase } = await this.state.read();
 
     if (HDPhrase === undefined) {
-      // FIXME: This should be part of the default initialization instead
       HDPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
       await this.state.update({ HDPhrase });
     }
@@ -32,6 +40,9 @@ export default class KeyringController {
     const mnemonic = await this.requireHDPhrase();
     const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
+    // FIXME: HD accounts are co-mingled with regular accounts. This will cause
+    // us to skip over HD accounts that should have been created whenever there
+    // is a regular account taking up its spot.
     const newAccountIndex = (await this.state.read()).wallets.length;
     const { privateKey } = node.derivePath(`m/44'/60'/0'/0/${newAccountIndex}`);
 
@@ -63,19 +74,6 @@ export default class KeyringController {
     await this.state.update({ wallets: newWallets });
   }
 
-  /**
-   * Signs a transaction of Type T
-   * @param address - account to sign the tx with
-   * @param tx - Transaction to sign
-   */
-  async signTransactions(address: string, tx: Operation) {
-    return (await this.BlsWalletWrapper(address)).sign(tx);
-  }
-
-  async getNonce(address: string) {
-    return (await this.BlsWalletWrapper(address)).Nonce();
-  }
-
   private async lookupPrivateKey(rawAddress: string): Promise<string> {
     const address = ethers.utils.getAddress(rawAddress);
 
@@ -105,14 +103,6 @@ export default class KeyringController {
   private async BlsWalletAddress(privateKey: string): Promise<string> {
     return BlsWalletWrapper.Address(
       privateKey,
-      NETWORK_CONFIG.addresses.verificationGateway,
-      await this.EthersProvider(),
-    );
-  }
-
-  private async BlsWalletWrapper(address: string): Promise<BlsWalletWrapper> {
-    return BlsWalletWrapper.connect(
-      await this.lookupPrivateKey(address),
       NETWORK_CONFIG.addresses.verificationGateway,
       await this.EthersProvider(),
     );

@@ -40,13 +40,10 @@ export default class AggregatorController {
         };
       });
 
-      const nonce = await this.keyringController.getNonce(from);
-      const tx = {
-        nonce: nonce.toString(),
-        actions,
-      };
+      const wallet = await this.keyringController.lookupWallet(from);
+      const nonce = (await wallet.Nonce()).toString();
+      const bundle = await wallet.sign({ nonce, actions });
 
-      const bundle = await this.keyringController.signTransactions(from, tx);
       const aggregatorUrl =
         this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
       const agg = new Aggregator(aggregatorUrl);
@@ -58,7 +55,7 @@ export default class AggregatorController {
 
       this.knownTransactions[result.hash] = {
         ...txParams[0],
-        nonce: nonce.toString(),
+        nonce,
         value: txParams[0].value || '0',
         aggregatorUrl,
       };

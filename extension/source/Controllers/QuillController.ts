@@ -255,7 +255,7 @@ export default class QuillController {
   }
 
   async addAccount(privKey: string): Promise<string> {
-    const address = await this.keyringController.importAccount(privKey);
+    const address = await this.keyringController.createAccount(privKey);
     const locale = getUserLanguage();
     this.preferencesController.createUser({
       address,
