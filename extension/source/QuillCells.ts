@@ -14,13 +14,17 @@ function QuillCells(storage: CellCollection) {
       'preferredCurrency',
       io.type({
         userCurrency: io.string,
-        conversionRate: io.number,
-        conversionDate: io.string,
+        cachedConversion: io.union([
+          io.undefined,
+          io.type({
+            rate: io.number,
+            lastUpdated: io.string,
+          }),
+        ]),
       }),
       () => ({
         userCurrency: 'usd',
-        conversionRate: 0,
-        conversionDate: 'N/A',
+        cachedConversion: undefined,
       }),
     ),
     keyring: storage.Cell(

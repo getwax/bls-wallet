@@ -1,11 +1,16 @@
+import approximate from '../cells/approximate';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
-import QuillCells, { QuillState } from '../QuillCells';
+import assert from '../helpers/assert';
+import { requireEnv } from '../helpers/envTools';
+import QuillCells from '../QuillCells';
 
-export interface CurrencyControllerConfig {
-  pollInterval: number;
+export type CurrencyControllerConfig = {
   api: string;
-}
+  pollInterval: number;
+};
+
+const CRYPTO_COMPARE_API_KEY = requireEnv('CRYPTO_COMPARE_API_KEY');
 
 export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
   api: 'https://min-api.cryptocompare.com/data/price',
@@ -13,14 +18,14 @@ export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
 };
 
 export default class CurrencyController {
-  private conversionInterval?: number;
-
   userCurrency: IReadableCell<string>;
+  conversionRate: IReadableCell<number>;
 
   constructor(
     public config: CurrencyControllerConfig,
     public state: QuillCells['preferredCurrency'],
     public networkCurrency: IReadableCell<string>,
+    public time: IReadableCell<number>,
   ) {
     this.userCurrency = new FormulaCell(
       { state },
@@ -28,92 +33,31 @@ export default class CurrencyController {
       ({ state }) => state.userCurrency,
     );
 
-    this.updateConversionRate();
-    this.scheduleConversionInterval();
-  }
-
-  async updateConversionRate(): Promise<void> {
-    let state: QuillState<'preferredCurrency'> | undefined;
-    let networkCurrency: string | undefined;
-
-    try {
-      networkCurrency = await this.networkCurrency.read();
-      state = await this.state.read();
-      const apiUrl = `${
-        this.config.api
-      }?fsym=${networkCurrency.toUpperCase()}&tsyms=${state.userCurrency.toUpperCase()}&api_key=${
-        process.env.CRYPTO_COMPARE_API_KEY
-      }`;
-      let response: Response;
-      try {
-        response = await fetch(apiUrl);
-      } catch (error) {
-        console.error(
-          error,
-          'CurrencyController - Failed to request currency from cryptocompare',
-        );
-        return;
-      }
-      // parse response
-      let parsedResponse: { [key: string]: number };
-      try {
-        parsedResponse = await response.json();
-      } catch {
-        console.error(
-          new Error(
-            `CurrencyController - Failed to parse response "${response.status}"`,
-          ),
-        );
-        return;
-      }
-      // set conversion rate
-      // if (networkCurrency === 'ETH') {
-      // ETH
-      //   this.setConversionRate(Number(parsedResponse.bid))
-      //   this.setConversionDate(Number(parsedResponse.timestamp))
-      // } else
-      if (parsedResponse[state.userCurrency.toUpperCase()]) {
-        // ETC
-        this.state.update({
-          conversionRate: Number(
-            parsedResponse[state.userCurrency.toUpperCase()],
-          ),
-          conversionDate: (Date.now() / 1000).toString(),
-        });
-      } else {
-        this.state.update({
-          conversionRate: 0,
-          conversionDate: 'N/A',
-        });
-      }
-    } catch (error) {
-      // reset current conversion rate
-      console.warn(
-        'Quill - Failed to query currency conversion:',
+    this.conversionRate = new FormulaCell(
+      {
+        userCurrency: this.userCurrency,
         networkCurrency,
-        state?.userCurrency,
-        error,
-      );
-
-      this.state.update({
-        conversionRate: 0,
-        conversionDate: 'N/A',
-      });
-
-      // throw error
-      console.error(
-        error,
-        `CurrencyController - Failed to query rate for currency "${state?.userCurrency}"`,
-      );
-    }
+        time: approximate(time, config.pollInterval),
+      },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      ({ userCurrency, networkCurrency, time: _ }) =>
+        this.fetchConversionRate(networkCurrency, userCurrency),
+    );
   }
 
-  public scheduleConversionInterval(): void {
-    if (this.conversionInterval) {
-      window.clearInterval(this.conversionInterval);
-    }
-    this.conversionInterval = window.setInterval(() => {
-      this.updateConversionRate();
-    }, this.config.pollInterval);
+  async fetchConversionRate(
+    networkCurrency: string,
+    userCurrency: string,
+  ): Promise<number> {
+    const apiUrl = new URL(this.config.api);
+    apiUrl.searchParams.append('fsym', networkCurrency.toUpperCase());
+    apiUrl.searchParams.append('tsyms', userCurrency.toUpperCase());
+    apiUrl.searchParams.append('api_key', CRYPTO_COMPARE_API_KEY);
+
+    const response = await fetch(apiUrl.toString()).then((res) => res.json());
+    const rate = Number(response[userCurrency.toUpperCase()]);
+    assert(Number.isFinite(rate));
+
+    return rate;
   }
 }
