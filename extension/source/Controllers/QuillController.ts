@@ -239,10 +239,10 @@ export default class QuillController {
             rpcMap.public[message.method].params as io.Type<ExplicitAny>,
           );
 
-          return (this.publicRpc[message.method] as ExplicitAny)(
-            message,
-            message.params,
-          ) as unknown;
+          return (this.publicRpc[message.method] as ExplicitAny)({
+            ...message,
+            Output: rpcMap.public[message.method].output,
+          }) as unknown;
         }
 
         return this.networkController.fetch(message);

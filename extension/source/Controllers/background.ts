@@ -27,9 +27,16 @@ function setupController(): void {
     defaultCurrencyControllerConfig,
   );
 
-  runtime.onMessage.addListener((message, _sender) =>
-    quillController.handleMessage(message),
-  );
+  runtime.onMessage.addListener((message, _sender) => {
+    const response = quillController.handleMessage(message);
+
+    if (response !== undefined) {
+      // TODO: Better logging (configuration etc)
+      console.log({ message, response });
+    }
+
+    return response;
+  });
 
   runtime.onConnect.addListener((port) => {
     if (!port.name.startsWith('quill-provider-')) {

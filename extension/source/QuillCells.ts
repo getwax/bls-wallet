@@ -92,7 +92,9 @@ function QuillCells(storage: CellCollection) {
         ]),
       }),
       () => ({
-        chainId: 'loading', // TODO: Use undefined instead
+        // TODO: Remove this - the real chain id is in
+        //       providerConfig
+        chainId: '0x66eeb',
         properties: {
           EIPS: { 1559: undefined },
         },

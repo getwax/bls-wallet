@@ -130,6 +130,8 @@ export function QuillContextProvider({ children }: Props) {
     return <div>Loading...</div>;
   }
 
+  (window as any).quillCtx = ctxVal;
+
   return (
     <QuillContext.Provider value={ctxVal}>{children}</QuillContext.Provider>
   );
