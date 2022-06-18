@@ -5,7 +5,6 @@ import {
   JRPCRequest,
   JRPCResponse,
 } from '@toruslabs/openlogin-jrpc';
-import { BigNumberish, BytesLike } from 'ethers';
 import web3_clientVersion from './web3_clientVersion';
 
 type ProviderHandler<Params, Result> = (
