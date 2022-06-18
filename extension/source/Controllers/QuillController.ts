@@ -197,11 +197,11 @@ export default class QuillController {
     },
 
     isOnboardingComplete: async (_message) => {
-      return this.keyringController.isOnboardingComplete();
+      return (await this.cells.keyring.read()).HDPhrase !== undefined;
     },
 
-    setHDPhrase: async ({ params: [phrase] }) => {
-      this.keyringController.setHDPhrase(phrase);
+    setHDPhrase: async ({ params: [HDPhrase] }) => {
+      this.cells.keyring.update({ HDPhrase });
       return 'ok';
     },
   };

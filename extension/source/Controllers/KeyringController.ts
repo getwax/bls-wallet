@@ -10,12 +10,6 @@ export default class KeyringController {
 
   constructor(public state: QuillCells['keyring']) {}
 
-  async setHDPhrase(phrase: string) {
-    const state = await this.state.read();
-    state.HDPhrase = phrase;
-    await this.state.write(state);
-  }
-
   async requireHDPhrase() {
     const state = await this.state.read();
     let phrase = state.HDPhrase;
@@ -27,10 +21,6 @@ export default class KeyringController {
     }
 
     return phrase;
-  }
-
-  async isOnboardingComplete(): Promise<boolean> {
-    return (await this.state.read()).HDPhrase !== undefined;
   }
 
   /**
