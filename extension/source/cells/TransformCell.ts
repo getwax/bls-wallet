@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 
 import { FormulaCell } from './FormulaCell';
-import ICell, { CellEmitter } from './ICell';
+import ICell, { CellEmitter, StrictPartial } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
 
 export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
@@ -39,6 +39,10 @@ export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
 
   async write(newValue: Awaited<T>) {
     await this.input.write(this.mapOutput(await this.input.read(), newValue));
+  }
+
+  async update(updates: StrictPartial<Awaited<T>>): Promise<void> {
+    await this.write({ ...(await this.read()), ...updates });
   }
 
   [Symbol.asyncIterator]() {

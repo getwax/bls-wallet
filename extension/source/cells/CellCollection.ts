@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import * as io from 'io-ts';
 
 import ExplicitAny from '../types/ExplicitAny';
-import ICell, { CellEmitter } from './ICell';
+import ICell, { CellEmitter, StrictPartial } from './ICell';
 import CellIterator from './CellIterator';
 import jsonHasChanged from './jsonHasChanged';
 import assert from '../helpers/assert';
@@ -160,6 +160,10 @@ export class CollectionCell<T> implements ICell<T> {
         latest: newVersionedValue.value,
       });
     }
+  }
+
+  async update(updates: StrictPartial<T>): Promise<void> {
+    await this.write({ ...(await this.read()), ...updates });
   }
 
   end() {

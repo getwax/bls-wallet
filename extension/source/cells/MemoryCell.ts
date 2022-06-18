@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import assert from '../helpers/assert';
 import CellIterator from './CellIterator';
 
-import ICell, { CellEmitter } from './ICell';
+import ICell, { CellEmitter, StrictPartial } from './ICell';
 import jsonHasChanged from './jsonHasChanged';
 
 export default class MemoryCell<T> implements ICell<Awaited<T>> {
@@ -34,6 +34,10 @@ export default class MemoryCell<T> implements ICell<Awaited<T>> {
         latest: newValue,
       });
     }
+  }
+
+  async update(updates: StrictPartial<Awaited<T>>): Promise<void> {
+    await this.write({ ...(await this.read()), ...updates });
   }
 
   end() {
