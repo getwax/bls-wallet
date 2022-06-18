@@ -10,13 +10,6 @@ export default class KeyringController {
 
   constructor(public state: QuillCells['keyring']) {}
 
-  /**
-   * Returns the addresses of all stored key pairs
-   */
-  async getAccounts(): Promise<string[]> {
-    return (await this.state.read()).wallets.map((x) => x.address);
-  }
-
   async setHDPhrase(phrase: string) {
     const state = await this.state.read();
     state.HDPhrase = phrase;
