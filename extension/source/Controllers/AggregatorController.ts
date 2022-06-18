@@ -1,7 +1,7 @@
 import { Aggregator } from 'bls-wallet-clients';
 import { AGGREGATOR_URL } from '../env';
 import ensureType from '../helpers/ensureType';
-import { PublicRpcWithMessage, Subset } from '../types/Rpc';
+import { PublicRpc, Subset } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import { SendTransactionParams } from './Network/createEthMiddleware';
 import NetworkController from './Network/NetworkController';
@@ -26,8 +26,8 @@ export default class AggregatorController {
     public keyringController: KeyringController,
   ) {}
 
-  publicRpc = ensureType<Subset<PublicRpcWithMessage>>()({
-    eth_sendTransaction: async ({ providerId }, params) => {
+  publicRpc = ensureType<Subset<PublicRpc>>()({
+    eth_sendTransaction: async ({ providerId, params }) => {
       // TODO: rtti for SendTransactionParams
       const txParams = params as SendTransactionParams[];
       const { from } = txParams[0];
@@ -65,7 +65,7 @@ export default class AggregatorController {
 
       return result.hash;
     },
-    eth_getTransactionByHash: async (_origin, [hash]) => {
+    eth_getTransactionByHash: async ({ params: [hash] }) => {
       const knownTx = this.knownTransactions[hash];
 
       if (knownTx === undefined) {
@@ -84,7 +84,7 @@ export default class AggregatorController {
         data: knownTx.data,
       };
     },
-    eth_getTransactionReceipt: async (_origin, [hash]) => {
+    eth_getTransactionReceipt: async ({ params: [hash] }) => {
       const knownTx = this.knownTransactions[hash];
 
       if (knownTx === undefined) {
@@ -114,10 +114,10 @@ export default class AggregatorController {
         effectiveGasPrice: '0x0',
       };
     },
-    eth_setPreferredAggregator: async (
-      { providerId },
-      [preferredAggregator],
-    ) => {
+    eth_setPreferredAggregator: async ({
+      providerId,
+      params: [preferredAggregator],
+    }) => {
       this.preferredAggregators[providerId] = preferredAggregator;
 
       return 'ok';

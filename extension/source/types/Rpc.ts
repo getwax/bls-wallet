@@ -170,6 +170,15 @@ export const PublicRpcMessage = io.type({
   params: io.array(io.unknown),
 });
 
+export type PublicRpcMethodMessage<M extends PublicRpcMethodName> = Omit<
+  PublicRpcMessage,
+  'method' | 'params'
+> & {
+  method: M;
+  params: io.TypeOf<RpcMap['public'][M]['params']>;
+  Output: RpcMap['public'][M]['output'];
+};
+
 export type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
 
 export const RpcResult = io.union([
@@ -209,16 +218,12 @@ export const PublicRpcResponse = io.type({
 
 export type PublicRpcResponse = io.TypeOf<typeof PublicRpcResponse>;
 
-export type PublicRpc = Rpc['public'];
 export type PrivateRpc = Rpc['private'];
 
-export type PublicRpcWithMessage = {
-  [M in keyof PublicRpc]: (
-    // TODO: Change this to context which contains at least origin and
-    //       providerId
-    message: PublicRpcMessage,
-    params: Parameters<PublicRpc[M]>,
-  ) => ReturnType<PublicRpc[M]>;
+export type PublicRpc = {
+  [M in PublicRpcMethodName]: (
+    message: PublicRpcMethodMessage<M>,
+  ) => ReturnType<Rpc['public'][M]>;
 };
 
 type AnyAsyncFunction = (...params: ExplicitAny[]) => Promise<ExplicitAny>;
