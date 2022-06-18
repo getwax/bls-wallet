@@ -1,48 +1,7 @@
 import * as io from 'io-ts';
 import assert from '../helpers/assert';
+import ensureType from '../helpers/ensureType';
 import ExplicitAny from '../types/ExplicitAny';
-
-export const chains = [
-  {
-    name: 'arbitrum-rinkeby',
-    id: '0x66eeb',
-  },
-  {
-    name: 'arbitrum',
-    id: '0xa4b1',
-  },
-  {
-    name: 'optimism-kovan',
-    id: '0x45',
-  },
-  {
-    name: 'optimism',
-    id: '0xa',
-  },
-  {
-    name: 'local',
-    id: '0x7a69',
-  },
-] as const;
-
-export type ChainName = typeof chains[number]['name'];
-export type ChainId = typeof chains[number]['id'];
-
-export const ChainId: io.Type<ChainId> = io.union(
-  chains.map((c) => io.literal(c.id)) as ExplicitAny,
-);
-
-export function chainNameToId(name: ChainName): ChainId {
-  const pair = chains.find((c) => c.name === name);
-  assert(pair !== undefined);
-  return pair.id;
-}
-
-export function chainIdToName(id: ChainId): ChainName {
-  const pair = chains.find((c) => c.id === id);
-  assert(pair !== undefined);
-  return pair.name;
-}
 
 export const ProviderConfig = io.type({
   /**
@@ -88,15 +47,12 @@ export const ProviderConfig = io.type({
 
 export type ProviderConfig = io.TypeOf<typeof ProviderConfig>;
 
-type SupportedProviderConfig = ProviderConfig & {
-  chainId: ChainId;
-  networkKey: ChainName;
-};
-
-export const SUPPORTED_NETWORKS: Record<ChainName, SupportedProviderConfig> = {
+export const builtinProviderConfigs = ensureType<
+  Record<string, ProviderConfig>
+>()({
   'arbitrum-rinkeby': {
     blockExplorerUrl: 'https://rinkeby-explorer.arbitrum.io',
-    chainId: chainNameToId('arbitrum-rinkeby'),
+    chainId: '0x66eeb', // 421611
     displayName: 'Arbitrum Test Network',
     logo: '',
     rpcTarget: 'https://rinkeby.arbitrum.io/rpc',
@@ -106,7 +62,7 @@ export const SUPPORTED_NETWORKS: Record<ChainName, SupportedProviderConfig> = {
   },
   arbitrum: {
     blockExplorerUrl: 'https://explorer.arbitrum.io',
-    chainId: chainNameToId('arbitrum'),
+    chainId: '0xa4b1', // 42161
     displayName: 'Arbitrum One',
     logo: '',
     rpcTarget: `https://arb1.arbitrum.io/rpc`,
@@ -116,7 +72,7 @@ export const SUPPORTED_NETWORKS: Record<ChainName, SupportedProviderConfig> = {
   },
   'optimism-kovan': {
     blockExplorerUrl: 'https://kovan-optimistic.etherscan.io',
-    chainId: chainNameToId('optimism-kovan'),
+    chainId: '0x45', // 69
     displayName: 'Optimism Test Network',
     logo: '',
     rpcTarget: 'https://kovan.optimism.io',
@@ -126,7 +82,7 @@ export const SUPPORTED_NETWORKS: Record<ChainName, SupportedProviderConfig> = {
   },
   optimism: {
     blockExplorerUrl: 'https://optimistic.etherscan.io',
-    chainId: chainNameToId('optimism'),
+    chainId: '0xa', // 10
     displayName: 'Optimism',
     logo: '',
     rpcTarget: 'https://mainnet.optimism.io',
@@ -136,7 +92,7 @@ export const SUPPORTED_NETWORKS: Record<ChainName, SupportedProviderConfig> = {
   },
   local: {
     blockExplorerUrl: 'N/A',
-    chainId: chainNameToId('local'),
+    chainId: '0x7a69', // 31337
     displayName: 'Local Network',
     logo: '',
     rpcTarget: 'http://localhost:8545',
@@ -144,4 +100,26 @@ export const SUPPORTED_NETWORKS: Record<ChainName, SupportedProviderConfig> = {
     tickerName: 'Ethereum',
     networkKey: 'local',
   },
-};
+} as const);
+
+type BuiltinProviderConfigs = typeof builtinProviderConfigs;
+
+export type BuiltinChainName = keyof BuiltinProviderConfigs;
+
+export type BuiltinChainId =
+  BuiltinProviderConfigs[BuiltinChainName]['chainId'];
+
+export const BuiltinChainId: io.Type<BuiltinChainId> = io.union(
+  Object.values(builtinProviderConfigs).map((c) =>
+    io.literal(c.chainId),
+  ) as ExplicitAny,
+);
+
+export function builtinChainIdToName(id: BuiltinChainId): BuiltinChainName {
+  const config = Object.values(builtinProviderConfigs).find(
+    (c) => c.chainId === id,
+  );
+
+  assert(config !== undefined);
+  return config.networkKey;
+}

@@ -1,10 +1,9 @@
 import { DEFAULT_CHAIN_ID_HEX } from '../env';
-import assert from '../helpers/assert';
 import {
-  ChainId,
-  chainIdToName,
+  BuiltinChainId,
+  builtinChainIdToName,
   ProviderConfig,
-  SUPPORTED_NETWORKS,
+  builtinProviderConfigs,
 } from './constants';
 
 // TODO: Use a better random source, and maybe more entropy
@@ -17,16 +16,13 @@ export const getUserLanguage = (): string => {
 };
 
 export const getDefaultProviderConfig = (): ProviderConfig => {
-  const networkName = chainIdToName(DEFAULT_CHAIN_ID_HEX);
-  const config = SUPPORTED_NETWORKS[networkName];
-
-  assert(networkName !== undefined);
-  assert(config !== undefined);
+  const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
+  const config = builtinProviderConfigs[networkName];
 
   return config;
 };
 
-export const getRPCURL = (chainId: ChainId): string => {
-  const name = chainIdToName(chainId);
-  return SUPPORTED_NETWORKS[name].rpcTarget;
+export const getBuiltinRPCURL = (builtinChainId: BuiltinChainId) => {
+  const name = builtinChainIdToName(builtinChainId);
+  return builtinProviderConfigs[name].rpcTarget;
 };

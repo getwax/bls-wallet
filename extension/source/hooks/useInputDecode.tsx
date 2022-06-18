@@ -1,11 +1,13 @@
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { getRPCURL } from '../Controllers/utils';
-import { ChainId } from '../Controllers/constants';
+import { getBuiltinRPCURL } from '../Controllers/utils';
+import { BuiltinChainId } from '../Controllers/constants';
 
-const getParitySigRegistry = (chainId: ChainId) => {
-  const provider = new ethers.providers.JsonRpcProvider(getRPCURL(chainId));
+const getParitySigRegistry = (builtinChainId: BuiltinChainId) => {
+  const provider = new ethers.providers.JsonRpcProvider(
+    getBuiltinRPCURL(builtinChainId),
+  );
   const address = '0x44691B39d1a75dC4E0A0346CBB15E310e6ED1E86';
   const abi = [
     {
@@ -21,11 +23,14 @@ const getParitySigRegistry = (chainId: ChainId) => {
   return new ethers.Contract(address, abi, provider);
 };
 
-const getMethodFromOnChainRegistry = async (data: string, chainId: ChainId) => {
+const getMethodFromOnChainRegistry = async (
+  data: string,
+  builtinChainId: BuiltinChainId,
+) => {
   if (data === '0x') return 'SENDING ETH';
 
   const methodID = ethers.utils.hexDataSlice(data, 0, 4);
-  const registry = getParitySigRegistry(chainId);
+  const registry = getParitySigRegistry(builtinChainId);
 
   return registry.entries(methodID);
 };
@@ -58,7 +63,7 @@ type UseInputDecodeValues = {
 export const useInputDecode = (
   functionData: string,
   to: string,
-  chainId: ChainId,
+  builtinChainId: BuiltinChainId,
 ): UseInputDecodeValues => {
   const [loading, setLoading] = useState<boolean>(true);
   const [method, setMethod] = useState<string>('CONTRACT INTERACTION');
@@ -70,7 +75,10 @@ export const useInputDecode = (
       const data = functionData?.replace(/\s+/g, '');
 
       try {
-        const registryPromise = getMethodFromOnChainRegistry(data, chainId);
+        const registryPromise = getMethodFromOnChainRegistry(
+          data,
+          builtinChainId,
+        );
         const etherScanPromise = getMethodFromEtherscan(to, data);
         const rawMethod = (await registryPromise) ?? (await etherScanPromise);
         if (rawMethod) {
@@ -86,7 +94,7 @@ export const useInputDecode = (
     if (functionData) {
       getMethod();
     }
-  }, [functionData, to, chainId]);
+  }, [functionData, to, builtinChainId]);
 
   return { loading, method };
 };
