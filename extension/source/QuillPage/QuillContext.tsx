@@ -2,12 +2,11 @@ import * as io from 'io-ts';
 import React from 'react';
 import { ethers } from 'ethers';
 
-import Browser from 'webextension-polyfill';
 import getWindowQuillProvider from './getWindowQuillProvider';
 import mapValues from '../helpers/mapValues';
 import QuillProvider from '../PageContentScript/QuillProvider';
 import ExplicitAny from '../types/ExplicitAny';
-import { rpcMap } from '../types/Rpc';
+import { RpcClient, rpcMap } from '../types/Rpc';
 import { IReadableCell } from '../cells/ICell';
 import elcc from '../cells/extensionLocalCellCollection';
 import assertType from '../cells/assertType';
@@ -20,37 +19,17 @@ import TransformCell from '../cells/TransformCell';
 type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
 function getQuillContextValue(provider: QuillProvider) {
-  const rpc = {
-    public: mapValues(
-      rpcMap.public,
-      ({ params: paramsType, output }, method) => {
-        return async (...params: unknown[]) => {
-          assertType(params, paramsType as unknown as io.Type<unknown[]>);
-          const response = await provider.request({
-            method,
-            params,
-          });
-          assertType(response, output as io.Type<unknown>);
-          return response as ExplicitAny;
-        };
-      },
-    ),
-    private: mapValues(
-      rpcMap.private,
-      ({ params: paramsType, output }, method) => {
-        return async (...params: unknown[]) => {
-          assertType(params, paramsType as unknown as io.Type<unknown[]>);
-          const response = await Browser.runtime.sendMessage(undefined, {
-            type: 'quill-private-rpc',
-            method,
-            params,
-          });
-          assertType(response, output as io.Type<unknown>);
-          return response as ExplicitAny;
-        };
-      },
-    ),
-  };
+  const rpc = mapValues(rpcMap, ({ params: paramsType, output }, method) => {
+    return async (...params: unknown[]) => {
+      assertType(params, paramsType as unknown as io.Type<unknown[]>);
+      const response = await provider.request({
+        method,
+        params,
+      });
+      assertType(response, output as io.Type<unknown>);
+      return response as ExplicitAny;
+    };
+  }) as RpcClient;
 
   const Cell = elcc.Cell.bind(elcc);
   const time = TimeCell(100);

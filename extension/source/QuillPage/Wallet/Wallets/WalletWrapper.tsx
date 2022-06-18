@@ -22,12 +22,7 @@ export const WalletsWrapper: FunctionComponent = () => {
     <div className="">
       <div className="flex justify-between place-items-center">
         <div className="text-body">Wallets</div>
-        <Button
-          onPress={async () => {
-            await rpc.private.createHDAccount();
-          }}
-          className="btn-secondary"
-        >
+        <Button onPress={rpc.createHDAccount} className="btn-secondary">
           Add Wallet
         </Button>
       </div>
@@ -37,9 +32,7 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="flex flex-col gap-6 mt-8">
           {keyring.wallets.map((wallet, index) => (
             <WalletSummary
-              onClick={() => {
-                rpc.private.setSelectedAddress(wallet.address);
-              }}
+              onClick={() => rpc.setSelectedAddress(wallet.address)}
               key={wallet.address}
               wallet={{
                 address: wallet.address,

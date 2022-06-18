@@ -38,12 +38,7 @@ import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
 import { createRandomId } from './Controllers/utils';
-import {
-  PublicRpcMessage,
-  PublicRpcResponse,
-  RpcResult,
-  toRpcResult,
-} from './types/Rpc';
+import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 
 (() => {
   if (
@@ -93,7 +88,7 @@ function relayRpcRequests() {
       origin: window.location.origin,
     };
 
-    if (!isType(data, PublicRpcMessage)) {
+    if (!isType(data, RpcMessage)) {
       return;
     }
 
@@ -121,8 +116,8 @@ function relayRpcRequests() {
       };
     }
 
-    const response: PublicRpcResponse = {
-      type: 'quill-public-rpc-response',
+    const response: RpcResponse = {
+      type: 'quill-rpc-response',
       id: data.id,
       result,
     };

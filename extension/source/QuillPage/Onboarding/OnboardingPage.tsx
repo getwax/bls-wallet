@@ -11,9 +11,7 @@ const OnboardingPage: FunctionComponent = () => {
 
   useEffect(() => {
     (async () => {
-      const onboardingComplete = await rpc.private.isOnboardingComplete();
-
-      if (onboardingComplete) {
+      if (await rpc.isOnboardingComplete()) {
         navigate('/wallet/');
       }
     })();

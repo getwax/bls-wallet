@@ -8,11 +8,7 @@ import { FormulaCell } from '../cells/FormulaCell';
 import isType from '../cells/isType';
 import LongPollingCell from '../cells/LongPollingCell';
 import { createRandomId } from '../Controllers/utils';
-import {
-  ProviderState,
-  PublicRpcMessage,
-  PublicRpcResponse,
-} from '../types/Rpc';
+import { ProviderState, RpcMessage, RpcResponse } from '../types/Rpc';
 
 const RequestBody = io.type({
   method: io.string,
@@ -98,8 +94,8 @@ export default class QuillProvider extends (EventEmitter as new () => TypedEvent
 
     const id = createRandomId();
 
-    const message: Omit<PublicRpcMessage, 'providerId' | 'origin'> = {
-      type: 'quill-public-rpc',
+    const message: Omit<RpcMessage, 'providerId' | 'origin'> = {
+      type: 'quill-rpc',
       id,
       // Note: We do not set providerId or origin here because our code is
       // co-mingled with the dApp and is therefore untrusted. Instead, the
@@ -115,11 +111,7 @@ export default class QuillProvider extends (EventEmitter as new () => TypedEvent
 
     return await new Promise((resolve, reject) => {
       const messageListener = (evt: MessageEvent<unknown>) => {
-        if (!isType(evt.data, PublicRpcResponse)) {
-          return;
-        }
-
-        if (evt.data.id !== id) {
+        if (!isType(evt.data, RpcResponse) || evt.data.id !== id) {
           return;
         }
 

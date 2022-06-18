@@ -1,7 +1,7 @@
 import { Aggregator } from 'bls-wallet-clients';
 import { AGGREGATOR_URL } from '../env';
 import ensureType from '../helpers/ensureType';
-import { PartialRpc } from '../types/Rpc';
+import { PartialRpcImpl } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import { SendTransactionParams } from './Network/createEthMiddleware';
 import NetworkController from './Network/NetworkController';
@@ -26,7 +26,7 @@ export default class AggregatorController {
     public keyringController: KeyringController,
   ) {}
 
-  publicRpc = ensureType<PartialRpc>()({
+  rpc = ensureType<PartialRpcImpl>()({
     eth_sendTransaction: async ({ providerId, params }) => {
       // TODO: rtti for SendTransactionParams
       const txParams = params as SendTransactionParams[];

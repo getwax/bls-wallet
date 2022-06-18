@@ -184,16 +184,22 @@ export const RpcResponse = io.type({
 
 export type RpcResponse = io.TypeOf<typeof RpcResponse>;
 
-type Rpc = {
+export type RpcImpl = {
   [M in RpcMethodName]: (
     message: RpcMethodMessage<M>,
   ) => Promise<io.TypeOf<RpcMap[M]['output']>>;
 };
 
-export type PartialRpc = {
+export type PartialRpcImpl = {
   [M in RpcMethodName]?: (
-    ...params: Parameters<Rpc[M]>
-  ) => Promise<AsyncReturnType<Rpc[M]> | undefined>;
+    message: RpcMethodMessage<M>,
+  ) => Promise<AsyncReturnType<RpcImpl[M]> | undefined>;
 };
 
-export default Rpc;
+export type RpcClient = {
+  [M in RpcMethodName]: (
+    ...params: RpcMethodMessage<M>['params']
+  ) => Promise<io.TypeOf<RpcMap[M]['output']>>;
+};
+
+// TODO: export type EthereumRequest...

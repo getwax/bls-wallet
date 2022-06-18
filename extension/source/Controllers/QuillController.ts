@@ -11,8 +11,9 @@ import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
 import CellCollection from '../cells/CellCollection';
 import ExplicitAny from '../types/ExplicitAny';
-import Rpc, {
+import {
   ProviderState,
+  RpcImpl,
   rpcMap,
   RpcMessage,
   RpcMethodMessage,
@@ -86,7 +87,7 @@ export default class QuillController {
     );
   }
 
-  rpc: Rpc = {
+  rpc: RpcImpl = {
     eth_chainId: async () => this.cells.chainId.read(),
 
     eth_coinbase: async (_message) =>
@@ -104,14 +105,12 @@ export default class QuillController {
     },
 
     eth_sendTransaction: async (message) => {
-      return this.aggregatorController.publicRpc.eth_sendTransaction(message);
+      return this.aggregatorController.rpc.eth_sendTransaction(message);
     },
 
     eth_getTransactionByHash: async (message) => {
       const aggregatorRes =
-        await this.aggregatorController.publicRpc.eth_getTransactionByHash(
-          message,
-        );
+        await this.aggregatorController.rpc.eth_getTransactionByHash(message);
 
       if (aggregatorRes !== undefined) {
         return aggregatorRes;
@@ -125,9 +124,7 @@ export default class QuillController {
 
     eth_getTransactionReceipt: async (message) => {
       const aggregatorRes =
-        await this.aggregatorController.publicRpc.eth_getTransactionReceipt(
-          message,
-        );
+        await this.aggregatorController.rpc.eth_getTransactionReceipt(message);
 
       if (aggregatorRes !== undefined) {
         return aggregatorRes;
@@ -140,9 +137,7 @@ export default class QuillController {
     },
 
     eth_setPreferredAggregator: async (message) => {
-      return this.aggregatorController.publicRpc.eth_setPreferredAggregator(
-        message,
-      );
+      return this.aggregatorController.rpc.eth_setPreferredAggregator(message);
     },
 
     eth_accounts: async ({ origin }) => {
