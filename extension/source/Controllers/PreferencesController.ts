@@ -1,7 +1,7 @@
 import { cloneDeep } from 'lodash-es';
 import * as io from 'io-ts';
 import assert from '../helpers/assert';
-import QuillCells, { QuillState } from '../QuillCells';
+import QuillCells from '../QuillCells';
 
 /**
  * Controller that stores shared settings and exposes convenience methods
@@ -106,17 +106,12 @@ export default class PreferencesController {
       ...currentState,
       ...preferences,
     };
-    await this.update({
+    await this.state.update({
       identities: {
         ...(await this.state.read()).identities,
         [selectedAddress]: mergedState,
       },
     });
-  }
-
-  async update(stateUpdates: Partial<QuillState<'preferences'>>) {
-    const state = await this.state.read();
-    await this.state.write({ ...state, ...stateUpdates });
   }
 }
 

@@ -32,13 +32,6 @@ export default class CurrencyController {
     this.scheduleConversionInterval();
   }
 
-  public async update(stateUpdates: Partial<QuillState<'preferredCurrency'>>) {
-    await this.state.write({
-      ...(await this.state.read()),
-      ...stateUpdates,
-    });
-  }
-
   async updateConversionRate(): Promise<void> {
     let state: QuillState<'preferredCurrency'> | undefined;
     let networkCurrency: string | undefined;
@@ -81,14 +74,14 @@ export default class CurrencyController {
       // } else
       if (parsedResponse[state.userCurrency.toUpperCase()]) {
         // ETC
-        this.update({
+        this.state.update({
           conversionRate: Number(
             parsedResponse[state.userCurrency.toUpperCase()],
           ),
           conversionDate: (Date.now() / 1000).toString(),
         });
       } else {
-        this.update({
+        this.state.update({
           conversionRate: 0,
           conversionDate: 'N/A',
         });
@@ -102,7 +95,7 @@ export default class CurrencyController {
         error,
       );
 
-      this.update({
+      this.state.update({
         conversionRate: 0,
         conversionDate: 'N/A',
       });

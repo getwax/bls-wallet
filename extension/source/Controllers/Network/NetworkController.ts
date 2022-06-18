@@ -22,7 +22,7 @@ import approximate from '../../cells/approximate';
 import { createRandomId } from '../utils';
 import assertType from '../../cells/assertType';
 import assert from '../../helpers/assert';
-import QuillCells, { QuillState } from '../../QuillCells';
+import QuillCells from '../../QuillCells';
 
 // use state_get_balance for account balance
 
@@ -95,10 +95,6 @@ export default class NetworkController implements INetworkController {
     return (await this.state.read()).chainId;
   }
 
-  async update(stateUpdates: Partial<QuillState<'network'>>) {
-    await this.state.write({ ...(await this.state.read()), ...stateUpdates });
-  }
-
   /**
    * Called by orchestrator once while initializing the class
    * @param providerHandlers - JRPC handlers for provider
@@ -123,8 +119,8 @@ export default class NetworkController implements INetworkController {
   async lookupNetwork(): Promise<void> {
     const { rpcTarget, chainId } = await this.providerConfig.read();
     if (!chainId || !rpcTarget || !this._provider) {
-      await this.update({
-        chainId: 'loading',
+      await this.state.update({
+        chainId: 'loading', // TODO: no
         properties: { EIPS: { 1559: undefined } },
       });
       return;
@@ -141,7 +137,7 @@ export default class NetworkController implements INetworkController {
         (error: Error, network: unknown) => {
           releaseLock();
           if (error) {
-            this.update({
+            this.state.update({
               chainId: 'loading',
               properties: {
                 EIPS: { 1559: undefined },
@@ -150,7 +146,7 @@ export default class NetworkController implements INetworkController {
             reject(error);
           }
 
-          this.update({
+          this.state.update({
             // Network is returned as a string (base 10)
             chainId: `0x${Number.parseInt(network as string, 16).toString()}`,
           });
@@ -174,7 +170,7 @@ export default class NetworkController implements INetworkController {
     });
     const supportsEIP1559 =
       latestBlock && latestBlock.baseFeePerGas !== undefined;
-    this.update({
+    this.state.update({
       properties: {
         EIPS: { 1559: supportsEIP1559 },
       },
@@ -238,7 +234,7 @@ export default class NetworkController implements INetworkController {
   }
 
   private refreshNetwork() {
-    this.update({
+    this.state.update({
       chainId: 'loading',
       properties: { EIPS: { 1559: undefined } },
     });

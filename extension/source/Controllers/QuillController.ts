@@ -188,7 +188,7 @@ export default class QuillController {
     },
 
     setSelectedAddress: async ({ params: [selectedAddress] }) => {
-      this.preferencesController.update({ selectedAddress });
+      this.cells.preferences.update({ selectedAddress });
       return 'ok';
     },
 
