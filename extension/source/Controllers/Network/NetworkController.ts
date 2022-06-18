@@ -5,11 +5,7 @@ import { Mutex } from 'async-mutex';
 import EthQuery from '../rpcHelpers/EthQuery';
 
 import { ProviderConfig } from '../constants';
-import createSwappableProxy from '../createSwappableProxy';
-import {
-  createWalletMiddleware,
-  IProviderHandlers,
-} from './createEthMiddleware';
+import { createWalletMiddleware } from './createEthMiddleware';
 import { createJsonRpcClient } from './createJsonRpcClient';
 import {
   INetworkController,
@@ -23,6 +19,7 @@ import { createRandomId } from '../utils';
 import assertType from '../../cells/assertType';
 import assert from '../../helpers/assert';
 import QuillCells from '../../QuillCells';
+import MemoryCell from '../../cells/MemoryCell';
 
 // use state_get_balance for account balance
 
@@ -38,18 +35,19 @@ export default class NetworkController implements INetworkController {
   blockNumber: IReadableCell<number>;
   providerConfig: IReadableCell<ProviderConfig>;
 
-  _providerProxy!: SafeEventEmitterProvider;
+  provider = new MemoryCell<SafeEventEmitterProvider | undefined>(
+    undefined,
+    (p1, p2) => p1 !== p2,
+  );
 
   private mutex = new Mutex();
-
-  private _provider: SafeEventEmitterProvider | null = null;
 
   /**
    * Initialized before our provider is created.
    */
   private ethQuery!: EthQuery;
 
-  private _baseProviderHandlers!: IProviderHandlers;
+  private _baseProviderHandlers = {};
 
   constructor(
     public state: QuillCells['network'],
@@ -82,7 +80,7 @@ export default class NetworkController implements INetworkController {
     );
 
     // TODO: Delete stuff?
-    this.initializeProvider({});
+    this.initializeProvider();
 
     this.watchThings();
 
@@ -98,17 +96,21 @@ export default class NetworkController implements INetworkController {
    * @param providerHandlers - JRPC handlers for provider
    * @returns - provider - Returns the providerProxy
    */
-  public initializeProvider(
-    providerHandlers: IProviderHandlers,
-  ): SafeEventEmitterProvider {
-    this._baseProviderHandlers = providerHandlers;
+  public initializeProvider() {
     this.configureProvider();
     this.lookupNetwork(); // Not awaiting this, because we don't want to block the initialization
-    return this._providerProxy;
   }
 
-  getProvider(): SafeEventEmitterProvider {
-    return this._providerProxy;
+  async Provider(): Promise<SafeEventEmitterProvider> {
+    for await (const provider of this.provider) {
+      if (provider === undefined) {
+        continue;
+      }
+
+      return provider;
+    }
+
+    assert(false, 'Unexpected end of provider cell');
   }
 
   /**
@@ -116,7 +118,7 @@ export default class NetworkController implements INetworkController {
    */
   async lookupNetwork(): Promise<void> {
     const { rpcTarget, chainId } = await this.providerConfig.read();
-    if (!chainId || !rpcTarget || !this._provider) {
+    if (!chainId || !rpcTarget || !(await this.Provider())) {
       await this.state.update({
         chainId: 'loading', // TODO: no
         properties: { EIPS: { 1559: undefined } },
@@ -177,7 +179,9 @@ export default class NetworkController implements INetworkController {
   }
 
   async fetch(body: RpcMessage) {
-    const res = await this._providerProxy.request({
+    const provider = await this.Provider();
+
+    const res = await provider.request({
       method: body.method,
       jsonrpc: '2.0',
       id: body.id, // TODO: Do we need to set id if body.id is not provided?
@@ -212,22 +216,11 @@ export default class NetworkController implements INetworkController {
     engine.push(walletMiddleware);
     engine.push(networkMiddleware);
     const provider = providerFromEngine(engine);
-    this.setProvider({ provider });
+    this.setProvider(provider);
   }
 
-  private setProvider({ provider }: { provider: SafeEventEmitterProvider }) {
-    if (this._providerProxy) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      this._providerProxy.setTarget(provider);
-    } else {
-      this._providerProxy =
-        createSwappableProxy<SafeEventEmitterProvider>(provider);
-    }
-
-    // set new provider and blockTracker
-    this._provider = provider;
-    provider.setMaxListeners(10);
+  private async setProvider(provider: SafeEventEmitterProvider) {
+    await this.provider.write(provider);
     this.ethQuery = new EthQuery(provider);
   }
 
