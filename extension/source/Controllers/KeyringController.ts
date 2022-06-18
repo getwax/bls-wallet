@@ -6,8 +6,6 @@ import { getRPCURL } from './utils';
 import QuillCells from '../QuillCells';
 
 export default class KeyringController {
-  name = 'KeyringController';
-
   constructor(public state: QuillCells['keyring']) {}
 
   async requireHDPhrase() {

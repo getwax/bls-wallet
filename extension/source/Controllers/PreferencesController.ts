@@ -9,11 +9,6 @@ import TransformCell from '../cells/TransformCell';
  * Controller that stores shared settings and exposes convenience methods
  */
 export default class PreferencesController {
-  /**
-   * Name of this controller used during composition
-   */
-  name = 'PreferencesController';
-
   identities: ICell<Preferences['identities']>;
 
   constructor(public state: ICell<Preferences>) {
