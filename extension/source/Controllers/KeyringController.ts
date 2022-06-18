@@ -17,6 +17,7 @@ export default class KeyringController {
     let { HDPhrase } = await this.state.read();
 
     if (HDPhrase === undefined) {
+      // FIXME: This should be part of the default initialization instead
       HDPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
       await this.state.update({ HDPhrase });
     }
@@ -34,41 +35,32 @@ export default class KeyringController {
     const newAccountIndex = (await this.state.read()).wallets.length;
     const { privateKey } = node.derivePath(`m/44'/60'/0'/0/${newAccountIndex}`);
 
-    return this._createAccountAndUpdate(privateKey);
+    return await this.createAccount(privateKey);
   }
 
-  /**
-   * Creates a new key pair
-   */
-  async createAccount(): Promise<string> {
-    const privateKey = generateRandomHex(256);
-    return this._createAccountAndUpdate(privateKey);
-  }
+  async createAccount(privateKey = generateRandomHex(256)): Promise<string> {
+    const { wallets } = await this.state.read();
 
-  /**
-   * Imports a key pair
-   * @param privateKey - Hex string without 0x prefix
-   */
-  async importAccount(privateKey: string): Promise<string> {
-    const existingWallet = (await this.state.read()).wallets.find(
-      (x) => x.privateKey.toLowerCase() === privateKey.toLowerCase(),
+    assert(
+      wallets.every((w) => w.privateKey !== privateKey),
+      'Wallet already exists',
     );
-    if (existingWallet) return existingWallet.address;
 
-    return this._createAccountAndUpdate(privateKey);
+    const address = await this.BlsWalletAddress(privateKey);
+
+    wallets.push({ privateKey, address });
+    await this.state.update({ wallets });
+
+    return address;
   }
 
-  /**
-   * Removes a key pair
-   * @param address - Address of the key pair
-   */
   async removeAccount(address: string) {
-    const state = await this.state.read();
-    const index = state.wallets.findIndex((x) => x.address === address);
-    if (index !== -1) {
-      state.wallets.splice(index, 1);
-      await this.state.write(state);
-    }
+    const { wallets } = await this.state.read();
+
+    const newWallets = wallets.filter((w) => w.address !== address);
+    assert(newWallets.length < wallets.length, 'Account did not exist');
+
+    await this.state.update({ wallets: newWallets });
   }
 
   /**
@@ -77,29 +69,14 @@ export default class KeyringController {
    * @param tx - Transaction to sign
    */
   async signTransactions(address: string, tx: Operation) {
-    const privKey = await this._getPrivateKeyFor(address);
-    const wallet = await this._getBLSWallet(privKey);
-
-    return wallet.sign(tx);
+    return (await this.BlsWalletWrapper(address)).sign(tx);
   }
 
   async getNonce(address: string) {
-    const privKey = await this._getPrivateKeyFor(address);
-    const wallet = await this._getBLSWallet(privKey);
-    return wallet.Nonce();
+    return (await this.BlsWalletWrapper(address)).Nonce();
   }
 
-  async _createAccountAndUpdate(privateKey: string): Promise<string> {
-    const address = await this._getContractWalletAddress(privateKey);
-
-    const state = await this.state.read();
-    state.wallets.push({ privateKey, address });
-    await this.state.write(state);
-
-    return address;
-  }
-
-  private async _getPrivateKeyFor(rawAddress: string): Promise<string> {
+  private async lookupPrivateKey(rawAddress: string): Promise<string> {
     const address = ethers.utils.getAddress(rawAddress);
 
     const keyPair = (await this.state.read()).wallets.find(
@@ -117,13 +94,15 @@ export default class KeyringController {
         continue;
       }
 
+      // TODO: Change BlsWalletWrapper so that it can just use a vanilla
+      // provider
       return new ethers.providers.Web3Provider(provider);
     }
 
     assert(false, 'Unexpected end of provider cell');
   }
 
-  private async _getContractWalletAddress(privateKey: string): Promise<string> {
+  private async BlsWalletAddress(privateKey: string): Promise<string> {
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
@@ -131,9 +110,9 @@ export default class KeyringController {
     );
   }
 
-  private async _getBLSWallet(privateKey: string): Promise<BlsWalletWrapper> {
+  private async BlsWalletWrapper(address: string): Promise<BlsWalletWrapper> {
     return BlsWalletWrapper.connect(
-      privateKey,
+      await this.lookupPrivateKey(address),
       NETWORK_CONFIG.addresses.verificationGateway,
       await this.EthersProvider(),
     );
