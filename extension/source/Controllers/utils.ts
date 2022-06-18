@@ -1,4 +1,5 @@
 import { DEFAULT_CHAIN_ID_HEX } from '../env';
+import assert from '../helpers/assert';
 import {
   ProviderConfig,
   CHAIN_ID_NETWORK_MAP,
@@ -16,30 +17,15 @@ export const getUserLanguage = (): string => {
 
 export const getDefaultProviderConfig = (): ProviderConfig => {
   const networkName = CHAIN_ID_NETWORK_MAP[DEFAULT_CHAIN_ID_HEX];
-  if (!networkName) {
-    throw new Error(
-      `supported network not found for chainid ${DEFAULT_CHAIN_ID_HEX}`,
-    );
-  }
   const config = SUPPORTED_NETWORKS[networkName];
-  if (!config) {
-    throw new Error(`network config not found for network ${networkName}`);
-  }
+
+  assert(networkName !== undefined);
+  assert(config !== undefined);
+
   return config;
 };
 
 export const getRPCURL = (chainId: string): string => {
   const name = CHAIN_ID_NETWORK_MAP[chainId];
   return SUPPORTED_NETWORKS[name].rpcTarget;
-};
-
-// TODO: delete
-export const getFirstReqParam = <T>(req: any): T => {
-  if (!Array.isArray(req.params)) {
-    throw new Error('req.params not array');
-  }
-  if (!req.params.length) {
-    throw new Error('req.params empty');
-  }
-  return req.params[0];
 };
