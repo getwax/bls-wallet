@@ -12,20 +12,8 @@ function QuillCells(storage: CellCollection) {
   const rootCells = {
     preferredCurrency: storage.Cell(
       'preferredCurrency',
-      io.type({
-        userCurrency: io.string,
-        cachedConversion: io.union([
-          io.undefined,
-          io.type({
-            rate: io.number,
-            lastUpdated: io.string,
-          }),
-        ]),
-      }),
-      () => ({
-        userCurrency: 'usd',
-        cachedConversion: undefined,
-      }),
+      io.string,
+      () => 'USD',
     ),
     keyring: storage.Cell(
       'keyring',

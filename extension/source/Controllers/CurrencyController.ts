@@ -3,7 +3,6 @@ import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import assert from '../helpers/assert';
 import { requireEnv } from '../helpers/envTools';
-import QuillCells from '../QuillCells';
 
 export type CurrencyControllerConfig = {
   api: string;
@@ -18,44 +17,37 @@ export const defaultCurrencyControllerConfig: CurrencyControllerConfig = {
 };
 
 export default class CurrencyController {
-  userCurrency: IReadableCell<string>;
   conversionRate: IReadableCell<number>;
 
   constructor(
     public config: CurrencyControllerConfig,
-    public state: QuillCells['preferredCurrency'],
+    public preferredCurrency: IReadableCell<string>,
     public networkCurrency: IReadableCell<string>,
     public time: IReadableCell<number>,
   ) {
-    this.userCurrency = new FormulaCell(
-      { state },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ state }) => state.userCurrency,
-    );
-
     this.conversionRate = new FormulaCell(
       {
-        userCurrency: this.userCurrency,
+        preferredCurrency,
         networkCurrency,
         time: approximate(time, config.pollInterval),
       },
       // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ userCurrency, networkCurrency, time: _ }) =>
-        this.fetchConversionRate(networkCurrency, userCurrency),
+      ({ preferredCurrency, networkCurrency, time: _ }) =>
+        this.fetchConversionRate(networkCurrency, preferredCurrency),
     );
   }
 
   async fetchConversionRate(
     networkCurrency: string,
-    userCurrency: string,
+    preferredCurrency: string,
   ): Promise<number> {
     const apiUrl = new URL(this.config.api);
     apiUrl.searchParams.append('fsym', networkCurrency.toUpperCase());
-    apiUrl.searchParams.append('tsyms', userCurrency.toUpperCase());
+    apiUrl.searchParams.append('tsyms', preferredCurrency.toUpperCase());
     apiUrl.searchParams.append('api_key', CRYPTO_COMPARE_API_KEY);
 
     const response = await fetch(apiUrl.toString()).then((res) => res.json());
-    const rate = Number(response[userCurrency.toUpperCase()]);
+    const rate = Number(response[preferredCurrency.toUpperCase()]);
     assert(Number.isFinite(rate));
 
     return rate;

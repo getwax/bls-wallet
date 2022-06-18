@@ -56,6 +56,7 @@ export default class QuillController {
       this.currencyControllerConfig,
       this.cells.preferredCurrency,
       this.networkController.ticker,
+      this.time,
     );
 
     this.keyringController = new KeyringController(
@@ -260,7 +261,7 @@ export default class QuillController {
     this.preferencesController.createUser({
       address,
       locale,
-      selectedCurrency: 'USD',
+      preferredCurrency: 'USD',
       theme: 'light',
     });
     return address;
@@ -280,12 +281,10 @@ export default class QuillController {
     })();
 
     (async () => {
-      for await (const userCurrency of this.currencyController.userCurrency) {
-        await this.currencyController.updateConversionRate();
-
+      for await (const preferredCurrency of this.cells.preferredCurrency) {
         await this.preferencesController
           .SelectedPreferences()
-          .update({ selectedCurrency: userCurrency });
+          .update({ preferredCurrency });
       }
     })();
 
