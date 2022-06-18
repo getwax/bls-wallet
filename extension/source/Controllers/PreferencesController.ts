@@ -2,8 +2,6 @@ import { cloneDeep } from 'lodash-es';
 import * as io from 'io-ts';
 import assert from '../helpers/assert';
 import QuillCells, { QuillState } from '../QuillCells';
-import { IReadableCell } from '../cells/ICell';
-import { FormulaCell } from '../cells/FormulaCell';
 
 /**
  * Controller that stores shared settings and exposes convenience methods
@@ -14,14 +12,7 @@ export default class PreferencesController {
    */
   name = 'PreferencesController';
 
-  selectedAddress: IReadableCell<string | undefined>;
-
-  constructor(public state: QuillCells['preferences']) {
-    this.selectedAddress = new FormulaCell(
-      { preferences: state },
-      ({ preferences }) => preferences.selectedAddress,
-    );
-  }
+  constructor(public state: QuillCells['preferences']) {}
 
   /**
    * Gets the preferences state of specified address

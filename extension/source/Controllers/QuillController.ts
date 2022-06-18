@@ -91,11 +91,10 @@ export default class QuillController {
     eth_chainId: async () => this.cells.chainId.read(),
 
     eth_coinbase: async (_message) =>
-      (await this.preferencesController.selectedAddress.read()) || null,
+      (await this.cells.selectedAddress.read()) || null,
 
     wallet_get_provider_state: async (_message) => {
-      const selectedAddress =
-        await this.preferencesController.selectedAddress.read();
+      const selectedAddress = await this.cells.selectedAddress.read();
 
       return {
         accounts: selectedAddress ? [selectedAddress] : [],
@@ -147,8 +146,7 @@ export default class QuillController {
         );
       }
 
-      const selectedAddress =
-        await this.preferencesController.selectedAddress.read();
+      const selectedAddress = await this.cells.selectedAddress.read();
 
       // TODO (merge-ok) Expose no accounts if this origin has not been approved,
       // preventing account-requiring RPC methods from completing successfully
@@ -158,8 +156,7 @@ export default class QuillController {
     },
 
     eth_requestAccounts: async (_message) => {
-      const selectedAddress =
-        await this.preferencesController.selectedAddress.read();
+      const selectedAddress = await this.cells.selectedAddress.read();
       const accounts = selectedAddress ? [selectedAddress] : [];
       return accounts;
     },
