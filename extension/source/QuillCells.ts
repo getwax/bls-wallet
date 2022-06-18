@@ -3,47 +3,9 @@ import * as io from 'io-ts';
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
 import { ProviderConfig } from './Controllers/constants';
+import { Preferences } from './Controllers/PreferencesController';
 import { getDefaultProviderConfig } from './Controllers/utils';
 import AsyncReturnType from './types/AsyncReturnType';
-
-const Theme = io.union([io.literal('light'), io.literal('dark')]);
-type Theme = io.TypeOf<typeof Theme>;
-
-const Contact = io.type({
-  displayName: io.string,
-  publicAddress: io.string,
-});
-
-type Contact = io.TypeOf<typeof Contact>;
-
-const CustomNft = io.type({
-  nftAddress: io.string,
-  chainId: io.string,
-  nftContractStandard: io.string,
-  nftTokenId: io.string,
-});
-
-type CustomNft = io.TypeOf<typeof CustomNft>;
-
-const CustomToken = io.type({
-  tokenAddress: io.string,
-  chainId: io.string,
-  tokenSymbol: io.string,
-  tokenName: io.string,
-  decimals: io.string,
-});
-
-type CustomToken = io.TypeOf<typeof CustomToken>;
-
-const AddressPreferences = io.type({
-  selectedCurrency: io.string,
-  locale: io.string,
-  theme: Theme,
-  defaultPublicAddress: io.union([io.undefined, io.string]),
-  contacts: io.union([io.undefined, io.array(Contact)]),
-  customTokens: io.union([io.undefined, io.array(CustomToken)]),
-  customNfts: io.union([io.undefined, io.array(CustomNft)]),
-});
 
 function QuillCells(storage: CellCollection) {
   const rootCells = {
@@ -101,23 +63,13 @@ function QuillCells(storage: CellCollection) {
         providerConfig: getDefaultProviderConfig(),
       }),
     ),
-    preferences: storage.Cell(
-      'preferences',
-      io.type({
-        identities: io.record(io.string, AddressPreferences),
-        selectedAddress: io.union([io.undefined, io.string]),
-        lastErrorMessage: io.union([io.undefined, io.string]),
-        lastSuccessMessage: io.union([io.undefined, io.string]),
-        breakOnAssertionFailures: io.union([io.undefined, io.boolean]),
-      }),
-      () => ({
-        identities: {},
-        selectedAddress: undefined,
-        lastErrorMessage: undefined,
-        lastSuccessMessage: undefined,
-        breakOnAssertionFailures: undefined,
-      }),
-    ),
+    preferences: storage.Cell('preferences', Preferences, () => ({
+      identities: {},
+      selectedAddress: undefined,
+      lastErrorMessage: undefined,
+      lastSuccessMessage: undefined,
+      breakOnAssertionFailures: undefined,
+    })),
   };
 
   /** the cells involved in the response to quill_providerState in public rpc */

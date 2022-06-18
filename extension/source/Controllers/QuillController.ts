@@ -279,7 +279,10 @@ export default class QuillController {
     (async () => {
       for await (const userCurrency of this.currencyController.userCurrency) {
         await this.currencyController.updateConversionRate();
-        this.preferencesController.setSelectedCurrency(userCurrency);
+
+        await this.preferencesController
+          .SelectedPreferences()
+          .update({ selectedCurrency: userCurrency });
       }
     })();
 
