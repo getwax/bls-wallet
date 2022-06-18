@@ -58,7 +58,10 @@ export default class QuillController {
       this.networkController.ticker,
     );
 
-    this.keyringController = new KeyringController(this.cells.keyring);
+    this.keyringController = new KeyringController(
+      this.cells.keyring,
+      this.networkController.provider,
+    );
 
     this.preferencesController = new PreferencesController(
       this.cells.preferences,
