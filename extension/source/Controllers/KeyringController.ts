@@ -4,21 +4,20 @@ import generateRandomHex from '../helpers/generateRandomHex';
 import { DEFAULT_CHAIN_ID_HEX, NETWORK_CONFIG } from '../env';
 import { getRPCURL } from './utils';
 import QuillCells from '../QuillCells';
+import assert from '../helpers/assert';
 
 export default class KeyringController {
   constructor(public state: QuillCells['keyring']) {}
 
   async requireHDPhrase() {
-    const state = await this.state.read();
-    let phrase = state.HDPhrase;
+    let { HDPhrase } = await this.state.read();
 
-    if (phrase === undefined) {
-      phrase = ethers.Wallet.createRandom().mnemonic.phrase;
-      state.HDPhrase = phrase;
-      await this.state.write(state);
+    if (HDPhrase === undefined) {
+      HDPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
+      await this.state.update({ HDPhrase });
     }
 
-    return phrase;
+    return HDPhrase;
   }
 
   /**
@@ -28,10 +27,9 @@ export default class KeyringController {
     const mnemonic = await this.requireHDPhrase();
     const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
-    const partialPath = "m/44'/60'/0'/0/";
-    const path = partialPath + (await this.state.read()).wallets.length;
+    const newAccountIndex = (await this.state.read()).wallets.length;
+    const { privateKey } = node.derivePath(`m/44'/60'/0'/0/${newAccountIndex}`);
 
-    const { privateKey } = node.derivePath(path);
     return this._createAccountAndUpdate(privateKey);
   }
 
@@ -90,21 +88,22 @@ export default class KeyringController {
   async _createAccountAndUpdate(privateKey: string): Promise<string> {
     const address = await this._getContractWalletAddress(privateKey);
 
-    if (address) {
-      const state = await this.state.read();
-      state.wallets.push({ privateKey, address });
-      await this.state.write(state);
-    }
+    const state = await this.state.read();
+    state.wallets.push({ privateKey, address });
+    await this.state.write(state);
 
     return address;
   }
 
-  private async _getPrivateKeyFor(address: string): Promise<string> {
-    const checksummedAddress = ethers.utils.getAddress(address);
+  private async _getPrivateKeyFor(rawAddress: string): Promise<string> {
+    const address = ethers.utils.getAddress(rawAddress);
+
     const keyPair = (await this.state.read()).wallets.find(
-      (x) => x.address === checksummedAddress,
+      (x) => x.address === address,
     );
-    if (!keyPair) throw new Error('key does not exist');
+
+    assert(keyPair !== undefined, 'key does not exist');
+
     return keyPair.privateKey;
   }
 
@@ -122,6 +121,8 @@ export default class KeyringController {
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
+
+      // TODO: Fix this after fixing NetworkController
       await this._createProvider(),
     );
   }
