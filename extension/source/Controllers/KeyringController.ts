@@ -21,23 +21,11 @@ export default class KeyringController {
     );
   }
 
-  // FIXME: This should be part of the default initialization instead
-  async requireHDPhrase() {
-    let { HDPhrase } = await this.state.read();
-
-    if (HDPhrase === undefined) {
-      HDPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
-      await this.state.update({ HDPhrase });
-    }
-
-    return HDPhrase;
-  }
-
   /**
    * Creates a Deterministic Account based on seed phrase
    */
   async createHDAccount(): Promise<string> {
-    const mnemonic = await this.requireHDPhrase();
+    const mnemonic = (await this.state.read()).HDPhrase;
     const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
     // FIXME: HD accounts are co-mingled with regular accounts. This will cause
@@ -92,8 +80,7 @@ export default class KeyringController {
         continue;
       }
 
-      // TODO: Change BlsWalletWrapper so that it can just use a vanilla
-      // provider
+      // FIXME: BlsWalletWrapper should just support a vanilla provider
       return new ethers.providers.Web3Provider(provider);
     }
 

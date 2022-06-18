@@ -1,3 +1,4 @@
+import { ethers } from 'ethers';
 import * as io from 'io-ts';
 
 import CellCollection from './cells/CellCollection';
@@ -25,17 +26,18 @@ function QuillCells(storage: CellCollection) {
     keyring: storage.Cell(
       'keyring',
       io.type({
-        HDPhrase: io.union([io.undefined, io.string]),
+        HDPhrase: io.string,
         wallets: io.array(
           io.type({
             privateKey: io.string,
             address: io.string,
           }),
         ),
+        // FIXME: redundant storage of chainId
         chainId: io.union([io.undefined, io.string]),
       }),
       () => ({
-        HDPhrase: undefined,
+        HDPhrase: ethers.Wallet.createRandom().mnemonic.phrase,
         wallets: [],
         chainId: undefined,
       }),
