@@ -11,16 +11,12 @@ import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
 import CellCollection from '../cells/CellCollection';
 import ExplicitAny from '../types/ExplicitAny';
-import {
-  PrivateRpc,
-  PrivateRpcMessage,
-  PrivateRpcMethodName,
+import Rpc, {
   ProviderState,
-  PublicRpc,
-  PublicRpcMessage,
-  PublicRpcMethodMessage,
-  PublicRpcMethodName,
   rpcMap,
+  RpcMessage,
+  RpcMethodMessage,
+  RpcMethodName,
   RpcResult,
   toRpcResult,
 } from '../types/Rpc';
@@ -76,7 +72,7 @@ export default class QuillController {
   }
 
   ProviderState(
-    _message: PublicRpcMethodMessage<'quill_providerState'>,
+    _message: RpcMethodMessage<'quill_providerState'>,
   ): IReadableCell<ProviderState> {
     // TODO: (merge-ok) This should be per-provider (or maybe per-origin)
 
@@ -90,30 +86,7 @@ export default class QuillController {
     );
   }
 
-  privateRpc: PrivateRpc = {
-    setSelectedAddress: async (newSelectedAddress) => {
-      this.preferencesController.update({
-        selectedAddress: newSelectedAddress,
-      });
-
-      return 'ok';
-    },
-
-    createHDAccount: async () => {
-      return this.keyringController.createHDAccount();
-    },
-
-    isOnboardingComplete: async () => {
-      return this.keyringController.isOnboardingComplete();
-    },
-
-    setHDPhrase: async (phrase) => {
-      this.keyringController.setHDPhrase(phrase);
-      return 'ok';
-    },
-  };
-
-  publicRpc: PublicRpc = {
+  rpc: Rpc = {
     eth_chainId: async () => this.cells.chainId.read(),
 
     eth_coinbase: async (_message) =>
@@ -221,6 +194,24 @@ export default class QuillController {
 
       throw new Error('Unexpected end of providerState cell');
     },
+
+    setSelectedAddress: async ({ params: [selectedAddress] }) => {
+      this.preferencesController.update({ selectedAddress });
+      return 'ok';
+    },
+
+    createHDAccount: async (_message) => {
+      return this.keyringController.createHDAccount();
+    },
+
+    isOnboardingComplete: async (_message) => {
+      return this.keyringController.isOnboardingComplete();
+    },
+
+    setHDPhrase: async ({ params: [phrase] }) => {
+      this.keyringController.setHDPhrase(phrase);
+      return 'ok';
+    },
   };
 
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
@@ -229,38 +220,35 @@ export default class QuillController {
     //   messages relevant to that page)
     // - Make this configurable in Developer Settings
 
-    if (PublicRpcMessage.is(message)) {
-      return toOkError(async () => {
-        if (isType(message.method, PublicRpcMethodName)) {
-          assertType(message.method, PublicRpcMethodName);
+    if (RpcMessage.is(message)) {
+      // FIXME: duplication of checking message.method
+      if (isType(message.method, RpcMethodName)) {
+        let methodOrigin = rpcMap[message.method].origin;
 
+        if (methodOrigin === '<quill>') {
+          methodOrigin = window.location.origin;
+        }
+
+        if (methodOrigin !== message.origin && methodOrigin !== '*') {
+          // Don't respond if it's an origin mismatch
+          return;
+        }
+      }
+
+      return toOkError(async () => {
+        if (isType(message.method, RpcMethodName)) {
           assertType(
             message.params,
-            rpcMap.public[message.method].params as io.Type<ExplicitAny>,
+            rpcMap[message.method].params as io.Type<ExplicitAny>,
           );
 
-          return (this.publicRpc[message.method] as ExplicitAny)({
+          return (this.rpc[message.method] as ExplicitAny)({
             ...message,
-            Output: rpcMap.public[message.method].output,
+            Output: rpcMap[message.method].output,
           }) as unknown;
         }
 
         return this.networkController.fetch(message);
-      }).then(toRpcResult);
-    }
-
-    if (PrivateRpcMessage.is(message)) {
-      return toOkError(async () => {
-        assertType(message.method, PrivateRpcMethodName);
-
-        assertType(
-          message.params,
-          rpcMap.private[message.method].params as io.Type<ExplicitAny>,
-        );
-
-        return (this.privateRpc[message.method] as ExplicitAny)(
-          ...message.params,
-        );
       }).then(toRpcResult);
     }
 

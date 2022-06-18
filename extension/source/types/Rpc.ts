@@ -1,6 +1,5 @@
 import * as io from 'io-ts';
 
-import assert from '../helpers/assert';
 import { Result } from '../helpers/toOkError';
 import AsyncReturnType from './AsyncReturnType';
 import emptyTuple from './emptyTuple';
@@ -18,151 +17,118 @@ export const ProviderState = io.type({
 export type ProviderState = io.TypeOf<typeof ProviderState>;
 
 export const rpcMap = {
-  public: {
-    eth_chainId: {
-      params: emptyTuple,
-      output: io.string,
-    },
-    eth_accounts: {
-      params: emptyTuple,
-      output: io.array(io.string),
-    },
-    eth_coinbase: {
-      params: emptyTuple,
-      output: io.union([io.null, io.string]),
-    },
-    wallet_get_provider_state: {
-      params: emptyTuple,
-      output: io.type({
-        accounts: io.array(io.string),
-        chainId: io.string,
-        isUnlocked: io.boolean,
-      }),
-    },
-    eth_requestAccounts: {
-      params: emptyTuple,
-      output: io.array(io.string),
-    },
-
-    eth_sendTransaction: {
-      params: io.array(io.unknown), // TODO: SendTransactionParams
-      output: io.string,
-    },
-    eth_getTransactionByHash: {
-      params: io.tuple([io.string]),
-      output: io.type({
-        hash: io.string,
-        from: io.string,
-        nonce: io.string,
-        value: io.string,
-        gasLimit: io.string,
-        data: io.string,
-      }),
-    },
-    eth_getTransactionReceipt: {
-      params: io.tuple([io.string]),
-      output: io.type({
-        transactionHash: io.string,
-        transactionIndex: io.string,
-        blockHash: io.string,
-        blockNumber: io.string,
-        from: io.string,
-        to: io.string,
-        logs: io.array(io.unknown),
-        cumulativeGasUsed: io.string,
-        gasUsed: io.string,
-        status: io.string,
-        effectiveGasPrice: io.string,
-      }),
-    },
-    eth_setPreferredAggregator: {
-      params: io.tuple([io.string]),
-      output: io.literal('ok'),
-    },
-
-    debugMe: {
-      params: io.tuple([io.string, io.number, io.string]),
-      output: io.literal('ok'),
-    },
-    quill_providerState: {
-      params: io.tuple([
-        io.union([io.null, io.type({ differentFrom: ProviderState })]),
-      ]),
-      output: ProviderState,
-    },
+  eth_chainId: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.string,
   },
-  private: {
-    setSelectedAddress: {
-      params: io.tuple([/* newSelectedAddress */ io.string]),
-      output: io.literal('ok'),
-    },
-
-    createHDAccount: {
-      params: emptyTuple,
-      output: io.string,
-    },
-
-    isOnboardingComplete: {
-      params: emptyTuple,
-      output: io.boolean,
-    },
-
-    setHDPhrase: {
-      params: io.tuple([io.string]),
-      output: io.literal('ok'),
-    },
+  eth_accounts: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.array(io.string),
+  },
+  eth_coinbase: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.union([io.null, io.string]),
+  },
+  wallet_get_provider_state: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.type({
+      accounts: io.array(io.string),
+      chainId: io.string,
+      isUnlocked: io.boolean,
+    }),
+  },
+  eth_requestAccounts: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.array(io.string),
+  },
+  eth_sendTransaction: {
+    origin: '*',
+    params: io.array(io.unknown), // TODO: SendTransactionParams
+    output: io.string,
+  },
+  eth_getTransactionByHash: {
+    origin: '*',
+    params: io.tuple([io.string]),
+    output: io.type({
+      hash: io.string,
+      from: io.string,
+      nonce: io.string,
+      value: io.string,
+      gasLimit: io.string,
+      data: io.string,
+    }),
+  },
+  eth_getTransactionReceipt: {
+    origin: '*',
+    params: io.tuple([io.string]),
+    output: io.type({
+      transactionHash: io.string,
+      transactionIndex: io.string,
+      blockHash: io.string,
+      blockNumber: io.string,
+      from: io.string,
+      to: io.string,
+      logs: io.array(io.unknown),
+      cumulativeGasUsed: io.string,
+      gasUsed: io.string,
+      status: io.string,
+      effectiveGasPrice: io.string,
+    }),
+  },
+  eth_setPreferredAggregator: {
+    origin: '*',
+    params: io.tuple([io.string]),
+    output: io.literal('ok'),
+  },
+  debugMe: {
+    origin: '*',
+    params: io.tuple([io.string, io.number, io.string]),
+    output: io.literal('ok'),
+  },
+  quill_providerState: {
+    origin: '*',
+    params: io.tuple([
+      io.union([io.null, io.type({ differentFrom: ProviderState })]),
+    ]),
+    output: ProviderState,
+  },
+  setSelectedAddress: {
+    origin: '<quill>',
+    params: io.tuple([/* newSelectedAddress */ io.string]),
+    output: io.literal('ok'),
+  },
+  createHDAccount: {
+    origin: '<quill>',
+    params: emptyTuple,
+    output: io.string,
+  },
+  isOnboardingComplete: {
+    origin: '<quill>',
+    params: emptyTuple,
+    output: io.boolean,
+  },
+  setHDPhrase: {
+    origin: '<quill>',
+    params: io.tuple([io.string]),
+    output: io.literal('ok'),
   },
 };
-
-const publicMethodNames = Object.keys(rpcMap.public);
-const privateMethodNames = Object.keys(rpcMap.private);
-
-const overlappingMethodNames = publicMethodNames.filter((publicMethodName) =>
-  privateMethodNames.includes(publicMethodName),
-);
-
-// Check that public & private rpc don't overlap. This is relevant to security
-// because QuillController assumes that private methods can only be called
-// privately.
-assert(overlappingMethodNames.length === 0);
 
 export type RpcMap = typeof rpcMap;
 
-type Rpc = {
-  public: {
-    [K in keyof RpcMap['public']]: (
-      ...params: io.TypeOf<RpcMap['public'][K]['params']>
-    ) => Promise<io.TypeOf<RpcMap['public'][K]['output']>>;
-  };
-  private: {
-    [K in keyof RpcMap['private']]: (
-      ...params: io.TypeOf<RpcMap['private'][K]['params']>
-    ) => Promise<io.TypeOf<RpcMap['private'][K]['output']>>;
-  };
-};
-
-export const PrivateRpcMethodName: io.Type<keyof RpcMap['private']> = io.union(
-  Object.keys(rpcMap.private).map((k) => io.literal(k)) as ExplicitAny,
+export const RpcMethodName: io.Type<keyof RpcMap> = io.union(
+  Object.keys(rpcMap).map((k) => io.literal(k)) as ExplicitAny,
 );
 
-export type PrivateRpcMethodName = io.TypeOf<typeof PrivateRpcMethodName>;
+export type RpcMethodName = io.TypeOf<typeof RpcMethodName>;
 
-export const PublicRpcMethodName: io.Type<keyof RpcMap['public']> = io.union(
-  Object.keys(rpcMap.public).map((k) => io.literal(k)) as ExplicitAny,
-);
-
-export type PublicRpcMethodName = io.TypeOf<typeof PublicRpcMethodName>;
-
-export const PrivateRpcMessage = io.type({
-  type: io.literal('quill-private-rpc'),
-  method: io.string,
-  params: io.array(io.unknown),
-});
-
-export type PrivateRpcMessage = io.TypeOf<typeof PrivateRpcMessage>;
-
-export const PublicRpcMessage = io.type({
-  type: io.literal('quill-public-rpc'),
+export const RpcMessage = io.type({
+  type: io.literal('quill-rpc'),
   id: io.string,
   providerId: io.string,
   origin: io.string,
@@ -170,16 +136,16 @@ export const PublicRpcMessage = io.type({
   params: io.array(io.unknown),
 });
 
-export type PublicRpcMethodMessage<M extends PublicRpcMethodName> = Omit<
-  PublicRpcMessage,
+export type RpcMessage = io.TypeOf<typeof RpcMessage>;
+
+export type RpcMethodMessage<M extends RpcMethodName> = Omit<
+  RpcMessage,
   'method' | 'params'
 > & {
   method: M;
-  params: io.TypeOf<RpcMap['public'][M]['params']>;
-  Output: RpcMap['public'][M]['output'];
+  params: io.TypeOf<RpcMap[M]['params']>;
+  Output: RpcMap[M]['output'];
 };
-
-export type PublicRpcMessage = io.TypeOf<typeof PublicRpcMessage>;
 
 export const RpcResult = io.union([
   io.type({ ok: io.unknown }),
@@ -210,28 +176,24 @@ export function toRpcResult<T>(result: Result<T>): RpcResult<T> {
   return result;
 }
 
-export const PublicRpcResponse = io.type({
-  type: io.literal('quill-public-rpc-response'),
+export const RpcResponse = io.type({
+  type: io.literal('quill-rpc-response'),
   id: io.string,
   result: RpcResult,
 });
 
-export type PublicRpcResponse = io.TypeOf<typeof PublicRpcResponse>;
+export type RpcResponse = io.TypeOf<typeof RpcResponse>;
 
-export type PrivateRpc = Rpc['private'];
-
-export type PublicRpc = {
-  [M in PublicRpcMethodName]: (
-    message: PublicRpcMethodMessage<M>,
-  ) => ReturnType<Rpc['public'][M]>;
+type Rpc = {
+  [M in RpcMethodName]: (
+    message: RpcMethodMessage<M>,
+  ) => Promise<io.TypeOf<RpcMap[M]['output']>>;
 };
 
-type AnyAsyncFunction = (...params: ExplicitAny[]) => Promise<ExplicitAny>;
-
-export type Subset<Scope extends Record<string, AnyAsyncFunction>> = {
-  [M in keyof Scope]?: (
-    ...params: Parameters<Scope[M]>
-  ) => Promise<AsyncReturnType<Scope[M]> | undefined>;
+export type PartialRpc = {
+  [M in RpcMethodName]?: (
+    ...params: Parameters<Rpc[M]>
+  ) => Promise<AsyncReturnType<Rpc[M]> | undefined>;
 };
 
 export default Rpc;
