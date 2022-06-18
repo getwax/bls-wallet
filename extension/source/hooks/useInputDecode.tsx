@@ -2,8 +2,9 @@ import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { getRPCURL } from '../Controllers/utils';
+import { ChainId } from '../Controllers/constants';
 
-const getParitySigRegistry = (chainId: string) => {
+const getParitySigRegistry = (chainId: ChainId) => {
   const provider = new ethers.providers.JsonRpcProvider(getRPCURL(chainId));
   const address = '0x44691B39d1a75dC4E0A0346CBB15E310e6ED1E86';
   const abi = [
@@ -20,7 +21,7 @@ const getParitySigRegistry = (chainId: string) => {
   return new ethers.Contract(address, abi, provider);
 };
 
-const getMethodFromOnChainRegistry = async (data: string, chainId: string) => {
+const getMethodFromOnChainRegistry = async (data: string, chainId: ChainId) => {
   if (data === '0x') return 'SENDING ETH';
 
   const methodID = ethers.utils.hexDataSlice(data, 0, 4);
@@ -57,7 +58,7 @@ type UseInputDecodeValues = {
 export const useInputDecode = (
   functionData: string,
   to: string,
-  chainId: string,
+  chainId: ChainId,
 ): UseInputDecodeValues => {
   const [loading, setLoading] = useState<boolean>(true);
   const [method, setMethod] = useState<string>('CONTRACT INTERACTION');

@@ -3,6 +3,9 @@ import assert from '../helpers/assert';
 
 import isType from './isType';
 
+/**
+ * TODO: docstring
+ */
 export default function assertType<T>(
   value: unknown,
   type: io.Type<T>,
@@ -11,4 +14,12 @@ export default function assertType<T>(
     isType(value, type),
     `assertType failed, value: ${JSON.stringify(value)}, type: ${type.name}`,
   );
+}
+
+/**
+ * TODO: docstring
+ */
+export function assertTypeEcho<T>(value: unknown, type: io.Type<T>): T {
+  assertType(value, type);
+  return value;
 }

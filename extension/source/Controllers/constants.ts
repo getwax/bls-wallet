@@ -1,24 +1,48 @@
 import * as io from 'io-ts';
+import assert from '../helpers/assert';
+import ExplicitAny from '../types/ExplicitAny';
 
-import toHex from '../helpers/toHex';
+export const chains = [
+  {
+    name: 'arbitrum-rinkeby',
+    id: '0x66eeb',
+  },
+  {
+    name: 'arbitrum',
+    id: '0xa4b1',
+  },
+  {
+    name: 'optimism-kovan',
+    id: '0x45',
+  },
+  {
+    name: 'optimism',
+    id: '0xa',
+  },
+  {
+    name: 'local',
+    id: '0x7a69',
+  },
+] as const;
 
-// TODO: Clean this up
+export type ChainName = typeof chains[number]['name'];
+export type ChainId = typeof chains[number]['id'];
 
-export const CHAINS = {
-  ARBITRUM_RINKEBY: 'arbitrum-rinkeby',
-  ARBITRUM: 'arbitrum',
-  OPTIMISM_KOVAN: 'optimism-kovan',
-  OPTIMISM: 'optimism',
-  LOCAL: 'local',
-};
+export const ChainId: io.Type<ChainId> = io.union(
+  chains.map((c) => io.literal(c.id)) as ExplicitAny,
+);
 
-export const CHAINIDS = {
-  ARBITRUM_RINKEBY: toHex(421611),
-  ARBITRUM: toHex(42161),
-  OPTIMISM_KOVAN: toHex(69),
-  OPTIMISM: toHex(10),
-  LOCAL: toHex(31337),
-};
+export function chainNameToId(name: ChainName): ChainId {
+  const pair = chains.find((c) => c.name === name);
+  assert(pair !== undefined);
+  return pair.id;
+}
+
+export function chainIdToName(id: ChainId): ChainName {
+  const pair = chains.find((c) => c.id === id);
+  assert(pair !== undefined);
+  return pair.name;
+}
 
 export const ProviderConfig = io.type({
   /**
@@ -64,63 +88,60 @@ export const ProviderConfig = io.type({
 
 export type ProviderConfig = io.TypeOf<typeof ProviderConfig>;
 
-export const CHAIN_ID_NETWORK_MAP = {
-  [CHAINIDS.ARBITRUM_RINKEBY]: CHAINS.ARBITRUM_RINKEBY,
-  [CHAINIDS.ARBITRUM]: CHAINS.ARBITRUM,
-  [CHAINIDS.OPTIMISM_KOVAN]: CHAINS.OPTIMISM_KOVAN,
-  [CHAINIDS.OPTIMISM]: CHAINS.OPTIMISM,
-  [CHAINIDS.LOCAL]: CHAINS.LOCAL,
+type SupportedProviderConfig = ProviderConfig & {
+  chainId: ChainId;
+  networkKey: ChainName;
 };
 
-export const SUPPORTED_NETWORKS: Record<string, ProviderConfig> = {
-  [CHAINS.ARBITRUM_RINKEBY]: {
+export const SUPPORTED_NETWORKS: Record<ChainName, SupportedProviderConfig> = {
+  'arbitrum-rinkeby': {
     blockExplorerUrl: 'https://rinkeby-explorer.arbitrum.io',
-    chainId: CHAINIDS.ARBITRUM_RINKEBY,
+    chainId: chainNameToId('arbitrum-rinkeby'),
     displayName: 'Arbitrum Test Network',
     logo: '',
     rpcTarget: 'https://rinkeby.arbitrum.io/rpc',
     ticker: 'ARETH',
     tickerName: 'Arbitrum Ethereum',
-    networkKey: CHAINS.ARBITRUM_RINKEBY,
+    networkKey: 'arbitrum-rinkeby',
   },
-  [CHAINS.ARBITRUM]: {
+  arbitrum: {
     blockExplorerUrl: 'https://explorer.arbitrum.io',
-    chainId: CHAINIDS.ARBITRUM,
+    chainId: chainNameToId('arbitrum'),
     displayName: 'Arbitrum One',
     logo: '',
     rpcTarget: `https://arb1.arbitrum.io/rpc`,
     ticker: 'ETH',
     tickerName: 'Ethereum',
-    networkKey: CHAINS.ARBITRUM,
+    networkKey: 'arbitrum',
   },
-  [CHAINS.OPTIMISM_KOVAN]: {
+  'optimism-kovan': {
     blockExplorerUrl: 'https://kovan-optimistic.etherscan.io',
-    chainId: CHAINIDS.OPTIMISM_KOVAN,
+    chainId: chainNameToId('optimism-kovan'),
     displayName: 'Optimism Test Network',
     logo: '',
     rpcTarget: 'https://kovan.optimism.io',
     ticker: 'KOR',
     tickerName: '?',
-    networkKey: CHAINS.OPTIMISM_KOVAN,
+    networkKey: 'optimism-kovan',
   },
-  [CHAINS.OPTIMISM]: {
+  optimism: {
     blockExplorerUrl: 'https://optimistic.etherscan.io',
-    chainId: CHAINIDS.OPTIMISM,
+    chainId: chainNameToId('optimism'),
     displayName: 'Optimism',
     logo: '',
     rpcTarget: 'https://mainnet.optimism.io',
     ticker: 'ETH',
     tickerName: 'Ethereum',
-    networkKey: CHAINS.OPTIMISM,
+    networkKey: 'optimism',
   },
-  [CHAINS.LOCAL]: {
+  local: {
     blockExplorerUrl: 'N/A',
-    chainId: CHAINIDS.LOCAL,
+    chainId: chainNameToId('local'),
     displayName: 'Local Network',
     logo: '',
     rpcTarget: 'http://localhost:8545',
     ticker: 'ETH',
     tickerName: 'Ethereum',
-    networkKey: CHAINS.LOCAL,
+    networkKey: 'local',
   },
 };

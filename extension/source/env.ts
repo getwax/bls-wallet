@@ -1,4 +1,6 @@
 import { validateConfig } from 'bls-wallet-clients';
+import { assertTypeEcho } from './cells/assertType';
+import { ChainId } from './Controllers/constants';
 import { requireEnv } from './helpers/envTools';
 import toHex from './helpers/toHex';
 
@@ -8,9 +10,12 @@ export const PRIVATE_KEY_STORAGE_KEY = requireEnv(
 );
 
 export const AGGREGATOR_URL = requireEnv(process.env.AGGREGATOR_URL);
-export const DEFAULT_CHAIN_ID_HEX = toHex(
-  parseInt(requireEnv(process.env.DEFAULT_CHAIN_ID)),
+
+export const DEFAULT_CHAIN_ID_HEX = assertTypeEcho(
+  toHex(parseInt(requireEnv(process.env.DEFAULT_CHAIN_ID))),
+  ChainId,
 );
+
 export const CREATE_TX_URL = requireEnv(process.env.CREATE_TX_URL);
 
 export const NETWORK_CONFIG = validateConfig(
