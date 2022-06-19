@@ -2,6 +2,8 @@ import assert, { softAssert } from '../helpers/assert';
 import { IReadableCell } from './ICell';
 import MemoryCell from './MemoryCell';
 
+// FIXME: Don't longPoll actively, instead make use of a FormulaCell (or
+// otherwise) to only longPoll when needed
 export default function LongPollingCell<T>(
   longPoll: (opt?: { differentFrom: T }) => Promise<T>,
 ): IReadableCell<T> {
