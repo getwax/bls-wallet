@@ -30,7 +30,6 @@ import AggregatorController from './AggregatorController';
 import CurrencyConversionCell, {
   CurrencyConversionConfig,
 } from './CurrencyConversionCell';
-import ensureType from '../helpers/ensureType';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -76,28 +75,9 @@ export default class QuillController {
       this.keyringController,
     );
 
-    this.rpc = this.Rpc();
-
     this.watchThings();
-  }
 
-  ProviderState(
-    _message: RpcMethodMessage<'quill_providerState'>,
-  ): IReadableCell<ProviderState> {
-    // TODO: (merge-ok) This should be per-provider (or maybe per-origin)
-
-    return new FormulaCell(
-      {
-        chainId: this.cells.chainId,
-        selectedAddress: this.cells.selectedAddress,
-        breakOnAssertionFailures: this.cells.breakOnAssertionFailures,
-      },
-      (cells) => cells,
-    );
-  }
-
-  Rpc = () =>
-    ensureType<RpcImpl>()({
+    this.rpc = {
       eth_chainId: async () => this.cells.chainId.read(),
       eth_sendTransaction: this.aggregatorController.rpc.eth_sendTransaction,
 
@@ -169,7 +149,23 @@ export default class QuillController {
       },
 
       setSelectedAddress: this.preferencesController.rpc.setSelectedAddress,
-    });
+    };
+  }
+
+  ProviderState(
+    _message: RpcMethodMessage<'quill_providerState'>,
+  ): IReadableCell<ProviderState> {
+    // TODO: (merge-ok) This should be per-provider (or maybe per-origin)
+
+    return new FormulaCell(
+      {
+        chainId: this.cells.chainId,
+        selectedAddress: this.cells.selectedAddress,
+        breakOnAssertionFailures: this.cells.breakOnAssertionFailures,
+      },
+      (cells) => cells,
+    );
+  }
 
   // TODO: message -> request
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
