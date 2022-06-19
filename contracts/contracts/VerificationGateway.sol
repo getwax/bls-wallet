@@ -52,11 +52,12 @@ contract VerificationGateway
      */
     constructor(
         IBLS bls,
-        address blsWalletImpl
+        address blsWalletImpl,
+        ProxyAdmin proxyAdmin
     ) {
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
-        walletProxyAdmin = new ProxyAdmin();
+        walletProxyAdmin = proxyAdmin;
     }
 
     /** Throw if bundle not valid or signature verification fails */

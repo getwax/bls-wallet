@@ -19,7 +19,7 @@ import {
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
-import { VerificationGateway, BLSOpen } from "../../typechain";
+import { VerificationGateway, BLSOpen, ProxyAdmin } from "../../typechain";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -68,14 +68,20 @@ export default class Fixture {
     } catch (e) {}
 
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
+    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
+    const proxyAdmin = (await ProxyAdmin.deploy()) as ProxyAdmin;
+    await proxyAdmin.deployed();
     // deploy Verification Gateway
     const verificationGateway = (await create2Fixture.create2Contract(
       "VerificationGateway",
       ethers.utils.defaultAbiCoder.encode(
-        ["address", "address"],
-        [bls.address, blsWalletImpl.address],
+        ["address", "address", "address"],
+        [bls.address, blsWalletImpl.address, proxyAdmin.address],
       ),
     )) as VerificationGateway;
+    await (
+      await proxyAdmin.transferOwnership(verificationGateway.address)
+    ).wait();
 
     // deploy BLSExpander Gateway
     const blsExpander = await create2Fixture.create2Contract(

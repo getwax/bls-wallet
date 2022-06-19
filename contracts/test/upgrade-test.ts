@@ -76,6 +76,10 @@ describe("Upgrade", async function () {
     // Deploy new verification gateway
     const create2Fixture = Create2Fixture.create();
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
+    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
+    const proxyAdmin2 = (await ProxyAdmin.deploy()) as ProxyAdmin;
+    await proxyAdmin2.deployed();
+
     const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
     const VerificationGateway = await ethers.getContractFactory(
       "VerificationGateway",
@@ -83,7 +87,9 @@ describe("Upgrade", async function () {
     const vg2 = await VerificationGateway.deploy(
       bls.address,
       blsWalletImpl.address,
+      proxyAdmin2.address
     );
+    await (await proxyAdmin2.transferOwnership(vg2.address)).wait();
 
     // Recreate hubble bls signer
     const walletOldVg = await fx.lazyBlsWallets[0]();
