@@ -1,18 +1,9 @@
 import { Aggregator } from 'bls-wallet-clients';
 import { AGGREGATOR_URL } from '../env';
 import ensureType from '../helpers/ensureType';
-import { PartialRpcImpl } from '../types/Rpc';
+import { PartialRpcImpl, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
-
-export type SendTransactionParams = {
-  from: string;
-  to: string;
-  gas?: string;
-  gasPrice?: string;
-  value?: string;
-  data: string;
-};
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -36,13 +27,17 @@ export default class AggregatorController {
 
   rpc = ensureType<PartialRpcImpl>()({
     eth_sendTransaction: async ({ providerId, params }) => {
-      // TODO: rtti for SendTransactionParams
-      const txParams = params as SendTransactionParams[];
-      const { from } = txParams[0];
+      // FIXME: We should not be assuming that the first from is the same as all
+      // the other froms!
+      // Supporting multiple froms is actually super awesome - we can show off
+      // client-side aggregation and implement contractless transaction pairs
+      // (or rings!), ie account A sends asset X in exchange for account B
+      // sending asset Y
+      const { from } = params[0];
 
-      const actions = txParams.map((tx) => {
+      const actions = params.map((tx) => {
         return {
-          ethValue: tx.value || '0',
+          ethValue: tx.value ?? '0',
           contractAddress: tx.to,
           encodedFunction: tx.data,
         };
@@ -62,9 +57,9 @@ export default class AggregatorController {
       }
 
       this.knownTransactions[result.hash] = {
-        ...txParams[0],
+        ...params[0],
         nonce,
-        value: txParams[0].value || '0',
+        value: params[0].value ?? '0',
         aggregatorUrl,
       };
 

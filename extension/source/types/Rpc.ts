@@ -16,6 +16,17 @@ export const ProviderState = io.type({
 
 export type ProviderState = io.TypeOf<typeof ProviderState>;
 
+export const SendTransactionParams = io.type({
+  from: io.string,
+  to: io.string,
+  gas: io.union([io.undefined, io.string]),
+  gasPrice: io.union([io.undefined, io.string]),
+  value: io.union([io.undefined, io.string]),
+  data: io.string,
+});
+
+export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
+
 export const rpcMap = {
   eth_chainId: {
     origin: '*',
@@ -39,7 +50,7 @@ export const rpcMap = {
   },
   eth_sendTransaction: {
     origin: '*',
-    params: io.array(io.unknown), // TODO: SendTransactionParams
+    params: io.array(SendTransactionParams),
     output: io.string,
   },
   eth_getTransactionByHash: {

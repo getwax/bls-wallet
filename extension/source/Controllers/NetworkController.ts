@@ -28,6 +28,7 @@ type RpcMessage = io.TypeOf<typeof RpcMessage>;
 export default class NetworkController
   implements ethers.providers.ExternalProvider
 {
+  // TODO: Move / deduplicate these cells
   ticker: IReadableCell<string>;
   chainId: IReadableCell<string>;
   blockNumber: IReadableCell<number>;
