@@ -73,17 +73,12 @@ export default class PreferencesController {
    * @param address - address of the user
    *
    */
-  async createUser({
-    preferredCurrency,
-    theme,
-    locale,
-    address,
-  }: {
-    preferredCurrency: string;
-    theme: Theme;
-    locale: string;
-    address: string;
-  }) {
+  async createUser(
+    address: string,
+    locale: string,
+    preferredCurrency: string,
+    theme: Theme,
+  ) {
     const newUserPreferences = this.AddressPreferences(address);
 
     assert(
