@@ -120,7 +120,7 @@ export default class QuillController {
         return aggregatorRes;
       }
 
-      const networkRes = await this.networkController.request(message);
+      const networkRes = await this.networkController.requestStrict(message);
       assertType(networkRes, message.Output);
 
       return networkRes;
@@ -134,7 +134,7 @@ export default class QuillController {
         return aggregatorRes;
       }
 
-      const networkRes = await this.networkController.request(message);
+      const networkRes = await this.networkController.requestStrict(message);
       assertType(networkRes, message.Output);
 
       return networkRes;
@@ -245,7 +245,7 @@ export default class QuillController {
           }) as unknown;
         }
 
-        return this.networkController.request(message);
+        return this.networkController.requestStrict(message);
       }).then(toRpcResult);
     }
 
