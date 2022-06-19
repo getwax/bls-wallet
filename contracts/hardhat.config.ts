@@ -53,11 +53,11 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.10",
+        version: "0.8.15",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000,
+            runs: 1,
           },
         },
       },
@@ -85,6 +85,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       initialBaseFeePerGas: 0, // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
       accounts,
+      blockGasLimit: 30_000_000,
     },
     gethDev: {
       url: `http://localhost:8545`,

@@ -28,7 +28,7 @@ interface IWallet {
     );
 
     function recoveryHash() external returns (bytes32);
-    function recover(uint256[4] calldata newBLSKey) external;
+    function recover() external;
 
     // prepares gateway to be set (after pending timestamp)
     function setTrustedGateway(address gateway) external;
@@ -39,16 +39,3 @@ interface IWallet {
     function approvedProxyAdminFunctionHash() external view returns (bytes32);
     function clearApprovedProxyAdminFunctionHash() external;
 }
-
-/** Interface for bls-specific functions
- */
-interface IBLSWallet is IWallet {
-    // type BLSPublicKey is uint256[4]; // The underlying type for a user defined value type has to be an elementary value type.
-
-    function latchBLSPublicKey(
-        uint256[4] memory blsKey
-    ) external;
-
-    function getBLSPublicKey() external view returns (uint256[4] memory);
- }
- 
