@@ -1,10 +1,10 @@
 import type { providers } from 'ethers';
-import type QuillProvider from '../PageContentScript/QuillProvider';
+import type QuillEthereumProvider from '../ethereumvider';
 
 declare global {
   interface Window {
     ethereum?:
-      | QuillProvider
+      | QuillEthereumProvider
       | (providers.ExternalProvider & { breakOnAssertionFailures: boolean })
       | { breakOnAssertionFailures: boolean };
   }

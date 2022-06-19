@@ -56,12 +56,8 @@ import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 function addInPageScript() {
   const container = document.head || document.documentElement;
   const pageContentScriptTag = document.createElement('script');
-  pageContentScriptTag.src = runtime.getURL('js/pageContentScript.bundle.js');
+  pageContentScriptTag.src = runtime.getURL('js/ethereum.bundle.js');
   container.insertBefore(pageContentScriptTag, container.children[0]);
-  // Can remove after script injection
-  // TODO: But why? The script is there, so removing the tag is confusing. Is
-  // there some advantage to doing this that makes up for that confusion?
-  container.removeChild(pageContentScriptTag);
 }
 
 function relayRpcRequests() {

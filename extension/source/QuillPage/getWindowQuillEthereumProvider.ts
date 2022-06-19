@@ -1,5 +1,7 @@
 import assert from '../helpers/assert';
-import QuillProvider from '../PageContentScript/QuillProvider';
+import type QuillEthereumProvider from '../QuillEthereumProvider';
+
+// FIXME: This shouldn't be necessary
 
 const ethereumInitialziedEvent = 'ethereum#initialized';
 
@@ -27,7 +29,7 @@ function waitForWindowEthererum(): Promise<void> {
   });
 }
 
-export default async function getWindowQuillProvider(): Promise<QuillProvider> {
+export default async function getWindowQuillEthereumProvider(): Promise<QuillEthereumProvider> {
   if (!window.ethereum) {
     await waitForWindowEthererum();
   }

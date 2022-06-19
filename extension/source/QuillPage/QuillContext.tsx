@@ -2,9 +2,8 @@ import * as io from 'io-ts';
 import React from 'react';
 import { ethers } from 'ethers';
 
-import getWindowQuillProvider from './getWindowQuillProvider';
+import getWindowQuillEthereumProvider from './getWindowQuillEthereumProvider';
 import mapValues from '../helpers/mapValues';
-import QuillProvider from '../PageContentScript/QuillProvider';
 import ExplicitAny from '../types/ExplicitAny';
 import { RpcClient, rpcMap } from '../types/Rpc';
 import { IReadableCell } from '../cells/ICell';
@@ -15,10 +14,11 @@ import { FormulaCell } from '../cells/FormulaCell';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import TransformCell from '../cells/TransformCell';
+import type QuillEthereumProvider from '../QuillEthereumProvider';
 
 type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
-function getQuillContextValue(provider: QuillProvider) {
+function getQuillContextValue(provider: QuillEthereumProvider) {
   const rpc = mapValues(rpcMap, ({ params: paramsType, output }, method) => {
     return async (...params: unknown[]) => {
       assertType(params, paramsType as unknown as io.Type<unknown[]>);
@@ -80,7 +80,7 @@ function getQuillContextValue(provider: QuillProvider) {
 }
 
 const QuillContext = React.createContext<QuillContextValue>(
-  // QuillProvider render will ensure this is set properly
+  // QuillEthereumProvider render will ensure this is set properly
   // before other components load.
   {} as QuillContextValue,
 );
@@ -98,7 +98,7 @@ export function QuillContextProvider({ children }: Props) {
 
   React.useEffect(() => {
     (async () => {
-      const provider = await getWindowQuillProvider();
+      const provider = await getWindowQuillEthereumProvider();
       const val = getQuillContextValue(provider);
       setCtxVal(val);
     })();
@@ -109,6 +109,7 @@ export function QuillContextProvider({ children }: Props) {
     return <div>Loading...</div>;
   }
 
+  // TODO: Improve this
   (window as any).quillCtx = ctxVal;
 
   return (

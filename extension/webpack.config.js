@@ -29,7 +29,7 @@ const extensionReloaderPlugin =
         entries: {
           // TODO: reload manifest on update
           contentScript: 'contentScript',
-          pageContentScript: 'pageContentScript',
+          ethereum: 'ethereum',
           background: 'background',
           quillPage: ['popup', 'quillPage', 'confirm'],
         },
@@ -70,7 +70,7 @@ module.exports = {
     manifest: path.join(sourcePath, 'manifest.json'),
     background: path.join(sourcePath, 'Controllers', 'background.ts'),
     contentScript: path.join(sourcePath, 'contentScript.ts'),
-    pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
+    ethereum: path.join(sourcePath, 'ethereum.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
     quillPage: path.join(sourcePath, 'QuillPage', 'index.tsx'),
     confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
