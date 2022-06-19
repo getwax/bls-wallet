@@ -11,7 +11,7 @@ import "./interfaces/IWallet.sol";
 /** Minimal upgradable smart contract wallet.
     Generic calls can only be requested by its trusted gateway.
  */
-contract BLSWallet is Initializable, IBLSWallet
+contract BLSWallet is Initializable, IWallet
 {
     uint256 public nonce;
     bytes32 public recoveryHash;
@@ -22,18 +22,12 @@ contract BLSWallet is Initializable, IBLSWallet
     uint256 pendingPAFunctionTime;
 
     // BLS variables
-    uint256[4] public blsPublicKey;
-    uint256[4] pendingBLSPublicKey;
-    uint256 pendingBLSPublicKeyTime;
     address public trustedBLSGateway;
     address pendingBLSGateway;
     uint256 pendingGatewayTime;
 
     event PendingRecoveryHashSet(
         bytes32 pendingRecoveryHash
-    );
-    event PendingBLSKeySet(
-        uint256[4] pendingBLSKey
     );
     event PendingGatewaySet(
         address pendingGateway
@@ -45,10 +39,6 @@ contract BLSWallet is Initializable, IBLSWallet
     event RecoveryHashUpdated(
         bytes32 oldHash,
         bytes32 newHash
-    );
-    event BLSKeySet(
-        uint256[4] oldBLSKey,
-        uint256[4] newBLSKey
     );
     event GatewayUpdated(
         address oldGateway,
@@ -63,37 +53,10 @@ contract BLSWallet is Initializable, IBLSWallet
     ) external initializer {
         nonce = 0;
         trustedBLSGateway = blsGateway;
-        pendingGatewayTime = type(uint256).max;
-        pendingPAFunctionTime = type(uint256).max;
-        pendingRecoveryHashTime = type(uint256).max;
-        pendingBLSPublicKeyTime = type(uint256).max;
-    }
-
-    /** */
-    function latchBLSPublicKey(
-        uint256[4] memory blsKey
-    ) public onlyTrustedGateway {
-        require(isZeroBLSKey(blsPublicKey), "BLSWallet: public key already set");
-        blsPublicKey = blsKey;
-    }
-
-    function isZeroBLSKey(uint256[4] memory blsKey) public pure returns (bool) {
-        bool isZero = true;
-        for (uint256 i=0; isZero && i<4; i++) {
-            isZero = (blsKey[i] == 0);
-        }
-        return isZero;
     }
 
     receive() external payable {}
     fallback() external payable {}
-
-    /**
-    BLS public key format, contract can be upgraded for other types
-     */
-    function getBLSPublicKey() external view returns (uint256[4] memory) {
-        return blsPublicKey;
-    }
 
     /**
     Wallet can update its recovery hash
@@ -110,18 +73,6 @@ contract BLSWallet is Initializable, IBLSWallet
             emit PendingRecoveryHashSet(pendingRecoveryHash);
         }
     }
-
-    /**
-    Wallet can update its BLS key
-     */
-    function setBLSPublicKey(uint256[4] memory blsKey) public onlyThis {
-        require(isZeroBLSKey(blsKey) == false, "BLSWallet: blsKey must be non-zero");
-        pendingBLSPublicKey = blsKey;
-        pendingBLSPublicKeyTime = block.timestamp + 604800; // 1 week from now
-        emit PendingBLSKeySet(pendingBLSPublicKey);
-    }
-
-    // Set bls key with gateway? Or put delay of gateway bls key in bls-gateway.
 
     /**
     Wallet can migrate to a new gateway, eg additional signature support
@@ -145,51 +96,45 @@ contract BLSWallet is Initializable, IBLSWallet
     Set results of any pending set operation if their respective timestamp has elapsed.
      */
     function setAnyPending() public {
-        if (block.timestamp > pendingRecoveryHashTime) {
+        if (pendingRecoveryHashTime != 0 &&
+            block.timestamp > pendingRecoveryHashTime
+        ) {
             bytes32 previousRecoveryHash = recoveryHash;
             recoveryHash = pendingRecoveryHash;
             clearPendingRecoveryHash();
             emit RecoveryHashUpdated(previousRecoveryHash, recoveryHash);
         }
-        if (block.timestamp > pendingBLSPublicKeyTime) {
-            uint256[4] memory previousBLSPublicKey = blsPublicKey;
-            blsPublicKey = pendingBLSPublicKey;
-            pendingBLSPublicKeyTime = type(uint256).max;
-            pendingBLSPublicKey = [0,0,0,0];
-            emit BLSKeySet(previousBLSPublicKey, blsPublicKey);
-        }
-        if (block.timestamp > pendingGatewayTime) {
+        if (pendingGatewayTime != 0 &&
+            block.timestamp > pendingGatewayTime
+        ) {
             address previousGateway = trustedBLSGateway;
             trustedBLSGateway = pendingBLSGateway;
-            pendingGatewayTime = type(uint256).max;
+            pendingGatewayTime = 0;
             pendingBLSGateway = address(0);
             emit GatewayUpdated(previousGateway, trustedBLSGateway);
         }
-        if (block.timestamp > pendingPAFunctionTime) {
+        if (
+            pendingPAFunctionTime != 0 &&
+            block.timestamp > pendingPAFunctionTime
+        ) {
             approvedProxyAdminFunctionHash = pendingPAFunctionHash;
-            pendingPAFunctionTime = type(uint256).max;
+            pendingPAFunctionTime = 0;
             pendingPAFunctionHash = 0;
             emit ProxyAdminFunctionHashApproved(approvedProxyAdminFunctionHash);
         }
     }
 
     function clearPendingRecoveryHash() internal {
-        pendingRecoveryHashTime = type(uint256).max;
+        pendingRecoveryHashTime = 0;
         pendingRecoveryHash = bytes32(0);
     }
 
-    function recover(
-        uint256[4] calldata newBLSKey
-    ) public onlyTrustedGateway {
-        // set new bls key
-        blsPublicKey = newBLSKey;
+    function recover() public onlyTrustedGateway {
         // clear any pending operations
         clearPendingRecoveryHash();
-        pendingBLSPublicKeyTime = type(uint256).max;
-        pendingBLSPublicKey = [0,0,0,0];
-        pendingGatewayTime = type(uint256).max;
+        pendingGatewayTime = 0;
         pendingBLSGateway = address(0);
-        pendingPAFunctionTime = type(uint256).max;
+        pendingPAFunctionTime = 0;
         pendingPAFunctionHash = 0;
     }
 

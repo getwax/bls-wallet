@@ -87,7 +87,7 @@ describe("Upgrade", async function () {
     const vg2 = await VerificationGateway.deploy(
       bls.address,
       blsWalletImpl.address,
-      proxyAdmin2.address
+      proxyAdmin2.address,
     );
     await (await proxyAdmin2.transferOwnership(vg2.address)).wait();
 
@@ -298,7 +298,7 @@ describe("Upgrade", async function () {
     expect(await vg1.walletFromHash(hash1)).to.equal(wallet1.address);
     expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash1);
 
-    // wallet 2 signs message containing address of wallet 1
+    // wallet 2 bls key signs message containing address of wallet 1
     const addressMessage = solidityPack(["address"], [wallet1.address]);
     const addressSignature = wallet2.signMessage(addressMessage);
 
@@ -337,6 +337,9 @@ describe("Upgrade", async function () {
     // wallet 1's hash is pointed to null address
     // wallet 2's hash is now pointed to wallet 1's address
     const hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
+
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
+    await fx.call(wallet1, vg1, "setPendingBLSKeyForWallet", [], 2);
 
     expect(await vg1.walletFromHash(hash1)).to.equal(
       ethers.constants.AddressZero,

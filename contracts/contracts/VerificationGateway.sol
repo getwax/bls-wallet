@@ -66,11 +66,11 @@ contract VerificationGateway
     constructor(
         IBLS bls,
         address blsWalletImpl,
-        ProxyAdmin proxyAdmin
+        address proxyAdmin
     ) {
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
-        walletProxyAdmin = proxyAdmin;
+        walletProxyAdmin = ProxyAdmin(proxyAdmin);
     }
 
     /** Throw if bundle not valid or signature verification fails */
@@ -114,22 +114,22 @@ contract VerificationGateway
         require(blsLib.isZeroBLSKey(publicKey) == false, "VG: publicKey must be non-zero");
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
-        // if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
+        if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
             // set it instantly
             safeSetWallet(messageSenderSignature, publicKey, wallet);
-        // }
-        // else { // wallet already has a key registered, set after delay
-        //     pendingMessageSenderSignatureFromHash[existingHash] = messageSenderSignature;
-        //     pendingBLSPublicKeyFromHash[existingHash] = publicKey;
-        //     pendingBLSPublicKeyTimeFromHash[existingHash] = block.timestamp + 604800; // 1 week from now
-        //     emit PendingBLSKeySet(existingHash, publicKey);
-        // }
+        }
+        else { // wallet already has a key registered, set after delay
+            pendingMessageSenderSignatureFromHash[existingHash] = messageSenderSignature;
+            pendingBLSPublicKeyFromHash[existingHash] = publicKey;
+            pendingBLSPublicKeyTimeFromHash[existingHash] = block.timestamp + 604800; // 1 week from now
+            emit PendingBLSKeySet(existingHash, publicKey);
+        }
     }
 
     function setPendingBLSKeyForWallet() public {
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
-        require(existingHash != bytes32(0));
+        require(existingHash != bytes32(0), "VG: hash does not exist for caller");
         if (
             (pendingBLSPublicKeyTimeFromHash[existingHash] != 0) &&
             (block.timestamp > pendingBLSPublicKeyTimeFromHash[existingHash])
@@ -205,7 +205,7 @@ contract VerificationGateway
         );
         if (recoveryHash == wallet.recoveryHash()) {
             safeSetWallet(walletAddressSignature, newBLSKey, wallet);
-            wallet.recover(newBLSKey);
+            wallet.recover();
         }
     }
 
@@ -296,7 +296,6 @@ contract VerificationGateway
                 getInitializeData()
             )));
             updateWalletHashMappings(publicKeyHash, blsWallet);
-            // IBLSWallet(address(blsWallet)).latchBLSPublicKey(publicKey);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
