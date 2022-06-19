@@ -78,7 +78,7 @@ export default class NetworkController
       body: JSON.stringify({
         method: body.method,
         jsonrpc: '2.0',
-        id: body.id, // TODO: Do we need to set id if body.id is not provided?
+        id: body.id,
         params: body.params,
       }),
     });
