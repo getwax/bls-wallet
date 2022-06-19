@@ -98,16 +98,6 @@ export default class QuillController {
     eth_coinbase: async (_message) =>
       (await this.cells.selectedAddress.read()) || null,
 
-    wallet_get_provider_state: async (_message) => {
-      const selectedAddress = await this.cells.selectedAddress.read();
-
-      return {
-        accounts: selectedAddress ? [selectedAddress] : [],
-        chainId: (await this.networkController.state.read()).chainId,
-        isUnlocked: !!selectedAddress,
-      };
-    },
-
     eth_sendTransaction: async (message) => {
       return this.aggregatorController.rpc.eth_sendTransaction(message);
     },

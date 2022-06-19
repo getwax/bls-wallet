@@ -32,15 +32,6 @@ export const rpcMap = {
     params: emptyTuple,
     output: io.union([io.null, io.string]),
   },
-  wallet_get_provider_state: {
-    origin: '*',
-    params: emptyTuple,
-    output: io.type({
-      accounts: io.array(io.string),
-      chainId: io.string,
-      isUnlocked: io.boolean,
-    }),
-  },
   eth_requestAccounts: {
     origin: '*',
     params: emptyTuple,
