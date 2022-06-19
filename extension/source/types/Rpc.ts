@@ -28,29 +28,17 @@ export const SendTransactionParams = io.type({
 export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
 
 export const rpcMap = {
+  // QuillController
+  // - ALL rpc methods are technically implemented by QuillController. It
+  //   defines the delegation to other controllers.
+  // - Some of these methods, (e.g. eth_getTransactionByHash) are mostly handled
+  //   by other controllers (e.g. AggregatorController). However, they aren't
+  //   listed under the other controller unless QuillController delegates to
+  //   them unconditionally.
+
   eth_chainId: {
     origin: '*',
     params: emptyTuple,
-    output: io.string,
-  },
-  eth_accounts: {
-    origin: '*',
-    params: emptyTuple,
-    output: io.array(io.string),
-  },
-  eth_coinbase: {
-    origin: '*',
-    params: emptyTuple,
-    output: io.union([io.null, io.string]),
-  },
-  eth_requestAccounts: {
-    origin: '*',
-    params: emptyTuple,
-    output: io.array(io.string),
-  },
-  eth_sendTransaction: {
-    origin: '*',
-    params: io.array(SendTransactionParams),
     output: io.string,
   },
   eth_getTransactionByHash: {
@@ -82,11 +70,6 @@ export const rpcMap = {
       effectiveGasPrice: io.string,
     }),
   },
-  eth_setPreferredAggregator: {
-    origin: '*',
-    params: io.tuple([io.string]),
-    output: io.literal('ok'),
-  },
   debugMe: {
     origin: '*',
     params: io.tuple([io.string, io.number, io.string]),
@@ -99,10 +82,23 @@ export const rpcMap = {
     ]),
     output: ProviderState,
   },
-  setSelectedAddress: {
-    origin: '<quill>',
-    params: io.tuple([/* newSelectedAddress */ io.string]),
-    output: io.literal('ok'),
+
+  // KeyringController
+
+  eth_accounts: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.array(io.string),
+  },
+  eth_coinbase: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.union([io.null, io.string]),
+  },
+  eth_requestAccounts: {
+    origin: '*',
+    params: emptyTuple,
+    output: io.array(io.string),
   },
   createHDAccount: {
     origin: '<quill>',
@@ -117,6 +113,27 @@ export const rpcMap = {
   setHDPhrase: {
     origin: '<quill>',
     params: io.tuple([io.string]),
+    output: io.literal('ok'),
+  },
+
+  // AggregatorController
+
+  eth_sendTransaction: {
+    origin: '*',
+    params: io.array(SendTransactionParams),
+    output: io.string,
+  },
+  eth_setPreferredAggregator: {
+    origin: '*',
+    params: io.tuple([io.string]),
+    output: io.literal('ok'),
+  },
+
+  // PreferencesController
+
+  setSelectedAddress: {
+    origin: '<quill>',
+    params: io.tuple([/* newSelectedAddress */ io.string]),
     output: io.literal('ok'),
   },
 };
