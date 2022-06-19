@@ -10,6 +10,7 @@ import LongPollingCell from '../cells/LongPollingCell';
 import { createRandomId } from '../Controllers/utils';
 import { ProviderState, RpcMessage, RpcResponse } from '../types/Rpc';
 
+// TODO: Move inside Rpc.ts / deduplicate
 const RequestBody = io.type({
   method: io.string,
   params: io.union([io.undefined, io.array(io.unknown)]),
@@ -31,6 +32,7 @@ export default class QuillProvider extends (EventEmitter as new () => TypedEvent
   constructor() {
     super();
 
+    // TODO: Generalize this
     const state = LongPollingCell<ProviderState>(
       (opt) =>
         this.request({

@@ -168,6 +168,7 @@ export default class QuillController {
         params: [opt],
       } = message;
 
+      // TODO: Move this long polling idea inside cells
       for await (const $providerState of providerState) {
         if (
           opt &&
@@ -260,6 +261,10 @@ export default class QuillController {
 
   private watchThings() {
     (async () => {
+      // TODO: Don't store the block number. Just use LongPollingCell to provide
+      // to consumers, that way we don't need to actively track the block number
+      // if nothing needs it.
+
       const storedBlockNumber = this.storage.Cell(
         'block-number',
         io.number,
@@ -280,6 +285,7 @@ export default class QuillController {
         false,
       );
 
+      // TODO: Use .forEach
       for await (const brk of breakOnAssertionFailures) {
         window.ethereum.breakOnAssertionFailures = brk;
       }
