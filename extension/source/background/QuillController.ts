@@ -1,6 +1,7 @@
 /* eslint-disable no-empty-pattern */
 
 import * as io from 'io-ts';
+import { ethers } from 'ethers';
 
 import { getUserLanguage } from './utils';
 import NetworkController from './NetworkController';
@@ -37,6 +38,13 @@ export default class QuillController {
   preferencesController: PreferencesController;
   aggregatorController: AggregatorController;
   currencyConversion: IReadableCell<number | undefined>;
+
+  /**
+   * @deprecated
+   * FIXME: `BlsWalletWrapper` should just support a vanilla provider.
+   */
+  ethersProvider: ethers.providers.Provider;
+
   rpc: RpcImpl;
 
   time = TimeCell(1000);
@@ -53,6 +61,10 @@ export default class QuillController {
       this.time,
     );
 
+    this.ethersProvider = new ethers.providers.Web3Provider(
+      this.networkController,
+    );
+
     this.preferencesController = new PreferencesController(
       this.cells.preferences,
     );
@@ -67,7 +79,7 @@ export default class QuillController {
     this.keyringController = new KeyringController(
       this.cells.keyring,
       this.cells.selectedAddress,
-      this.networkController,
+      this.ethersProvider,
     );
 
     this.aggregatorController = new AggregatorController(

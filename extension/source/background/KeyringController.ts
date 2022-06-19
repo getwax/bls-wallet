@@ -4,21 +4,15 @@ import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
 import QuillCells from '../QuillCells';
 import assert from '../helpers/assert';
-import NetworkController from './NetworkController';
 import { PartialRpcImpl } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
 
 export default class KeyringController {
-  // FIXME: BlsWalletWrapper should just support a vanilla provider
-  public ethersProvider: ethers.providers.Provider;
-
   constructor(
     public keyring: QuillCells['keyring'],
     public selectedAddress: QuillCells['selectedAddress'],
-    public networkController: NetworkController,
-  ) {
-    this.ethersProvider = new ethers.providers.Web3Provider(networkController);
-  }
+    public ethersProvider: ethers.providers.Provider,
+  ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
     eth_accounts: async ({ origin }) => {
