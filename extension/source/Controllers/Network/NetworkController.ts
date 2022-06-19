@@ -226,7 +226,7 @@ export default class NetworkController implements INetworkController {
 
   private refreshNetwork() {
     this.state.update({
-      chainId: 'loading',
+      chainId: '0x66eeb',
       properties: { EIPS: { 1559: undefined } },
     });
     this.configureProvider();
