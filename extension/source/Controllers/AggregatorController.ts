@@ -3,7 +3,7 @@ import { AGGREGATOR_URL } from '../env';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl } from '../types/Rpc';
 import KeyringController from './KeyringController';
-import NetworkController from './Network/NetworkController';
+import NetworkController from './NetworkController';
 
 export type SendTransactionParams = {
   from: string;

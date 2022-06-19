@@ -4,7 +4,7 @@ import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
 import QuillCells from '../QuillCells';
 import assert from '../helpers/assert';
-import NetworkController from './Network/NetworkController';
+import NetworkController from './NetworkController';
 
 export default class KeyringController {
   // FIXME: BlsWalletWrapper should just support a vanilla provider

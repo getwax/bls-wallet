@@ -3,7 +3,7 @@
 import * as io from 'io-ts';
 
 import { getUserLanguage } from './utils';
-import NetworkController from './Network/NetworkController';
+import NetworkController from './NetworkController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
 import CellCollection from '../cells/CellCollection';

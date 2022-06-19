@@ -3,15 +3,15 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
-import { ProviderConfig } from '../constants';
-import { IReadableCell } from '../../cells/ICell';
-import { FormulaCell } from '../../cells/FormulaCell';
-import approximate from '../../cells/approximate';
-import { createRandomId } from '../utils';
-import assertType from '../../cells/assertType';
-import assert from '../../helpers/assert';
-import QuillCells from '../../QuillCells';
-import toOkError from '../../helpers/toOkError';
+import { ProviderConfig } from './constants';
+import { IReadableCell } from '../cells/ICell';
+import { FormulaCell } from '../cells/FormulaCell';
+import approximate from '../cells/approximate';
+import { createRandomId } from './utils';
+import assertType from '../cells/assertType';
+import assert from '../helpers/assert';
+import QuillCells from '../QuillCells';
+import toOkError from '../helpers/toOkError';
 
 const Object_ = io.record(io.string, io.unknown);
 type Object_ = io.TypeOf<typeof Object_>;
