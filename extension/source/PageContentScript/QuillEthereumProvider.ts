@@ -1,3 +1,4 @@
+import { ethers } from 'ethers';
 import { EventEmitter } from 'events';
 
 import * as io from 'io-ts';
@@ -16,16 +17,19 @@ const RequestBody = io.type({
   params: io.union([io.undefined, io.array(io.unknown)]),
 });
 
-export default class QuillProvider extends (EventEmitter as new () => TypedEventEmitter<{
-  accountsChanged(accounts: string[]): void;
-  chainChanged(chainId: string): void;
-  connect(connection: { chainId: string }): void;
-  disconnect(disconnectionMessage: {
-    message: string;
-    code: number;
-    data?: unknown;
-  }): void;
-}>) {
+export default class QuillEthereumProvider
+  extends (EventEmitter as new () => TypedEventEmitter<{
+    accountsChanged(accounts: string[]): void;
+    chainChanged(chainId: string): void;
+    connect(connection: { chainId: string }): void;
+    disconnect(disconnectionMessage: {
+      message: string;
+      code: number;
+      data?: unknown;
+    }): void;
+  }>)
+  implements ethers.providers.ExternalProvider
+{
   isQuill = true;
   breakOnAssertionFailures = false;
 
