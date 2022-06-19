@@ -1,3 +1,5 @@
+// TODO: Move to helpers
+
 import { DEFAULT_CHAIN_ID_HEX } from '../env';
 import {
   BuiltinChainId,

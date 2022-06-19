@@ -1,3 +1,5 @@
+// TODO: Remove
+
 export function requireEnv(value: string | undefined): string {
   if (value === undefined) {
     throw new Error('Missing required environment variable');

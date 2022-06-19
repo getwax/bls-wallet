@@ -4,6 +4,8 @@ import { BuiltinChainId } from './Controllers/constants';
 import { requireEnv } from './helpers/envTools';
 import toHex from './helpers/toHex';
 
+// TODO: Use a file instead
+
 // export const ETHERSCAN_KEY = requireEnv(process.env.ETHERSCAN_KEY);
 export const PRIVATE_KEY_STORAGE_KEY = requireEnv(
   process.env.PRIVATE_KEY_STORAGE_KEY,
