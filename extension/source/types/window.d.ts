@@ -1,5 +1,7 @@
 import type { providers } from 'ethers';
-import type QuillEthereumProvider from '../ethereumvider';
+import type { Browser } from 'webextension-polyfill';
+import type QuillEthereumProvider from '../QuillEthereumProvider';
+import type { QuillContextValue } from '../QuillPage/QuillContext';
 
 declare global {
   interface Window {
@@ -7,5 +9,9 @@ declare global {
       | QuillEthereumProvider
       | (providers.ExternalProvider & { breakOnAssertionFailures: boolean })
       | { breakOnAssertionFailures: boolean };
+    debug?: {
+      Browser?: Browser;
+      quill?: QuillContextValue;
+    };
   }
 }

@@ -7,6 +7,7 @@ import './styles.scss';
 import Browser from 'webextension-polyfill';
 import QuillPage from './QuillPage';
 
-(window as any).Browser ??= Browser;
+window.debug ??= {};
+window.debug.Browser = Browser;
 
 ReactDOM.render(<QuillPage />, document.getElementById('quill-page-root'));

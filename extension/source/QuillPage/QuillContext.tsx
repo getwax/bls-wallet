@@ -13,11 +13,12 @@ import { FormulaCell } from '../cells/FormulaCell';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import TransformCell from '../cells/TransformCell';
+import QuillEthereumProvider from '../QuillEthereumProvider';
 
-type QuillContextValue = ReturnType<typeof getQuillContextValue>;
+export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
 function getQuillContextValue() {
-  const { ethereum } = window;
+  const ethereum = window.ethereum as QuillEthereumProvider;
   assert(ethereum?.isQuill);
 
   const rpc = mapValues(rpcMap, ({ params: paramsType, output }, method) => {
@@ -97,8 +98,8 @@ type Props = {
 export function QuillContextProvider({ children }: Props) {
   const quill = useMemo(() => getQuillContextValue(), []);
 
-  // TODO: Improve this
-  (window as any).quill = quill;
+  window.debug ??= {};
+  window.debug.quill = quill;
 
   return (
     <QuillContext.Provider value={quill}>{children}</QuillContext.Provider>
