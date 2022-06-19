@@ -35,33 +35,33 @@ export default class NetworkController
   providerConfig: IReadableCell<ProviderConfig>;
 
   constructor(
-    public state: QuillCells['network'],
+    public network: QuillCells['network'],
     time: IReadableCell<number>,
   ) {
     this.ticker = new FormulaCell(
-      { state: this.state },
+      { network: this.network },
       // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ state }) => state.providerConfig.ticker,
+      ({ network }) => network.providerConfig.ticker,
     );
 
     this.chainId = new FormulaCell(
-      { state: this.state },
+      { network: this.network },
       // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ state }) => state.chainId,
+      ({ network }) => network.chainId,
     );
 
     this.blockNumber = new FormulaCell(
       {
-        networkState: this.state,
+        networkState: this.network,
         time: approximate(time, 20_000),
       },
       () => this.fetchBlockNumber(),
     );
 
     this.providerConfig = new FormulaCell(
-      { state: this.state },
+      { network: this.network },
       // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ state }) => state.providerConfig,
+      ({ network }) => network.providerConfig,
     );
   }
 

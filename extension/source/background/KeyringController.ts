@@ -14,7 +14,7 @@ export default class KeyringController {
   rpc: ReturnType<KeyringController['Rpc']>;
 
   constructor(
-    public state: QuillCells['keyring'], // TODO: state -> keyring
+    public keyring: QuillCells['keyring'],
     public selectedAddress: QuillCells['selectedAddress'],
     public networkController: NetworkController,
   ) {
@@ -26,7 +26,7 @@ export default class KeyringController {
     ensureType<PartialRpcImpl>()({
       eth_accounts: async ({ origin }) => {
         if (origin === window.location.origin) {
-          return (await this.state.read()).wallets.map(
+          return (await this.keyring.read()).wallets.map(
             ({ address }) => address,
           );
         }
@@ -54,12 +54,12 @@ export default class KeyringController {
       },
 
       setHDPhrase: async ({ params: [HDPhrase] }) => {
-        this.state.update({ HDPhrase });
+        this.keyring.update({ HDPhrase });
         return 'ok';
       },
 
       isOnboardingComplete: async (_message) => {
-        return (await this.state.read()).HDPhrase !== undefined;
+        return (await this.keyring.read()).HDPhrase !== undefined;
       },
     });
 
@@ -75,20 +75,20 @@ export default class KeyringController {
    * Creates a Deterministic Account based on seed phrase
    */
   async createHDAccount(): Promise<string> {
-    const mnemonic = (await this.state.read()).HDPhrase;
+    const mnemonic = (await this.keyring.read()).HDPhrase;
     const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
     // FIXME: HD accounts are co-mingled with regular accounts. This will cause
     // us to skip over HD accounts that should have been created whenever there
     // is a regular account taking up its spot.
-    const newAccountIndex = (await this.state.read()).wallets.length;
+    const newAccountIndex = (await this.keyring.read()).wallets.length;
     const { privateKey } = node.derivePath(`m/44'/60'/0'/0/${newAccountIndex}`);
 
     return await this.createAccount(privateKey);
   }
 
   async createAccount(privateKey = generateRandomHex(256)): Promise<string> {
-    const { wallets } = await this.state.read();
+    const { wallets } = await this.keyring.read();
 
     assert(
       wallets.every((w) => w.privateKey !== privateKey),
@@ -98,24 +98,24 @@ export default class KeyringController {
     const address = await this.BlsWalletAddress(privateKey);
 
     wallets.push({ privateKey, address });
-    await this.state.update({ wallets });
+    await this.keyring.update({ wallets });
 
     return address;
   }
 
   async removeAccount(address: string) {
-    const { wallets } = await this.state.read();
+    const { wallets } = await this.keyring.read();
 
     const newWallets = wallets.filter((w) => w.address !== address);
     assert(newWallets.length < wallets.length, 'Account did not exist');
 
-    await this.state.update({ wallets: newWallets });
+    await this.keyring.update({ wallets: newWallets });
   }
 
   private async lookupPrivateKey(rawAddress: string): Promise<string> {
     const address = ethers.utils.getAddress(rawAddress);
 
-    const keyPair = (await this.state.read()).wallets.find(
+    const keyPair = (await this.keyring.read()).wallets.find(
       (x) => x.address === address,
     );
 

@@ -13,11 +13,12 @@ export default class PreferencesController {
   identities: ICell<Preferences['identities']>;
   preferredCurrency: IReadableCell<string | undefined>;
 
-  constructor(public state: ICell<Preferences>) {
-    this.identities = TransformCell.Sub(state, 'identities');
+  constructor(public preferences: ICell<Preferences>) {
+    this.identities = TransformCell.Sub(preferences, 'identities');
 
     this.preferredCurrency = new FormulaCell(
-      { preferences: state },
+      { preferences },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
       ({ preferences }) => {
         const { selectedAddress, identities } = preferences;
 
@@ -38,7 +39,7 @@ export default class PreferencesController {
   }
 
   SelectedPreferences(): ICell<AddressPreferences> {
-    const selectedAddressPromise = this.state.read().then((s) => {
+    const selectedAddressPromise = this.preferences.read().then((s) => {
       assert(s.selectedAddress !== undefined);
       return s.selectedAddress;
     });
@@ -81,10 +82,11 @@ export default class PreferencesController {
       'User already exists',
     );
 
-    const $state = await this.state.read();
+    const $preferences = await this.preferences.read();
 
     const selectedAddressPreferences =
-      $state.selectedAddress && $state.identities[$state.selectedAddress];
+      $preferences.selectedAddress &&
+      $preferences.identities[$preferences.selectedAddress];
 
     await newUserPreferences.write({
       ...defaultAddressPreferences,
