@@ -42,9 +42,10 @@ import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 
 (() => {
   if (
-    window.document.doctype?.name !== 'html' ||
-    window.location.pathname.endsWith('.pdf') ||
-    document.documentElement.nodeName.toLowerCase() !== 'html'
+    document.doctype?.name !== 'html' ||
+    location.pathname.endsWith('.pdf') ||
+    document.documentElement.nodeName.toLowerCase() !== 'html' ||
+    `${location.origin}/` === runtime.getURL('')
   ) {
     return;
   }

@@ -1,8 +1,7 @@
 import * as io from 'io-ts';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ethers } from 'ethers';
 
-import getWindowQuillEthereumProvider from './getWindowQuillEthereumProvider';
 import mapValues from '../helpers/mapValues';
 import ExplicitAny from '../types/ExplicitAny';
 import { RpcClient, rpcMap } from '../types/Rpc';
@@ -14,15 +13,17 @@ import { FormulaCell } from '../cells/FormulaCell';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import TransformCell from '../cells/TransformCell';
-import type QuillEthereumProvider from '../QuillEthereumProvider';
 
 type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
-function getQuillContextValue(provider: QuillEthereumProvider) {
+function getQuillContextValue() {
+  const { ethereum } = window;
+  assert(ethereum?.isQuill);
+
   const rpc = mapValues(rpcMap, ({ params: paramsType, output }, method) => {
     return async (...params: unknown[]) => {
       assertType(params, paramsType as unknown as io.Type<unknown[]>);
-      const response = await provider.request({
+      const response = await ethereum.request({
         method,
         params,
       });
@@ -35,7 +36,7 @@ function getQuillContextValue(provider: QuillEthereumProvider) {
   const time = TimeCell(100);
 
   const blockNumber = Cell('block-number', io.number, async () => {
-    const blockNumberStr = await provider.request({
+    const blockNumberStr = await ethereum.request({
       method: 'eth_blockNumber',
     });
 
@@ -60,8 +61,8 @@ function getQuillContextValue(provider: QuillEthereumProvider) {
   );
 
   return {
-    provider,
-    ethersProvider: new ethers.providers.Web3Provider(provider),
+    ethereum,
+    ethersProvider: new ethers.providers.Web3Provider(ethereum),
     rpc,
     Cell,
     time,
@@ -94,25 +95,12 @@ type Props = {
 };
 
 export function QuillContextProvider({ children }: Props) {
-  const [ctxVal, setCtxVal] = React.useState<QuillContextValue | undefined>();
-
-  React.useEffect(() => {
-    (async () => {
-      const provider = await getWindowQuillEthereumProvider();
-      const val = getQuillContextValue(provider);
-      setCtxVal(val);
-    })();
-  }, []);
-
-  if (!ctxVal) {
-    // This could be replaced by a nicer splash screen
-    return <div>Loading...</div>;
-  }
+  const quill = useMemo(() => getQuillContextValue(), []);
 
   // TODO: Improve this
-  (window as any).quillCtx = ctxVal;
+  (window as any).quill = quill;
 
   return (
-    <QuillContext.Provider value={ctxVal}>{children}</QuillContext.Provider>
+    <QuillContext.Provider value={quill}>{children}</QuillContext.Provider>
   );
 }

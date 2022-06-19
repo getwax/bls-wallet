@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom';
 
 import '../contentScript';
+import '../ethereum';
 import '../styles/index.scss';
 import './styles.scss';
 import Browser from 'webextension-polyfill';
