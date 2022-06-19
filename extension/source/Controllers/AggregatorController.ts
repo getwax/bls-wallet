@@ -3,8 +3,16 @@ import { AGGREGATOR_URL } from '../env';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl } from '../types/Rpc';
 import KeyringController from './KeyringController';
-import { SendTransactionParams } from './Network/createEthMiddleware';
 import NetworkController from './Network/NetworkController';
+
+export type SendTransactionParams = {
+  from: string;
+  to: string;
+  gas?: string;
+  gasPrice?: string;
+  value?: string;
+  data: string;
+};
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred

@@ -4,20 +4,24 @@ import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
 import QuillCells from '../QuillCells';
 import assert from '../helpers/assert';
-import { IReadableCell } from '../cells/ICell';
-import { SafeEventEmitterProvider } from './Network/INetworkController';
+import NetworkController from './Network/NetworkController';
 
 export default class KeyringController {
+  // FIXME: BlsWalletWrapper should just support a vanilla provider
+  public ethersProvider: ethers.providers.Provider;
+
   constructor(
     public state: QuillCells['keyring'],
-    public provider: IReadableCell<SafeEventEmitterProvider | undefined>,
-  ) {}
+    public networkController: NetworkController,
+  ) {
+    this.ethersProvider = new ethers.providers.Web3Provider(networkController);
+  }
 
   async lookupWallet(address: string): Promise<BlsWalletWrapper> {
     return BlsWalletWrapper.connect(
       await this.lookupPrivateKey(address),
       NETWORK_CONFIG.addresses.verificationGateway,
-      await this.EthersProvider(),
+      this.ethersProvider,
     );
   }
 
@@ -74,24 +78,11 @@ export default class KeyringController {
     return keyPair.privateKey;
   }
 
-  private async EthersProvider(): Promise<ethers.providers.Provider> {
-    for await (const provider of this.provider) {
-      if (provider === undefined) {
-        continue;
-      }
-
-      // FIXME: BlsWalletWrapper should just support a vanilla provider
-      return new ethers.providers.Web3Provider(provider);
-    }
-
-    assert(false, 'Unexpected end of provider cell');
-  }
-
   private async BlsWalletAddress(privateKey: string): Promise<string> {
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
-      await this.EthersProvider(),
+      this.ethersProvider,
     );
   }
 }

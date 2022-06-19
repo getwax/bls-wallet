@@ -62,8 +62,11 @@ function setupController(): void {
   // Close associated popups when page is closed
   // https://github.com/web3well/bls-wallet/blob/e671e73/extension/source/Controllers/background.ts#L210
   //
-  // TODO: onConnectExternal / support for comms with other extensions
+  // onConnectExternal / support for comms with other extensions
   // https://github.com/web3well/bls-wallet/blob/main/extension/source/Controllers/background.ts#L270
+  //
+  // Getting metadata about networks:
+  // https://github.com/web3well/bls-wallet/blob/d2b18f3/extension/source/Controllers/Network/NetworkController.ts#L110-L171
 }
 
 // On first install, open a new tab with Quill

@@ -66,7 +66,7 @@ export default class QuillController {
 
     this.keyringController = new KeyringController(
       this.cells.keyring,
-      this.networkController.provider,
+      this.networkController,
     );
 
     this.aggregatorController = new AggregatorController(
@@ -120,7 +120,7 @@ export default class QuillController {
         return aggregatorRes;
       }
 
-      const networkRes = await this.networkController.fetch(message);
+      const networkRes = await this.networkController.request(message);
       assertType(networkRes, message.Output);
 
       return networkRes;
@@ -134,7 +134,7 @@ export default class QuillController {
         return aggregatorRes;
       }
 
-      const networkRes = await this.networkController.fetch(message);
+      const networkRes = await this.networkController.request(message);
       assertType(networkRes, message.Output);
 
       return networkRes;
@@ -245,7 +245,7 @@ export default class QuillController {
           }) as unknown;
         }
 
-        return this.networkController.fetch(message);
+        return this.networkController.request(message);
       }).then(toRpcResult);
     }
 
