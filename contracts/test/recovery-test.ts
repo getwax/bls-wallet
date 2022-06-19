@@ -23,7 +23,7 @@ const signWalletAddress = async (
   return wallet.signMessage(addressMessage);
 };
 
-describe("Recovery", async function () {
+describe.only("Recovery", async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
     if (network.name === "hardhat") {
@@ -43,7 +43,9 @@ describe("Recovery", async function () {
 
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
-  let wallet1, wallet2, walletAttacker;
+  let wallet1: BlsWalletWrapper;
+  let wallet2: BlsWalletWrapper
+  let walletAttacker: BlsWalletWrapper;
   let blsWallet: BLSWallet;
   let recoverySigner;
   let hash1, hash2;
@@ -86,16 +88,26 @@ describe("Recovery", async function () {
     expect(await blsWallet.getBLSPublicKey()).to.eql(newKey);
   });
 
-  it("should NOT override public key after creation", async function () {
-    const initialKey = await blsWallet.getBLSPublicKey();
+  it.only("should NOT override public key hash after creation", async function () {
+    const vg = fx.verificationGateway;
 
-    const ZERO = ethers.BigNumber.from(0);
-    expect(initialKey).to.not.eql([ZERO, ZERO, ZERO, ZERO]);
+    let walletForHash = await vg.walletFromHash(hash1);
+    expect(BigNumber.from(walletForHash)).to.not.equal(BigNumber.from(0));
+    expect(walletForHash).to.equal(wallet1.address);
 
-    await blsWallet.setAnyPending();
+    let hashFromWallet = await vg.hashFromWallet(wallet1.address);
+    expect(BigNumber.from(hashFromWallet)).to.not.equal(BigNumber.from(0));
+    expect(hashFromWallet).to.equal(hash1);
 
-    const finalKey = await blsWallet.getBLSPublicKey();
-    expect(finalKey).to.eql(initialKey);
+    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 1);
+
+    walletForHash = await vg.walletFromHash(hash1);
+    expect(BigNumber.from(walletForHash)).to.not.equal(BigNumber.from(0));
+    expect(walletForHash).to.equal(wallet1.address);
+
+    hashFromWallet = await vg.hashFromWallet(wallet1.address);
+    expect(BigNumber.from(hashFromWallet)).to.not.equal(BigNumber.from(0));
+    expect(hashFromWallet).to.equal(hash1);
   });
 
   it("should set recovery hash", async function () {

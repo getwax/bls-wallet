@@ -121,6 +121,8 @@ contract BLSWallet is Initializable, IBLSWallet
         emit PendingBLSKeySet(pendingBLSPublicKey);
     }
 
+    // Set bls key with gateway? Or put delay of gateway bls key in bls-gateway.
+
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */

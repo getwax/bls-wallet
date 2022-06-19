@@ -3,7 +3,7 @@ import { BigNumber } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import { BLSOpen } from "../typechain";
+import { BLSOpen, ProxyAdmin } from "../typechain";
 import { ActionData, BlsWalletWrapper } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
@@ -129,7 +129,7 @@ describe("Upgrade", async function () {
     const setExternalWalletAction: ActionData = {
       ethValue: BigNumber.from(0),
       contractAddress: vg2.address,
-      encodedFunction: vg2.interface.encodeFunctionData("setExternalWallet", [
+      encodedFunction: vg2.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         walletOldVg.PublicKey(),
       ]),
@@ -305,7 +305,7 @@ describe("Upgrade", async function () {
     const setExternalWalletAction: ActionData = {
       ethValue: BigNumber.from(0),
       contractAddress: vg1.address,
-      encodedFunction: vg1.interface.encodeFunctionData("setExternalWallet", [
+      encodedFunction: vg1.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         wallet2.PublicKey(),
       ]),
