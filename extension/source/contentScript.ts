@@ -37,20 +37,24 @@
 import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
-import { createRandomId } from './Controllers/utils';
+import { createRandomId } from './background/utils';
 import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 
 (() => {
   if (
     document.doctype?.name !== 'html' ||
     location.pathname.endsWith('.pdf') ||
-    document.documentElement.nodeName.toLowerCase() !== 'html' ||
-    `${location.origin}/` === runtime.getURL('')
+    document.documentElement.nodeName.toLowerCase() !== 'html'
   ) {
     return;
   }
 
-  addInPageScript();
+  const isExtensionOrigin = `${location.origin}/` === runtime.getURL('');
+
+  if (!isExtensionOrigin) {
+    addInPageScript();
+  }
+
   relayRpcRequests();
 })();
 

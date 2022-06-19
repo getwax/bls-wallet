@@ -3,9 +3,9 @@ import * as io from 'io-ts';
 
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
-import { ProviderConfig } from './Controllers/networks';
-import { Preferences } from './Controllers/PreferencesController';
-import { getDefaultProviderConfig } from './Controllers/utils';
+import { ProviderConfig } from './background/networks';
+import { Preferences } from './background/PreferencesController';
+import { getDefaultProviderConfig } from './background/utils';
 import AsyncReturnType from './types/AsyncReturnType';
 
 function QuillCells(storage: CellCollection) {
