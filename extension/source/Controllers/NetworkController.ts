@@ -3,7 +3,7 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
-import { ProviderConfig } from './constants';
+import { ProviderConfig } from './networks';
 import { IReadableCell } from '../cells/ICell';
 import { FormulaCell } from '../cells/FormulaCell';
 import approximate from '../cells/approximate';

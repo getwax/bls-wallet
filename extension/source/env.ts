@@ -1,6 +1,6 @@
 import { validateConfig } from 'bls-wallet-clients';
 import { assertTypeEcho } from './cells/assertType';
-import { BuiltinChainId } from './Controllers/constants';
+import { BuiltinChainId } from './Controllers/networks';
 import { requireEnv } from './helpers/envTools';
 import toHex from './helpers/toHex';
 

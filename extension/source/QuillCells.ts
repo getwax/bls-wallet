@@ -3,7 +3,7 @@ import * as io from 'io-ts';
 
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
-import { ProviderConfig } from './Controllers/constants';
+import { ProviderConfig } from './Controllers/networks';
 import { Preferences } from './Controllers/PreferencesController';
 import { getDefaultProviderConfig } from './Controllers/utils';
 import AsyncReturnType from './types/AsyncReturnType';

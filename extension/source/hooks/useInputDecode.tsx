@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { getBuiltinRPCURL } from '../Controllers/utils';
-import { BuiltinChainId } from '../Controllers/constants';
+import { BuiltinChainId } from '../Controllers/networks';
 
 const getParitySigRegistry = (builtinChainId: BuiltinChainId) => {
   const provider = new ethers.providers.JsonRpcProvider(

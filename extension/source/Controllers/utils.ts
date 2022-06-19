@@ -6,7 +6,7 @@ import {
   builtinChainIdToName,
   ProviderConfig,
   builtinProviderConfigs,
-} from './constants';
+} from './networks';
 
 // TODO: Use a better random source, and maybe more entropy
 export const createRandomId = (): string => Math.random().toString(36).slice(2);
