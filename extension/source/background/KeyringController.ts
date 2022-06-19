@@ -5,17 +5,63 @@ import { NETWORK_CONFIG } from '../env';
 import QuillCells from '../QuillCells';
 import assert from '../helpers/assert';
 import NetworkController from './NetworkController';
+import { PartialRpcImpl } from '../types/Rpc';
+import ensureType from '../helpers/ensureType';
 
 export default class KeyringController {
   // FIXME: BlsWalletWrapper should just support a vanilla provider
   public ethersProvider: ethers.providers.Provider;
+  rpc: ReturnType<KeyringController['Rpc']>;
 
   constructor(
-    public state: QuillCells['keyring'],
+    public state: QuillCells['keyring'], // TODO: state -> keyring
+    public selectedAddress: QuillCells['selectedAddress'],
     public networkController: NetworkController,
   ) {
     this.ethersProvider = new ethers.providers.Web3Provider(networkController);
+    this.rpc = this.Rpc();
   }
+
+  private Rpc = () =>
+    ensureType<PartialRpcImpl>()({
+      eth_accounts: async ({ origin }) => {
+        if (origin === window.location.origin) {
+          return (await this.state.read()).wallets.map(
+            ({ address }) => address,
+          );
+        }
+
+        const selectedAddress = await this.selectedAddress.read();
+
+        // TODO (merge-ok) Expose no accounts if this origin has not been
+        // approved, preventing account-requiring RPC methods from completing
+        // successfully only show address if account is unlocked
+        // https://github.com/web3well/bls-wallet/issues/224
+        return selectedAddress ? [selectedAddress] : [];
+      },
+
+      eth_requestAccounts: async (_message) => {
+        const selectedAddress = await this.selectedAddress.read();
+        const accounts = selectedAddress ? [selectedAddress] : [];
+        return accounts;
+      },
+
+      eth_coinbase: async (_message) =>
+        (await this.selectedAddress.read()) ?? null,
+
+      createHDAccount: async (_message) => {
+        return this.createHDAccount();
+      },
+
+      setHDPhrase: async ({ params: [HDPhrase] }) => {
+        this.state.update({ HDPhrase });
+        return 'ok';
+      },
+
+      isOnboardingComplete: async (_message) => {
+        return (await this.state.read()).HDPhrase !== undefined;
+      },
+    });
 
   async lookupWallet(address: string): Promise<BlsWalletWrapper> {
     return BlsWalletWrapper.connect(

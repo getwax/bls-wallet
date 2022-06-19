@@ -30,6 +30,7 @@ import AggregatorController from './AggregatorController';
 import CurrencyConversionCell, {
   CurrencyConversionConfig,
 } from './CurrencyConversionCell';
+import ensureType from '../helpers/ensureType';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -66,6 +67,7 @@ export default class QuillController {
 
     this.keyringController = new KeyringController(
       this.cells.keyring,
+      this.cells.selectedAddress,
       this.networkController,
     );
 
@@ -94,112 +96,84 @@ export default class QuillController {
     );
   }
 
-  private Rpc = (): RpcImpl => ({
-    eth_chainId: async () => this.cells.chainId.read(),
+  private Rpc = () =>
+    ensureType<RpcImpl>()({
+      eth_chainId: async () => this.cells.chainId.read(),
 
-    eth_coinbase: async (_message) =>
-      (await this.cells.selectedAddress.read()) || null,
+      eth_sendTransaction: this.aggregatorController.rpc.eth_sendTransaction,
 
-    eth_sendTransaction: this.aggregatorController.rpc.eth_sendTransaction,
+      eth_getTransactionByHash: async (message) => {
+        const aggregatorRes =
+          await this.aggregatorController.rpc.eth_getTransactionByHash(message);
 
-    eth_getTransactionByHash: async (message) => {
-      const aggregatorRes =
-        await this.aggregatorController.rpc.eth_getTransactionByHash(message);
-
-      if (aggregatorRes !== undefined) {
-        return aggregatorRes;
-      }
-
-      const networkRes = await this.networkController.requestStrict(message);
-      assertType(networkRes, message.Output);
-
-      return networkRes;
-    },
-
-    eth_getTransactionReceipt: async (message) => {
-      const aggregatorRes =
-        await this.aggregatorController.rpc.eth_getTransactionReceipt(message);
-
-      if (aggregatorRes !== undefined) {
-        return aggregatorRes;
-      }
-
-      const networkRes = await this.networkController.requestStrict(message);
-      assertType(networkRes, message.Output);
-
-      return networkRes;
-    },
-
-    eth_setPreferredAggregator:
-      this.aggregatorController.rpc.eth_setPreferredAggregator,
-
-    eth_accounts: async ({ origin }) => {
-      if (origin === window.location.origin) {
-        return (await this.keyringController.state.read()).wallets.map(
-          ({ address }) => address,
-        );
-      }
-
-      const selectedAddress = await this.cells.selectedAddress.read();
-
-      // TODO (merge-ok) Expose no accounts if this origin has not been approved,
-      // preventing account-requiring RPC methods from completing successfully
-      // only show address if account is unlocked
-      // https://github.com/web3well/bls-wallet/issues/224
-      return selectedAddress ? [selectedAddress] : [];
-    },
-
-    eth_requestAccounts: async (_message) => {
-      const selectedAddress = await this.cells.selectedAddress.read();
-      const accounts = selectedAddress ? [selectedAddress] : [];
-      return accounts;
-    },
-
-    debugMe: async ({ params: [a, b, c] }) => {
-      console.log('debugMe', { a, b, c });
-      return 'ok' as const;
-    },
-
-    quill_providerState: async (message) => {
-      const providerState = this.ProviderState(message);
-
-      const {
-        params: [opt],
-      } = message;
-
-      // TODO: Move this long polling idea inside cells
-      for await (const $providerState of providerState) {
-        if (
-          opt &&
-          !providerState.hasChanged(opt.differentFrom, $providerState)
-        ) {
-          continue;
+        if (aggregatorRes !== undefined) {
+          return aggregatorRes;
         }
 
-        return $providerState;
-      }
+        const networkRes = await this.networkController.requestStrict(message);
+        assertType(networkRes, message.Output);
 
-      throw new Error('Unexpected end of providerState cell');
-    },
+        return networkRes;
+      },
 
-    setSelectedAddress: async ({ params: [selectedAddress] }) => {
-      this.cells.preferences.update({ selectedAddress });
-      return 'ok';
-    },
+      eth_getTransactionReceipt: async (message) => {
+        const aggregatorRes =
+          await this.aggregatorController.rpc.eth_getTransactionReceipt(
+            message,
+          );
 
-    createHDAccount: async (_message) => {
-      return this.keyringController.createHDAccount();
-    },
+        if (aggregatorRes !== undefined) {
+          return aggregatorRes;
+        }
 
-    isOnboardingComplete: async (_message) => {
-      return (await this.cells.keyring.read()).HDPhrase !== undefined;
-    },
+        const networkRes = await this.networkController.requestStrict(message);
+        assertType(networkRes, message.Output);
 
-    setHDPhrase: async ({ params: [HDPhrase] }) => {
-      this.cells.keyring.update({ HDPhrase });
-      return 'ok';
-    },
-  });
+        return networkRes;
+      },
+
+      eth_setPreferredAggregator:
+        this.aggregatorController.rpc.eth_setPreferredAggregator,
+
+      eth_coinbase: this.keyringController.rpc.eth_coinbase,
+      eth_accounts: this.keyringController.rpc.eth_accounts,
+      eth_requestAccounts: this.keyringController.rpc.eth_requestAccounts,
+      createHDAccount: this.keyringController.rpc.createHDAccount,
+      setHDPhrase: this.keyringController.rpc.setHDPhrase,
+      isOnboardingComplete: this.keyringController.rpc.isOnboardingComplete,
+
+      debugMe: async ({ params: [a, b, c] }) => {
+        console.log('debugMe', { a, b, c });
+        return 'ok' as const;
+      },
+
+      quill_providerState: async (message) => {
+        const providerState = this.ProviderState(message);
+
+        const {
+          params: [opt],
+        } = message;
+
+        // TODO: Move this long polling idea inside cells
+        for await (const $providerState of providerState) {
+          if (
+            opt &&
+            !providerState.hasChanged(opt.differentFrom, $providerState)
+          ) {
+            continue;
+          }
+
+          return $providerState;
+        }
+
+        throw new Error('Unexpected end of providerState cell');
+      },
+
+      setSelectedAddress: async ({ params: [selectedAddress] }) => {
+        this.cells.preferences.update({ selectedAddress });
+        return 'ok';
+      },
+    });
 
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
     // TODO: Logging
