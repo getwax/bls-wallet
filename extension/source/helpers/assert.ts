@@ -1,3 +1,6 @@
+// TODO: Probably all of our raw `throw new Error(...)` examples should be
+// asserts.
+
 /**
  * Asserts that the condition is true. The meaning of an assertion is that it is
  * expected to never fail.
