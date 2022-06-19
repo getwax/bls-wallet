@@ -5,6 +5,8 @@ import assert from '../helpers/assert';
 import ICell, { IReadableCell } from '../cells/ICell';
 import TransformCell from '../cells/TransformCell';
 import { FormulaCell } from '../cells/FormulaCell';
+import ensureType from '../helpers/ensureType';
+import { PartialRpcImpl } from '../types/Rpc';
 
 /**
  * Controller that stores shared settings and exposes convenience methods
@@ -33,6 +35,13 @@ export default class PreferencesController {
       },
     );
   }
+
+  rpc = ensureType<PartialRpcImpl>()({
+    setSelectedAddress: async ({ params: [selectedAddress] }) => {
+      this.preferences.update({ selectedAddress });
+      return 'ok';
+    },
+  });
 
   AddressPreferences(address: string): ICell<AddressPreferences | undefined> {
     return TransformCell.Sub(this.identities, address);

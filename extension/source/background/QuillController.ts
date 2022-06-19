@@ -96,10 +96,9 @@ export default class QuillController {
     );
   }
 
-  private Rpc = () =>
+  Rpc = () =>
     ensureType<RpcImpl>()({
       eth_chainId: async () => this.cells.chainId.read(),
-
       eth_sendTransaction: this.aggregatorController.rpc.eth_sendTransaction,
 
       eth_getTransactionByHash: async (message) => {
@@ -169,12 +168,10 @@ export default class QuillController {
         throw new Error('Unexpected end of providerState cell');
       },
 
-      setSelectedAddress: async ({ params: [selectedAddress] }) => {
-        this.cells.preferences.update({ selectedAddress });
-        return 'ok';
-      },
+      setSelectedAddress: this.preferencesController.rpc.setSelectedAddress,
     });
 
+  // TODO: message -> request
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
     // TODO: Logging
     // - Don't just log here, also log the same way in page (only include
@@ -259,6 +256,7 @@ export default class QuillController {
       );
 
       // TODO: Use .forEach
+      // TODO: don't set on window.ethereum (but use global area)
       for await (const brk of breakOnAssertionFailures) {
         window.ethereum.breakOnAssertionFailures = brk;
       }
