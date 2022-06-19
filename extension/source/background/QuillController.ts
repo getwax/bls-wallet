@@ -36,8 +36,8 @@ export default class QuillController {
   keyringController: KeyringController;
   preferencesController: PreferencesController;
   aggregatorController: AggregatorController;
-
   currencyConversion: IReadableCell<number | undefined>;
+  rpc: RpcImpl;
 
   time = TimeCell(1000);
   cells: QuillCells;
@@ -74,6 +74,8 @@ export default class QuillController {
       this.keyringController,
     );
 
+    this.rpc = this.Rpc();
+
     this.watchThings();
   }
 
@@ -92,15 +94,13 @@ export default class QuillController {
     );
   }
 
-  rpc: RpcImpl = {
+  private Rpc = (): RpcImpl => ({
     eth_chainId: async () => this.cells.chainId.read(),
 
     eth_coinbase: async (_message) =>
       (await this.cells.selectedAddress.read()) || null,
 
-    eth_sendTransaction: async (message) => {
-      return this.aggregatorController.rpc.eth_sendTransaction(message);
-    },
+    eth_sendTransaction: this.aggregatorController.rpc.eth_sendTransaction,
 
     eth_getTransactionByHash: async (message) => {
       const aggregatorRes =
@@ -130,9 +130,8 @@ export default class QuillController {
       return networkRes;
     },
 
-    eth_setPreferredAggregator: async (message) => {
-      return this.aggregatorController.rpc.eth_setPreferredAggregator(message);
-    },
+    eth_setPreferredAggregator:
+      this.aggregatorController.rpc.eth_setPreferredAggregator,
 
     eth_accounts: async ({ origin }) => {
       if (origin === window.location.origin) {
@@ -200,7 +199,7 @@ export default class QuillController {
       this.cells.keyring.update({ HDPhrase });
       return 'ok';
     },
-  };
+  });
 
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
     // TODO: Logging
