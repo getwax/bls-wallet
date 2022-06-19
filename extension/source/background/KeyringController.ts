@@ -46,8 +46,23 @@ export default class KeyringController {
     eth_coinbase: async (_message) =>
       (await this.selectedAddress.read()) ?? null,
 
+    // TODO: Would this docstring work better in Rpc.ts?
+    /**
+     * Creates a Deterministic Account based on seed phrase
+     */
     createHDAccount: async (_message) => {
-      return this.createHDAccount();
+      const mnemonic = (await this.keyring.read()).HDPhrase;
+      const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
+
+      // FIXME: HD accounts are co-mingled with regular accounts. This will
+      // cause us to skip over HD accounts that should have been created
+      // whenever there is a regular account taking up its spot.
+      const newAccountIndex = (await this.keyring.read()).wallets.length;
+      const { privateKey } = node.derivePath(
+        `m/44'/60'/0'/0/${newAccountIndex}`,
+      );
+
+      return await this.createAccount(privateKey);
     },
 
     setHDPhrase: async ({ params: [HDPhrase] }) => {
@@ -66,22 +81,6 @@ export default class KeyringController {
       NETWORK_CONFIG.addresses.verificationGateway,
       this.ethersProvider,
     );
-  }
-
-  /**
-   * Creates a Deterministic Account based on seed phrase
-   */
-  async createHDAccount(): Promise<string> {
-    const mnemonic = (await this.keyring.read()).HDPhrase;
-    const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
-
-    // FIXME: HD accounts are co-mingled with regular accounts. This will cause
-    // us to skip over HD accounts that should have been created whenever there
-    // is a regular account taking up its spot.
-    const newAccountIndex = (await this.keyring.read()).wallets.length;
-    const { privateKey } = node.derivePath(`m/44'/60'/0'/0/${newAccountIndex}`);
-
-    return await this.createAccount(privateKey);
   }
 
   async createAccount(privateKey = generateRandomHex(256)): Promise<string> {
