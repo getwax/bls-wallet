@@ -112,13 +112,14 @@ export default class QuillController {
       },
 
       eth_getTransactionReceipt: async (message) => {
-        const aggregatorRes =
-          await this.aggregatorController.rpc.eth_getTransactionReceipt(
+        const {
+          params: [hash],
+        } = message;
+
+        if (hash in this.aggregatorController.knownTransactions) {
+          return await this.aggregatorController.rpc.eth_getTransactionReceipt(
             message,
           );
-
-        if (aggregatorRes !== undefined) {
-          return aggregatorRes;
         }
 
         const networkRes = await this.networkController.requestStrict(message);

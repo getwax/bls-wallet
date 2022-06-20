@@ -6,6 +6,7 @@ import { Result } from '../helpers/toOkError';
 import AsyncReturnType from './AsyncReturnType';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
+import optional from './optional';
 
 // TODO: MEGAFIX: Make a tuple wrapper handling empty and also preventing accidental
 // undefineds
@@ -61,19 +62,21 @@ export const rpcMap = {
   eth_getTransactionReceipt: {
     origin: '*',
     Params: io.tuple([io.string]),
-    Response: io.type({
-      transactionHash: io.string,
-      transactionIndex: io.string,
-      blockHash: io.string,
-      blockNumber: io.string,
-      from: io.string,
-      to: io.string,
-      logs: io.array(io.unknown),
-      cumulativeGasUsed: io.string,
-      gasUsed: io.string,
-      status: io.string,
-      effectiveGasPrice: io.string,
-    }),
+    Response: optional(
+      io.type({
+        transactionHash: io.string,
+        transactionIndex: io.string,
+        blockHash: io.string,
+        blockNumber: io.string,
+        from: io.string,
+        to: io.string,
+        logs: io.array(io.unknown),
+        cumulativeGasUsed: io.string,
+        gasUsed: io.string,
+        status: io.string,
+        effectiveGasPrice: io.string,
+      }),
+    ),
   },
   debugMe: {
     origin: '*',

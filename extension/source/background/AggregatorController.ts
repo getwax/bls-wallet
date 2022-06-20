@@ -107,25 +107,21 @@ export default class AggregatorController {
       const aggregator = new Aggregator(knownTx.aggregatorUrl);
       const bundleReceipt = await aggregator.lookupReceipt(hash);
 
-      if (bundleReceipt === undefined) {
-        // TODO: MEGAFIX: Indicate that we've taken responsibility here so that
-        // QuillController doesn't defer to the network
-        return undefined;
-      }
-
-      return {
-        transactionHash: hash,
-        transactionIndex: bundleReceipt.transactionIndex,
-        blockHash: bundleReceipt.blockHash,
-        blockNumber: bundleReceipt.blockNumber,
-        from: knownTx.from,
-        to: knownTx.to,
-        logs: [],
-        cumulativeGasUsed: '0x0',
-        gasUsed: '0x0',
-        status: '0x1',
-        effectiveGasPrice: '0x0',
-      };
+      return (
+        bundleReceipt && {
+          transactionHash: hash,
+          transactionIndex: bundleReceipt.transactionIndex,
+          blockHash: bundleReceipt.blockHash,
+          blockNumber: bundleReceipt.blockNumber,
+          from: knownTx.from,
+          to: knownTx.to,
+          logs: [],
+          cumulativeGasUsed: '0x0',
+          gasUsed: '0x0',
+          status: '0x1',
+          effectiveGasPrice: '0x0',
+        }
+      );
     },
     eth_setPreferredAggregator: async ({
       providerId,
