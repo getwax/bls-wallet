@@ -18,7 +18,7 @@ import {
   RpcMethodName,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
-import QuillCells from '../QuillCells';
+import QuillStorageCells from '../QuillStorageCells';
 import isType from '../cells/isType';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
@@ -47,13 +47,13 @@ export default class QuillController {
   rpc: RpcImpl;
   internalRpc: RpcClient;
 
-  cells: QuillCells;
+  cells: QuillStorageCells;
 
   constructor(
     public storage: CellCollection,
     public currencyConversionConfig: CurrencyConversionConfig,
   ) {
-    this.cells = QuillCells(storage);
+    this.cells = QuillStorageCells(storage);
 
     this.networkController = new NetworkController(this.cells.network);
 

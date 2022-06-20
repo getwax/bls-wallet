@@ -14,7 +14,7 @@ import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
 
-function QuillCells(storage: CellCollection) {
+function QuillStorageCells(storage: CellCollection) {
   const rootCells = {
     keyring: storage.Cell(
       'keyring',
@@ -95,10 +95,10 @@ function QuillCells(storage: CellCollection) {
   };
 }
 
-type QuillCells = ReturnType<typeof QuillCells>;
+type QuillStorageCells = ReturnType<typeof QuillStorageCells>;
 
-export default QuillCells;
+export default QuillStorageCells;
 
-export type QuillState<K extends keyof QuillCells> = AsyncReturnType<
-  QuillCells[K]['read']
+export type QuillState<K extends keyof QuillStorageCells> = AsyncReturnType<
+  QuillStorageCells[K]['read']
 >;

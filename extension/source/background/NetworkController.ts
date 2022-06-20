@@ -8,7 +8,7 @@ import { FormulaCell } from '../cells/FormulaCell';
 import RandomId from '../helpers/RandomId';
 import assertType from '../cells/assertType';
 import assert from '../helpers/assert';
-import QuillCells from '../QuillCells';
+import QuillStorageCells from '../QuillStorageCells';
 import toOkError from '../helpers/toOkError';
 import TimeCell from '../cells/TimeCell';
 
@@ -28,7 +28,7 @@ export default class NetworkController
 {
   blockNumber: IReadableCell<number>;
 
-  constructor(public network: QuillCells['network']) {
+  constructor(public network: QuillStorageCells['network']) {
     this.blockNumber = new FormulaCell(
       {
         network,

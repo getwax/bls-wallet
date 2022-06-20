@@ -2,7 +2,7 @@ import { BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
-import QuillCells from '../QuillCells';
+import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
@@ -10,8 +10,8 @@ import ensureType from '../helpers/ensureType';
 export default class KeyringController {
   constructor(
     public InternalRpc: () => RpcClient,
-    public keyring: QuillCells['keyring'],
-    public selectedAddress: QuillCells['selectedAddress'],
+    public keyring: QuillStorageCells['keyring'],
+    public selectedAddress: QuillStorageCells['selectedAddress'],
     public ethersProvider: ethers.providers.Provider,
   ) {}
 

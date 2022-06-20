@@ -9,7 +9,7 @@ import assertType from '../cells/assertType';
 import assert from '../helpers/assert';
 import { FormulaCell } from '../cells/FormulaCell';
 import TimeCell from '../cells/TimeCell';
-import QuillCells from '../QuillCells';
+import QuillStorageCells from '../QuillStorageCells';
 import QuillEthereumProvider from '../QuillEthereumProvider';
 import EthersProvider from '../EthersProvider';
 
@@ -39,7 +39,7 @@ function getQuillContextValue() {
   const time = TimeCell(100);
 
   // TODO: MEGAFIX: Cleanup other cells
-  const cells = QuillCells(elcc);
+  const cells = QuillStorageCells(elcc);
 
   const selectedAddress: IReadableCell<string | undefined> = new FormulaCell(
     { preferences: cells.preferences },
