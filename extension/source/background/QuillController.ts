@@ -3,7 +3,7 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
-import { createRandomId, getUserLanguage } from './utils';
+import { getUserLanguage } from './utils';
 import NetworkController from './NetworkController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
@@ -24,7 +24,6 @@ import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
 import toOkError from '../helpers/toOkError';
-import TransformCell from '../cells/TransformCell';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import AggregatorController from './AggregatorController';
@@ -122,6 +121,18 @@ export default class QuillController {
         assertType(networkRes, message.Output);
 
         return networkRes;
+      },
+
+      addAccount: async (message) => {
+        // FIXME: This call should be simpler
+        const address = await this.keyringController.rpc.createAccount({
+          ...message,
+          method: 'createAccount',
+        });
+
+        const locale = getUserLanguage();
+        this.preferencesController.createUser(address, locale, 'USD', 'light');
+        return address;
       },
 
       eth_setPreferredAggregator:
@@ -229,23 +240,6 @@ export default class QuillController {
     return undefined;
   }
 
-  async addAccount(privKey: string): Promise<string> {
-    // FIXME: This call should be simpler
-    const address = await this.keyringController.rpc.createAccount({
-      type: 'quill-rpc',
-      id: createRandomId(),
-      providerId: 'unknown',
-      origin: '<quill>',
-      Output: io.string,
-      method: 'createAccount',
-      params: [privKey],
-    });
-
-    const locale = getUserLanguage();
-    this.preferencesController.createUser(address, locale, 'USD', 'light');
-    return address;
-  }
-
   private watchThings() {
     (async () => {
       // TODO: Don't store the block number. Just use LongPollingCell to provide
@@ -266,7 +260,7 @@ export default class QuillController {
     (async () => {
       window.ethereum ??= { breakOnAssertionFailures: false };
 
-      const breakOnAssertionFailures = TransformCell.SubWithDefault(
+      const breakOnAssertionFailures = FormulaCell.SubWithDefault(
         this.cells.preferences,
         'breakOnAssertionFailures',
         false,

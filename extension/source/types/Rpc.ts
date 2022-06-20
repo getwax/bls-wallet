@@ -82,6 +82,11 @@ export const rpcMap = {
     ]),
     output: ProviderState,
   },
+  addAccount: {
+    origin: '<quill>',
+    params: io.tuple([io.union([io.undefined, io.string])]),
+    output: io.string,
+  },
 
   // KeyringController
 

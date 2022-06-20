@@ -114,7 +114,7 @@ export default class KeyringController {
     },
   });
 
-  private async BlsWalletAddress(privateKey: string): Promise<string> {
+  async BlsWalletAddress(privateKey: string): Promise<string> {
     return BlsWalletWrapper.Address(
       privateKey,
       NETWORK_CONFIG.addresses.verificationGateway,
