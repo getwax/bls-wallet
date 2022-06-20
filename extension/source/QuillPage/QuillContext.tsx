@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 
-import { RpcClient } from '../types/Rpc';
 import elcc from '../cells/extensionLocalCellCollection';
 import assert from '../helpers/assert';
 import QuillStorageCells from '../QuillStorageCells';
@@ -8,6 +7,7 @@ import QuillEthereumProvider from '../QuillEthereumProvider';
 import EthersProvider from '../EthersProvider';
 import CellCollection from '../cells/CellCollection';
 import { FormulaCell } from '../cells/FormulaCell';
+import QuillLongPollingCell from '../QuillLongPollingCell';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -20,7 +20,7 @@ function getQuillContextValue() {
     ethereum,
     ethersProvider: EthersProvider(ethereum),
     rpc: ethereum.rpc,
-    cells: QuillContextCells(elcc, ethereum.rpc),
+    cells: QuillContextCells(elcc, ethereum),
   };
 }
 
@@ -49,7 +49,10 @@ export function QuillContextProvider({ children }: Props) {
   );
 }
 
-function QuillContextCells(storage: CellCollection, _rpc: RpcClient) {
+function QuillContextCells(
+  storage: CellCollection,
+  ethereum: QuillEthereumProvider,
+) {
   const storageCells = QuillStorageCells(storage);
 
   return {
@@ -58,5 +61,6 @@ function QuillContextCells(storage: CellCollection, _rpc: RpcClient) {
       { network: storageCells.network },
       ({ network }) => JSON.stringify(network, null, 2),
     ),
+    blockNumber: QuillLongPollingCell(ethereum, 'blockNumber'),
   };
 }

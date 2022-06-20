@@ -9,6 +9,8 @@ const NetworkSettings: FunctionComponent = () => {
     <>
       <pre>
         <Display cell={cells.networkJson} />
+        {'\n'}
+        Block number: <Display cell={cells.blockNumber} />
       </pre>
     </>
   );
