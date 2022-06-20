@@ -24,19 +24,15 @@ function QuillCells(storage: CellCollection) {
             address: io.string,
           }),
         ),
-        // FIXME: MEGAFIX: redundant storage of chainId
-        chainId: io.union([io.undefined, io.string]),
       }),
       () => ({
         HDPhrase: ethers.Wallet.createRandom().mnemonic.phrase,
         wallets: [],
-        chainId: undefined,
       }),
     ),
     network: storage.Cell(
       'network',
       io.type({
-        chainId: io.string,
         providerConfig: ProviderConfig,
         properties: io.intersection([
           io.record(io.string, io.unknown),
@@ -47,9 +43,6 @@ function QuillCells(storage: CellCollection) {
         ]),
       }),
       () => ({
-        // TODO: MEGAFIX: Remove this - the real chain id is in
-        //       providerConfig
-        chainId: '0x66eeb',
         properties: {
           EIPS: { 1559: undefined },
         },
@@ -65,9 +58,11 @@ function QuillCells(storage: CellCollection) {
     })),
   };
 
+  const providerConfig = TransformCell.Sub(rootCells.network, 'providerConfig');
+
   /** the cells involved in the response to quill_providerState in public rpc */
   const providerStateCells = {
-    chainId: TransformCell.Sub(rootCells.network, 'chainId'),
+    chainId: TransformCell.Sub(providerConfig, 'chainId'),
     selectedAddress: TransformCell.Sub(
       rootCells.preferences,
       'selectedAddress',

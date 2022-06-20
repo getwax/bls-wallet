@@ -30,7 +30,6 @@ export default class NetworkController
 {
   // TODO: MEGAFIX: Move / deduplicate these cells
   ticker: IReadableCell<string>;
-  chainId: IReadableCell<string>;
   blockNumber: IReadableCell<number>;
   providerConfig: IReadableCell<ProviderConfig>;
 
@@ -42,12 +41,6 @@ export default class NetworkController
       { network: this.network },
       // eslint-disable-next-line @typescript-eslint/no-shadow
       ({ network }) => network.providerConfig.ticker,
-    );
-
-    this.chainId = new FormulaCell(
-      { network: this.network },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ network }) => network.chainId,
     );
 
     this.blockNumber = new FormulaCell(
