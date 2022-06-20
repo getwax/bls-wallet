@@ -52,7 +52,6 @@ function QuillStorageCells(storage: CellCollection) {
     })),
   };
 
-  /** the cells involved in the response to quill_providerState in public rpc */
   const providerStateCells = {
     chainId: FormulaCell.Sub(rootCells.network, 'chainId'),
     selectedAddress: TransformCell.Sub(
@@ -67,6 +66,7 @@ function QuillStorageCells(storage: CellCollection) {
 
   return {
     ...rootCells,
+    providerState: new FormulaCell(providerStateCells, (values) => values),
     ...providerStateCells,
 
     theme: new FormulaCell(

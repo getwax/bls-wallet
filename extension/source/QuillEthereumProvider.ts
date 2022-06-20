@@ -7,13 +7,11 @@ import forEach from './cells/forEach';
 
 import { FormulaCell } from './cells/FormulaCell';
 import isType from './cells/isType';
-import LongPollingCell from './cells/LongPollingCell';
 import mapValues from './helpers/mapValues';
 import RandomId from './helpers/RandomId';
 import {
   assertEthereumRequestBody,
   EthereumRequestBody,
-  ProviderState,
   RpcClient,
   RpcMap,
   rpcMap,
@@ -23,6 +21,7 @@ import {
 } from './types/Rpc';
 import ExplicitAny from './types/ExplicitAny';
 import { assertConfig } from './helpers/assert';
+import QuillLongPollingCell from './QuillLongPollingCell';
 
 /**
  * This is Quill's definition of window.ethereum.
@@ -51,16 +50,10 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       this.#exposeRpc();
     }
 
-    const state = LongPollingCell<ProviderState>(async (opt) =>
-      this.request({
-        method: 'quill_providerState',
-        params: [opt ?? null],
-      }),
-    );
+    const state = QuillLongPollingCell(this, 'providerState');
 
     const chainId = FormulaCell.Sub(state, 'chainId');
     const selectedAddress = FormulaCell.Sub(state, 'selectedAddress');
-
     const developerSettings = FormulaCell.Sub(state, 'developerSettings');
 
     let connected = false;

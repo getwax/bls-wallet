@@ -1,11 +1,11 @@
 import * as io from 'io-ts';
 
 import assertType from '../cells/assertType';
+import { IReadableCell } from '../cells/ICell';
 import Stoppable from '../cells/Stoppable';
 import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import AsyncReturnType from '../types/AsyncReturnType';
-import ExplicitAny from '../types/ExplicitAny';
 import {
   longPollingCellMap,
   LongPollingCellName,
@@ -34,13 +34,13 @@ export default class LongPollingController {
         differentMaybe,
         optional(
           io.type({
-            value: longPollingCellMap[cellName] as io.Type<unknown>,
+            value: longPollingCellMap[cellName].Type as io.Type<unknown>,
           }),
         ),
       );
 
-      const cell = this.cells[cellName];
-      const stoppable = new Stoppable(cell);
+      const cell: IReadableCell<unknown> = this.cells[cellName];
+      const stoppable = new Stoppable<unknown>(cell);
       let res: AsyncReturnType<RpcImpl['longPoll']> = 'please-retry';
 
       this.cancelHandles[fullLongPollingId] = {
@@ -59,7 +59,7 @@ export default class LongPollingController {
 
         if (
           !differentMaybe ||
-          cell.hasChanged(differentMaybe.value as ExplicitAny, maybe.value)
+          cell.hasChanged(differentMaybe.value, maybe.value)
         ) {
           res = { value: maybe.value };
         }

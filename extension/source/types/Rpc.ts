@@ -83,13 +83,6 @@ export const rpcMap = {
     Params: io.tuple([io.string, io.number, io.string]),
     Response: io.literal('ok'),
   },
-  quill_providerState: {
-    origin: '*',
-    Params: io.tuple([
-      io.union([io.null, io.type({ differentFrom: ProviderState })]),
-    ]),
-    Response: ProviderState,
-  },
   addAccount: {
     origin: '<quill>',
     Params: io.tuple([io.union([io.undefined, io.string])]),
@@ -163,7 +156,7 @@ export const rpcMap = {
   // LongPollingController
 
   longPoll: {
-    origin: '<quill>',
+    origin: '*',
     Params: io.tuple([
       io.type({
         cellName: io.string,
@@ -185,7 +178,7 @@ export const rpcMap = {
   },
 
   longPollCancel: {
-    origin: '<quill>',
+    origin: '*',
     Params: io.tuple([
       io.type({
         longPollingId: io.string,

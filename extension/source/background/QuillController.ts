@@ -9,12 +9,10 @@ import PreferencesController from './PreferencesController';
 import CellCollection from '../cells/CellCollection';
 import ExplicitAny from '../types/ExplicitAny';
 import {
-  ProviderState,
   RpcClient,
   RpcImpl,
   rpcMap,
   RpcMessage,
-  RpcMethodMessage,
   RpcMethodName,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
@@ -89,6 +87,7 @@ export default class QuillController {
 
     this.longPollingController = new LongPollingController({
       blockNumber: this.networkController.blockNumber,
+      providerState: this.cells.providerState,
     });
 
     this.watchThings();
@@ -157,28 +156,6 @@ export default class QuillController {
         return 'ok' as const;
       },
 
-      quill_providerState: async (message) => {
-        const providerState = this.ProviderState(message);
-
-        const {
-          params: [opt],
-        } = message;
-
-        // TODO: MEGAFIX: Move this long polling idea inside cells
-        for await (const $providerState of providerState) {
-          if (
-            opt &&
-            !providerState.hasChanged(opt.differentFrom, $providerState)
-          ) {
-            continue;
-          }
-
-          return $providerState;
-        }
-
-        throw new Error('Unexpected end of providerState cell');
-      },
-
       setSelectedAddress: this.preferencesController.rpc.setSelectedAddress,
       longPoll: this.longPollingController.rpc.longPoll,
       longPollCancel: this.longPollingController.rpc.longPollCancel,
@@ -198,21 +175,6 @@ export default class QuillController {
             Params: rpcMap[methodName].Params,
             Response: rpcMap[methodName].Response,
           }),
-    );
-  }
-
-  ProviderState(
-    _message: RpcMethodMessage<'quill_providerState'>,
-  ): IReadableCell<ProviderState> {
-    // TODO: (merge-ok) This should be per-provider (or maybe per-origin)
-
-    return new FormulaCell(
-      {
-        chainId: this.cells.chainId,
-        selectedAddress: this.cells.selectedAddress,
-        developerSettings: this.cells.developerSettings,
-      },
-      (cells) => cells,
     );
   }
 
