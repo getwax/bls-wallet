@@ -45,6 +45,7 @@ export const ProviderConfig = io.type({
 
 export type ProviderConfig = io.TypeOf<typeof ProviderConfig>;
 
+// FIXME: MEGAFIX: This belongs in config.
 export const builtinProviderConfigs = ensureType<
   Record<string, ProviderConfig>
 >()({

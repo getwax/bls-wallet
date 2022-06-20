@@ -5,12 +5,12 @@ import { ethers } from 'ethers';
 
 import { IReadableCell } from '../cells/ICell';
 import { FormulaCell } from '../cells/FormulaCell';
-import approximate from '../cells/approximate';
 import RandomId from '../helpers/RandomId';
 import assertType from '../cells/assertType';
 import assert from '../helpers/assert';
 import QuillCells from '../QuillCells';
 import toOkError from '../helpers/toOkError';
+import TimeCell from '../cells/TimeCell';
 
 const Object_ = io.record(io.string, io.unknown);
 type Object_ = io.TypeOf<typeof Object_>;
@@ -26,21 +26,13 @@ type RpcMessage = io.TypeOf<typeof RpcMessage>;
 export default class NetworkController
   implements ethers.providers.ExternalProvider
 {
-  // TODO: MEGAFIX: Move / deduplicate these cells
   blockNumber: IReadableCell<number>;
 
-  constructor(
-    public network: QuillCells['network'],
-    time: IReadableCell<number>,
-  ) {
+  constructor(public network: QuillCells['network']) {
     this.blockNumber = new FormulaCell(
       {
         network,
-
-        // TODO: MEGAFIX: Once we stop actively tracking blocks we should
-        // increase the frequency here. ethers polls every 4 seconds, that seems
-        // reasonable.
-        time: approximate(time, 20_000),
+        time: TimeCell(4_000),
       },
       () => this.fetchBlockNumber(),
     );

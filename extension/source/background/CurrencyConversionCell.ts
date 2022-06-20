@@ -1,6 +1,6 @@
-import approximate from '../cells/approximate';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
+import TimeCell from '../cells/TimeCell';
 import { CRYPTO_COMPARE_API_KEY } from '../env';
 import assert from '../helpers/assert';
 
@@ -13,16 +13,15 @@ export default function CurrencyConversionCell(
   config: CurrencyConversionConfig,
   preferredCurrency: IReadableCell<string | undefined>,
   chainCurrency: IReadableCell<string>,
-  time: IReadableCell<number>,
 ) {
   return new FormulaCell(
     {
       preferredCurrency,
       chainCurrency,
-      time: approximate(time, config.pollInterval),
+      time: TimeCell(config.pollInterval),
     },
     // eslint-disable-next-line @typescript-eslint/no-shadow
-    ({ preferredCurrency, chainCurrency, time: _ }) =>
+    ({ preferredCurrency, chainCurrency }) =>
       fetchRate(config.api, chainCurrency, preferredCurrency),
   );
 }

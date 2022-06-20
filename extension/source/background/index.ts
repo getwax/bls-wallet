@@ -17,7 +17,11 @@ const quillController = new QuillController(
   // FIXME: MEGAFIX (deferred): Hard coding is not configuration.
   {
     api: 'https://min-api.cryptocompare.com/data/price',
-    pollInterval: 600_000,
+
+    // Note: We can afford to poll relatively frequently because we only fetch
+    // currency information when we actually need it, via the magic of cells.
+    // (TODO: MEGAFIX: test)
+    pollInterval: 30_000,
   },
 );
 

@@ -18,7 +18,6 @@ import {
   RpcMethodName,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
-import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
 import { FormulaCell } from '../cells/FormulaCell';
@@ -48,7 +47,6 @@ export default class QuillController {
   rpc: RpcImpl;
   internalRpc: RpcClient;
 
-  time = TimeCell(1000);
   cells: QuillCells;
 
   constructor(
@@ -57,10 +55,7 @@ export default class QuillController {
   ) {
     this.cells = QuillCells(storage);
 
-    this.networkController = new NetworkController(
-      this.cells.network,
-      this.time,
-    );
+    this.networkController = new NetworkController(this.cells.network);
 
     this.ethersProvider = new ethers.providers.Web3Provider(
       this.networkController,
@@ -74,7 +69,6 @@ export default class QuillController {
       this.currencyConversionConfig,
       this.preferencesController.preferredCurrency,
       FormulaCell.Sub(this.cells.network, 'chainCurrency'),
-      this.time,
     );
 
     this.keyringController = new KeyringController(
