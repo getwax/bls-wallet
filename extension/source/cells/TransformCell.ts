@@ -12,7 +12,7 @@ export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
   constructor(
     public input: ICell<Input>,
     public mapInput: ($input: Input) => T,
-    public mapOutput: (
+    public mapResponse: (
       $input: Input,
       $output: Awaited<T>,
     ) => Input | Promise<Input>,
@@ -42,7 +42,7 @@ export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
 
   async write(newValue: Awaited<T>) {
     await this.input.write(
-      await this.mapOutput(await this.input.read(), newValue),
+      await this.mapResponse(await this.input.read(), newValue),
     );
   }
 

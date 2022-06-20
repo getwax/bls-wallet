@@ -103,7 +103,7 @@ export default class QuillController {
         }
 
         const networkRes = await this.networkController.requestStrict(message);
-        assertType(networkRes, message.Output);
+        assertType(networkRes, message.Response);
 
         return networkRes;
       },
@@ -119,7 +119,7 @@ export default class QuillController {
         }
 
         const networkRes = await this.networkController.requestStrict(message);
-        assertType(networkRes, message.Output);
+        assertType(networkRes, message.Response);
 
         return networkRes;
       },
@@ -225,7 +225,7 @@ export default class QuillController {
 
           return (this.rpc[message.method] as ExplicitAny)({
             ...message,
-            Output: rpcMap[message.method].Output,
+            Response: rpcMap[message.method].Response,
           }) as unknown;
         }
 

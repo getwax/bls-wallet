@@ -44,12 +44,12 @@ export const rpcMap = {
   eth_chainId: {
     origin: '*',
     Params: emptyTuple,
-    Output: io.string,
+    Response: io.string,
   },
   eth_getTransactionByHash: {
     origin: '*',
     Params: io.tuple([io.string]),
-    Output: io.type({
+    Response: io.type({
       hash: io.string,
       from: io.string,
       nonce: io.string,
@@ -61,7 +61,7 @@ export const rpcMap = {
   eth_getTransactionReceipt: {
     origin: '*',
     Params: io.tuple([io.string]),
-    Output: io.type({
+    Response: io.type({
       transactionHash: io.string,
       transactionIndex: io.string,
       blockHash: io.string,
@@ -78,19 +78,19 @@ export const rpcMap = {
   debugMe: {
     origin: '*',
     Params: io.tuple([io.string, io.number, io.string]),
-    Output: io.literal('ok'),
+    Response: io.literal('ok'),
   },
   quill_providerState: {
     origin: '*',
     Params: io.tuple([
       io.union([io.null, io.type({ differentFrom: ProviderState })]),
     ]),
-    Output: ProviderState,
+    Response: ProviderState,
   },
   addAccount: {
     origin: '<quill>',
     Params: io.tuple([io.union([io.undefined, io.string])]),
-    Output: io.string,
+    Response: io.string,
   },
 
   // KeyringController
@@ -98,42 +98,42 @@ export const rpcMap = {
   eth_accounts: {
     origin: '*',
     Params: emptyTuple,
-    Output: io.array(io.string),
+    Response: io.array(io.string),
   },
   eth_coinbase: {
     origin: '*',
     Params: emptyTuple,
-    Output: io.union([io.null, io.string]),
+    Response: io.union([io.null, io.string]),
   },
   eth_requestAccounts: {
     origin: '*',
     Params: emptyTuple,
-    Output: io.array(io.string),
+    Response: io.array(io.string),
   },
   addHDAccount: {
     origin: '<quill>',
     Params: emptyTuple,
-    Output: io.string,
+    Response: io.string,
   },
   isOnboardingComplete: {
     origin: '<quill>',
     Params: emptyTuple,
-    Output: io.boolean,
+    Response: io.boolean,
   },
   setHDPhrase: {
     origin: '<quill>',
     Params: io.tuple([io.string]),
-    Output: io.literal('ok'),
+    Response: io.literal('ok'),
   },
   lookupPrivateKey: {
     origin: '<quill>',
     Params: io.tuple([io.string]),
-    Output: io.string,
+    Response: io.string,
   },
   removeAccount: {
     origin: '<quill>',
     Params: io.tuple([io.string]),
-    Output: io.void, // TODO: MEGAFIX: 'ok's should also be io.void
+    Response: io.void, // TODO: MEGAFIX: 'ok's should also be io.void
   },
 
   // AggregatorController
@@ -141,12 +141,12 @@ export const rpcMap = {
   eth_sendTransaction: {
     origin: '*',
     Params: io.array(SendTransactionParams),
-    Output: io.string,
+    Response: io.string,
   },
   eth_setPreferredAggregator: {
     origin: '*',
     Params: io.tuple([io.string]),
-    Output: io.literal('ok'),
+    Response: io.literal('ok'),
   },
 
   // PreferencesController
@@ -154,7 +154,7 @@ export const rpcMap = {
   setSelectedAddress: {
     origin: '<quill>',
     Params: io.tuple([/* newSelectedAddress */ io.string]),
-    Output: io.literal('ok'),
+    Response: io.literal('ok'),
   },
 };
 
@@ -166,6 +166,7 @@ export const RpcMethodName: io.Type<keyof RpcMap> = io.union(
 
 export type RpcMethodName = io.TypeOf<typeof RpcMethodName>;
 
+// TODO: MEGAFIX: Message -> Request
 export const RpcMessage = io.type({
   type: io.literal('quill-rpc'),
   id: io.string,
@@ -184,7 +185,7 @@ export type RpcMethodMessage<M extends RpcMethodName> = Omit<
   method: M;
   params: io.TypeOf<RpcMap[M]['Params']>;
   Params: RpcMap[M]['Params'];
-  Output: RpcMap[M]['Output'];
+  Response: RpcMap[M]['Response'];
 };
 
 export const RpcResult = io.union([
@@ -227,7 +228,7 @@ export type RpcResponse = io.TypeOf<typeof RpcResponse>;
 export type RpcImpl = {
   [M in RpcMethodName]: (
     message: RpcMethodMessage<M>,
-  ) => Promise<io.TypeOf<RpcMap[M]['Output']>>;
+  ) => Promise<io.TypeOf<RpcMap[M]['Response']>>;
 };
 
 export type PartialRpcImpl = {
@@ -239,7 +240,7 @@ export type PartialRpcImpl = {
 export type RpcClient = {
   [M in RpcMethodName]: (
     ...params: RpcMethodMessage<M>['params']
-  ) => Promise<io.TypeOf<RpcMap[M]['Output']>>;
+  ) => Promise<io.TypeOf<RpcMap[M]['Response']>>;
 };
 
 export type EthereumRequestBody<M extends string> = {

@@ -105,7 +105,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
   async request<M extends string>(
     body: EthereumRequestBody<M>,
   ): Promise<
-    M extends RpcMethodName ? io.TypeOf<RpcMap[M]['Output']> : unknown
+    M extends RpcMethodName ? io.TypeOf<RpcMap[M]['Response']> : unknown
   > {
     // TODO: MEGAFIX (deferred): Ensure all errors are EthereumRpcError, maybe making use of
     // the ethereum-rpc-error module.
@@ -150,8 +150,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     });
 
     if (isType(body.method, RpcMethodName)) {
-      // FIXME: MEGAFIX: Naming: output vs response
-      assertType(response, rpcMap[body.method].Output as io.Type<unknown>);
+      assertType(response, rpcMap[body.method].Response as io.Type<unknown>);
     }
 
     return response as ExplicitAny;
