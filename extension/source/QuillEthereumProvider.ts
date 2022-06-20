@@ -9,6 +9,7 @@ import {
   assertEthereumRequestBody,
   EthereumRequestBody,
   ProviderState,
+  RpcClient,
   RpcMessage,
   RpcResponse,
 } from './types/Rpc';
@@ -28,6 +29,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
 }>) {
   isQuill = true;
   breakOnAssertionFailures = false;
+  rpc?: RpcClient; // TODO: MEGAFIX: Define this based on quill/config.
 
   constructor() {
     super();
