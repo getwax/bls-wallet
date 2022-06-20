@@ -37,7 +37,7 @@
 import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
-import { RandomId } from './background/utils';
+import RandomId from './helpers/RandomId';
 import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 
 (() => {

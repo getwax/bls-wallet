@@ -7,7 +7,7 @@ import { ProviderConfig } from './networks';
 import { IReadableCell } from '../cells/ICell';
 import { FormulaCell } from '../cells/FormulaCell';
 import approximate from '../cells/approximate';
-import { RandomId } from './utils';
+import RandomId from '../helpers/RandomId';
 import assertType from '../cells/assertType';
 import assert from '../helpers/assert';
 import QuillCells from '../QuillCells';

@@ -8,7 +8,7 @@ import assertType from './cells/assertType';
 import { FormulaCell } from './cells/FormulaCell';
 import isType from './cells/isType';
 import LongPollingCell from './cells/LongPollingCell';
-import { RandomId } from './background/utils';
+import RandomId from './helpers/RandomId';
 import { ProviderState, RpcMessage, RpcResponse } from './types/Rpc';
 
 // TODO: Move inside Rpc.ts / deduplicate
