@@ -15,11 +15,13 @@ import {
   EthereumRequestBody,
   ProviderState,
   RpcClient,
+  RpcMap,
   rpcMap,
   RpcMessage,
   RpcMethodName,
   RpcResponse,
 } from './types/Rpc';
+import ExplicitAny from './types/ExplicitAny';
 
 /**
  * This is Quill's definition of window.ethereum.
@@ -36,7 +38,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
 }>) {
   isQuill = true;
   breakOnAssertionFailures = false;
-  rpc?: RpcClient; // TODO: MEGAFIX: Define this based on quill/config.
+  rpc?: RpcClient;
 
   constructor() {
     super();
@@ -45,13 +47,11 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       this.#exposeRpc();
     }
 
-    // TODO: MEGAFIX: Generalize this
-    const state = LongPollingCell<ProviderState>(
-      (opt) =>
-        this.request({
-          method: 'quill_providerState',
-          params: [opt ?? null],
-        }) as Promise<ProviderState>, // TODO: MEGAFIX: Avoid cast
+    const state = LongPollingCell<ProviderState>(async (opt) =>
+      this.request({
+        method: 'quill_providerState',
+        params: [opt ?? null],
+      }),
     );
 
     const chainId = FormulaCell.Sub(state, 'chainId');
@@ -102,7 +102,11 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     );
   }
 
-  async request<M extends string>(body: EthereumRequestBody<M>) {
+  async request<M extends string>(
+    body: EthereumRequestBody<M>,
+  ): Promise<
+    M extends RpcMethodName ? io.TypeOf<RpcMap[M]['output']> : unknown
+  > {
     // TODO: MEGAFIX: Ensure all errors are EthereumRpcError, maybe making use of
     // the ethereum-rpc-error module.
 
@@ -150,7 +154,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       assertType(response, rpcMap[body.method].output as io.Type<unknown>);
     }
 
-    return response;
+    return response as ExplicitAny;
   }
 
   #exposeRpc() {
