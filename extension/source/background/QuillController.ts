@@ -3,7 +3,6 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
-import { getUserLanguage } from './utils';
 import NetworkController from './NetworkController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
@@ -131,8 +130,7 @@ export default class QuillController {
 
         const address = await this.keyringController.rpc.addAccount(message);
 
-        const locale = getUserLanguage();
-        this.preferencesController.createUser(address, locale, 'USD', 'light');
+        this.preferencesController.createUser(address, 'USD', 'light');
         return address;
       },
 

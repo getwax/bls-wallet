@@ -73,12 +73,7 @@ export default class PreferencesController {
    * @param address - address of the user
    *
    */
-  async createUser(
-    address: string,
-    locale: string,
-    preferredCurrency: string,
-    theme: Theme,
-  ) {
+  async createUser(address: string, preferredCurrency: string, theme: Theme) {
     const newUserPreferences = this.AddressPreferences(address);
 
     assert(
@@ -98,7 +93,6 @@ export default class PreferencesController {
       theme,
       defaultPublicAddress: address,
       preferredCurrency,
-      locale,
     });
   }
 
@@ -160,7 +154,6 @@ type CustomToken = io.TypeOf<typeof CustomToken>;
 
 export const AddressPreferences = io.type({
   preferredCurrency: io.string,
-  locale: io.string,
   theme: Theme,
   defaultPublicAddress: io.union([io.undefined, io.string]),
   contacts: io.array(Contact),
@@ -172,7 +165,6 @@ export type AddressPreferences = io.TypeOf<typeof AddressPreferences>;
 
 export const defaultAddressPreferences: AddressPreferences = {
   preferredCurrency: 'USD',
-  locale: 'en-US',
   theme: 'dark',
   defaultPublicAddress: undefined,
   contacts: [],
