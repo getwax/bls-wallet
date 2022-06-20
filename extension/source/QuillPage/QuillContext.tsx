@@ -1,10 +1,8 @@
 import * as io from 'io-ts';
 import React, { useMemo } from 'react';
-import { ethers } from 'ethers';
 
 import mapValues from '../helpers/mapValues';
-import ExplicitAny from '../types/ExplicitAny';
-import { RpcClient, rpcMap } from '../types/Rpc';
+import { EthereumRequestBody, RpcClient, rpcMap } from '../types/Rpc';
 import { IReadableCell } from '../cells/ICell';
 import elcc from '../cells/extensionLocalCellCollection';
 import assertType from '../cells/assertType';
@@ -13,6 +11,7 @@ import { FormulaCell } from '../cells/FormulaCell';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import QuillEthereumProvider from '../QuillEthereumProvider';
+import EthersProvider from '../EthersProvider';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -23,12 +22,16 @@ function getQuillContextValue() {
   const rpc = mapValues(rpcMap, ({ params: paramsType, output }, method) => {
     return async (...params: unknown[]) => {
       assertType(params, paramsType as unknown as io.Type<unknown[]>);
-      const response = await ethereum.request({
+
+      const request = {
         method,
         params,
-      });
+      } as EthereumRequestBody<string>;
+
+      const response = await ethereum.request(request);
       assertType(response, output as io.Type<unknown>);
-      return response as ExplicitAny;
+
+      return response;
     };
   }) as RpcClient;
 
@@ -44,7 +47,7 @@ function getQuillContextValue() {
 
   return {
     ethereum,
-    ethersProvider: new ethers.providers.Web3Provider(ethereum),
+    ethersProvider: EthersProvider(ethereum),
     rpc,
     time,
     selectedAddress,

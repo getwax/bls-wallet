@@ -1,4 +1,6 @@
 import * as io from 'io-ts';
+import assertType from '../cells/assertType';
+import isType from '../cells/isType';
 
 import { Result } from '../helpers/toOkError';
 import AsyncReturnType from './AsyncReturnType';
@@ -26,6 +28,8 @@ export const SendTransactionParams = io.type({
 });
 
 export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
+
+// FIXME: MEGAFIX: Use uppercase for io types
 
 export const rpcMap = {
   // QuillController
@@ -236,4 +240,37 @@ export type RpcClient = {
   ) => Promise<io.TypeOf<RpcMap[M]['output']>>;
 };
 
-// TODO: MEGAFIX: export type EthereumRequest...
+export type EthereumRequestBody<M extends string> = {
+  method: M;
+  params: M extends RpcMethodName ? RpcMethodMessage<M>['params'] : unknown[];
+};
+
+// FIXME: MEGAFIX: Lints are only warnings!
+
+export const EthereumRequestBody = io.union([
+  ...Object.entries(rpcMap).map(([k, v]) =>
+    io.type({
+      method: io.literal(k),
+      params: v.params,
+    }),
+  ),
+  io.type({
+    // method: io.
+  }),
+] as ExplicitAny);
+
+export function assertEthereumRequestBody(
+  body: unknown,
+): asserts body is EthereumRequestBody<string> {
+  assertType(
+    body,
+    io.type({
+      method: io.string,
+      params: io.array(io.unknown),
+    }),
+  );
+
+  if (isType(body.method, RpcMethodName)) {
+    assertType(body.params, rpcMap[body.method].params as io.Type<unknown>);
+  }
+}

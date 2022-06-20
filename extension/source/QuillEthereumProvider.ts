@@ -1,35 +1,31 @@
-import { ethers } from 'ethers';
 import { EventEmitter } from 'events';
-
-import * as io from 'io-ts';
 import TypedEventEmitter from 'typed-emitter';
 
-import assertType from './cells/assertType';
 import { FormulaCell } from './cells/FormulaCell';
 import isType from './cells/isType';
 import LongPollingCell from './cells/LongPollingCell';
 import RandomId from './helpers/RandomId';
-import { ProviderState, RpcMessage, RpcResponse } from './types/Rpc';
+import {
+  assertEthereumRequestBody,
+  EthereumRequestBody,
+  ProviderState,
+  RpcMessage,
+  RpcResponse,
+} from './types/Rpc';
 
-// TODO: MEGAFIX: Move inside Rpc.ts / deduplicate
-const RequestBody = io.type({
-  method: io.string,
-  params: io.union([io.undefined, io.array(io.unknown)]),
-});
-
-export default class QuillEthereumProvider
-  extends (EventEmitter as new () => TypedEventEmitter<{
-    accountsChanged(accounts: string[]): void;
-    chainChanged(chainId: string): void;
-    connect(connection: { chainId: string }): void;
-    disconnect(disconnectionMessage: {
-      message: string;
-      code: number;
-      data?: unknown;
-    }): void;
-  }>)
-  implements ethers.providers.ExternalProvider
-{
+/**
+ * This is Quill's definition of window.ethereum.
+ */
+export default class QuillEthereumProvider extends (EventEmitter as new () => TypedEventEmitter<{
+  accountsChanged(accounts: string[]): void;
+  chainChanged(chainId: string): void;
+  connect(connection: { chainId: string }): void;
+  disconnect(disconnectionMessage: {
+    message: string;
+    code: number;
+    data?: unknown;
+  }): void;
+}>) {
   isQuill = true;
   breakOnAssertionFailures = false;
 
@@ -91,12 +87,11 @@ export default class QuillEthereumProvider
     })();
   }
 
-  // TODO: MEGAFIX: Expose better type information
-  async request(body: unknown) {
+  async request<M extends string>(body: EthereumRequestBody<M>) {
     // TODO: MEGAFIX: Ensure all errors are EthereumRpcError, maybe making use of
     // the ethereum-rpc-error module.
 
-    assertType(body, RequestBody);
+    assertEthereumRequestBody(body);
 
     const id = RandomId();
 
