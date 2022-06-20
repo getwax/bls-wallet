@@ -5,10 +5,7 @@ import type { QuillContextValue } from '../QuillPage/QuillContext';
 
 declare global {
   interface Window {
-    ethereum?:
-      | QuillEthereumProvider
-      | (providers.ExternalProvider & { breakOnAssertionFailures: boolean })
-      | { breakOnAssertionFailures: boolean };
+    ethereum?: QuillEthereumProvider | providers.ExternalProvider;
     debug?: {
       Browser?: Browser;
       quill?: QuillContextValue;

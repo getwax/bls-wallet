@@ -30,6 +30,7 @@ import CurrencyConversionCell, {
   CurrencyConversionConfig,
 } from './CurrencyConversionCell';
 import forEach from '../cells/forEach';
+import { assertConfig } from '../helpers/assert';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -251,14 +252,10 @@ export default class QuillController {
       await storedBlockNumber.write($blockNumber);
     });
 
-    window.ethereum ??= { breakOnAssertionFailures: false };
-    const { ethereum } = window;
-
     forEach(
       FormulaCell.Sub(this.cells.developerSettings, 'breakOnAssertionFailures'),
       ($breakOnAssertionFailures) => {
-        // TODO: MEGAFIX: don't set on window.ethereum (but use global area)
-        ethereum.breakOnAssertionFailures = $breakOnAssertionFailures;
+        assertConfig.breakOnFailures = $breakOnAssertionFailures;
       },
     );
   }

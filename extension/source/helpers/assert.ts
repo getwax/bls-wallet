@@ -1,6 +1,10 @@
 // TODO: MEGAFIX: Probably all of our raw `throw new Error(...)` examples should be
 // asserts.
 
+export const assertConfig = {
+  breakOnFailures: false,
+};
+
 /**
  * Asserts that the condition is true. The meaning of an assertion is that it is
  * expected to never fail.
@@ -31,16 +35,20 @@
  */
 export default function assert(
   condition: boolean,
-  msg?: string,
+  info?: string | Error,
 ): asserts condition {
   if (!condition) {
-    if (window.ethereum?.breakOnAssertionFailures) {
+    if (assertConfig.breakOnFailures) {
       // eslint-disable-next-line no-debugger
       debugger;
     }
 
+    if (info instanceof Error) {
+      throw info;
+    }
+
     throw new Error(
-      msg === undefined ? 'Assertion failed' : `Assertion failed: ${msg}`,
+      info === undefined ? 'Assertion failed' : `Assertion failed: ${info}`,
     );
   }
 }
@@ -52,15 +60,19 @@ export default function assert(
  * breakpoint for you if you have configured "Break on assertion failures" in
  * Quill's Developer Settings.
  */
-export function softAssert(condition: boolean, msg?: string): void {
+export function softAssert(condition: boolean, info?: string | Error): void {
   if (!condition) {
-    if (window.ethereum?.breakOnAssertionFailures) {
+    if (assertConfig.breakOnFailures) {
       // eslint-disable-next-line no-debugger
       debugger;
     }
 
-    console.error(
-      msg === undefined ? 'Assertion failed' : `Assertion failed: ${msg}`,
-    );
+    if (info instanceof Error) {
+      console.error(info);
+    } else {
+      console.error(
+        info === undefined ? 'Assertion failed' : `Assertion failed: ${info}`,
+      );
+    }
   }
 }

@@ -22,6 +22,7 @@ import {
   RpcResponse,
 } from './types/Rpc';
 import ExplicitAny from './types/ExplicitAny';
+import { assertConfig } from './helpers/assert';
 
 /**
  * This is Quill's definition of window.ethereum.
@@ -70,7 +71,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       this.emit('chainChanged', $chainId);
     });
 
-    // FIXME: MEGAFIX: The chainId cell is not ending when it should.
+    // FIXME: MEGAFIX (deferred): The chainId cell is not ending when it should.
     chainId.events.on('end', () =>
       this.emit('disconnect', {
         message: 'disconnected',
@@ -86,8 +87,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     forEach(
       developerSettings,
       ({ breakOnAssertionFailures, exposeEthereumRpc }) => {
-        // TODO: MEGAFIX: Move this flag.
-        this.breakOnAssertionFailures = breakOnAssertionFailures;
+        assertConfig.breakOnFailures = breakOnAssertionFailures;
 
         const ethereumRpcExposed = this.rpc !== undefined;
 
