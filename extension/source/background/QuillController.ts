@@ -30,12 +30,14 @@ import forEach from '../cells/forEach';
 import { assertConfig } from '../helpers/assert';
 import RandomId from '../helpers/RandomId';
 import mapValues from '../helpers/mapValues';
+import LongPollingController from './LongPollingController';
 
 export default class QuillController {
   networkController: NetworkController;
   keyringController: KeyringController;
   preferencesController: PreferencesController;
   aggregatorController: AggregatorController;
+  longPollingController: LongPollingController;
   currencyConversion: IReadableCell<number | undefined>;
 
   /**
@@ -84,6 +86,10 @@ export default class QuillController {
       this.keyringController,
       this.ethersProvider,
     );
+
+    this.longPollingController = new LongPollingController({
+      blockNumber: this.networkController.blockNumber,
+    });
 
     this.watchThings();
 
@@ -174,6 +180,7 @@ export default class QuillController {
       },
 
       setSelectedAddress: this.preferencesController.rpc.setSelectedAddress,
+      longPoll: this.longPollingController.rpc.longPoll,
     };
 
     this.internalRpc = mapValues(

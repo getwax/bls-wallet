@@ -159,6 +159,28 @@ export const rpcMap = {
     Params: io.tuple([/* newSelectedAddress */ io.string]),
     Response: io.literal('ok'),
   },
+
+  // LongPollingController
+
+  longPoll: {
+    origin: '<quill>',
+    Params: io.tuple([
+      io.string,
+      io.union([
+        io.null,
+        io.type({
+          differentFrom: io.unknown,
+        }),
+      ]),
+    ]),
+    Response: io.union([
+      io.literal('please-retry'),
+      io.literal('cancelled'),
+      io.type({
+        value: io.unknown,
+      }),
+    ]),
+  },
 };
 
 export type RpcMap = typeof rpcMap;
