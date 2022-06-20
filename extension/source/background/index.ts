@@ -10,10 +10,14 @@ runtime.onInstalled.addListener(({ reason }) => {
   }
 });
 
-const quillController = new QuillController(extensionLocalCellCollection, {
-  api: 'https://min-api.cryptocompare.com/data/price',
-  pollInterval: 600_000,
-});
+const quillController = new QuillController(
+  extensionLocalCellCollection,
+  // FIXME: Hard coding is not configuration.
+  {
+    api: 'https://min-api.cryptocompare.com/data/price',
+    pollInterval: 600_000,
+  },
+);
 
 runtime.onMessage.addListener((message, _sender) => {
   const response = quillController.handleMessage(message);
