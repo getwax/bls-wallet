@@ -1,17 +1,23 @@
+import * as io from 'io-ts';
+
 import { EventEmitter } from 'events';
 import TypedEventEmitter from 'typed-emitter';
+import assertType from './cells/assertType';
 import forEach from './cells/forEach';
 
 import { FormulaCell } from './cells/FormulaCell';
 import isType from './cells/isType';
 import LongPollingCell from './cells/LongPollingCell';
+import mapValues from './helpers/mapValues';
 import RandomId from './helpers/RandomId';
 import {
   assertEthereumRequestBody,
   EthereumRequestBody,
   ProviderState,
   RpcClient,
+  rpcMap,
   RpcMessage,
+  RpcMethodName,
   RpcResponse,
 } from './types/Rpc';
 
@@ -35,6 +41,10 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
   constructor() {
     super();
 
+    if (window.isQuillExtensionPage) {
+      this.#exposeRpc();
+    }
+
     // TODO: MEGAFIX: Generalize this
     const state = LongPollingCell<ProviderState>(
       (opt) =>
@@ -47,10 +57,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     const chainId = FormulaCell.Sub(state, 'chainId');
     const selectedAddress = FormulaCell.Sub(state, 'selectedAddress');
 
-    const breakOnAssertionFailures = FormulaCell.Sub(
-      state,
-      'breakOnAssertionFailures',
-    );
+    const developerSettings = FormulaCell.Sub(state, 'developerSettings');
 
     let connected = false;
 
@@ -76,10 +83,23 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       this.emit('accountsChanged', $selectedAddress ? [$selectedAddress] : []),
     );
 
-    forEach(breakOnAssertionFailures, ($breakOnAssertionFailures) => {
-      // TODO: MEGAFIX: Move this flag.
-      this.breakOnAssertionFailures = $breakOnAssertionFailures;
-    });
+    forEach(
+      developerSettings,
+      ({ breakOnAssertionFailures, exposeEthereumRpc }) => {
+        // TODO: MEGAFIX: Move this flag.
+        this.breakOnAssertionFailures = breakOnAssertionFailures;
+
+        const ethereumRpcExposed = this.rpc !== undefined;
+
+        if (exposeEthereumRpc !== ethereumRpcExposed) {
+          if (exposeEthereumRpc) {
+            this.#exposeRpc();
+          } else {
+            delete this.rpc;
+          }
+        }
+      },
+    );
   }
 
   async request<M extends string>(body: EthereumRequestBody<M>) {
@@ -105,7 +125,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
 
     window.postMessage(message, '*');
 
-    return await new Promise((resolve, reject) => {
+    const response = await new Promise((resolve, reject) => {
       const messageListener = (evt: MessageEvent<unknown>) => {
         if (!isType(evt.data, RpcResponse) || evt.data.id !== id) {
           return;
@@ -124,8 +144,22 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
 
       window.addEventListener('message', messageListener);
     });
+
+    if (isType(body.method, RpcMethodName)) {
+      // FIXME: MEGAFIX: Naming: output vs response
+      assertType(response, rpcMap[body.method].output as io.Type<unknown>);
+    }
+
+    return response;
   }
 
-  // TODO: MEGAFIX: Expose .rpc here (only for quill page and maybe all pages if it's
-  // configured to be turned on)
+  #exposeRpc() {
+    this.rpc = mapValues(rpcMap, (_, method) => {
+      return (...params: unknown[]) =>
+        this.request({
+          method,
+          params,
+        } as EthereumRequestBody<string>);
+    }) as RpcClient;
+  }
 }

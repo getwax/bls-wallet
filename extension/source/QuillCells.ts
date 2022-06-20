@@ -56,7 +56,10 @@ function QuillCells(storage: CellCollection) {
       selectedAddress: undefined,
       lastErrorMessage: undefined,
       lastSuccessMessage: undefined,
-      breakOnAssertionFailures: undefined,
+      developerSettings: {
+        breakOnAssertionFailures: false,
+        exposeEthereumRpc: false,
+      },
     })),
   };
 
@@ -69,10 +72,9 @@ function QuillCells(storage: CellCollection) {
       rootCells.preferences,
       'selectedAddress',
     ),
-    breakOnAssertionFailures: TransformCell.SubWithDefault(
+    developerSettings: TransformCell.Sub(
       rootCells.preferences,
-      'breakOnAssertionFailures',
-      false,
+      'developerSettings',
     ),
   };
 
@@ -92,6 +94,16 @@ function QuillCells(storage: CellCollection) {
 
         return identity.theme;
       },
+    ),
+
+    breakOnAssertionFailures: TransformCell.Sub(
+      providerStateCells.developerSettings,
+      'breakOnAssertionFailures',
+    ),
+
+    exposeEthereumRpc: TransformCell.Sub(
+      providerStateCells.developerSettings,
+      'exposeEthereumRpc',
     ),
   };
 }

@@ -187,7 +187,7 @@ export default class QuillController {
       {
         chainId: this.cells.chainId,
         selectedAddress: this.cells.selectedAddress,
-        breakOnAssertionFailures: this.cells.breakOnAssertionFailures,
+        developerSettings: this.cells.developerSettings,
       },
       (cells) => cells,
     );
@@ -255,11 +255,7 @@ export default class QuillController {
     const { ethereum } = window;
 
     forEach(
-      FormulaCell.SubWithDefault(
-        this.cells.preferences,
-        'breakOnAssertionFailures',
-        false,
-      ),
+      FormulaCell.Sub(this.cells.developerSettings, 'breakOnAssertionFailures'),
       ($breakOnAssertionFailures) => {
         // TODO: MEGAFIX: don't set on window.ethereum (but use global area)
         ethereum.breakOnAssertionFailures = $breakOnAssertionFailures;

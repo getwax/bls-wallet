@@ -13,5 +13,6 @@ declare global {
       Browser?: Browser;
       quill?: QuillContextValue;
     };
+    isQuillExtensionPage?: true;
   }
 }

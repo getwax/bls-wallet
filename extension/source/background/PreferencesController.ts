@@ -180,7 +180,10 @@ export const Preferences = io.type({
   selectedAddress: io.union([io.undefined, io.string]),
   lastErrorMessage: io.union([io.undefined, io.string]),
   lastSuccessMessage: io.union([io.undefined, io.string]),
-  breakOnAssertionFailures: io.union([io.undefined, io.boolean]),
+  developerSettings: io.type({
+    breakOnAssertionFailures: io.boolean,
+    exposeEthereumRpc: io.boolean,
+  }),
 });
 
 export type Preferences = io.TypeOf<typeof Preferences>;

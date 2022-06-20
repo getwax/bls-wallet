@@ -13,7 +13,10 @@ import ExplicitAny from './ExplicitAny';
 export const ProviderState = io.type({
   chainId: io.string,
   selectedAddress: io.union([io.undefined, io.string]),
-  breakOnAssertionFailures: io.boolean,
+  developerSettings: io.type({
+    breakOnAssertionFailures: io.boolean,
+    exposeEthereumRpc: io.boolean,
+  }),
 });
 
 export type ProviderState = io.TypeOf<typeof ProviderState>;
@@ -247,17 +250,14 @@ export type EthereumRequestBody<M extends string> = {
 
 // FIXME: MEGAFIX: Lints are only warnings!
 
-export const EthereumRequestBody = io.union([
-  ...Object.entries(rpcMap).map(([k, v]) =>
+export const EthereumRequestBody = io.union(
+  Object.entries(rpcMap).map(([k, v]) =>
     io.type({
       method: io.literal(k),
       params: v.params,
     }),
-  ),
-  io.type({
-    // method: io.
-  }),
-] as ExplicitAny);
+  ) as ExplicitAny,
+);
 
 export function assertEthereumRequestBody(
   body: unknown,
