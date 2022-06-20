@@ -20,6 +20,7 @@ function QuillCells(storage: CellCollection) {
       'keyring',
       io.type({
         HDPhrase: io.string,
+        nextHDIndex: io.number,
         wallets: io.array(
           io.type({
             privateKey: io.string,
@@ -29,6 +30,7 @@ function QuillCells(storage: CellCollection) {
       }),
       () => ({
         HDPhrase: ethers.Wallet.createRandom().mnemonic.phrase,
+        nextHDIndex: 0,
         wallets: [],
       }),
     ),
