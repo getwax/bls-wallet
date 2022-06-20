@@ -12,7 +12,7 @@ const DeveloperSettings: FunctionComponent = () => {
         <CheckBox cell={cells.breakOnAssertionFailures} />
       </div>
       <div>
-        Expose <pre>ethereum.rpc</pre>:{' '}
+        Expose <span style={{ fontFamily: 'monospace' }}>ethereum.rpc</span>:{' '}
         <CheckBox cell={cells.exposeEthereumRpc} />
       </div>
     </>
