@@ -12,7 +12,6 @@ import assert from '../helpers/assert';
 import { FormulaCell } from '../cells/FormulaCell';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
-import TransformCell from '../cells/TransformCell';
 import QuillEthereumProvider from '../QuillEthereumProvider';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
@@ -33,25 +32,7 @@ function getQuillContextValue() {
     };
   }) as RpcClient;
 
-  const Cell = elcc.Cell.bind(elcc);
   const time = TimeCell(100);
-
-  const blockNumber = Cell('block-number', io.number, async () => {
-    const blockNumberStr = await ethereum.request({
-      method: 'eth_blockNumber',
-    });
-
-    assertType(blockNumberStr, io.string);
-    assert(Number.isFinite(Number(blockNumberStr)));
-
-    return Number(blockNumberStr);
-  });
-
-  // FIXME: MEGAFIX: This cell has an awkward name due to an apparent collision with
-  // theming coming from the old controller system. It should simply be named
-  // 'theme', but this requires updating the controllers, which is out of scope
-  // for now.
-  const theme = Cell('cell-based-theme', io.string, () => 'light');
 
   // TODO: MEGAFIX: Cleanup other cells
   const cells = QuillCells(elcc);
@@ -65,19 +46,9 @@ function getQuillContextValue() {
     ethereum,
     ethersProvider: new ethers.providers.Web3Provider(ethereum),
     rpc,
-    Cell,
     time,
-    blockNumber,
-    theme,
     selectedAddress,
-    cells: {
-      ...cells,
-      breakOnAssertionFailures: TransformCell.SubWithDefault(
-        cells.preferences,
-        'breakOnAssertionFailures',
-        false,
-      ),
-    },
+    cells,
   };
 }
 

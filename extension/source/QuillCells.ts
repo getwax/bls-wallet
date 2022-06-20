@@ -68,7 +68,6 @@ function QuillCells(storage: CellCollection) {
       rootCells.preferences,
       'selectedAddress',
     ),
-    // TODO: MEGAFIX: Deduplicate with quillPage
     breakOnAssertionFailures: TransformCell.SubWithDefault(
       rootCells.preferences,
       'breakOnAssertionFailures',
@@ -79,6 +78,12 @@ function QuillCells(storage: CellCollection) {
   return {
     ...rootCells,
     ...providerStateCells,
+
+    // FIXME: MEGAFIX: This cell has an awkward name due to an apparent collision with
+    // theming coming from the old controller system. It should simply be named
+    // 'theme', but this requires updating the controllers, which is out of scope
+    // for now.
+    theme: storage.Cell('cell-based-theme', io.string, () => 'light'),
   };
 }
 
