@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 
 import { AGGREGATOR_URL, NETWORK_CONFIG } from '../env';
 import ensureType from '../helpers/ensureType';
-import { PartialRpcImpl, rpcMap, SendTransactionParams } from '../types/Rpc';
+import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 
@@ -23,6 +23,7 @@ export default class AggregatorController {
   > = {};
 
   constructor(
+    public InternalRpc: () => RpcClient,
     public networkController: NetworkController,
     public keyringController: KeyringController,
     public ethersProvider: ethers.providers.Provider,
@@ -48,13 +49,7 @@ export default class AggregatorController {
         };
       });
 
-      // FIXME: MEGAFIX: This internal rpc call should be more ergonomic
-      const privateKey = await this.keyringController.rpc.lookupPrivateKey({
-        ...message,
-        method: 'lookupPrivateKey',
-        params: [from],
-        Params: rpcMap.lookupPrivateKey.Params,
-      });
+      const privateKey = await this.InternalRpc().lookupPrivateKey(from);
 
       const wallet = await BlsWalletWrapper.connect(
         privateKey,

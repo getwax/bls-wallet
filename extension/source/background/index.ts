@@ -2,6 +2,8 @@ import { runtime, tabs } from 'webextension-polyfill';
 
 import QuillController from './QuillController';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
+import { toRpcResult } from '../types/Rpc';
+import toOkError from '../helpers/toOkError';
 
 // On first install, open a new tab with Quill
 runtime.onInstalled.addListener(({ reason }) => {
@@ -22,12 +24,14 @@ const quillController = new QuillController(
 runtime.onMessage.addListener((message, _sender) => {
   const response = quillController.handleMessage(message);
 
-  if (response !== undefined) {
-    // TODO: MEGAFIX: Better logging (configuration etc)
-    console.log({ message, response });
+  if (response === undefined) {
+    return undefined;
   }
 
-  return response;
+  // TODO: MEGAFIX: Better logging (configuration etc)
+  console.log({ message, response });
+
+  return toOkError(() => response).then(toRpcResult);
 });
 
 runtime.onConnect.addListener((port) => {

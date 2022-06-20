@@ -186,6 +186,11 @@ export type RpcMethodMessage<M extends RpcMethodName> = Omit<
   params: io.TypeOf<RpcMap[M]['Params']>;
   Params: RpcMap[M]['Params'];
   Response: RpcMap[M]['Response'];
+  callInternal: <M2 extends RpcMethodName>(
+    methodName: M2,
+  ) => (
+    ...params: RpcMethodMessage<M2>['params']
+  ) => io.TypeOf<RpcMap[M2]['Response']>;
 };
 
 export const RpcResult = io.union([

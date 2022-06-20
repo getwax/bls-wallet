@@ -4,11 +4,12 @@ import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
 import QuillCells from '../QuillCells';
 import assert from '../helpers/assert';
-import { PartialRpcImpl, rpcMap } from '../types/Rpc';
+import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
 
 export default class KeyringController {
   constructor(
+    public InternalRpc: () => RpcClient,
     public keyring: QuillCells['keyring'],
     public selectedAddress: QuillCells['selectedAddress'],
     public ethersProvider: ethers.providers.Provider,
@@ -44,7 +45,7 @@ export default class KeyringController {
     /**
      * Creates a Deterministic Account based on seed phrase
      */
-    addHDAccount: async (message) => {
+    addHDAccount: async (_message) => {
       const mnemonic = (await this.keyring.read()).HDPhrase;
       const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
@@ -56,12 +57,7 @@ export default class KeyringController {
         `m/44'/60'/0'/0/${newAccountIndex}`,
       );
 
-      const address: string = await this.rpc.addAccount({
-        ...message,
-        method: 'addAccount',
-        params: [privateKey],
-        Params: rpcMap.addAccount.Params,
-      });
+      const address: string = await this.InternalRpc().addAccount(privateKey);
 
       return address;
     },

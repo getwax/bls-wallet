@@ -10,19 +10,17 @@ import CellCollection from '../cells/CellCollection';
 import ExplicitAny from '../types/ExplicitAny';
 import {
   ProviderState,
+  RpcClient,
   RpcImpl,
   rpcMap,
   RpcMessage,
   RpcMethodMessage,
   RpcMethodName,
-  RpcResult,
-  toRpcResult,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
 import TimeCell from '../cells/TimeCell';
 import QuillCells from '../QuillCells';
 import isType from '../cells/isType';
-import toOkError from '../helpers/toOkError';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import AggregatorController from './AggregatorController';
@@ -31,6 +29,8 @@ import CurrencyConversionCell, {
 } from './CurrencyConversionCell';
 import forEach from '../cells/forEach';
 import { assertConfig } from '../helpers/assert';
+import RandomId from '../helpers/RandomId';
+import mapValues from '../helpers/mapValues';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -46,6 +46,7 @@ export default class QuillController {
   ethersProvider: ethers.providers.Provider;
 
   rpc: RpcImpl;
+  internalRpc: RpcClient;
 
   time = TimeCell(1000);
   cells: QuillCells;
@@ -77,12 +78,14 @@ export default class QuillController {
     );
 
     this.keyringController = new KeyringController(
+      () => this.internalRpc,
       this.cells.keyring,
       this.cells.selectedAddress,
       this.ethersProvider,
     );
 
     this.aggregatorController = new AggregatorController(
+      () => this.internalRpc,
       this.networkController,
       this.keyringController,
       this.ethersProvider,
@@ -177,6 +180,22 @@ export default class QuillController {
 
       setSelectedAddress: this.preferencesController.rpc.setSelectedAddress,
     };
+
+    this.internalRpc = mapValues(
+      this.rpc,
+      (method, methodName) =>
+        (...params: unknown[]) =>
+          (method as ExplicitAny)({
+            type: 'quill-rpc',
+            id: RandomId(),
+            providerId: '(internal-call)',
+            origin: window.location.origin,
+            method: methodName,
+            params,
+            Params: rpcMap[methodName].Params,
+            Response: rpcMap[methodName].Response,
+          }),
+    );
   }
 
   ProviderState(
@@ -195,7 +214,7 @@ export default class QuillController {
   }
 
   // TODO: MEGAFIX: message -> request
-  handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
+  handleMessage(message: unknown): Promise<unknown> | undefined {
     // TODO: MEGAFIX: Logging
     // - Don't just log here, also log the same way in page (only include
     //   messages relevant to that page)
@@ -216,21 +235,19 @@ export default class QuillController {
         }
       }
 
-      return toOkError(async () => {
-        if (isType(message.method, RpcMethodName)) {
-          assertType(
-            message.params,
-            rpcMap[message.method].Params as io.Type<ExplicitAny>,
-          );
+      if (isType(message.method, RpcMethodName)) {
+        const { Params, Response } = rpcMap[message.method];
 
-          return (this.rpc[message.method] as ExplicitAny)({
-            ...message,
-            Response: rpcMap[message.method].Response,
-          }) as unknown;
-        }
+        assertType(message.params, Params as io.Type<ExplicitAny>);
 
-        return this.networkController.requestStrict(message);
-      }).then(toRpcResult);
+        return (this.rpc[message.method] as ExplicitAny)({
+          ...message,
+          Params,
+          Response,
+        });
+      }
+
+      return this.networkController.requestStrict(message);
     }
 
     // It's important to return undefined synchronously because messages can
