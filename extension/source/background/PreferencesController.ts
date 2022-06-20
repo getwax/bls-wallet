@@ -123,8 +123,8 @@ export default class PreferencesController {
   }
 }
 
-const Theme = io.union([io.literal('light'), io.literal('dark')]);
-type Theme = io.TypeOf<typeof Theme>;
+export const Theme = io.union([io.literal('light'), io.literal('dark')]);
+export type Theme = io.TypeOf<typeof Theme>;
 
 const Contact = io.type({
   displayName: io.string,

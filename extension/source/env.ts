@@ -4,7 +4,7 @@ import { BuiltinChainId } from './background/networks';
 import { requireEnv } from './helpers/envTools';
 import toHex from './helpers/toHex';
 
-// TODO: MEGAFIX: Use a file instead
+// TODO: MEGAFIX (deferred): Use a file instead
 
 // export const ETHERSCAN_KEY = requireEnv(process.env.ETHERSCAN_KEY);
 export const PRIVATE_KEY_STORAGE_KEY = requireEnv(

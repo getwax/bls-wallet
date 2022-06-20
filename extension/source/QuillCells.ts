@@ -8,10 +8,11 @@ import {
   builtinProviderConfigs,
   ProviderConfig,
 } from './background/networks';
-import { Preferences } from './background/PreferencesController';
+import { Preferences, Theme } from './background/PreferencesController';
 import AsyncReturnType from './types/AsyncReturnType';
 import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
+import assert from './helpers/assert';
 
 function QuillCells(storage: CellCollection) {
   const rootCells = {
@@ -79,11 +80,19 @@ function QuillCells(storage: CellCollection) {
     ...rootCells,
     ...providerStateCells,
 
-    // FIXME: MEGAFIX: This cell has an awkward name due to an apparent collision with
-    // theming coming from the old controller system. It should simply be named
-    // 'theme', but this requires updating the controllers, which is out of scope
-    // for now.
-    theme: storage.Cell('cell-based-theme', io.string, () => 'light'),
+    theme: new FormulaCell(
+      { preferences: rootCells.preferences },
+      ({ preferences: { selectedAddress, identities } }): Theme => {
+        if (selectedAddress === undefined) {
+          return 'light';
+        }
+
+        const identity = identities[selectedAddress];
+        assert(identity !== undefined);
+
+        return identity.theme;
+      },
+    ),
   };
 }
 
