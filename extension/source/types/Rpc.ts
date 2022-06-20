@@ -120,6 +120,11 @@ export const rpcMap = {
     params: io.tuple([io.string]),
     output: io.string,
   },
+  createAccount: {
+    origin: '<quill>',
+    params: io.tuple([io.union([io.undefined, io.string])]),
+    output: io.string,
+  },
 
   // AggregatorController
 

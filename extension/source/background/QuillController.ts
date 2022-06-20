@@ -3,7 +3,7 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
-import { getUserLanguage } from './utils';
+import { createRandomId, getUserLanguage } from './utils';
 import NetworkController from './NetworkController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
@@ -134,6 +134,7 @@ export default class QuillController {
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       isOnboardingComplete: this.keyringController.rpc.isOnboardingComplete,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
+      createAccount: this.keyringController.rpc.createAccount,
 
       debugMe: async ({ params: [a, b, c] }) => {
         console.log('debugMe', { a, b, c });
@@ -228,7 +229,17 @@ export default class QuillController {
   }
 
   async addAccount(privKey: string): Promise<string> {
-    const address = await this.keyringController.createAccount(privKey);
+    // FIXME: This call should be simpler
+    const address = await this.keyringController.rpc.createAccount({
+      type: 'quill-rpc',
+      id: createRandomId(),
+      providerId: 'unknown',
+      origin: '<quill>',
+      Output: io.string,
+      method: 'createAccount',
+      params: [privKey],
+    });
+
     const locale = getUserLanguage();
     this.preferencesController.createUser(address, locale, 'USD', 'light');
     return address;

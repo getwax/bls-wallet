@@ -44,7 +44,7 @@ export default class KeyringController {
     /**
      * Creates a Deterministic Account based on seed phrase
      */
-    createHDAccount: async (_message) => {
+    createHDAccount: async (message) => {
       const mnemonic = (await this.keyring.read()).HDPhrase;
       const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
@@ -56,7 +56,13 @@ export default class KeyringController {
         `m/44'/60'/0'/0/${newAccountIndex}`,
       );
 
-      return await this.createAccount(privateKey);
+      const address: string = await this.rpc.createAccount({
+        ...message,
+        method: 'createAccount',
+        params: [privateKey],
+      });
+
+      return address;
     },
 
     setHDPhrase: async ({ params: [HDPhrase] }) => {
@@ -79,23 +85,25 @@ export default class KeyringController {
 
       return keyPair.privateKey;
     },
+
+    createAccount: async ({
+      params: [privateKey = generateRandomHex(256)],
+    }) => {
+      const { wallets } = await this.keyring.read();
+
+      assert(
+        wallets.every((w) => w.privateKey !== privateKey),
+        'Wallet already exists',
+      );
+
+      const address = await this.BlsWalletAddress(privateKey);
+
+      wallets.push({ privateKey, address });
+      await this.keyring.update({ wallets });
+
+      return address;
+    },
   });
-
-  async createAccount(privateKey = generateRandomHex(256)): Promise<string> {
-    const { wallets } = await this.keyring.read();
-
-    assert(
-      wallets.every((w) => w.privateKey !== privateKey),
-      'Wallet already exists',
-    );
-
-    const address = await this.BlsWalletAddress(privateKey);
-
-    wallets.push({ privateKey, address });
-    await this.keyring.update({ wallets });
-
-    return address;
-  }
 
   async removeAccount(address: string) {
     const { wallets } = await this.keyring.read();
