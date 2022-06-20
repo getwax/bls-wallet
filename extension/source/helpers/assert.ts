@@ -35,6 +35,9 @@ export const assertConfig = {
  */
 export default function assert(
   condition: boolean,
+
+  // FIXME: MEGAFIX: Don't allow `string`. `Error` is much better because it
+  // links the developer directly to the assertion instead of here.
   info?: string | Error,
 ): asserts condition {
   if (!condition) {
@@ -60,7 +63,13 @@ export default function assert(
  * breakpoint for you if you have configured "Break on assertion failures" in
  * Quill's Developer Settings.
  */
-export function softAssert(condition: boolean, info?: string | Error): void {
+export function softAssert(
+  condition: boolean,
+
+  // FIXME: MEGAFIX: Don't allow `string`. `Error` is much better because it
+  // links the developer directly to the assertion instead of here.
+  info?: string | Error,
+): void {
   if (!condition) {
     if (assertConfig.breakOnFailures) {
       // eslint-disable-next-line no-debugger

@@ -13,6 +13,7 @@ import {
 } from '../types/LongPollingCells';
 import optional from '../types/optional';
 import { PartialRpcImpl, RpcImpl } from '../types/Rpc';
+import isPermittedOrigin from './isPermittedOrigin';
 
 const maxWaitTime = 300_000;
 
@@ -23,21 +24,24 @@ export default class LongPollingController {
 
   rpc = ensureType<PartialRpcImpl>()({
     longPoll: async ({
+      origin,
       providerId,
       params: [{ longPollingId, cellName, differentMaybe }],
     }) => {
-      const fullLongPollingId = `${providerId}:${longPollingId}`;
-
       assertType(cellName, LongPollingCellName);
+      const longPollingDetails = longPollingCellMap[cellName];
+      assert(isPermittedOrigin(origin, longPollingDetails.origin));
 
       assertType(
         differentMaybe,
         optional(
           io.type({
-            value: longPollingCellMap[cellName].Type as io.Type<unknown>,
+            value: longPollingDetails.Type as io.Type<unknown>,
           }),
         ),
       );
+
+      const fullLongPollingId = `${providerId}:${longPollingId}`;
 
       const cell: IReadableCell<unknown> = this.cells[cellName];
       const stoppable = new Stoppable<unknown>(cell);

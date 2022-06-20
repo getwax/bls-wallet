@@ -13,6 +13,10 @@ export const longPollingCellMap = {
     origin: '*',
     Type: ProviderState,
   },
+  currencyConversion: {
+    origin: '<quill>',
+    Type: io.union([io.undefined, io.number]),
+  },
 };
 
 export type LongPollingCellMap = typeof longPollingCellMap;

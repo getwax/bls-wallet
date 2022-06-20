@@ -25,10 +25,11 @@ import CurrencyConversionCell, {
   CurrencyConversionConfig,
 } from './CurrencyConversionCell';
 import forEach from '../cells/forEach';
-import { assertConfig } from '../helpers/assert';
+import assert, { assertConfig } from '../helpers/assert';
 import RandomId from '../helpers/RandomId';
 import mapValues from '../helpers/mapValues';
 import LongPollingController from './LongPollingController';
+import isPermittedOrigin from './isPermittedOrigin';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -90,6 +91,7 @@ export default class QuillController {
     this.longPollingController = new LongPollingController({
       blockNumber: this.networkController.blockNumber,
       providerState: this.cells.providerState,
+      currencyConversion: this.currencyConversion,
     });
 
     forEach(
@@ -193,29 +195,28 @@ export default class QuillController {
     // - Make this configurable in Developer Settings
 
     if (RpcMessage.is(message)) {
-      // FIXME: MEGAFIX: duplication of checking message.method
       if (isType(message.method, RpcMethodName)) {
-        let methodOrigin = rpcMap[message.method].origin;
+        const rpcMethod = rpcMap[message.method];
 
-        if (methodOrigin === '<quill>') {
-          methodOrigin = window.location.origin;
-        }
+        assert(
+          isPermittedOrigin(message.origin, rpcMethod.origin),
+          new Error(
+            [
+              `Origin ${message.origin}`,
+              `is not allowed to access ${message.method}`,
+              `because the method is restricted to ${rpcMethod.origin}`,
+            ].join(' '),
+          ),
+        );
 
-        if (methodOrigin !== message.origin && methodOrigin !== '*') {
-          // Don't respond if it's an origin mismatch
-          return;
-        }
-      }
-
-      if (isType(message.method, RpcMethodName)) {
-        const { Params, Response } = rpcMap[message.method];
-
-        assertType(message.params, Params as io.Type<ExplicitAny>);
+        assertType(message.params, rpcMethod.Params as io.Type<ExplicitAny>);
 
         return (this.rpc[message.method] as ExplicitAny)({
           ...message,
-          Params,
-          Response,
+
+          // FIXME: MEGAFIX: Just put rpcMethod here
+          Params: rpcMethod.Params,
+          Response: rpcMethod.Response,
         });
       }
 

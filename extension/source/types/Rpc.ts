@@ -156,6 +156,8 @@ export const rpcMap = {
   // LongPollingController
 
   longPoll: {
+    // This is allowed at the method level because each cell defines its own
+    // origin pattern which is checked in LongPollingController.
     origin: '*',
     Params: io.tuple([
       io.type({
