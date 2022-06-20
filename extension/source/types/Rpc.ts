@@ -165,13 +165,15 @@ export const rpcMap = {
   longPoll: {
     origin: '<quill>',
     Params: io.tuple([
-      io.string,
-      io.union([
-        io.null,
-        io.type({
-          differentFrom: io.unknown,
-        }),
-      ]),
+      io.type({
+        cellName: io.string,
+        longPollingId: io.string,
+        differentMaybe: optional(
+          io.type({
+            value: io.unknown,
+          }),
+        ),
+      }),
     ]),
     Response: io.union([
       io.literal('please-retry'),
@@ -184,7 +186,11 @@ export const rpcMap = {
 
   longPollCancel: {
     origin: '<quill>',
-    Params: io.tuple([io.string]),
+    Params: io.tuple([
+      io.type({
+        longPollingId: io.string,
+      }),
+    ]),
     Response: io.void,
   },
 };

@@ -11,33 +11,44 @@ import {
   LongPollingCellName,
   LongPollingCells,
 } from '../types/LongPollingCells';
+import optional from '../types/optional';
 import { PartialRpcImpl, RpcImpl } from '../types/Rpc';
 
 const maxWaitTime = 300_000;
 
 export default class LongPollingController {
-  stopHandles: Record<string, { stop: () => void } | undefined> = {};
+  cancelHandles: Record<string, { cancel: () => void } | undefined> = {};
 
   constructor(public cells: LongPollingCells) {}
 
   rpc = ensureType<PartialRpcImpl>()({
-    longPoll: async ({ id, params: [cellName, opt] }) => {
+    longPoll: async ({
+      providerId,
+      params: [{ longPollingId, cellName, differentMaybe }],
+    }) => {
+      const fullLongPollingId = `${providerId}:${longPollingId}`;
+
       assertType(cellName, LongPollingCellName);
 
       assertType(
-        opt,
-        io.union([
-          io.null,
+        differentMaybe,
+        optional(
           io.type({
-            differentFrom: longPollingCellMap[cellName] as io.Type<unknown>,
+            value: longPollingCellMap[cellName] as io.Type<unknown>,
           }),
-        ]),
+        ),
       );
 
       const cell = this.cells[cellName];
       const stoppable = new Stoppable(cell);
-      this.stopHandles[id] = { stop: () => stoppable.stop() };
       let res: AsyncReturnType<RpcImpl['longPoll']> = 'please-retry';
+
+      this.cancelHandles[fullLongPollingId] = {
+        cancel: () => {
+          res = 'cancelled';
+          stoppable.stop();
+        },
+      };
 
       const timerId = setTimeout(() => stoppable.stop(), maxWaitTime);
 
@@ -47,15 +58,15 @@ export default class LongPollingController {
         }
 
         if (
-          !opt ||
-          cell.hasChanged(opt.differentFrom as ExplicitAny, maybe.value)
+          !differentMaybe ||
+          cell.hasChanged(differentMaybe.value as ExplicitAny, maybe.value)
         ) {
           res = { value: maybe.value };
         }
       }
 
       clearTimeout(timerId);
-      delete this.stopHandles[id];
+      delete this.cancelHandles[fullLongPollingId];
 
       if (cell.ended) {
         assert(false, new Error(`Unexpected end of ${cellName}`));
@@ -64,10 +75,11 @@ export default class LongPollingController {
       return res;
     },
 
-    longPollCancel: async ({ params: [longPollId] }) => {
-      const stopHandle = this.stopHandles[longPollId];
-      assert(stopHandle !== undefined);
-      stopHandle.stop();
+    longPollCancel: async ({ providerId, params: [{ longPollingId }] }) => {
+      const fullLongPollingId = `${providerId}:${longPollingId}`;
+      const handle = this.cancelHandles[fullLongPollingId];
+      assert(handle !== undefined);
+      handle.cancel();
     },
   });
 }
