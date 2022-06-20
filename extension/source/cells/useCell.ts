@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import AsyncReturnType from '../types/AsyncReturnType';
+import forEach from './forEach';
 
 import { IReadableCell } from './ICell';
-import Stoppable from './Stoppable';
 
 export default function useCell<C extends IReadableCell<unknown>>(
   cellParam: C,
@@ -13,17 +13,8 @@ export default function useCell<C extends IReadableCell<unknown>>(
   const [value, setValue] = useState<T>();
 
   useEffect(() => {
-    const stoppableSequence = new Stoppable(cell);
-
-    (async () => {
-      for await (const v of stoppableSequence) {
-        setValue(v);
-      }
-    })();
-
-    return () => {
-      stoppableSequence.stop();
-    };
+    const { stop } = forEach(cell, setValue);
+    return stop;
   }, [cell]);
 
   return value;

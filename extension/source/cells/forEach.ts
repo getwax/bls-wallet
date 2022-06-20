@@ -11,8 +11,8 @@ import Stoppable from './Stoppable';
  *    handled until the previous call is complete. If multiple new values come
  *    in during the call, `handler` will only get the latest one (the others
  *    will be skipped).
- * 4. The return value of `forEach` provides .stop(). This usually leads to much
- *    better code than EventEmitter's .off approach.
+ * 4. The return value of `forEach` provides `.stop()`. This usually leads to
+ *    much better code than EventEmitter's `.off` approach.
  */
 export default function forEach<T>(
   cell: IReadableCell<T>,

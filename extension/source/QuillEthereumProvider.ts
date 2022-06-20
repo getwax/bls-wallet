@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import TypedEventEmitter from 'typed-emitter';
+import forEach from './cells/forEach';
 
 import { FormulaCell } from './cells/FormulaCell';
 import isType from './cells/isType';
@@ -51,42 +52,34 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       'breakOnAssertionFailures',
     );
 
-    (async () => {
-      let connected = false;
+    let connected = false;
 
-      for await (const $chainId of chainId) {
-        if (!connected) {
-          connected = true;
-          this.emit('connect', { chainId: $chainId });
-        }
-
-        this.emit('chainChanged', $chainId);
+    forEach(chainId, ($chainId) => {
+      if (!connected) {
+        connected = true;
+        this.emit('connect', { chainId: $chainId });
       }
 
-      // FIXME: MEGAFIX: We're not reaching this because the chainId cell is not ending
-      // like it should.
+      this.emit('chainChanged', $chainId);
+    });
+
+    // FIXME: MEGAFIX: The chainId cell is not ending when it should.
+    chainId.events.on('end', () =>
       this.emit('disconnect', {
         message: 'disconnected',
         code: 4900,
         data: undefined,
-      });
-    })();
+      }),
+    );
 
-    // TODO: MEGAFIX: Add .forEach to IReadable cell to simplify this use-case
-    (async () => {
-      for await (const $selectedAddress of selectedAddress) {
-        this.emit(
-          'accountsChanged',
-          $selectedAddress ? [$selectedAddress] : [],
-        );
-      }
-    })();
+    forEach(selectedAddress, ($selectedAddress) =>
+      this.emit('accountsChanged', $selectedAddress ? [$selectedAddress] : []),
+    );
 
-    (async () => {
-      for await (const $breakOnAssertionFailures of breakOnAssertionFailures) {
-        this.breakOnAssertionFailures = $breakOnAssertionFailures;
-      }
-    })();
+    forEach(breakOnAssertionFailures, ($breakOnAssertionFailures) => {
+      // TODO: MEGAFIX: Move this flag.
+      this.breakOnAssertionFailures = $breakOnAssertionFailures;
+    });
   }
 
   async request<M extends string>(body: EthereumRequestBody<M>) {

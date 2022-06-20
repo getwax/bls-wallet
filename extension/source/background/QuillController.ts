@@ -29,6 +29,7 @@ import AggregatorController from './AggregatorController';
 import CurrencyConversionCell, {
   CurrencyConversionConfig,
 } from './CurrencyConversionCell';
+import forEach from '../cells/forEach';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -239,36 +240,30 @@ export default class QuillController {
   }
 
   private watchThings() {
-    (async () => {
-      // TODO: MEGAFIX: Don't store the block number. Just use LongPollingCell to provide
-      // to consumers, that way we don't need to actively track the block number
-      // if nothing needs it.
+    // TODO: MEGAFIX: Don't store the block number. Just use LongPollingCell to provide
+    // to consumers, that way we don't need to actively track the block number
+    // if nothing needs it.
+    const storedBlockNumber = this.storage.Cell('block-number', io.number, () =>
+      this.networkController.blockNumber.read(),
+    );
 
-      const storedBlockNumber = this.storage.Cell(
-        'block-number',
-        io.number,
-        () => this.networkController.blockNumber.read(),
-      );
+    forEach(this.networkController.blockNumber, async ($blockNumber) => {
+      await storedBlockNumber.write($blockNumber);
+    });
 
-      for await (const blockNumber of this.networkController.blockNumber) {
-        await storedBlockNumber.write(blockNumber);
-      }
-    })();
+    window.ethereum ??= { breakOnAssertionFailures: false };
+    const { ethereum } = window;
 
-    (async () => {
-      window.ethereum ??= { breakOnAssertionFailures: false };
-
-      const breakOnAssertionFailures = FormulaCell.SubWithDefault(
+    forEach(
+      FormulaCell.SubWithDefault(
         this.cells.preferences,
         'breakOnAssertionFailures',
         false,
-      );
-
-      // TODO: MEGAFIX: Use .forEach
-      // TODO: MEGAFIX: don't set on window.ethereum (but use global area)
-      for await (const brk of breakOnAssertionFailures) {
-        window.ethereum.breakOnAssertionFailures = brk;
-      }
-    })();
+      ),
+      ($breakOnAssertionFailures) => {
+        // TODO: MEGAFIX: don't set on window.ethereum (but use global area)
+        ethereum.breakOnAssertionFailures = $breakOnAssertionFailures;
+      },
+    );
   }
 }

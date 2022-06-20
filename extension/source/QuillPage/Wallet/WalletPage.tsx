@@ -62,11 +62,13 @@ const routes: IRoutes[] = [
 ];
 
 export const WalletPage: React.FunctionComponent = () => {
+  // TODO: MEGAFIX: Add useQuillCells convenience api.
   const { rpc } = useQuill();
   const navigate = useNavigate();
 
   React.useEffect(() => {
     (async () => {
+      // TODO: MEGAFIX: Use cell instead.
       const onboardingComplete = await rpc.isOnboardingComplete();
       console.debug('onboardingComplete', onboardingComplete);
 
