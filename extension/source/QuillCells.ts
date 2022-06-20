@@ -34,25 +34,12 @@ function QuillCells(storage: CellCollection) {
         wallets: [],
       }),
     ),
-    network: storage.Cell(
-      'network',
-      io.type({
-        providerConfig: ProviderConfig,
-        properties: io.intersection([
-          io.record(io.string, io.unknown),
-          io.type({
-            // undefined means we have not checked yet. (true or false means property is set)
-            EIPS: io.record(io.string, io.union([io.boolean, io.undefined])),
-          }),
-        ]),
-      }),
-      () => ({
-        properties: {
-          EIPS: { 1559: undefined },
-        },
-        providerConfig: getDefaultProviderConfig(),
-      }),
-    ),
+    network: storage.Cell('network', ProviderConfig, () => {
+      const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
+      const config = builtinProviderConfigs[networkName];
+
+      return config;
+    }),
     preferences: storage.Cell('preferences', Preferences, () => ({
       identities: {},
       selectedAddress: undefined,
@@ -65,11 +52,9 @@ function QuillCells(storage: CellCollection) {
     })),
   };
 
-  const providerConfig = FormulaCell.Sub(rootCells.network, 'providerConfig');
-
   /** the cells involved in the response to quill_providerState in public rpc */
   const providerStateCells = {
-    chainId: FormulaCell.Sub(providerConfig, 'chainId'),
+    chainId: FormulaCell.Sub(rootCells.network, 'chainId'),
     selectedAddress: TransformCell.Sub(
       rootCells.preferences,
       'selectedAddress',
@@ -117,10 +102,3 @@ export default QuillCells;
 export type QuillState<K extends keyof QuillCells> = AsyncReturnType<
   QuillCells[K]['read']
 >;
-
-export const getDefaultProviderConfig = (): ProviderConfig => {
-  const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
-  const config = builtinProviderConfigs[networkName];
-
-  return config;
-};

@@ -3,7 +3,6 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
-import { ProviderConfig } from './networks';
 import { IReadableCell } from '../cells/ICell';
 import { FormulaCell } from '../cells/FormulaCell';
 import approximate from '../cells/approximate';
@@ -16,7 +15,6 @@ import toOkError from '../helpers/toOkError';
 const Object_ = io.record(io.string, io.unknown);
 type Object_ = io.TypeOf<typeof Object_>;
 
-// TODO: MEGAFIX: This should be in Rpc.ts
 const RpcMessage = io.type({
   method: io.string,
   params: io.array(io.unknown),
@@ -29,37 +27,27 @@ export default class NetworkController
   implements ethers.providers.ExternalProvider
 {
   // TODO: MEGAFIX: Move / deduplicate these cells
-  ticker: IReadableCell<string>;
   blockNumber: IReadableCell<number>;
-  providerConfig: IReadableCell<ProviderConfig>;
 
   constructor(
     public network: QuillCells['network'],
     time: IReadableCell<number>,
   ) {
-    this.ticker = new FormulaCell(
-      { network: this.network },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ network }) => network.providerConfig.ticker,
-    );
-
     this.blockNumber = new FormulaCell(
       {
-        networkState: this.network,
+        network,
+
+        // TODO: MEGAFIX: Once we stop actively tracking blocks we should
+        // increase the frequency here. ethers polls every 4 seconds, that seems
+        // reasonable.
         time: approximate(time, 20_000),
       },
       () => this.fetchBlockNumber(),
     );
-
-    this.providerConfig = new FormulaCell(
-      { network: this.network },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ network }) => network.providerConfig,
-    );
   }
 
   async requestStrict(body: RpcMessage) {
-    const { rpcTarget } = await this.providerConfig.read();
+    const { rpcTarget } = await this.network.read();
 
     const res = await fetch(rpcTarget, {
       method: 'POST',

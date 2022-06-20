@@ -14,15 +14,13 @@ export const ProviderConfig = io.type({
    */
   logo: io.string,
   /**
-   * Name for ticker
-   * @example 'Binance Token', 'Ethereum', 'Matic Network Token'
+   * @example 'Binance Token', 'Ether', 'Matic Network Token'
    */
-  tickerName: io.string,
+  chainCurrencyName: io.string,
   /**
-   * Symbol for ticker
    * @example BNB, ETH
    */
-  ticker: io.string,
+  chainCurrency: io.string,
   /**
    * RPC target Url for the chain
    * @example https://ropsten.infura.io/v3/YOUR_API_KEY
@@ -56,8 +54,8 @@ export const builtinProviderConfigs = ensureType<
     displayName: 'Arbitrum Test Network',
     logo: '',
     rpcTarget: 'https://rinkeby.arbitrum.io/rpc',
-    ticker: 'ARETH',
-    tickerName: 'Arbitrum Ethereum',
+    chainCurrencyName: 'Arbitrum Ether',
+    chainCurrency: 'ARETH',
     networkKey: 'arbitrum-rinkeby',
   },
   arbitrum: {
@@ -66,8 +64,8 @@ export const builtinProviderConfigs = ensureType<
     displayName: 'Arbitrum One',
     logo: '',
     rpcTarget: `https://arb1.arbitrum.io/rpc`,
-    ticker: 'ETH',
-    tickerName: 'Ethereum',
+    chainCurrencyName: 'Ether',
+    chainCurrency: 'ETH',
     networkKey: 'arbitrum',
   },
   'optimism-kovan': {
@@ -76,8 +74,8 @@ export const builtinProviderConfigs = ensureType<
     displayName: 'Optimism Test Network',
     logo: '',
     rpcTarget: 'https://kovan.optimism.io',
-    ticker: 'KOR',
-    tickerName: '?',
+    chainCurrencyName: 'Optimistic Kovan Ether',
+    chainCurrency: 'KOR',
     networkKey: 'optimism-kovan',
   },
   optimism: {
@@ -86,8 +84,8 @@ export const builtinProviderConfigs = ensureType<
     displayName: 'Optimism',
     logo: '',
     rpcTarget: 'https://mainnet.optimism.io',
-    ticker: 'ETH',
-    tickerName: 'Ethereum',
+    chainCurrencyName: 'Ether',
+    chainCurrency: 'ETH',
     networkKey: 'optimism',
   },
   local: {
@@ -96,8 +94,8 @@ export const builtinProviderConfigs = ensureType<
     displayName: 'Local Network',
     logo: '',
     rpcTarget: 'http://localhost:8545',
-    ticker: 'ETH',
-    tickerName: 'Ethereum',
+    chainCurrencyName: 'Ethereum',
+    chainCurrency: 'ETH',
     networkKey: 'local',
   },
 } as const);

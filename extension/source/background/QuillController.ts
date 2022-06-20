@@ -73,7 +73,7 @@ export default class QuillController {
     this.currencyConversion = CurrencyConversionCell(
       this.currencyConversionConfig,
       this.preferencesController.preferredCurrency,
-      this.networkController.ticker,
+      FormulaCell.Sub(this.cells.network, 'chainCurrency'),
       this.time,
     );
 

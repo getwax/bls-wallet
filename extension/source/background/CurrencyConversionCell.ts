@@ -12,24 +12,24 @@ export type CurrencyConversionConfig = {
 export default function CurrencyConversionCell(
   config: CurrencyConversionConfig,
   preferredCurrency: IReadableCell<string | undefined>,
-  networkCurrency: IReadableCell<string>,
+  chainCurrency: IReadableCell<string>,
   time: IReadableCell<number>,
 ) {
   return new FormulaCell(
     {
       preferredCurrency,
-      networkCurrency,
+      chainCurrency,
       time: approximate(time, config.pollInterval),
     },
     // eslint-disable-next-line @typescript-eslint/no-shadow
-    ({ preferredCurrency, networkCurrency, time: _ }) =>
-      fetchRate(config.api, networkCurrency, preferredCurrency),
+    ({ preferredCurrency, chainCurrency, time: _ }) =>
+      fetchRate(config.api, chainCurrency, preferredCurrency),
   );
 }
 
 async function fetchRate(
   api: string,
-  networkCurrency: string,
+  chainCurrency: string,
   preferredCurrency: string | undefined,
 ): Promise<number | undefined> {
   if (preferredCurrency === undefined) {
@@ -37,7 +37,7 @@ async function fetchRate(
   }
 
   const apiUrl = new URL(api);
-  apiUrl.searchParams.append('fsym', networkCurrency.toUpperCase());
+  apiUrl.searchParams.append('fsym', chainCurrency.toUpperCase());
   apiUrl.searchParams.append('tsyms', preferredCurrency.toUpperCase());
   apiUrl.searchParams.append('api_key', CRYPTO_COMPARE_API_KEY);
 
