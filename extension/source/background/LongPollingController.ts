@@ -62,6 +62,7 @@ export default class LongPollingController {
           cell.hasChanged(differentMaybe.value, maybe.value)
         ) {
           res = { value: maybe.value };
+          break;
         }
       }
 
