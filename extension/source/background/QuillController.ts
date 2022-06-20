@@ -123,7 +123,7 @@ export default class QuillController {
       },
 
       addAccount: async (message) => {
-        // FIXME: Needing to coordinate this between keyringController and
+        // FIXME: MEGAFIX: Needing to coordinate this between keyringController and
         // preferencesController is a symptom of these controllers having
         // awkwardly overlapping responsibilities. This should be fixed by
         // combining them into AccountController.
@@ -158,7 +158,7 @@ export default class QuillController {
           params: [opt],
         } = message;
 
-        // TODO: Move this long polling idea inside cells
+        // TODO: MEGAFIX: Move this long polling idea inside cells
         for await (const $providerState of providerState) {
           if (
             opt &&
@@ -192,15 +192,15 @@ export default class QuillController {
     );
   }
 
-  // TODO: message -> request
+  // TODO: MEGAFIX: message -> request
   handleMessage(message: unknown): Promise<RpcResult<unknown>> | undefined {
-    // TODO: Logging
+    // TODO: MEGAFIX: Logging
     // - Don't just log here, also log the same way in page (only include
     //   messages relevant to that page)
     // - Make this configurable in Developer Settings
 
     if (RpcMessage.is(message)) {
-      // FIXME: duplication of checking message.method
+      // FIXME: MEGAFIX: duplication of checking message.method
       if (isType(message.method, RpcMethodName)) {
         let methodOrigin = rpcMap[message.method].origin;
 
@@ -240,7 +240,7 @@ export default class QuillController {
 
   private watchThings() {
     (async () => {
-      // TODO: Don't store the block number. Just use LongPollingCell to provide
+      // TODO: MEGAFIX: Don't store the block number. Just use LongPollingCell to provide
       // to consumers, that way we don't need to actively track the block number
       // if nothing needs it.
 
@@ -264,8 +264,8 @@ export default class QuillController {
         false,
       );
 
-      // TODO: Use .forEach
-      // TODO: don't set on window.ethereum (but use global area)
+      // TODO: MEGAFIX: Use .forEach
+      // TODO: MEGAFIX: don't set on window.ethereum (but use global area)
       for await (const brk of breakOnAssertionFailures) {
         window.ethereum.breakOnAssertionFailures = brk;
       }

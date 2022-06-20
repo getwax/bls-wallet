@@ -40,7 +40,7 @@ export default class KeyringController {
     eth_coinbase: async (_message) =>
       (await this.selectedAddress.read()) ?? null,
 
-    // TODO: Would this docstring work better in Rpc.ts?
+    // TODO: MEGAFIX: Would this docstring work better in Rpc.ts?
     /**
      * Creates a Deterministic Account based on seed phrase
      */
@@ -48,7 +48,7 @@ export default class KeyringController {
       const mnemonic = (await this.keyring.read()).HDPhrase;
       const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
-      // FIXME: HD accounts are co-mingled with regular accounts. This will
+      // FIXME: MEGAFIX: HD accounts are co-mingled with regular accounts. This will
       // cause us to skip over HD accounts that should have been created
       // whenever there is a regular account taking up its spot.
       const newAccountIndex = (await this.keyring.read()).wallets.length;

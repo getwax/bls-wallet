@@ -16,7 +16,7 @@ import toOkError from '../helpers/toOkError';
 const Object_ = io.record(io.string, io.unknown);
 type Object_ = io.TypeOf<typeof Object_>;
 
-// TODO: This should be in Rpc.ts
+// TODO: MEGAFIX: This should be in Rpc.ts
 const RpcMessage = io.type({
   method: io.string,
   params: io.array(io.unknown),
@@ -28,7 +28,7 @@ type RpcMessage = io.TypeOf<typeof RpcMessage>;
 export default class NetworkController
   implements ethers.providers.ExternalProvider
 {
-  // TODO: Move / deduplicate these cells
+  // TODO: MEGAFIX: Move / deduplicate these cells
   ticker: IReadableCell<string>;
   chainId: IReadableCell<string>;
   blockNumber: IReadableCell<number>;

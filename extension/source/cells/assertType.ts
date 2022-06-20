@@ -4,7 +4,7 @@ import assert from '../helpers/assert';
 import isType from './isType';
 
 /**
- * TODO: docstring
+ * TODO: MEGAFIX: docstring
  */
 export default function assertType<T>(
   value: unknown,
@@ -17,7 +17,7 @@ export default function assertType<T>(
 }
 
 /**
- * TODO: docstring
+ * TODO: MEGAFIX: docstring
  */
 export function assertTypeEcho<T>(value: unknown, type: io.Type<T>): T {
   assertType(value, type);

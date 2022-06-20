@@ -11,7 +11,7 @@ import LongPollingCell from './cells/LongPollingCell';
 import RandomId from './helpers/RandomId';
 import { ProviderState, RpcMessage, RpcResponse } from './types/Rpc';
 
-// TODO: Move inside Rpc.ts / deduplicate
+// TODO: MEGAFIX: Move inside Rpc.ts / deduplicate
 const RequestBody = io.type({
   method: io.string,
   params: io.union([io.undefined, io.array(io.unknown)]),
@@ -36,13 +36,13 @@ export default class QuillEthereumProvider
   constructor() {
     super();
 
-    // TODO: Generalize this
+    // TODO: MEGAFIX: Generalize this
     const state = LongPollingCell<ProviderState>(
       (opt) =>
         this.request({
           method: 'quill_providerState',
           params: [opt ?? null],
-        }) as Promise<ProviderState>, // TODO: Avoid cast
+        }) as Promise<ProviderState>, // TODO: MEGAFIX: Avoid cast
     );
 
     const chainId = FormulaCell.Sub(state, 'chainId');
@@ -65,7 +65,7 @@ export default class QuillEthereumProvider
         this.emit('chainChanged', $chainId);
       }
 
-      // FIXME: We're not reaching this because the chainId cell is not ending
+      // FIXME: MEGAFIX: We're not reaching this because the chainId cell is not ending
       // like it should.
       this.emit('disconnect', {
         message: 'disconnected',
@@ -74,7 +74,7 @@ export default class QuillEthereumProvider
       });
     })();
 
-    // TODO: Add .forEach to IReadable cell to simplify this use-case
+    // TODO: MEGAFIX: Add .forEach to IReadable cell to simplify this use-case
     (async () => {
       for await (const $selectedAddress of selectedAddress) {
         this.emit(
@@ -91,9 +91,9 @@ export default class QuillEthereumProvider
     })();
   }
 
-  // TODO: Expose better type information
+  // TODO: MEGAFIX: Expose better type information
   async request(body: unknown) {
-    // TODO: Ensure all errors are EthereumRpcError, maybe making use of
+    // TODO: MEGAFIX: Ensure all errors are EthereumRpcError, maybe making use of
     // the ethereum-rpc-error module.
 
     assertType(body, RequestBody);
@@ -136,6 +136,6 @@ export default class QuillEthereumProvider
     });
   }
 
-  // TODO: Expose .rpc here (only for quill page and maybe all pages if it's
+  // TODO: MEGAFIX: Expose .rpc here (only for quill page and maybe all pages if it's
   // configured to be turned on)
 }

@@ -24,7 +24,7 @@ function QuillCells(storage: CellCollection) {
             address: io.string,
           }),
         ),
-        // FIXME: redundant storage of chainId
+        // FIXME: MEGAFIX: redundant storage of chainId
         chainId: io.union([io.undefined, io.string]),
       }),
       () => ({
@@ -47,7 +47,7 @@ function QuillCells(storage: CellCollection) {
         ]),
       }),
       () => ({
-        // TODO: Remove this - the real chain id is in
+        // TODO: MEGAFIX: Remove this - the real chain id is in
         //       providerConfig
         chainId: '0x66eeb',
         properties: {
@@ -72,7 +72,7 @@ function QuillCells(storage: CellCollection) {
       rootCells.preferences,
       'selectedAddress',
     ),
-    // TODO: Deduplicate with quillPage
+    // TODO: MEGAFIX: Deduplicate with quillPage
     breakOnAssertionFailures: TransformCell.SubWithDefault(
       rootCells.preferences,
       'breakOnAssertionFailures',

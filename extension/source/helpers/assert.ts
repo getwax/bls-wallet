@@ -1,4 +1,4 @@
-// TODO: Probably all of our raw `throw new Error(...)` examples should be
+// TODO: MEGAFIX: Probably all of our raw `throw new Error(...)` examples should be
 // asserts.
 
 /**

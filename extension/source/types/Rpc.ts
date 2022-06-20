@@ -5,7 +5,7 @@ import AsyncReturnType from './AsyncReturnType';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
 
-// TODO: Make a tuple wrapper handling empty and also preventing accidental
+// TODO: MEGAFIX: Make a tuple wrapper handling empty and also preventing accidental
 // undefineds
 
 export const ProviderState = io.type({
@@ -128,7 +128,7 @@ export const rpcMap = {
   removeAccount: {
     origin: '<quill>',
     params: io.tuple([io.string]),
-    output: io.void, // TODO: 'ok's should also be io.void
+    output: io.void, // TODO: MEGAFIX: 'ok's should also be io.void
   },
 
   // AggregatorController
@@ -236,4 +236,4 @@ export type RpcClient = {
   ) => Promise<io.TypeOf<RpcMap[M]['output']>>;
 };
 
-// TODO: export type EthereumRequest...
+// TODO: MEGAFIX: export type EthereumRequest...

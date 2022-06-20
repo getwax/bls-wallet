@@ -48,7 +48,7 @@ export default class AggregatorController {
         };
       });
 
-      // FIXME: This internal rpc call should be more ergonomic
+      // FIXME: MEGAFIX: This internal rpc call should be more ergonomic
       const privateKey = await this.keyringController.rpc.lookupPrivateKey({
         ...message,
         method: 'lookupPrivateKey',
@@ -112,7 +112,7 @@ export default class AggregatorController {
       const bundleReceipt = await aggregator.lookupReceipt(hash);
 
       if (bundleReceipt === undefined) {
-        // TODO: Indicate that we've taken responsibility here so that
+        // TODO: MEGAFIX: Indicate that we've taken responsibility here so that
         // QuillController doesn't defer to the network
         return undefined;
       }

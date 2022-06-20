@@ -12,7 +12,7 @@ runtime.onInstalled.addListener(({ reason }) => {
 
 const quillController = new QuillController(
   extensionLocalCellCollection,
-  // FIXME: Hard coding is not configuration.
+  // FIXME: MEGAFIX: Hard coding is not configuration.
   {
     api: 'https://min-api.cryptocompare.com/data/price',
     pollInterval: 600_000,
@@ -23,7 +23,7 @@ runtime.onMessage.addListener((message, _sender) => {
   const response = quillController.handleMessage(message);
 
   if (response !== undefined) {
-    // TODO: Better logging (configuration etc)
+    // TODO: MEGAFIX: Better logging (configuration etc)
     console.log({ message, response });
   }
 
