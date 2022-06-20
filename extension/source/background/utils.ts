@@ -1,5 +1,7 @@
 // TODO: Move to helpers
 
+import { encode as encode58 } from 'bs58check';
+
 import { DEFAULT_CHAIN_ID_HEX } from '../env';
 import {
   BuiltinChainId,
@@ -8,8 +10,8 @@ import {
   builtinProviderConfigs,
 } from './networks';
 
-// TODO: Use a better random source, and maybe more entropy
-export const createRandomId = (): string => Math.random().toString(36).slice(2);
+export const RandomId = (): string =>
+  encode58(crypto.getRandomValues(new Uint8Array(16)));
 
 export const getUserLanguage = (): string => {
   const navLang = window.navigator.language || 'en-US';

@@ -8,7 +8,7 @@ import assertType from './cells/assertType';
 import { FormulaCell } from './cells/FormulaCell';
 import isType from './cells/isType';
 import LongPollingCell from './cells/LongPollingCell';
-import { createRandomId } from './background/utils';
+import { RandomId } from './background/utils';
 import { ProviderState, RpcMessage, RpcResponse } from './types/Rpc';
 
 // TODO: Move inside Rpc.ts / deduplicate
@@ -98,7 +98,7 @@ export default class QuillEthereumProvider
 
     assertType(body, RequestBody);
 
-    const id = createRandomId();
+    const id = RandomId();
 
     const message: Omit<RpcMessage, 'providerId' | 'origin'> = {
       type: 'quill-rpc',

@@ -7,7 +7,7 @@ import { ProviderConfig } from './networks';
 import { IReadableCell } from '../cells/ICell';
 import { FormulaCell } from '../cells/FormulaCell';
 import approximate from '../cells/approximate';
-import { createRandomId } from './utils';
+import { RandomId } from './utils';
 import assertType from '../cells/assertType';
 import assert from '../helpers/assert';
 import QuillCells from '../QuillCells';
@@ -92,7 +92,7 @@ export default class NetworkController
 
   async request(body: unknown) {
     assertType(body, Object_);
-    body.id ??= createRandomId();
+    body.id ??= RandomId();
     assertType(body, RpcMessage);
     return await this.requestStrict(body);
   }
@@ -100,7 +100,7 @@ export default class NetworkController
   private async fetchBlockNumber() {
     const res = await this.requestStrict({
       method: 'eth_blockNumber',
-      id: createRandomId(),
+      id: RandomId(),
       params: [],
     });
     assertType(res, io.string);

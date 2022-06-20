@@ -30,10 +30,12 @@
   "dependencies": {
     "@babel/runtime": "^7.16.3",
     "@ethereumjs/tx": "^3.5.1",
+    "@types/bs58check": "^2.1.0",
     "advanced-css-reset": "^1.2.2",
     "async-mutex": "^0.3.2",
     "axios": "^0.25.0",
     "bls-wallet-clients": "0.6.0",
+    "bs58check": "^2.1.2",
     "dotenv-webpack": "^7.0.3",
     "emoji-log": "^1.0.2",
     "end-of-stream": "^1.4.4",

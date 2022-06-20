@@ -37,7 +37,7 @@
 import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
-import { createRandomId } from './background/utils';
+import { RandomId } from './background/utils';
 import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 
 (() => {
@@ -66,7 +66,7 @@ function addInPageScript() {
 }
 
 function relayRpcRequests() {
-  const providerId = createRandomId();
+  const providerId = RandomId();
 
   const port = runtime.connect(undefined, {
     name: `quill-provider-${providerId}`,
