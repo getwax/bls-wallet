@@ -135,4 +135,7 @@ export default class QuillEthereumProvider
       window.addEventListener('message', messageListener);
     });
   }
+
+  // TODO: Expose .rpc here (only for quill page and maybe all pages if it's
+  // configured to be turned on)
 }
