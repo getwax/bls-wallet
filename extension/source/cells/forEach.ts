@@ -1,4 +1,3 @@
-import { FormulaCell } from './FormulaCell';
 import { IReadableCell } from './ICell';
 import Stoppable from './Stoppable';
 
@@ -18,15 +17,15 @@ export default function forEach<T>(
   cell: IReadableCell<T>,
   handler: (value: T) => unknown,
 ) {
-  const stoppable = new Stoppable(
-    new FormulaCell({ value: cell }, ({ value }) => ({ value })),
-  );
+  const stoppable = new Stoppable(cell);
 
   (async () => {
     for await (const maybe of stoppable) {
-      if (maybe !== undefined) {
-        await handler(maybe.value);
+      if (maybe === 'stopped') {
+        break;
       }
+
+      await handler(maybe.value);
     }
   })();
 

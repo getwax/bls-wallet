@@ -132,8 +132,12 @@ export class FormulaCell<
       }
 
       for await (const inputValues of stoppableSequence) {
+        if (inputValues === 'stopped') {
+          break;
+        }
+
         const latest = deepCopy(
-          await this.formula(inputValues as InputValues<InputCells>),
+          await this.formula(inputValues.value as InputValues<InputCells>),
         );
 
         iterationCell.write({ value: latest });
