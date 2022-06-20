@@ -103,16 +103,16 @@ export default class KeyringController {
 
       return address;
     },
+
+    removeAccount: async ({ params: [address] }) => {
+      const { wallets } = await this.keyring.read();
+
+      const newWallets = wallets.filter((w) => w.address !== address);
+      assert(newWallets.length < wallets.length, 'Account did not exist');
+
+      await this.keyring.update({ wallets: newWallets });
+    },
   });
-
-  async removeAccount(address: string) {
-    const { wallets } = await this.keyring.read();
-
-    const newWallets = wallets.filter((w) => w.address !== address);
-    assert(newWallets.length < wallets.length, 'Account did not exist');
-
-    await this.keyring.update({ wallets: newWallets });
-  }
 
   private async BlsWalletAddress(privateKey: string): Promise<string> {
     return BlsWalletWrapper.Address(

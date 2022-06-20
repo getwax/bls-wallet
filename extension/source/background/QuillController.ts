@@ -135,6 +135,7 @@ export default class QuillController {
       isOnboardingComplete: this.keyringController.rpc.isOnboardingComplete,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
       createAccount: this.keyringController.rpc.createAccount,
+      removeAccount: this.keyringController.rpc.removeAccount,
 
       debugMe: async ({ params: [a, b, c] }) => {
         console.log('debugMe', { a, b, c });

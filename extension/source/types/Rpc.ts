@@ -125,6 +125,11 @@ export const rpcMap = {
     params: io.tuple([io.union([io.undefined, io.string])]),
     output: io.string,
   },
+  removeAccount: {
+    origin: '<quill>',
+    params: io.tuple([io.string]),
+    output: io.void, // TODO: 'ok's should also be io.void
+  },
 
   // AggregatorController
 
