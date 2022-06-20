@@ -115,6 +115,11 @@ export const rpcMap = {
     params: io.tuple([io.string]),
     output: io.literal('ok'),
   },
+  lookupPrivateKey: {
+    origin: '<quill>',
+    params: io.tuple([io.string]),
+    output: io.string,
+  },
 
   // AggregatorController
 

@@ -85,6 +85,7 @@ export default class QuillController {
     this.aggregatorController = new AggregatorController(
       this.networkController,
       this.keyringController,
+      this.ethersProvider,
     );
 
     this.watchThings();
@@ -132,6 +133,7 @@ export default class QuillController {
       createHDAccount: this.keyringController.rpc.createHDAccount,
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       isOnboardingComplete: this.keyringController.rpc.isOnboardingComplete,
+      lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
 
       debugMe: async ({ params: [a, b, c] }) => {
         console.log('debugMe', { a, b, c });

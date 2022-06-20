@@ -67,15 +67,19 @@ export default class KeyringController {
     isOnboardingComplete: async (_message) => {
       return (await this.keyring.read()).HDPhrase !== undefined;
     },
-  });
 
-  async lookupWallet(address: string): Promise<BlsWalletWrapper> {
-    return BlsWalletWrapper.connect(
-      await this.lookupPrivateKey(address),
-      NETWORK_CONFIG.addresses.verificationGateway,
-      this.ethersProvider,
-    );
-  }
+    lookupPrivateKey: async ({ params: [rawAddress] }) => {
+      const address = ethers.utils.getAddress(rawAddress);
+
+      const keyPair = (await this.keyring.read()).wallets.find(
+        (x) => x.address === address,
+      );
+
+      assert(keyPair !== undefined, 'key does not exist');
+
+      return keyPair.privateKey;
+    },
+  });
 
   async createAccount(privateKey = generateRandomHex(256)): Promise<string> {
     const { wallets } = await this.keyring.read();
@@ -100,18 +104,6 @@ export default class KeyringController {
     assert(newWallets.length < wallets.length, 'Account did not exist');
 
     await this.keyring.update({ wallets: newWallets });
-  }
-
-  private async lookupPrivateKey(rawAddress: string): Promise<string> {
-    const address = ethers.utils.getAddress(rawAddress);
-
-    const keyPair = (await this.keyring.read()).wallets.find(
-      (x) => x.address === address,
-    );
-
-    assert(keyPair !== undefined, 'key does not exist');
-
-    return keyPair.privateKey;
   }
 
   private async BlsWalletAddress(privateKey: string): Promise<string> {

@@ -1,5 +1,7 @@
-import { Aggregator } from 'bls-wallet-clients';
-import { AGGREGATOR_URL } from '../env';
+import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
+import { ethers } from 'ethers';
+
+import { AGGREGATOR_URL, NETWORK_CONFIG } from '../env';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
@@ -23,10 +25,13 @@ export default class AggregatorController {
   constructor(
     public networkController: NetworkController,
     public keyringController: KeyringController,
+    public ethersProvider: ethers.providers.Provider,
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
-    eth_sendTransaction: async ({ providerId, params }) => {
+    eth_sendTransaction: async (message) => {
+      const { providerId, params } = message;
+
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!
       // Supporting multiple froms is actually super awesome - we can show off
@@ -43,7 +48,19 @@ export default class AggregatorController {
         };
       });
 
-      const wallet = await this.keyringController.lookupWallet(from);
+      // FIXME: This internal rpc call should be more ergonomic
+      const privateKey = await this.keyringController.rpc.lookupPrivateKey({
+        ...message,
+        method: 'lookupPrivateKey',
+        params: [from],
+      });
+
+      const wallet = await BlsWalletWrapper.connect(
+        privateKey,
+        NETWORK_CONFIG.addresses.verificationGateway,
+        this.ethersProvider,
+      );
+
       const nonce = (await wallet.Nonce()).toString();
       const bundle = await wallet.sign({ nonce, actions });
 

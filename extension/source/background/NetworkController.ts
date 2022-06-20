@@ -65,7 +65,7 @@ export default class NetworkController
     );
   }
 
-  async requestStrict(body: RpcMessage & { id: string }) {
+  async requestStrict(body: RpcMessage) {
     const { rpcTarget } = await this.providerConfig.read();
 
     const res = await fetch(rpcTarget, {
