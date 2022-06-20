@@ -4,7 +4,6 @@ import { encode as encode58 } from 'bs58check';
 
 import { DEFAULT_CHAIN_ID_HEX } from '../env';
 import {
-  BuiltinChainId,
   builtinChainIdToName,
   ProviderConfig,
   builtinProviderConfigs,
@@ -24,9 +23,4 @@ export const getDefaultProviderConfig = (): ProviderConfig => {
   const config = builtinProviderConfigs[networkName];
 
   return config;
-};
-
-export const getBuiltinRPCURL = (builtinChainId: BuiltinChainId) => {
-  const name = builtinChainIdToName(builtinChainId);
-  return builtinProviderConfigs[name].rpcTarget;
 };

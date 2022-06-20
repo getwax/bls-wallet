@@ -1,8 +1,17 @@
 import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { getBuiltinRPCURL } from '../background/utils';
-import { BuiltinChainId } from '../background/networks';
+
+import {
+  BuiltinChainId,
+  builtinChainIdToName,
+  builtinProviderConfigs,
+} from '../background/networks';
+
+export const getBuiltinRPCURL = (builtinChainId: BuiltinChainId) => {
+  const name = builtinChainIdToName(builtinChainId);
+  return builtinProviderConfigs[name].rpcTarget;
+};
 
 const getParitySigRegistry = (builtinChainId: BuiltinChainId) => {
   const provider = new ethers.providers.JsonRpcProvider(
