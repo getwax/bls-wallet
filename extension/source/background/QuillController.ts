@@ -124,11 +124,12 @@ export default class QuillController {
       },
 
       addAccount: async (message) => {
-        // FIXME: This call should be simpler
-        const address = await this.keyringController.rpc.createAccount({
-          ...message,
-          method: 'createAccount',
-        });
+        // FIXME: Needing to coordinate this between keyringController and
+        // preferencesController is a symptom of these controllers having
+        // awkwardly overlapping responsibilities. This should be fixed by
+        // combining them into AccountController.
+
+        const address = await this.keyringController.rpc.addAccount(message);
 
         const locale = getUserLanguage();
         this.preferencesController.createUser(address, locale, 'USD', 'light');
@@ -141,11 +142,10 @@ export default class QuillController {
       eth_coinbase: this.keyringController.rpc.eth_coinbase,
       eth_accounts: this.keyringController.rpc.eth_accounts,
       eth_requestAccounts: this.keyringController.rpc.eth_requestAccounts,
-      createHDAccount: this.keyringController.rpc.createHDAccount,
+      addHDAccount: this.keyringController.rpc.addHDAccount,
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       isOnboardingComplete: this.keyringController.rpc.isOnboardingComplete,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
-      createAccount: this.keyringController.rpc.createAccount,
       removeAccount: this.keyringController.rpc.removeAccount,
 
       debugMe: async ({ params: [a, b, c] }) => {

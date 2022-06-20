@@ -44,7 +44,7 @@ export default class KeyringController {
     /**
      * Creates a Deterministic Account based on seed phrase
      */
-    createHDAccount: async (message) => {
+    addHDAccount: async (message) => {
       const mnemonic = (await this.keyring.read()).HDPhrase;
       const node = ethers.utils.HDNode.fromMnemonic(mnemonic);
 
@@ -56,9 +56,9 @@ export default class KeyringController {
         `m/44'/60'/0'/0/${newAccountIndex}`,
       );
 
-      const address: string = await this.rpc.createAccount({
+      const address: string = await this.rpc.addAccount({
         ...message,
-        method: 'createAccount',
+        method: 'addAccount',
         params: [privateKey],
       });
 
@@ -86,9 +86,7 @@ export default class KeyringController {
       return keyPair.privateKey;
     },
 
-    createAccount: async ({
-      params: [privateKey = generateRandomHex(256)],
-    }) => {
+    addAccount: async ({ params: [privateKey = generateRandomHex(256)] }) => {
       const { wallets } = await this.keyring.read();
 
       assert(

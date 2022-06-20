@@ -22,7 +22,7 @@ export const WalletsWrapper: FunctionComponent = () => {
     <div className="">
       <div className="flex justify-between place-items-center">
         <div className="text-body">Wallets</div>
-        <Button onPress={rpc.createHDAccount} className="btn-secondary">
+        <Button onPress={rpc.addHDAccount} className="btn-secondary">
           Add Wallet
         </Button>
       </div>

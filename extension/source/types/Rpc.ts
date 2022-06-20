@@ -105,7 +105,7 @@ export const rpcMap = {
     params: emptyTuple,
     output: io.array(io.string),
   },
-  createHDAccount: {
+  addHDAccount: {
     origin: '<quill>',
     params: emptyTuple,
     output: io.string,
@@ -123,11 +123,6 @@ export const rpcMap = {
   lookupPrivateKey: {
     origin: '<quill>',
     params: io.tuple([io.string]),
-    output: io.string,
-  },
-  createAccount: {
-    origin: '<quill>',
-    params: io.tuple([io.union([io.undefined, io.string])]),
     output: io.string,
   },
   removeAccount: {
