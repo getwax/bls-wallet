@@ -232,12 +232,16 @@ function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
           const stoppableSequence = new Stoppable(recordOfIterables[key]);
           endedPromise.then(() => stoppableSequence.stop());
 
-          for await (const value of stoppableSequence) {
+          for await (const maybe of stoppableSequence) {
+            if (maybe === 'stopped') {
+              break;
+            }
+
             if (!(key in latest)) {
               keysFilled += 1;
             }
 
-            latest[key] = value as ExplicitAny;
+            latest[key] = maybe.value as ExplicitAny;
 
             if (keysFilled === keysNeeded) {
               latestVersion += 1;

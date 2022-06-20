@@ -54,6 +54,8 @@ export default class QuillController {
     public currencyConversionConfig: CurrencyConversionConfig,
   ) {
     this.cells = QuillStorageCells(storage);
+    window.debug ??= {};
+    window.debug.storageCells = this.cells;
 
     this.networkController = new NetworkController(this.cells.network);
 
@@ -90,7 +92,12 @@ export default class QuillController {
       providerState: this.cells.providerState,
     });
 
-    this.watchThings();
+    forEach(
+      FormulaCell.Sub(this.cells.developerSettings, 'breakOnAssertionFailures'),
+      ($breakOnAssertionFailures) => {
+        assertConfig.breakOnFailures = $breakOnAssertionFailures;
+      },
+    );
 
     this.rpc = {
       eth_chainId: async () => this.cells.chainId.read(),
@@ -220,25 +227,5 @@ export default class QuillController {
     // ownership of replying to that message. If multiple handlers return
     // promises then the browser will just provide the caller with null.
     return undefined;
-  }
-
-  private watchThings() {
-    // TODO: MEGAFIX: Don't store the block number. Just use LongPollingCell to provide
-    // to consumers, that way we don't need to actively track the block number
-    // if nothing needs it.
-    const storedBlockNumber = this.storage.Cell('block-number', io.number, () =>
-      this.networkController.blockNumber.read(),
-    );
-
-    forEach(this.networkController.blockNumber, async ($blockNumber) => {
-      await storedBlockNumber.write($blockNumber);
-    });
-
-    forEach(
-      FormulaCell.Sub(this.cells.developerSettings, 'breakOnAssertionFailures'),
-      ($breakOnAssertionFailures) => {
-        assertConfig.breakOnFailures = $breakOnAssertionFailures;
-      },
-    );
   }
 }
