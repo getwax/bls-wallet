@@ -3,10 +3,14 @@ import * as io from 'io-ts';
 
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
-import { ProviderConfig } from './background/networks';
+import {
+  builtinChainIdToName,
+  builtinProviderConfigs,
+  ProviderConfig,
+} from './background/networks';
 import { Preferences } from './background/PreferencesController';
-import { getDefaultProviderConfig } from './background/utils';
 import AsyncReturnType from './types/AsyncReturnType';
+import { DEFAULT_CHAIN_ID_HEX } from './env';
 
 function QuillCells(storage: CellCollection) {
   const rootCells = {
@@ -89,3 +93,10 @@ export default QuillCells;
 export type QuillState<K extends keyof QuillCells> = AsyncReturnType<
   QuillCells[K]['read']
 >;
+
+export const getDefaultProviderConfig = (): ProviderConfig => {
+  const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
+  const config = builtinProviderConfigs[networkName];
+
+  return config;
+};
