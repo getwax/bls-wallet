@@ -26,6 +26,7 @@ export class FormulaCell<
   events = new EventEmitter() as TypedEmitter<{
     change(changeEvent: ChangeEvent<T>): void;
     end(): void;
+    'first-iterator'(): void;
     'zero-iterators'(): void;
   }>;
 
@@ -88,6 +89,10 @@ export class FormulaCell<
 
   iterateInputs() {
     this.iteratorCount += 1;
+
+    if (this.iteratorCount === 1) {
+      this.events.emit('first-iterator');
+    }
 
     if (this.iterationCell) {
       return this.iterationCell;
