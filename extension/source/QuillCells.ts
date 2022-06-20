@@ -11,6 +11,7 @@ import {
 import { Preferences } from './background/PreferencesController';
 import AsyncReturnType from './types/AsyncReturnType';
 import { DEFAULT_CHAIN_ID_HEX } from './env';
+import { FormulaCell } from './cells/FormulaCell';
 
 function QuillCells(storage: CellCollection) {
   const rootCells = {
@@ -58,11 +59,11 @@ function QuillCells(storage: CellCollection) {
     })),
   };
 
-  const providerConfig = TransformCell.Sub(rootCells.network, 'providerConfig');
+  const providerConfig = FormulaCell.Sub(rootCells.network, 'providerConfig');
 
   /** the cells involved in the response to quill_providerState in public rpc */
   const providerStateCells = {
-    chainId: TransformCell.Sub(providerConfig, 'chainId'),
+    chainId: FormulaCell.Sub(providerConfig, 'chainId'),
     selectedAddress: TransformCell.Sub(
       rootCells.preferences,
       'selectedAddress',
