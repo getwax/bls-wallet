@@ -31,7 +31,9 @@ const extensionReloaderPlugin =
           contentScript: 'contentScript',
           ethereum: 'ethereum',
           background: 'background',
-          quillPage: ['popup', 'quillPage', 'confirm'],
+
+          // TODO: MEGAFIX: quillPage -> wallet
+          quillPage: 'quillPage',
         },
       })
     : () => {

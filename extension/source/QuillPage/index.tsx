@@ -1,11 +1,13 @@
 import ReactDOM from 'react-dom';
 
 import '../contentScript';
-import '../ethereum';
 import '../styles/index.scss';
 import './styles.scss';
 import Browser from 'webextension-polyfill';
+import QuillEthereumProvider from '../QuillEthereumProvider';
 import QuillPage from './QuillPage';
+
+window.ethereum = new QuillEthereumProvider(true);
 
 window.debug ??= {};
 window.debug.Browser = Browser;

@@ -40,11 +40,14 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
   isQuill = true;
   breakOnAssertionFailures = false;
   rpc?: RpcClient;
+  #isQuillExtensionPage: boolean;
 
-  constructor() {
+  constructor(isQuillExtensionPage = false) {
     super();
 
-    if (window.isQuillExtensionPage) {
+    this.#isQuillExtensionPage = isQuillExtensionPage;
+
+    if (this.#isQuillExtensionPage) {
       this.#exposeRpc();
     }
 
@@ -89,10 +92,13 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       ({ breakOnAssertionFailures, exposeEthereumRpc }) => {
         assertConfig.breakOnFailures = breakOnAssertionFailures;
 
+        const shouldExposeEthereumRpc =
+          exposeEthereumRpc || this.#isQuillExtensionPage;
+
         const ethereumRpcExposed = this.rpc !== undefined;
 
-        if (exposeEthereumRpc !== ethereumRpcExposed) {
-          if (exposeEthereumRpc) {
+        if (ethereumRpcExposed !== shouldExposeEthereumRpc) {
+          if (shouldExposeEthereumRpc) {
             this.#exposeRpc();
           } else {
             delete this.rpc;
