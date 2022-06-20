@@ -32,8 +32,6 @@ export const SendTransactionParams = io.type({
 
 export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
 
-// FIXME: MEGAFIX: Use uppercase for io types
-
 export const rpcMap = {
   // QuillController
   // - ALL rpc methods are technically implemented by QuillController. It
@@ -45,13 +43,13 @@ export const rpcMap = {
 
   eth_chainId: {
     origin: '*',
-    params: emptyTuple,
-    output: io.string,
+    Params: emptyTuple,
+    Output: io.string,
   },
   eth_getTransactionByHash: {
     origin: '*',
-    params: io.tuple([io.string]),
-    output: io.type({
+    Params: io.tuple([io.string]),
+    Output: io.type({
       hash: io.string,
       from: io.string,
       nonce: io.string,
@@ -62,8 +60,8 @@ export const rpcMap = {
   },
   eth_getTransactionReceipt: {
     origin: '*',
-    params: io.tuple([io.string]),
-    output: io.type({
+    Params: io.tuple([io.string]),
+    Output: io.type({
       transactionHash: io.string,
       transactionIndex: io.string,
       blockHash: io.string,
@@ -79,84 +77,84 @@ export const rpcMap = {
   },
   debugMe: {
     origin: '*',
-    params: io.tuple([io.string, io.number, io.string]),
-    output: io.literal('ok'),
+    Params: io.tuple([io.string, io.number, io.string]),
+    Output: io.literal('ok'),
   },
   quill_providerState: {
     origin: '*',
-    params: io.tuple([
+    Params: io.tuple([
       io.union([io.null, io.type({ differentFrom: ProviderState })]),
     ]),
-    output: ProviderState,
+    Output: ProviderState,
   },
   addAccount: {
     origin: '<quill>',
-    params: io.tuple([io.union([io.undefined, io.string])]),
-    output: io.string,
+    Params: io.tuple([io.union([io.undefined, io.string])]),
+    Output: io.string,
   },
 
   // KeyringController
 
   eth_accounts: {
     origin: '*',
-    params: emptyTuple,
-    output: io.array(io.string),
+    Params: emptyTuple,
+    Output: io.array(io.string),
   },
   eth_coinbase: {
     origin: '*',
-    params: emptyTuple,
-    output: io.union([io.null, io.string]),
+    Params: emptyTuple,
+    Output: io.union([io.null, io.string]),
   },
   eth_requestAccounts: {
     origin: '*',
-    params: emptyTuple,
-    output: io.array(io.string),
+    Params: emptyTuple,
+    Output: io.array(io.string),
   },
   addHDAccount: {
     origin: '<quill>',
-    params: emptyTuple,
-    output: io.string,
+    Params: emptyTuple,
+    Output: io.string,
   },
   isOnboardingComplete: {
     origin: '<quill>',
-    params: emptyTuple,
-    output: io.boolean,
+    Params: emptyTuple,
+    Output: io.boolean,
   },
   setHDPhrase: {
     origin: '<quill>',
-    params: io.tuple([io.string]),
-    output: io.literal('ok'),
+    Params: io.tuple([io.string]),
+    Output: io.literal('ok'),
   },
   lookupPrivateKey: {
     origin: '<quill>',
-    params: io.tuple([io.string]),
-    output: io.string,
+    Params: io.tuple([io.string]),
+    Output: io.string,
   },
   removeAccount: {
     origin: '<quill>',
-    params: io.tuple([io.string]),
-    output: io.void, // TODO: MEGAFIX: 'ok's should also be io.void
+    Params: io.tuple([io.string]),
+    Output: io.void, // TODO: MEGAFIX: 'ok's should also be io.void
   },
 
   // AggregatorController
 
   eth_sendTransaction: {
     origin: '*',
-    params: io.array(SendTransactionParams),
-    output: io.string,
+    Params: io.array(SendTransactionParams),
+    Output: io.string,
   },
   eth_setPreferredAggregator: {
     origin: '*',
-    params: io.tuple([io.string]),
-    output: io.literal('ok'),
+    Params: io.tuple([io.string]),
+    Output: io.literal('ok'),
   },
 
   // PreferencesController
 
   setSelectedAddress: {
     origin: '<quill>',
-    params: io.tuple([/* newSelectedAddress */ io.string]),
-    output: io.literal('ok'),
+    Params: io.tuple([/* newSelectedAddress */ io.string]),
+    Output: io.literal('ok'),
   },
 };
 
@@ -184,8 +182,9 @@ export type RpcMethodMessage<M extends RpcMethodName> = Omit<
   'method' | 'params'
 > & {
   method: M;
-  params: io.TypeOf<RpcMap[M]['params']>;
-  Output: RpcMap[M]['output'];
+  params: io.TypeOf<RpcMap[M]['Params']>;
+  Params: RpcMap[M]['Params'];
+  Output: RpcMap[M]['Output'];
 };
 
 export const RpcResult = io.union([
@@ -228,7 +227,7 @@ export type RpcResponse = io.TypeOf<typeof RpcResponse>;
 export type RpcImpl = {
   [M in RpcMethodName]: (
     message: RpcMethodMessage<M>,
-  ) => Promise<io.TypeOf<RpcMap[M]['output']>>;
+  ) => Promise<io.TypeOf<RpcMap[M]['Output']>>;
 };
 
 export type PartialRpcImpl = {
@@ -240,7 +239,7 @@ export type PartialRpcImpl = {
 export type RpcClient = {
   [M in RpcMethodName]: (
     ...params: RpcMethodMessage<M>['params']
-  ) => Promise<io.TypeOf<RpcMap[M]['output']>>;
+  ) => Promise<io.TypeOf<RpcMap[M]['Output']>>;
 };
 
 export type EthereumRequestBody<M extends string> = {
@@ -251,10 +250,10 @@ export type EthereumRequestBody<M extends string> = {
 // FIXME: MEGAFIX: Lints are only warnings!
 
 export const EthereumRequestBody = io.union(
-  Object.entries(rpcMap).map(([k, v]) =>
+  Object.entries(rpcMap).map(([methodName, { Params }]) =>
     io.type({
-      method: io.literal(k),
-      params: v.params,
+      method: io.literal(methodName),
+      params: Params,
     }),
   ) as ExplicitAny,
 );
@@ -271,6 +270,6 @@ export function assertEthereumRequestBody(
   );
 
   if (isType(body.method, RpcMethodName)) {
-    assertType(body.params, rpcMap[body.method].params as io.Type<unknown>);
+    assertType(body.params, rpcMap[body.method].Params as io.Type<unknown>);
   }
 }

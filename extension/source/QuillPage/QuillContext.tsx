@@ -19,9 +19,10 @@ function getQuillContextValue() {
   const ethereum = window.ethereum as QuillEthereumProvider;
   assert(ethereum?.isQuill);
 
-  const rpc = mapValues(rpcMap, ({ params: paramsType, output }, method) => {
+  // TODO: MEGAFIX: Remove this
+  const rpc = mapValues(rpcMap, ({ Params, Output }, method) => {
     return async (...params: unknown[]) => {
-      assertType(params, paramsType as unknown as io.Type<unknown[]>);
+      assertType(params, Params as unknown as io.Type<unknown[]>);
 
       const request = {
         method,
@@ -29,7 +30,7 @@ function getQuillContextValue() {
       } as EthereumRequestBody<string>;
 
       const response = await ethereum.request(request);
-      assertType(response, output as io.Type<unknown>);
+      assertType(response, Output as io.Type<unknown>);
 
       return response;
     };

@@ -220,12 +220,12 @@ export default class QuillController {
         if (isType(message.method, RpcMethodName)) {
           assertType(
             message.params,
-            rpcMap[message.method].params as io.Type<ExplicitAny>,
+            rpcMap[message.method].Params as io.Type<ExplicitAny>,
           );
 
           return (this.rpc[message.method] as ExplicitAny)({
             ...message,
-            Output: rpcMap[message.method].output,
+            Output: rpcMap[message.method].Output,
           }) as unknown;
         }
 

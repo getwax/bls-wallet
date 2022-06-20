@@ -4,7 +4,7 @@ import generateRandomHex from '../helpers/generateRandomHex';
 import { NETWORK_CONFIG } from '../env';
 import QuillCells from '../QuillCells';
 import assert from '../helpers/assert';
-import { PartialRpcImpl } from '../types/Rpc';
+import { PartialRpcImpl, rpcMap } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
 
 export default class KeyringController {
@@ -60,6 +60,7 @@ export default class KeyringController {
         ...message,
         method: 'addAccount',
         params: [privateKey],
+        Params: rpcMap.addAccount.Params,
       });
 
       return address;

@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 
 import { AGGREGATOR_URL, NETWORK_CONFIG } from '../env';
 import ensureType from '../helpers/ensureType';
-import { PartialRpcImpl, SendTransactionParams } from '../types/Rpc';
+import { PartialRpcImpl, rpcMap, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 
@@ -53,6 +53,7 @@ export default class AggregatorController {
         ...message,
         method: 'lookupPrivateKey',
         params: [from],
+        Params: rpcMap.lookupPrivateKey.Params,
       });
 
       const wallet = await BlsWalletWrapper.connect(
