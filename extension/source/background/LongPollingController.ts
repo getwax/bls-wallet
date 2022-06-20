@@ -77,9 +77,7 @@ export default class LongPollingController {
 
     longPollCancel: async ({ providerId, params: [{ longPollingId }] }) => {
       const fullLongPollingId = `${providerId}:${longPollingId}`;
-      const handle = this.cancelHandles[fullLongPollingId];
-      assert(handle !== undefined);
-      handle.cancel();
+      this.cancelHandles[fullLongPollingId]?.cancel();
     },
   });
 }

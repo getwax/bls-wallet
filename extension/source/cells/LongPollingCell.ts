@@ -1,28 +1,66 @@
-import assert, { softAssert } from '../helpers/assert';
+import assert from '../helpers/assert';
+import { FormulaCell } from './FormulaCell';
 import { IReadableCell } from './ICell';
 import MemoryCell from './MemoryCell';
 
-// FIXME: MEGAFIX: Don't longPoll actively, instead make use of a FormulaCell (or
-// otherwise) to only longPoll when needed
 export default function LongPollingCell<T>(
-  longPoll: (opt?: { differentFrom: T }) => Promise<T>,
+  longPoll: (differentMaybe?: { value: T }) => {
+    resultPromise: Promise<'please-retry' | 'cancelled' | { value: T }>;
+    cancel: () => void;
+  },
 ): IReadableCell<T> {
-  const cell = new MemoryCell(longPoll());
+  let latest: { value: T } | undefined;
+  let sharedCancel: (() => void) | undefined;
+  let trackerValue = 0;
+  const tracker = new MemoryCell<number>(trackerValue);
 
-  (async () => {
-    try {
-      let value = await cell.read();
-
-      while (true) {
-        value = await longPoll({ differentFrom: value });
-        await cell.write(value);
-      }
-    } catch (error) {
-      cell.end();
-      assert(error instanceof Error);
-      softAssert(false, error.message);
+  const formulaCell = new FormulaCell({ tracker }, async () => {
+    if (latest) {
+      return latest.value;
     }
-  })();
 
-  return cell;
+    while (true) {
+      const result = await longPoll().resultPromise;
+
+      if (result === 'please-retry') {
+        continue;
+      }
+
+      assert(result !== 'cancelled');
+
+      return result.value;
+    }
+  });
+
+  formulaCell.events.on('first-iterator', async () => {
+    while (true) {
+      const { resultPromise, cancel } = longPoll(latest);
+      assert(sharedCancel === undefined);
+      sharedCancel = cancel;
+
+      const result = await resultPromise;
+      sharedCancel = undefined;
+
+      if (result === 'cancelled') {
+        break;
+      }
+
+      if (result === 'please-retry') {
+        continue;
+      }
+
+      latest = result;
+      trackerValue += 1;
+      tracker.write(trackerValue);
+    }
+  });
+
+  formulaCell.events.on('zero-iterators', () => {
+    assert(sharedCancel !== undefined);
+    sharedCancel();
+    sharedCancel = undefined;
+    latest = undefined;
+  });
+
+  return formulaCell;
 }
