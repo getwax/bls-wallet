@@ -7,6 +7,7 @@ import QuillStorageCells from '../QuillStorageCells';
 import QuillEthereumProvider from '../QuillEthereumProvider';
 import EthersProvider from '../EthersProvider';
 import CellCollection from '../cells/CellCollection';
+import { FormulaCell } from '../cells/FormulaCell';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -53,6 +54,9 @@ function QuillContextCells(storage: CellCollection, _rpc: RpcClient) {
 
   return {
     ...storageCells,
-    // TODO: MEGAFIX: Add blockNumber here
+    networkJson: new FormulaCell(
+      { network: storageCells.network },
+      ({ network }) => JSON.stringify(network, null, 2),
+    ),
   };
 }

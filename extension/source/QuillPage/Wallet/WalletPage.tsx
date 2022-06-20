@@ -5,6 +5,7 @@ import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
 import DeveloperSettings from './Settings/DeveloperSettings';
+import NetworkSettings from './Settings/NetworkSettings';
 import { SettingsWrapper } from './Settings/SettingsWrapper';
 import { WalletDetail } from './Wallets/WalletDetail';
 import { WalletsWrapper } from './Wallets/WalletWrapper';
@@ -45,7 +46,7 @@ const routes: IRoutes[] = [
     name: 'network settings',
     path: '/settings/network',
     summaryComponent: <SettingsWrapper />,
-    detailComponent: <div>network settings detail</div>,
+    detailComponent: <NetworkSettings />,
   },
   {
     name: 'security settings',
