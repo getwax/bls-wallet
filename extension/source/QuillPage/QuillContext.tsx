@@ -3,15 +3,13 @@ import React, { useMemo } from 'react';
 
 import mapValues from '../helpers/mapValues';
 import { EthereumRequestBody, RpcClient, rpcMap } from '../types/Rpc';
-import { IReadableCell } from '../cells/ICell';
 import elcc from '../cells/extensionLocalCellCollection';
 import assertType from '../cells/assertType';
 import assert from '../helpers/assert';
-import { FormulaCell } from '../cells/FormulaCell';
-import TimeCell from '../cells/TimeCell';
 import QuillStorageCells from '../QuillStorageCells';
 import QuillEthereumProvider from '../QuillEthereumProvider';
 import EthersProvider from '../EthersProvider';
+import CellCollection from '../cells/CellCollection';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -19,7 +17,7 @@ function getQuillContextValue() {
   const ethereum = window.ethereum as QuillEthereumProvider;
   assert(ethereum?.isQuill);
 
-  // TODO: MEGAFIX: Remove this
+  // TODO: MEGAFIX: Replace this with window.ethereum.rpc
   const rpc = mapValues(rpcMap, ({ Params, Response }, method) => {
     return async (...params: unknown[]) => {
       assertType(params, Params as unknown as io.Type<unknown[]>);
@@ -36,23 +34,11 @@ function getQuillContextValue() {
     };
   }) as RpcClient;
 
-  const time = TimeCell(100);
-
-  // TODO: MEGAFIX: Cleanup other cells
-  const cells = QuillStorageCells(elcc);
-
-  const selectedAddress: IReadableCell<string | undefined> = new FormulaCell(
-    { preferences: cells.preferences },
-    ({ preferences }) => preferences.selectedAddress,
-  );
-
   return {
     ethereum,
     ethersProvider: EthersProvider(ethereum),
     rpc,
-    time,
-    selectedAddress,
-    cells,
+    cells: QuillContextCells(elcc, rpc),
   };
 }
 
@@ -79,4 +65,13 @@ export function QuillContextProvider({ children }: Props) {
   return (
     <QuillContext.Provider value={quill}>{children}</QuillContext.Provider>
   );
+}
+
+function QuillContextCells(storage: CellCollection, _rpc: RpcClient) {
+  const storageCells = QuillStorageCells(storage);
+
+  return {
+    ...storageCells,
+    // TODO: MEGAFIX: Add blockNumber here
+  };
 }
