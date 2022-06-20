@@ -181,6 +181,7 @@ export default class QuillController {
 
       setSelectedAddress: this.preferencesController.rpc.setSelectedAddress,
       longPoll: this.longPollingController.rpc.longPoll,
+      longPollCancel: this.longPollingController.rpc.longPollCancel,
     };
 
     this.internalRpc = mapValues(

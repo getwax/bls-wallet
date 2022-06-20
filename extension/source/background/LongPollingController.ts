@@ -16,10 +16,12 @@ import { PartialRpcImpl, RpcImpl } from '../types/Rpc';
 const maxWaitTime = 300_000;
 
 export default class LongPollingController {
+  stopHandles: Record<string, { stop: () => void } | undefined> = {};
+
   constructor(public cells: LongPollingCells) {}
 
   rpc = ensureType<PartialRpcImpl>()({
-    longPoll: async ({ params: [cellName, opt] }) => {
+    longPoll: async ({ id, params: [cellName, opt] }) => {
       assertType(cellName, LongPollingCellName);
 
       assertType(
@@ -34,6 +36,7 @@ export default class LongPollingController {
 
       const cell = this.cells[cellName];
       const stoppable = new Stoppable(cell);
+      this.stopHandles[id] = { stop: () => stoppable.stop() };
       let res: AsyncReturnType<RpcImpl['longPoll']> = 'please-retry';
 
       const timerId = setTimeout(() => stoppable.stop(), maxWaitTime);
@@ -52,12 +55,19 @@ export default class LongPollingController {
       }
 
       clearTimeout(timerId);
+      delete this.stopHandles[id];
 
       if (cell.ended) {
         assert(false, new Error(`Unexpected end of ${cellName}`));
       }
 
       return res;
+    },
+
+    longPollCancel: async ({ params: [longPollId] }) => {
+      const stopHandle = this.stopHandles[longPollId];
+      assert(stopHandle !== undefined);
+      stopHandle.stop();
     },
   });
 }

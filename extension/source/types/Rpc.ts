@@ -181,6 +181,12 @@ export const rpcMap = {
       }),
     ]),
   },
+
+  longPollCancel: {
+    origin: '<quill>',
+    Params: io.tuple([io.string]),
+    Response: io.void,
+  },
 };
 
 export type RpcMap = typeof rpcMap;
