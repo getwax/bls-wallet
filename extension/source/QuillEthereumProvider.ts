@@ -163,7 +163,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     })();
 
     if (this.#shouldLog) {
-      if (this.rpc) {
+      if (this.rpc && body.method in this.rpc) {
         console.log(
           // Ok, we might be lying a bit here. We're logging the ethereum.rpc
           // version of the call regardless of which version was actually used.
@@ -176,11 +176,11 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
         );
       } else {
         console.log(
-          `ethereum.request({\n  method: ${
-            body.method
-          },\n  params: [${body.params
+          `ethereum.request({\n  method: ${JSON.stringify(
+            body.method,
+          )},\n  params: [${body.params
             .map((p) => JSON.stringify(p))
-            .join(', ')}],\n) ->`,
+            .join(', ')}],\n}) ->`,
           response,
         );
       }
