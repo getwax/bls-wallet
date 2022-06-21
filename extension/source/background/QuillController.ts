@@ -188,7 +188,13 @@ export default class QuillController {
 
       debugMe: async ({ params: [a, b, c] }) => {
         console.log('debugMe', { a, b, c });
-        return 'ok' as const;
+
+        return {
+          // This special debugging method uses io.unknown for Response, which
+          // is what enables returning anything here. All real methods should
+          // use precise typing.
+          ahoy: `Looks like you sent ${[a, b, c]}`,
+        };
       },
 
       setSelectedAddress: this.preferencesController.rpc.setSelectedAddress,

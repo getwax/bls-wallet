@@ -127,8 +127,6 @@ export default class AggregatorController {
       params: [preferredAggregator],
     }) => {
       this.preferredAggregators[providerId] = preferredAggregator;
-
-      return 'ok';
     },
   });
 }

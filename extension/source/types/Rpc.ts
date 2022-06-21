@@ -79,7 +79,7 @@ export const rpcMap = {
   debugMe: {
     origin: '*',
     Params: io.tuple([io.string, io.number, io.string]),
-    Response: io.literal('ok'),
+    Response: io.unknown,
   },
   addAccount: {
     origin: '<quill>',
@@ -112,7 +112,7 @@ export const rpcMap = {
   setHDPhrase: {
     origin: '<quill>',
     Params: io.tuple([io.string]),
-    Response: io.literal('ok'),
+    Response: io.void,
   },
   lookupPrivateKey: {
     origin: '<quill>',
@@ -122,7 +122,7 @@ export const rpcMap = {
   removeAccount: {
     origin: '<quill>',
     Params: io.tuple([io.string]),
-    Response: io.void, // TODO: MEGAFIX: 'ok's should also be io.void
+    Response: io.void,
   },
 
   // AggregatorController
@@ -135,7 +135,7 @@ export const rpcMap = {
   eth_setPreferredAggregator: {
     origin: '*',
     Params: io.tuple([io.string]),
-    Response: io.literal('ok'),
+    Response: io.void,
   },
 
   // PreferencesController
@@ -143,7 +143,7 @@ export const rpcMap = {
   setSelectedAddress: {
     origin: '<quill>',
     Params: io.tuple([/* newSelectedAddress */ io.string]),
-    Response: io.literal('ok'),
+    Response: io.void,
   },
 
   // LongPollingController

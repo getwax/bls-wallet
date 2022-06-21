@@ -58,7 +58,6 @@ export default class KeyringController {
 
     setHDPhrase: async ({ params: [HDPhrase] }) => {
       this.keyring.update({ HDPhrase });
-      return 'ok';
     },
 
     lookupPrivateKey: async ({ params: [rawAddress] }) => {

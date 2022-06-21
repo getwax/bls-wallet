@@ -45,7 +45,6 @@ export default class PreferencesController {
   rpc = ensureType<PartialRpcImpl>()({
     setSelectedAddress: async ({ params: [selectedAddress] }) => {
       this.preferences.update({ selectedAddress });
-      return 'ok';
     },
   });
 
