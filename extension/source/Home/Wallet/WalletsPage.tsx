@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { Route, Routes, useNavigate } from 'react-router-dom';
-import { useQuill } from '../QuillContext';
+import { Route, Routes } from 'react-router-dom';
 import { ConnectionsWrapper } from './Connections/ConnectionWrapper';
 import { ContactsWrapper } from './Contacts/ContactsWrapper';
 import { Navigation } from './Navigation';
@@ -64,10 +63,6 @@ const routes: IRoutes[] = [
 
 export const WalletsPage: React.FunctionComponent = () => {
   // TODO: MEGAFIX: Add useQuillCells convenience api.
-  const { rpc } = useQuill();
-  const navigate = useNavigate();
-
-  // TODO: MEGAFIX: Onboarding navigation?
 
   return (
     <div className="flex h-screen">
