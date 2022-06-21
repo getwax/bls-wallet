@@ -40,6 +40,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
   breakOnAssertionFailures = false;
   rpc?: RpcClient;
   #isQuillExtensionPage: boolean;
+  #shouldLog = false;
 
   constructor(isQuillExtensionPage = false) {
     super();
@@ -82,7 +83,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
 
     forEach(
       developerSettings,
-      ({ breakOnAssertionFailures, exposeEthereumRpc }) => {
+      ({ breakOnAssertionFailures, exposeEthereumRpc, rpcLogging }) => {
         assertConfig.breakOnFailures = breakOnAssertionFailures;
 
         const shouldExposeEthereumRpc =
@@ -97,62 +98,95 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
             delete this.rpc;
           }
         }
+
+        this.#shouldLog = rpcLogging.inPage;
       },
     );
   }
 
-  async request<M extends string>(
+  request<M extends string>(
     body: EthereumRequestBody<M>,
   ): Promise<
     M extends RpcMethodName ? io.TypeOf<RpcMap[M]['Response']> : unknown
   > {
-    // TODO: MEGAFIX (deferred): Ensure all errors are EthereumRpcError, maybe making use of
-    // the ethereum-rpc-error module.
-
     assertEthereumRequestBody(body);
 
-    const id = RandomId();
+    const response = (async () => {
+      // TODO: MEGAFIX (deferred): Ensure all errors are EthereumRpcError, maybe making use of
+      // the ethereum-rpc-error module.
 
-    const message: Omit<RpcMessage, 'providerId' | 'origin'> = {
-      type: 'quill-rpc',
-      id,
-      // Note: We do not set providerId or origin here because our code is
-      // co-mingled with the dApp and is therefore untrusted. Instead, the
-      // content script will add these fields before passing them along to the
-      // background script.
-      // providerId: this.id,
-      // origin: window.location.origin,
-      method: body.method,
-      params: body.params ?? [],
-    };
+      const id = RandomId();
 
-    window.postMessage(message, '*');
-
-    const response = await new Promise((resolve, reject) => {
-      const messageListener = (evt: MessageEvent<unknown>) => {
-        if (!isType(evt.data, RpcResponse) || evt.data.id !== id) {
-          return;
-        }
-
-        window.removeEventListener('message', messageListener);
-
-        if ('ok' in evt.data.result) {
-          resolve(evt.data.result.ok);
-        } else if ('error' in evt.data.result) {
-          const error = new Error(evt.data.result.error.message);
-          error.stack = evt.data.result.error.stack;
-          reject(error);
-        }
+      const message: Omit<RpcMessage, 'providerId' | 'origin'> = {
+        type: 'quill-rpc',
+        id,
+        // Note: We do not set providerId or origin here because our code is
+        // co-mingled with the dApp and is therefore untrusted. Instead, the
+        // content script will add these fields before passing them along to the
+        // background script.
+        // providerId: this.id,
+        // origin: window.location.origin,
+        method: body.method,
+        params: body.params ?? [],
       };
 
-      window.addEventListener('message', messageListener);
-    });
+      window.postMessage(message, '*');
 
-    if (isType(body.method, RpcMethodName)) {
-      assertType(response, rpcMap[body.method].Response as io.Type<unknown>);
+      const backgroundResponse = await new Promise((resolve, reject) => {
+        const messageListener = (evt: MessageEvent<unknown>) => {
+          if (!isType(evt.data, RpcResponse) || evt.data.id !== id) {
+            return;
+          }
+
+          window.removeEventListener('message', messageListener);
+
+          if ('ok' in evt.data.result) {
+            resolve(evt.data.result.ok);
+          } else if ('error' in evt.data.result) {
+            const error = new Error(evt.data.result.error.message);
+            error.stack = evt.data.result.error.stack;
+            reject(error);
+          }
+        };
+
+        window.addEventListener('message', messageListener);
+      });
+
+      if (isType(body.method, RpcMethodName)) {
+        assertType(
+          backgroundResponse,
+          rpcMap[body.method].Response as io.Type<unknown>,
+        );
+      }
+
+      return backgroundResponse as ExplicitAny;
+    })();
+
+    if (this.#shouldLog) {
+      if (this.rpc) {
+        console.log(
+          // Ok, we might be lying a bit here. We're logging the ethereum.rpc
+          // version of the call regardless of which version was actually used.
+          // This is to help raise awareness of the proposed ethereum.rpc way of
+          // doing things.
+          `ethereum.rpc.${body.method}(${body.params
+            .map((p) => JSON.stringify(p))
+            .join(', ')}) ->`,
+          response,
+        );
+      } else {
+        console.log(
+          `ethereum.request({\n  method: ${
+            body.method
+          },\n  params: [${body.params
+            .map((p) => JSON.stringify(p))
+            .join(', ')}],\n) ->`,
+          response,
+        );
+      }
     }
 
-    return response as ExplicitAny;
+    return response;
   }
 
   #exposeRpc() {

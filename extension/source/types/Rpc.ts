@@ -7,6 +7,7 @@ import AsyncReturnType from './AsyncReturnType';
 import emptyTuple from './emptyTuple';
 import ExplicitAny from './ExplicitAny';
 import optional from './optional';
+import { DeveloperSettings } from '../background/Preferences';
 
 // TODO: MEGAFIX: Make a tuple wrapper handling empty and also preventing accidental
 // undefineds
@@ -14,10 +15,7 @@ import optional from './optional';
 export const ProviderState = io.type({
   chainId: io.string,
   selectedAddress: io.union([io.undefined, io.string]),
-  developerSettings: io.type({
-    breakOnAssertionFailures: io.boolean,
-    exposeEthereumRpc: io.boolean,
-  }),
+  developerSettings: DeveloperSettings,
 });
 
 export type ProviderState = io.TypeOf<typeof ProviderState>;

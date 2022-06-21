@@ -3,6 +3,7 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
+import Browser from 'webextension-polyfill';
 import NetworkController from './NetworkController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
@@ -55,8 +56,34 @@ export default class QuillController {
     public currencyConversionConfig: CurrencyConversionConfig,
   ) {
     this.cells = QuillStorageCells(storage);
+
+    // FIXME: MEGAFIX: This should go somewhere else
     window.debug ??= {};
     window.debug.storageCells = this.cells;
+    window.debug.Browser = Browser;
+
+    let warned = false;
+
+    window.debug.reset = async () => {
+      if (!warned) {
+        // TODO: Instead of being dramatic, we probably don't need to care about
+        // the completeness of our reset and instead offer backups. This could
+        // be a user-facing feature too.
+        console.warn(
+          [
+            "WARNING: This will delete ALL of Quill's storage, including any",
+            'private keys. Use debug.reset() again to proceed.',
+          ].join(' '),
+        );
+
+        warned = true;
+
+        return;
+      }
+
+      await Browser.storage.local.clear();
+      window.location.reload();
+    };
 
     this.networkController = new NetworkController(this.cells.network);
 

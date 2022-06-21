@@ -11,6 +11,7 @@ declare global {
       Browser?: Browser;
       quill?: QuillContextValue;
       storageCells?: QuillStorageCells;
+      reset?: () => unknown;
     };
   }
 }

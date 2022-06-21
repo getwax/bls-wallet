@@ -1,4 +1,3 @@
-import * as io from 'io-ts';
 import deepEqual from 'fast-deep-equal';
 
 import assert from '../helpers/assert';
@@ -6,6 +5,13 @@ import ICell, { IReadableCell } from '../cells/ICell';
 import TransformCell from '../cells/TransformCell';
 import { FormulaCell } from '../cells/FormulaCell';
 import ensureType from '../helpers/ensureType';
+import {
+  AddressPreferences,
+  Contact,
+  defaultAddressPreferences,
+  Preferences,
+  Theme,
+} from './Preferences';
 import { PartialRpcImpl } from '../types/Rpc';
 
 /**
@@ -122,68 +128,3 @@ export default class PreferencesController {
     });
   }
 }
-
-export const Theme = io.union([io.literal('light'), io.literal('dark')]);
-export type Theme = io.TypeOf<typeof Theme>;
-
-const Contact = io.type({
-  displayName: io.string,
-  publicAddress: io.string,
-});
-
-type Contact = io.TypeOf<typeof Contact>;
-
-const CustomNft = io.type({
-  nftAddress: io.string,
-  chainId: io.string,
-  nftContractStandard: io.string,
-  nftTokenId: io.string,
-});
-
-type CustomNft = io.TypeOf<typeof CustomNft>;
-
-const CustomToken = io.type({
-  tokenAddress: io.string,
-  chainId: io.string,
-  tokenSymbol: io.string,
-  tokenName: io.string,
-  decimals: io.string,
-});
-
-type CustomToken = io.TypeOf<typeof CustomToken>;
-
-export const AddressPreferences = io.type({
-  preferredCurrency: io.string,
-  theme: Theme,
-  defaultPublicAddress: io.union([io.undefined, io.string]),
-  contacts: io.array(Contact),
-  customTokens: io.array(CustomToken),
-  customNfts: io.array(CustomNft),
-});
-
-export type AddressPreferences = io.TypeOf<typeof AddressPreferences>;
-
-export const defaultAddressPreferences: AddressPreferences = {
-  preferredCurrency: 'USD',
-  theme: 'dark',
-  defaultPublicAddress: undefined,
-  contacts: [],
-  customTokens: [],
-  customNfts: [],
-};
-
-export const Preferences = io.type({
-  identities: io.record(
-    io.string,
-    io.union([io.undefined, AddressPreferences]),
-  ),
-  selectedAddress: io.union([io.undefined, io.string]),
-  lastErrorMessage: io.union([io.undefined, io.string]),
-  lastSuccessMessage: io.union([io.undefined, io.string]),
-  developerSettings: io.type({
-    breakOnAssertionFailures: io.boolean,
-    exposeEthereumRpc: io.boolean,
-  }),
-});
-
-export type Preferences = io.TypeOf<typeof Preferences>;

@@ -8,11 +8,15 @@ import {
   builtinProviderConfigs,
   ProviderConfig,
 } from './background/networks';
-import { Preferences, Theme } from './background/PreferencesController';
+import { Preferences, Theme } from './background/Preferences';
 import AsyncReturnType from './types/AsyncReturnType';
 import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
+
+// FIXME: If defaults were built into our io types, we could easily add new
+// fields that always have concrete values incrementally without breaking
+// existing clients.
 
 function QuillStorageCells(storage: CellCollection) {
   const rootCells = {
@@ -48,6 +52,10 @@ function QuillStorageCells(storage: CellCollection) {
       developerSettings: {
         breakOnAssertionFailures: false,
         exposeEthereumRpc: false,
+        rpcLogging: {
+          background: true,
+          inPage: false,
+        },
       },
     })),
   };

@@ -7,14 +7,38 @@ const DeveloperSettings: FunctionComponent = () => {
 
   return (
     <>
-      <div>
-        Break on assertion failures:{' '}
-        <CheckBox cell={cells.breakOnAssertionFailures} />
-      </div>
-      <div>
-        Expose <span style={{ fontFamily: 'monospace' }}>ethereum.rpc</span>:{' '}
-        <CheckBox cell={cells.exposeEthereumRpc} />
-      </div>
+      <pre>
+        {[
+          [
+            'Break on assertion failures:  ',
+            <CheckBox
+              key="breakOnAssertionFailures"
+              cell={cells.breakOnAssertionFailures}
+            />,
+            '\n',
+          ],
+          [
+            'Expose dApps to ethereum.rpc: ',
+            <CheckBox key="exposeEthereumRpc" cell={cells.exposeEthereumRpc} />,
+            '\n',
+          ],
+          '\n',
+          'RPC logging:\n',
+          [
+            '  in background script:       ',
+            <CheckBox
+              key="rpcBackgroundLogging"
+              cell={cells.rpcBackgroundLogging}
+            />,
+            '\n',
+          ],
+          [
+            '  in dApp pages:              ',
+            <CheckBox key="rpcInPageLogging" cell={cells.rpcInPageLogging} />,
+            '\n',
+          ],
+        ]}
+      </pre>
     </>
   );
 };

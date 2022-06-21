@@ -8,6 +8,7 @@ import EthersProvider from '../EthersProvider';
 import CellCollection from '../cells/CellCollection';
 import { FormulaCell } from '../cells/FormulaCell';
 import QuillLongPollingCell from '../QuillLongPollingCell';
+import TransformCell from '../cells/TransformCell';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -55,6 +56,11 @@ function QuillContextCells(
 ) {
   const storageCells = QuillStorageCells(storage);
 
+  const rpcLogging = TransformCell.Sub(
+    storageCells.developerSettings,
+    'rpcLogging',
+  );
+
   return {
     ...storageCells,
     networkJson: new FormulaCell(
@@ -62,5 +68,7 @@ function QuillContextCells(
       ({ network }) => JSON.stringify(network, null, 2),
     ),
     blockNumber: QuillLongPollingCell(ethereum, 'blockNumber'),
+    rpcBackgroundLogging: TransformCell.Sub(rpcLogging, 'background'),
+    rpcInPageLogging: TransformCell.Sub(rpcLogging, 'inPage'),
   };
 }

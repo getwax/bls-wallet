@@ -2,8 +2,10 @@ import { runtime, tabs } from 'webextension-polyfill';
 
 import QuillController from './QuillController';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
-import { toRpcResult } from '../types/Rpc';
+import { RpcMessage, toRpcResult } from '../types/Rpc';
 import toOkError from '../helpers/toOkError';
+import assertType from '../cells/assertType';
+import forEach from '../cells/forEach';
 
 // On first install, open a new tab with Quill
 runtime.onInstalled.addListener(({ reason }) => {
@@ -25,6 +27,12 @@ const quillController = new QuillController(
   },
 );
 
+let shouldLog = true;
+
+forEach(quillController.cells.developerSettings, (developerSettings) => {
+  shouldLog = developerSettings.rpcLogging.background;
+});
+
 runtime.onMessage.addListener((message, _sender) => {
   const response = quillController.handleMessage(message);
 
@@ -32,8 +40,23 @@ runtime.onMessage.addListener((message, _sender) => {
     return undefined;
   }
 
-  // TODO: MEGAFIX (deferred): Better logging (configuration etc)
-  console.log({ message, response });
+  // FIXME: MEGAFIX: Duplication with rtti checking inside QuillController
+  assertType(message, RpcMessage);
+
+  if (shouldLog) {
+    const host =
+      message.origin === window.location.origin
+        ? '<quill>'
+        : new URL(message.origin).host;
+
+    console.log(
+      `${host}:${message.providerId.slice(0, 5)}:`,
+      `${message.method}(${message.params
+        .map((p) => JSON.stringify(p))
+        .join(', ')}) ->`,
+      response,
+    );
+  }
 
   return toOkError(() => response).then(toRpcResult);
 });
