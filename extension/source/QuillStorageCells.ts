@@ -61,11 +61,14 @@ function QuillStorageCells(storage: CellCollection) {
       lastErrorMessage: undefined,
       lastSuccessMessage: undefined,
       developerSettings: {
-        breakOnAssertionFailures: false,
+        // For now, default to dev settings that are appropriate for the bls
+        // wallet team. FIXME: The defaults that get bundled into the extension
+        // should probably be configurable.
+        breakOnAssertionFailures: true,
         exposeEthereumRpc: false,
         rpcLogging: {
           background: true,
-          inPage: false,
+          inPage: true,
         },
       },
     })),
