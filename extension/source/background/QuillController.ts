@@ -3,7 +3,6 @@
 import * as io from 'io-ts';
 import { ethers } from 'ethers';
 
-import Browser from 'webextension-polyfill';
 import NetworkController from './NetworkController';
 import KeyringController from './KeyringController';
 import PreferencesController from './PreferencesController';
@@ -25,8 +24,7 @@ import AggregatorController from './AggregatorController';
 import CurrencyConversionCell, {
   CurrencyConversionConfig,
 } from './CurrencyConversionCell';
-import forEach from '../cells/forEach';
-import assert, { assertConfig } from '../helpers/assert';
+import assert from '../helpers/assert';
 import RandomId from '../helpers/RandomId';
 import mapValues from '../helpers/mapValues';
 import LongPollingController from './LongPollingController';
@@ -56,34 +54,6 @@ export default class QuillController {
     public currencyConversionConfig: CurrencyConversionConfig,
   ) {
     this.cells = QuillStorageCells(storage);
-
-    // FIXME: MEGAFIX: This should go somewhere else
-    window.debug ??= {};
-    window.debug.storageCells = this.cells;
-    window.debug.Browser = Browser;
-
-    let warned = false;
-
-    window.debug.reset = async () => {
-      if (!warned) {
-        // TODO: Instead of being dramatic, we probably don't need to care about
-        // the completeness of our reset and instead offer backups. This could
-        // be a user-facing feature too.
-        console.warn(
-          [
-            "WARNING: This will delete ALL of Quill's storage, including any",
-            'private keys. Use debug.reset() again to proceed.',
-          ].join(' '),
-        );
-
-        warned = true;
-
-        return;
-      }
-
-      await Browser.storage.local.clear();
-      window.location.reload();
-    };
 
     this.networkController = new NetworkController(this.cells.network);
 
@@ -120,13 +90,6 @@ export default class QuillController {
       providerState: this.cells.providerState,
       currencyConversion: this.currencyConversion,
     });
-
-    forEach(
-      FormulaCell.Sub(this.cells.developerSettings, 'breakOnAssertionFailures'),
-      ($breakOnAssertionFailures) => {
-        assertConfig.breakOnFailures = $breakOnAssertionFailures;
-      },
-    );
 
     this.rpc = {
       eth_chainId: async () => this.cells.chainId.read(),

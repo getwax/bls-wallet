@@ -6,6 +6,9 @@ import { RpcRequest, toRpcResult } from '../types/Rpc';
 import toOkError from '../helpers/toOkError';
 import assertType from '../cells/assertType';
 import forEach from '../cells/forEach';
+import Debug from './Debug';
+import { FormulaCell } from '../cells/FormulaCell';
+import { assertConfig } from '../helpers/assert';
 
 const quillController = new QuillController(
   extensionLocalCellCollection,
@@ -75,9 +78,24 @@ runtime.onConnect.addListener((port) => {
   console.log('Connected:', port.name);
 
   port.onDisconnect.addListener(() => {
+    // TODO: Provide disconnect information to QuillController so that eg
+    // `LongPollingCell`s can stop iteration (reducing derived network
+    // requests).
     console.log('Disconnected:', port.name, port.error);
   });
 });
+
+forEach(
+  FormulaCell.Sub(
+    quillController.cells.developerSettings,
+    'breakOnAssertionFailures',
+  ),
+  ($breakOnAssertionFailures) => {
+    assertConfig.breakOnFailures = $breakOnAssertionFailures;
+  },
+);
+
+window.debug = Debug(quillController);
 
 // TODO: The old system that has been deleted had signs of useful ideas that
 // are not implemented in the new system.
