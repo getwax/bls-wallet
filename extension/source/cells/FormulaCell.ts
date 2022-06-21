@@ -13,6 +13,7 @@ import MemoryCell from './MemoryCell';
 import AsyncIteratee from './AsyncIteratee';
 import Stoppable from './Stoppable';
 import nextEvent from './nextEvent';
+import assert from '../helpers/assert';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -64,7 +65,7 @@ export class FormulaCell<
       this.decrementIterators();
     }
 
-    throw new Error('Inputs ended');
+    assert(false, () => new Error('Inputs ended'));
   }
 
   [Symbol.asyncIterator](): AsyncIterator<Awaited<T>> {

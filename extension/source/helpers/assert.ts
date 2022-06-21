@@ -1,6 +1,3 @@
-// TODO: MEGAFIX: Probably all of our raw `throw new Error(...)` examples should be
-// asserts.
-
 export const assertConfig = {
   breakOnFailures: false,
 };

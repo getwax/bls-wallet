@@ -7,6 +7,7 @@ import {
   builtinChainIdToName,
   builtinProviderConfigs,
 } from '../background/networks';
+import assert from '../helpers/assert';
 
 export const getBuiltinRPCURL = (builtinChainId: BuiltinChainId) => {
   const name = builtinChainIdToName(builtinChainId);
@@ -54,7 +55,7 @@ const getMethodFromEtherscan = async (to: string, data: string) => {
     return iface.parseTransaction({ data, value: 1 }).name;
   }
 
-  throw new Error('Unverified Contract');
+  assert(false, () => new Error('Unverified Contract'));
 };
 
 const formatMethod = (method: string) => {
