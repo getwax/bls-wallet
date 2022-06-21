@@ -174,6 +174,13 @@ module.exports = {
       filename: 'home.html',
     }),
     new HtmlWebpackPlugin({
+      template: path.join(viewsPath, 'cellsDemo.html'),
+      inject: 'body',
+      chunks: ['cellsDemo'],
+      hash: true,
+      filename: 'cellsDemo.html',
+    }),
+    new HtmlWebpackPlugin({
       template: path.join(viewsPath, 'popup.html'),
       inject: 'body',
       chunks: ['popup'],

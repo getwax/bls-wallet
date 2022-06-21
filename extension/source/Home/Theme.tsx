@@ -4,7 +4,7 @@ import { useQuill } from './QuillContext';
 
 const Theme: FunctionComponent = ({ children }) => {
   const quill = useQuill();
-  const theme = useCell(quill.cells.theme);
+  const theme = useCell(quill.theme);
 
   return (
     <div className={`themable1 ${theme === 'dark' && 'dark-theme'}`}>

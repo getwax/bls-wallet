@@ -1,8 +1,9 @@
 #!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write --allow-env
 
+import { lintTodosFixmes } from "./helpers/lint.ts"; // merge-ok
+import { checkTs } from "./helpers/typescript.ts";
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";
-import nil from "../src/helpers/nil.ts";
 import { envName } from "../src/helpers/dotEnvPath.ts";
 
 Deno.chdir(repoDir);
@@ -27,44 +28,8 @@ function Checks(): Check[] {
     ["lint", async () => {
       await shell.run("deno", "lint", ".");
     }],
-    ["todos and fixmes", async () => { // merge-ok
-      const searchArgs = [
-        "egrep",
-        "--color",
-        "-ni",
-        "todo|fixme", // merge-ok
-        ...(await allFiles()),
-      ];
-
-      const matches = await shell.Lines(...searchArgs);
-
-      const notOkMatches = matches.filter((m) => !m.includes("merge-ok"));
-
-      if (notOkMatches.length > 0) {
-        console.error(notOkMatches.join("\n"));
-        throw new Error(`${notOkMatches.length} todos/fixmes found`); // merge-ok
-      }
-    }],
-    ["typescript", async () => {
-      let testFilePath: string | nil = nil;
-
-      try {
-        const tsFiles = (await allFiles()).filter((f) => f.endsWith(".ts"));
-
-        testFilePath = await Deno.makeTempFile({ suffix: ".ts" });
-
-        await Deno.writeTextFile(
-          testFilePath,
-          tsFiles.map((f) => `import "${repoDir}/${f}";`).join("\n"),
-        );
-
-        await shell.run("deno", "cache", "--unstable", testFilePath);
-      } finally {
-        if (testFilePath !== nil) {
-          await Deno.remove(testFilePath);
-        }
-      }
-    }],
+    ["todos and fixmes",  lintTodosFixmes], // merge-ok
+    ["typescript", checkTs],
     ["test", async () => {
       await shell.run(
         "deno",
@@ -83,17 +48,5 @@ function Checks(): Check[] {
         envName,
       );
     }],
-  ];
-}
-
-async function allFiles() {
-  return [
-    ...await shell.Lines("git", "ls-files"),
-    ...await shell.Lines(
-      "git",
-      "ls-files",
-      "--others",
-      "--exclude-standard",
-    ),
   ];
 }

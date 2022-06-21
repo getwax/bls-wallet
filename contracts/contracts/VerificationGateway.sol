@@ -22,11 +22,16 @@ contract VerificationGateway
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_KEY_LEN = 4;
 
-    IBLS public blsLib;
+    IBLS public immutable blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
-    address public blsWalletLogic;
-    mapping(bytes32 => IWallet) externalWalletsFromHash;
+    address public immutable blsWalletLogic;
+    mapping(bytes32 => IWallet) public walletFromHash;
+    mapping(IWallet => bytes32) public hashFromWallet;
 
+    //mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
+    mapping(bytes32 => uint256[BLS_KEY_LEN]) public pendingBLSPublicKeyFromHash;
+    mapping(bytes32 => uint256[2]) public pendingMessageSenderSignatureFromHash;
+    mapping(bytes32 => uint256) public pendingBLSPublicKeyTimeFromHash;
 
     /** Aggregated signature with corresponding senders + operations */
     struct Bundle {
@@ -46,27 +51,36 @@ contract VerificationGateway
         bool result
     );
 
+    event PendingBLSKeySet(
+        bytes32 previousHash,
+        uint256[BLS_KEY_LEN] newBLSKey
+    );
+    event BLSKeySetForWallet(
+        uint256[BLS_KEY_LEN] newBLSKey,
+        IWallet wallet
+    );
 
     /**
     @param bls verified bls library contract address
      */
     constructor(
         IBLS bls,
-        address blsWalletImpl
+        address blsWalletImpl,
+        address proxyAdmin
     ) {
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
-        walletProxyAdmin = new ProxyAdmin();
+        walletProxyAdmin = ProxyAdmin(proxyAdmin);
     }
 
     /** Throw if bundle not valid or signature verification fails */
     function verify(
-        Bundle calldata bundle
+        Bundle memory bundle
     ) public view {
         uint256 opLength = bundle.operations.length;
         require(
             opLength == bundle.senderPublicKeys.length,
-            "VG: Sender and operation length mismatch"
+            "VG: Sender/op length mismatch"
         );
         uint256[2][] memory messages = new uint256[2][](opLength);
 
@@ -81,37 +95,7 @@ contract VerificationGateway
             messages
         );
 
-        require(verified, "VG: All sigs not verified");
-    }
-
-    /**
-    Returns a BLSWallet if deployed from this contract, otherwise 0.
-    @param hash BLS public key hash used as salt for create2
-    @return BLSWallet at calculated address (if code exists), otherwise zero address
-     */
-    function walletFromHash(bytes32 hash) public view returns (IWallet) {
-        //return wallet of hash registered explicitly
-        if (externalWalletsFromHash[hash] != IWallet(address(0))) {
-            return externalWalletsFromHash[hash];
-        }
-
-        address walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
-            bytes1(0xff),
-            address(this),
-            hash,
-            keccak256(abi.encodePacked(
-                type(TransparentUpgradeableProxy).creationCode,
-                abi.encode(
-                    address(blsWalletLogic),
-                    address(walletProxyAdmin),
-                    getInitializeData()
-                )
-            ))
-        )))));
-        if (!hasCode(walletAddress)) {
-            walletAddress = address(0);
-        }
-        return IWallet(payable(walletAddress));
+        require(verified, "VG: Sig not verified");
     }
 
     /**
@@ -123,11 +107,42 @@ contract VerificationGateway
     @param messageSenderSignature signature of message containing only the calling address
     @param publicKey that signed the caller's address
      */
-    function setExternalWallet(
-        uint256[2] calldata messageSenderSignature,
-        uint256[BLS_KEY_LEN] calldata publicKey
+    function setBLSKeyForWallet(
+        uint256[2] memory messageSenderSignature,
+        uint256[BLS_KEY_LEN] memory publicKey
     ) public {
-        safeSetWallet(messageSenderSignature, publicKey, msg.sender);
+        require(blsLib.isZeroBLSKey(publicKey) == false, "VG: publicKey must be non-zero");
+        IWallet wallet = IWallet(msg.sender);
+        bytes32 existingHash = hashFromWallet[wallet];
+        if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
+            // set it instantly
+            safeSetWallet(messageSenderSignature, publicKey, wallet);
+        }
+        else { // wallet already has a key registered, set after delay
+            pendingMessageSenderSignatureFromHash[existingHash] = messageSenderSignature;
+            pendingBLSPublicKeyFromHash[existingHash] = publicKey;
+            pendingBLSPublicKeyTimeFromHash[existingHash] = block.timestamp + 604800; // 1 week from now
+            emit PendingBLSKeySet(existingHash, publicKey);
+        }
+    }
+
+    function setPendingBLSKeyForWallet() public {
+        IWallet wallet = IWallet(msg.sender);
+        bytes32 existingHash = hashFromWallet[wallet];
+        require(existingHash != bytes32(0), "VG: hash does not exist for caller");
+        if (
+            (pendingBLSPublicKeyTimeFromHash[existingHash] != 0) &&
+            (block.timestamp > pendingBLSPublicKeyTimeFromHash[existingHash])
+        ) {
+            safeSetWallet(
+                pendingMessageSenderSignatureFromHash[existingHash],
+                pendingBLSPublicKeyFromHash[existingHash],
+                wallet
+            );
+            pendingMessageSenderSignatureFromHash[existingHash] = [0,0];
+            pendingBLSPublicKeyTimeFromHash[existingHash] = 0;
+            pendingBLSPublicKeyFromHash[existingHash] = [0,0,0,0];
+        }
     }
 
     /**
@@ -138,9 +153,9 @@ contract VerificationGateway
      */
     function walletAdminCall(
         bytes32 hash,
-        bytes calldata encodedFunction
+        bytes memory encodedFunction
     ) public onlyWallet(hash) {
-        IWallet wallet = walletFromHash(hash);
+        IWallet wallet = walletFromHash[hash];
 
         // ensure first parameter is the calling wallet address
         bytes memory encodedAddress = abi.encode(address(wallet));
@@ -179,20 +194,18 @@ contract VerificationGateway
     @param newBLSKey to set as the wallet's bls public key
      */
     function recoverWallet(
-        uint256[2] calldata walletAddressSignature,
+        uint256[2] memory walletAddressSignature,
         bytes32 blsKeyHash,
         bytes32 salt,
-        uint256[BLS_KEY_LEN] calldata newBLSKey
+        uint256[BLS_KEY_LEN] memory newBLSKey
     ) public {
-        IWallet wallet = walletFromHash(blsKeyHash);
+        IWallet wallet = walletFromHash[blsKeyHash];
         bytes32 recoveryHash = keccak256(
             abi.encodePacked(msg.sender, blsKeyHash, salt)
         );
         if (recoveryHash == wallet.recoveryHash()) {
-            // override mapping of old key hash (takes precedence over create2 address)
-            externalWalletsFromHash[blsKeyHash] = IWallet(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF);
-            safeSetWallet(walletAddressSignature, newBLSKey, address(wallet));
-            wallet.recover(newBLSKey);
+            safeSetWallet(walletAddressSignature, newBLSKey, wallet);
+            wallet.recover();
         }
     }
 
@@ -211,7 +224,7 @@ contract VerificationGateway
             "BLSWallet: gateway address param not valid"
         );
 
-        IWallet wallet = walletFromHash(hash);
+        IWallet wallet = walletFromHash[hash];
 
         require(
             VerificationGateway(blsGateway).walletFromHash(hash) == wallet,
@@ -234,7 +247,7 @@ contract VerificationGateway
     Can be called with a single operation with no actions.
     */
     function processBundle(
-        Bundle calldata bundle
+        Bundle memory bundle
     ) external returns (
         bool[] memory successes,
         bytes[][] memory results
@@ -271,18 +284,18 @@ contract VerificationGateway
     needed.
      */
     function getOrCreateWallet(
-        uint256[BLS_KEY_LEN] calldata publicKey
+        uint256[BLS_KEY_LEN] memory publicKey
     ) private returns (IWallet) {
         bytes32 publicKeyHash = keccak256(abi.encodePacked(publicKey));
-        address blsWallet = address(walletFromHash(publicKeyHash));
-        // wallet with publicKeyHash doesn't exist at expected create2 address
-        if (blsWallet == address(0)) {
-            blsWallet = address(new TransparentUpgradeableProxy{salt: publicKeyHash}(
+        IWallet blsWallet = walletFromHash[publicKeyHash];
+        // publicKeyHash does not yet refer to a wallet, create one then update mappings.
+        if (address(blsWallet) == address(0)) {
+            blsWallet = IWallet(address(new TransparentUpgradeableProxy{salt: publicKeyHash}(
                 address(blsWalletLogic),
                 address(walletProxyAdmin),
                 getInitializeData()
-            ));
-            IBLSWallet(payable(blsWallet)).latchBLSPublicKey(publicKey);
+            )));
+            updateWalletHashMappings(publicKeyHash, blsWallet);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
@@ -298,10 +311,11 @@ contract VerificationGateway
     @param wallet address to set
      */
     function safeSetWallet(
-        uint256[2] calldata wallletAddressSignature,
-        uint256[BLS_KEY_LEN] calldata publicKey,
-        address wallet
+        uint256[2] memory wallletAddressSignature,
+        uint256[BLS_KEY_LEN] memory publicKey,
+        IWallet wallet
     ) private {
+        // verify the given wallet was signed for by the bls key
         uint256[2] memory addressMsg = blsLib.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(wallet)
@@ -313,14 +327,22 @@ contract VerificationGateway
         bytes32 publicKeyHash = keccak256(abi.encodePacked(
             publicKey
         ));
-        externalWalletsFromHash[publicKeyHash] = IWallet(wallet);
+        emit BLSKeySetForWallet(publicKey, wallet);
+        updateWalletHashMappings(publicKeyHash, wallet);
     }
 
-    function hasCode(address a) private view returns (bool) {
-        uint256 size;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(a) }
-        return size > 0;
+    /** @dev Only to be called on wallet creation, and in `safeSetWallet` */
+    function updateWalletHashMappings(
+        bytes32 publicKeyHash,
+        IWallet wallet
+    ) private {
+        // remove reference from old hash
+        bytes32 oldHash = hashFromWallet[wallet];
+        walletFromHash[oldHash] = IWallet(address(0));
+
+        // update new hash / wallet mappings
+        walletFromHash[publicKeyHash] = wallet;
+        hashFromWallet[wallet] = publicKeyHash;
     }
 
     function getInitializeData() private view returns (bytes memory) {
@@ -329,19 +351,19 @@ contract VerificationGateway
 
     modifier onlyWallet(bytes32 hash) {
         require(
-            (msg.sender == address(walletFromHash(hash))),
+            (IWallet(msg.sender) == walletFromHash[hash]),
             "VG: not called from wallet"
         );
         _;
     }
 
     function messagePoint(
-        IWallet.Operation calldata op
+        IWallet.Operation memory op
     ) internal view returns (
         uint256[2] memory
     ) {
         bytes memory encodedActionData;
-        IWallet.ActionData calldata a;
+        IWallet.ActionData memory a;
         for (uint256 i=0; i<op.actions.length; i++) {
             a = op.actions[i];
             encodedActionData = abi.encodePacked(

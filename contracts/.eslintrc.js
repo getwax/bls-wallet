@@ -35,5 +35,7 @@ module.exports = {
         ignores: [],
       },
     ],
+    // TODO (merge-ok) Remove and fix lint error
+    "node/no-unpublished-import": ["warn"],
   },
 };

@@ -53,4 +53,12 @@ library BLSOpen {
         );
     }
 
+    function isZeroBLSKey(uint256[4] memory blsKey) public pure returns (bool) {
+        bool isZero = true;
+        for (uint256 i=0; isZero && i<4; i++) {
+            isZero = (blsKey[i] == 0);
+        }
+        return isZero;
+    }
+
 }

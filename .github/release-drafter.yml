@@ -1,0 +1,20 @@
+categories:
+  - title: 'aggregator'
+    label: 'aggregator'
+  - title: 'aggregator-proxy'
+    label: 'aggregator-proxy'
+  - title: 'contracts'
+    label: 'contracts'
+  - title: 'clients'
+    label: 'clients'
+  - title: 'docs'
+    label: 'documentation'
+  - title: 'extension'
+    label: 'extension'
+version-resolver:
+  default: minor
+prerelease: true
+template: |
+  ## What’s Changed
+
+  $CHANGES

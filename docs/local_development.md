@@ -25,7 +25,7 @@ Run the repo setup script
 
 Then choose to target either a local Hardhat node or the Arbitrum Testnet.
 
-### Chain & Contracts
+### Chain (RPC Node)
 
 Start a local Hardhat node for RPC use.
 ```sh
@@ -33,35 +33,14 @@ cd ./contracts
 yarn hardhat node
 ```
 
-You can use any two of the private keys displayed (PK0 & PK1) to update these values in `./aggregator/.env`.
-```
-...
-PRIVATE_KEY_AGG=PK0
-PRIVATE_KEY_ADMIN=PK1
-...
-```
+### Contracts
 
-Set this value in `./contracts/.env` (This mnemonic is special to hardhat and has funds).
-```
-...
-DEPLOYER_MNEMONIC="test test test test test test test test test test test junk"
-...
-```
-
-Deploy the PrecompileCostEstimator contract.
+Fund the `create2Deployer`.
 ```sh
-yarn hardhat run scripts/0_deploy_precompile_cost_estimator.ts --network gethDev
-```
-Copy the address that is output.
-
-Update `./contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol`'s `COST_ESTIMATOR_ADDRESS` to the value of that address;
-```solidity
-...
-address private constant COST_ESTIMATOR_ADDRESS = 0x57047C275bbCb44D85DFA50AD562bA968EEba95A;
-...
+yarn hardhat fundDeployer --network gethDev
 ```
 
-Deploy all remaining `bls-wallet` contracts.
+Deploy all `bls-wallet` contracts.
 ```sh
 yarn hardhat run scripts/deploy_all.ts --network gethDev
 ```
@@ -91,6 +70,9 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 1. Go to Firefox's [debugging page](about:debugging#/runtime/this-firefox).
 2. Click `Load Temporary Add-on...`.
 3. Select `./extension/extension/firefox/manifest.json`.
+
+### Tests
+See each components `README.md` for how to run tests.
 
 ## Testing/using updates to ./clients
 

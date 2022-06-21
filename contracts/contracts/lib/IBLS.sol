@@ -20,4 +20,6 @@ interface IBLS {
         bytes memory message
     ) external view returns (uint256[2] memory);
 
+    function isZeroBLSKey(uint256[4] memory blsKey) external pure returns (bool);
+
 }

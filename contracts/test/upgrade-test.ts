@@ -3,7 +3,7 @@ import { BigNumber } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import { BLSOpen } from "../typechain";
+import { BLSOpen, ProxyAdmin } from "../typechain";
 import { ActionData, BlsWalletWrapper } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
@@ -76,6 +76,10 @@ describe("Upgrade", async function () {
     // Deploy new verification gateway
     const create2Fixture = Create2Fixture.create();
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
+    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
+    const proxyAdmin2 = (await ProxyAdmin.deploy()) as ProxyAdmin;
+    await proxyAdmin2.deployed();
+
     const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
     const VerificationGateway = await ethers.getContractFactory(
       "VerificationGateway",
@@ -83,7 +87,9 @@ describe("Upgrade", async function () {
     const vg2 = await VerificationGateway.deploy(
       bls.address,
       blsWalletImpl.address,
+      proxyAdmin2.address,
     );
+    await (await proxyAdmin2.transferOwnership(vg2.address)).wait();
 
     // Recreate hubble bls signer
     const walletOldVg = await fx.lazyBlsWallets[0]();
@@ -123,7 +129,7 @@ describe("Upgrade", async function () {
     const setExternalWalletAction: ActionData = {
       ethValue: BigNumber.from(0),
       contractAddress: vg2.address,
-      encodedFunction: vg2.interface.encodeFunctionData("setExternalWallet", [
+      encodedFunction: vg2.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         walletOldVg.PublicKey(),
       ]),
@@ -227,6 +233,7 @@ describe("Upgrade", async function () {
 
     // Direct checks corresponding to each action
     expect(await vg2.walletFromHash(hash)).to.equal(walletAddress);
+    expect(await vg2.hashFromWallet(walletAddress)).to.equal(hash);
     expect(await proxyAdmin.getProxyAdmin(walletAddress)).to.equal(
       proxyAdmin.address,
     );
@@ -266,5 +273,78 @@ describe("Upgrade", async function () {
       bundleResult.results[0][0], // first and only operation/action result
     )[0];
     expect(walletFromHashAddress).to.equal(walletAddress);
+  });
+
+  it("should change mapping of an address to hash", async function () {
+    const vg1 = fx.verificationGateway;
+
+    const lazyWallet1 = await fx.lazyBlsWallets[0]();
+    const lazyWallet2 = await fx.lazyBlsWallets[1]();
+
+    const wallet1 = await BlsWalletWrapper.connect(
+      lazyWallet1.privateKey,
+      vg1.address,
+      fx.provider,
+    );
+
+    const wallet2 = await BlsWalletWrapper.connect(
+      lazyWallet2.privateKey,
+      vg1.address,
+      fx.provider,
+    );
+
+    const hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
+
+    expect(await vg1.walletFromHash(hash1)).to.equal(wallet1.address);
+    expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash1);
+
+    // wallet 2 bls key signs message containing address of wallet 1
+    const addressMessage = solidityPack(["address"], [wallet1.address]);
+    const addressSignature = wallet2.signMessage(addressMessage);
+
+    const setExternalWalletAction: ActionData = {
+      ethValue: BigNumber.from(0),
+      contractAddress: vg1.address,
+      encodedFunction: vg1.interface.encodeFunctionData("setBLSKeyForWallet", [
+        addressSignature,
+        wallet2.PublicKey(),
+      ]),
+    };
+
+    // wallet 1 submits a tx
+    {
+      const { successes } = await vg1.callStatic.processBundle(
+        wallet1.sign({
+          nonce: BigNumber.from(1),
+          actions: [setExternalWalletAction],
+        }),
+      );
+
+      expect(successes).to.deep.equal([true]);
+    }
+
+    await (
+      await fx.verificationGateway.processBundle(
+        fx.blsWalletSigner.aggregate([
+          wallet1.sign({
+            nonce: BigNumber.from(1),
+            actions: [setExternalWalletAction],
+          }),
+        ]),
+      )
+    ).wait();
+
+    // wallet 1's hash is pointed to null address
+    // wallet 2's hash is now pointed to wallet 1's address
+    const hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
+
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
+    await fx.call(wallet1, vg1, "setPendingBLSKeyForWallet", [], 2);
+
+    expect(await vg1.walletFromHash(hash1)).to.equal(
+      ethers.constants.AddressZero,
+    );
+    expect(await vg1.walletFromHash(hash2)).to.equal(wallet1.address);
+    expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash2);
   });
 });

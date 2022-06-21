@@ -3,11 +3,11 @@ import { BigNumber } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import { PublicKey, BlsWalletWrapper, Signature } from "../clients/src";
+import { BlsWalletWrapper, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import { BLSWallet } from "../typechain";
+import { BLSWallet, VerificationGateway } from "../typechain";
 
 const signWalletAddress = async (
   fx: Fixture,
@@ -43,14 +43,18 @@ describe("Recovery", async function () {
 
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
-  let wallet1, wallet2, walletAttacker;
+  let vg: VerificationGateway;
+  let wallet1: BlsWalletWrapper;
+  let wallet2: BlsWalletWrapper;
+  let walletAttacker: BlsWalletWrapper;
   let blsWallet: BLSWallet;
   let recoverySigner;
-  let hash1, hash2;
+  let hash1, hash2, hashAttacker;
   let salt;
   let recoveryHash;
   beforeEach(async function () {
     fx = await Fixture.create();
+    vg = fx.verificationGateway;
 
     wallet1 = await fx.lazyBlsWallets[0]();
     wallet2 = await fx.lazyBlsWallets[1]();
@@ -60,6 +64,9 @@ describe("Recovery", async function () {
 
     hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
     hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
+    hashAttacker = wallet2.blsWalletSigner.getPublicKeyHash(
+      walletAttacker.privateKey,
+    );
     salt = "0x1234567812345678123456781234567812345678123456781234567812345678";
     recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
@@ -68,34 +75,44 @@ describe("Recovery", async function () {
   });
 
   it("should update bls key", async function () {
-    const newKey: PublicKey = [
-      BigNumber.from(1),
-      BigNumber.from(2),
-      BigNumber.from(3),
-      BigNumber.from(4),
-    ];
-    const initialKey = await blsWallet.getBLSPublicKey();
+    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash1);
 
-    await fx.call(wallet1, blsWallet, "setBLSPublicKey", [newKey], 1);
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      wallet2.privateKey,
+    );
 
-    expect(await blsWallet.getBLSPublicKey()).to.eql(initialKey);
+    await fx.call(
+      wallet1,
+      vg,
+      "setBLSKeyForWallet",
+      [addressSignature, wallet2.PublicKey()],
+      1,
+    );
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await (await blsWallet.setAnyPending()).wait();
+    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 2);
 
-    expect(await blsWallet.getBLSPublicKey()).to.eql(newKey);
+    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash2);
   });
 
-  it("should NOT override public key after creation", async function () {
-    const initialKey = await blsWallet.getBLSPublicKey();
+  it("should NOT override public key hash after creation", async function () {
+    let walletForHash = await vg.walletFromHash(hash1);
+    expect(BigNumber.from(walletForHash)).to.not.equal(BigNumber.from(0));
+    expect(walletForHash).to.equal(wallet1.address);
 
-    const ZERO = ethers.BigNumber.from(0);
-    expect(initialKey).to.not.eql([ZERO, ZERO, ZERO, ZERO]);
+    let hashFromWallet = await vg.hashFromWallet(wallet1.address);
+    expect(BigNumber.from(hashFromWallet)).to.not.equal(BigNumber.from(0));
+    expect(hashFromWallet).to.equal(hash1);
 
-    await blsWallet.setAnyPending();
+    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 1);
 
-    const finalKey = await blsWallet.getBLSPublicKey();
-    expect(finalKey).to.eql(initialKey);
+    walletForHash = await vg.walletFromHash(hash1);
+    expect(walletForHash).to.equal(wallet1.address);
+
+    hashFromWallet = await vg.hashFromWallet(wallet1.address);
+    expect(hashFromWallet).to.equal(hash1);
   });
 
   it("should set recovery hash", async function () {
@@ -118,14 +135,25 @@ describe("Recovery", async function () {
 
   it("should recover before bls key update", async function () {
     await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
-    const attackKey = walletAttacker.PublicKey();
 
-    // Attacker assumed to have compromised current bls key, and wishes to reset
-    // the contract's bls key to their own.
-    await fx.call(wallet1, blsWallet, "setBLSPublicKey", [attackKey], 2);
+    const attackSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      walletAttacker.privateKey,
+    );
+
+    // Attacker assumed to have compromised wallet1 bls key, and wishes to reset
+    // the gateway wallet's bls key to their own.
+    await fx.call(
+      wallet1,
+      vg,
+      "setBLSKeyForWallet",
+      [attackSignature, walletAttacker.PublicKey()],
+      1,
+    );
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
-    await (await blsWallet.setAnyPending()).wait();
+    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 2);
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -141,33 +169,34 @@ describe("Recovery", async function () {
     ).wait();
 
     // key reset via recovery
-    expect(await blsWallet.getBLSPublicKey()).to.eql(
-      safeKey.map(BigNumber.from),
-    );
+    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash2);
+    expect(await vg.walletFromHash(hash2)).to.eql(wallet1.address);
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2 + 1); // wait remainder the time
 
-    // attacker's key not set after waiting full safety delay
-    expect(await blsWallet.getBLSPublicKey()).to.eql(
-      safeKey.map(BigNumber.from),
+    // check attacker's key not set after waiting full safety delay
+    await fx.call(
+      walletAttacker,
+      vg,
+      "setPendingBLSKeyForWallet",
+      [],
+      await walletAttacker.Nonce(),
+    );
+    await fx.call(
+      wallet2,
+      vg,
+      "setPendingBLSKeyForWallet",
+      [],
+      await wallet2.Nonce(),
     );
 
-    let walletFromKey = await fx.verificationGateway.walletFromHash(
-      wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey),
+    expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
+    expect(await vg.walletFromHash(hashAttacker)).to.not.equal(
+      blsWallet.address,
     );
-    expect(walletFromKey).to.not.equal(blsWallet.address);
-    walletFromKey = await fx.verificationGateway.walletFromHash(
-      walletAttacker.blsWalletSigner.getPublicKeyHash(
-        walletAttacker.privateKey,
-      ),
-    );
-    expect(walletFromKey).to.not.equal(blsWallet.address);
-    walletFromKey = await fx.verificationGateway.walletFromHash(
-      wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey),
-    );
-    expect(walletFromKey).to.equal(blsWallet.address);
+    expect(await vg.walletFromHash(hash2)).to.equal(blsWallet.address);
 
-    // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
+    // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
     const res = await fx.callStatic(
       wallet2,
       fx.verificationGateway,
@@ -184,15 +213,12 @@ describe("Recovery", async function () {
       "BLSWallet",
       walletAttacker.address,
     );
-    const hashAttacker = walletAttacker.blsWalletSigner.getPublicKeyHash(
-      walletAttacker.privateKey,
-    );
+
+    // Attacker users recovery signer to set their recovery hash
     const attackerRecoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
       [recoverySigner.address, hashAttacker, salt],
     );
-
-    // Attacker puts their wallet into recovery
     await fx.call(
       walletAttacker,
       attackerWalletContract,
@@ -204,6 +230,9 @@ describe("Recovery", async function () {
     // Attacker waits out safety delay
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await (await attackerWalletContract.setAnyPending()).wait();
+    expect(await attackerWalletContract.recoveryHash()).to.equal(
+      attackerRecoveryHash,
+    );
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -212,7 +241,7 @@ describe("Recovery", async function () {
     );
     const wallet1Key = await wallet1.PublicKey();
 
-    // Attacker attempts to overwite wallet 1's public key and fails
+    // Attacker attempts to overwrite wallet 1's hash in the gateway and fails
     await expect(
       fx.verificationGateway
         .connect(recoverySigner)

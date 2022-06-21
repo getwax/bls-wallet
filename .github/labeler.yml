@@ -1,9 +1,22 @@
 aggregator:
+  - aggregator/*
   - aggregator/**/*
+aggregator-proxy:
+  - aggregator-proxy/*
+  - aggregator-proxy/**/*
 extension:
+  - extension/*
   - extension/**/*
 contracts:
-# Don't label client only changes.
-- any: ['contracts/**/*', '!contracts/clients/**/*']
+  - contracts/*
+  # Don't label client only changes.
+  - any: ['contracts/**/*', '!contracts/clients/**/*']
 clients:
-  - contracts/clients/**/*
+  - 'contracts/clients/*'
+  - 'contracts/clients/**/*'
+documentation:
+  - 'docs/*'
+  - 'docs/**/*'
+  - '*.md'
+  - '**/*.md'
+  - '**/**/*.md'

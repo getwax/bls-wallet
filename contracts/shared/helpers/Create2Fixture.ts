@@ -75,6 +75,8 @@ export default class Create2Fixture {
     const initCode = factory.bytecode + constructorParamsBytes.substr(2);
     const initCodeHash = ethers.utils.solidityKeccak256(["bytes"], [initCode]);
 
+    console.log((initCode.length - 2) / 2, "bytes in contract", contractName);
+
     const contractAddress = ethers.utils.getCreate2Address(
       create2Deployer.address,
       "0x" + salt.toHexString().substr(2).padStart(64, "0"),

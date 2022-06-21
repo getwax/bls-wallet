@@ -1,4 +1,4 @@
-![BLS Wallet](images/bls-github-banner.svg)
+![BLS Wallet](./docs/images/bls-github-banner.svg)
 
 An Ethereum Layer 2 smart contract wallet that uses [BLS signatures](https://en.wikipedia.org/wiki/BLS_digital_signature) and aggregated transactions to reduce gas costs.
 
@@ -30,6 +30,16 @@ npm package for proxying to another aggregator instance.
 
 npm package which provides easy to use constructs to interact with the contracts and aggregator.
 
-[extension](./extension/) 
+[extension](./extension/)
 
 Prototype browser extension used to manage BLS Wallets and sign transactions.
+
+## Ways to Contribute
+
+- [Work on an open issue](https://github.com/web3well/bls-wallet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+- [Use BLS Wallet](./docs/use_bls_wallet_clients.md) in your project and [share it with us](https://github.com/web3well/bls-wallet/discussions)
+- [Report a bug or request a feature](https://github.com/web3well/bls-wallet/issues/new)
+- [Ask a question or answer an existing one](https://github.com/web3well/bls-wallet/discussions)
+- [Try or add to our documentation](https://github.com/web3well/bls-wallet/tree/main/docs)
+
+See our [contribution instructions & guidelines](./CONTRIBUTING.md) for more details.
