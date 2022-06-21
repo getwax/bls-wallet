@@ -20,16 +20,6 @@ function getQuillContextValue() {
 
   const cells = QuillContextCells(elcc, ethereum);
 
-  if (window.location.hash === '') {
-    cells.onboarding.read().then((onboarding) => {
-      if (!onboarding.completed) {
-        window.location.hash = '#/onboarding';
-      } else {
-        window.location.hash = '#/wallets';
-      }
-    });
-  }
-
   forEach(cells.onboarding, (onboarding) => {
     if (!onboarding.autoOpened) {
       // Auto-opening is the very first thing that happens, so if it hasn't

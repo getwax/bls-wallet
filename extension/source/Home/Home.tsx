@@ -5,6 +5,7 @@ import OnboardingPage from './Onboarding/OnboardingPage';
 import { WalletsPage } from './Wallet/WalletsPage';
 import { QuillContextProvider } from './QuillContext';
 import Theme from './Theme';
+import LoadingPage from './LoadingPage';
 
 const Home: FunctionComponent = () => {
   return (
@@ -12,6 +13,7 @@ const Home: FunctionComponent = () => {
       <Theme>
         <HashRouter>
           <Routes>
+            <Route path="/" element={<LoadingPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/*" element={<WalletsPage />} />
           </Routes>
