@@ -170,7 +170,7 @@ export default class QuillController {
       (method, methodName) =>
         (...params: unknown[]) =>
           (method as ExplicitAny)({
-            type: 'quill-rpc',
+            type: 'quill-rpc-request',
             id: RandomId(),
             providerId: '(internal-call)',
             origin: window.location.origin,

@@ -4,98 +4,113 @@ import QuillController from './QuillController';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
 import { RpcRequest, toRpcResult } from '../types/Rpc';
 import toOkError from '../helpers/toOkError';
-import assertType from '../cells/assertType';
+import { castType } from '../cells/assertType';
 import forEach from '../cells/forEach';
 import Debug from './Debug';
 import { FormulaCell } from '../cells/FormulaCell';
 import { assertConfig } from '../helpers/assert';
 
-const quillController = new QuillController(
-  extensionLocalCellCollection,
-  // FIXME: Config should be a file, not hardcoded.
-  {
-    api: 'https://min-api.cryptocompare.com/data/price',
+(() => {
+  const quillController = new QuillController(
+    extensionLocalCellCollection,
+    // FIXME: Config should be a file, not hardcoded.
+    {
+      api: 'https://min-api.cryptocompare.com/data/price',
 
-    // Note: We can afford to poll relatively frequently because we only fetch
-    // currency information when we actually need it, via the magic of cells.
-    // TODO: Enable even more aggressive polling intervals by tying
-    // `LongPollingCell`s to user activity (mouse movement, etc). This would
-    // require some visible indication that the value is not being updated
-    // though (like a grey filter) so that if you keep the window open on the
-    // side of your screen you can get an indication that the value isn't being
-    // kept up to date.
-    pollInterval: 30_000,
-  },
-);
+      // Note: We can afford to poll relatively frequently because we only fetch
+      // currency information when we actually need it, via the magic of cells.
+      // TODO: Enable even more aggressive polling intervals by tying
+      // `LongPollingCell`s to user activity (mouse movement, etc). This would
+      // require some visible indication that the value is not being updated
+      // though (like a grey filter) so that if you keep the window open on the
+      // side of your screen you can get an indication that the value isn't
+      // being kept up to date.
+      pollInterval: 30_000,
+    },
+  );
 
-// On install, open a new tab with Quill
-quillController.cells.onboarding.read().then(async (onboarding) => {
-  if (!onboarding.autoOpened) {
-    await quillController.cells.onboarding.update({ autoOpened: true });
-    tabs.create({ url: runtime.getURL('home.html') });
-  }
-});
+  setupOnboardingTrigger(quillController);
+  setupRequests(quillController);
+  setupPorts(quillController);
+  setupDebugging(quillController);
+})();
 
-let shouldLog = true;
-
-forEach(quillController.cells.developerSettings, (developerSettings) => {
-  shouldLog = developerSettings.rpcLogging.background;
-});
-
-runtime.onMessage.addListener((request, _sender) => {
-  const response = quillController.handleRequest(request);
-
-  if (response === undefined) {
-    return undefined;
-  }
-
-  // FIXME: MEGAFIX: Duplication with rtti checking inside QuillController
-  assertType(request, RpcRequest);
-
-  if (shouldLog) {
-    const host =
-      request.origin === window.location.origin
-        ? '<quill>'
-        : new URL(request.origin).host;
-
-    console.log(
-      `${host}:${request.providerId.slice(0, 5)}:`,
-      `${request.method}(${request.params
-        .map((p) => JSON.stringify(p))
-        .join(', ')}) ->`,
-      response,
-    );
-  }
-
-  return toOkError(() => response).then(toRpcResult);
-});
-
-runtime.onConnect.addListener((port) => {
-  if (!port.name.startsWith('quill-provider-')) {
-    return;
-  }
-
-  console.log('Connected:', port.name);
-
-  port.onDisconnect.addListener(() => {
-    // TODO: Provide disconnect information to QuillController so that eg
-    // `LongPollingCell`s can stop iteration (reducing derived network
-    // requests).
-    console.log('Disconnected:', port.name, port.error);
+function setupOnboardingTrigger(quillController: QuillController) {
+  // On install, open a new tab with Quill
+  quillController.cells.onboarding.read().then(async (onboarding) => {
+    if (!onboarding.autoOpened) {
+      await quillController.cells.onboarding.update({ autoOpened: true });
+      tabs.create({ url: runtime.getURL('home.html') });
+    }
   });
-});
+}
 
-forEach(
-  FormulaCell.Sub(
-    quillController.cells.developerSettings,
-    'breakOnAssertionFailures',
-  ),
-  ($breakOnAssertionFailures) => {
-    assertConfig.breakOnFailures = $breakOnAssertionFailures;
-  },
-);
+function setupRequests(quillController: QuillController) {
+  let shouldLog = true;
 
-window.debug = Debug(quillController);
+  forEach(quillController.cells.developerSettings, (developerSettings) => {
+    shouldLog = developerSettings.rpcLogging.background;
+  });
+
+  runtime.onMessage.addListener((request, _sender) => {
+    const response = quillController.handleRequest(request);
+
+    if (response === undefined) {
+      return undefined;
+    }
+
+    // Just casting here because `handleRequest` does the rtti checking.
+    castType(request, RpcRequest);
+
+    if (shouldLog) {
+      const host =
+        request.origin === window.location.origin
+          ? '<quill>'
+          : new URL(request.origin).host;
+
+      console.log(
+        `${host}:${request.providerId.slice(0, 5)}:`,
+        `${request.method}(${request.params
+          .map((p) => JSON.stringify(p))
+          .join(', ')}) ->`,
+        response,
+      );
+    }
+
+    return toOkError(() => response).then(toRpcResult);
+  });
+}
+
+function setupPorts(_quillController: QuillController) {
+  runtime.onConnect.addListener((port) => {
+    if (!port.name.startsWith('quill-provider-')) {
+      return;
+    }
+
+    console.log('Connected:', port.name);
+
+    port.onDisconnect.addListener(() => {
+      // TODO: Provide disconnect information to QuillController so that eg
+      // `LongPollingCell`s can stop iteration (reducing derived network
+      // requests).
+      console.log('Disconnected:', port.name, port.error);
+    });
+  });
+}
+
+function setupDebugging(quillController: QuillController) {
+  forEach(
+    FormulaCell.Sub(
+      quillController.cells.developerSettings,
+      'breakOnAssertionFailures',
+    ),
+    ($breakOnAssertionFailures) => {
+      assertConfig.breakOnFailures = $breakOnAssertionFailures;
+    },
+  );
+
+  window.debug = Debug(quillController);
+}
 
 // TODO: The old system that has been deleted had signs of useful ideas that
 // are not implemented in the new system.

@@ -107,7 +107,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       const id = RandomId();
 
       const request: Omit<RpcRequest, 'providerId' | 'origin'> = {
-        type: 'quill-rpc',
+        type: 'quill-rpc-request',
         id,
         // Note: We do not set providerId or origin here because our code is
         // co-mingled with the dApp and is therefore untrusted. Instead, the

@@ -192,7 +192,7 @@ export const RpcMethodName: io.Type<keyof RpcMap> = io.union(
 export type RpcMethodName = io.TypeOf<typeof RpcMethodName>;
 
 export const RpcRequest = io.type({
-  type: io.literal('quill-rpc'),
+  type: io.literal('quill-rpc-request'),
   id: io.string,
   providerId: io.string,
   origin: io.string,
