@@ -68,7 +68,7 @@ export default class KeyringController {
         (x) => x.address === address,
       );
 
-      assert(keyPair !== undefined, 'key does not exist');
+      assert(keyPair !== undefined, () => new Error('key does not exist'));
 
       return keyPair.privateKey;
     },
@@ -78,7 +78,7 @@ export default class KeyringController {
 
       assert(
         wallets.every((w) => w.privateKey !== privateKey),
-        'Wallet already exists',
+        () => new Error('Wallet already exists'),
       );
 
       const address = await this.BlsWalletAddress(privateKey);
@@ -91,9 +91,12 @@ export default class KeyringController {
 
     removeAccount: async ({ params: [address] }) => {
       const { wallets } = await this.keyring.read();
-
       const newWallets = wallets.filter((w) => w.address !== address);
-      assert(newWallets.length < wallets.length, 'Account did not exist');
+
+      assert(
+        newWallets.length < wallets.length,
+        () => new Error('Account did not exist'),
+      );
 
       await this.keyring.update({ wallets: newWallets });
     },

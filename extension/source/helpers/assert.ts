@@ -36,9 +36,12 @@ export const assertConfig = {
 export default function assert(
   condition: boolean,
 
-  // FIXME: MEGAFIX: Don't allow `string`. `Error` is much better because it
-  // links the developer directly to the assertion instead of here.
-  info?: string | Error,
+  /**
+   * We don't accept `string` here to encourage inlining `new Error` at the call
+   * site. This means the logged error will point the developer directly to the
+   * call site instead of here.
+   */
+  makeError = () => new Error('Assertion failed'),
 ): asserts condition {
   if (!condition) {
     if (assertConfig.breakOnFailures) {
@@ -46,13 +49,7 @@ export default function assert(
       debugger;
     }
 
-    if (info instanceof Error) {
-      throw info;
-    }
-
-    throw new Error(
-      info === undefined ? 'Assertion failed' : `Assertion failed: ${info}`,
-    );
+    throw makeError();
   }
 }
 
@@ -66,9 +63,12 @@ export default function assert(
 export function softAssert(
   condition: boolean,
 
-  // FIXME: MEGAFIX: Don't allow `string`. `Error` is much better because it
-  // links the developer directly to the assertion instead of here.
-  info?: string | Error,
+  /**
+   * We don't accept `string` here to encourage inlining `new Error` at the call
+   * site. This means the logged error will point the developer directly to the
+   * call site instead of here.
+   */
+  makeError = () => new Error('Assertion failed'),
 ): void {
   if (!condition) {
     if (assertConfig.breakOnFailures) {
@@ -76,12 +76,6 @@ export function softAssert(
       debugger;
     }
 
-    if (info instanceof Error) {
-      console.error(info);
-    } else {
-      console.error(
-        info === undefined ? 'Assertion failed' : `Assertion failed: ${info}`,
-      );
-    }
+    console.error(makeError());
   }
 }

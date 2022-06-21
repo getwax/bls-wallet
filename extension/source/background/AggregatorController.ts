@@ -2,6 +2,7 @@ import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 
 import { AGGREGATOR_URL, NETWORK_CONFIG } from '../env';
+import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
@@ -65,9 +66,7 @@ export default class AggregatorController {
       const agg = new Aggregator(aggregatorUrl);
       const result = await agg.add(bundle);
 
-      if ('failures' in result) {
-        throw new Error(JSON.stringify(result.failures));
-      }
+      assert(!('failures' in result), () => new Error(JSON.stringify(result)));
 
       this.knownTransactions[result.hash] = {
         ...params[0],

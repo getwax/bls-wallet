@@ -105,11 +105,13 @@ export class CollectionCell<T> implements ICell<T> {
     }
 
     if (this.type !== io.unknown && this.type.name !== type.name) {
-      throw new Error(
-        [
-          'Tried to get existing storage cell with a different type',
-          `(type: ${type.name}, existing: ${this.type.name})`,
-        ].join(' '),
+      assert(false, () =>
+        Error(
+          [
+            'Tried to get existing storage cell with a different type',
+            `(type: ${type.name}, existing: ${this.type.name})`,
+          ].join(' '),
+        ),
       );
     }
 

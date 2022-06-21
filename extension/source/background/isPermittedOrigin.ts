@@ -14,7 +14,10 @@ export default function isPermittedOrigin(
 
   assert(
     !permittedOriginPattern.includes('*'),
-    new Error(`Origin patterns other than simply '*' are not yet implemented`),
+    () =>
+      new Error(
+        `Origin patterns other than simply '*' are not yet implemented`,
+      ),
   );
 
   return messageOrigin === permittedOriginPattern;

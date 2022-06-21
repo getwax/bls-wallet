@@ -84,7 +84,7 @@ export default class PreferencesController {
 
     assert(
       (await newUserPreferences.read()) === undefined,
-      'User already exists',
+      () => new Error('User already exists'),
     );
 
     const $preferences = await this.preferences.read();
@@ -108,7 +108,7 @@ export default class PreferencesController {
 
     assert(
       !$selectedPreferences.contacts.some((c) => deepEqual(c, contact)),
-      'Contact already exists',
+      () => new Error('Contact already exists'),
     );
 
     await selectedPreferences.update({
@@ -121,7 +121,11 @@ export default class PreferencesController {
     const { contacts } = await selectedPreferences.read();
 
     const newContacts = contacts.filter((c) => !deepEqual(c, contact));
-    assert(newContacts.length < contacts.length, "Contact doesn't exist");
+
+    assert(
+      newContacts.length < contacts.length,
+      () => new Error("Contact doesn't exist"),
+    );
 
     await selectedPreferences.update({
       contacts: newContacts,

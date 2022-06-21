@@ -12,7 +12,12 @@ export default function assertType<T>(
 ): asserts value is T {
   assert(
     isType(value, type),
-    `assertType failed, value: ${JSON.stringify(value)}, type: ${type.name}`,
+    () =>
+      new Error(
+        `assertType failed, value: ${JSON.stringify(value)}, type: ${
+          type.name
+        }`,
+      ),
   );
 }
 

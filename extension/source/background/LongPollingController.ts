@@ -73,9 +73,7 @@ export default class LongPollingController {
       clearTimeout(timerId);
       delete this.cancelHandles[fullLongPollingId];
 
-      if (cell.ended) {
-        assert(false, new Error(`Unexpected end of ${cellName}`));
-      }
+      assert(!cell.ended, () => new Error(`Unexpected end of ${cellName}`));
 
       return res;
     },

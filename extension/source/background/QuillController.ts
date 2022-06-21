@@ -221,13 +221,14 @@ export default class QuillController {
 
         assert(
           isPermittedOrigin(message.origin, rpcMethod.origin),
-          new Error(
-            [
-              `Origin ${message.origin}`,
-              `is not allowed to access ${message.method}`,
-              `because the method is restricted to ${rpcMethod.origin}`,
-            ].join(' '),
-          ),
+          () =>
+            new Error(
+              [
+                `Origin ${message.origin}`,
+                `is not allowed to access ${message.method}`,
+                `because the method is restricted to ${rpcMethod.origin}`,
+              ].join(' '),
+            ),
         );
 
         assertType(message.params, rpcMethod.Params as io.Type<ExplicitAny>);
