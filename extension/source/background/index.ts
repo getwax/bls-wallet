@@ -15,7 +15,12 @@ const quillController = new QuillController(
 
     // Note: We can afford to poll relatively frequently because we only fetch
     // currency information when we actually need it, via the magic of cells.
-    // (TODO: MEGAFIX: test)
+    // TODO: Enable even more aggressive polling intervals by tying
+    // `LongPollingCell`s to user activity (mouse movement, etc). This would
+    // require some visible indication that the value is not being updated
+    // though (like a grey filter) so that if you keep the window open on the
+    // side of your screen you can get an indication that the value isn't being
+    // kept up to date.
     pollInterval: 30_000,
   },
 );
