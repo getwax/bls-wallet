@@ -11,6 +11,8 @@ import { FormulaCell } from '../cells/FormulaCell';
 import { assertConfig } from '../helpers/assert';
 
 (() => {
+  console.log('Quill background script started');
+
   const quillController = new QuillController(
     extensionLocalCellCollection,
     // FIXME: Config should be a file, not hardcoded.
