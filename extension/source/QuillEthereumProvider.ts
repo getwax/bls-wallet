@@ -129,9 +129,9 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
 
           window.removeEventListener('message', responseListener);
 
-          if ('ok' in evt.data.result) {
+          if (!('error' in evt.data.result)) {
             resolve(evt.data.result.ok);
-          } else if ('error' in evt.data.result) {
+          } else {
             const error = new Error(evt.data.result.error.message);
             (error as unknown as { code: number }).code =
               evt.data.result.error.code;
