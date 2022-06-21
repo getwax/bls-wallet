@@ -84,5 +84,6 @@ function QuillContextCells(
     blockNumber: QuillLongPollingCell(ethereum, 'blockNumber'),
     rpcBackgroundLogging: TransformCell.Sub(rpcLogging, 'background'),
     rpcInPageLogging: TransformCell.Sub(rpcLogging, 'inPage'),
+    currencyConversion: QuillLongPollingCell(ethereum, 'currencyConversion'),
   };
 }
