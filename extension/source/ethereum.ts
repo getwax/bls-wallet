@@ -5,9 +5,7 @@ let ethereum: QuillEthereumProvider | undefined;
 Object.defineProperty(window, 'ethereum', {
   get() {
     if (ethereum === undefined) {
-      // TODO: MEGAFIX: Now that we're creating lazily, we should also tell the
-      // content script when this happens so that it actually doesn't connect
-      // anything unless this happens.
+      window.postMessage('ethereum-accessed', '*');
       ethereum = new QuillEthereumProvider();
     }
 

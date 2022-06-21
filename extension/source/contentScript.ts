@@ -52,18 +52,25 @@ import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
   const isExtensionOrigin = `${location.origin}/` === runtime.getURL('');
 
   if (!isExtensionOrigin) {
-    addInPageScript();
+    // Add in-page script
+    const container = document.head || document.documentElement;
+    const pageContentScriptTag = document.createElement('script');
+    pageContentScriptTag.src = runtime.getURL('js/ethereum.bundle.js');
+    container.insertBefore(pageContentScriptTag, container.children[0]);
   }
 
-  relayRpcRequests();
-})();
+  window.addEventListener('message', relayIfEthereumAccessed);
 
-function addInPageScript() {
-  const container = document.head || document.documentElement;
-  const pageContentScriptTag = document.createElement('script');
-  pageContentScriptTag.src = runtime.getURL('js/ethereum.bundle.js');
-  container.insertBefore(pageContentScriptTag, container.children[0]);
-}
+  function relayIfEthereumAccessed(evt: MessageEvent) {
+    if (evt.data !== 'ethereum-accessed') {
+      return;
+    }
+
+    window.removeEventListener('message', relayIfEthereumAccessed);
+
+    relayRpcRequests();
+  }
+})();
 
 function relayRpcRequests() {
   const providerId = RandomId();
