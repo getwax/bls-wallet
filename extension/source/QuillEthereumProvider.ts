@@ -104,9 +104,6 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     assertEthereumRequestBody(body);
 
     const response = (async () => {
-      // TODO: MEGAFIX (deferred): Ensure all errors are EthereumRpcError, maybe making use of
-      // the ethereum-rpc-error module.
-
       const id = RandomId();
 
       const message: Omit<RpcMessage, 'providerId' | 'origin'> = {
@@ -136,6 +133,8 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
             resolve(evt.data.result.ok);
           } else if ('error' in evt.data.result) {
             const error = new Error(evt.data.result.error.message);
+            (error as unknown as { code: number }).code =
+              evt.data.result.error.code;
             error.stack = evt.data.result.error.stack;
             reject(error);
           }

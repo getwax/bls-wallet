@@ -123,6 +123,7 @@ function relayRpcRequests() {
 
       result.error = {
         message,
+        code: result.error.code,
         stack: new Error(message).stack,
       };
     }

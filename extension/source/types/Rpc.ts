@@ -223,6 +223,7 @@ export const RpcResult = io.union([
   io.type({
     error: io.type({
       message: io.string,
+      code: io.number,
       stack: io.union([io.undefined, io.string]),
     }),
   }),
@@ -230,7 +231,30 @@ export const RpcResult = io.union([
 
 export type RpcResult<T> =
   | { ok: T }
-  | { error: { message: string; stack?: string } };
+  | {
+      error: {
+        message: string;
+
+        /**
+         * EIP-1193 requires inclusion of a CloseEvent code:
+         * https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code
+         *
+         * It includes the following list of specialized codes:
+         *   4001 | User Rejected Request | The user rejected the request.
+         *   4100 | Unauthorized          | The requested method and/or account
+         *                                  has not been authorized by the user.
+         *   4200 | Unsupported Method    | The Provider does not support the
+         *                                  requested method.
+         *   4900 | Disconnected          | The Provider is disconnected from
+         *                                  all chains.
+         *   4901 | Chain Disconnected    | The Provider is not connected to the
+         *                                  requested chain.
+         */
+        code: number;
+
+        stack?: string;
+      };
+    };
 
 export function toRpcResult<T>(result: Result<T>): RpcResult<T> {
   if ('error' in result) {
@@ -239,6 +263,13 @@ export function toRpcResult<T>(result: Result<T>): RpcResult<T> {
     return {
       error: {
         message: `Quill RPC: ${result.error.message}`,
+
+        // This is the right catch-all code for unexpected errors (e.g.
+        // assertion failures). Its description is 'Internal Error' on the MDN
+        // docs.
+        // TODO: Specify more specific codes where appropriate.
+        code: 1011,
+
         stack: result.error.stack && `Quill RPC: ${result.error.stack}`,
       },
     };
