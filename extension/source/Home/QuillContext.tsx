@@ -20,8 +20,23 @@ function getQuillContextValue() {
 
   const cells = QuillContextCells(elcc, ethereum);
 
-  forEach(cells.onboardingAutoOpened, (onboardingAutoOpened) => {
-    if (!onboardingAutoOpened) {
+  if (window.location.hash === '') {
+    cells.onboarding.read().then((onboarding) => {
+      if (!onboarding.completed) {
+        window.location.hash = '#/onboarding';
+      } else {
+        window.location.hash = '#/wallets';
+      }
+    });
+  }
+
+  forEach(cells.onboarding, (onboarding) => {
+    if (!onboarding.autoOpened) {
+      // Auto-opening is the very first thing that happens, so if it hasn't
+      // happened, we should not be open.
+      // This is used to make debug.reset() mimic a complete uninstall and
+      // reinstall of the extension - all extension pages should close on
+      // uninstall.
       window.close();
     }
   });

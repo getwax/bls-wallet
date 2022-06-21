@@ -21,14 +21,12 @@ const quillController = new QuillController(
 );
 
 // On install, open a new tab with Quill
-quillController.cells.onboardingAutoOpened
-  .read()
-  .then(async (onboardingAutoOpened) => {
-    if (!onboardingAutoOpened) {
-      await quillController.cells.onboardingAutoOpened.write(true);
-      tabs.create({ url: runtime.getURL('home.html') });
-    }
-  });
+quillController.cells.onboarding.read().then(async (onboarding) => {
+  if (!onboarding.autoOpened) {
+    await quillController.cells.onboarding.update({ autoOpened: true });
+    tabs.create({ url: runtime.getURL('home.html') });
+  }
+});
 
 let shouldLog = true;
 

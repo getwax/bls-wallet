@@ -20,10 +20,16 @@ import assert from './helpers/assert';
 
 function QuillStorageCells(storage: CellCollection) {
   const rootCells = {
-    onboardingAutoOpened: storage.Cell(
-      'onboardingAutoOpened',
-      io.boolean,
-      () => false,
+    onboarding: storage.Cell(
+      'onboarding',
+      io.type({
+        autoOpened: io.boolean,
+        completed: io.boolean,
+      }),
+      () => ({
+        autoOpened: false,
+        completed: false,
+      }),
     ),
     keyring: storage.Cell(
       'keyring',

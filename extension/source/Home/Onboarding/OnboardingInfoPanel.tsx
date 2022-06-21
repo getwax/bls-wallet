@@ -44,8 +44,11 @@ const OnboardingInfoPanel: FunctionComponent = () => {
   const [pageIndex, setPageIndex] = useState(0);
 
   useEffect(() => {
-    const currentPage = Number(params.get('p'));
-    setPageIndex(currentPage - 1);
+    const p = params.get('p');
+
+    if (p !== null) {
+      setPageIndex(Number(p) - 1);
+    }
   }, [params]);
 
   return (

@@ -10,8 +10,12 @@ const WorkflowNumbers: FunctionComponent<{
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const page = Number(params.get('p'));
-    setCurrentPage(page);
+    // TODO: use hash, deduplicate page detection with other components
+    const p = params.get('p');
+
+    if (p !== null) {
+      setCurrentPage(Number(p));
+    }
   }, [params]);
 
   function onSelect(index: number) {

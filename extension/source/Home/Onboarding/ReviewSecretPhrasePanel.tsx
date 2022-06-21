@@ -50,7 +50,7 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   sampleIndexes?: number[];
   onBack: () => void;
 }> = ({ secretPhrase, sampleIndexes = [0, 3, 9, 11], onBack }) => {
-  const { rpc } = useQuill();
+  const { rpc, cells } = useQuill();
 
   const len = sampleIndexes.length;
 
@@ -73,6 +73,7 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
     await rpc.setHDPhrase(secretPhrase.join(' '));
     const address = await rpc.addHDAccount();
     await rpc.setSelectedAddress(address);
+    await cells.onboarding.update({ completed: true });
 
     navigate('/wallets');
   };
