@@ -58,8 +58,6 @@ function QuillStorageCells(storage: CellCollection) {
     preferences: storage.Cell('preferences', Preferences, () => ({
       identities: {},
       selectedAddress: undefined,
-      lastErrorMessage: undefined,
-      lastSuccessMessage: undefined,
       developerSettings: {
         // For now, default to dev settings that are appropriate for the bls
         // wallet team. FIXME: The defaults that get bundled into the extension

@@ -2,7 +2,7 @@ import { runtime, tabs } from 'webextension-polyfill';
 
 import QuillController from './QuillController';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
-import { RpcMessage, toRpcResult } from '../types/Rpc';
+import { RpcRequest, toRpcResult } from '../types/Rpc';
 import toOkError from '../helpers/toOkError';
 import assertType from '../cells/assertType';
 import forEach from '../cells/forEach';
@@ -39,25 +39,25 @@ forEach(quillController.cells.developerSettings, (developerSettings) => {
   shouldLog = developerSettings.rpcLogging.background;
 });
 
-runtime.onMessage.addListener((message, _sender) => {
-  const response = quillController.handleMessage(message);
+runtime.onMessage.addListener((request, _sender) => {
+  const response = quillController.handleRequest(request);
 
   if (response === undefined) {
     return undefined;
   }
 
   // FIXME: MEGAFIX: Duplication with rtti checking inside QuillController
-  assertType(message, RpcMessage);
+  assertType(request, RpcRequest);
 
   if (shouldLog) {
     const host =
-      message.origin === window.location.origin
+      request.origin === window.location.origin
         ? '<quill>'
-        : new URL(message.origin).host;
+        : new URL(request.origin).host;
 
     console.log(
-      `${host}:${message.providerId.slice(0, 5)}:`,
-      `${message.method}(${message.params
+      `${host}:${request.providerId.slice(0, 5)}:`,
+      `${request.method}(${request.params
         .map((p) => JSON.stringify(p))
         .join(', ')}) ->`,
       response,

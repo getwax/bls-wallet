@@ -15,13 +15,13 @@ import TimeCell from '../cells/TimeCell';
 const Object_ = io.record(io.string, io.unknown);
 type Object_ = io.TypeOf<typeof Object_>;
 
-const RpcMessage = io.type({
+const RpcRequest = io.type({
   method: io.string,
   params: io.array(io.unknown),
   id: io.string,
 });
 
-type RpcMessage = io.TypeOf<typeof RpcMessage>;
+type RpcRequest = io.TypeOf<typeof RpcRequest>;
 
 export default class NetworkController
   implements ethers.providers.ExternalProvider
@@ -38,7 +38,7 @@ export default class NetworkController
     );
   }
 
-  async requestStrict(body: RpcMessage) {
+  async requestStrict(body: RpcRequest) {
     const { rpcTarget } = await this.network.read();
 
     const res = await fetch(rpcTarget, {
@@ -66,7 +66,7 @@ export default class NetworkController
   async request(body: unknown) {
     assertType(body, Object_);
     body.id ??= RandomId();
-    assertType(body, RpcMessage);
+    assertType(body, RpcRequest);
     return await this.requestStrict(body);
   }
 

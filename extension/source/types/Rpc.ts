@@ -191,8 +191,7 @@ export const RpcMethodName: io.Type<keyof RpcMap> = io.union(
 
 export type RpcMethodName = io.TypeOf<typeof RpcMethodName>;
 
-// TODO: MEGAFIX: Message -> Request
-export const RpcMessage = io.type({
+export const RpcRequest = io.type({
   type: io.literal('quill-rpc'),
   id: io.string,
   providerId: io.string,
@@ -201,21 +200,16 @@ export const RpcMessage = io.type({
   params: io.array(io.unknown),
 });
 
-export type RpcMessage = io.TypeOf<typeof RpcMessage>;
+export type RpcRequest = io.TypeOf<typeof RpcRequest>;
 
-export type RpcMethodMessage<M extends RpcMethodName> = Omit<
-  RpcMessage,
+export type RpcMethodRequest<M extends RpcMethodName> = Omit<
+  RpcRequest,
   'method' | 'params'
 > & {
   method: M;
   params: io.TypeOf<RpcMap[M]['Params']>;
   Params: RpcMap[M]['Params'];
   Response: RpcMap[M]['Response'];
-  callInternal: <M2 extends RpcMethodName>(
-    methodName: M2,
-  ) => (
-    ...params: RpcMethodMessage<M2>['params']
-  ) => io.TypeOf<RpcMap[M2]['Response']>;
 };
 
 export const RpcResult = io.union([
@@ -288,25 +282,25 @@ export type RpcResponse = io.TypeOf<typeof RpcResponse>;
 
 export type RpcImpl = {
   [M in RpcMethodName]: (
-    message: RpcMethodMessage<M>,
+    request: RpcMethodRequest<M>,
   ) => Promise<io.TypeOf<RpcMap[M]['Response']>>;
 };
 
 export type PartialRpcImpl = {
   [M in RpcMethodName]?: (
-    message: RpcMethodMessage<M>,
+    request: RpcMethodRequest<M>,
   ) => Promise<AsyncReturnType<RpcImpl[M]> | undefined>;
 };
 
 export type RpcClient = {
   [M in RpcMethodName]: (
-    ...params: RpcMethodMessage<M>['params']
+    ...params: RpcMethodRequest<M>['params']
   ) => Promise<io.TypeOf<RpcMap[M]['Response']>>;
 };
 
 export type EthereumRequestBody<M extends string> = {
   method: M;
-  params: M extends RpcMethodName ? RpcMethodMessage<M>['params'] : unknown[];
+  params: M extends RpcMethodName ? RpcMethodRequest<M>['params'] : unknown[];
 };
 
 // FIXME: Lints are only warnings!

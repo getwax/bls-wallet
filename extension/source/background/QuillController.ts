@@ -13,7 +13,7 @@ import {
   RpcClient,
   RpcImpl,
   rpcMap,
-  RpcMessage,
+  RpcRequest,
   RpcMethodName,
 } from '../types/Rpc';
 import assertType from '../cells/assertType';
@@ -132,44 +132,44 @@ export default class QuillController {
       eth_chainId: async () => this.cells.chainId.read(),
       eth_sendTransaction: this.aggregatorController.rpc.eth_sendTransaction,
 
-      eth_getTransactionByHash: async (message) => {
+      eth_getTransactionByHash: async (request) => {
         const aggregatorRes =
-          await this.aggregatorController.rpc.eth_getTransactionByHash(message);
+          await this.aggregatorController.rpc.eth_getTransactionByHash(request);
 
         if (aggregatorRes !== undefined) {
           return aggregatorRes;
         }
 
-        const networkRes = await this.networkController.requestStrict(message);
-        assertType(networkRes, message.Response);
+        const networkRes = await this.networkController.requestStrict(request);
+        assertType(networkRes, request.Response);
 
         return networkRes;
       },
 
-      eth_getTransactionReceipt: async (message) => {
+      eth_getTransactionReceipt: async (request) => {
         const {
           params: [hash],
-        } = message;
+        } = request;
 
         if (hash in this.aggregatorController.knownTransactions) {
           return await this.aggregatorController.rpc.eth_getTransactionReceipt(
-            message,
+            request,
           );
         }
 
-        const networkRes = await this.networkController.requestStrict(message);
-        assertType(networkRes, message.Response);
+        const networkRes = await this.networkController.requestStrict(request);
+        assertType(networkRes, request.Response);
 
         return networkRes;
       },
 
-      addAccount: async (message) => {
+      addAccount: async (request) => {
         // FIXME: Needing to coordinate this between keyringController and
         // preferencesController is a symptom of these controllers having
         // awkwardly overlapping responsibilities. This should be fixed by
         // combining them into AccountController.
 
-        const address = await this.keyringController.rpc.addAccount(message);
+        const address = await this.keyringController.rpc.addAccount(request);
 
         this.preferencesController.createUser(address, 'USD', 'light');
         return address;
@@ -213,28 +213,27 @@ export default class QuillController {
     );
   }
 
-  // TODO: MEGAFIX: message -> request
-  handleMessage(message: unknown): Promise<unknown> | undefined {
-    if (RpcMessage.is(message)) {
-      if (isType(message.method, RpcMethodName)) {
-        const rpcMethod = rpcMap[message.method];
+  handleRequest(request: unknown): Promise<unknown> | undefined {
+    if (RpcRequest.is(request)) {
+      if (isType(request.method, RpcMethodName)) {
+        const rpcMethod = rpcMap[request.method];
 
         assert(
-          isPermittedOrigin(message.origin, rpcMethod.origin),
+          isPermittedOrigin(request.origin, rpcMethod.origin),
           () =>
             new Error(
               [
-                `Origin ${message.origin}`,
-                `is not allowed to access ${message.method}`,
+                `Origin ${request.origin}`,
+                `is not allowed to access ${request.method}`,
                 `because the method is restricted to ${rpcMethod.origin}`,
               ].join(' '),
             ),
         );
 
-        assertType(message.params, rpcMethod.Params as io.Type<ExplicitAny>);
+        assertType(request.params, rpcMethod.Params as io.Type<ExplicitAny>);
 
-        return (this.rpc[message.method] as ExplicitAny)({
-          ...message,
+        return (this.rpc[request.method] as ExplicitAny)({
+          ...request,
 
           // TODO: Just put rpcMethod here
           Params: rpcMethod.Params,
@@ -242,7 +241,7 @@ export default class QuillController {
         });
       }
 
-      return this.networkController.requestStrict(message);
+      return this.networkController.requestStrict(request);
     }
 
     // It's important to return undefined synchronously because messages can

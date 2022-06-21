@@ -69,8 +69,6 @@ export const Preferences = io.type({
     io.union([io.undefined, AddressPreferences]),
   ),
   selectedAddress: io.union([io.undefined, io.string]),
-  lastErrorMessage: io.union([io.undefined, io.string]),
-  lastSuccessMessage: io.union([io.undefined, io.string]),
   developerSettings: DeveloperSettings,
 });
 

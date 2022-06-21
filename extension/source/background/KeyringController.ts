@@ -32,19 +32,19 @@ export default class KeyringController {
       return selectedAddress ? [selectedAddress] : [];
     },
 
-    eth_requestAccounts: async (_message) => {
+    eth_requestAccounts: async (_request) => {
       const selectedAddress = await this.selectedAddress.read();
       const accounts = selectedAddress ? [selectedAddress] : [];
       return accounts;
     },
 
-    eth_coinbase: async (_message) =>
+    eth_coinbase: async (_request) =>
       (await this.selectedAddress.read()) ?? null,
 
     /**
      * Creates a Deterministic Account based on seed phrase
      */
-    addHDAccount: async (_message) => {
+    addHDAccount: async (_request) => {
       const { HDPhrase, nextHDIndex } = await this.keyring.read();
       const node = ethers.utils.HDNode.fromMnemonic(HDPhrase);
 

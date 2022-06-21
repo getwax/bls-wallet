@@ -38,7 +38,7 @@ import { runtime } from 'webextension-polyfill';
 import assertType from './cells/assertType';
 import isType from './cells/isType';
 import RandomId from './helpers/RandomId';
-import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
+import { RpcRequest, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 
 (() => {
   if (
@@ -99,7 +99,7 @@ function relayRpcRequests() {
       origin: window.location.origin,
     };
 
-    if (!isType(data, RpcMessage)) {
+    if (!isType(data, RpcRequest)) {
       return;
     }
 

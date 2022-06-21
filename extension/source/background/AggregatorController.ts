@@ -31,8 +31,8 @@ export default class AggregatorController {
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
-    eth_sendTransaction: async (message) => {
-      const { providerId, params } = message;
+    eth_sendTransaction: async (request) => {
+      const { providerId, params } = request;
 
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!

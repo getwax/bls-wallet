@@ -1,7 +1,7 @@
 import assert from '../helpers/assert';
 
 export default function isPermittedOrigin(
-  messageOrigin: string,
+  requestOrigin: string,
   permittedOriginPattern: string,
 ) {
   if (permittedOriginPattern === '*') {
@@ -9,7 +9,7 @@ export default function isPermittedOrigin(
   }
 
   if (permittedOriginPattern === '<quill>') {
-    return messageOrigin === window.location.origin;
+    return requestOrigin === window.location.origin;
   }
 
   assert(
@@ -20,5 +20,5 @@ export default function isPermittedOrigin(
       ),
   );
 
-  return messageOrigin === permittedOriginPattern;
+  return requestOrigin === permittedOriginPattern;
 }

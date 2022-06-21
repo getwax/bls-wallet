@@ -15,7 +15,7 @@ import {
   RpcClient,
   RpcMap,
   rpcMap,
-  RpcMessage,
+  RpcRequest,
   RpcMethodName,
   RpcResponse,
 } from './types/Rpc';
@@ -106,7 +106,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
     const response = (async () => {
       const id = RandomId();
 
-      const message: Omit<RpcMessage, 'providerId' | 'origin'> = {
+      const request: Omit<RpcRequest, 'providerId' | 'origin'> = {
         type: 'quill-rpc',
         id,
         // Note: We do not set providerId or origin here because our code is
@@ -119,15 +119,15 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
         params: body.params ?? [],
       };
 
-      window.postMessage(message, '*');
+      window.postMessage(request, '*');
 
       const backgroundResponse = await new Promise((resolve, reject) => {
-        const messageListener = (evt: MessageEvent<unknown>) => {
+        const responseListener = (evt: MessageEvent<unknown>) => {
           if (!isType(evt.data, RpcResponse) || evt.data.id !== id) {
             return;
           }
 
-          window.removeEventListener('message', messageListener);
+          window.removeEventListener('message', responseListener);
 
           if ('ok' in evt.data.result) {
             resolve(evt.data.result.ok);
@@ -140,7 +140,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
           }
         };
 
-        window.addEventListener('message', messageListener);
+        window.addEventListener('message', responseListener);
       });
 
       if (isType(body.method, RpcMethodName)) {
