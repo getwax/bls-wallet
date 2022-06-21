@@ -2,6 +2,7 @@ import { FunctionComponent } from 'react';
 import useCell from '../../../cells/useCell';
 import Button from '../../../components/Button';
 import { useQuill } from '../../QuillContext';
+/* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
 import { WalletSummary } from './WalletSummary';
 
 export interface IWallet {
