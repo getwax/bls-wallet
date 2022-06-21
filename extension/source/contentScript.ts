@@ -51,13 +51,16 @@ import { RpcMessage, RpcResponse, RpcResult, toRpcResult } from './types/Rpc';
 
   const isExtensionOrigin = `${location.origin}/` === runtime.getURL('');
 
-  if (!isExtensionOrigin) {
-    // Add in-page script
-    const container = document.head || document.documentElement;
-    const pageContentScriptTag = document.createElement('script');
-    pageContentScriptTag.src = runtime.getURL('js/ethereum.bundle.js');
-    container.insertBefore(pageContentScriptTag, container.children[0]);
+  if (isExtensionOrigin) {
+    relayRpcRequests();
+    return;
   }
+
+  // Add in-page script
+  const container = document.head || document.documentElement;
+  const pageContentScriptTag = document.createElement('script');
+  pageContentScriptTag.src = runtime.getURL('js/ethereum.bundle.js');
+  container.insertBefore(pageContentScriptTag, container.children[0]);
 
   window.addEventListener('message', relayIfEthereumAccessed);
 
