@@ -67,17 +67,7 @@ export const WalletsPage: React.FunctionComponent = () => {
   const { rpc } = useQuill();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    (async () => {
-      // TODO: MEGAFIX: Use cell instead.
-      const onboardingComplete = await rpc.isOnboardingComplete();
-      console.debug('onboardingComplete', onboardingComplete);
-
-      if (!onboardingComplete) {
-        navigate('/onboarding?p=1');
-      }
-    })();
-  }, [navigate, rpc]);
+  // TODO: MEGAFIX: Onboarding navigation?
 
   return (
     <div className="flex h-screen">

@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect } from 'react';
+import { FunctionComponent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuill } from '../QuillContext';
 
@@ -9,14 +9,7 @@ const OnboardingPage: FunctionComponent = () => {
   const { rpc } = useQuill();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    (async () => {
-      // TODO: MEGAFIX: Use cell instead and remove rpc method.
-      if (await rpc.isOnboardingComplete()) {
-        navigate('/wallets/');
-      }
-    })();
-  }, [navigate, rpc]);
+  // TODO: MEGAFIX: Don't show onboarding once completed.
 
   return (
     <div className="flex h-screen">

@@ -9,6 +9,7 @@ import CellCollection from '../cells/CellCollection';
 import { FormulaCell } from '../cells/FormulaCell';
 import QuillLongPollingCell from '../QuillLongPollingCell';
 import TransformCell from '../cells/TransformCell';
+import forEach from '../cells/forEach';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -17,11 +18,19 @@ function getQuillContextValue() {
   assert(ethereum?.isQuill);
   assert(ethereum.rpc !== undefined);
 
+  const cells = QuillContextCells(elcc, ethereum);
+
+  forEach(cells.onboardingAutoOpened, (onboardingAutoOpened) => {
+    if (!onboardingAutoOpened) {
+      window.close();
+    }
+  });
+
   return {
     ethereum,
     ethersProvider: EthersProvider(ethereum),
     rpc: ethereum.rpc,
-    cells: QuillContextCells(elcc, ethereum),
+    cells,
   };
 }
 

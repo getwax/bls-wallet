@@ -183,7 +183,6 @@ export default class QuillController {
       eth_requestAccounts: this.keyringController.rpc.eth_requestAccounts,
       addHDAccount: this.keyringController.rpc.addHDAccount,
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
-      isOnboardingComplete: this.keyringController.rpc.isOnboardingComplete,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
       removeAccount: this.keyringController.rpc.removeAccount,
 

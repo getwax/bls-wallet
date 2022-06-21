@@ -61,10 +61,6 @@ export default class KeyringController {
       return 'ok';
     },
 
-    isOnboardingComplete: async (_message) => {
-      return (await this.keyring.read()).HDPhrase !== undefined;
-    },
-
     lookupPrivateKey: async ({ params: [rawAddress] }) => {
       const address = ethers.utils.getAddress(rawAddress);
 

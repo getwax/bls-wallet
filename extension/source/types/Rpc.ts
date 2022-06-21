@@ -109,11 +109,6 @@ export const rpcMap = {
     Params: emptyTuple,
     Response: io.string,
   },
-  isOnboardingComplete: {
-    origin: '<quill>',
-    Params: emptyTuple,
-    Response: io.boolean,
-  },
   setHDPhrase: {
     origin: '<quill>',
     Params: io.tuple([io.string]),

@@ -7,13 +7,6 @@ import toOkError from '../helpers/toOkError';
 import assertType from '../cells/assertType';
 import forEach from '../cells/forEach';
 
-// On first install, open a new tab with Quill
-runtime.onInstalled.addListener(({ reason }) => {
-  if (reason === 'install') {
-    tabs.create({ url: runtime.getURL('home.html#/wallets') });
-  }
-});
-
 const quillController = new QuillController(
   extensionLocalCellCollection,
   // FIXME: MEGAFIX (deferred): Hard coding is not configuration.
@@ -26,6 +19,16 @@ const quillController = new QuillController(
     pollInterval: 30_000,
   },
 );
+
+// On install, open a new tab with Quill
+quillController.cells.onboardingAutoOpened
+  .read()
+  .then(async (onboardingAutoOpened) => {
+    if (!onboardingAutoOpened) {
+      await quillController.cells.onboardingAutoOpened.write(true);
+      tabs.create({ url: runtime.getURL('home.html') });
+    }
+  });
 
 let shouldLog = true;
 
