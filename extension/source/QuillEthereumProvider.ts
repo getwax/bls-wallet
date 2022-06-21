@@ -63,19 +63,11 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       if (!connected) {
         connected = true;
         this.emit('connect', { chainId: $chainId });
+        // TODO: Also implement disconnect event
       }
 
       this.emit('chainChanged', $chainId);
     });
-
-    // FIXME: MEGAFIX (deferred): The chainId cell is not ending when it should.
-    chainId.events.on('end', () =>
-      this.emit('disconnect', {
-        message: 'disconnected',
-        code: 4900,
-        data: undefined,
-      }),
-    );
 
     forEach(selectedAddress, ($selectedAddress) =>
       this.emit('accountsChanged', $selectedAddress ? [$selectedAddress] : []),

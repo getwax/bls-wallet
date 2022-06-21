@@ -19,7 +19,7 @@ export default function forEach<T>(
 ) {
   const stoppable = new Stoppable(cell);
 
-  (async () => {
+  const completionPromise = (async () => {
     for await (const maybe of stoppable) {
       if (maybe === 'stopped') {
         break;
@@ -31,5 +31,6 @@ export default function forEach<T>(
 
   return {
     stop: () => stoppable.stop(),
+    iterationCompletionPromise: completionPromise,
   };
 }
