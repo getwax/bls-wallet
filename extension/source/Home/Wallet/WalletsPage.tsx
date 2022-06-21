@@ -20,7 +20,7 @@ interface IRoutes {
 const routes: IRoutes[] = [
   {
     name: 'wallets',
-    path: '/',
+    path: '/wallets',
     summaryComponent: <WalletsWrapper />,
     detailComponent: <WalletDetail />,
   },
@@ -62,7 +62,7 @@ const routes: IRoutes[] = [
   },
 ];
 
-export const WalletPage: React.FunctionComponent = () => {
+export const WalletsPage: React.FunctionComponent = () => {
   // TODO: MEGAFIX: Add useQuillCells convenience api.
   const { rpc } = useQuill();
   const navigate = useNavigate();

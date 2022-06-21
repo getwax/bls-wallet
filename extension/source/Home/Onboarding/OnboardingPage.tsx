@@ -13,7 +13,7 @@ const OnboardingPage: FunctionComponent = () => {
     (async () => {
       // TODO: MEGAFIX: Use cell instead and remove rpc method.
       if (await rpc.isOnboardingComplete()) {
-        navigate('/wallet/');
+        navigate('/wallets/');
       }
     })();
   }, [navigate, rpc]);

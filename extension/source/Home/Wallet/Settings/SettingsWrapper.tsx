@@ -32,7 +32,7 @@ export const SettingsWrapper: React.FunctionComponent = () => {
 
       <div className="flex flex-col gap-4 mt-8">
         {contacts.map((contact) => {
-          const linkTo = `/wallet/settings/${contact.name.toLowerCase()}`;
+          const linkTo = `/settings/${contact.name.toLowerCase()}`;
 
           return (
             <Link to={linkTo} key={contact.name}>

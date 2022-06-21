@@ -31,9 +31,7 @@ const extensionReloaderPlugin =
           contentScript: 'contentScript',
           ethereum: 'ethereum',
           background: 'background',
-
-          // TODO: MEGAFIX: quillPage -> wallet
-          quillPage: 'quillPage',
+          home: 'home',
         },
       })
     : () => {
@@ -74,7 +72,7 @@ module.exports = {
     contentScript: path.join(sourcePath, 'contentScript.ts'),
     ethereum: path.join(sourcePath, 'ethereum.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
-    quillPage: path.join(sourcePath, 'QuillPage', 'index.tsx'),
+    home: path.join(sourcePath, 'Home', 'index.tsx'),
     confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
   },
 
@@ -169,11 +167,11 @@ module.exports = {
       verbose: true,
     }),
     new HtmlWebpackPlugin({
-      template: path.join(viewsPath, 'quillPage.html'),
+      template: path.join(viewsPath, 'home.html'),
       inject: 'body',
-      chunks: ['quillPage'],
+      chunks: ['home'],
       hash: true,
-      filename: 'quillPage.html',
+      filename: 'home.html',
     }),
     new HtmlWebpackPlugin({
       template: path.join(viewsPath, 'popup.html'),

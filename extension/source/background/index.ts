@@ -10,7 +10,7 @@ import forEach from '../cells/forEach';
 // On first install, open a new tab with Quill
 runtime.onInstalled.addListener(({ reason }) => {
   if (reason === 'install') {
-    tabs.create({ url: runtime.getURL('quillPage.html#/wallet') });
+    tabs.create({ url: runtime.getURL('home.html#/wallets') });
   }
 });
 

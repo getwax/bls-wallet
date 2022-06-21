@@ -5,11 +5,11 @@ import '../styles/index.scss';
 import './styles.scss';
 import Browser from 'webextension-polyfill';
 import QuillEthereumProvider from '../QuillEthereumProvider';
-import QuillPage from './QuillPage';
+import Home from './Home';
 
 window.ethereum = new QuillEthereumProvider(true);
 
 window.debug ??= {};
 window.debug.Browser = Browser;
 
-ReactDOM.render(<QuillPage />, document.getElementById('quill-page-root'));
+ReactDOM.render(<Home />, document.getElementById('quill-page-root'));

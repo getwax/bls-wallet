@@ -74,7 +74,7 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
     const address = await rpc.addHDAccount();
     await rpc.setSelectedAddress(address);
 
-    navigate('/wallet');
+    navigate('/wallets');
   };
 
   return (

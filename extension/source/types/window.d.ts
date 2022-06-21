@@ -1,7 +1,7 @@
 import type { providers } from 'ethers';
 import type { Browser } from 'webextension-polyfill';
 import type QuillEthereumProvider from '../QuillEthereumProvider';
-import type { QuillContextValue } from '../QuillPage/QuillContext';
+import type { QuillContextValue } from '../Home/QuillContext';
 import QuillStorageCells from '../QuillStorageCells';
 
 declare global {
