@@ -9,7 +9,7 @@ import ExplicitAny from './ExplicitAny';
 import optional from './optional';
 import { DeveloperSettings } from '../background/Preferences';
 
-// TODO: MEGAFIX: Make a tuple wrapper handling empty and also preventing accidental
+// TODO: Make a tuple wrapper handling empty and also preventing accidental
 // undefineds
 
 export const ProviderState = io.type({
@@ -278,7 +278,7 @@ export type EthereumRequestBody<M extends string> = {
   params: M extends RpcMethodName ? RpcMethodMessage<M>['params'] : unknown[];
 };
 
-// FIXME: MEGAFIX: Lints are only warnings!
+// FIXME: Lints are only warnings!
 
 export const EthereumRequestBody = io.union(
   Object.entries(rpcMap).map(([methodName, { Params }]) =>

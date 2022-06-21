@@ -15,6 +15,8 @@ export interface IWallet {
 export const WalletsWrapper: FunctionComponent = () => {
   const quill = useQuill();
   const { rpc } = quill;
+
+  // TODO: Add useQuillCells convenience api.
   const keyring = useCell(quill.cells.keyring);
   const selectedAddress = useCell(quill.cells.selectedAddress);
 
@@ -23,7 +25,7 @@ export const WalletsWrapper: FunctionComponent = () => {
       <div className="flex justify-between place-items-center">
         <div className="text-body">Wallets</div>
         <Button onPress={rpc.addHDAccount} className="btn-secondary">
-          Add Wallet
+          Add
         </Button>
       </div>
 

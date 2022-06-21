@@ -164,7 +164,7 @@ export default class QuillController {
       },
 
       addAccount: async (message) => {
-        // FIXME: MEGAFIX: Needing to coordinate this between keyringController and
+        // FIXME: Needing to coordinate this between keyringController and
         // preferencesController is a symptom of these controllers having
         // awkwardly overlapping responsibilities. This should be fixed by
         // combining them into AccountController.
@@ -215,11 +215,6 @@ export default class QuillController {
 
   // TODO: MEGAFIX: message -> request
   handleMessage(message: unknown): Promise<unknown> | undefined {
-    // TODO: MEGAFIX: Logging
-    // - Don't just log here, also log the same way in page (only include
-    //   messages relevant to that page)
-    // - Make this configurable in Developer Settings
-
     if (RpcMessage.is(message)) {
       if (isType(message.method, RpcMethodName)) {
         const rpcMethod = rpcMap[message.method];
@@ -240,7 +235,7 @@ export default class QuillController {
         return (this.rpc[message.method] as ExplicitAny)({
           ...message,
 
-          // FIXME: MEGAFIX: Just put rpcMethod here
+          // TODO: Just put rpcMethod here
           Params: rpcMethod.Params,
           Response: rpcMethod.Response,
         });

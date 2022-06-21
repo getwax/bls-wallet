@@ -62,8 +62,6 @@ const routes: IRoutes[] = [
 ];
 
 export const WalletsPage: React.FunctionComponent = () => {
-  // TODO: MEGAFIX: Add useQuillCells convenience api.
-
   return (
     <div className="flex h-screen">
       {/* Navigation */}

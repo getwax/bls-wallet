@@ -9,7 +9,7 @@ import forEach from '../cells/forEach';
 
 const quillController = new QuillController(
   extensionLocalCellCollection,
-  // FIXME: MEGAFIX (deferred): Hard coding is not configuration.
+  // FIXME: Config should be a file, not hardcoded.
   {
     api: 'https://min-api.cryptocompare.com/data/price',
 
