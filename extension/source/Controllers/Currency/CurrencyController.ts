@@ -1,5 +1,6 @@
 import CellCollection from '../../cells/CellCollection';
 import ICell from '../../cells/ICell';
+import { CRYPTO_COMPARE_API_KEY } from '../../env';
 import {
   CurrencyControllerConfig,
   CurrencyControllerState,
@@ -49,9 +50,7 @@ export default class CurrencyController {
       state = await this.state.read();
       const apiUrl = `${
         this.config.api
-      }?fsym=${state.nativeCurrency.toUpperCase()}&tsyms=${state.currentCurrency.toUpperCase()}&api_key=${
-        process.env.CRYPTO_COMPARE_API_KEY
-      }`;
+      }?fsym=${state.nativeCurrency.toUpperCase()}&tsyms=${state.currentCurrency.toUpperCase()}&api_key=${CRYPTO_COMPARE_API_KEY}`;
       let response: Response;
       try {
         response = await fetch(apiUrl);

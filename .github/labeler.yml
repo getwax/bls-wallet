@@ -4,6 +4,9 @@ aggregator:
 aggregator-proxy:
   - aggregator-proxy/*
   - aggregator-proxy/**/*
+automation:
+  - .github/*
+  - .github/**/*
 extension:
   - extension/*
   - extension/**/*
