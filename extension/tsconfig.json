@@ -4,13 +4,16 @@
     "target": "esnext", // ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017','ES2018' or 'ESNEXT'.
     "module": "esnext", // Module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'.
     "lib": ["dom", "dom.iterable", "esnext"],
-    "declaration": false,
+    "declaration": true,                      /* Generates corresponding '.d.ts' file. */
+    "declarationMap": true,                   /* Generates a sourcemap for each corresponding '.d.ts' file. */
+    "sourceMap": true,                        /* Generates corresponding '.map' file. */
     "isolatedModules": true,
     "strictPropertyInitialization": true,
     /* Additional Checks */
     "useDefineForClassFields": true,
     "skipLibCheck": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+
   },
   "include": ["source", "webpack.config.js"]
 }

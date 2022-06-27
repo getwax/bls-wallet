@@ -71,6 +71,7 @@
   "web_accessible_resources": [
     "/assets/*",
     "/js/ethereum.bundle.js",
+    "/js/ethereum.bundle.js.map",
     "/confirm.html"
   ]
 }
