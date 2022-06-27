@@ -37,7 +37,6 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
   }): void;
 }>) {
   isQuill = true;
-  breakOnAssertionFailures = false;
   rpc?: RpcClient;
   #isQuillExtensionPage: boolean;
   #shouldLog = false;
