@@ -1,5 +1,5 @@
-import { FormulaCell } from '../cells/FormulaCell';
-import { IReadableCell } from '../cells/ICell';
+import { FormulaCell } from './FormulaCell';
+import { IReadableCell } from './ICell';
 
 export default function approximate(
   value: IReadableCell<number>,
