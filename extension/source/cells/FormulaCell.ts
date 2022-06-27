@@ -14,6 +14,7 @@ import AsyncIteratee from './AsyncIteratee';
 import Stoppable from './Stoppable';
 import nextEvent from './nextEvent';
 import assert from '../helpers/assert';
+import delay from '../helpers/delay';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -80,7 +81,13 @@ export class FormulaCell<
     return iterator;
   }
 
-  decrementIterators() {
+  async decrementIterators() {
+    // Delay 500ms first. In some access patterns (long polling), a new iterator
+    // is coming immediately after iteration stops. This prevents us from
+    // stopping our tracking too eagerly, so that if iteration is immediately
+    // resumed, we don't need to recalculate unnecessarily.
+    await delay(500);
+
     this.iteratorCount -= 1;
 
     if (this.iteratorCount === 0) {
