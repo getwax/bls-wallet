@@ -5,6 +5,7 @@ export default function Debug(quillController: QuillController) {
   let warnedAboutDeletion = false;
 
   return {
+    quillController,
     storageCells: quillController.cells,
     Browser,
     reset: async () => {
