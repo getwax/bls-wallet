@@ -8,7 +8,8 @@
         // Do not transform modules to CJS
         "modules": false,
         "targets": {
-          "chrome": "70"
+          "chrome": "92",
+          "firefox": "90"
         }
       }
     ],
@@ -36,6 +37,7 @@
         "helpers": false,
         "regenerator": true
       }
-    ]
+    ],
+    "@babel/plugin-proposal-private-methods"
   ]
 }

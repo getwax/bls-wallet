@@ -83,6 +83,10 @@ module.exports = {
 
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json'],
+    fallback: {
+      stream: require.resolve('stream-browserify'),
+      crypto: require.resolve('crypto-browserify'),
+    },
     // alias: {
     //   'webextension-polyfill-ts': path.resolve(
     //     path.join(__dirname, 'node_modules', 'webextension-polyfill-ts')
@@ -199,6 +203,9 @@ module.exports = {
       path: `./.env${
         process.env.ENV === undefined ? '' : `.${process.env.ENV}`
       }`,
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
     }),
   ],
 
