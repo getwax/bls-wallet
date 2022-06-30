@@ -1,3 +1,6 @@
+// TODO: Make use of this
+// TODO: Rename to onAction
+
 export default function defineAction(handler: () => void) {
   return {
     onClick: handler,

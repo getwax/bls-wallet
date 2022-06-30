@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { FunctionComponent, useEffect, useMemo, useState } from 'react';
 import { runtime } from 'webextension-polyfill';
-import TaskQueue from '../common/TaskQueue';
+import TaskQueue from '../helpers/TaskQueue';
 
 // components, styles and UI
 import Button from '../components/Button';

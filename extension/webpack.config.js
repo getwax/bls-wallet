@@ -29,10 +29,9 @@ const extensionReloaderPlugin =
         entries: {
           // TODO: reload manifest on update
           contentScript: 'contentScript',
-          pageContentScript: 'pageContentScript',
+          ethereum: 'ethereum',
           background: 'background',
-          quillPage: ['popup', 'quillPage', 'confirm'],
-          cellsDemo: 'cellsDemo',
+          home: 'home',
         },
       })
     : () => {
@@ -69,12 +68,11 @@ module.exports = {
 
   entry: {
     manifest: path.join(sourcePath, 'manifest.json'),
-    background: path.join(sourcePath, 'Controllers', 'background.ts'),
-    contentScript: path.join(sourcePath, 'ContentScript', 'index.ts'),
-    pageContentScript: path.join(sourcePath, 'PageContentScript', 'index.ts'),
+    background: path.join(sourcePath, 'background', 'index.ts'),
+    contentScript: path.join(sourcePath, 'contentScript.ts'),
+    ethereum: path.join(sourcePath, 'ethereum.ts'),
     popup: path.join(sourcePath, 'Popup', 'index.tsx'),
-    quillPage: path.join(sourcePath, 'QuillPage', 'index.tsx'),
-    cellsDemo: path.join(sourcePath, 'cells', 'CellsDemo', 'index.tsx'),
+    home: path.join(sourcePath, 'Home', 'index.tsx'),
     confirm: path.join(sourcePath, 'Confirm', 'index.tsx'),
   },
 
@@ -85,6 +83,10 @@ module.exports = {
 
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json'],
+    fallback: {
+      stream: require.resolve('stream-browserify'),
+      crypto: require.resolve('crypto-browserify'),
+    },
     // alias: {
     //   'webextension-polyfill-ts': path.resolve(
     //     path.join(__dirname, 'node_modules', 'webextension-polyfill-ts')
@@ -148,7 +150,7 @@ module.exports = {
     // Plugin to not generate js bundle for manifest entry
     new WextManifestWebpackPlugin(),
     // Generate sourcemaps
-    new webpack.SourceMapDevToolPlugin({ filename: false }),
+    new webpack.SourceMapDevToolPlugin({ filename: 'js/[name].bundle.js.map' }),
     new ForkTsCheckerWebpackPlugin(),
     // environmental variables
     new webpack.EnvironmentPlugin({
@@ -169,18 +171,11 @@ module.exports = {
       verbose: true,
     }),
     new HtmlWebpackPlugin({
-      template: path.join(viewsPath, 'quillPage.html'),
+      template: path.join(viewsPath, 'home.html'),
       inject: 'body',
-      chunks: ['quillPage'],
+      chunks: ['home'],
       hash: true,
-      filename: 'quillPage.html',
-    }),
-    new HtmlWebpackPlugin({
-      template: path.join(viewsPath, 'cellsDemo.html'),
-      inject: 'body',
-      chunks: ['cellsDemo'],
-      hash: true,
-      filename: 'cellsDemo.html',
+      filename: 'home.html',
     }),
     new HtmlWebpackPlugin({
       template: path.join(viewsPath, 'popup.html'),
@@ -208,6 +203,9 @@ module.exports = {
       path: `./.env${
         process.env.ENV === undefined ? '' : `.${process.env.ENV}`
       }`,
+    }),
+    new webpack.ProvidePlugin({
+      Buffer: ['buffer', 'Buffer'],
     }),
   ],
 

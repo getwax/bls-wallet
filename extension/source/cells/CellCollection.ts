@@ -3,11 +3,12 @@ import { EventEmitter } from 'events';
 import * as io from 'io-ts';
 
 import ExplicitAny from '../types/ExplicitAny';
-import ICell, { CellEmitter } from './ICell';
+import ICell, { CellEmitter, StrictPartial } from './ICell';
 import CellIterator from './CellIterator';
 import jsonHasChanged from './jsonHasChanged';
 import assert from '../helpers/assert';
 import IAsyncStorage from './IAsyncStorage';
+import assertType from './assertType';
 
 export default class CellCollection {
   cells: Record<string, CollectionCell<ExplicitAny> | undefined> = {};
@@ -42,7 +43,7 @@ export default class CellCollection {
   Cell<T>(
     key: string,
     type: io.Type<T>,
-    defaultValue: T,
+    makeDefault: () => T | Promise<Awaited<T>>,
     hasChanged = jsonHasChanged,
   ): CollectionCell<T> {
     let cell = this.cells[key];
@@ -56,7 +57,7 @@ export default class CellCollection {
       this.asyncStorage,
       key,
       type,
-      defaultValue,
+      makeDefault,
       hasChanged,
     );
 
@@ -88,7 +89,7 @@ export class CollectionCell<T> implements ICell<T> {
     public asyncStorage: IAsyncStorage,
     public key: string,
     public type: io.Type<T>,
-    public defaultValue: T,
+    public makeDefault: () => T | Promise<Awaited<T>>,
     public hasChanged: ICell<T>['hasChanged'] = jsonHasChanged,
   ) {
     this.versionedType = io.type({ version: io.number, value: type });
@@ -104,22 +105,18 @@ export class CollectionCell<T> implements ICell<T> {
     }
 
     if (this.type !== io.unknown && this.type.name !== type.name) {
-      throw new Error(
-        [
-          'Tried to get existing storage cell with a different type',
-          `(type: ${type.name}, existing: ${this.type.name})`,
-        ].join(' '),
+      assert(false, () =>
+        Error(
+          [
+            'Tried to get existing storage cell with a different type',
+            `(type: ${type.name}, existing: ${this.type.name})`,
+          ].join(' '),
+        ),
       );
     }
 
-    if (this.lastSeen && !type.is(this.lastSeen.value)) {
-      throw new Error(
-        [
-          `Type mismatch at storage key ${this.key}`,
-          `contents: ${JSON.stringify(this.lastSeen.value)}`,
-          `expected: ${type.name}`,
-        ].join(' '),
-      );
+    if (this.lastSeen) {
+      assertType(this.lastSeen.value, type);
     }
 
     if (this.type === io.unknown) {
@@ -135,7 +132,7 @@ export class CollectionCell<T> implements ICell<T> {
 
   async write(newValue: T): Promise<void> {
     assert(!this.ended);
-    assert(this.type.is(newValue));
+    assertType(newValue, this.type);
 
     await this.initialRead;
 
@@ -146,9 +143,13 @@ export class CollectionCell<T> implements ICell<T> {
 
     const latest = await this.versionedRead();
 
-    if (!(newVersionedValue.version > latest.version)) {
-      throw new Error('Rejecting write which is not newer than remote');
-    }
+    assert(
+      newVersionedValue.version > latest.version,
+      () =>
+        new Error(
+          `Rejecting write which is not newer than remote. write v: ${newVersionedValue.version}, remote v: ${latest.version}`,
+        ),
+    );
 
     await this.asyncStorage.write(
       this.key,
@@ -167,6 +168,10 @@ export class CollectionCell<T> implements ICell<T> {
     }
   }
 
+  async update(updates: StrictPartial<T>): Promise<void> {
+    await this.write({ ...(await this.read()), ...updates });
+  }
+
   end() {
     this.events.emit('end');
     this.ended = true;
@@ -180,17 +185,7 @@ export class CollectionCell<T> implements ICell<T> {
     const readResult = (await this.asyncStorage.read(
       this.key,
       this.versionedType,
-    )) ?? { version: 0, value: this.defaultValue };
-
-    if (!this.versionedType.is(readResult)) {
-      throw new Error(
-        [
-          `Type mismatch at storage key ${this.key}`,
-          `contents: ${JSON.stringify(readResult)}`,
-          `expected: ${this.versionedType.name}`,
-        ].join(' '),
-      );
-    }
+    )) ?? { version: 0, value: await this.makeDefault() };
 
     if (this.hasChanged(this.lastSeen?.value, readResult.value)) {
       this.events.emit('change', {

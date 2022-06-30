@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 
 import * as io from 'io-ts';
 
-import assert from '../helpers/assert';
+import assertType from './assertType';
 import CellCollection from './CellCollection';
 import IAsyncStorage from './IAsyncStorage';
 
@@ -20,7 +20,7 @@ export default new CellCollection({
     const readResult = readResultStr && JSON.parse(readResultStr);
 
     if (readResult !== undefined) {
-      assert(type.is(readResult));
+      assertType(readResult, type);
     }
 
     return readResult;
@@ -36,7 +36,7 @@ export default new CellCollection({
       return;
     }
 
-    assert(type.is(value));
+    assertType(value, type);
 
     localStorage.setItem(key, JSON.stringify(value));
   },

@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import * as io from 'io-ts';
 import Browser from 'webextension-polyfill';
 
-import assert from '../helpers/assert';
+import assertType from './assertType';
 import CellCollection from './CellCollection';
 import IAsyncStorage from './IAsyncStorage';
 
@@ -18,7 +18,7 @@ export default new CellCollection({
     const readResult = (await Browser.storage.local.get(key))[key];
 
     if (readResult !== undefined) {
-      assert(type.is(readResult));
+      assertType(readResult, type);
     }
 
     return readResult;
@@ -34,7 +34,7 @@ export default new CellCollection({
       return;
     }
 
-    assert(type.is(value));
+    assertType(value, type);
 
     Browser.storage.local.set({
       [key]: value,

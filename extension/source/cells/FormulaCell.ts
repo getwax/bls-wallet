@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 
 import TypedEmitter from 'typed-emitter';
+import { deepCopy } from 'ethers/lib/utils';
 
 import AsyncReturnType from '../types/AsyncReturnType';
 import ExplicitAny from '../types/ExplicitAny';
@@ -12,6 +13,8 @@ import MemoryCell from './MemoryCell';
 import AsyncIteratee from './AsyncIteratee';
 import Stoppable from './Stoppable';
 import nextEvent from './nextEvent';
+import assert from '../helpers/assert';
+import delay from '../helpers/delay';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -25,6 +28,7 @@ export class FormulaCell<
   events = new EventEmitter() as TypedEmitter<{
     change(changeEvent: ChangeEvent<T>): void;
     end(): void;
+    'first-iterator'(): void;
     'zero-iterators'(): void;
   }>;
 
@@ -62,7 +66,7 @@ export class FormulaCell<
       this.decrementIterators();
     }
 
-    throw new Error('Inputs ended');
+    assert(false, () => new Error('Inputs ended'));
   }
 
   [Symbol.asyncIterator](): AsyncIterator<Awaited<T>> {
@@ -77,7 +81,13 @@ export class FormulaCell<
     return iterator;
   }
 
-  decrementIterators() {
+  async decrementIterators() {
+    // Delay 500ms first. In some access patterns (long polling), a new iterator
+    // is coming immediately after iteration stops. This prevents us from
+    // stopping our tracking too eagerly, so that if iteration is immediately
+    // resumed, we don't need to recalculate unnecessarily.
+    await delay(500);
+
     this.iteratorCount -= 1;
 
     if (this.iteratorCount === 0) {
@@ -87,6 +97,10 @@ export class FormulaCell<
 
   iterateInputs() {
     this.iteratorCount += 1;
+
+    if (this.iteratorCount === 1) {
+      this.events.emit('first-iterator');
+    }
 
     if (this.iterationCell) {
       return this.iterationCell;
@@ -126,8 +140,12 @@ export class FormulaCell<
       }
 
       for await (const inputValues of stoppableSequence) {
-        const latest = await this.formula(
-          inputValues as InputValues<InputCells>,
+        if (inputValues === 'stopped') {
+          break;
+        }
+
+        const latest = deepCopy(
+          await this.formula(inputValues.value as InputValues<InputCells>),
         );
 
         iterationCell.write({ value: latest });
@@ -151,6 +169,44 @@ export class FormulaCell<
     })();
 
     return iterationCell;
+  }
+
+  /** Creates an ICell for the subscript of another ICell. */
+  static Sub<Input extends Record<string, unknown>, K extends keyof Input>(
+    input: IReadableCell<Input>,
+    key: K,
+    hasChanged: (
+      previous: Input[K] | undefined,
+      latest: Input[K],
+    ) => boolean = jsonHasChanged,
+  ): IReadableCell<Input[K]> {
+    return new FormulaCell(
+      { input },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      ({ input }) => input[key],
+      hasChanged,
+    );
+  }
+
+  /** Like Sub, but also maps undefined|null to defaultValue. */
+  static SubWithDefault<
+    Input extends Record<string, unknown>,
+    K extends keyof Input,
+  >(
+    input: IReadableCell<Input>,
+    key: K,
+    defaultValue: Exclude<Input[K], undefined | null>,
+    hasChanged: (
+      previous: Input[K] | undefined,
+      latest: Input[K],
+    ) => boolean = jsonHasChanged,
+  ): IReadableCell<Exclude<Input[K], undefined | null>> {
+    return new FormulaCell(
+      { input },
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      ({ input }) => input[key] ?? defaultValue,
+      hasChanged,
+    );
   }
 }
 
@@ -184,12 +240,16 @@ function toIterableOfRecords<R extends Record<string, AsyncIterable<unknown>>>(
           const stoppableSequence = new Stoppable(recordOfIterables[key]);
           endedPromise.then(() => stoppableSequence.stop());
 
-          for await (const value of stoppableSequence) {
+          for await (const maybe of stoppableSequence) {
+            if (maybe === 'stopped') {
+              break;
+            }
+
             if (!(key in latest)) {
               keysFilled += 1;
             }
 
-            latest[key] = value as ExplicitAny;
+            latest[key] = maybe.value as ExplicitAny;
 
             if (keysFilled === keysNeeded) {
               latestVersion += 1;

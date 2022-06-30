@@ -1,10 +1,17 @@
-import { providers } from 'ethers';
-import { Browser } from 'webextension-polyfill';
-import { QuillInPageProvider } from '../PageContentScript/InPageProvider';
+import type { providers } from 'ethers';
+import type { Browser } from 'webextension-polyfill';
+import type QuillEthereumProvider from '../QuillEthereumProvider';
+import type { QuillContextValue } from '../Home/QuillContext';
+import QuillStorageCells from '../QuillStorageCells';
 
 declare global {
   interface Window {
-    ethereum?: QuillInPageProvider | providers.ExternalProvider;
-    Browser?: Browser;
+    ethereum?: QuillEthereumProvider | providers.ExternalProvider;
+    debug?: {
+      Browser?: Browser;
+      quill?: QuillContextValue;
+      storageCells?: QuillStorageCells;
+      reset?: () => unknown;
+    };
   }
 }

@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { once } from 'lodash-es';
 import TypedEmitter from 'typed-emitter';
+import ExplicitAny from '../types/ExplicitAny';
 import raceWithEvent from './raceWithEvent';
 
 export default class Stoppable<T> {
@@ -21,23 +22,30 @@ export default class Stoppable<T> {
     this.events.emit('stopped');
   }
 
-  [Symbol.asyncIterator]() {
+  [Symbol.asyncIterator](): AsyncIterator<{ value: T } | 'stopped'> {
     const aiIterator = this.asyncIterable[Symbol.asyncIterator]();
     const aiIteratorReturn = once(() => aiIterator.return?.());
 
     return {
       next: async () => {
         if (this.stopped) {
-          return { value: undefined, done: true };
+          return { value: 'stopped', done: true };
         }
 
-        return raceWithEvent(aiIterator.next(), this.events, 'stopped', () => {
-          aiIteratorReturn();
-          return { value: undefined, done: true };
-        });
+        return raceWithEvent(
+          aiIterator
+            .next()
+            .then(({ value, done }) => ({ value: { value }, done })),
+          this.events,
+          'stopped',
+          () => {
+            aiIteratorReturn();
+            return { value: 'stopped', done: true };
+          },
+        );
       },
       return() {
-        return aiIteratorReturn();
+        return aiIteratorReturn() as ExplicitAny;
       },
     };
   }

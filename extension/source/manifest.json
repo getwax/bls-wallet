@@ -70,7 +70,7 @@
 
   "web_accessible_resources": [
     "/assets/*",
-    "/js/pageContentScript.bundle.js",
+    "/js/*",
     "/confirm.html"
   ]
 }

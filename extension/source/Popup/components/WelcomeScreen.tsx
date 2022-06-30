@@ -21,7 +21,7 @@ const WelcomeScreen: FunctionComponent = () => (
       <p className="font-light">Your digital wallet for a digital world.</p>
       <div className="mt-2">
         <Button
-          onPress={() => window.open(runtime.getURL('quillPage.html#/wallet'))}
+          onPress={() => window.open(runtime.getURL('home.html#/wallets'))}
           icon={<ArrowRight className="icon-md" />}
           className="btn-primary px-9 py-4"
         >
