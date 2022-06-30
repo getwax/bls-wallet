@@ -63,9 +63,9 @@ export const rpcMap = {
     Response: optional(
       io.type({
         transactionHash: io.string,
-        transactionIndex: io.string,
+        transactionIndex: io.number,
         blockHash: io.string,
-        blockNumber: io.string,
+        blockNumber: io.number,
         from: io.string,
         to: io.string,
         logs: io.array(io.unknown),

@@ -1,5 +1,7 @@
+import * as io from 'io-ts';
 import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
+import assertType from '../cells/assertType';
 
 import { AGGREGATOR_URL, NETWORK_CONFIG } from '../env';
 import assert from '../helpers/assert';
@@ -7,6 +9,7 @@ import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
+import optional from '../types/optional';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -104,7 +107,21 @@ export default class AggregatorController {
       }
 
       const aggregator = new Aggregator(knownTx.aggregatorUrl);
-      const bundleReceipt = await aggregator.lookupReceipt(hash);
+
+      // FIXME: Aggregator/bls-wallet-clients: The response we're getting is
+      // different from the type annotation.
+      const bundleReceipt: unknown = await aggregator.lookupReceipt(hash);
+
+      assertType(
+        bundleReceipt,
+        optional(
+          io.type({
+            transactionIndex: io.number,
+            blockHash: io.string,
+            blockNumber: io.number,
+          }),
+        ),
+      );
 
       return (
         bundleReceipt && {
