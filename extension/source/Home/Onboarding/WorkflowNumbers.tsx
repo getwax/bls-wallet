@@ -10,7 +10,7 @@ const WorkflowNumbers: FunctionComponent<{
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    // TODO: use hash, deduplicate page detection with other components
+    // TODO (merge-ok) Use hash, deduplicate page detection with other components
     const p = params.get('p');
 
     if (p !== null) {

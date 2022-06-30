@@ -145,7 +145,10 @@ export class CollectionCell<T> implements ICell<T> {
 
     assert(
       newVersionedValue.version > latest.version,
-      () => new Error('Rejecting write which is not newer than remote'),
+      () =>
+        new Error(
+          `Rejecting write which is not newer than remote. write v: ${newVersionedValue.version}, remote v: ${latest.version}`,
+        ),
     );
 
     await this.asyncStorage.write(

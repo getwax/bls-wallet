@@ -25,8 +25,9 @@ const Button = (props: {
 
           try {
             await pressResult;
-          } catch {
+          } catch (err) {
             // Enhancement: Give the button an error state
+            console.error(err);
           } finally {
             setPressLoading(false);
           }

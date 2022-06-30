@@ -44,6 +44,7 @@ const OnboardingInfoPanel: FunctionComponent = () => {
   const [pageIndex, setPageIndex] = useState(0);
 
   useEffect(() => {
+    // TODO (merge-ok) Use hash, deduplicate page detection with other components
     const p = params.get('p');
 
     if (p !== null) {
