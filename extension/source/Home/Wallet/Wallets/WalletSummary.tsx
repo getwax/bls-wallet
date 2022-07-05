@@ -9,11 +9,11 @@ import {
   // Circle,
 } from 'phosphor-react';
 import Button from '../../../components/Button';
-/* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
-import { IWallet } from './WalletWrapper';
+import type { IWallet } from './WalletWrapper';
+import onAction from '../../../helpers/onAction';
 
 interface IWalletSummary {
-  onClick: () => void;
+  onAction: () => void;
   expanded?: boolean;
   wallet: IWallet;
 }
@@ -23,7 +23,7 @@ const addressShortner = (address: string) => {
 };
 
 export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
-  onClick,
+  onAction: onActionParam,
   expanded = false,
   wallet,
 }) => {
@@ -40,7 +40,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             checked={expanded}
             readOnly
             className="h-5 w-5 cursor-pointer"
-            onClick={onClick}
+            {...onAction(onActionParam)}
           />
         </div>
 
@@ -55,8 +55,9 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             {wallet.name}
             <div
               className="text-[8pt] bg-blue-100 bg-opacity-40 
-              hover:bg-opacity-70 cursor-pointer text-blue-600 rounded-full 
+              active:bg-opacity-70 cursor-pointer text-blue-600 rounded-full 
               px-2 flex place-items-center gap-2 w-28"
+              {...onAction(() => navigator.clipboard.writeText(wallet.address))}
             >
               {addressShortner(wallet.address)} <Copy className="text-[10pt]" />
             </div>
@@ -72,17 +73,14 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
           <div className="flex gap-2">
             <Button
               onPress={() => {}}
-              /* eslint react/no-children-prop: "warn" -- TODO (merge-ok) Pass 'Send' as child */
-              children={'Send'}
               className="btn-primary"
               icon={<PaperPlaneTilt className="icon-md" />}
-            />
-            <Button
-              onPress={() => {}}
-              /* eslint react/no-children-prop: "warn" -- TODO (merge-ok) Pass 'Receive' as child */
-              children={'Receive'}
-              className="btn-secondary"
-            />
+            >
+              Send
+            </Button>
+            <Button onPress={() => {}} className="btn-secondary">
+              Receive
+            </Button>
           </div>
 
           {/* <div className="mt-4 flex flex-col gap-1">

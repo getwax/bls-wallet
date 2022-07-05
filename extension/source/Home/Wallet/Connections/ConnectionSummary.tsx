@@ -5,15 +5,16 @@ import {
   PokerChip,
   Wallet,
 } from 'phosphor-react';
+import onAction from '../../../helpers/onAction';
 
 interface IConnectionsSummary {
-  onClick: () => void;
+  onAction: () => void;
   expanded?: boolean;
 }
 
 export const ConnectionsSummary: React.FunctionComponent<
   IConnectionsSummary
-> = ({ onClick, expanded = true }) => {
+> = ({ onAction: onActionParam, expanded = true }) => {
   return (
     <div
       className={`p-4 rounded-lg
@@ -27,7 +28,7 @@ export const ConnectionsSummary: React.FunctionComponent<
             checked={expanded}
             readOnly
             className="h-5 w-5 cursor-pointer"
-            onClick={onClick}
+            {...onAction(onActionParam)}
           />
         </div>
 

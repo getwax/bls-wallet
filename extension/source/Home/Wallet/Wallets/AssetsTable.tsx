@@ -11,6 +11,7 @@ import {
   CaretRight,
 } from 'phosphor-react';
 import { TokenData } from './WalletDetail';
+import onAction from '../../../helpers/onAction';
 
 export const TableHeader: React.FunctionComponent = () => {
   return (
@@ -144,14 +145,14 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
 
         <div className="flex items-center gap-4">
           <CaretLeft
-            onClick={() => previousPage()}
+            {...onAction(previousPage)}
             className="cursor-pointer icon-md"
           />
           <div className="font-semibold">
             {pageIndex + 1} of {pageCount}
           </div>
           <CaretRight
-            onClick={() => nextPage()}
+            {...onAction(nextPage)}
             className="cursor-pointer icon-md"
           />
         </div>

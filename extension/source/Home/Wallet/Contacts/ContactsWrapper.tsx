@@ -29,7 +29,7 @@ export const ContactsWrapper: React.FunctionComponent = () => {
       <div className="flex flex-col gap-6 mt-8">
         {contacts.map((contact, index) => (
           <ContactsSummary
-            onClick={() => setSelected(index)}
+            onAction={() => setSelected(index)}
             name={contact.name}
             key={contact.name}
             expanded={index === selected}

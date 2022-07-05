@@ -2,6 +2,7 @@ import { FunctionComponent, useState, useEffect } from 'react';
 import { Mutex } from 'async-mutex';
 
 import delay from '../../helpers/delay';
+import onAction from '../../helpers/onAction';
 
 type Position = 'left' | 'middle' | 'right';
 
@@ -110,16 +111,10 @@ const Carousel: FunctionComponent<{
               <div
                 className="radio"
                 key={imgSrc}
-                onClick={() => {
+                {...onAction(() => {
                   clearInterval(intervalId);
                   transitionImage(Number(i));
-                }}
-                onKeyDown={(evt) => {
-                  if (['Space', 'Enter'].includes(evt.code)) {
-                    clearInterval(intervalId);
-                    transitionImage(Number(i));
-                  }
-                }}
+                })}
               >
                 <div className={fillerClasses.join(' ')} />
               </div>
