@@ -8,7 +8,6 @@ import { WalletSummary } from './WalletSummary';
 export interface IWallet {
   address: string;
   name: string;
-  ether: number;
   networks: number;
   tokens: number;
 }
@@ -40,7 +39,6 @@ export const WalletsWrapper: FunctionComponent = () => {
               wallet={{
                 address: wallet.address,
                 name: `wallet ${index}`,
-                ether: 0,
                 networks: 1,
                 tokens: 0,
               }}

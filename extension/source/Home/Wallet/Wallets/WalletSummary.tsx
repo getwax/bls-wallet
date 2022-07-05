@@ -11,6 +11,7 @@ import {
 import Button from '../../../components/Button';
 /* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
 import { IWallet } from './WalletWrapper';
+import Balance from './Balance';
 
 interface IWalletSummary {
   onClick: () => void;
@@ -63,7 +64,9 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
           </div>
         </div>
 
-        <div className="text-body">{wallet.ether} ETH</div>
+        <div className="text-body">
+          <Balance address={wallet.address} />
+        </div>
       </div>
 
       {/* Details */}
