@@ -10,9 +10,10 @@ import {
 } from 'phosphor-react';
 import Button from '../../../components/Button';
 import type { IWallet } from './WalletWrapper';
+import onAction from '../../../helpers/onAction';
 
 interface IWalletSummary {
-  onClick: () => void;
+  onAction: () => void;
   expanded?: boolean;
   wallet: IWallet;
 }
@@ -22,7 +23,7 @@ const addressShortner = (address: string) => {
 };
 
 export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
-  onClick,
+  onAction: onActionParam,
   expanded = false,
   wallet,
 }) => {
@@ -39,7 +40,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             checked={expanded}
             readOnly
             className="h-5 w-5 cursor-pointer"
-            onClick={onClick}
+            {...onAction(onActionParam)}
           />
         </div>
 
@@ -54,8 +55,9 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             {wallet.name}
             <div
               className="text-[8pt] bg-blue-100 bg-opacity-40 
-              hover:bg-opacity-70 cursor-pointer text-blue-600 rounded-full 
+              active:bg-opacity-70 cursor-pointer text-blue-600 rounded-full 
               px-2 flex place-items-center gap-2 w-28"
+              {...onAction(() => navigator.clipboard.writeText(wallet.address))}
             >
               {addressShortner(wallet.address)} <Copy className="text-[10pt]" />
             </div>
