@@ -79,7 +79,7 @@ function QuillContextCells(
     ...storageCells,
     networkJson: new FormulaCell(
       { network: storageCells.network },
-      ({ network }) => JSON.stringify(network, null, 2),
+      ({ $network }) => JSON.stringify($network, null, 2),
     ),
     blockNumber: QuillLongPollingCell(ethereum, 'blockNumber'),
     rpcBackgroundLogging: TransformCell.Sub(rpcLogging, 'background'),

@@ -86,12 +86,19 @@ function QuillStorageCells(storage: CellCollection) {
 
   return {
     ...rootCells,
-    providerState: new FormulaCell(providerStateCells, (values) => values),
+    providerState: new FormulaCell(
+      providerStateCells,
+      ({ $chainId, $developerSettings, $selectedAddress }) => ({
+        chainId: $chainId,
+        developerSettings: $developerSettings,
+        selectedAddress: $selectedAddress,
+      }),
+    ),
     ...providerStateCells,
 
     theme: new FormulaCell(
       { preferences: rootCells.preferences },
-      ({ preferences: { selectedAddress, identities } }): Theme => {
+      ({ $preferences: { selectedAddress, identities } }): Theme => {
         if (selectedAddress === undefined) {
           return 'light';
         }
