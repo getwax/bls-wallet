@@ -25,8 +25,7 @@ export default class TransformCell<Input, T> implements ICell<Awaited<T>> {
 
     this.formulaCell = new FormulaCell(
       { input },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ input }) => mapInput(input),
+      ({ $input }) => mapInput($input),
       hasChanged,
     );
 

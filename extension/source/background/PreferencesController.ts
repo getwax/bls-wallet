@@ -27,8 +27,8 @@ export default class PreferencesController {
     this.preferredCurrency = new FormulaCell(
       { preferences },
       // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ preferences }) => {
-        const { selectedAddress, identities } = preferences;
+      ({ $preferences }) => {
+        const { selectedAddress, identities } = $preferences;
 
         if (selectedAddress === undefined) {
           return undefined;

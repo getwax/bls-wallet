@@ -13,6 +13,7 @@ import MemoryCell from './MemoryCell';
 import AsyncIteratee from './AsyncIteratee';
 import Stoppable from './Stoppable';
 import nextEvent from './nextEvent';
+import prefixKeys, { PrefixKeys } from './prefixKeys';
 import assert from '../helpers/assert';
 import delay from '../helpers/delay';
 
@@ -39,7 +40,9 @@ export class FormulaCell<
 
   constructor(
     public inputCells: InputCells,
-    public formula: (inputValues: InputValues<InputCells>) => T,
+    public formula: (
+      inputValues: PrefixKeys<'$', InputValues<InputCells>>,
+    ) => T,
     public hasChanged: (
       previous: Awaited<T> | undefined,
       latest: Awaited<T>,
@@ -145,7 +148,9 @@ export class FormulaCell<
         }
 
         const latest = deepCopy(
-          await this.formula(inputValues.value as InputValues<InputCells>),
+          await this.formula(
+            prefixKeys('$', inputValues.value as InputValues<InputCells>),
+          ),
         );
 
         iterationCell.write({ value: latest });
@@ -180,12 +185,7 @@ export class FormulaCell<
       latest: Input[K],
     ) => boolean = jsonHasChanged,
   ): IReadableCell<Input[K]> {
-    return new FormulaCell(
-      { input },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ input }) => input[key],
-      hasChanged,
-    );
+    return new FormulaCell({ input }, ({ $input }) => $input[key], hasChanged);
   }
 
   /** Like Sub, but also maps undefined|null to defaultValue. */
@@ -203,8 +203,7 @@ export class FormulaCell<
   ): IReadableCell<Exclude<Input[K], undefined | null>> {
     return new FormulaCell(
       { input },
-      // eslint-disable-next-line @typescript-eslint/no-shadow
-      ({ input }) => input[key] ?? defaultValue,
+      ({ $input }) => $input[key] ?? defaultValue,
       hasChanged,
     );
   }

@@ -33,9 +33,8 @@ export default function CurrencyConversionCell(
       chainCurrency,
       time: TimeCell(config.pollInterval),
     },
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    ({ preferredCurrency, chainCurrency }) =>
-      fetchRate(config.api, chainCurrency, preferredCurrency),
+    ({ $preferredCurrency, $chainCurrency }) =>
+      fetchRate(config.api, $chainCurrency, $preferredCurrency),
   );
 }
 
