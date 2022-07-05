@@ -1,4 +1,5 @@
 import * as React from 'react';
+import onAction from '../../../helpers/onAction';
 // import { AssetsTable } from './AssetsTable';
 
 export interface TokenData {
@@ -62,13 +63,12 @@ const WalletTabs: React.FunctionComponent = () => {
   return (
     <div className="flex border-b border-grey-300 gap-4 mb-4">
       {tabs.map((tab) => (
-        /* eslint jsx-a11y/click-events-have-key-events: "warn" -- TODO (merge-ok) Add keyboard listener */
         <div
           key={tab.name}
           className={`py-2 px-4 cursor-pointer ${
             tab.name === activeTab && 'border-b-2 border-blue-500 text-blue-500'
           }`}
-          onClick={() => setActiveTab(tab.name)}
+          {...onAction(() => setActiveTab(tab.name))}
         >
           {tab.name}
         </div>

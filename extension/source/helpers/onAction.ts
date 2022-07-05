@@ -1,5 +1,3 @@
-// TODO: Make more use of this
-
 export default function onAction(handler: () => void) {
   return {
     onClick: handler,

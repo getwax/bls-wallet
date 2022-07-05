@@ -35,7 +35,7 @@ export const WalletsWrapper: FunctionComponent = () => {
         <div className="flex flex-col gap-6 mt-8">
           {keyring.wallets.map((wallet, index) => (
             <WalletSummary
-              onClick={() => rpc.setSelectedAddress(wallet.address)}
+              onAction={() => rpc.setSelectedAddress(wallet.address)}
               key={wallet.address}
               wallet={{
                 address: wallet.address,

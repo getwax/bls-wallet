@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import { ConnectionsSummary } from './ConnectionSummary';
 
 export const ConnectionsWrapper: React.FunctionComponent = () => {
@@ -9,7 +10,7 @@ export const ConnectionsWrapper: React.FunctionComponent = () => {
       </div>
 
       <div className="flex flex-col gap-6 mt-8">
-        <ConnectionsSummary onClick={() => {}} />
+        <ConnectionsSummary onAction={() => {}} />
       </div>
     </div>
   );
