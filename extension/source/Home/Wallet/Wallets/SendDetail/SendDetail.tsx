@@ -19,7 +19,10 @@ const SendDetail: FunctionComponent = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <BigSendButton />
+      <BigSendButton
+        selectedAsset={cells.selectedAsset}
+        recipient={cells.recipient}
+      />
       {$selectedAsset === undefined && (
         <AssetSelector selectedAsset={cells.selectedAsset} />
       )}
