@@ -26,6 +26,7 @@ const SendDetail: FunctionComponent = () => {
       <BigSendButton
         selectedAsset={cells.selectedAsset}
         recipient={cells.recipient}
+        amountWei={cells.amountWei}
       />
       {(() => {
         if ($selectedAsset === undefined) {

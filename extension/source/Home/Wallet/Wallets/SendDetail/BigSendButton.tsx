@@ -15,17 +15,21 @@ const roundFieldClasses = [
 const BigSendButton: FunctionComponent<{
   selectedAsset: ICell<string | undefined>;
   recipient: ICell<string | undefined>;
-}> = ({ selectedAsset, recipient }) => {
+  amountWei: ICell<string | undefined>;
+}> = ({ selectedAsset, recipient, amountWei }) => {
   const navigate = useNavigate();
 
   const $selectedAsset = useCell(selectedAsset);
   const $recipient = useCell(recipient);
+  const $amountWei = useCell(amountWei);
+
+  const visibility = $amountWei === undefined ? '' : 'invisible';
 
   return (
     <div className="btn-primary-outer justify-center grow leading-10">
       <div className="flex grow justify-center">
         <div
-          className="btn-primary-inner flex flex-row gap-2"
+          className={`${visibility} btn-primary-inner flex flex-row gap-2`}
           {...onAction(async () => {
             if ($recipient !== undefined) {
               await recipient.write(undefined);
@@ -58,7 +62,7 @@ const BigSendButton: FunctionComponent<{
           )}
         </div>
         <div
-          className="btn-primary-inner flex flex-row gap-2"
+          className={`${visibility} btn-primary-inner flex flex-row gap-2`}
           {...onAction(() => navigate('/wallets'))}
         >
           <div>Cancel</div>
