@@ -1,5 +1,6 @@
 import { IconProps } from 'phosphor-react';
 import { ReactElement, ReactNode, useState } from 'react';
+import onAction from '../helpers/onAction';
 
 const Button = (props: {
   className?: string;
@@ -17,7 +18,7 @@ const Button = (props: {
           ? 'btn-loading'
           : `flex gap-2 items-center select-none ${props.className}`
       }
-      onClick={async () => {
+      {...onAction(async () => {
         const pressResult = props.onPress();
 
         if (pressResult instanceof Promise) {
@@ -32,12 +33,7 @@ const Button = (props: {
             setPressLoading(false);
           }
         }
-      }}
-      onKeyDown={(evt) => {
-        if (evt.code === 'Enter') {
-          props.onPress();
-        }
-      }}
+      })}
     >
       <div>{props.children}</div>
       {props.icon && <div>{props.icon}</div>}

@@ -1,5 +1,6 @@
 import { FunctionComponent, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import onAction from '../../helpers/onAction';
 
 import Range from '../../helpers/Range';
 
@@ -32,12 +33,7 @@ const WorkflowNumbers: FunctionComponent<{
           className={`icon-lg rounded-full text-center leading-8 cursor-pointer ${
             i + 1 <= currentPage ? 'bg-blue-500 text-white' : 'text-black'
           }`}
-          onClick={() => onSelect(i)}
-          onKeyDown={(e) => {
-            if (['Space', 'Enter'].includes(e.code)) {
-              onSelect(i + 1);
-            }
-          }}
+          {...onAction(() => onSelect(i))}
         >
           {i + 1}
         </div>

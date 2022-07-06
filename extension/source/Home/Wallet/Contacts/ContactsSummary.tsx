@@ -1,14 +1,15 @@
 import * as React from 'react';
 import Blockies from 'react-blockies';
+import onAction from '../../../helpers/onAction';
 
 interface IContactsSummary {
-  onClick: () => void;
+  onAction: () => void;
   expanded?: boolean;
   name: string;
 }
 
 export const ContactsSummary: React.FunctionComponent<IContactsSummary> = ({
-  onClick,
+  onAction: onActionParam,
   expanded = false,
   name,
 }) => {
@@ -26,7 +27,7 @@ export const ContactsSummary: React.FunctionComponent<IContactsSummary> = ({
             checked={expanded}
             readOnly
             className="h-5 w-5 cursor-pointer"
-            onClick={onClick}
+            {...onAction(onActionParam)}
           />
         </div>
 
