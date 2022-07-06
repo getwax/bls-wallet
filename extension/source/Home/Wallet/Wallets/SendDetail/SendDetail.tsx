@@ -1,6 +1,7 @@
 import { FunctionComponent, useMemo } from 'react';
 import MemoryCell from '../../../../cells/MemoryCell';
 import useCell from '../../../../cells/useCell';
+import AmountSelector from './AmountSelector';
 
 import AssetSelector from './AssetSelector';
 import BigSendButton from './BigSendButton';
@@ -11,12 +12,14 @@ const SendDetail: FunctionComponent = () => {
     () => ({
       selectedAsset: new MemoryCell<string | undefined>(undefined),
       recipient: new MemoryCell<string | undefined>(undefined),
+      amountWei: new MemoryCell<string | undefined>(undefined),
     }),
     [],
   );
 
   const $selectedAsset = useCell(cells.selectedAsset);
   const $recipient = useCell(cells.recipient);
+  const $amountWei = useCell(cells.amountWei);
 
   return (
     <div className="flex flex-col gap-8">
@@ -33,7 +36,20 @@ const SendDetail: FunctionComponent = () => {
           return <RecipientSelector recipient={cells.recipient} />;
         }
 
-        return <>TODO</>;
+        if ($amountWei === undefined) {
+          return (
+            <AmountSelector
+              selectedAsset={cells.selectedAsset}
+              onSend={(wei) => cells.amountWei.write(wei)}
+            />
+          );
+        }
+
+        return (
+          <>
+            TODO: Send {$amountWei} {$selectedAsset} to {$recipient}
+          </>
+        );
       })()}
     </div>
   );
