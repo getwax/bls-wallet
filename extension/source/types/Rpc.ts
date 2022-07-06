@@ -42,7 +42,7 @@ export const rpcMap = {
 
   eth_chainId: {
     origin: '*',
-    Params: emptyTuple,
+    Params: optional(emptyTuple),
     Response: io.string,
   },
   eth_getTransactionByHash: {
@@ -91,22 +91,22 @@ export const rpcMap = {
 
   eth_accounts: {
     origin: '*',
-    Params: emptyTuple,
+    Params: optional(emptyTuple),
     Response: io.array(io.string),
   },
   eth_coinbase: {
     origin: '*',
-    Params: emptyTuple,
+    Params: optional(emptyTuple),
     Response: io.union([io.null, io.string]),
   },
   eth_requestAccounts: {
     origin: '*',
-    Params: emptyTuple,
+    Params: optional(emptyTuple),
     Response: io.array(io.string),
   },
   addHDAccount: {
     origin: '<quill>',
-    Params: emptyTuple,
+    Params: optional(emptyTuple),
     Response: io.string,
   },
   setHDPhrase: {
@@ -294,13 +294,15 @@ export type PartialRpcImpl = {
 
 export type RpcClient = {
   [M in RpcMethodName]: (
-    ...params: RpcMethodRequest<M>['params']
+    ...params: Exclude<RpcMethodRequest<M>['params'], undefined>
   ) => Promise<io.TypeOf<RpcMap[M]['Response']>>;
 };
 
 export type EthereumRequestBody<M extends string> = {
   method: M;
-  params: M extends RpcMethodName ? RpcMethodRequest<M>['params'] : unknown[];
+  params: M extends RpcMethodName
+    ? RpcMethodRequest<M>['params']
+    : unknown[] | undefined;
 };
 
 // FIXME: Lints are only warnings!
@@ -321,7 +323,7 @@ export function assertEthereumRequestBody(
     body,
     io.type({
       method: io.string,
-      params: io.array(io.unknown),
+      params: optional(io.array(io.unknown)),
     }),
   );
 

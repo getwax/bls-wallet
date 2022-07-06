@@ -159,7 +159,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
           // version of the call regardless of which version was actually used.
           // This is to help raise awareness of the proposed ethereum.rpc way of
           // doing things.
-          `ethereum.rpc.${body.method}(${body.params
+          `ethereum.rpc.${body.method}(${(body.params ?? [])
             .map((p) => JSON.stringify(p))
             .join(', ')}) ->`,
           response,
@@ -168,7 +168,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
         console.log(
           `ethereum.request({\n  method: ${JSON.stringify(
             body.method,
-          )},\n  params: [${body.params
+          )},\n  params: [${(body.params ?? [])
             .map((p) => JSON.stringify(p))
             .join(', ')}],\n}) ->`,
           response,
