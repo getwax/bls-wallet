@@ -8,6 +8,7 @@ import {
   // PokerChip,
   // Circle,
 } from 'phosphor-react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../components/Button';
 import type { IWallet } from './WalletWrapper';
 import Balance from './Balance';
@@ -28,6 +29,8 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
   expanded = false,
   wallet,
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div
       className={`p-4 rounded-lg
@@ -75,7 +78,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
         <div className="mt-6">
           <div className="flex gap-2">
             <Button
-              onPress={() => {}}
+              onPress={() => navigate('/wallets/send')}
               className="btn-primary"
               icon={<PaperPlaneTilt className="icon-md" />}
             >

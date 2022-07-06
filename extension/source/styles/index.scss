@@ -21,6 +21,16 @@
     @apply btn bg-blue-500 active:bg-blue-700;
   }
 
+  .btn-primary-outer {
+    @apply text-white rounded bg-blue-500; 
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .btn-primary-inner {
+    @apply py-2 px-4 active:bg-blue-700 rounded;
+  }
+
   .btn-primary-alert {
     @apply btn bg-alert-500 active:bg-alert-600;
   }

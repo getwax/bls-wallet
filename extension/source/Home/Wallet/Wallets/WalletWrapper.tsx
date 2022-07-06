@@ -38,7 +38,7 @@ export const WalletsWrapper: FunctionComponent = () => {
               key={wallet.address}
               wallet={{
                 address: wallet.address,
-                name: `wallet ${index}`,
+                name: `Wallet ${index}`,
                 networks: 1,
                 tokens: 0,
               }}
