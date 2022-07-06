@@ -10,6 +10,7 @@ import {
 } from 'phosphor-react';
 import Button from '../../../components/Button';
 import type { IWallet } from './WalletWrapper';
+import Balance from './Balance';
 import onAction from '../../../helpers/onAction';
 
 interface IWalletSummary {
@@ -64,7 +65,9 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
           </div>
         </div>
 
-        <div className="text-body">{wallet.ether} ETH</div>
+        <div className="text-body">
+          <Balance address={wallet.address} />
+        </div>
       </div>
 
       {/* Details */}
