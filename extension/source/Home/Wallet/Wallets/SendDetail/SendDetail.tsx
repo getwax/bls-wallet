@@ -16,6 +16,7 @@ const SendDetail: FunctionComponent = () => {
   );
 
   const $selectedAsset = useCell(cells.selectedAsset);
+  const $recipient = useCell(cells.recipient);
 
   return (
     <div className="flex flex-col gap-8">
@@ -23,12 +24,17 @@ const SendDetail: FunctionComponent = () => {
         selectedAsset={cells.selectedAsset}
         recipient={cells.recipient}
       />
-      {$selectedAsset === undefined && (
-        <AssetSelector selectedAsset={cells.selectedAsset} />
-      )}
-      {$selectedAsset !== undefined && (
-        <RecipientSelector recipient={cells.recipient} />
-      )}
+      {(() => {
+        if ($selectedAsset === undefined) {
+          return <AssetSelector selectedAsset={cells.selectedAsset} />;
+        }
+
+        if ($recipient === undefined) {
+          return <RecipientSelector recipient={cells.recipient} />;
+        }
+
+        return <>TODO</>;
+      })()}
     </div>
   );
 };

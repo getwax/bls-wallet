@@ -13,16 +13,13 @@ import Button from '../../../components/Button';
 import type { IWallet } from './WalletWrapper';
 import Balance from './Balance';
 import onAction from '../../../helpers/onAction';
+import shortenAddress from './shortenAddress';
 
 interface IWalletSummary {
   onAction: () => void;
   expanded?: boolean;
   wallet: IWallet;
 }
-
-const addressShortner = (address: string) => {
-  return `${address.slice(0, 6)}...${address.slice(38)}`;
-};
 
 export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
   onAction: onActionParam,
@@ -63,7 +60,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
               px-2 flex place-items-center gap-2 w-28"
               {...onAction(() => navigator.clipboard.writeText(wallet.address))}
             >
-              {addressShortner(wallet.address)} <Copy className="text-[10pt]" />
+              {shortenAddress(wallet.address)} <Copy className="text-[10pt]" />
             </div>
           </div>
         </div>
