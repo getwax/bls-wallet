@@ -23,10 +23,10 @@ export type ProviderState = io.TypeOf<typeof ProviderState>;
 export const SendTransactionParams = io.type({
   from: io.string,
   to: io.string,
-  gas: io.union([io.undefined, io.string]),
-  gasPrice: io.union([io.undefined, io.string]),
-  value: io.union([io.undefined, io.string]),
-  data: io.string,
+  gas: optional(io.string),
+  gasPrice: optional(io.string),
+  value: optional(io.string),
+  data: optional(io.string),
 });
 
 export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
