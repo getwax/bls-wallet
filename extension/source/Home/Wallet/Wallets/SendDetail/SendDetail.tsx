@@ -19,7 +19,7 @@ type Receipt = Exclude<
 >;
 
 export type SendState =
-  | { step: 'sending' }
+  | { step: 'sending'; sendBlock: number }
   | { step: 'awaiting-confirmation'; txHash: string; sendBlock: number }
   | {
       step: 'confirmed';
@@ -77,10 +77,10 @@ const SendDetail: FunctionComponent = () => {
 
                 assert($recipient !== undefined);
 
-                setSendState({ step: 'sending' });
-
                 try {
                   const sendBlock = await quill.cells.blockNumber.read();
+                  setSendState({ step: 'sending', sendBlock });
+
                   let receipt: Receipt | undefined;
 
                   const txHash = await quill.rpc.eth_sendTransaction({
