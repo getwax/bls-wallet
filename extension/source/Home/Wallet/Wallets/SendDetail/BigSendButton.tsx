@@ -13,13 +13,13 @@ const roundFieldClasses = [
 ].join(' ');
 
 const BigSendButton: FunctionComponent<{
-  sendDetailCells: SendDetailCells;
-}> = ({ sendDetailCells }) => {
+  cells: SendDetailCells;
+}> = ({ cells }) => {
   const navigate = useNavigate();
 
-  const selectedAsset = useCell(sendDetailCells.selectedAsset);
-  const recipient = useCell(sendDetailCells.recipient);
-  const amountWei = useCell(sendDetailCells.amountWei);
+  const selectedAsset = useCell(cells.selectedAsset);
+  const recipient = useCell(cells.recipient);
+  const amountWei = useCell(cells.amountWei);
 
   const visibility = amountWei === undefined ? '' : 'invisible';
 
@@ -30,9 +30,9 @@ const BigSendButton: FunctionComponent<{
           className={`${visibility} btn-primary-inner flex flex-row gap-2`}
           {...onAction(async () => {
             if (recipient !== undefined) {
-              await sendDetailCells.recipient.write(undefined);
+              await cells.recipient.write(undefined);
             } else if (selectedAsset !== undefined) {
-              await sendDetailCells.selectedAsset.write(undefined);
+              await cells.selectedAsset.write(undefined);
             } else {
               navigate('/wallets');
             }
