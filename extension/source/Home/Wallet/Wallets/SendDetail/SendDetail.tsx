@@ -1,13 +1,15 @@
 import { FunctionComponent, useMemo, useState } from 'react';
+
 import forEach from '../../../../cells/forEach';
+import ICell from '../../../../cells/ICell';
 import MemoryCell from '../../../../cells/MemoryCell';
 import useCell from '../../../../cells/useCell';
 import assert from '../../../../helpers/assert';
 import AsyncReturnType from '../../../../types/AsyncReturnType';
 import { RpcClient } from '../../../../types/Rpc';
 import { useQuill } from '../../../QuillContext';
-import AmountSelector from './AmountSelector';
 
+import AmountSelector from './AmountSelector';
 import AssetSelector from './AssetSelector';
 import BigSendButton from './BigSendButton';
 import RecipientSelector from './RecipientSelector';
@@ -31,14 +33,20 @@ export type SendState =
     }
   | { step: 'error'; message: string };
 
+export type SendDetailCells = {
+  selectedAsset: ICell<string | undefined>;
+  recipient: ICell<string | undefined>;
+  amountWei: ICell<string | undefined>;
+};
+
 const SendDetail: FunctionComponent = () => {
   const quill = useQuill();
 
-  const cells = useMemo(
+  const cells: SendDetailCells = useMemo(
     () => ({
-      selectedAsset: new MemoryCell<string | undefined>(undefined),
-      recipient: new MemoryCell<string | undefined>(undefined),
-      amountWei: new MemoryCell<string | undefined>(undefined),
+      selectedAsset: new MemoryCell(undefined),
+      recipient: new MemoryCell(undefined),
+      amountWei: new MemoryCell(undefined),
     }),
     [],
   );
@@ -51,11 +59,7 @@ const SendDetail: FunctionComponent = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <BigSendButton
-        selectedAsset={cells.selectedAsset}
-        recipient={cells.recipient}
-        amountWei={cells.amountWei}
-      />
+      <BigSendButton sendDetailCells={cells} />
       {(() => {
         if (selectedAsset === undefined) {
           return <AssetSelector selectedAsset={cells.selectedAsset} />;

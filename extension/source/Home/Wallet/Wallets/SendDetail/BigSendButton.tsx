@@ -2,10 +2,10 @@ import { CaretLeft, X } from 'phosphor-react';
 import { FunctionComponent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import ICell from '../../../../cells/ICell';
 import useCell from '../../../../cells/useCell';
 import formatCompactAddress from '../../../../helpers/formatCompactAddress';
 import onAction from '../../../../helpers/onAction';
+import type { SendDetailCells } from './SendDetail';
 
 const roundFieldClasses = [
   'text-[8pt] bg-blue-100 bg-opacity-40 leading-normal',
@@ -13,17 +13,15 @@ const roundFieldClasses = [
 ].join(' ');
 
 const BigSendButton: FunctionComponent<{
-  selectedAsset: ICell<string | undefined>;
-  recipient: ICell<string | undefined>;
-  amountWei: ICell<string | undefined>;
-}> = ({ selectedAsset, recipient, amountWei }) => {
+  sendDetailCells: SendDetailCells;
+}> = ({ sendDetailCells }) => {
   const navigate = useNavigate();
 
-  const selectedAssetValue = useCell(selectedAsset);
-  const recipientValue = useCell(recipient);
-  const amountWeiValue = useCell(amountWei);
+  const selectedAsset = useCell(sendDetailCells.selectedAsset);
+  const recipient = useCell(sendDetailCells.recipient);
+  const amountWei = useCell(sendDetailCells.amountWei);
 
-  const visibility = amountWeiValue === undefined ? '' : 'invisible';
+  const visibility = amountWei === undefined ? '' : 'invisible';
 
   return (
     <div className="btn-primary-outer justify-center grow leading-10">
@@ -31,10 +29,10 @@ const BigSendButton: FunctionComponent<{
         <div
           className={`${visibility} btn-primary-inner flex flex-row gap-2`}
           {...onAction(async () => {
-            if (recipientValue !== undefined) {
-              await recipient.write(undefined);
-            } else if (selectedAssetValue !== undefined) {
-              await selectedAsset.write(undefined);
+            if (recipient !== undefined) {
+              await sendDetailCells.recipient.write(undefined);
+            } else if (selectedAsset !== undefined) {
+              await sendDetailCells.selectedAsset.write(undefined);
             } else {
               navigate('/wallets');
             }
@@ -45,17 +43,17 @@ const BigSendButton: FunctionComponent<{
         </div>
         <div className="flex grow justify-center py-2 gap-2">
           <div>Send</div>
-          {selectedAssetValue !== undefined && (
+          {selectedAsset !== undefined && (
             <div className="flex flex-col justify-center">
-              <div className={roundFieldClasses}>{selectedAssetValue}</div>
+              <div className={roundFieldClasses}>{selectedAsset}</div>
             </div>
           )}
-          {recipientValue !== undefined && (
+          {recipient !== undefined && (
             <>
               <div>to</div>
               <div className="flex flex-col justify-center">
                 <div className={roundFieldClasses}>
-                  {formatCompactAddress(recipientValue)}
+                  {formatCompactAddress(recipient)}
                 </div>
               </div>
             </>
