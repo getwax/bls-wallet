@@ -26,7 +26,7 @@ const routes: IRoutes[] = [
     detailComponent: <WalletDetail />,
   },
   {
-    name: 'wallets',
+    name: 'send asset',
     path: '/wallets/send',
     summaryComponent: <WalletsWrapper />,
     detailComponent: <SendDetail />,

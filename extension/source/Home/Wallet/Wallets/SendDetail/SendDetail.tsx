@@ -56,6 +56,8 @@ const SendDetail: FunctionComponent = () => {
       <SendDetailSelectors
         cells={cells}
         onSend={async (amountWei) => {
+          cells.amountWei.write(amountWei);
+
           const from = await quill.cells.selectedAddress.read();
           assert(from !== undefined);
 
