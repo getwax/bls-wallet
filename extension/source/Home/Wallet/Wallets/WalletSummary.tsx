@@ -13,7 +13,7 @@ import Button from '../../../components/Button';
 import type { IWallet } from './WalletWrapper';
 import Balance from './Balance';
 import onAction from '../../../helpers/onAction';
-import shortenAddress from './shortenAddress';
+import formatCompactAddress from '../../../helpers/formatCompactAddress';
 
 interface IWalletSummary {
   onAction: () => void;
@@ -60,7 +60,8 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
               px-2 flex place-items-center gap-2 w-28"
               {...onAction(() => navigator.clipboard.writeText(wallet.address))}
             >
-              {shortenAddress(wallet.address)} <Copy className="text-[10pt]" />
+              {formatCompactAddress(wallet.address)}{' '}
+              <Copy className="text-[10pt]" />
             </div>
           </div>
         </div>

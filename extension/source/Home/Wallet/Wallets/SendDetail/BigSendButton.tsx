@@ -1,11 +1,11 @@
 import { CaretLeft, X } from 'phosphor-react';
 import { FunctionComponent } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import ICell from '../../../../cells/ICell';
 import useCell from '../../../../cells/useCell';
-
+import formatCompactAddress from '../../../../helpers/formatCompactAddress';
 import onAction from '../../../../helpers/onAction';
-import shortenAddress from '../shortenAddress';
 
 const roundFieldClasses = [
   'text-[8pt] bg-blue-100 bg-opacity-40 leading-normal',
@@ -55,7 +55,7 @@ const BigSendButton: FunctionComponent<{
               <div>to</div>
               <div className="flex flex-col justify-center">
                 <div className={roundFieldClasses}>
-                  {shortenAddress(recipientValue)}
+                  {formatCompactAddress(recipientValue)}
                 </div>
               </div>
             </>

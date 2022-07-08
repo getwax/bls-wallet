@@ -8,7 +8,7 @@ import Button from '../components/Button';
 import CompactQuillHeading from '../components/CompactQuillHeading';
 import { DEFAULT_CHAIN_ID_HEX } from '../env';
 import { useInputDecode } from '../hooks/useInputDecode';
-import formatCompactAddress from '../Popup/helpers/formatCompactAddress';
+import formatCompactAddress from '../helpers/formatCompactAddress';
 
 const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string>();
