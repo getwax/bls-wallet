@@ -19,11 +19,11 @@ const BigSendButton: FunctionComponent<{
 }> = ({ selectedAsset, recipient, amountWei }) => {
   const navigate = useNavigate();
 
-  const $selectedAsset = useCell(selectedAsset);
-  const $recipient = useCell(recipient);
-  const $amountWei = useCell(amountWei);
+  const selectedAssetValue = useCell(selectedAsset);
+  const recipientValue = useCell(recipient);
+  const amountWeiValue = useCell(amountWei);
 
-  const visibility = $amountWei === undefined ? '' : 'invisible';
+  const visibility = amountWeiValue === undefined ? '' : 'invisible';
 
   return (
     <div className="btn-primary-outer justify-center grow leading-10">
@@ -31,9 +31,9 @@ const BigSendButton: FunctionComponent<{
         <div
           className={`${visibility} btn-primary-inner flex flex-row gap-2`}
           {...onAction(async () => {
-            if ($recipient !== undefined) {
+            if (recipientValue !== undefined) {
               await recipient.write(undefined);
-            } else if ($selectedAsset !== undefined) {
+            } else if (selectedAssetValue !== undefined) {
               await selectedAsset.write(undefined);
             } else {
               navigate('/wallets');
@@ -45,17 +45,17 @@ const BigSendButton: FunctionComponent<{
         </div>
         <div className="flex grow justify-center py-2 gap-2">
           <div>Send</div>
-          {$selectedAsset !== undefined && (
+          {selectedAssetValue !== undefined && (
             <div className="flex flex-col justify-center">
-              <div className={roundFieldClasses}>{$selectedAsset}</div>
+              <div className={roundFieldClasses}>{selectedAssetValue}</div>
             </div>
           )}
-          {$recipient !== undefined && (
+          {recipientValue !== undefined && (
             <>
               <div>to</div>
               <div className="flex flex-col justify-center">
                 <div className={roundFieldClasses}>
-                  {shortenAddress($recipient)}
+                  {shortenAddress(recipientValue)}
                 </div>
               </div>
             </>

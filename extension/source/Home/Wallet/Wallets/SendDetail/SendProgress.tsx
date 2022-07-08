@@ -12,16 +12,16 @@ const SendProgress: FunctionComponent<{ state: SendState }> = ({ state }) => {
   const quill = useQuill();
   const navigate = useNavigate();
 
-  const $blockNumber = useCell(quill.cells.blockNumber);
+  const blockNumber = useCell(quill.cells.blockNumber);
 
   return (
     <div className="flex flex-col gap-4">
       <pre>{JSON.stringify(state, null, 2)}</pre>
-      {$blockNumber && state.step !== 'confirmed' && 'sendBlock' in state && (
-        <pre>Block: Sent + {$blockNumber - state.sendBlock}</pre>
+      {blockNumber && state.step !== 'confirmed' && 'sendBlock' in state && (
+        <pre>Block: Sent + {blockNumber - state.sendBlock}</pre>
       )}
-      {$blockNumber && state.step === 'confirmed' && (
-        <pre>Block: Confirmed + {$blockNumber - state.receipt.blockNumber}</pre>
+      {blockNumber && state.step === 'confirmed' && (
+        <pre>Block: Confirmed + {blockNumber - state.receipt.blockNumber}</pre>
       )}
       <div className="flex flex-row">
         <Button

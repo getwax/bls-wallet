@@ -12,7 +12,7 @@ const AssetSelector: FunctionComponent<{
   selectedAsset: ICell<string | undefined>;
 }> = ({ selectedAsset }) => {
   const quill = useQuill();
-  const $selectedAddress = useCell(quill.cells.selectedAddress);
+  const selectedAddress = useCell(quill.cells.selectedAddress);
 
   return (
     <div className="flex flex-col gap-4">
@@ -28,8 +28,8 @@ const AssetSelector: FunctionComponent<{
         >
           <div className="grow">{/* TODO: icon */}Ether</div>
           <div>
-            {$selectedAddress && <Balance address={$selectedAddress} />}
-            {!$selectedAddress && <Loading />}
+            {selectedAddress && <Balance address={selectedAddress} />}
+            {!selectedAddress && <Loading />}
           </div>
           <ArrowRight className="self-center" size={20} />
         </div>

@@ -16,29 +16,29 @@ const RecipientSelector: FunctionComponent<{
   recipient: ICell<string | undefined>;
 }> = ({ recipient }) => {
   const quill = useQuill();
-  const $selectedAddress = useCell(quill.cells.selectedAddress);
-  const $keyring = useCell(quill.cells.keyring);
+  const selectedAddress = useCell(quill.cells.selectedAddress);
+  const keyring = useCell(quill.cells.keyring);
 
   const searchText = useMemo(() => new MemoryCell(''), []);
-  const $searchText = useCell(searchText);
+  const searchTextValue = useCell(searchText);
 
-  const $searchTextLowercase = ($searchText ?? '').toLowerCase();
+  const searchTextLowercase = (searchTextValue ?? '').toLowerCase();
 
   const recipients = (() => {
-    if ($searchText && ethers.utils.isAddress($searchText)) {
-      return [{ address: $searchText, name: 'Custom Recipient' }];
+    if (searchTextValue && ethers.utils.isAddress(searchTextValue)) {
+      return [{ address: searchTextValue, name: 'Custom Recipient' }];
     }
 
-    return ($keyring?.wallets ?? [])
+    return (keyring?.wallets ?? [])
       .map((wallet, i) => ({
         address: wallet.address,
         name: `Wallet ${i}`,
       }))
-      .filter((r) => r.address !== $selectedAddress)
+      .filter((r) => r.address !== selectedAddress)
       .filter(
         (r) =>
-          r.address.toLowerCase().includes($searchTextLowercase) ||
-          r.name.toLowerCase().includes($searchTextLowercase),
+          r.address.toLowerCase().includes(searchTextLowercase) ||
+          r.name.toLowerCase().includes(searchTextLowercase),
       );
   })();
 
@@ -73,8 +73,8 @@ const RecipientSelector: FunctionComponent<{
               />
               <div className="grow self-center">{r.name}</div>
               <div className="self-center">
-                {$selectedAddress && <Balance address={r.address} />}
-                {!$selectedAddress && <Loading />}
+                {selectedAddress && <Balance address={r.address} />}
+                {!selectedAddress && <Loading />}
               </div>
               <ArrowRight className="self-center" size={20} />
             </div>

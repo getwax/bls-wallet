@@ -43,9 +43,9 @@ const SendDetail: FunctionComponent = () => {
     [],
   );
 
-  const $selectedAsset = useCell(cells.selectedAsset);
-  const $recipient = useCell(cells.recipient);
-  const $amountWei = useCell(cells.amountWei);
+  const selectedAsset = useCell(cells.selectedAsset);
+  const recipient = useCell(cells.recipient);
+  const amountWei = useCell(cells.amountWei);
 
   const [sendState, setSendState] = useState<SendState>();
 
@@ -57,15 +57,15 @@ const SendDetail: FunctionComponent = () => {
         amountWei={cells.amountWei}
       />
       {(() => {
-        if ($selectedAsset === undefined) {
+        if (selectedAsset === undefined) {
           return <AssetSelector selectedAsset={cells.selectedAsset} />;
         }
 
-        if ($recipient === undefined) {
+        if (recipient === undefined) {
           return <RecipientSelector recipient={cells.recipient} />;
         }
 
-        if ($amountWei === undefined) {
+        if (amountWei === undefined) {
           return (
             <AmountSelector
               selectedAsset={cells.selectedAsset}
@@ -75,7 +75,7 @@ const SendDetail: FunctionComponent = () => {
                 const from = await quill.cells.selectedAddress.read();
                 assert(from !== undefined);
 
-                assert($recipient !== undefined);
+                assert(recipient !== undefined);
 
                 try {
                   const sendBlock = await quill.cells.blockNumber.read();
@@ -85,7 +85,7 @@ const SendDetail: FunctionComponent = () => {
 
                   const txHash = await quill.rpc.eth_sendTransaction({
                     from,
-                    to: $recipient,
+                    to: recipient,
                     gas: undefined,
                     gasPrice: undefined,
                     value: wei,
