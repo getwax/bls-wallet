@@ -7,6 +7,7 @@ import DeveloperSettings from './Settings/DeveloperSettings';
 import GeneralSettings from './Settings/GeneralSettings';
 import NetworkSettings from './Settings/NetworkSettings';
 import { SettingsWrapper } from './Settings/SettingsWrapper';
+import SendDetail from './Wallets/SendDetail/SendDetail';
 import { WalletDetail } from './Wallets/WalletDetail';
 import { WalletsWrapper } from './Wallets/WalletWrapper';
 
@@ -23,6 +24,12 @@ const routes: IRoutes[] = [
     path: '/wallets',
     summaryComponent: <WalletsWrapper />,
     detailComponent: <WalletDetail />,
+  },
+  {
+    name: 'send asset',
+    path: '/wallets/send',
+    summaryComponent: <WalletsWrapper />,
+    detailComponent: <SendDetail />,
   },
   {
     name: 'connections',

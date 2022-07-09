@@ -8,6 +8,7 @@ const Button = (props: {
   loading?: boolean;
   children?: ReactNode;
   icon?: IconProps;
+  iconLeft?: IconProps;
 }): ReactElement => {
   const [pressLoading, setPressLoading] = useState(false);
 
@@ -35,6 +36,7 @@ const Button = (props: {
         }
       })}
     >
+      {props.iconLeft && <div>{props.iconLeft}</div>}
       <div>{props.children}</div>
       {props.icon && <div>{props.icon}</div>}
     </div>

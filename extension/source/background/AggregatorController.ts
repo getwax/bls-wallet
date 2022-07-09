@@ -49,7 +49,7 @@ export default class AggregatorController {
         return {
           ethValue: tx.value ?? '0',
           contractAddress: tx.to,
-          encodedFunction: tx.data,
+          encodedFunction: tx.data ?? '0x',
         };
       });
 
@@ -96,7 +96,7 @@ export default class AggregatorController {
         nonce: knownTx.nonce,
         value: knownTx.value,
         gasLimit: '0x0',
-        data: knownTx.data,
+        data: knownTx.data ?? '0x',
       };
     },
     eth_getTransactionReceipt: async ({ params: [hash] }) => {

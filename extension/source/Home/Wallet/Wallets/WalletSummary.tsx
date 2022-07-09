@@ -8,10 +8,12 @@ import {
   // PokerChip,
   // Circle,
 } from 'phosphor-react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../../components/Button';
 import type { IWallet } from './WalletWrapper';
 import Balance from './Balance';
 import onAction from '../../../helpers/onAction';
+import formatCompactAddress from '../../../helpers/formatCompactAddress';
 
 interface IWalletSummary {
   onAction: () => void;
@@ -19,15 +21,13 @@ interface IWalletSummary {
   wallet: IWallet;
 }
 
-const addressShortner = (address: string) => {
-  return `${address.slice(0, 6)}...${address.slice(38)}`;
-};
-
 export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
   onAction: onActionParam,
   expanded = false,
   wallet,
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div
       className={`p-4 rounded-lg
@@ -60,7 +60,8 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
               px-2 flex place-items-center gap-2 w-28"
               {...onAction(() => navigator.clipboard.writeText(wallet.address))}
             >
-              {addressShortner(wallet.address)} <Copy className="text-[10pt]" />
+              {formatCompactAddress(wallet.address)}{' '}
+              <Copy className="text-[10pt]" />
             </div>
           </div>
         </div>
@@ -75,7 +76,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
         <div className="mt-6">
           <div className="flex gap-2">
             <Button
-              onPress={() => {}}
+              onPress={() => navigate('/wallets/send')}
               className="btn-primary"
               icon={<PaperPlaneTilt className="icon-md" />}
             >
