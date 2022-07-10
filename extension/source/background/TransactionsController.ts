@@ -1,9 +1,9 @@
+import { v4 as uuidv4 } from 'uuid';
+import { windows, runtime } from 'webextension-polyfill';
 import ensureType from '../helpers/ensureType';
 import QuillStorageCells from '../QuillStorageCells';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
-import { v4 as uuidv4 } from 'uuid';
 import assert from '../helpers/assert';
-import { windows, runtime } from 'webextension-polyfill';
 import TaskQueue from '../helpers/TaskQueue';
 import getPropOrUndefined from '../helpers/getPropOrUndefined';
 
@@ -132,9 +132,8 @@ export default class TransactionsController {
 
       if (transaction) {
         return transaction;
-      } else {
-        throw new Error('Transaction not found');
       }
+      throw new Error('Transaction not found');
     },
 
     getTransactionByHash: async ({ params: [hash] }) => {
@@ -143,9 +142,8 @@ export default class TransactionsController {
 
       if (transaction) {
         return transaction;
-      } else {
-        throw new Error('Transaction not found');
       }
+      throw new Error('Transaction not found');
     },
 
     updateTransactionStatus: async ({ params: [id, status] }) => {
@@ -181,6 +179,8 @@ export default class TransactionsController {
             if (transaction?.status === TransactionStatus.APPROVED) {
               transaction.status = status;
             }
+            break;
+          default:
             break;
         }
 

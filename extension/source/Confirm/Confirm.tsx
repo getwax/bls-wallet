@@ -2,12 +2,13 @@ import { FunctionComponent, useEffect, useState } from 'react';
 import { runtime, storage } from 'webextension-polyfill';
 
 // components, styles and UI
+import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
+import { ethers } from 'ethers';
 import Button from '../components/Button';
 import { TransactionStatus } from '../background/TransactionsController';
-import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
 import { SendTransactionParams } from '../types/Rpc';
 import TransactionCard from './TransactionCard';
-import { ethers } from 'ethers';
+import onAction from '../helpers/onAction';
 
 const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string | null>();
@@ -16,21 +17,19 @@ const Confirm: FunctionComponent = () => {
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;
-    const id = params.get('id');
-    setId(id);
+    const txid = params.get('id');
+    setId(txid);
 
     const fetchTx = async () => {
       const data = await storage.local.get('transactions');
       const tx = data.transactions.value.outgoing.find(
-        (tx: any) => tx.id === id,
+        (t: any) => t.id === txid,
       );
-      console.log({ data, tx });
-
       setActions(tx.actions);
     };
 
     fetchTx();
-  }, [window.location]);
+  }, []);
 
   const respondTx = (result: string) => {
     runtime.sendMessage(undefined, { id, result });
@@ -43,8 +42,8 @@ const Confirm: FunctionComponent = () => {
     setCurrent((current - 1) % actions.length);
   };
 
-  const calculateTotal = (actions: SendTransactionParams[]) => {
-    const total = actions.reduce(
+  const calculateTotal = (allActions: SendTransactionParams[]) => {
+    const total = allActions.reduce(
       (acc, cur) => acc.add(ethers.BigNumber.from(cur.value)),
       ethers.BigNumber.from(0),
     );
@@ -60,7 +59,7 @@ const Confirm: FunctionComponent = () => {
         <div className="">
           {/* site info */}
           <div className="flex gap-4">
-            <div className="h-10 w-10 bg-grey-400 rounded-full"></div>
+            <div className="h-10 w-10 bg-grey-400 rounded-full" />
             <div className="leading-5">
               <div className="">AppName</div>
               <div className="text-blue-400">https://app-url.com/</div>
@@ -75,13 +74,13 @@ const Confirm: FunctionComponent = () => {
             {current + 1} of {actions?.length}
             <div
               className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer"
-              onClick={prevTx}
+              {...onAction(prevTx)}
             >
               <CaretLeft size={20} className="self-center" />
             </div>
             <div
               className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer"
-              onClick={nextTx}
+              {...onAction(nextTx)}
             >
               <CaretRight size={20} className="self-center" />
             </div>
