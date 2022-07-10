@@ -17,7 +17,7 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
   const { loading, method } = useInputDecode(data || '0x', to);
 
   return (
-    <div className="bg-white rounded-md p-4 border">
+    <div className="bg-white rounded-md p-4 border border-blue-400">
       <div className="flex gap-4 w-full justify-between">
         <Blockies seed={from} className="rounded-md" size={5} scale={8} />
         <div className="flex justify-between flex-grow align-middle">
@@ -41,25 +41,25 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
         </div>
       </div>
 
-      <div className="flex mt-6">
-        <div className="w-60">
+      <div className="flex mt-6 gap-3">
+        <div className="w-60 border-r border-grey-400">
           <div>ETH Value</div>
-          <div className="break-all font-bold">
+          <div className="break-all text-[9.5pt] font-bold">
             {ethers.utils.formatEther(value || '0x0')}
           </div>
         </div>
 
-        <div className="w-60">
-          <div>Gas</div>
-          <div className="break-all font-bold">
-            {ethers.utils.formatEther(gas || '0x0')}
+        <div className="w-60 border-r border-grey-400">
+          <div>Gas Price</div>
+          <div className="break-all text-[9.5pt] font-bold">
+            {ethers.utils.formatUnits(gasPrice || '0x0', 'gwei')} gwei
           </div>
         </div>
 
         <div className="w-60">
-          <div>Gas Price</div>
-          <div className="break-all font-bold">
-            {ethers.utils.formatEther(gasPrice || '0x0')}
+          <div>Gas usage</div>
+          <div className="break-all text-[9.5pt] font-bold">
+            {ethers.utils.formatUnits(gas || '0x0', 'wei')} wei
           </div>
         </div>
       </div>
