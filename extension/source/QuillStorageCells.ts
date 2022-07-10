@@ -14,7 +14,6 @@ import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
 import { SendTransactionParams } from './types/Rpc';
-import { TransactionStatus } from './background/TransactionsController';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking

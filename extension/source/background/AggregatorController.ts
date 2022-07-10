@@ -70,34 +70,37 @@ export default class AggregatorController {
         .requestTransaction(...params);
 
       if (userAction === TransactionStatus.APPROVED) {
-        console.log(userAction);
+        // const nonce = (await wallet.Nonce()).toString();
+        const nonce = (
+          await BlsWalletWrapper.Nonce(
+            await wallet.PublicKey(),
+            NETWORK_CONFIG.addresses.verificationGateway,
+            this.ethersProvider,
+          )
+        ).toString();
+        const bundle = await wallet.sign({ nonce, actions });
+
+        const aggregatorUrl =
+          this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
+        const agg = new Aggregator(aggregatorUrl);
+        const result = await agg.add(bundle);
+
+        assert(
+          !('failures' in result),
+          () => new Error(JSON.stringify(result)),
+        );
+
+        this.knownTransactions[result.hash] = {
+          ...params[0],
+          nonce,
+          value: params[0].value ?? '0',
+          aggregatorUrl,
+        };
+
+        return result.hash;
       }
 
-      // const nonce = (await wallet.Nonce()).toString();
-      const nonce = (
-        await BlsWalletWrapper.Nonce(
-          await wallet.PublicKey(),
-          NETWORK_CONFIG.addresses.verificationGateway,
-          this.ethersProvider,
-        )
-      ).toString();
-      const bundle = await wallet.sign({ nonce, actions });
-
-      const aggregatorUrl =
-        this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
-      const agg = new Aggregator(aggregatorUrl);
-      const result = await agg.add(bundle);
-
-      assert(!('failures' in result), () => new Error(JSON.stringify(result)));
-
-      this.knownTransactions[result.hash] = {
-        ...params[0],
-        nonce,
-        value: params[0].value ?? '0',
-        aggregatorUrl,
-      };
-
-      return result.hash;
+      return '';
     },
     eth_getTransactionByHash: async ({ params: [hash] }) => {
       const knownTx = this.knownTransactions[hash];

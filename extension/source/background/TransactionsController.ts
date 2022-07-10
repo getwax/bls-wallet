@@ -40,7 +40,7 @@ export default class TransactionsController {
             }
 
             const popup = await windows.create({
-              url: runtime.getURL(`confirm.html?&id=${id}`),
+              url: runtime.getURL(`confirm.html?id=${id}`),
               type: 'popup',
               width: popupWidth,
               height: 700,

@@ -1,22 +1,45 @@
 import { FunctionComponent, useEffect, useState } from 'react';
-import { runtime } from 'webextension-polyfill';
+import { runtime, storage } from 'webextension-polyfill';
 
 // components, styles and UI
 import Button from '../components/Button';
 import { TransactionStatus } from '../background/TransactionsController';
 import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
+import { SendTransactionParams } from '../types/Rpc';
 import TransactionCard from './TransactionCard';
 
 const Confirm: FunctionComponent = () => {
-  const [id, setId] = useState<string>();
+  const [id, setId] = useState<string | null>();
+  const [actions, setActions] = useState<SendTransactionParams[]>([]);
+  const [current, setCurrent] = useState<number>(0);
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;
-    setId(params.get('id') || '0');
-  }, []);
+    const id = params.get('id');
+    setId(id);
+
+    const fetchTx = async () => {
+      const data = await storage.local.get('transactions');
+      const tx = data.transactions.value.outgoing.find(
+        (tx: any) => tx.id === id,
+      );
+      console.log({ data, tx });
+
+      setActions(tx.actions);
+    };
+
+    fetchTx();
+  }, [window.location]);
 
   const respondTx = (result: string) => {
     runtime.sendMessage(undefined, { id, result });
+  };
+
+  const nextTx = () => {
+    setCurrent((current + 1) % actions.length);
+  };
+  const prevTx = () => {
+    setCurrent((current - 1) % actions.length);
   };
 
   return (
@@ -38,26 +61,34 @@ const Confirm: FunctionComponent = () => {
 
         <div className="mt-4">AppName is making requests to your wallet</div>
 
-        <div className="mt-4 flex justify-end text-body self-center gap-3">
-          1 of 3
-          <div className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer">
-            <CaretLeft size={20} className="self-center" />
+        {actions.length > 1 && (
+          <div className="mt-4 flex justify-end text-body self-center gap-3">
+            {current + 1} of {actions?.length}
+            <div
+              className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer"
+              onClick={prevTx}
+            >
+              <CaretLeft size={20} className="self-center" />
+            </div>
+            <div
+              className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer"
+              onClick={nextTx}
+            >
+              <CaretRight size={20} className="self-center" />
+            </div>
           </div>
-          <div className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer">
-            <CaretRight size={20} className="self-center" />
-          </div>
-        </div>
+        )}
 
         <div className="flex flex-col">
           <div className="mt-4">
-            <TransactionCard />
+            {actions[current] && <TransactionCard {...actions[current]} />}
           </div>
 
           <div className="mt-4 p-4 bg-grey-300 rounded-md flex justify-between h-20">
             <div className="">Total Transaction Fees</div>
             <div className="text-right">
-              <div className="font-bold">USD $0.32</div>
-              <div className="">0.0000012 ETH</div>
+              <div className="font-bold">USD $0.0</div>
+              <div className="">0.00 ETH</div>
             </div>
           </div>
         </div>
