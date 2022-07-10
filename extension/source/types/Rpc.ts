@@ -125,6 +125,52 @@ export const rpcMap = {
     Response: io.void,
   },
 
+  // TransactionController
+  createTransaction: {
+    origin: '*',
+    Params: io.array(SendTransactionParams),
+    Response: io.string,
+  },
+  getTransactionById: {
+    origin: '*',
+    Params: io.array(io.string),
+    Response: io.type({
+      id: io.string,
+      chainId: io.string,
+      from: io.string,
+      status: io.string,
+      createdAt: io.number,
+      actions: io.array(SendTransactionParams),
+    }),
+  },
+  getTransactionByHash: {
+    origin: '*',
+    Params: io.array(io.string),
+    Response: io.type({
+      id: io.string,
+      chainId: io.string,
+      from: io.string,
+      status: io.string,
+      createdAt: io.number,
+      actions: io.array(SendTransactionParams),
+    }),
+  },
+  updateTransactionStatus: {
+    origin: '<quill>',
+    Params: io.tuple([io.string, io.string]),
+    Response: io.void,
+  },
+  promptUser: {
+    origin: '*',
+    Params: io.array(io.string),
+    Response: io.unknown,
+  },
+  requestTransaction: {
+    origin: '*',
+    Params: io.array(SendTransactionParams),
+    Response: io.unknown,
+  },
+
   // AggregatorController
 
   eth_sendTransaction: {

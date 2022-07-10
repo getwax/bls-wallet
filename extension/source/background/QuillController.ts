@@ -29,10 +29,12 @@ import RandomId from '../helpers/RandomId';
 import mapValues from '../helpers/mapValues';
 import LongPollingController from './LongPollingController';
 import isPermittedOrigin from './isPermittedOrigin';
+import TransactionsController from './TransactionsController';
 
 export default class QuillController {
   networkController: NetworkController;
   keyringController: KeyringController;
+  transactionsController: TransactionsController;
   preferencesController: PreferencesController;
   aggregatorController: AggregatorController;
   longPollingController: LongPollingController;
@@ -78,10 +80,17 @@ export default class QuillController {
       this.ethersProvider,
     );
 
+    this.transactionsController = new TransactionsController(
+      () => this.internalRpc,
+      this.cells.transactions,
+      this.cells.selectedAddress,
+    );
+
     this.aggregatorController = new AggregatorController(
       () => this.internalRpc,
       this.networkController,
       this.keyringController,
+      this.transactionsController,
       this.ethersProvider,
     );
 
@@ -148,6 +157,16 @@ export default class QuillController {
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
       removeAccount: this.keyringController.rpc.removeAccount,
+
+      // TransactionsController
+      createTransaction: this.transactionsController.rpc.createTransaction,
+      getTransactionById: this.transactionsController.rpc.getTransactionById,
+      getTransactionByHash:
+        this.transactionsController.rpc.getTransactionByHash,
+      updateTransactionStatus:
+        this.transactionsController.rpc.updateTransactionStatus,
+      promptUser: this.transactionsController.rpc.promptUser,
+      requestTransaction: this.transactionsController.rpc.requestTransaction,
 
       debugMe: async ({ params: [a, b, c] }) => {
         console.log('debugMe', { a, b, c });

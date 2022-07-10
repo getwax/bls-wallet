@@ -9,28 +9,28 @@ import CompactQuillHeading from '../components/CompactQuillHeading';
 import { DEFAULT_CHAIN_ID_HEX } from '../env';
 import { useInputDecode } from '../hooks/useInputDecode';
 import formatCompactAddress from '../helpers/formatCompactAddress';
+import { TransactionStatus } from '../background/TransactionsController';
+import { useQuill } from '../Home/QuillContext';
+import useCell from '../cells/useCell';
 
 const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string>();
-  const [to, setTo] = useState<string>('0x');
-  const [value, setValue] = useState<string>('0');
-  const [data, setData] = useState<string>('0x');
+  const quill = useQuill();
 
-  // TODO (merge-ok) update component to work across multiple chains/networks
-  const chainId = DEFAULT_CHAIN_ID_HEX;
-  const { loading, method } = useInputDecode(data, to, chainId);
+  const data = '0x';
+  const to = '0x';
+  const value = '0x';
 
-  const cleanupTasks = useMemo(() => new TaskQueue(), []);
+  const { loading, method } = useInputDecode(data, to, '0xa');
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;
     setId(params.get('id') || '0');
-    setTo(params.get('to') || '0x');
-    setValue(params.get('value') || '0');
-    setData(params.get('data') || '0x');
 
-    return cleanupTasks.run();
-  }, [cleanupTasks]);
+    // const allTransactions = useCell(quill.cells.transactions);
+    // const transaction = allTransactions?.outgoing.find((t) => t.id === id);
+    // console.log(transaction);
+  }, []);
 
   const respondTx = (result: string) => {
     runtime.sendMessage(undefined, { id, result });
@@ -54,10 +54,16 @@ const Confirm: FunctionComponent = () => {
               <div className="data">{data}</div>
             </div>
 
-            <Button className="btn-primary" onPress={() => respondTx('Yes')}>
+            <Button
+              className="btn-primary"
+              onPress={() => respondTx(TransactionStatus.APPROVED)}
+            >
               Confirm
             </Button>
-            <Button className="btn-secondary" onPress={() => respondTx('No')}>
+            <Button
+              className="btn-secondary"
+              onPress={() => respondTx(TransactionStatus.REJECTED)}
+            >
               Reject
             </Button>
           </>

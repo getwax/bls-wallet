@@ -10,6 +10,9 @@ import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 import optional from '../types/optional';
+import TransactionsController, {
+  TransactionStatus,
+} from './TransactionsController';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -30,6 +33,7 @@ export default class AggregatorController {
     public InternalRpc: () => RpcClient,
     public networkController: NetworkController,
     public keyringController: KeyringController,
+    public transactionsController: TransactionsController,
     public ethersProvider: ethers.providers.Provider,
   ) {}
 
@@ -61,7 +65,22 @@ export default class AggregatorController {
         this.ethersProvider,
       );
 
-      const nonce = (await wallet.Nonce()).toString();
+      const userAction = await this.transactionsController
+        .InternalRpc()
+        .requestTransaction(...params);
+
+      if (userAction === TransactionStatus.APPROVED) {
+        console.log(userAction);
+      }
+
+      // const nonce = (await wallet.Nonce()).toString();
+      const nonce = (
+        await BlsWalletWrapper.Nonce(
+          await wallet.PublicKey(),
+          NETWORK_CONFIG.addresses.verificationGateway,
+          this.ethersProvider,
+        )
+      ).toString();
       const bundle = await wallet.sign({ nonce, actions });
 
       const aggregatorUrl =

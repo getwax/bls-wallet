@@ -13,7 +13,7 @@
     "useDefineForClassFields": true,
     "skipLibCheck": true,
     "jsx": "preserve",
-
+    "noUnusedLocals": false
   },
   "include": ["source", "webpack.config.js"]
 }

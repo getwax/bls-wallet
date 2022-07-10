@@ -13,6 +13,8 @@ import AsyncReturnType from './types/AsyncReturnType';
 import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
+import { SendTransactionParams } from './types/Rpc';
+import { TransactionStatus } from './background/TransactionsController';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
@@ -48,6 +50,23 @@ function QuillStorageCells(storage: CellCollection) {
         nextHDIndex: 0,
         wallets: [],
       }),
+    ),
+    transactions: storage.Cell(
+      'transactions',
+      io.type({
+        outgoing: io.array(
+          io.type({
+            id: io.string,
+            chainId: io.string,
+            from: io.string,
+            status: io.string,
+            createdAt: io.number,
+            bundleHash: io.string,
+            actions: io.array(SendTransactionParams),
+          }),
+        ),
+      }),
+      () => ({ outgoing: [] }),
     ),
     network: storage.Cell('network', ProviderConfig, () => {
       const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
