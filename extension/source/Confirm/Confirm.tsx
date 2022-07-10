@@ -7,6 +7,7 @@ import { TransactionStatus } from '../background/TransactionsController';
 import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
 import { SendTransactionParams } from '../types/Rpc';
 import TransactionCard from './TransactionCard';
+import { ethers } from 'ethers';
 
 const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string | null>();
@@ -40,6 +41,14 @@ const Confirm: FunctionComponent = () => {
   };
   const prevTx = () => {
     setCurrent((current - 1) % actions.length);
+  };
+
+  const calculateTotal = (actions: SendTransactionParams[]) => {
+    const total = actions.reduce(
+      (acc, cur) => acc.add(ethers.BigNumber.from(cur.value)),
+      ethers.BigNumber.from(0),
+    );
+    return ethers.utils.formatEther(total);
   };
 
   return (
@@ -88,7 +97,7 @@ const Confirm: FunctionComponent = () => {
             <div className="">Total Transaction Fees</div>
             <div className="text-right">
               <div className="font-bold">USD $0.0</div>
-              <div className="">0.00 ETH</div>
+              <div className="">{calculateTotal(actions)} ETH</div>
             </div>
           </div>
         </div>

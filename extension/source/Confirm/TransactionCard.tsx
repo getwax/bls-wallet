@@ -4,6 +4,7 @@ import Blockies from 'react-blockies';
 import formatCompactAddress from '../helpers/formatCompactAddress';
 import { ArrowRight } from 'phosphor-react';
 import { useInputDecode } from '../hooks/useInputDecode';
+import { ethers } from 'ethers';
 
 const TransactionCard: React.FC<SendTransactionParams> = ({
   data,
@@ -43,17 +44,23 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
       <div className="flex mt-6">
         <div className="w-60">
           <div>ETH Value</div>
-          <div className="break-all font-bold">{value || '0x0'}</div>
+          <div className="break-all font-bold">
+            {ethers.utils.formatEther(value || '0x0')}
+          </div>
         </div>
 
         <div className="w-60">
           <div>Gas</div>
-          <div className="break-all font-bold">{gas || '0x0'}</div>
+          <div className="break-all font-bold">
+            {ethers.utils.formatEther(gas || '0x0')}
+          </div>
         </div>
 
         <div className="w-60">
           <div>Gas Price</div>
-          <div className="break-all font-bold">{gasPrice || '0x0'}</div>
+          <div className="break-all font-bold">
+            {ethers.utils.formatEther(gasPrice || '0x0')}
+          </div>
         </div>
       </div>
     </div>
