@@ -143,27 +143,44 @@ export default class TransactionsController {
     },
 
     updateTransactionStatus: async ({ params: [id, status] }) => {
-      const transaction = await this.InternalRpc().getTransactionById(id);
+      const { outgoing: transactions } = await this.transactions.read();
+      const transaction = transactions.find((t) => t.id === id);
 
-      switch (status) {
-        // move to APPROVED only if status was NEW
-        case TransactionStatus.APPROVED || TransactionStatus.REJECTED:
-          if (transaction.status === TransactionStatus.NEW) {
-            transaction.status = status;
-          }
-          break;
-        // move to CANCELLED only if status was APPROVED
-        case TransactionStatus.CANCELLED:
-          if (transaction.status === TransactionStatus.APPROVED) {
-            transaction.status = status;
-          }
-          break;
-        // move to CONFIRM or FAILED only if status was APPROVED
-        case TransactionStatus.CONFIRMED || TransactionStatus.FAILED:
-          if (transaction.status === TransactionStatus.APPROVED) {
-            transaction.status = status;
-          }
-          break;
+      if (transaction) {
+        switch (status) {
+          // move to APPROVED or REJECTED only if status was NEW
+          case TransactionStatus.APPROVED:
+            if (transaction?.status === TransactionStatus.NEW) {
+              transaction.status = status;
+            }
+            break;
+          case TransactionStatus.REJECTED:
+            if (transaction?.status === TransactionStatus.NEW) {
+              transaction.status = status;
+            }
+            break;
+          // move to CANCELLED only if status was APPROVED
+          case TransactionStatus.CANCELLED:
+            if (transaction?.status === TransactionStatus.APPROVED) {
+              transaction.status = status;
+            }
+            break;
+          // move to CONFIRM or FAILED only if status was APPROVED
+          case TransactionStatus.CONFIRMED:
+            if (transaction?.status === TransactionStatus.APPROVED) {
+              transaction.status = status;
+            }
+            break;
+          case TransactionStatus.FAILED:
+            if (transaction?.status === TransactionStatus.APPROVED) {
+              transaction.status = status;
+            }
+            break;
+        }
+
+        const updatedTx = transactions.filter((t) => t.id !== id);
+        updatedTx.push(transaction);
+        await this.transactions.update({ outgoing: updatedTx });
       }
     },
   });

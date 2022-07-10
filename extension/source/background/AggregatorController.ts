@@ -100,6 +100,7 @@ export default class AggregatorController {
         return result.hash;
       }
 
+      // TODO - FIX error when tx is rejected and this does not return a hash
       return '';
     },
     eth_getTransactionByHash: async ({ params: [hash] }) => {
