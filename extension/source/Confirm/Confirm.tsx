@@ -1,35 +1,18 @@
-import { ethers } from 'ethers';
-import { FunctionComponent, useEffect, useMemo, useState } from 'react';
+import { FunctionComponent, useEffect, useState } from 'react';
 import { runtime } from 'webextension-polyfill';
-import TaskQueue from '../helpers/TaskQueue';
 
 // components, styles and UI
 import Button from '../components/Button';
-import CompactQuillHeading from '../components/CompactQuillHeading';
-import { DEFAULT_CHAIN_ID_HEX } from '../env';
-import { useInputDecode } from '../hooks/useInputDecode';
-import formatCompactAddress from '../helpers/formatCompactAddress';
 import { TransactionStatus } from '../background/TransactionsController';
-import { useQuill } from '../Home/QuillContext';
-import useCell from '../cells/useCell';
+import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
+import TransactionCard from './TransactionCard';
 
 const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string>();
-  const quill = useQuill();
-
-  const data = '0x';
-  const to = '0x';
-  const value = '0x';
-
-  const { loading, method } = useInputDecode(data, to, '0xa');
 
   useEffect(() => {
     const params = new URL(window.location.href).searchParams;
     setId(params.get('id') || '0');
-
-    // const allTransactions = useCell(quill.cells.transactions);
-    // const transaction = allTransactions?.outgoing.find((t) => t.id === id);
-    // console.log(transaction);
   }, []);
 
   const respondTx = (result: string) => {
@@ -37,37 +20,66 @@ const Confirm: FunctionComponent = () => {
   };
 
   return (
-    <div className="confirm">
-      <div className="section">
-        <CompactQuillHeading />
+    <div className="flex flex-col justify-between h-screen bg-grey-200">
+      <div className="p-4 flex justify-between text-white bg-blue-700">
+        Transaction request
       </div>
-      <div className="section prompt">
-        {loading ? (
-          'loading...'
-        ) : (
-          <>
-            <div>{method}</div>
-            <div>to: {formatCompactAddress(to)}</div>
-            <div>value: {ethers.utils.formatEther(value)} ETH</div>
-            <div>
-              data:
-              <div className="data">{data}</div>
+      <div className="flex-grow p-4">
+        <div className="">
+          {/* site info */}
+          <div className="flex gap-4">
+            <div className="h-10 w-10 bg-grey-400 rounded-full"></div>
+            <div className="leading-5">
+              <div className="">AppName</div>
+              <div className="text-blue-400">https://app-url.com/</div>
             </div>
+          </div>
+        </div>
 
-            <Button
-              className="btn-primary"
-              onPress={() => respondTx(TransactionStatus.APPROVED)}
-            >
-              Confirm
-            </Button>
-            <Button
-              className="btn-secondary"
-              onPress={() => respondTx(TransactionStatus.REJECTED)}
-            >
-              Reject
-            </Button>
-          </>
-        )}
+        <div className="mt-4">AppName is making requests to your wallet</div>
+
+        <div className="mt-4 flex justify-end text-body self-center gap-3">
+          1 of 3
+          <div className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer">
+            <CaretLeft size={20} className="self-center" />
+          </div>
+          <div className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer">
+            <CaretRight size={20} className="self-center" />
+          </div>
+        </div>
+
+        <div className="flex flex-col">
+          <div className="mt-4">
+            <TransactionCard />
+          </div>
+
+          <div className="mt-4 p-4 bg-grey-300 rounded-md flex justify-between h-20">
+            <div className="">Total Transaction Fees</div>
+            <div className="text-right">
+              <div className="font-bold">USD $0.32</div>
+              <div className="">0.0000012 ETH</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex bg-white p-4 justify-between">
+        <Button
+          className="btn-secondary"
+          onPress={() => respondTx(TransactionStatus.REJECTED)}
+        >
+          <div className="flex justify-between gap-3">
+            Reject All <X size={20} className="self-center" />
+          </div>
+        </Button>
+
+        <Button
+          className="btn-primary"
+          onPress={() => respondTx(TransactionStatus.APPROVED)}
+        >
+          <div className="flex justify-between gap-3">
+            Confirm All <Check size={20} className="self-center" />
+          </div>
+        </Button>
       </div>
     </div>
   );

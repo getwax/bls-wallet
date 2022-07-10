@@ -32,7 +32,7 @@ export default class TransactionsController {
           (async () => {
             const lastWin = await windows.getLastFocused();
 
-            const popupWidth = 359;
+            const popupWidth = 400;
             let left: number | undefined;
 
             if (lastWin.width !== undefined && lastWin.left !== undefined) {
@@ -43,7 +43,7 @@ export default class TransactionsController {
               url: runtime.getURL(`confirm.html?&id=${id}`),
               type: 'popup',
               width: popupWidth,
-              height: 500,
+              height: 700,
               left,
             });
 
