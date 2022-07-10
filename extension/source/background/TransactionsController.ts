@@ -92,7 +92,13 @@ export default class TransactionsController {
         createdAt: +new Date(),
         status: TransactionStatus.NEW,
         bundleHash: '',
-        actions: params,
+        actions: params.map((p) => {
+          return {
+            ...p,
+            value: p.value || '0x0',
+            gasPrice: p.gasPrice || '0x0',
+          };
+        }),
       };
 
       const { outgoing: transactions } = await this.transactions.read();
