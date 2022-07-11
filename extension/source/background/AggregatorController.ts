@@ -39,7 +39,7 @@ export default class AggregatorController {
     eth_sendTransaction: async (request) => {
       const { providerId, params } = request;
 
-      const userAction = await this.InternalRpc().requestTransaction(...params);
+      await this.InternalRpc().requestTransaction(...params);
 
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!
@@ -65,39 +65,31 @@ export default class AggregatorController {
         this.ethersProvider,
       );
 
-      if (userAction === 'approved') {
-        // const nonce = (await wallet.Nonce()).toString();
-        const nonce = (
-          await BlsWalletWrapper.Nonce(
-            await wallet.PublicKey(),
-            NETWORK_CONFIG.addresses.verificationGateway,
-            this.ethersProvider,
-          )
-        ).toString();
-        const bundle = await wallet.sign({ nonce, actions });
+      // const nonce = (await wallet.Nonce()).toString();
+      const nonce = (
+        await BlsWalletWrapper.Nonce(
+          await wallet.PublicKey(),
+          NETWORK_CONFIG.addresses.verificationGateway,
+          this.ethersProvider,
+        )
+      ).toString();
+      const bundle = await wallet.sign({ nonce, actions });
 
-        const aggregatorUrl =
-          this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
-        const agg = new Aggregator(aggregatorUrl);
-        const result = await agg.add(bundle);
+      const aggregatorUrl =
+        this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
+      const agg = new Aggregator(aggregatorUrl);
+      const result = await agg.add(bundle);
 
-        assert(
-          !('failures' in result),
-          () => new Error(JSON.stringify(result)),
-        );
+      assert(!('failures' in result), () => new Error(JSON.stringify(result)));
 
-        this.knownTransactions[result.hash] = {
-          ...params[0],
-          nonce,
-          value: params[0].value ?? '0',
-          aggregatorUrl,
-        };
+      this.knownTransactions[result.hash] = {
+        ...params[0],
+        nonce,
+        value: params[0].value ?? '0',
+        aggregatorUrl,
+      };
 
-        return result.hash;
-      }
-
-      // TODO - FIX error when tx is rejected and this does not return a hash
-      return '';
+      return result.hash;
     },
     eth_getTransactionByHash: async ({ params: [hash] }) => {
       const knownTx = this.knownTransactions[hash];
