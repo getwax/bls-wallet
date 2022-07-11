@@ -31,6 +31,29 @@ export const SendTransactionParams = io.type({
 
 export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
 
+export const TransactionStatus = io.union([
+  io.literal('new'),
+  io.literal('approved'),
+  io.literal('rejected'),
+  io.literal('cancelled'),
+  io.literal('confirmed'),
+  io.literal('failed'),
+]);
+
+export type TransactionStatus = io.TypeOf<typeof TransactionStatus>;
+
+export const QuillTransaction = io.type({
+  id: io.string,
+  chainId: io.string,
+  from: io.string,
+  status: TransactionStatus,
+  createdAt: io.number,
+  bundleHash: io.string,
+  actions: io.array(SendTransactionParams),
+});
+
+export type QuillTransaction = io.TypeOf<typeof QuillTransaction>;
+
 export const rpcMap = {
   // QuillController
   // - ALL rpc methods are technically implemented by QuillController. It
@@ -157,7 +180,7 @@ export const rpcMap = {
   },
   updateTransactionStatus: {
     origin: '<quill>',
-    Params: io.tuple([io.string, io.string]),
+    Params: io.tuple([io.string, TransactionStatus]),
     Response: io.void,
   },
   promptUser: {

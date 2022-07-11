@@ -1,11 +1,13 @@
 import * as io from 'io-ts';
 import { windows, runtime } from 'webextension-polyfill';
 import ensureType from '../helpers/ensureType';
-import QuillStorageCells, {
+import QuillStorageCells from '../QuillStorageCells';
+import {
+  PartialRpcImpl,
   QuillTransaction,
+  RpcClient,
   TransactionStatus,
-} from '../QuillStorageCells';
-import { PartialRpcImpl, RpcClient } from '../types/Rpc';
+} from '../types/Rpc';
 import assert from '../helpers/assert';
 import TaskQueue from '../helpers/TaskQueue';
 import RandomId from '../helpers/RandomId';
@@ -149,44 +151,37 @@ export default class TransactionsController {
       const { outgoing: transactions } = await this.transactions.read();
       const transaction = transactions.find((t) => t.id === id);
 
-      if (transaction) {
-        switch (status) {
-          // move to APPROVED or REJECTED only if status was NEW
-          case 'approved':
-            if (transaction?.status === 'new') {
-              transaction.status = status;
-            }
-            break;
-          case 'rejected':
-            if (transaction?.status === 'new') {
-              transaction.status = status;
-            }
-            break;
-          // move to CANCELLED only if status was APPROVED
-          case 'cancelled':
-            if (transaction?.status === 'approved') {
-              transaction.status = status;
-            }
-            break;
-          // move to CONFIRM or FAILED only if status was APPROVED
-          case 'confirmed':
-            if (transaction?.status === 'approved') {
-              transaction.status = status;
-            }
-            break;
-          case 'failed':
-            if (transaction?.status === 'approved') {
-              transaction.status = status;
-            }
-            break;
-          default:
-            break;
-        }
+      assert(
+        transaction !== undefined,
+        () => new Error('Transaction not found'),
+      );
 
-        const updatedTx = transactions.filter((t) => t.id !== id);
-        updatedTx.push(transaction);
-        await this.transactions.update({ outgoing: updatedTx });
-      }
+      const validTransitions: Partial<
+        Record<TransactionStatus, TransactionStatus[]>
+      > = {
+        new: ['approved', 'rejected'],
+        approved: ['cancelled', 'confirmed', 'failed'],
+      };
+
+      const currentValidTransitions =
+        validTransitions[transaction.status] ?? [];
+
+      assert(
+        currentValidTransitions.includes(status),
+        () =>
+          new Error(
+            [
+              `Forbidden transaction status transition:`,
+              `${transaction.status} -> ${status}`,
+            ].join(' '),
+          ),
+      );
+
+      transaction.status = status;
+
+      const updatedTx = transactions.filter((t) => t.id !== id);
+      updatedTx.push(transaction);
+      await this.transactions.update({ outgoing: updatedTx });
     },
   });
 }
