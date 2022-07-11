@@ -5,7 +5,11 @@ import { runtime, storage } from 'webextension-polyfill';
 import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
 import { ethers } from 'ethers';
 import Button from '../components/Button';
-import { PromptMessage, SendTransactionParams } from '../types/Rpc';
+import {
+  PromptMessage,
+  SendTransactionParams,
+  TransactionStatus,
+} from '../types/Rpc';
 import TransactionCard from './TransactionCard';
 import onAction from '../helpers/onAction';
 
@@ -101,13 +105,19 @@ const Confirm: FunctionComponent = () => {
         </div>
       </div>
       <div className="flex bg-white p-4 justify-between">
-        <Button className="btn-secondary" onPress={() => respondTx('rejected')}>
+        <Button
+          className="btn-secondary"
+          onPress={() => respondTx(TransactionStatus.REJECTED)}
+        >
           <div className="flex justify-between gap-3">
             Reject All <X size={20} className="self-center" />
           </div>
         </Button>
 
-        <Button className="btn-primary" onPress={() => respondTx('approved')}>
+        <Button
+          className="btn-primary"
+          onPress={() => respondTx(TransactionStatus.APPROVED)}
+        >
           <div className="flex justify-between gap-3">
             Confirm All <Check size={20} className="self-center" />
           </div>
