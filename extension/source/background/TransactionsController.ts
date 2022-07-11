@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { windows, runtime } from 'webextension-polyfill';
 import ensureType from '../helpers/ensureType';
 import QuillStorageCells from '../QuillStorageCells';
@@ -6,6 +5,7 @@ import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import assert from '../helpers/assert';
 import TaskQueue from '../helpers/TaskQueue';
 import getPropOrUndefined from '../helpers/getPropOrUndefined';
+import RandomId from '../helpers/RandomId';
 
 export enum TransactionStatus {
   'NEW' = 'new',
@@ -83,7 +83,7 @@ export default class TransactionsController {
     },
 
     createTransaction: async ({ params }) => {
-      const id = uuidv4().toString();
+      const id = RandomId();
 
       const newTransaction = {
         id,
