@@ -54,6 +54,13 @@ export const QuillTransaction = io.type({
 
 export type QuillTransaction = io.TypeOf<typeof QuillTransaction>;
 
+export const PromptMessage = io.type({
+  id: io.string,
+  result: io.union([io.literal('approved'), io.literal('rejected')]),
+});
+
+export type PromptMessage = io.TypeOf<typeof PromptMessage>;
+
 export const rpcMap = {
   // QuillController
   // - ALL rpc methods are technically implemented by QuillController. It
@@ -149,6 +156,7 @@ export const rpcMap = {
   },
 
   // TransactionController
+
   createTransaction: {
     origin: '<quill>',
     Params: io.array(SendTransactionParams),
@@ -186,12 +194,12 @@ export const rpcMap = {
   promptUser: {
     origin: '<quill>',
     Params: io.array(io.string),
-    Response: io.unknown,
+    Response: PromptMessage.props.result,
   },
   requestTransaction: {
     origin: '<quill>',
     Params: io.array(SendTransactionParams),
-    Response: io.unknown,
+    Response: io.string,
   },
 
   // AggregatorController

@@ -1,9 +1,9 @@
-import * as io from 'io-ts';
 import { windows, runtime } from 'webextension-polyfill';
 import ensureType from '../helpers/ensureType';
 import QuillStorageCells from '../QuillStorageCells';
 import {
   PartialRpcImpl,
+  PromptMessage,
   QuillTransaction,
   RpcClient,
   TransactionStatus,
@@ -12,13 +12,6 @@ import assert from '../helpers/assert';
 import TaskQueue from '../helpers/TaskQueue';
 import RandomId from '../helpers/RandomId';
 import isType from '../cells/isType';
-
-export const PromptMessage = io.type({
-  id: io.string,
-  result: io.union([io.literal('approved'), io.literal('rejected')]),
-});
-
-export type PromptMessage = io.TypeOf<typeof PromptMessage>;
 
 export default class TransactionsController {
   constructor(
@@ -31,7 +24,7 @@ export default class TransactionsController {
     promptUser: async ({ params: [id] }) => {
       const cleanupTasks = new TaskQueue();
 
-      const promptAction = new Promise<TransactionStatus>(
+      const promptAction = new Promise<'approved' | 'rejected'>(
         (resolve, _reject) => {
           (async () => {
             const lastWin = await windows.getLastFocused();
@@ -117,13 +110,15 @@ export default class TransactionsController {
 
     requestTransaction: async ({ params }) => {
       const id = await this.InternalRpc().createTransaction(...params);
-      const result = await this.InternalRpc().promptUser(id);
+      const userAction = await this.InternalRpc().promptUser(id);
 
-      if (result === 'approved' || result === 'rejected') {
-        await this.InternalRpc().updateTransactionStatus(id, result);
+      await this.InternalRpc().updateTransactionStatus(id, userAction);
+
+      if (userAction !== 'approved') {
+        throw new Error('User did not approve the transaction');
       }
 
-      return result;
+      return id;
     },
 
     getTransactionById: async ({ params: [id] }) => {

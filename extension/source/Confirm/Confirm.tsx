@@ -5,10 +5,9 @@ import { runtime, storage } from 'webextension-polyfill';
 import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
 import { ethers } from 'ethers';
 import Button from '../components/Button';
-import { SendTransactionParams } from '../types/Rpc';
+import { PromptMessage, SendTransactionParams } from '../types/Rpc';
 import TransactionCard from './TransactionCard';
 import onAction from '../helpers/onAction';
-import type { PromptMessage } from '../background/TransactionsController';
 
 const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string | null>();
