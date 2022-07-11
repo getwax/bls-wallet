@@ -41,6 +41,10 @@ export default class AggregatorController {
     eth_sendTransaction: async (request) => {
       const { providerId, params } = request;
 
+      const userAction = await this.transactionsController
+        .InternalRpc()
+        .requestTransaction(...params);
+
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!
       // Supporting multiple froms is actually super awesome - we can show off
@@ -64,10 +68,6 @@ export default class AggregatorController {
         NETWORK_CONFIG.addresses.verificationGateway,
         this.ethersProvider,
       );
-
-      const userAction = await this.transactionsController
-        .InternalRpc()
-        .requestTransaction(...params);
 
       if (userAction === TransactionStatus.APPROVED) {
         // const nonce = (await wallet.Nonce()).toString();
