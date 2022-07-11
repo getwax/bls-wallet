@@ -41,9 +41,7 @@ export default class AggregatorController {
     eth_sendTransaction: async (request) => {
       const { providerId, params } = request;
 
-      const userAction = await this.transactionsController
-        .InternalRpc()
-        .requestTransaction(...params);
+      const userAction = await this.InternalRpc().requestTransaction(...params);
 
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!
