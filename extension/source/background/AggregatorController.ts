@@ -10,9 +10,7 @@ import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 import optional from '../types/optional';
-import TransactionsController, {
-  TransactionStatus,
-} from './TransactionsController';
+import TransactionsController from './TransactionsController';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -67,7 +65,7 @@ export default class AggregatorController {
         this.ethersProvider,
       );
 
-      if (userAction === TransactionStatus.APPROVED) {
+      if (userAction === 'approved') {
         // const nonce = (await wallet.Nonce()).toString();
         const nonce = (
           await BlsWalletWrapper.Nonce(

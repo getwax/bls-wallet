@@ -1,20 +1,30 @@
+import * as io from 'io-ts';
 import { windows, runtime } from 'webextension-polyfill';
 import ensureType from '../helpers/ensureType';
 import QuillStorageCells from '../QuillStorageCells';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import assert from '../helpers/assert';
 import TaskQueue from '../helpers/TaskQueue';
-import getPropOrUndefined from '../helpers/getPropOrUndefined';
 import RandomId from '../helpers/RandomId';
+import isType from '../cells/isType';
 
-export enum TransactionStatus {
-  'NEW' = 'new',
-  'APPROVED' = 'approved',
-  'REJECTED' = 'rejected',
-  'CANCELLED' = 'cancelled',
-  'CONFIRMED' = 'confirmed',
-  'FAILED' = 'failed',
-}
+export const TransactionStatus = io.union([
+  io.literal('new'),
+  io.literal('approved'),
+  io.literal('rejected'),
+  io.literal('cancelled'),
+  io.literal('confirmed'),
+  io.literal('failed'),
+]);
+
+export type TransactionStatus = io.TypeOf<typeof TransactionStatus>;
+
+export const PromptMessage = io.type({
+  id: io.string,
+  result: io.union([io.literal('approved'), io.literal('rejected')]),
+});
+
+export type PromptMessage = io.TypeOf<typeof PromptMessage>;
 
 export default class TransactionsController {
   constructor(
@@ -27,7 +37,7 @@ export default class TransactionsController {
     promptUser: async ({ params: [id] }) => {
       const cleanupTasks = new TaskQueue();
 
-      const promptAction = new Promise<string | undefined>(
+      const promptAction = new Promise<TransactionStatus>(
         (resolve, _reject) => {
           (async () => {
             const lastWin = await windows.getLastFocused();
@@ -55,7 +65,7 @@ export default class TransactionsController {
 
             function onRemovedListener(windowId: number) {
               if (windowId === popup.id) {
-                resolve(undefined);
+                resolve('rejected');
               }
             }
 
@@ -66,11 +76,11 @@ export default class TransactionsController {
             });
 
             function messageListener(message: unknown) {
-              if (getPropOrUndefined(message, 'id') !== id) {
+              if (!isType(message, PromptMessage) || message.id !== id) {
                 return;
               }
 
-              resolve(getPropOrUndefined(message, 'result') as string);
+              resolve(message.result);
             }
 
             runtime.onMessage.addListener(messageListener);
@@ -90,15 +100,13 @@ export default class TransactionsController {
         chainId: await this.InternalRpc().eth_chainId(),
         from: (await this.selectedAddress.read()) || '',
         createdAt: +new Date(),
-        status: TransactionStatus.NEW,
+        status: 'new',
         bundleHash: '',
-        actions: params.map((p) => {
-          return {
-            ...p,
-            value: p.value || '0x0',
-            gasPrice: p.gasPrice || '0x0',
-          };
-        }),
+        actions: params.map((p) => ({
+          ...p,
+          value: p.value || '0x0',
+          gasPrice: p.gasPrice || '0x0',
+        })),
       };
 
       const { outgoing: transactions } = await this.transactions.read();
@@ -117,12 +125,10 @@ export default class TransactionsController {
       const id = await this.InternalRpc().createTransaction(...params);
       const result = await this.InternalRpc().promptUser(id);
 
-      if (
-        result === TransactionStatus.APPROVED ||
-        result === TransactionStatus.REJECTED
-      ) {
+      if (result === 'approved' || result === 'rejected') {
         await this.InternalRpc().updateTransactionStatus(id, result);
       }
+
       return result;
     },
 
@@ -133,6 +139,7 @@ export default class TransactionsController {
       if (transaction) {
         return transaction;
       }
+
       throw new Error('Transaction not found');
     },
 
@@ -153,30 +160,30 @@ export default class TransactionsController {
       if (transaction) {
         switch (status) {
           // move to APPROVED or REJECTED only if status was NEW
-          case TransactionStatus.APPROVED:
-            if (transaction?.status === TransactionStatus.NEW) {
+          case 'approved':
+            if (transaction?.status === 'new') {
               transaction.status = status;
             }
             break;
-          case TransactionStatus.REJECTED:
-            if (transaction?.status === TransactionStatus.NEW) {
+          case 'rejected':
+            if (transaction?.status === 'new') {
               transaction.status = status;
             }
             break;
           // move to CANCELLED only if status was APPROVED
-          case TransactionStatus.CANCELLED:
-            if (transaction?.status === TransactionStatus.APPROVED) {
+          case 'cancelled':
+            if (transaction?.status === 'approved') {
               transaction.status = status;
             }
             break;
           // move to CONFIRM or FAILED only if status was APPROVED
-          case TransactionStatus.CONFIRMED:
-            if (transaction?.status === TransactionStatus.APPROVED) {
+          case 'confirmed':
+            if (transaction?.status === 'approved') {
               transaction.status = status;
             }
             break;
-          case TransactionStatus.FAILED:
-            if (transaction?.status === TransactionStatus.APPROVED) {
+          case 'failed':
+            if (transaction?.status === 'approved') {
               transaction.status = status;
             }
             break;

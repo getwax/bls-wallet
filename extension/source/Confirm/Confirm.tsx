@@ -5,10 +5,10 @@ import { runtime, storage } from 'webextension-polyfill';
 import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
 import { ethers } from 'ethers';
 import Button from '../components/Button';
-import { TransactionStatus } from '../background/TransactionsController';
 import { SendTransactionParams } from '../types/Rpc';
 import TransactionCard from './TransactionCard';
 import onAction from '../helpers/onAction';
+import type { PromptMessage } from '../background/TransactionsController';
 
 const Confirm: FunctionComponent = () => {
   const [id, setId] = useState<string | null>();
@@ -31,7 +31,7 @@ const Confirm: FunctionComponent = () => {
     fetchTx();
   }, []);
 
-  const respondTx = (result: string) => {
+  const respondTx = (result: PromptMessage['result']) => {
     runtime.sendMessage(undefined, { id, result });
   };
 
@@ -102,19 +102,13 @@ const Confirm: FunctionComponent = () => {
         </div>
       </div>
       <div className="flex bg-white p-4 justify-between">
-        <Button
-          className="btn-secondary"
-          onPress={() => respondTx(TransactionStatus.REJECTED)}
-        >
+        <Button className="btn-secondary" onPress={() => respondTx('rejected')}>
           <div className="flex justify-between gap-3">
             Reject All <X size={20} className="self-center" />
           </div>
         </Button>
 
-        <Button
-          className="btn-primary"
-          onPress={() => respondTx(TransactionStatus.APPROVED)}
-        >
+        <Button className="btn-primary" onPress={() => respondTx('approved')}>
           <div className="flex justify-between gap-3">
             Confirm All <Check size={20} className="self-center" />
           </div>
