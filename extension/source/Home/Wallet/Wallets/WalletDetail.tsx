@@ -1,5 +1,10 @@
-import * as React from 'react';
+import { FunctionComponent, useMemo } from 'react';
+import ICell from '../../../cells/ICell';
+import MemoryCell from '../../../cells/MemoryCell';
+import useCell from '../../../cells/useCell';
 import onAction from '../../../helpers/onAction';
+import { useQuill } from '../../QuillContext';
+import DisplayNonce from './DisplayNonce';
 // import { AssetsTable } from './AssetsTable';
 
 export interface TokenData {
@@ -55,10 +60,18 @@ export interface TokenData {
 //   },
 // ];
 
-const tabs = [{ name: 'Assets' }, { name: 'Outbox' }, { name: 'Transactions' }];
+type TabName = 'Assets' | 'Outbox' | 'Transactions';
 
-const WalletTabs: React.FunctionComponent = () => {
-  const [activeTab, setActiveTab] = React.useState<string>('Assets');
+const tabs: { name: TabName }[] = [
+  { name: 'Assets' },
+  { name: 'Outbox' },
+  { name: 'Transactions' },
+];
+
+const WalletTabs: FunctionComponent<{ activeTab: ICell<TabName> }> = ({
+  activeTab,
+}) => {
+  const activeTabValue = useCell(activeTab);
 
   return (
     <div className="flex border-b border-grey-300 gap-4 mb-4">
@@ -66,9 +79,10 @@ const WalletTabs: React.FunctionComponent = () => {
         <div
           key={tab.name}
           className={`py-2 px-4 cursor-pointer ${
-            tab.name === activeTab && 'border-b-2 border-blue-500 text-blue-500'
+            tab.name === activeTabValue &&
+            'border-b-2 border-blue-500 text-blue-500'
           }`}
-          {...onAction(() => setActiveTab(tab.name))}
+          {...onAction(() => activeTab.write(tab.name))}
         >
           {tab.name}
         </div>
@@ -77,12 +91,28 @@ const WalletTabs: React.FunctionComponent = () => {
   );
 };
 
-export const WalletDetail: React.FunctionComponent = () => {
+export const WalletDetail: FunctionComponent = () => {
+  const quill = useQuill();
+
+  const activeTab = useMemo(
+    () => new MemoryCell<'Assets' | 'Outbox' | 'Transactions'>('Assets'),
+    [],
+  );
+
+  const activeTabValue = useCell(activeTab);
+  const selectedAddress = useCell(quill.cells.selectedAddress);
+
   return (
     <div className="">
-      <WalletTabs />
+      <WalletTabs {...{ activeTab }} />
 
       <input placeholder="Search" />
+
+      {activeTabValue === 'Transactions' && selectedAddress && (
+        <>
+          Total: <DisplayNonce address={selectedAddress} />
+        </>
+      )}
 
       {/* <AssetsTable data={data} /> */}
       {/* <AssetsTable data={data} /> */}
