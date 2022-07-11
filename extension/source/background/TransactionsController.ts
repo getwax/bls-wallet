@@ -24,56 +24,56 @@ export default class TransactionsController {
     promptUser: async ({ params: [id] }) => {
       const cleanupTasks = new TaskQueue();
 
-      const promptAction = new Promise<'approved' | 'rejected'>(
-        (resolve, _reject) => {
-          (async () => {
-            const lastWin = await windows.getLastFocused();
+      const promptAction = new Promise<
+        TransactionStatus.APPROVED | TransactionStatus.REJECTED
+      >((resolve, _reject) => {
+        (async () => {
+          const lastWin = await windows.getLastFocused();
 
-            const popupWidth = 400;
-            let left: number | undefined;
+          const popupWidth = 400;
+          let left: number | undefined;
 
-            if (lastWin.width !== undefined && lastWin.left !== undefined) {
-              left = lastWin.left + lastWin.width - popupWidth - 20;
+          if (lastWin.width !== undefined && lastWin.left !== undefined) {
+            left = lastWin.left + lastWin.width - popupWidth - 20;
+          }
+
+          const popup = await windows.create({
+            url: runtime.getURL(`confirm.html?id=${id}`),
+            type: 'popup',
+            width: popupWidth,
+            height: 700,
+            left,
+          });
+
+          cleanupTasks.push(() => {
+            if (popup.id !== undefined) {
+              windows.remove(popup.id);
+            }
+          });
+
+          function onRemovedListener(windowId: number) {
+            if (windowId === popup.id) {
+              resolve(TransactionStatus.REJECTED);
+            }
+          }
+
+          windows.onRemoved.addListener(onRemovedListener);
+
+          cleanupTasks.push(() => {
+            windows.onRemoved.removeListener(onRemovedListener);
+          });
+
+          function messageListener(message: unknown) {
+            if (!isType(message, PromptMessage) || message.id !== id) {
+              return;
             }
 
-            const popup = await windows.create({
-              url: runtime.getURL(`confirm.html?id=${id}`),
-              type: 'popup',
-              width: popupWidth,
-              height: 700,
-              left,
-            });
+            resolve(message.result);
+          }
 
-            cleanupTasks.push(() => {
-              if (popup.id !== undefined) {
-                windows.remove(popup.id);
-              }
-            });
-
-            function onRemovedListener(windowId: number) {
-              if (windowId === popup.id) {
-                resolve('rejected');
-              }
-            }
-
-            windows.onRemoved.addListener(onRemovedListener);
-
-            cleanupTasks.push(() => {
-              windows.onRemoved.removeListener(onRemovedListener);
-            });
-
-            function messageListener(message: unknown) {
-              if (!isType(message, PromptMessage) || message.id !== id) {
-                return;
-              }
-
-              resolve(message.result);
-            }
-
-            runtime.onMessage.addListener(messageListener);
-          })();
-        },
-      );
+          runtime.onMessage.addListener(messageListener);
+        })();
+      });
 
       promptAction.finally(() => cleanupTasks.run());
       return promptAction;
@@ -87,7 +87,7 @@ export default class TransactionsController {
         chainId: await this.InternalRpc().eth_chainId(),
         from: (await this.selectedAddress.read()) || '',
         createdAt: +new Date(),
-        status: 'new',
+        status: TransactionStatus.NEW,
         bundleHash: '',
         actions: params.map((p) => ({
           ...p,
@@ -114,7 +114,7 @@ export default class TransactionsController {
 
       await this.InternalRpc().updateTransactionStatus(id, userAction);
 
-      if (userAction !== 'approved') {
+      if (userAction !== TransactionStatus.APPROVED) {
         throw new Error('User did not approve the transaction');
       }
 
@@ -154,8 +154,15 @@ export default class TransactionsController {
       const validTransitions: Partial<
         Record<TransactionStatus, TransactionStatus[]>
       > = {
-        new: ['approved', 'rejected'],
-        approved: ['cancelled', 'confirmed', 'failed'],
+        [TransactionStatus.NEW]: [
+          TransactionStatus.APPROVED,
+          TransactionStatus.REJECTED,
+        ],
+        [TransactionStatus.APPROVED]: [
+          TransactionStatus.CANCELLED,
+          TransactionStatus.APPROVED,
+          TransactionStatus.FAILED,
+        ],
       };
 
       const currentValidTransitions =

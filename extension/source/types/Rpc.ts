@@ -31,22 +31,24 @@ export const SendTransactionParams = io.type({
 
 export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
 
-export const TransactionStatus = io.union([
-  io.literal('new'),
-  io.literal('approved'),
-  io.literal('rejected'),
-  io.literal('cancelled'),
-  io.literal('confirmed'),
-  io.literal('failed'),
-]);
+export enum TransactionStatus {
+  NEW = 'new',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  CANCELLED = 'cancelled',
+  CONFIRMED = 'confirmed',
+  FAILED = 'failed',
+}
 
-export type TransactionStatus = io.TypeOf<typeof TransactionStatus>;
+export const TransactionStatusType: io.Type<TransactionStatus> = io.union(
+  Object.values(TransactionStatus).map((v) => io.literal(v)) as ExplicitAny,
+);
 
 export const QuillTransaction = io.type({
   id: io.string,
   chainId: io.string,
   from: io.string,
-  status: TransactionStatus,
+  status: TransactionStatusType,
   createdAt: io.number,
   bundleHash: io.string,
   actions: io.array(SendTransactionParams),
@@ -56,7 +58,10 @@ export type QuillTransaction = io.TypeOf<typeof QuillTransaction>;
 
 export const PromptMessage = io.type({
   id: io.string,
-  result: io.union([io.literal('approved'), io.literal('rejected')]),
+  result: io.union([
+    io.literal(TransactionStatus.APPROVED),
+    io.literal(TransactionStatus.REJECTED),
+  ]),
 });
 
 export type PromptMessage = io.TypeOf<typeof PromptMessage>;
@@ -188,7 +193,7 @@ export const rpcMap = {
   },
   updateTransactionStatus: {
     origin: '<quill>',
-    Params: io.tuple([io.string, TransactionStatus]),
+    Params: io.tuple([io.string, TransactionStatusType]),
     Response: io.void,
   },
   promptUser: {
