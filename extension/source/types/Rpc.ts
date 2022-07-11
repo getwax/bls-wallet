@@ -127,12 +127,12 @@ export const rpcMap = {
 
   // TransactionController
   createTransaction: {
-    origin: '*',
+    origin: '<quill>',
     Params: io.array(SendTransactionParams),
     Response: io.string,
   },
   getTransactionById: {
-    origin: '*',
+    origin: '<quill>',
     Params: io.array(io.string),
     Response: io.type({
       id: io.string,
@@ -144,7 +144,7 @@ export const rpcMap = {
     }),
   },
   getTransactionByHash: {
-    origin: '*',
+    origin: '<quill>',
     Params: io.array(io.string),
     Response: io.type({
       id: io.string,
@@ -161,12 +161,12 @@ export const rpcMap = {
     Response: io.void,
   },
   promptUser: {
-    origin: '*',
+    origin: '<quill>',
     Params: io.array(io.string),
     Response: io.unknown,
   },
   requestTransaction: {
-    origin: '*',
+    origin: '<quill>',
     Params: io.array(SendTransactionParams),
     Response: io.unknown,
   },
