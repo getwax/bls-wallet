@@ -15,6 +15,29 @@ import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
 import { SendTransactionParams } from './types/Rpc';
 
+export const TransactionStatus = io.union([
+  io.literal('new'),
+  io.literal('approved'),
+  io.literal('rejected'),
+  io.literal('cancelled'),
+  io.literal('confirmed'),
+  io.literal('failed'),
+]);
+
+export type TransactionStatus = io.TypeOf<typeof TransactionStatus>;
+
+export const QuillTransaction = io.type({
+  id: io.string,
+  chainId: io.string,
+  from: io.string,
+  status: TransactionStatus,
+  createdAt: io.number,
+  bundleHash: io.string,
+  actions: io.array(SendTransactionParams),
+});
+
+export type QuillTransaction = io.TypeOf<typeof QuillTransaction>;
+
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
 // existing clients.
@@ -53,17 +76,7 @@ function QuillStorageCells(storage: CellCollection) {
     transactions: storage.Cell(
       'transactions',
       io.type({
-        outgoing: io.array(
-          io.type({
-            id: io.string,
-            chainId: io.string,
-            from: io.string,
-            status: io.string,
-            createdAt: io.number,
-            bundleHash: io.string,
-            actions: io.array(SendTransactionParams),
-          }),
-        ),
+        outgoing: io.array(QuillTransaction),
       }),
       () => ({ outgoing: [] }),
     ),

@@ -1,23 +1,15 @@
 import * as io from 'io-ts';
 import { windows, runtime } from 'webextension-polyfill';
 import ensureType from '../helpers/ensureType';
-import QuillStorageCells from '../QuillStorageCells';
+import QuillStorageCells, {
+  QuillTransaction,
+  TransactionStatus,
+} from '../QuillStorageCells';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import assert from '../helpers/assert';
 import TaskQueue from '../helpers/TaskQueue';
 import RandomId from '../helpers/RandomId';
 import isType from '../cells/isType';
-
-export const TransactionStatus = io.union([
-  io.literal('new'),
-  io.literal('approved'),
-  io.literal('rejected'),
-  io.literal('cancelled'),
-  io.literal('confirmed'),
-  io.literal('failed'),
-]);
-
-export type TransactionStatus = io.TypeOf<typeof TransactionStatus>;
 
 export const PromptMessage = io.type({
   id: io.string,
@@ -95,7 +87,7 @@ export default class TransactionsController {
     createTransaction: async ({ params }) => {
       const id = RandomId();
 
-      const newTransaction = {
+      const newTransaction: QuillTransaction = {
         id,
         chainId: await this.InternalRpc().eth_chainId(),
         from: (await this.selectedAddress.read()) || '',
