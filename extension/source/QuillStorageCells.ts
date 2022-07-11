@@ -13,30 +13,7 @@ import AsyncReturnType from './types/AsyncReturnType';
 import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
-import { SendTransactionParams } from './types/Rpc';
-
-export const TransactionStatus = io.union([
-  io.literal('new'),
-  io.literal('approved'),
-  io.literal('rejected'),
-  io.literal('cancelled'),
-  io.literal('confirmed'),
-  io.literal('failed'),
-]);
-
-export type TransactionStatus = io.TypeOf<typeof TransactionStatus>;
-
-export const QuillTransaction = io.type({
-  id: io.string,
-  chainId: io.string,
-  from: io.string,
-  status: TransactionStatus,
-  createdAt: io.number,
-  bundleHash: io.string,
-  actions: io.array(SendTransactionParams),
-});
-
-export type QuillTransaction = io.TypeOf<typeof QuillTransaction>;
+import { QuillTransaction } from './types/Rpc';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
