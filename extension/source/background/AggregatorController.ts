@@ -36,10 +36,10 @@ export default class AggregatorController {
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
-    eth_sendTransaction: async (request) => {
-      const { providerId, params } = request;
-
-      await this.InternalRpc().requestTransaction(...params);
+    eth_sendTransaction: async ({ providerId, params, origin }) => {
+      if (origin !== window.location.origin) {
+        await this.InternalRpc().requestTransaction(...params);
+      }
 
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!
