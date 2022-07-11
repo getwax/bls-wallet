@@ -99,6 +99,16 @@ export const builtinProviderConfigs = ensureType<
     chainCurrency: 'ETH',
     networkKey: 'local',
   },
+  mainnet: {
+    blockExplorerUrl: 'http://etherscan.io/',
+    chainId: '0x1', // 1
+    displayName: 'Mainnet',
+    logo: '',
+    rpcTarget: 'https://mainnet.infura.io/v3/d0f317090d6645b6b494ddc6f1cce5ad',
+    chainCurrencyName: 'Ethereum',
+    chainCurrency: 'ETH',
+    networkKey: 'mainnet',
+  },
 } as const);
 
 type BuiltinProviderConfigs = typeof builtinProviderConfigs;

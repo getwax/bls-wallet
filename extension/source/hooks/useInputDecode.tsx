@@ -73,7 +73,7 @@ type UseInputDecodeValues = {
 export const useInputDecode = (
   functionData: string,
   to: string,
-  builtinChainId: BuiltinChainId,
+  builtinChainId: BuiltinChainId = '0x1',
 ): UseInputDecodeValues => {
   const [loading, setLoading] = useState<boolean>(true);
   const [method, setMethod] = useState<string>('CONTRACT INTERACTION');

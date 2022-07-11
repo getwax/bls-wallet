@@ -10,6 +10,7 @@ import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 import optional from '../types/optional';
+import TransactionsController from './TransactionsController';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -30,12 +31,16 @@ export default class AggregatorController {
     public InternalRpc: () => RpcClient,
     public networkController: NetworkController,
     public keyringController: KeyringController,
+    public transactionsController: TransactionsController,
     public ethersProvider: ethers.providers.Provider,
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
-    eth_sendTransaction: async (request) => {
-      const { providerId, params } = request;
+    eth_sendTransaction: async ({ providerId, params }) => {
+      // TODO: If `origin === window.location.origin` (ie the tx is coming from
+      // inside Quill), then we should really inline the information from the
+      // dialog rather than using it.
+      await this.InternalRpc().requestTransaction(...params);
 
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!
@@ -61,7 +66,14 @@ export default class AggregatorController {
         this.ethersProvider,
       );
 
-      const nonce = (await wallet.Nonce()).toString();
+      // const nonce = (await wallet.Nonce()).toString();
+      const nonce = (
+        await BlsWalletWrapper.Nonce(
+          await wallet.PublicKey(),
+          NETWORK_CONFIG.addresses.verificationGateway,
+          this.ethersProvider,
+        )
+      ).toString();
       const bundle = await wallet.sign({ nonce, actions });
 
       const aggregatorUrl =

@@ -31,6 +31,41 @@ export const SendTransactionParams = io.type({
 
 export type SendTransactionParams = io.TypeOf<typeof SendTransactionParams>;
 
+export enum TransactionStatus {
+  NEW = 'new',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  CANCELLED = 'cancelled',
+  CONFIRMED = 'confirmed',
+  FAILED = 'failed',
+}
+
+export const TransactionStatusType: io.Type<TransactionStatus> = io.union(
+  Object.values(TransactionStatus).map((v) => io.literal(v)) as ExplicitAny,
+);
+
+export const QuillTransaction = io.type({
+  id: io.string,
+  chainId: io.string,
+  from: io.string,
+  status: TransactionStatusType,
+  createdAt: io.number,
+  bundleHash: io.string,
+  actions: io.array(SendTransactionParams),
+});
+
+export type QuillTransaction = io.TypeOf<typeof QuillTransaction>;
+
+export const PromptMessage = io.type({
+  id: io.string,
+  result: io.union([
+    io.literal(TransactionStatus.APPROVED),
+    io.literal(TransactionStatus.REJECTED),
+  ]),
+});
+
+export type PromptMessage = io.TypeOf<typeof PromptMessage>;
+
 export const rpcMap = {
   // QuillController
   // - ALL rpc methods are technically implemented by QuillController. It
@@ -123,6 +158,53 @@ export const rpcMap = {
     origin: '<quill>',
     Params: io.tuple([io.string]),
     Response: io.void,
+  },
+
+  // TransactionController
+
+  createTransaction: {
+    origin: '<quill>',
+    Params: io.array(SendTransactionParams),
+    Response: io.string,
+  },
+  getTransactionById: {
+    origin: '<quill>',
+    Params: io.array(io.string),
+    Response: io.type({
+      id: io.string,
+      chainId: io.string,
+      from: io.string,
+      status: io.string,
+      createdAt: io.number,
+      actions: io.array(SendTransactionParams),
+    }),
+  },
+  getTransactionByHash: {
+    origin: '<quill>',
+    Params: io.array(io.string),
+    Response: io.type({
+      id: io.string,
+      chainId: io.string,
+      from: io.string,
+      status: io.string,
+      createdAt: io.number,
+      actions: io.array(SendTransactionParams),
+    }),
+  },
+  updateTransactionStatus: {
+    origin: '<quill>',
+    Params: io.tuple([io.string, TransactionStatusType]),
+    Response: io.void,
+  },
+  promptUser: {
+    origin: '<quill>',
+    Params: io.array(io.string),
+    Response: PromptMessage.props.result,
+  },
+  requestTransaction: {
+    origin: '<quill>',
+    Params: io.array(SendTransactionParams),
+    Response: io.string,
   },
 
   // AggregatorController
