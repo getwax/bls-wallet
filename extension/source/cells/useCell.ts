@@ -14,7 +14,11 @@ export default function useCell<C extends IReadableCell<unknown>>(
 
   useEffect(() => {
     const { stop } = forEach(cell, setValue);
-    return stop;
+
+    return () => {
+      setValue(undefined);
+      stop();
+    };
   }, [cell]);
 
   return value;
