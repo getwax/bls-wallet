@@ -3,7 +3,7 @@ import { FunctionComponent, useMemo } from 'react';
 import { FormulaCell } from '../../../cells/FormulaCell';
 import useCell from '../../../cells/useCell';
 import { NETWORK_CONFIG } from '../../../env';
-import { useQuill } from '../../QuillContext';
+import { useQuill } from '../../../QuillContext';
 
 const DisplayNonce: FunctionComponent<{ address: string }> = ({ address }) => {
   const quill = useQuill();

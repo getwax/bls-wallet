@@ -3,7 +3,7 @@ import ICell from '../../../cells/ICell';
 import MemoryCell from '../../../cells/MemoryCell';
 import useCell from '../../../cells/useCell';
 import onAction from '../../../helpers/onAction';
-import { useQuill } from '../../QuillContext';
+import { useQuill } from '../../../QuillContext';
 import DisplayNonce from './DisplayNonce';
 // import { AssetsTable } from './AssetsTable';
 

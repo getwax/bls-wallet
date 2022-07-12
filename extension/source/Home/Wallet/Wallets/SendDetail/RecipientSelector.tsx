@@ -9,7 +9,7 @@ import MemoryCell from '../../../../cells/MemoryCell';
 import useCell from '../../../../cells/useCell';
 import Loading from '../../../../components/Loading';
 import onAction from '../../../../helpers/onAction';
-import { useQuill } from '../../../QuillContext';
+import { useQuill } from '../../../../QuillContext';
 import Balance from '../Balance';
 
 const RecipientSelector: FunctionComponent<{

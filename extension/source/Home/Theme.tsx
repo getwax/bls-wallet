@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react';
 import useCell from '../cells/useCell';
-import { useQuill } from './QuillContext';
+import { useQuill } from '../QuillContext';
 
 const Theme: FunctionComponent = ({ children }) => {
   const quill = useQuill();

@@ -8,7 +8,7 @@ import { IReadableCell } from '../../../cells/ICell';
 import useCell from '../../../cells/useCell';
 import Loading from '../../../components/Loading';
 import assert from '../../../helpers/assert';
-import { useQuill } from '../../QuillContext';
+import { useQuill } from '../../../QuillContext';
 
 const Balance: FunctionComponent<{ address: string }> = ({ address }) => {
   const quill = useQuill();
