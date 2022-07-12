@@ -32,6 +32,7 @@
   "dependencies": {
     "@babel/runtime": "^7.16.3",
     "@ethereumjs/tx": "^3.5.1",
+    "@tanstack/react-table": "^8.2.3",
     "@types/bs58check": "^2.1.0",
     "advanced-css-reset": "^1.2.2",
     "async-mutex": "^0.3.2",
@@ -51,7 +52,6 @@
     "react-blockies": "^1.4.1",
     "react-dom": "^17.0.2",
     "react-router-dom": "^6.2.1",
-    "react-table": "^7.7.0",
     "sass": "^1.44.0",
     "stream-browserify": "^3.0.0",
     "typed-emitter": "^1.4.0",

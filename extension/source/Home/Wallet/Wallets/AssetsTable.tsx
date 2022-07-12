@@ -1,7 +1,11 @@
-/* eslint @typescript-eslint/ban-ts-comment: "warn", react/jsx-key: "warn" -- TODO (merge-ok) Fix types, linting */
-// @ts-nocheck
 import * as React from 'react';
-import { useTable, usePagination } from 'react-table';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  flexRender,
+  ColumnDef,
+} from '@tanstack/react-table';
 import {
   CurrencyEth,
   ShareNetwork,
@@ -10,6 +14,7 @@ import {
   CaretLeft,
   CaretRight,
 } from 'phosphor-react';
+
 import type { TokenData } from './WalletDetail';
 import onAction from '../../../helpers/onAction';
 
@@ -49,78 +54,77 @@ interface IAssetsTable {
 export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
   data,
 }) => {
-  const columns: Array<any> = React.useMemo(
+  const columns = React.useMemo<ColumnDef<TokenData>[]>(
     () => [
       {
-        Header: 'Token',
-        accessor: 'token',
+        header: 'Token',
+        accessorKey: 'token',
       },
       {
-        Header: 'Token Value',
-        accessor: 'tokenVal',
+        header: 'Token Value',
+        accessorKey: 'tokenVal',
       },
       {
-        Header: 'USD Value',
-        accessor: 'usdVal',
+        header: 'USD Value',
+        accessorKey: 'usdVal',
       },
       {
-        Header: 'Last Transaction',
-        accessor: 'lastTx',
+        header: 'Last Transaction',
+        accessorKey: 'lastTx',
       },
       {
-        Header: '',
-        accessor: 'action',
+        header: '',
+        accessorKey: 'action',
       },
     ],
     [],
   );
 
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    prepareRow,
-    page,
-    nextPage,
-    previousPage,
-    setPageSize,
-    pageCount,
-    state: { pageIndex, pageSize },
-  } = useTable({ columns, data, initialState: { pageSize: 5 } }, usePagination);
+  const table = useReactTable({
+    columns,
+    data,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { pagination: { pageSize: 5 } },
+  });
 
   return (
     <div className="mt-4 border border-grey-300 rounded-lg border-separate">
       <TableHeader />
 
-      <table {...getTableProps()} className="w-full">
+      <table className="w-full">
         <thead className="text-blue-500">
-          {headerGroups.map((headerGroup) => (
-            <tr key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column) => (
-                <th
-                  className="pb-2"
-                  key={column.id}
-                  {...column.getHeaderProps()}
-                >
-                  {column.render('Header')}
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th className="pb-2" key={header.id} colSpan={header.colSpan}>
+                  {header.isPlaceholder ? null : (
+                    <div>
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </div>
+                  )}
                 </th>
               ))}
             </tr>
           ))}
         </thead>
-        <tbody {...getTableBodyProps()} className="text-center">
-          {page.map((row) => {
-            prepareRow(row);
+        <tbody className="text-center">
+          {table.getRowModel().rows.map((row) => {
             return (
               <tr
                 key={row.id}
-                {...row.getRowProps()}
                 className="border-y border-grey-400 last:border-b-0"
               >
-                {row.cells.map((cell) => {
+                {row.getVisibleCells().map((cell) => {
                   return (
-                    <td key={cell.id} className="py-3" {...cell.getCellProps()}>
-                      {cell.render('Cell')}
+                    <td key={cell.id} className="py-3">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </td>
                   );
                 })}
@@ -134,9 +138,9 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
         <div className="flex">
           <div>showing</div>
           <select
-            value={pageSize}
+            value={table.getState().pagination.pageSize}
             onChange={(e) => {
-              setPageSize(Number(e.target.value));
+              table.setPageSize(Number(e.target.value));
             }}
             className="text-blue-500"
           >
@@ -150,14 +154,15 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
 
         <div className="flex items-center gap-4">
           <CaretLeft
-            {...onAction(previousPage)}
+            {...onAction(() => table.previousPage())}
             className="cursor-pointer icon-md"
           />
           <div className="font-semibold">
-            {pageIndex + 1} of {pageCount}
+            {table.getState().pagination.pageIndex + 1} of{' '}
+            {table.getPageCount()}
           </div>
           <CaretRight
-            {...onAction(nextPage)}
+            {...onAction(() => table.nextPage())}
             className="cursor-pointer icon-md"
           />
         </div>
