@@ -1329,14 +1329,7 @@ module.exports = {
     ],
     'no-mixed-spaces-and-tabs': ['warn'],
     'no-multi-assign': ['warn'],
-    'no-multiple-empty-lines': [
-      'warn',
-      {
-        max: 1,
-        maxBOF: 0,
-        maxEOF: 0,
-      },
-    ],
+    'no-multiple-empty-lines': 'off',
     'no-negated-condition': ['off'],
     'no-nested-ternary': ['warn'],
     'no-new-object': ['warn'],
