@@ -10,7 +10,7 @@ import {
   CaretLeft,
   CaretRight,
 } from 'phosphor-react';
-import { TokenData } from './WalletDetail';
+import type { TokenData } from './WalletDetail';
 import onAction from '../../../helpers/onAction';
 
 export const TableHeader: React.FunctionComponent = () => {
@@ -95,9 +95,13 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
       <table {...getTableProps()} className="w-full">
         <thead className="text-blue-500">
           {headerGroups.map((headerGroup) => (
-            <tr {...headerGroup.getHeaderGroupProps()}>
+            <tr key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column) => (
-                <th className="pb-2" {...column.getHeaderProps()}>
+                <th
+                  className="pb-2"
+                  key={column.id}
+                  {...column.getHeaderProps()}
+                >
                   {column.render('Header')}
                 </th>
               ))}
@@ -109,12 +113,13 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
             prepareRow(row);
             return (
               <tr
+                key={row.id}
                 {...row.getRowProps()}
                 className="border-y border-grey-400 last:border-b-0"
               >
                 {row.cells.map((cell) => {
                   return (
-                    <td className="py-3" {...cell.getCellProps()}>
+                    <td key={cell.id} className="py-3" {...cell.getCellProps()}>
                       {cell.render('Cell')}
                     </td>
                   );

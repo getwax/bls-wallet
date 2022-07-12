@@ -4,8 +4,8 @@ import MemoryCell from '../../../cells/MemoryCell';
 import useCell from '../../../cells/useCell';
 import onAction from '../../../helpers/onAction';
 import { useQuill } from '../../../QuillContext';
+import { AssetsTable } from './AssetsTable';
 import DisplayNonce from './DisplayNonce';
-// import { AssetsTable } from './AssetsTable';
 
 export interface TokenData {
   token: string;
@@ -15,50 +15,50 @@ export interface TokenData {
   action: string;
 }
 
-// const data: TokenData[] = [
-//   {
-//     token: 'ETH',
-//     tokenVal: 0.835,
-//     usdVal: 3398.27,
-//     lastTx: '12/10/2021',
-//     action: 'Transfer',
-//   },
-//   {
-//     token: 'ENJ',
-//     tokenVal: 1220.18,
-//     usdVal: 398.27,
-//     lastTx: '12/10/2021',
-//     action: 'Transfer',
-//   },
-//   {
-//     token: 'USDT',
-//     tokenVal: 187.12,
-//     usdVal: 98.27,
-//     lastTx: '12/10/2021',
-//     action: 'Transfer',
-//   },
-//   {
-//     token: 'ETH',
-//     tokenVal: 0.835,
-//     usdVal: 3398.27,
-//     lastTx: '12/10/2021',
-//     action: 'Transfer',
-//   },
-//   {
-//     token: 'DAI',
-//     tokenVal: 717.64,
-//     usdVal: 717.27,
-//     lastTx: '12/10/2021',
-//     action: 'Transfer',
-//   },
-//   {
-//     token: 'OMG',
-//     tokenVal: 371.82,
-//     usdVal: 33098.27,
-//     lastTx: '12/10/2021',
-//     action: 'Transfer',
-//   },
-// ];
+const data: TokenData[] = [
+  {
+    token: 'ETH',
+    tokenVal: 0.835,
+    usdVal: 3398.27,
+    lastTx: '12/10/2021',
+    action: 'Transfer',
+  },
+  {
+    token: 'ENJ',
+    tokenVal: 1220.18,
+    usdVal: 398.27,
+    lastTx: '12/10/2021',
+    action: 'Transfer',
+  },
+  {
+    token: 'USDT',
+    tokenVal: 187.12,
+    usdVal: 98.27,
+    lastTx: '12/10/2021',
+    action: 'Transfer',
+  },
+  {
+    token: 'ETH',
+    tokenVal: 0.835,
+    usdVal: 3398.27,
+    lastTx: '12/10/2021',
+    action: 'Transfer',
+  },
+  {
+    token: 'DAI',
+    tokenVal: 717.64,
+    usdVal: 717.27,
+    lastTx: '12/10/2021',
+    action: 'Transfer',
+  },
+  {
+    token: 'OMG',
+    tokenVal: 371.82,
+    usdVal: 33098.27,
+    lastTx: '12/10/2021',
+    action: 'Transfer',
+  },
+];
 
 type TabName = 'Assets' | 'Outbox' | 'Transactions';
 
@@ -74,7 +74,7 @@ const WalletTabs: FunctionComponent<{ activeTab: ICell<TabName> }> = ({
   const activeTabValue = useCell(activeTab);
 
   return (
-    <div className="flex border-b border-grey-300 gap-4 mb-4">
+    <div className="flex border-b border-grey-300 gap-4">
       {tabs.map((tab) => (
         <div
           key={tab.name}
@@ -103,20 +103,25 @@ export const WalletDetail: FunctionComponent = () => {
   const selectedAddress = useCell(quill.cells.selectedAddress);
 
   return (
-    <div className="">
+    <div className="flex flex-col gap-4">
       <WalletTabs {...{ activeTab }} />
 
       <input placeholder="Search" />
 
       {activeTabValue === 'Transactions' && selectedAddress && (
-        <>
+        <div>
           Total: <DisplayNonce address={selectedAddress} />
-        </>
+        </div>
       )}
 
-      {/* <AssetsTable data={data} /> */}
-      {/* <AssetsTable data={data} /> */}
-      {/* <AssetsTable data={data} /> */}
+      <div>
+        <div>Note: Placeholder data in the tables below</div>
+        <div style={{ opacity: 0.5 }}>
+          <AssetsTable data={data} />
+          <AssetsTable data={data} />
+          <AssetsTable data={data} />
+        </div>
+      </div>
     </div>
   );
 };
