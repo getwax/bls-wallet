@@ -387,8 +387,6 @@ export type EthereumRequestBody<M extends string> = {
     : unknown[] | undefined;
 };
 
-// FIXME: Lints are only warnings!
-
 export const EthereumRequestBody = io.union(
   Object.entries(rpcMap).map(([methodName, { Params }]) =>
     io.type({
