@@ -7,8 +7,9 @@ import CellCollection from './CellCollection';
 import IAsyncStorage from './IAsyncStorage';
 
 export default function MemoryCellCollection(
-  memory: Record<string, unknown> = {},
+  memoryParam: Record<string, unknown> = {},
 ) {
+  const memory = memoryParam;
   const events = new EventEmitter() as IAsyncStorage['events'];
 
   return new CellCollection({

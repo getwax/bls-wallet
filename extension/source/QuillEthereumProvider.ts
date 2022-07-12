@@ -180,12 +180,14 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
   }
 
   #exposeRpc() {
-    this.rpc = mapValues(rpcMap, (_, method) => {
-      return (...params: unknown[]) =>
-        this.request({
-          method,
-          params,
-        } as EthereumRequestBody<string>);
-    }) as RpcClient;
+    this.rpc = mapValues(
+      rpcMap,
+      (_, method) =>
+        (...params: unknown[]) =>
+          this.request({
+            method,
+            params,
+          } as EthereumRequestBody<string>),
+    ) as RpcClient;
   }
 }

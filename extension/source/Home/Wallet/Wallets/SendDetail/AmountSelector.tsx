@@ -19,8 +19,13 @@ const AmountSelector: FunctionComponent<{
       new TransformCell(
         amount,
         ($amount) => $amount || '0',
-        ($amount, $newAmount) =>
-          Number.isFinite(Number($newAmount)) ? $newAmount : $amount,
+        ($amount, $newAmount) => {
+          if (Number.isFinite(Number($newAmount))) {
+            return $newAmount;
+          }
+
+          return $amount;
+        },
       ),
     [amount],
   );

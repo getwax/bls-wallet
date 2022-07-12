@@ -25,7 +25,7 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
             <div>from</div>
             <div className="font-bold">{formatCompactAddress(from)}</div>
           </div>
-          <ArrowRight size={20} alignmentBaseline={'central'} />
+          <ArrowRight size={20} alignmentBaseline="central" />
           <div className="leading-snug">
             <div>to</div>
             <div className="font-bold">{formatCompactAddress(to)}</div>

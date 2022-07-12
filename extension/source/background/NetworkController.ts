@@ -63,8 +63,9 @@ export default class NetworkController
     return json.ok.result;
   }
 
-  async request(body: unknown) {
-    assertType(body, Object_);
+  async request(bodyParam: unknown) {
+    assertType(bodyParam, Object_);
+    const body = { ...bodyParam };
     body.id ??= RandomId();
     assertType(body, RpcRequest);
     return await this.requestStrict(body);

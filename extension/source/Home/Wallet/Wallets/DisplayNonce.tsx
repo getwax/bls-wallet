@@ -8,10 +8,9 @@ import { useQuill } from '../../../QuillContext';
 const DisplayNonce: FunctionComponent<{ address: string }> = ({ address }) => {
   const quill = useQuill();
 
-  const nonce = useMemo(() => {
-    return new FormulaCell(
-      { blockNumber: quill.cells.blockNumber },
-      async () => {
+  const nonce = useMemo(
+    () =>
+      new FormulaCell({ blockNumber: quill.cells.blockNumber }, async () => {
         const wallet = await BlsWalletWrapper.connect(
           await quill.rpc.lookupPrivateKey(address),
           NETWORK_CONFIG.addresses.verificationGateway,
@@ -19,9 +18,9 @@ const DisplayNonce: FunctionComponent<{ address: string }> = ({ address }) => {
         );
 
         return (await wallet.Nonce()).toNumber();
-      },
-    );
-  }, [quill.cells.blockNumber, quill.ethersProvider, quill.rpc, address]);
+      }),
+    [quill.cells.blockNumber, quill.ethersProvider, quill.rpc, address],
+  );
 
   const nonceValue = useCell(nonce);
 

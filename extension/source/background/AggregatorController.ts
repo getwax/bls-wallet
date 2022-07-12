@@ -50,13 +50,11 @@ export default class AggregatorController {
       // sending asset Y
       const { from } = params[0];
 
-      const actions = params.map((tx) => {
-        return {
-          ethValue: tx.value ?? '0',
-          contractAddress: tx.to,
-          encodedFunction: tx.data ?? '0x',
-        };
-      });
+      const actions = params.map((tx) => ({
+        ethValue: tx.value ?? '0',
+        contractAddress: tx.to,
+        encodedFunction: tx.data ?? '0x',
+      }));
 
       const privateKey = await this.InternalRpc().lookupPrivateKey(from);
 
