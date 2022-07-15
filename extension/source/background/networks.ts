@@ -51,7 +51,7 @@ export type ProviderConfig = io.TypeOf<typeof ProviderConfig>;
 export const builtinProviderConfigs = ensureType<
   Record<string, ProviderConfig>
 >()({
-  'arbitrum-rinkeby': {
+  'arbitrum-testnet': {
     blockExplorerUrl: 'https://rinkeby-explorer.arbitrum.io',
     chainId: '0x66eeb', // 421611
     displayName: 'Arbitrum Test Network',
@@ -59,7 +59,7 @@ export const builtinProviderConfigs = ensureType<
     rpcTarget: 'https://rinkeby.arbitrum.io/rpc',
     chainCurrencyName: 'Arbitrum Ether',
     chainCurrency: 'ARETH',
-    networkKey: 'arbitrum-rinkeby',
+    networkKey: 'arbitrum-testnet',
   },
   arbitrum: {
     blockExplorerUrl: 'https://explorer.arbitrum.io',
@@ -114,6 +114,10 @@ export const builtinProviderConfigs = ensureType<
 } as const);
 
 type BuiltinProviderConfigs = typeof builtinProviderConfigs;
+
+export const BuiltinChainName: io.Type<keyof BuiltinProviderConfigs> = io.keyof(
+  builtinProviderConfigs,
+);
 
 export type BuiltinChainName = keyof BuiltinProviderConfigs;
 

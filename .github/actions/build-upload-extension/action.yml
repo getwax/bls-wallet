@@ -33,7 +33,7 @@ runs:
       shell: bash
       run: |
         CRYPTO_COMPARE_API_KEY=${CRYPTO_COMPARE_API_KEY} \
-        NETWORK_CONFIG_PATH=../contracts/networks/arbitrum-testnet.json \
+        NETWORK_CONFIGS_DIR=../contracts/networks \
         yarn build:${{ inputs.browser }}
     - working-directory: ./extension
       shell: bash

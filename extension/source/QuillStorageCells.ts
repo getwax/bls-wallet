@@ -4,16 +4,16 @@ import * as io from 'io-ts';
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
 import {
-  builtinChainIdToName,
+  BuiltinChainName,
   builtinProviderConfigs,
   ProviderConfig,
 } from './background/networks';
 import { Preferences, Theme } from './background/Preferences';
 import AsyncReturnType from './types/AsyncReturnType';
-import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
 import { QuillTransaction } from './types/Rpc';
+import config from './config';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
@@ -58,10 +58,10 @@ function QuillStorageCells(storage: CellCollection) {
       () => ({ outgoing: [] }),
     ),
     network: storage.Cell('network', ProviderConfig, () => {
-      const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
-      const config = builtinProviderConfigs[networkName];
+      const networkName: BuiltinChainName = config.defaultNetwork;
+      const providerConfig = builtinProviderConfigs[networkName];
 
-      return config;
+      return providerConfig;
     }),
     preferences: storage.Cell('preferences', Preferences, () => ({
       identities: {},

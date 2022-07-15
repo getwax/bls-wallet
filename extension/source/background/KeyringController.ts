@@ -1,17 +1,18 @@
 import { BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import generateRandomHex from '../helpers/generateRandomHex';
-import { NETWORK_CONFIG } from '../env';
 import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
+import blsNetworksConfig from '../blsNetworksConfig';
 
 export default class KeyringController {
   constructor(
     public InternalRpc: () => RpcClient,
     public keyring: QuillStorageCells['keyring'],
     public selectedAddress: QuillStorageCells['selectedAddress'],
+    public network: QuillStorageCells['network'],
     public ethersProvider: ethers.providers.Provider,
   ) {}
 
@@ -102,9 +103,17 @@ export default class KeyringController {
   });
 
   async BlsWalletAddress(privateKey: string): Promise<string> {
+    const network = await this.network.read();
+    const blsNetworkConfig = blsNetworksConfig[network.networkKey];
+
+    assert(
+      blsNetworkConfig !== undefined,
+      () => new Error(`Missing bls network config for ${network.displayName}`),
+    );
+
     return BlsWalletWrapper.Address(
       privateKey,
-      NETWORK_CONFIG.addresses.verificationGateway,
+      blsNetworkConfig.addresses.verificationGateway,
       this.ethersProvider,
     );
   }

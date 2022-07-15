@@ -77,6 +77,7 @@ export default class QuillController {
       () => this.internalRpc,
       this.cells.keyring,
       this.cells.selectedAddress,
+      this.cells.network,
       this.ethersProvider,
     );
 

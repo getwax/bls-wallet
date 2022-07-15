@@ -3,7 +3,6 @@ import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import assertType from '../cells/assertType';
 
-import { AGGREGATOR_URL, NETWORK_CONFIG } from '../env';
 import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
@@ -11,11 +10,13 @@ import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
+import blsNetworksConfig from '../blsNetworksConfig';
+import config from '../config';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
   // aggregator for the particular provider only.
-  preferredAggregators: Record<string, string> = {};
+  preferredAggregators: Record<string, string | undefined> = {};
 
   knownTransactions: Record<
     string,
@@ -58,24 +59,46 @@ export default class AggregatorController {
 
       const privateKey = await this.InternalRpc().lookupPrivateKey(from);
 
+      const network = await this.networkController.network.read();
+      const blsNetworkConfig = blsNetworksConfig[network.networkKey];
+
+      assert(
+        blsNetworkConfig !== undefined,
+        () =>
+          new Error(`Missing bls network config for ${network.displayName}`),
+      );
+
       const wallet = await BlsWalletWrapper.connect(
         privateKey,
-        NETWORK_CONFIG.addresses.verificationGateway,
+        blsNetworkConfig.addresses.verificationGateway,
         this.ethersProvider,
       );
 
+      // FIXME: Restore this preferred method
       // const nonce = (await wallet.Nonce()).toString();
       const nonce = (
         await BlsWalletWrapper.Nonce(
           await wallet.PublicKey(),
-          NETWORK_CONFIG.addresses.verificationGateway,
+          blsNetworkConfig.addresses.verificationGateway,
           this.ethersProvider,
         )
       ).toString();
       const bundle = await wallet.sign({ nonce, actions });
 
-      const aggregatorUrl =
-        this.preferredAggregators[providerId] ?? AGGREGATOR_URL;
+      let aggregatorUrl = this.preferredAggregators[providerId];
+
+      if (aggregatorUrl === undefined) {
+        aggregatorUrl = config.aggregatorUrls[network.networkKey];
+
+        assert(
+          aggregatorUrl !== undefined,
+          () =>
+            new Error(
+              `Could not find aggregator for network ${network.displayName}`,
+            ),
+        );
+      }
+
       const agg = new Aggregator(aggregatorUrl);
       const result = await agg.add(bundle);
 

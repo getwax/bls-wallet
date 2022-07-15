@@ -1,0 +1,8 @@
+{
+  "defaultNetwork": "local",
+  "cryptoCompareApiKey": "<Add your api key>",
+  "aggregatorUrls": {
+    "local": "http://localhost:3000",
+    "arbitrum-testnet": "https://arbitrum-testnet.blswallet.org"
+  }
+}
