@@ -10,6 +10,7 @@ import { FormulaCell } from './cells/FormulaCell';
 import QuillLongPollingCell from './QuillLongPollingCell';
 import TransformCell from './cells/TransformCell';
 import forEach from './cells/forEach';
+import config from './config';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -85,5 +86,19 @@ function QuillContextCells(
     rpcBackgroundLogging: TransformCell.Sub(rpcLogging, 'background'),
     rpcInPageLogging: TransformCell.Sub(rpcLogging, 'inPage'),
     currencyConversion: QuillLongPollingCell(ethereum, 'currencyConversion'),
+    networkDisplayName: new TransformCell(
+      storageCells.network,
+      ($network) => $network.displayName,
+      ($network, newDisplayName) => {
+        for (const builtinNetwork of Object.values(config.builtinNetworks)) {
+          if (builtinNetwork?.displayName === newDisplayName) {
+            return builtinNetwork;
+          }
+        }
+
+        console.error(`Network not found: ${newDisplayName}`);
+        return $network;
+      },
+    ),
   };
 }
