@@ -1,13 +1,14 @@
 import * as io from 'io-ts';
 
 import configJson from '../config.json';
-import { BuiltinChainName } from './background/networks';
+import { ProviderConfig } from './background/ProviderConfig';
 import assertType from './cells/assertType';
+import optional from './types/optional';
 
 const Config = io.type({
-  defaultNetwork: BuiltinChainName,
+  defaultNetwork: io.string,
   cryptoCompareApiKey: io.string,
-  aggregatorUrls: io.record(io.string, io.string),
+  builtinNetworks: io.record(io.string, optional(ProviderConfig)),
 });
 
 assertType(configJson, Config);

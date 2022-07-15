@@ -3,11 +3,7 @@ import * as io from 'io-ts';
 
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
-import {
-  BuiltinChainName,
-  builtinProviderConfigs,
-  ProviderConfig,
-} from './background/networks';
+import { ProviderConfig } from './background/ProviderConfig';
 import { Preferences, Theme } from './background/Preferences';
 import AsyncReturnType from './types/AsyncReturnType';
 import { FormulaCell } from './cells/FormulaCell';
@@ -58,10 +54,14 @@ function QuillStorageCells(storage: CellCollection) {
       () => ({ outgoing: [] }),
     ),
     network: storage.Cell('network', ProviderConfig, () => {
-      const networkName: BuiltinChainName = config.defaultNetwork;
-      const providerConfig = builtinProviderConfigs[networkName];
+      const network = config.builtinNetworks[config.defaultNetwork];
 
-      return providerConfig;
+      assert(
+        network !== undefined,
+        () => new Error('Missing config for default network'),
+      );
+
+      return network;
     }),
     preferences: storage.Cell('preferences', Preferences, () => ({
       identities: {},

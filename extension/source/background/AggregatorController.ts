@@ -85,19 +85,8 @@ export default class AggregatorController {
       ).toString();
       const bundle = await wallet.sign({ nonce, actions });
 
-      let aggregatorUrl = this.preferredAggregators[providerId];
-
-      if (aggregatorUrl === undefined) {
-        aggregatorUrl = config.aggregatorUrls[network.networkKey];
-
-        assert(
-          aggregatorUrl !== undefined,
-          () =>
-            new Error(
-              `Could not find aggregator for network ${network.displayName}`,
-            ),
-        );
-      }
+      const aggregatorUrl =
+        this.preferredAggregators[providerId] ?? network.aggregatorUrl;
 
       const agg = new Aggregator(aggregatorUrl);
       const result = await agg.add(bundle);

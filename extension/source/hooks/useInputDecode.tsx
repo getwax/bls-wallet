@@ -2,22 +2,10 @@ import { ethers } from 'ethers';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-import {
-  BuiltinChainId,
-  builtinChainIdToName,
-  builtinProviderConfigs,
-} from '../background/networks';
 import assert from '../helpers/assert';
+import { useQuill } from '../QuillContext';
 
-export const getBuiltinRPCURL = (builtinChainId: BuiltinChainId) => {
-  const name = builtinChainIdToName(builtinChainId);
-  return builtinProviderConfigs[name].rpcTarget;
-};
-
-const getParitySigRegistry = (builtinChainId: BuiltinChainId) => {
-  const provider = new ethers.providers.JsonRpcProvider(
-    getBuiltinRPCURL(builtinChainId),
-  );
+const getParitySigRegistry = (provider: ethers.providers.Provider) => {
   const address = '0x44691B39d1a75dC4E0A0346CBB15E310e6ED1E86';
   const abi = [
     {
@@ -35,12 +23,12 @@ const getParitySigRegistry = (builtinChainId: BuiltinChainId) => {
 
 const getMethodFromOnChainRegistry = async (
   data: string,
-  builtinChainId: BuiltinChainId,
+  provider: ethers.providers.Provider,
 ) => {
   if (data === '0x') return 'SENDING ETH';
 
   const methodID = ethers.utils.hexDataSlice(data, 0, 4);
-  const registry = getParitySigRegistry(builtinChainId);
+  const registry = getParitySigRegistry(provider);
 
   return registry.entries(methodID);
 };
@@ -72,8 +60,9 @@ type UseInputDecodeValues = {
 export const useInputDecode = (
   functionData: string,
   to: string,
-  builtinChainId: BuiltinChainId = '0x1',
 ): UseInputDecodeValues => {
+  const quill = useQuill();
+
   const [loading, setLoading] = useState<boolean>(true);
   const [method, setMethod] = useState<string>('CONTRACT INTERACTION');
 
@@ -86,7 +75,7 @@ export const useInputDecode = (
       try {
         const registryPromise = getMethodFromOnChainRegistry(
           data,
-          builtinChainId,
+          quill.ethersProvider,
         );
         const etherScanPromise = getMethodFromEtherscan(to, data);
         const rawMethod = (await registryPromise) ?? (await etherScanPromise);
@@ -103,7 +92,7 @@ export const useInputDecode = (
     if (functionData) {
       getMethod();
     }
-  }, [functionData, to, builtinChainId]);
+  }, [functionData, to, quill]);
 
   return { loading, method };
 };
