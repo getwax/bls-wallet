@@ -42,7 +42,7 @@ export default class QuillController {
    * @deprecated
    * FIXME: `BlsWalletWrapper` should just support a vanilla provider.
    */
-  ethersProvider: ethers.providers.Provider;
+  ethersProvider: IReadableCell<ethers.providers.Provider>;
 
   rpc: RpcImpl;
   internalRpc: RpcClient;
@@ -54,8 +54,9 @@ export default class QuillController {
 
     this.networkController = new NetworkController(this.cells.network);
 
-    this.ethersProvider = new ethers.providers.Web3Provider(
-      this.networkController,
+    this.ethersProvider = new FormulaCell(
+      { network: this.cells.network },
+      () => new ethers.providers.Web3Provider(this.networkController),
     );
 
     this.preferencesController = new PreferencesController(

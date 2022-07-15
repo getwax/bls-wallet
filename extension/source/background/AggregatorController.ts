@@ -11,7 +11,7 @@ import NetworkController from './NetworkController';
 import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
 import blsNetworksConfig from '../blsNetworksConfig';
-import config from '../config';
+import { IReadableCell } from '../cells/ICell';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -33,7 +33,7 @@ export default class AggregatorController {
     public networkController: NetworkController,
     public keyringController: KeyringController,
     public transactionsController: TransactionsController,
-    public ethersProvider: ethers.providers.Provider,
+    public ethersProvider: IReadableCell<ethers.providers.Provider>,
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
@@ -68,10 +68,12 @@ export default class AggregatorController {
           new Error(`Missing bls network config for ${network.displayName}`),
       );
 
+      const ethersProvider = await this.ethersProvider.read();
+
       const wallet = await BlsWalletWrapper.connect(
         privateKey,
         blsNetworkConfig.addresses.verificationGateway,
-        this.ethersProvider,
+        ethersProvider,
       );
 
       // FIXME: Restore this preferred method
@@ -80,7 +82,7 @@ export default class AggregatorController {
         await BlsWalletWrapper.Nonce(
           await wallet.PublicKey(),
           blsNetworkConfig.addresses.verificationGateway,
-          this.ethersProvider,
+          ethersProvider,
         )
       ).toString();
       const bundle = await wallet.sign({ nonce, actions });

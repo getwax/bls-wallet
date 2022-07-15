@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events';
 
 import TypedEmitter from 'typed-emitter';
-import { deepCopy } from 'ethers/lib/utils';
 
 import AsyncReturnType from '../types/AsyncReturnType';
 import ExplicitAny from '../types/ExplicitAny';
@@ -16,6 +15,7 @@ import prefixKeys, { PrefixKeys } from './prefixKeys';
 import assert from '../helpers/assert';
 import delay from '../helpers/delay';
 import mixtureHasChanged from './mixtureHasChanged';
+import mixtureCopy from './mixtureCopy';
 
 type InputValues<InputCells extends Record<string, IReadableCell<unknown>>> = {
   [K in keyof InputCells]: AsyncReturnType<InputCells[K]['read']>;
@@ -147,7 +147,7 @@ export class FormulaCell<
           break;
         }
 
-        const latest = deepCopy(
+        const latest = mixtureCopy(
           await this.formula(
             prefixKeys('$', inputValues.value as InputValues<InputCells>),
           ),

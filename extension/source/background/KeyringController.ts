@@ -6,6 +6,8 @@ import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
 import blsNetworksConfig from '../blsNetworksConfig';
+import { IReadableCell } from '../cells/ICell';
+import mixtureCopy from '../cells/mixtureCopy';
 
 export default class KeyringController {
   constructor(
@@ -13,15 +15,50 @@ export default class KeyringController {
     public keyring: QuillStorageCells['keyring'],
     public selectedAddress: QuillStorageCells['selectedAddress'],
     public network: QuillStorageCells['network'],
-    public ethersProvider: ethers.providers.Provider,
+    public ethersProvider: IReadableCell<ethers.providers.Provider>,
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
     eth_accounts: async ({ origin }) => {
       if (origin === window.location.origin) {
-        return (await this.keyring.read()).wallets.map(
-          ({ address }) => address,
+        const network = await this.network.read();
+        const blsNetworkConfig = blsNetworksConfig[network.networkKey];
+
+        const keyring = mixtureCopy(await this.keyring.read());
+        let keyringUpdated = false;
+
+        const addresses = await Promise.all(
+          keyring.wallets.map(async (wallet) => {
+            let networkDataForWallet = wallet.networks[network.networkKey];
+
+            if (networkDataForWallet === undefined) {
+              assert(
+                blsNetworkConfig !== undefined,
+                () =>
+                  new Error(
+                    `Missing bls network config for ${network.displayName}`,
+                  ),
+              );
+
+              networkDataForWallet = {
+                originalGateway: blsNetworkConfig.addresses.verificationGateway,
+                address: await this.BlsWalletAddress(wallet.privateKey),
+              };
+
+              // eslint-disable-next-line no-param-reassign
+              wallet.networks[network.networkKey] = networkDataForWallet;
+              keyringUpdated = true;
+            }
+
+            return networkDataForWallet.address;
+          }),
         );
+
+        if (keyringUpdated) {
+          await this.keyring.write(keyring);
+        }
+
+        return addresses;
       }
 
       const selectedAddress = await this.selectedAddress.read();
@@ -63,9 +100,10 @@ export default class KeyringController {
 
     lookupPrivateKey: async ({ params: [rawAddress] }) => {
       const address = ethers.utils.getAddress(rawAddress);
+      const network = await this.network.read();
 
       const keyPair = (await this.keyring.read()).wallets.find(
-        (x) => x.address === address,
+        (x) => x.networks[network.networkKey]?.address === address,
       );
 
       assert(keyPair !== undefined, () => new Error('key does not exist'));
@@ -83,7 +121,26 @@ export default class KeyringController {
 
       const address = await this.BlsWalletAddress(privateKey);
 
-      wallets.push({ privateKey, address });
+      const network = await this.network.read();
+      const blsNetworkConfig = blsNetworksConfig[network.networkKey];
+
+      // FIXME: Duplication of this
+      assert(
+        blsNetworkConfig !== undefined,
+        () =>
+          new Error(`bls network config not found for ${network.displayName}`),
+      );
+
+      wallets.push({
+        privateKey,
+        networks: {
+          [network.networkKey]: {
+            address,
+            originalGateway: blsNetworkConfig.addresses.verificationGateway,
+          },
+        },
+      });
+
       await this.keyring.update({ wallets });
 
       return address;
@@ -91,7 +148,11 @@ export default class KeyringController {
 
     removeAccount: async ({ params: [address] }) => {
       const { wallets } = await this.keyring.read();
-      const newWallets = wallets.filter((w) => w.address !== address);
+      const network = await this.network.read();
+
+      const newWallets = wallets.filter(
+        (w) => w.networks[network.networkKey]?.address !== address,
+      );
 
       assert(
         newWallets.length < wallets.length,
@@ -114,7 +175,7 @@ export default class KeyringController {
     return BlsWalletWrapper.Address(
       privateKey,
       blsNetworkConfig.addresses.verificationGateway,
-      this.ethersProvider,
+      await this.ethersProvider.read(),
     );
   }
 }

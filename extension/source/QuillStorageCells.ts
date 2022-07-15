@@ -10,6 +10,7 @@ import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
 import { QuillTransaction } from './types/Rpc';
 import config from './config';
+import optional from './types/optional';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
@@ -36,7 +37,15 @@ function QuillStorageCells(storage: CellCollection) {
         wallets: io.array(
           io.type({
             privateKey: io.string,
-            address: io.string,
+            networks: io.record(
+              io.string,
+              optional(
+                io.type({
+                  originalGateway: io.string,
+                  address: io.string,
+                }),
+              ),
+            ),
           }),
         ),
       }),

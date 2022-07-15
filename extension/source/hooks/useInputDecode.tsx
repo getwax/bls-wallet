@@ -4,8 +4,11 @@ import axios from 'axios';
 
 import assert from '../helpers/assert';
 import { useQuill } from '../QuillContext';
+import { IReadableCell } from '../cells/ICell';
 
-const getParitySigRegistry = (provider: ethers.providers.Provider) => {
+const getParitySigRegistry = async (
+  provider: IReadableCell<ethers.providers.Provider>,
+) => {
   const address = '0x44691B39d1a75dC4E0A0346CBB15E310e6ED1E86';
   const abi = [
     {
@@ -18,17 +21,17 @@ const getParitySigRegistry = (provider: ethers.providers.Provider) => {
     },
   ];
 
-  return new ethers.Contract(address, abi, provider);
+  return new ethers.Contract(address, abi, await provider.read());
 };
 
 const getMethodFromOnChainRegistry = async (
   data: string,
-  provider: ethers.providers.Provider,
+  provider: IReadableCell<ethers.providers.Provider>,
 ) => {
   if (data === '0x') return 'SENDING ETH';
 
   const methodID = ethers.utils.hexDataSlice(data, 0, 4);
-  const registry = getParitySigRegistry(provider);
+  const registry = await getParitySigRegistry(provider);
 
   return registry.entries(methodID);
 };

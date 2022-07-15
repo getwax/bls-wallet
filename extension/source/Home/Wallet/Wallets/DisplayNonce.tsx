@@ -22,7 +22,7 @@ const DisplayNonce: FunctionComponent<{ address: string }> = ({ address }) => {
           const wallet = await BlsWalletWrapper.connect(
             await quill.rpc.lookupPrivateKey(address),
             blsNetworkConfig.addresses.verificationGateway,
-            quill.ethersProvider,
+            await quill.ethersProvider.read(),
           );
 
           return (await wallet.Nonce()).toNumber();
