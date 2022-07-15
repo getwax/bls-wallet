@@ -1,6 +1,5 @@
 {
   "defaultNetwork": "local",
-  "cryptoCompareApiKey": "<Add your api key>",
   "builtinNetworks": {
     "mainnet": {
       "blockExplorerUrl": "http://etherscan.io/",
@@ -68,5 +67,10 @@
       "aggregatorUrl": "https://optimism.blswallet.org",
       "networkKey": "optimism"
     }
+  },
+  "currencyConversion": {
+    "api": "https://min-api.cryptocompare.com/data/price",
+    "apiKey": "<Add your api key>",
+    "pollInterval": 30000
   }
 }

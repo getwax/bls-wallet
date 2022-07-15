@@ -21,9 +21,7 @@ import isType from '../cells/isType';
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import AggregatorController from './AggregatorController';
-import CurrencyConversionCell, {
-  CurrencyConversionConfig,
-} from './CurrencyConversionCell';
+import CurrencyConversionCell from './CurrencyConversionCell';
 import assert from '../helpers/assert';
 import RandomId from '../helpers/RandomId';
 import mapValues from '../helpers/mapValues';
@@ -51,10 +49,7 @@ export default class QuillController {
 
   cells: QuillStorageCells;
 
-  constructor(
-    public storage: CellCollection,
-    public currencyConversionConfig: CurrencyConversionConfig,
-  ) {
+  constructor(public storage: CellCollection) {
     this.cells = QuillStorageCells(storage);
 
     this.networkController = new NetworkController(this.cells.network);
@@ -68,7 +63,6 @@ export default class QuillController {
     );
 
     this.currencyConversion = CurrencyConversionCell(
-      this.currencyConversionConfig,
       this.preferencesController.preferredCurrency,
       FormulaCell.Sub(this.cells.network, 'chainCurrency'),
     );

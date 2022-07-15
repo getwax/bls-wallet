@@ -4,11 +4,6 @@ import TimeCell from '../cells/TimeCell';
 import config from '../config';
 import assert from '../helpers/assert';
 
-export type CurrencyConversionConfig = {
-  api: string;
-  pollInterval: number;
-};
-
 /**
  * We use these aliases because the api we use does not know about them and
  * ETH is a pretty good proxy. Ideally, we would use a data source which is
@@ -23,8 +18,6 @@ const currencyAliases: Record<string, string | undefined> = {
 };
 
 export default function CurrencyConversionCell(
-  // FIXME: CurrencyConversionConfig should be in the main config
-  currencyConversionConfig: CurrencyConversionConfig,
   preferredCurrency: IReadableCell<string | undefined>,
   chainCurrency: IReadableCell<string>,
 ) {
@@ -32,11 +25,11 @@ export default function CurrencyConversionCell(
     {
       preferredCurrency,
       chainCurrency,
-      time: TimeCell(currencyConversionConfig.pollInterval),
+      time: TimeCell(config.currencyConversion.pollInterval),
     },
     ({ $preferredCurrency, $chainCurrency }) =>
       fetchRate(
-        currencyConversionConfig.api,
+        config.currencyConversion.api,
         $chainCurrency,
         $preferredCurrency,
       ),
@@ -57,7 +50,7 @@ async function fetchRate(
   const apiUrl = new URL(api);
   apiUrl.searchParams.append('fsym', mappedChainCurrency);
   apiUrl.searchParams.append('tsyms', preferredCurrency);
-  apiUrl.searchParams.append('api_key', config.cryptoCompareApiKey);
+  apiUrl.searchParams.append('api_key', config.currencyConversion.apiKey);
 
   const response = await fetch(apiUrl.toString()).then((res) => res.json());
   const rate = Number(response[preferredCurrency]);
