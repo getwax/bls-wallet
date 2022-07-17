@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 import useCell from '../../../../cells/useCell';
 import Button from '../../../../components/Button';
-import { useQuill } from '../../../QuillContext';
+import { useQuill } from '../../../../QuillContext';
 
 import type { SendState } from './SendDetail';
 

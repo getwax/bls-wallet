@@ -6,7 +6,7 @@ import MemoryCell from '../../../../cells/MemoryCell';
 import assert from '../../../../helpers/assert';
 import AsyncReturnType from '../../../../types/AsyncReturnType';
 import { RpcClient } from '../../../../types/Rpc';
-import { QuillContextValue, useQuill } from '../../../QuillContext';
+import { QuillContextValue, useQuill } from '../../../../QuillContext';
 
 import BigSendButton from './BigSendButton';
 import SendDetailSelectors from './SendDetailSelectors';

@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react';
 
-import elcc from '../cells/extensionLocalCellCollection';
-import assert from '../helpers/assert';
-import QuillStorageCells from '../QuillStorageCells';
-import QuillEthereumProvider from '../QuillEthereumProvider';
-import EthersProvider from '../EthersProvider';
-import CellCollection from '../cells/CellCollection';
-import { FormulaCell } from '../cells/FormulaCell';
-import QuillLongPollingCell from '../QuillLongPollingCell';
-import TransformCell from '../cells/TransformCell';
-import forEach from '../cells/forEach';
+import elcc from './cells/extensionLocalCellCollection';
+import assert from './helpers/assert';
+import QuillStorageCells from './QuillStorageCells';
+import QuillEthereumProvider from './QuillEthereumProvider';
+import EthersProvider from './EthersProvider';
+import CellCollection from './cells/CellCollection';
+import { FormulaCell } from './cells/FormulaCell';
+import QuillLongPollingCell from './QuillLongPollingCell';
+import TransformCell from './cells/TransformCell';
+import forEach from './cells/forEach';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 

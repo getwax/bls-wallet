@@ -1,5 +1,5 @@
-import { FunctionComponent, useEffect, useState } from 'react';
-import { runtime, storage } from 'webextension-polyfill';
+import { FunctionComponent, useState } from 'react';
+import { runtime } from 'webextension-polyfill';
 
 // components, styles and UI
 import { Check, X, CaretLeft, CaretRight } from 'phosphor-react';
@@ -12,37 +12,37 @@ import {
 } from '../types/Rpc';
 import TransactionCard from './TransactionCard';
 import onAction from '../helpers/onAction';
+import { useQuill } from '../QuillContext';
+import useCell from '../cells/useCell';
+import Loading from '../components/Loading';
 
 const Confirm: FunctionComponent = () => {
-  const [id, setId] = useState<string | null>();
-  const [actions, setActions] = useState<SendTransactionParams[]>([]);
+  const quill = useQuill();
+
+  const id = new URL(window.location.href).searchParams.get('id');
+  const transactions = useCell(quill.cells.transactions);
+
   const [current, setCurrent] = useState<number>(0);
 
-  useEffect(() => {
-    const params = new URL(window.location.href).searchParams;
-    const txid = params.get('id');
-    setId(txid);
+  if (transactions === undefined) {
+    return <Loading />;
+  }
 
-    const fetchTx = async () => {
-      const data = await storage.local.get('transactions');
-      const tx = data.transactions.value.outgoing.find(
-        (t: any) => t.id === txid,
-      );
-      setActions(tx.actions);
-    };
+  const tx = transactions.outgoing.find((t) => t.id === id);
 
-    fetchTx();
-  }, []);
+  if (tx === undefined) {
+    return <>Error: Tx not found</>;
+  }
 
   const respondTx = (result: PromptMessage['result']) => {
     runtime.sendMessage(undefined, { id, result });
   };
 
   const nextTx = () => {
-    setCurrent((current + 1) % actions.length);
+    setCurrent((current + 1) % tx.actions.length);
   };
   const prevTx = () => {
-    setCurrent((current - 1) % actions.length);
+    setCurrent((current - 1) % tx.actions.length);
   };
 
   const calculateTotal = (allActions: SendTransactionParams[]) => {
@@ -72,9 +72,9 @@ const Confirm: FunctionComponent = () => {
 
         <div className="mt-4">AppName is making requests to your wallet</div>
 
-        {actions.length > 1 && (
+        {tx.actions.length > 1 && (
           <div className="mt-4 flex justify-end text-body self-center gap-3">
-            {current + 1} of {actions?.length}
+            {current + 1} of {tx.actions?.length}
             <div
               className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer"
               {...onAction(prevTx)}
@@ -92,14 +92,16 @@ const Confirm: FunctionComponent = () => {
 
         <div className="flex flex-col">
           <div className="mt-4">
-            {actions[current] && <TransactionCard {...actions[current]} />}
+            {tx.actions[current] && (
+              <TransactionCard {...tx.actions[current]} />
+            )}
           </div>
 
           <div className="mt-4 p-4 bg-grey-300 rounded-md flex justify-between h-20">
             <div className="">Total Transaction Fees</div>
             <div className="text-right">
               <div className="font-bold">USD $0.0</div>
-              <div className="">{calculateTotal(actions)} ETH</div>
+              <div className="">{calculateTotal(tx.actions)} ETH</div>
             </div>
           </div>
         </div>

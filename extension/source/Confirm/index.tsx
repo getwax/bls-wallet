@@ -1,7 +1,21 @@
-import ReactDOM from 'react-dom';
-
-import Confirm from './Confirm';
 import '../styles/index.scss';
 import './styles.scss';
 
-ReactDOM.render(<Confirm />, document.getElementById('confirm-root'));
+import ReactDOM from 'react-dom';
+import Browser from 'webextension-polyfill';
+
+import QuillEthereumProvider from '../QuillEthereumProvider';
+import Confirm from './Confirm';
+import { QuillContextProvider } from '../QuillContext';
+
+window.ethereum = new QuillEthereumProvider(true);
+
+window.debug ??= {};
+window.debug.Browser = Browser;
+
+ReactDOM.render(
+  <QuillContextProvider>
+    <Confirm />
+  </QuillContextProvider>,
+  document.getElementById('confirm-root'),
+);

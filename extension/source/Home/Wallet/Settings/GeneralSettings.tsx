@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react';
 import Display from '../../../cells/components/Display';
-import { useQuill } from '../../QuillContext';
+import { useQuill } from '../../../QuillContext';
 
 const GeneralSettings: FunctionComponent = () => {
   const { cells } = useQuill();

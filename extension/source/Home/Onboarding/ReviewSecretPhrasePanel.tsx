@@ -4,7 +4,7 @@ import { ArrowRight } from 'phosphor-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Range from '../../helpers/Range';
-import { useQuill } from '../QuillContext';
+import { useQuill } from '../../QuillContext';
 
 const WordInReview: FunctionComponent<{
   index: number;

@@ -3,7 +3,7 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 
 import OnboardingPage from './Onboarding/OnboardingPage';
 import { WalletsPage } from './Wallet/WalletsPage';
-import { QuillContextProvider } from './QuillContext';
+import { QuillContextProvider } from '../QuillContext';
 import Theme from './Theme';
 import LoadingPage from './LoadingPage';
 

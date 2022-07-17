@@ -5,7 +5,7 @@ import ICell from '../../../../cells/ICell';
 import useCell from '../../../../cells/useCell';
 import Loading from '../../../../components/Loading';
 import onAction from '../../../../helpers/onAction';
-import { useQuill } from '../../../QuillContext';
+import { useQuill } from '../../../../QuillContext';
 import Balance from '../Balance';
 
 const AssetSelector: FunctionComponent<{

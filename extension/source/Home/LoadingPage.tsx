@@ -2,7 +2,7 @@ import { FunctionComponent, useEffect } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import Loading from '../components/Loading';
-import { useQuill } from './QuillContext';
+import { useQuill } from '../QuillContext';
 
 const LoadingPage: FunctionComponent = () => {
   const navigate = useNavigate();
