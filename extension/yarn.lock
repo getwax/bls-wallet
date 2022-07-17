@@ -1710,6 +1710,18 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
+"@tanstack/react-table@^8.2.3":
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-table/-/react-table-8.2.3.tgz#bc451497d53b788581c0c226626e625c904a2d20"
+  integrity sha512-48vfd1gOsjE6XCUrFQ8ZSUNRDEbDhFNmYgPlB8RkO+kyvOGut219lZ5rsu8Znw6YVU/WhUmsdE+GMGUeCjFdVQ==
+  dependencies:
+    "@tanstack/table-core" "8.2.3"
+
+"@tanstack/table-core@8.2.3":
+  version "8.2.3"
+  resolved "https://registry.yarnpkg.com/@tanstack/table-core/-/table-core-8.2.3.tgz#2ca0c8564262a6624bfddfd9b8361c4b829621e9"
+  integrity sha512-jzWAXgoXj8OK5zCrUfApesZ0+Admley/+T+W21MQxkfFaPRyoz+wiM+3xARpwGkB7SPzc3FuAzF4Ae9JcKq6gw==
+
 "@thehubbleproject/bls@^0.5.1":
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/@thehubbleproject/bls/-/bls-0.5.1.tgz#6b0565f56fc9c8896dcf3c8f0e2214b69a06167f"
@@ -6141,11 +6153,6 @@ react-router@6.2.1:
   integrity sha512-2fG0udBtxou9lXtK97eJeET2ki5//UWfQSl1rlJ7quwe6jrktK9FCCc8dQb5QY6jAv3jua8bBQRhhDOM/kVRsg==
   dependencies:
     history "^5.2.0"
-
-react-table@^7.7.0:
-  version "7.7.0"
-  resolved "https://registry.yarnpkg.com/react-table/-/react-table-7.7.0.tgz#e2ce14d7fe3a559f7444e9ecfe8231ea8373f912"
-  integrity sha512-jBlj70iBwOTvvImsU9t01LjFjy4sXEtclBovl3mTiqjz23Reu0DKnRza4zlLtOPACx6j2/7MrQIthIK1Wi+LIA==
 
 react@^17.0.2:
   version "17.0.2"
