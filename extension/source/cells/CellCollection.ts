@@ -147,7 +147,11 @@ export class CollectionCell<T> implements ICell<T> {
       newVersionedValue.version > latest.version,
       () =>
         new Error(
-          `Rejecting write which is not newer than remote. write v: ${newVersionedValue.version}, remote v: ${latest.version}`,
+          [
+            'Rejecting write which is not newer than remote.',
+            `write v: ${newVersionedValue.version},`,
+            `remote v: ${latest.version}`,
+          ].join(' '),
         ),
     );
 

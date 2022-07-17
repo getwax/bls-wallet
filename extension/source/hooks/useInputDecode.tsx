@@ -58,12 +58,11 @@ const getMethodFromEtherscan = async (to: string, data: string) => {
   assert(false, () => new Error('Unverified Contract'));
 };
 
-const formatMethod = (method: string) => {
-  return method
+const formatMethod = (method: string) =>
+  method
     .split('(')[0]
     .replace(/([a-z](?=[A-Z]))/g, '$1 ')
     .toUpperCase();
-};
 
 type UseInputDecodeValues = {
   loading: boolean;

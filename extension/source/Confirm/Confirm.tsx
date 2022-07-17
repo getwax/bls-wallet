@@ -76,13 +76,17 @@ const Confirm: FunctionComponent = () => {
           <div className="mt-4 flex justify-end text-body self-center gap-3">
             {current + 1} of {tx.actions?.length}
             <div
-              className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer"
+              className={[
+                'bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer',
+              ].join(' ')}
               {...onAction(prevTx)}
             >
               <CaretLeft size={20} className="self-center" />
             </div>
             <div
-              className="bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer"
+              className={[
+                'bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer',
+              ].join(' ')}
               {...onAction(nextTx)}
             >
               <CaretRight size={20} className="self-center" />
@@ -97,7 +101,11 @@ const Confirm: FunctionComponent = () => {
             )}
           </div>
 
-          <div className="mt-4 p-4 bg-grey-300 rounded-md flex justify-between h-20">
+          <div
+            className={[
+              'mt-4 p-4 bg-grey-300 rounded-md flex justify-between h-20',
+            ].join(' ')}
+          >
             <div className="">Total Transaction Fees</div>
             <div className="text-right">
               <div className="font-bold">USD $0.0</div>

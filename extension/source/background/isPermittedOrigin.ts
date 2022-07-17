@@ -16,7 +16,7 @@ export default function isPermittedOrigin(
     !permittedOriginPattern.includes('*'),
     () =>
       new Error(
-        `Origin patterns other than simply '*' are not yet implemented`,
+        "Origin patterns other than simply '*' are not yet implemented",
       ),
   );
 

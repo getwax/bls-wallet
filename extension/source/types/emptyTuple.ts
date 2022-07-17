@@ -10,8 +10,13 @@ const isEmptyTuple = (input: unknown): input is [] =>
 const emptyTuple = new io.Type<[], [], unknown>(
   '[]',
   isEmptyTuple,
-  (input, context) =>
-    isEmptyTuple(input) ? io.success(input) : io.failure(input, context),
+  (input, context) => {
+    if (isEmptyTuple(input)) {
+      return io.success(input);
+    }
+
+    return io.failure(input, context);
+  },
   io.identity,
 );
 

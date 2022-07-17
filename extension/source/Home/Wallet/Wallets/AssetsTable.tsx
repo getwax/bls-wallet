@@ -18,34 +18,32 @@ import {
 import type { TokenData } from './WalletDetail';
 import onAction from '../../../helpers/onAction';
 
-export const TableHeader: React.FunctionComponent = () => {
-  return (
-    <div className="flex justify-between p-6">
-      <div className="flex gap-4">
-        <div className="flex gap-2 items-center">
-          <ShareNetwork className="text-blue-500 icon-md" />
-          <div className="">
-            <span className="text-blue-500">Network :</span> Mainnet
-          </div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <StopCircle className="text-blue-500 icon-md" />
-          <div className=""> 3 Tokens</div>
+export const TableHeader: React.FunctionComponent = () => (
+  <div className="flex justify-between p-6">
+    <div className="flex gap-4">
+      <div className="flex gap-2 items-center">
+        <ShareNetwork className="text-blue-500 icon-md" />
+        <div className="">
+          <span className="text-blue-500">Network :</span> Mainnet
         </div>
       </div>
-      <div className="flex gap-4 text-[13pt]">
-        <div className="flex gap-2 items-center">
-          <CurrencyEth className="text-blue-500 icon-md" />
-          <div className="">0.937 ETH</div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <CurrencyDollar className="text-blue-500 icon-md" />
-          <div className="">3,813.38 USD</div>
-        </div>
+      <div className="flex gap-2 items-center">
+        <StopCircle className="text-blue-500 icon-md" />
+        <div className=""> 3 Tokens</div>
       </div>
     </div>
-  );
-};
+    <div className="flex gap-4 text-[13pt]">
+      <div className="flex gap-2 items-center">
+        <CurrencyEth className="text-blue-500 icon-md" />
+        <div className="">0.937 ETH</div>
+      </div>
+      <div className="flex gap-2 items-center">
+        <CurrencyDollar className="text-blue-500 icon-md" />
+        <div className="">3,813.38 USD</div>
+      </div>
+    </div>
+  </div>
+);
 
 interface IAssetsTable {
   data: TokenData[];
@@ -112,29 +110,27 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
           ))}
         </thead>
         <tbody className="text-center">
-          {table.getRowModel().rows.map((row) => {
-            return (
-              <tr
-                key={row.id}
-                className="border-y border-grey-400 last:border-b-0"
-              >
-                {row.getVisibleCells().map((cell) => {
-                  return (
-                    <td key={cell.id} className="py-3">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
+          {table.getRowModel().rows.map((row) => (
+            <tr
+              key={row.id}
+              className="border-y border-grey-400 last:border-b-0"
+            >
+              {row.getVisibleCells().map((cell) => (
+                <td key={cell.id} className="py-3">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
 
-      <div className="bg-grey-100 px-4 py-2 border-t border-grey-300 flex justify-end gap-8">
+      <div
+        className={[
+          'bg-grey-100 px-4 py-2 border-t border-grey-300 flex justify-end',
+          'gap-8',
+        ].join(' ')}
+      >
         <div className="flex">
           <div>showing</div>
           <select

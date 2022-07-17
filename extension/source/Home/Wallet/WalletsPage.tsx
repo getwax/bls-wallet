@@ -69,40 +69,42 @@ const routes: IRoutes[] = [
   },
 ];
 
-export const WalletsPage: React.FunctionComponent = () => {
-  return (
-    <div className="flex h-screen">
-      {/* Navigation */}
-      <Navigation />
+export const WalletsPage: React.FunctionComponent = () => (
+  <div className="flex h-screen">
+    {/* Navigation */}
+    <Navigation />
 
-      <div className="flex-grow flex">
-        {/* summary pane */}
-        <div className="w-1/3 bg-grey-100 border-x border-grey-300 p-8 overflow-y-scroll">
-          <Routes>
-            {routes.map((item) => (
-              <Route
-                index={item.path === '/'}
-                key={item.name}
-                path={item.path}
-                element={item.summaryComponent}
-              />
-            ))}
-          </Routes>
-        </div>
+    <div className="flex-grow flex">
+      {/* summary pane */}
+      <div
+        className={[
+          'w-1/3 bg-grey-100 border-x border-grey-300 p-8 overflow-y-scroll',
+        ].join(' ')}
+      >
+        <Routes>
+          {routes.map((item) => (
+            <Route
+              index={item.path === '/'}
+              key={item.name}
+              path={item.path}
+              element={item.summaryComponent}
+            />
+          ))}
+        </Routes>
+      </div>
 
-        {/* details pane */}
-        <div className="w-2/3 p-8 overflow-y-scroll">
-          <Routes>
-            {routes.map((item) => (
-              <Route
-                key={item.name}
-                path={item.path}
-                element={item.detailComponent}
-              />
-            ))}
-          </Routes>
-        </div>
+      {/* details pane */}
+      <div className="w-2/3 p-8 overflow-y-scroll">
+        <Routes>
+          {routes.map((item) => (
+            <Route
+              key={item.name}
+              path={item.path}
+              element={item.detailComponent}
+            />
+          ))}
+        </Routes>
       </div>
     </div>
-  );
-};
+  </div>
+);

@@ -7,20 +7,18 @@ import { QuillContextProvider } from '../QuillContext';
 import Theme from './Theme';
 import LoadingPage from './LoadingPage';
 
-const Home: FunctionComponent = () => {
-  return (
-    <QuillContextProvider>
-      <Theme>
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<LoadingPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/*" element={<WalletsPage />} />
-          </Routes>
-        </HashRouter>
-      </Theme>
-    </QuillContextProvider>
-  );
-};
+const Home: FunctionComponent = () => (
+  <QuillContextProvider>
+    <Theme>
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<LoadingPage />} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/*" element={<WalletsPage />} />
+        </Routes>
+      </HashRouter>
+    </Theme>
+  </QuillContextProvider>
+);
 
 export default Home;

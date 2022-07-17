@@ -11,7 +11,8 @@ const WorkflowNumbers: FunctionComponent<{
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    // TODO (merge-ok) Use hash, deduplicate page detection with other components
+    // TODO (merge-ok) Use hash, deduplicate page detection with other
+    // components
     const p = params.get('p');
 
     if (p !== null) {
@@ -30,9 +31,10 @@ const WorkflowNumbers: FunctionComponent<{
       {Range(max).map((i) => (
         <div
           key={i}
-          className={`icon-lg rounded-full text-center leading-8 cursor-pointer ${
-            i + 1 <= currentPage ? 'bg-blue-500 text-white' : 'text-black'
-          }`}
+          className={[
+            'icon-lg rounded-full text-center leading-8 cursor-pointer',
+            i + 1 <= currentPage ? 'bg-blue-500 text-white' : 'text-black',
+          ].join(' ')}
           {...onAction(() => onSelect(i))}
         >
           {i + 1}

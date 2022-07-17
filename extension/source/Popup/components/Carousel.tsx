@@ -23,20 +23,18 @@ const ImageSlider: FunctionComponent<{
   url: string;
   position: 'left' | 'middle' | 'right';
   resetting: boolean;
-}> = ({ url, position, resetting }) => {
-  return (
-    <div
-      className="image-slider"
-      key="A"
-      style={{
-        left: `${positionMap[position]}px`,
-        ...(resetting ? { transition: 'none' } : {}),
-      }}
-    >
-      <img src={url} width="258" height="215" alt="artwork" />
-    </div>
-  );
-};
+}> = ({ url, position, resetting }) => (
+  <div
+    className="image-slider"
+    key="A"
+    style={{
+      left: `${positionMap[position]}px`,
+      ...(resetting ? { transition: 'none' } : {}),
+    }}
+  >
+    <img src={url} width="258" height="215" alt="artwork" />
+  </div>
+);
 
 const Carousel: FunctionComponent<{
   images: string[];

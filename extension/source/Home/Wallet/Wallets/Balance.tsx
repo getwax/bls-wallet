@@ -13,10 +13,9 @@ import { useQuill } from '../../../QuillContext';
 const Balance: FunctionComponent<{ address: string }> = ({ address }) => {
   const quill = useQuill();
 
-  const balanceWeiHex: IReadableCell<string> = useMemo(() => {
-    return new FormulaCell(
-      { blockNumber: quill.cells.blockNumber },
-      async () => {
+  const balanceWeiHex: IReadableCell<string> = useMemo(
+    () =>
+      new FormulaCell({ blockNumber: quill.cells.blockNumber }, async () => {
         const response = await quill.ethereum.request({
           method: 'eth_getBalance',
           params: [address, 'latest'],
@@ -26,9 +25,9 @@ const Balance: FunctionComponent<{ address: string }> = ({ address }) => {
         assert(response.slice(0, 2) === '0x');
 
         return response;
-      },
-    );
-  }, [address, quill]);
+      }),
+    [address, quill],
+  );
 
   const $balanceWeiHex = useCell(balanceWeiHex);
 

@@ -89,10 +89,16 @@ const PasswordCreationForm: FunctionComponent<{
       return '';
     }
     if (confirmPasswordFieldValue === passwordFieldValue) {
-      return 'border-2 border-positive-500 bg-positive-500 focus:border-positive-500';
+      return [
+        'border-2 border-positive-500 bg-positive-500',
+        'focus:border-positive-500',
+      ].join(' ');
     }
     if (passwordFieldValue.startsWith(confirmPasswordFieldValue)) {
-      return 'border-2 border-neutral-500 bg-neutral-500 focus:border-neutral-500';
+      return [
+        'border-2 border-neutral-500 bg-neutral-500',
+        'focus:border-neutral-500',
+      ].join(' ');
     }
     return 'border-2 border-alert-500 bg-alert-500 focus:border-alert-500';
   };
@@ -111,7 +117,10 @@ const PasswordCreationForm: FunctionComponent<{
         <input
           type="password"
           placeholder="Confirm password"
-          className={`mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25 ${getConfirmPasswordClass()}`}
+          className={[
+            'mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25',
+            getConfirmPasswordClass(),
+          ].join(' ')}
           disabled={!passwordFieldValue}
           onInput={(e: ChangeEvent<HTMLInputElement>) => {
             const newConfirmPassword = e.target.value;

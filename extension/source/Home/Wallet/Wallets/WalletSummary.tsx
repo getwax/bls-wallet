@@ -55,8 +55,8 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
           <div>
             {wallet.name}
             <div
-              className="text-[8pt] bg-blue-100 bg-opacity-40 
-              active:bg-opacity-70 cursor-pointer text-blue-600 rounded-full 
+              className="text-[8pt] bg-blue-100 bg-opacity-40
+              active:bg-opacity-70 cursor-pointer text-blue-600 rounded-full
               px-2 flex place-items-center gap-2 w-28"
               {...onAction(() => navigator.clipboard.writeText(wallet.address))}
             >
@@ -97,21 +97,40 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
               {wallet.networks} Networks
             </div>
             <div className="flex gap-2 place-items-center">
-              <PokerChip className="text-blue-400 icon-md" /> {wallet.tokens}{' '}
-              Tokens
+              {[
+                <PokerChip className="text-blue-400 icon-md" />,
+                ' ',
+                wallet.tokens,
+                ' Tokens',
+              ]}
             </div>
           </div> */}
 
           {/* <div className="mt-4 flex flex-col gap-3">
-            <div className="bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2 place-items-center rounded-md">
+            <div
+              className={[
+                'bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2',
+                'place-items-center rounded-md',
+              ].join(' ')}
+            >
               <Circle weight="fill" fill="#689F38" />
               Uniswap
             </div>
-            <div className="bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2 place-items-center rounded-md">
+            <div
+              className={[
+                'bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2',
+                'place-items-center rounded-md',
+              ].join(' ')}
+            >
               <Circle weight="fill" fill="#689F38" />
               CryptoKitties
             </div>
-            <div className="bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2 place-items-center rounded-md">
+            <div
+              className={[
+                'bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2',
+                'place-items-center rounded-md',
+              ].join(' ')}
+            >
               <Circle weight="fill" fill="#F44336" />
               Sushi
             </div>

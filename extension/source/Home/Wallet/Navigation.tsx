@@ -52,26 +52,22 @@ export const Navigation: React.FunctionComponent = () => {
     <div className="flex flex-col w-52 px-4 py-12">
       <QuillHeading />
       <div className="mt-8 flex flex-col gap-4 justify-items-center">
-        {navigationTargets.map((item) => {
-          return (
-            <Link to={item.link ?? item.target} key={item.name}>
-              <div
-                className={`flex gap-4 p-3 rounded-lg ${
-                  isCurrentRoute(item.target) && 'bg-grey-200'
-                }`}
+        {navigationTargets.map((item) => (
+          <Link to={item.link ?? item.target} key={item.name}>
+            <div
+              className={`flex gap-4 p-3 rounded-lg ${
+                isCurrentRoute(item.target) && 'bg-grey-200'
+              }`}
+            >
+              <span
+                className={`${isCurrentRoute(item.target) && 'text-blue-500'}`}
               >
-                <span
-                  className={`${
-                    isCurrentRoute(item.target) && 'text-blue-500'
-                  }`}
-                >
-                  {item.icon}
-                </span>
-                {item.name}
-              </div>
-            </Link>
-          );
-        })}
+                {item.icon}
+              </span>
+              {item.name}
+            </div>
+          </Link>
+        ))}
       </div>
       <div className="flex gap-2 p-3 rounded-lg mt-20">
         <Lock className="icon-md" />

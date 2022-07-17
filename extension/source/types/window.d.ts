@@ -5,7 +5,7 @@ import type { QuillContextValue } from '../QuillContext';
 import QuillStorageCells from '../QuillStorageCells';
 
 declare global {
-  interface Window {
+  export interface Window {
     ethereum?: QuillEthereumProvider | providers.ExternalProvider;
     debug?: {
       Browser?: Browser;

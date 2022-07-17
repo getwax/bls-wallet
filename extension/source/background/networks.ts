@@ -27,8 +27,10 @@ export const ProviderConfig = io.type({
    */
   rpcTarget: io.string,
   /**
-   * Chain Id parameter(hex with 0x prefix) for the network. Mandatory for all networks. (assign one with a map to network identifier for platforms)
-   * @example 0x1 for mainnet, 'loading' if not connected to anything yet or connection fails
+   * Chain Id parameter(hex with 0x prefix) for the network. Mandatory for all
+   * networks. (assign one with a map to network identifier for platforms)
+   * @example 0x1 for mainnet, 'loading' if not connected to anything yet or
+   *          connection fails
    * @defaultValue 'loading'
    */
   chainId: io.string,
@@ -64,7 +66,7 @@ export const builtinProviderConfigs = ensureType<
     chainId: '0xa4b1', // 42161
     displayName: 'Arbitrum One',
     logo: '',
-    rpcTarget: `https://arb1.arbitrum.io/rpc`,
+    rpcTarget: 'https://arb1.arbitrum.io/rpc',
     chainCurrencyName: 'Ether',
     chainCurrency: 'ETH',
     networkKey: 'arbitrum',

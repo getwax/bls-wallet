@@ -173,7 +173,7 @@ export default class TransactionsController {
         () =>
           new Error(
             [
-              `Forbidden transaction status transition:`,
+              'Forbidden transaction status transition:',
               `${transaction.status} -> ${status}`,
             ].join(' '),
           ),

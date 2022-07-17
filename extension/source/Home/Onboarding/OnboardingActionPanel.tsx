@@ -11,7 +11,8 @@ const OnboardingActionPanel: FunctionComponent = () => {
   const [pageIndex, setPageIndex] = useState(0);
 
   useEffect(() => {
-    // TODO (merge-ok) Use hash, deduplicate page detection with other components
+    // TODO (merge-ok) Use hash, deduplicate page detection with other
+    // components
     const p = params.get('p');
 
     if (p !== null) {
@@ -20,7 +21,11 @@ const OnboardingActionPanel: FunctionComponent = () => {
   }, [params]);
 
   return (
-    <div className="h-screen p-32 flex flex-col flex-grow space-y-16 items-center">
+    <div
+      className={[
+        'h-screen p-32 flex flex-col flex-grow space-y-16 items-center',
+      ].join(' ')}
+    >
       <WorkflowNumbers max={3} />
       <div className="w-96">
         {
