@@ -1,4 +1,11 @@
-import { FunctionComponent, useState, useEffect } from 'react';
+import {
+  FunctionComponent,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { Mutex } from 'async-mutex';
 
 import delay from '../../helpers/delay';
@@ -41,45 +48,43 @@ const Carousel: FunctionComponent<{
   const [imageBPosition, setImageBPosition] = useState<Position>('right');
 
   const [resetting, setResetting] = useState(false);
-  const [transitionMutex] = useState(new Mutex());
-  const [intervalId, setIntervalId] = useState(-1);
+  const transitionMutex = useMemo(() => new Mutex(), []);
+  const intervalId = useRef<number>();
 
-  const transitionImage = async (index: number) => {
-    const releaseMutex = await transitionMutex.acquire();
+  const transitionImage = useCallback(
+    async (index: number) => {
+      const releaseMutex = await transitionMutex.acquire();
 
-    setImageAPosition('left');
-    setImageBIndex(index);
-    setImageBPosition('middle');
+      setImageAPosition('left');
+      setImageBIndex(index);
+      setImageBPosition('middle');
 
-    await delay(550);
+      await delay(550);
 
-    setResetting(true);
+      setResetting(true);
 
-    setImageAIndex(index);
-    setImageAPosition('middle');
-    setImageBPosition('right');
+      setImageAIndex(index);
+      setImageAPosition('middle');
+      setImageBPosition('right');
 
-    await delay(50);
+      await delay(50);
 
-    setResetting(false);
+      setResetting(false);
 
-    releaseMutex();
-  };
+      releaseMutex();
+    },
+    [transitionMutex],
+  );
 
   useEffect(() => {
-    console.log('Running useEffect');
     let index = 0;
-    setIntervalId(
-      setInterval(() => {
-        index = (index + 1) % images.length;
-        transitionImage(index);
-      }, 5000) as unknown as number,
-    );
+    intervalId.current = setInterval(() => {
+      index = (index + 1) % images.length;
+      transitionImage(index);
+    }, 5000) as unknown as number;
 
-    return () => clearInterval(intervalId);
-
-    /* eslint react-hooks/exhaustive-deps: "warn" -- TODO (merge-ok) Add hook deps */
-  }, []);
+    return () => clearInterval(intervalId.current);
+  }, [images.length, intervalId, transitionImage]);
 
   return (
     <div className="carousel">
@@ -112,7 +117,7 @@ const Carousel: FunctionComponent<{
                 className="radio"
                 key={imgSrc}
                 {...onAction(() => {
-                  clearInterval(intervalId);
+                  clearInterval(intervalId.current);
                   transitionImage(Number(i));
                 })}
               >
