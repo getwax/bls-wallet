@@ -32,8 +32,14 @@ const WorkflowNumbers: FunctionComponent<{
         <div
           key={i}
           className={[
-            'icon-lg rounded-full text-center leading-8 cursor-pointer',
-            i + 1 <= currentPage ? 'bg-blue-500 text-white' : 'text-black',
+            'icon-lg',
+            'rounded-full',
+            'text-center',
+            'leading-8',
+            'cursor-pointer',
+            ...(i + 1 <= currentPage
+              ? ['bg-blue-500', 'text-white']
+              : ['text-black']),
           ].join(' ')}
           {...onAction(() => onSelect(i))}
         >

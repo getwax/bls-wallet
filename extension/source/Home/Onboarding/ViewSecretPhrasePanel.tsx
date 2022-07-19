@@ -39,7 +39,12 @@ const ViewSecretPhrasePanel: FunctionComponent<{
               {Range(3).map((j) => (
                 <div
                   className={[
-                    'bg-grey-200 w-1/3 mb-2 py-2 px-4 rounded-md',
+                    'bg-grey-200',
+                    'w-1/3',
+                    'mb-2',
+                    'py-2',
+                    'px-4',
+                    'rounded-md',
                     'hover:bg-grey-300',
                   ].join(' ')}
                   key={`column${j}`}

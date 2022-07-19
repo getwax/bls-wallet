@@ -59,9 +59,19 @@ const RecipientSelector: FunctionComponent<{
             <div
               key={`${r.name}:${r.address}`}
               className={[
-                'flex flex-row p-4 gap-4 rounded-lg bg-white border',
-                'border-grey-400 shadow-md cursor-pointer active:bg-grey-200',
-                'select-none cursor-pointer',
+                'flex',
+                'flex-row',
+                'p-4',
+                'gap-4',
+                'rounded-lg',
+                'bg-white',
+                'border',
+                'border-grey-400',
+                'shadow-md',
+                'cursor-pointer',
+                'active:bg-grey-200',
+                'select-none',
+                'cursor-pointer',
               ].join(' ')}
               {...onAction(() => recipient.write(r.address))}
             >
