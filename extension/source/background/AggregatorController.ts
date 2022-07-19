@@ -12,6 +12,7 @@ import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
 import blsNetworksConfig from '../blsNetworksConfig';
 import { IReadableCell } from '../cells/ICell';
+import getBlsNetworkConfig from './getBlsNetworkConfig';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -60,13 +61,7 @@ export default class AggregatorController {
       const privateKey = await this.InternalRpc().lookupPrivateKey(from);
 
       const network = await this.networkController.network.read();
-      const blsNetworkConfig = blsNetworksConfig[network.networkKey];
-
-      assert(
-        blsNetworkConfig !== undefined,
-        () =>
-          new Error(`Missing bls network config for ${network.displayName}`),
-      );
+      const blsNetworkConfig = getBlsNetworkConfig(network, blsNetworksConfig);
 
       const ethersProvider = await this.ethersProvider.read();
 

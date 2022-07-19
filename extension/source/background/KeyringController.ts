@@ -9,6 +9,7 @@ import ensureType from '../helpers/ensureType';
 import blsNetworksConfig from '../blsNetworksConfig';
 import { IReadableCell } from '../cells/ICell';
 import mixtureCopy from '../cells/mixtureCopy';
+import getBlsNetworkConfig from './getBlsNetworkConfig';
 
 export default class KeyringController {
   constructor(
@@ -117,16 +118,9 @@ export default class KeyringController {
       );
 
       const blsWalletWrapper = await this.BlsWalletWrapper(privateKey);
-
       const network = await this.network.read();
-      const blsNetworkConfig = blsNetworksConfig[network.networkKey];
 
-      // FIXME: Duplication of this
-      assert(
-        blsNetworkConfig !== undefined,
-        () =>
-          new Error(`bls network config not found for ${network.displayName}`),
-      );
+      const blsNetworkConfig = getBlsNetworkConfig(network, blsNetworksConfig);
 
       wallets.push({
         privateKey,
@@ -162,12 +156,9 @@ export default class KeyringController {
   });
 
   async BlsWalletWrapper(privateKey: string): Promise<BlsWalletWrapper> {
-    const network = await this.network.read();
-    const blsNetworkConfig = blsNetworksConfig[network.networkKey];
-
-    assert(
-      blsNetworkConfig !== undefined,
-      () => new Error(`Missing bls network config for ${network.displayName}`),
+    const blsNetworkConfig = getBlsNetworkConfig(
+      await this.network.read(),
+      blsNetworksConfig,
     );
 
     return BlsWalletWrapper.connect(
@@ -186,7 +177,7 @@ export default class KeyringController {
     > = {};
 
     const network = await this.network.read();
-    const blsNetworkConfig = blsNetworksConfig[network.networkKey];
+    const blsNetworkConfig = getBlsNetworkConfig(network, blsNetworksConfig);
 
     const keyring = mixtureCopy(await this.keyring.read());
     let keyringUpdated = false;
@@ -196,14 +187,6 @@ export default class KeyringController {
         let networkDataForWallet = wallet.networks[network.networkKey];
 
         if (networkDataForWallet === undefined) {
-          assert(
-            blsNetworkConfig !== undefined,
-            () =>
-              new Error(
-                `Missing bls network config for ${network.displayName}`,
-              ),
-          );
-
           networkDataForWallet = {
             originalGateway: blsNetworkConfig.addresses.verificationGateway,
             address: await (
