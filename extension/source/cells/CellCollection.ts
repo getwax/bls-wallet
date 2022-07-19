@@ -58,7 +58,7 @@ export default class CellCollection {
       key,
       type,
       makeDefault,
-      // hasChanged,
+      hasChanged,
     );
 
     this.cells[key] = cell;
