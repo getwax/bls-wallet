@@ -6,13 +6,14 @@ import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
-import blsNetworksConfig from '../blsNetworksConfig';
+import BlsNetworksConfig from '../BlsNetworksConfig';
 import { IReadableCell } from '../cells/ICell';
 import mixtureCopy from '../cells/mixtureCopy';
 import getBlsNetworkConfig from './getBlsNetworkConfig';
 
 export default class KeyringController {
   constructor(
+    public blsNetworksConfig: BlsNetworksConfig,
     public InternalRpc: () => RpcClient,
     public keyring: QuillStorageCells['keyring'],
     public selectedPublicKeyHash: QuillStorageCells['selectedPublicKeyHash'],
@@ -120,7 +121,10 @@ export default class KeyringController {
       const blsWalletWrapper = await this.BlsWalletWrapper(privateKey);
       const network = await this.network.read();
 
-      const blsNetworkConfig = getBlsNetworkConfig(network, blsNetworksConfig);
+      const blsNetworkConfig = getBlsNetworkConfig(
+        network,
+        this.blsNetworksConfig,
+      );
 
       wallets.push({
         privateKey,
@@ -158,7 +162,7 @@ export default class KeyringController {
   async BlsWalletWrapper(privateKey: string): Promise<BlsWalletWrapper> {
     const blsNetworkConfig = getBlsNetworkConfig(
       await this.network.read(),
-      blsNetworksConfig,
+      this.blsNetworksConfig,
     );
 
     return BlsWalletWrapper.connect(
@@ -177,7 +181,11 @@ export default class KeyringController {
     > = {};
 
     const network = await this.network.read();
-    const blsNetworkConfig = getBlsNetworkConfig(network, blsNetworksConfig);
+
+    const blsNetworkConfig = getBlsNetworkConfig(
+      network,
+      this.blsNetworksConfig,
+    );
 
     const keyring = mixtureCopy(await this.keyring.read());
     let keyringUpdated = false;

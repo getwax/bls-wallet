@@ -1,6 +1,6 @@
 import { BlsWalletWrapper } from 'bls-wallet-clients';
 import { FunctionComponent, useMemo } from 'react';
-import blsNetworksConfig from '../../../blsNetworksConfig';
+
 import { FormulaCell } from '../../../cells/FormulaCell';
 import useCell from '../../../cells/useCell';
 import { useQuill } from '../../../QuillContext';
@@ -13,7 +13,7 @@ const DisplayNonce: FunctionComponent<{ address: string }> = ({ address }) => {
       new FormulaCell(
         { blockNumber: quill.cells.blockNumber, network: quill.cells.network },
         async ({ $network }) => {
-          const blsNetworkConfig = blsNetworksConfig[$network.networkKey];
+          const blsNetworkConfig = quill.blsNetworksConfig[$network.networkKey];
 
           if (blsNetworkConfig === undefined) {
             return `Missing bls network config for ${$network.displayName}`;

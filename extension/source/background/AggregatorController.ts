@@ -10,9 +10,9 @@ import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
 import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
-import blsNetworksConfig from '../blsNetworksConfig';
 import { IReadableCell } from '../cells/ICell';
 import getBlsNetworkConfig from './getBlsNetworkConfig';
+import BlsNetworksConfig from '../BlsNetworksConfig';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -30,6 +30,7 @@ export default class AggregatorController {
   > = {};
 
   constructor(
+    public blsNetworksConfig: BlsNetworksConfig,
     public InternalRpc: () => RpcClient,
     public networkController: NetworkController,
     public keyringController: KeyringController,
@@ -61,7 +62,11 @@ export default class AggregatorController {
       const privateKey = await this.InternalRpc().lookupPrivateKey(from);
 
       const network = await this.networkController.network.read();
-      const blsNetworkConfig = getBlsNetworkConfig(network, blsNetworksConfig);
+
+      const blsNetworkConfig = getBlsNetworkConfig(
+        network,
+        this.blsNetworksConfig,
+      );
 
       const ethersProvider = await this.ethersProvider.read();
 

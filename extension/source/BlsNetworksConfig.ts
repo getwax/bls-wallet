@@ -31,9 +31,13 @@ const BlsNetworksConfig: io.Type<Record<string, NetworkConfig | undefined>> =
     ),
   );
 
+type BlsNetworksConfig = io.TypeOf<typeof BlsNetworksConfig>;
+
 assertType(blsNetworksConfigJson, BlsNetworksConfig);
 
-const blsNetworksConfig: io.TypeOf<typeof BlsNetworksConfig> =
-  blsNetworksConfigJson;
+export function loadBlsNetworksConfig(): BlsNetworksConfig {
+  assertType(blsNetworksConfigJson, BlsNetworksConfig);
+  return blsNetworksConfigJson;
+}
 
-export default blsNetworksConfig;
+export default BlsNetworksConfig;

@@ -20,7 +20,7 @@ import QuillLongPollingCell from './QuillLongPollingCell';
 import TransformCell from './cells/TransformCell';
 import forEach from './cells/forEach';
 import config from './config';
-import blsNetworksConfig from './blsNetworksConfig';
+import { loadBlsNetworksConfig } from './BlsNetworksConfig';
 import { RpcClient } from './types/Rpc';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
@@ -31,6 +31,8 @@ function getQuillContextValue() {
   assert(ethereum.rpc !== undefined);
 
   const cells = QuillContextCells(elcc, ethereum, ethereum.rpc);
+
+  const blsNetworksConfig = loadBlsNetworksConfig();
 
   forEach(cells.onboarding, (onboarding) => {
     if (!onboarding.autoOpened) {
@@ -100,6 +102,7 @@ function getQuillContextValue() {
     ethersProvider: FormulaCell.Sub(networkAndEthersProvider, 'ethersProvider'),
     rpc: ethereum.rpc,
     cells,
+    blsNetworksConfig,
   };
 }
 

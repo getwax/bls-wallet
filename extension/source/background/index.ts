@@ -9,11 +9,13 @@ import forEach from '../cells/forEach';
 import Debug from './Debug';
 import { FormulaCell } from '../cells/FormulaCell';
 import { assertConfig } from '../helpers/assert';
+import { loadBlsNetworksConfig } from '../BlsNetworksConfig';
 
 (() => {
   console.log('Quill background script started');
 
   const quillController = new QuillController(
+    loadBlsNetworksConfig(),
     extensionLocalCellCollection,
     // TODO: Pass in config rather than accessing it globally
   );
