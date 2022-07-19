@@ -71,15 +71,7 @@ export default class AggregatorController {
         ethersProvider,
       );
 
-      // FIXME: Restore this preferred method
-      // const nonce = (await wallet.Nonce()).toString();
-      const nonce = (
-        await BlsWalletWrapper.Nonce(
-          await wallet.PublicKey(),
-          blsNetworkConfig.addresses.verificationGateway,
-          ethersProvider,
-        )
-      ).toString();
+      const nonce = (await wallet.Nonce()).toString();
       const bundle = await wallet.sign({ nonce, actions });
 
       const aggregatorUrl =
