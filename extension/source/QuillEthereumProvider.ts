@@ -60,7 +60,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
       }
 
       return this.request({
-        method: 'lookupAddress',
+        method: 'pkHashToAddress',
         params: [$state.selectedPublicKeyHash],
       });
     });

@@ -154,7 +154,7 @@ export const rpcMap = {
     Params: io.tuple([io.string]),
     Response: io.string,
   },
-  lookupAddress: {
+  pkHashToAddress: {
     origin: '*',
     Params: io.tuple([io.string]),
     Response: io.string,

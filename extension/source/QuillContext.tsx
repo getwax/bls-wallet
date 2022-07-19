@@ -174,7 +174,7 @@ function QuillContextCells(
         network: storageCells.network,
       },
       ({ $selectedPublicKeyHash }) =>
-        $selectedPublicKeyHash && rpc.lookupAddress($selectedPublicKeyHash),
+        $selectedPublicKeyHash && rpc.pkHashToAddress($selectedPublicKeyHash),
     ),
   };
 }

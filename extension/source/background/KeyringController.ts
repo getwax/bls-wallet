@@ -44,7 +44,7 @@ export default class KeyringController {
       // successfully only show address if account is unlocked
       // https://github.com/web3well/bls-wallet/issues/224
       return selectedPublicKeyHash
-        ? [await this.InternalRpc().lookupAddress(selectedPublicKeyHash)]
+        ? [await this.InternalRpc().pkHashToAddress(selectedPublicKeyHash)]
         : [];
     },
 
@@ -61,7 +61,7 @@ export default class KeyringController {
         return null;
       }
 
-      return await this.InternalRpc().lookupAddress(selectedPublicKeyHash);
+      return await this.InternalRpc().pkHashToAddress(selectedPublicKeyHash);
     },
 
     /**
@@ -96,7 +96,7 @@ export default class KeyringController {
       return keyPair.privateKey;
     },
 
-    lookupAddress: async ({ params: [publicKeyHash] }) => {
+    pkHashToAddress: async ({ params: [publicKeyHash] }) => {
       const walletsNetworkData = await this.getWalletsNetworkData();
       const networkData = walletsNetworkData[publicKeyHash];
 
