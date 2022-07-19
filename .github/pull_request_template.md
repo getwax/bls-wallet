@@ -14,9 +14,7 @@
 # Guidelines
 - Sometimes PRs are a source of conflict, please be mindful of your colleagues
 - If your PR is not ready, mark it as a draft
-- Prefer to seek followup instead of requiring changes, especially if the PR is
-  already clear improvement overall
-- If appropriate, consider implementing followup changes yourself instead of
-  waiting for them from the original author
+- Prefer to seek followup instead of requiring changes, especially if the PR is already clear improvement overall
+- If appropriate, consider implementing followup changes yourself instead of waiting for them from the original author
 - The `resolve conversation` button is for reviewers, not authors
   - (But add a 'done' comment or similar)
