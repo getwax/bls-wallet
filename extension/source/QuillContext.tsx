@@ -19,9 +19,9 @@ import { FormulaCell } from './cells/FormulaCell';
 import QuillLongPollingCell from './QuillLongPollingCell';
 import TransformCell from './cells/TransformCell';
 import forEach from './cells/forEach';
-import config from './config';
 import { loadBlsNetworksConfig } from './BlsNetworksConfig';
 import { RpcClient } from './types/Rpc';
+import Config, { loadConfig } from './Config';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -30,9 +30,10 @@ function getQuillContextValue() {
   assert(ethereum?.isQuill);
   assert(ethereum.rpc !== undefined);
 
-  const cells = QuillContextCells(elcc, ethereum, ethereum.rpc);
-
+  const config = loadConfig();
   const blsNetworksConfig = loadBlsNetworksConfig();
+
+  const cells = QuillContextCells(config, elcc, ethereum, ethereum.rpc);
 
   forEach(cells.onboarding, (onboarding) => {
     if (!onboarding.autoOpened) {
@@ -102,6 +103,7 @@ function getQuillContextValue() {
     ethersProvider: FormulaCell.Sub(networkAndEthersProvider, 'ethersProvider'),
     rpc: ethereum.rpc,
     cells,
+    config,
     blsNetworksConfig,
   };
 }
@@ -132,11 +134,12 @@ export function QuillContextProvider({ children }: Props) {
 }
 
 function QuillContextCells(
+  config: Config,
   storage: CellCollection,
   ethereum: QuillEthereumProvider,
   rpc: RpcClient,
 ) {
-  const storageCells = QuillStorageCells(storage);
+  const storageCells = QuillStorageCells(config, storage);
 
   const rpcLogging = TransformCell.Sub(
     storageCells.developerSettings,

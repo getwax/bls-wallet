@@ -10,11 +10,13 @@ import Debug from './Debug';
 import { FormulaCell } from '../cells/FormulaCell';
 import { assertConfig } from '../helpers/assert';
 import { loadBlsNetworksConfig } from '../BlsNetworksConfig';
+import { loadConfig } from '../Config';
 
 (() => {
   console.log('Quill background script started');
 
   const quillController = new QuillController(
+    loadConfig(),
     loadBlsNetworksConfig(),
     extensionLocalCellCollection,
     // TODO: Pass in config rather than accessing it globally

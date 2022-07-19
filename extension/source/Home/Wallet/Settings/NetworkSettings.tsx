@@ -1,11 +1,10 @@
 import { FunctionComponent } from 'react';
 import Display from '../../../cells/components/Display';
 import Selector from '../../../cells/components/Selector';
-import config from '../../../config';
 import { useQuill } from '../../../QuillContext';
 
 const NetworkSettings: FunctionComponent = () => {
-  const { cells } = useQuill();
+  const { cells, config } = useQuill();
 
   return (
     <>

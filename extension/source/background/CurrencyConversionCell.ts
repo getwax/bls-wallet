@@ -1,7 +1,7 @@
 import { FormulaCell } from '../cells/FormulaCell';
 import { IReadableCell } from '../cells/ICell';
 import TimeCell from '../cells/TimeCell';
-import config from '../config';
+import Config from '../Config';
 import assert from '../helpers/assert';
 
 /**
@@ -18,6 +18,7 @@ const currencyAliases: Record<string, string | undefined> = {
 };
 
 export default function CurrencyConversionCell(
+  config: Config['currencyConversion'],
   preferredCurrency: IReadableCell<string | undefined>,
   chainCurrency: IReadableCell<string>,
 ) {
@@ -25,19 +26,16 @@ export default function CurrencyConversionCell(
     {
       preferredCurrency,
       chainCurrency,
-      time: TimeCell(config.currencyConversion.pollInterval),
+      time: TimeCell(config.pollInterval),
     },
     ({ $preferredCurrency, $chainCurrency }) =>
-      fetchRate(
-        config.currencyConversion.api,
-        $chainCurrency,
-        $preferredCurrency,
-      ),
+      fetchRate(config.api, config.apiKey, $chainCurrency, $preferredCurrency),
   );
 }
 
 async function fetchRate(
   api: string,
+  apiKey: string,
   chainCurrency: string,
   preferredCurrency: string | undefined,
 ): Promise<number | undefined> {
@@ -50,7 +48,7 @@ async function fetchRate(
   const apiUrl = new URL(api);
   apiUrl.searchParams.append('fsym', mappedChainCurrency);
   apiUrl.searchParams.append('tsyms', preferredCurrency);
-  apiUrl.searchParams.append('api_key', config.currencyConversion.apiKey);
+  apiUrl.searchParams.append('api_key', apiKey);
 
   const response = await fetch(apiUrl.toString()).then((res) => res.json());
   const rate = Number(response[preferredCurrency]);

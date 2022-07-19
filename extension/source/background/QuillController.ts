@@ -29,6 +29,7 @@ import LongPollingController from './LongPollingController';
 import isPermittedOrigin from './isPermittedOrigin';
 import TransactionsController from './TransactionsController';
 import BlsNetworksConfig from '../BlsNetworksConfig';
+import Config from '../Config';
 
 export default class QuillController {
   networkController: NetworkController;
@@ -51,10 +52,11 @@ export default class QuillController {
   cells: QuillStorageCells;
 
   constructor(
+    public config: Config,
     public blsNetworksConfig: BlsNetworksConfig,
     public storage: CellCollection,
   ) {
-    this.cells = QuillStorageCells(storage);
+    this.cells = QuillStorageCells(config, storage);
 
     this.networkController = new NetworkController(this.cells.network);
 
@@ -78,6 +80,7 @@ export default class QuillController {
     );
 
     this.currencyConversion = CurrencyConversionCell(
+      config.currencyConversion,
       this.preferencesController.preferredCurrency,
       FormulaCell.Sub(this.cells.network, 'chainCurrency'),
     );

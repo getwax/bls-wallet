@@ -24,8 +24,12 @@ const Config = io.type({
   builtinNetworks: io.record(io.string, optional(ProviderConfig)),
 });
 
-assertType(configJson, Config);
+type Config = io.TypeOf<typeof Config>;
 
-const config: io.TypeOf<typeof Config> = configJson;
+export function loadConfig(): Config {
+  assertType(configJson, Config);
 
-export default config;
+  return configJson;
+}
+
+export default Config;
