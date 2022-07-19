@@ -59,8 +59,17 @@ export default class QuillController {
       () => new ethers.providers.Web3Provider(this.networkController),
     );
 
+    this.keyringController = new KeyringController(
+      () => this.internalRpc,
+      this.cells.keyring,
+      this.cells.selectedPublicKeyHash,
+      this.cells.network,
+      this.ethersProvider,
+    );
+
     this.preferencesController = new PreferencesController(
       this.cells.preferences,
+      this.keyringController,
     );
 
     this.currencyConversion = CurrencyConversionCell(
@@ -68,18 +77,9 @@ export default class QuillController {
       FormulaCell.Sub(this.cells.network, 'chainCurrency'),
     );
 
-    this.keyringController = new KeyringController(
-      () => this.internalRpc,
-      this.cells.keyring,
-      this.cells.selectedAddress,
-      this.cells.network,
-      this.ethersProvider,
-    );
-
     this.transactionsController = new TransactionsController(
       () => this.internalRpc,
       this.cells.transactions,
-      this.cells.selectedAddress,
     );
 
     this.aggregatorController = new AggregatorController(
@@ -139,7 +139,21 @@ export default class QuillController {
 
         const address = await this.keyringController.rpc.addAccount(request);
 
-        this.preferencesController.createUser(address, 'USD', 'light');
+        const network = await this.cells.network.read();
+        const keyring = await this.cells.keyring.read();
+
+        const wallet = keyring.wallets.find(
+          (w) => w.networks[network.networkKey]?.address === address,
+        );
+
+        assert(wallet !== undefined);
+
+        this.preferencesController.createUser(
+          wallet.publicKeyHash,
+          'USD',
+          'light',
+        );
+
         return address;
       },
 
@@ -152,6 +166,7 @@ export default class QuillController {
       addHDAccount: this.keyringController.rpc.addHDAccount,
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
+      lookupAddress: this.keyringController.rpc.lookupAddress,
       removeAccount: this.keyringController.rpc.removeAccount,
 
       // TransactionsController

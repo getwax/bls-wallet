@@ -49,16 +49,11 @@ function hasObjectChanged(
   a: Record<string, unknown>,
   b: Record<string, unknown>,
 ) {
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-
-  if (aKeys.length !== bKeys.length) {
-    return true;
-  }
-
-  for (const k of aKeys) {
-    if (hasChanged(a[k], b[k])) {
-      return true;
+  for (const keySource of [a, b]) {
+    for (const k of Object.keys(keySource)) {
+      if (hasChanged(a[k], b[k])) {
+        return true;
+      }
     }
   }
 

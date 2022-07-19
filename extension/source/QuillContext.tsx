@@ -168,5 +168,13 @@ function QuillContextCells(
       { network: storageCells.network, keyring: storageCells.keyring },
       () => rpc.eth_accounts(),
     ),
+    selectedAddress: new FormulaCell(
+      {
+        selectedPublicKeyHash: storageCells.selectedPublicKeyHash,
+        network: storageCells.network,
+      },
+      ({ $selectedPublicKeyHash }) =>
+        $selectedPublicKeyHash && rpc.lookupAddress($selectedPublicKeyHash),
+    ),
   };
 }

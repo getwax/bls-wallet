@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import * as io from 'io-ts';
+import { once } from 'lodash-es';
 
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
@@ -37,6 +38,7 @@ function QuillStorageCells(storage: CellCollection) {
         wallets: io.array(
           io.type({
             privateKey: io.string,
+            publicKeyHash: io.string,
             networks: io.record(
               io.string,
               optional(
@@ -49,11 +51,11 @@ function QuillStorageCells(storage: CellCollection) {
           }),
         ),
       }),
-      () => ({
+      once(() => ({
         HDPhrase: ethers.Wallet.createRandom().mnemonic.phrase,
         nextHDIndex: 0,
         wallets: [],
-      }),
+      })),
     ),
     transactions: storage.Cell(
       'transactions',
@@ -74,7 +76,7 @@ function QuillStorageCells(storage: CellCollection) {
     }),
     preferences: storage.Cell('preferences', Preferences, () => ({
       identities: {},
-      selectedAddress: undefined,
+      selectedPublicKeyHash: undefined,
       developerSettings: {
         // For now, default to dev settings that are appropriate for the bls
         // wallet team. FIXME: The defaults that get bundled into the extension
@@ -91,9 +93,9 @@ function QuillStorageCells(storage: CellCollection) {
 
   const providerStateCells = {
     chainId: FormulaCell.Sub(rootCells.network, 'chainId'),
-    selectedAddress: TransformCell.Sub(
+    selectedPublicKeyHash: TransformCell.Sub(
       rootCells.preferences,
-      'selectedAddress',
+      'selectedPublicKeyHash',
     ),
     developerSettings: TransformCell.Sub(
       rootCells.preferences,
@@ -105,22 +107,22 @@ function QuillStorageCells(storage: CellCollection) {
     ...rootCells,
     providerState: new FormulaCell(
       providerStateCells,
-      ({ $chainId, $developerSettings, $selectedAddress }) => ({
+      ({ $chainId, $developerSettings, $selectedPublicKeyHash }) => ({
         chainId: $chainId,
         developerSettings: $developerSettings,
-        selectedAddress: $selectedAddress,
+        selectedPublicKeyHash: $selectedPublicKeyHash,
       }),
     ),
     ...providerStateCells,
 
     theme: new FormulaCell(
       { preferences: rootCells.preferences },
-      ({ $preferences: { selectedAddress, identities } }): Theme => {
-        if (selectedAddress === undefined) {
+      ({ $preferences: { selectedPublicKeyHash, identities } }): Theme => {
+        if (selectedPublicKeyHash === undefined) {
           return 'light';
         }
 
-        const identity = identities[selectedAddress];
+        const identity = identities[selectedPublicKeyHash];
         assert(identity !== undefined);
 
         return identity.theme;
