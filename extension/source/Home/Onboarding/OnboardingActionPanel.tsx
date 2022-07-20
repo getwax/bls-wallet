@@ -23,7 +23,13 @@ const OnboardingActionPanel: FunctionComponent = () => {
   return (
     <div
       className={[
-        'h-screen p-32 flex flex-col flex-grow space-y-16 items-center',
+        'h-screen',
+        'p-32',
+        'flex',
+        'flex-col',
+        'flex-grow',
+        'space-y-16',
+        'items-center',
       ].join(' ')}
     >
       <WorkflowNumbers max={3} />
