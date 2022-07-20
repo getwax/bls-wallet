@@ -17,6 +17,8 @@ const currencyAliases: Record<string, string | undefined> = {
   KOR: 'ETH',
 };
 
+// TODO: Expose a cell containing the currency pair and the conversion to avoid
+// showing incorrect data temporarily when switching currencies.
 export default function CurrencyConversionCell(
   config: Config['currencyConversion'],
   preferredCurrency: IReadableCell<string | undefined>,
