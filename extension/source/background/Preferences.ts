@@ -51,7 +51,7 @@ export const Preferences = io.type({
   contacts: io.array(Contact),
   customTokens: io.array(CustomToken),
   customNfts: io.array(CustomNft),
-  currency: optional(io.string),
+  currency: io.string,
   selectedPublicKeyHash: optional(io.string),
   developerSettings: DeveloperSettings,
 });

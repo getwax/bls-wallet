@@ -126,6 +126,7 @@ function QuillStorageCells(config: Config, storage: CellCollection) {
     ...providerStateCells,
 
     theme: FormulaCell.Sub(rootCells.preferences, 'theme'),
+    currency: TransformCell.Sub(rootCells.preferences, 'currency'),
 
     breakOnAssertionFailures: TransformCell.Sub(
       providerStateCells.developerSettings,
