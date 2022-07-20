@@ -81,7 +81,7 @@ export default class QuillController {
 
     this.currencyConversion = CurrencyConversionCell(
       config.currencyConversion,
-      this.preferencesController.preferredCurrency,
+      FormulaCell.Sub(this.cells.preferences, 'currency'),
       FormulaCell.Sub(this.cells.network, 'chainCurrency'),
     );
 
@@ -140,32 +140,6 @@ export default class QuillController {
         return networkRes;
       },
 
-      addAccount: async (request) => {
-        // FIXME: Needing to coordinate this between keyringController and
-        // preferencesController is a symptom of these controllers having
-        // awkwardly overlapping responsibilities. This should be fixed by
-        // combining them into AccountController.
-
-        const address = await this.keyringController.rpc.addAccount(request);
-
-        const network = await this.cells.network.read();
-        const keyring = await this.cells.keyring.read();
-
-        const wallet = keyring.wallets.find(
-          (w) => w.networks[network.networkKey]?.address === address,
-        );
-
-        assert(wallet !== undefined);
-
-        this.preferencesController.createUser(
-          wallet.publicKeyHash,
-          'USD',
-          'light',
-        );
-
-        return address;
-      },
-
       eth_setPreferredAggregator:
         this.aggregatorController.rpc.eth_setPreferredAggregator,
 
@@ -176,6 +150,7 @@ export default class QuillController {
       setHDPhrase: this.keyringController.rpc.setHDPhrase,
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
       pkHashToAddress: this.keyringController.rpc.pkHashToAddress,
+      addAccount: this.keyringController.rpc.addAccount,
       removeAccount: this.keyringController.rpc.removeAccount,
 
       // TransactionsController
