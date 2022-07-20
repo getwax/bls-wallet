@@ -18,6 +18,11 @@ If you would like to target a remote network instead, add the addtional steps in
 
 ## Setup
 
+Install the latest Node 16.  If using nvm to manage node versions, run this in the root directory:
+```sh
+nvm install
+```
+
 Run the repo setup script
 ```sh
 ./setup.ts
