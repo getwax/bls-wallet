@@ -12,7 +12,7 @@
 - [ ] Post a link to the PR in the group chat
 
 # Guidelines
-- Sometimes PRs are a source of conflict, please be mindful of your colleagues
+- Please be careful when handling disagreements and stay mindful of others
 - If your PR is not ready, mark it as a draft
 - Prefer to seek followup instead of requiring changes, especially if the PR is already a clear net improvement
 - If appropriate, consider implementing followup changes yourself instead of waiting for them from the author and open a new PR against this one.
