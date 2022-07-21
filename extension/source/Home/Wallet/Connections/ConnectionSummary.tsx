@@ -6,11 +6,14 @@ import {
   Wallet,
 } from 'phosphor-react';
 import onAction from '../../../helpers/onAction';
+import CurrencyDisplay from '../../../components/CurrencyDisplay';
 
 interface IConnectionsSummary {
   onAction: () => void;
   expanded?: boolean;
 }
+
+const totalChainValue = 2.089; // ETH
 
 export const ConnectionsSummary: React.FunctionComponent<
   IConnectionsSummary
@@ -33,7 +36,7 @@ export const ConnectionsSummary: React.FunctionComponent<
 
       <div className="flex-grow">All Wallets</div>
 
-      <div className="text-body">2.089 ETH</div>
+      <div className="text-body">{totalChainValue} ETH</div>
     </div>
 
     {/* Details */}
@@ -41,8 +44,8 @@ export const ConnectionsSummary: React.FunctionComponent<
       <div className="mt-6">
         <div className="mt-4 flex flex-col gap-1">
           <div className="flex gap-2 place-items-center">
-            <CurrencyDollar className="text-blue-400 icon-md" /> USD $
-            {2.089 * 3000.1}
+            <CurrencyDollar className="text-blue-400 icon-md" />
+            <CurrencyDisplay chainValue={totalChainValue} />
           </div>
           <div className="flex gap-2 place-items-center">
             <ShareNetwork className="text-blue-400 icon-md" />3 Networks
