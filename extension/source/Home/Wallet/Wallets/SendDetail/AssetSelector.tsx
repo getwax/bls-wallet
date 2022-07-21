@@ -37,7 +37,7 @@ const AssetSelector: FunctionComponent<{
           {...onAction(() => selectedAsset.write('ETH'))}
         >
           <div className="grow flex flex-row gap-3">
-            <CurrencyEth className="self-center" size={20} />
+            <CurrencyEth className="self-center text-blue-400 icon-md" />
             <div>Ether</div>
           </div>
           <div>
