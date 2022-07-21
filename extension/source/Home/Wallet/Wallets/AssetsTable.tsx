@@ -17,6 +17,9 @@ import {
 
 import type { TokenData } from './WalletDetail';
 import onAction from '../../../helpers/onAction';
+import CurrencyDisplay from '../../../components/CurrencyDisplay';
+
+const totalChainValue = 0.937; // ETH
 
 export const TableHeader: React.FunctionComponent = () => (
   <div className="flex justify-between p-6">
@@ -35,11 +38,13 @@ export const TableHeader: React.FunctionComponent = () => (
     <div className="flex gap-4 text-[13pt]">
       <div className="flex gap-2 items-center">
         <CurrencyEth className="text-blue-500 icon-md" />
-        <div className="">0.937 ETH</div>
+        <div className="">{totalChainValue} ETH</div>
       </div>
       <div className="flex gap-2 items-center">
         <CurrencyDollar className="text-blue-500 icon-md" />
-        <div className="">3,813.38 USD</div>
+        <div className="">
+          <CurrencyDisplay chainValue={totalChainValue} />
+        </div>
       </div>
     </div>
   </div>

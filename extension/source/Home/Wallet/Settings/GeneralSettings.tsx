@@ -1,5 +1,5 @@
 import { FunctionComponent, useMemo } from 'react';
-import Display from '../../../cells/components/Display';
+
 import Selector from '../../../cells/components/Selector';
 import MemoryCell from '../../../cells/MemoryCell';
 import useCell from '../../../cells/useCell';
@@ -20,6 +20,7 @@ const GeneralSettings: FunctionComponent = () => {
   const $orderPreference = useCell(orderPreference) ?? 'trade';
 
   const currency = useCell(cells.currency);
+  const currencyConversion = useCell(cells.currencyConversion);
 
   let currencies: string[];
 
@@ -48,9 +49,12 @@ const GeneralSettings: FunctionComponent = () => {
         Order currencies by{' '}
         <Selector options={['trade', 'alphabet']} selection={orderPreference} />
       </div>
-      <div>
-        Currency conversion rate: <Display cell={cells.currencyConversion} />
-      </div>
+      {currencyConversion?.to && currencyConversion.rate && (
+        <div>
+          1 {currencyConversion.from} = {currencyConversion.rate}{' '}
+          {currencyConversion.to}
+        </div>
+      )}
     </div>
   );
 };

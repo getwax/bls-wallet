@@ -38,7 +38,12 @@ export default class QuillController {
   preferencesController: PreferencesController;
   aggregatorController: AggregatorController;
   longPollingController: LongPollingController;
-  currencyConversion: IReadableCell<number | undefined>;
+
+  currencyConversion: IReadableCell<{
+    from: string;
+    to: string | undefined;
+    rate: number | undefined;
+  }>;
 
   /**
    * @deprecated
