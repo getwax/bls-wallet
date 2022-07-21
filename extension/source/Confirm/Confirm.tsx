@@ -77,7 +77,11 @@ const Confirm: FunctionComponent = () => {
             {current + 1} of {tx.actions?.length}
             <div
               className={[
-                'bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer',
+                'bg-grey-400',
+                'rounded-md',
+                'p-1',
+                'hover:bg-grey-500',
+                'cursor-pointer',
               ].join(' ')}
               {...onAction(prevTx)}
             >
@@ -85,7 +89,11 @@ const Confirm: FunctionComponent = () => {
             </div>
             <div
               className={[
-                'bg-grey-400 rounded-md p-1 hover:bg-grey-500 cursor-pointer',
+                'bg-grey-400',
+                'rounded-md',
+                'p-1',
+                'hover:bg-grey-500',
+                'cursor-pointer',
               ].join(' ')}
               {...onAction(nextTx)}
             >
@@ -103,7 +111,13 @@ const Confirm: FunctionComponent = () => {
 
           <div
             className={[
-              'mt-4 p-4 bg-grey-300 rounded-md flex justify-between h-20',
+              'mt-4',
+              'p-4',
+              'bg-grey-300',
+              'rounded-md',
+              'flex',
+              'justify-between',
+              'h-20',
             ].join(' ')}
           >
             <div className="">Total Transaction Fees</div>

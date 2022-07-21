@@ -109,8 +109,14 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
           {/* <div className="mt-4 flex flex-col gap-3">
             <div
               className={[
-                'bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2',
-                'place-items-center rounded-md',
+                'bg-blue-100',
+                'bg-opacity-30',
+                'px-4',
+                'py-2',
+                'flex',
+                'gap-2',
+                'place-items-center',
+                'rounded-md'
               ].join(' ')}
             >
               <Circle weight="fill" fill="#689F38" />
@@ -118,8 +124,14 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             </div>
             <div
               className={[
-                'bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2',
-                'place-items-center rounded-md',
+                'bg-blue-100',
+                'bg-opacity-30',
+                'px-4',
+                'py-2',
+                'flex',
+                'gap-2',
+                'place-items-center',
+                'rounded-md'
               ].join(' ')}
             >
               <Circle weight="fill" fill="#689F38" />
@@ -127,8 +139,14 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             </div>
             <div
               className={[
-                'bg-blue-100 bg-opacity-30 px-4 py-2 flex gap-2',
-                'place-items-center rounded-md',
+                'bg-blue-100',
+                'bg-opacity-30',
+                'px-4',
+                'py-2',
+                'flex',
+                'gap-2',
+                'place-items-center',
+                'rounded-md'
               ].join(' ')}
             >
               <Circle weight="fill" fill="#F44336" />

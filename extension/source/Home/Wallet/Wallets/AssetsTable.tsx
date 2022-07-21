@@ -127,7 +127,13 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
 
       <div
         className={[
-          'bg-grey-100 px-4 py-2 border-t border-grey-300 flex justify-end',
+          'bg-grey-100',
+          'px-4',
+          'py-2',
+          'border-t',
+          'border-grey-300',
+          'flex',
+          'justify-end',
           'gap-8',
         ].join(' ')}
       >
