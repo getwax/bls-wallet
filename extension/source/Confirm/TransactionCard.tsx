@@ -46,12 +46,7 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
         <div className="w-60 border-r border-grey-400">
           <div>Value</div>
           <div className="break-all text-[9.5pt] font-bold">
-            <div>{ethers.utils.formatEther(value || '0x0')} ETH</div>
-            <div>
-              <CurrencyDisplay
-                chainValue={Number(ethers.utils.formatEther(value || '0x0'))}
-              />
-            </div>
+            {ethers.utils.formatEther(value || '0x0')} ETH
           </div>
         </div>
 
