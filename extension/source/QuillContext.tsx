@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 
 import {
-  // eslint-disable-next-line camelcase
-  AggregatorUtilities__factory,
+  AggregatorUtilities__factory, // eslint-disable-line
   BlsWalletWrapper,
   // eslint-disable-next-line camelcase
   MockERC20__factory,
@@ -73,14 +72,17 @@ function getQuillContextValue() {
     }
 
     window.debug.contracts = {
+      // eslint-disable-next-line camelcase
       verificationGateway: VerificationGateway__factory.connect(
         blsNetworkConfig.addresses.verificationGateway,
         ethersProvider,
       ),
+      // eslint-disable-next-line camelcase
       testToken: MockERC20__factory.connect(
         blsNetworkConfig.addresses.testToken,
         ethersProvider,
       ),
+      // eslint-disable-next-line camelcase
       aggregatorUtilities: AggregatorUtilities__factory.connect(
         blsNetworkConfig.addresses.utilities,
         ethersProvider,
