@@ -10,7 +10,6 @@ import {
   CurrencyEth,
   ShareNetwork,
   StopCircle,
-  CurrencyDollar,
   CaretLeft,
   CaretRight,
 } from 'phosphor-react';
@@ -18,6 +17,7 @@ import {
 import type { TokenData } from './WalletDetail';
 import onAction from '../../../helpers/onAction';
 import CurrencyDisplay from '../../../components/CurrencyDisplay';
+import PreferredCurrencySymbol from '../../../components/PreferredCurrencySymbol';
 
 const totalChainValue = 0.937; // ETH
 
@@ -41,7 +41,7 @@ export const TableHeader: React.FunctionComponent = () => (
         <div className="">{totalChainValue} ETH</div>
       </div>
       <div className="flex gap-2 items-center">
-        <CurrencyDollar className="text-blue-500 icon-md" />
+        <PreferredCurrencySymbol className="text-blue-500 icon-md" />
         <div className="">
           <CurrencyDisplay chainValue={totalChainValue} />
         </div>

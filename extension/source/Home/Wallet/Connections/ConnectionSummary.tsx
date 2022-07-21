@@ -1,12 +1,8 @@
 import * as React from 'react';
-import {
-  CurrencyDollar,
-  ShareNetwork,
-  PokerChip,
-  Wallet,
-} from 'phosphor-react';
+import { ShareNetwork, PokerChip, Wallet } from 'phosphor-react';
 import onAction from '../../../helpers/onAction';
 import CurrencyDisplay from '../../../components/CurrencyDisplay';
+import PreferredCurrencySymbol from '../../../components/PreferredCurrencySymbol';
 
 interface IConnectionsSummary {
   onAction: () => void;
@@ -44,7 +40,7 @@ export const ConnectionsSummary: React.FunctionComponent<
       <div className="mt-6">
         <div className="mt-4 flex flex-col gap-1">
           <div className="flex gap-2 place-items-center">
-            <CurrencyDollar className="text-blue-400 icon-md" />
+            <PreferredCurrencySymbol className="text-blue-400 icon-md" />
             <CurrencyDisplay chainValue={totalChainValue} />
           </div>
           <div className="flex gap-2 place-items-center">
