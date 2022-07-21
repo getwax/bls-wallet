@@ -15,6 +15,7 @@ import onAction from '../helpers/onAction';
 import { useQuill } from '../QuillContext';
 import useCell from '../cells/useCell';
 import Loading from '../components/Loading';
+import CurrencyDisplay from '../components/CurrencyDisplay';
 
 const Confirm: FunctionComponent = () => {
   const quill = useQuill();
@@ -106,9 +107,14 @@ const Confirm: FunctionComponent = () => {
               'mt-4 p-4 bg-grey-300 rounded-md flex justify-between h-20',
             ].join(' ')}
           >
-            <div className="">Total Transaction Fees</div>
+            <div className="">
+              <div>Fees</div>
+              <div>Total</div>
+            </div>
             <div className="text-right">
-              <div className="font-bold">USD $0.0</div>
+              <div className="font-bold">
+                <CurrencyDisplay chainValue={0} />
+              </div>
               <div className="">{calculateTotal(tx.actions)} ETH</div>
             </div>
           </div>
