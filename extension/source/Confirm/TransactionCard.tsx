@@ -5,7 +5,6 @@ import { ethers } from 'ethers';
 import { SendTransactionParams } from '../types/Rpc';
 import formatCompactAddress from '../helpers/formatCompactAddress';
 import { useInputDecode } from '../hooks/useInputDecode';
-import CurrencyDisplay from '../components/CurrencyDisplay';
 
 const TransactionCard: React.FC<SendTransactionParams> = ({
   data,
