@@ -78,7 +78,12 @@ export const WalletsPage: React.FunctionComponent = () => (
       {/* summary pane */}
       <div
         className={[
-          'w-1/3 bg-grey-100 border-x border-grey-300 p-8 overflow-y-scroll',
+          'w-1/3',
+          'bg-grey-100',
+          'border-x',
+          'border-grey-300',
+          'p-8',
+          'overflow-y-scroll',
         ].join(' ')}
       >
         <Routes>

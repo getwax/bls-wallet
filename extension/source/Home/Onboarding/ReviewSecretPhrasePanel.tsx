@@ -21,28 +21,44 @@ const WordInReview: FunctionComponent<{
 
   const getConfirmWordClass = () => {
     if (guess === '') {
-      return '';
+      return [];
     }
+
     if (guess === word) {
       return [
-        'border-2 border-positive-500 bg-positive-500',
+        'border-2',
+        'border-positive-500',
+        'bg-positive-500',
         'focus:border-positive-500',
-      ].join(' ');
+      ];
     }
+
     if (word.startsWith(guess)) {
       return [
-        'border-2 border-neutral-500 bg-neutral-500 focus:border-neutral-500',
-      ].join(' ');
+        'border-2',
+        'border-neutral-500',
+        'bg-neutral-500',
+        'focus:border-neutral-500',
+      ];
     }
-    return 'border-2 border-alert-500 bg-alert-500 focus:border-alert-500';
+
+    return [
+      'border-2',
+      'border-alert-500',
+      'bg-alert-500',
+      'focus:border-alert-500',
+    ];
   };
 
   return (
     <input
       type="text"
       className={[
-        'mt-2 bg-opacity-5 border-opacity-25 focus:border-opacity-25',
-        getConfirmWordClass(),
+        'mt-2',
+        'bg-opacity-5',
+        'border-opacity-25',
+        'focus:border-opacity-25',
+        ...getConfirmWordClass(),
       ].join(' ')}
       placeholder={`Secret word ${sampleIndex + 1} ${word}`}
       onInput={(e: ChangeEvent<HTMLInputElement>) => {
