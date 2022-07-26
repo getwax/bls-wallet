@@ -26,7 +26,6 @@ function getQuillContextValue() {
   );
 
   forEach(cells.onboarding, (onboarding) => {
-    console.log(onboarding);
     if (!onboarding.autoOpened) {
       // Auto-opening is the very first thing that happens, so if it hasn't
       // happened, we should not be open.
