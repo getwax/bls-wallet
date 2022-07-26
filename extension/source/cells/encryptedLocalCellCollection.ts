@@ -29,11 +29,11 @@ export default new CellCollection({
     const payload = JSON.parse(readResult);
     const { salt } = payload;
     const passwordKey = await encryptor.keyFromPassword(PASSWORD, salt);
-    const value = await encryptor.decryptWithKey(passwordKey, payload);
+    const decryptedValue = await encryptor.decryptWithKey(passwordKey, payload);
 
-    assertType(value, type);
+    assertType(decryptedValue, type);
 
-    return value;
+    return decryptedValue;
   },
 
   async write<T>(
@@ -50,11 +50,11 @@ export default new CellCollection({
 
     const salt = encryptor.generateSalt();
     const passwordKey = await encryptor.keyFromPassword(PASSWORD, salt);
-    const payload = await encryptor.encryptWithKey(passwordKey, value);
-    payload.salt = salt;
+    const encryptedPayload = await encryptor.encryptWithKey(passwordKey, value);
+    encryptedPayload.salt = salt;
 
     Browser.storage.local.set({
-      [key]: JSON.stringify(payload),
+      [key]: JSON.stringify(encryptedPayload),
     });
   },
 
