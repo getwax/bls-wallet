@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 
-import elcc from './cells/extensionLocalCellCollection';
+import elcc from './cells/encryptedLocalCellCollection';
 import assert from './helpers/assert';
 import QuillStorageCells from './QuillStorageCells';
 import QuillEthereumProvider from './QuillEthereumProvider';
@@ -21,6 +21,7 @@ function getQuillContextValue() {
   const cells = QuillContextCells(elcc, ethereum);
 
   forEach(cells.onboarding, (onboarding) => {
+    console.log(onboarding)
     if (!onboarding.autoOpened) {
       // Auto-opening is the very first thing that happens, so if it hasn't
       // happened, we should not be open.
