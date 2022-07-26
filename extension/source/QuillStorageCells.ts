@@ -19,7 +19,10 @@ import { QuillTransaction } from './types/Rpc';
 // fields that always have concrete values incrementally without breaking
 // existing clients.
 
-function QuillStorageCells(storage: CellCollection) {
+function QuillStorageCells(
+  storage: CellCollection,
+  encryptedStorage: CellCollection,
+) {
   const rootCells = {
     onboarding: storage.Cell(
       'onboarding',
@@ -32,7 +35,7 @@ function QuillStorageCells(storage: CellCollection) {
         completed: false,
       }),
     ),
-    keyring: storage.Cell(
+    keyring: encryptedStorage.Cell(
       'keyring',
       io.type({
         HDPhrase: io.string,

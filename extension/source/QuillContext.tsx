@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 
-import elcc from './cells/encryptedLocalCellCollection';
+import extensionLocalCellCollection from './cells/extensionLocalCellCollection';
+import encryptedLocalCellCollection from './cells/encryptedLocalCellCollection';
 import assert from './helpers/assert';
 import QuillStorageCells from './QuillStorageCells';
 import QuillEthereumProvider from './QuillEthereumProvider';
@@ -18,10 +19,14 @@ function getQuillContextValue() {
   assert(ethereum?.isQuill);
   assert(ethereum.rpc !== undefined);
 
-  const cells = QuillContextCells(elcc, ethereum);
+  const cells = QuillContextCells(
+    extensionLocalCellCollection,
+    encryptedLocalCellCollection,
+    ethereum,
+  );
 
   forEach(cells.onboarding, (onboarding) => {
-    console.log(onboarding)
+    console.log(onboarding);
     if (!onboarding.autoOpened) {
       // Auto-opening is the very first thing that happens, so if it hasn't
       // happened, we should not be open.
@@ -67,9 +72,10 @@ export function QuillContextProvider({ children }: Props) {
 
 function QuillContextCells(
   storage: CellCollection,
+  encryptedStorage: CellCollection,
   ethereum: QuillEthereumProvider,
 ) {
-  const storageCells = QuillStorageCells(storage);
+  const storageCells = QuillStorageCells(storage, encryptedStorage);
 
   const rpcLogging = TransformCell.Sub(
     storageCells.developerSettings,

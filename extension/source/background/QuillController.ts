@@ -53,9 +53,10 @@ export default class QuillController {
 
   constructor(
     public storage: CellCollection,
+    public encryptedStorage: CellCollection,
     public currencyConversionConfig: CurrencyConversionConfig,
   ) {
-    this.cells = QuillStorageCells(storage);
+    this.cells = QuillStorageCells(storage, encryptedStorage);
 
     this.networkController = new NetworkController(this.cells.network);
 
