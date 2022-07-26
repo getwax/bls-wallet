@@ -2,10 +2,11 @@ import { FunctionComponent, useMemo } from 'react';
 import ICell from '../../../cells/ICell';
 import MemoryCell from '../../../cells/MemoryCell';
 import useCell from '../../../cells/useCell';
+import Loading from '../../../components/Loading';
 import onAction from '../../../helpers/onAction';
 import { useQuill } from '../../../QuillContext';
 import { AssetsTable } from './AssetsTable';
-import DisplayNonce from './DisplayNonce';
+import { TransactionsTable } from './TransactionsTable';
 
 export interface TokenData {
   token: string;
@@ -102,25 +103,27 @@ export const WalletDetail: FunctionComponent = () => {
   const activeTabValue = useCell(activeTab);
   const selectedAddress = useCell(quill.cells.selectedAddress);
 
+  const getTable = () => {
+    if (activeTabValue === 'Assets') {
+      return <AssetsTable data={data} />;
+    } else if (activeTabValue === 'Outbox') {
+      return <div>Outbox</div>;
+    } else if (activeTabValue === 'Transactions') {
+      return <TransactionsTable selectedAddress={selectedAddress} />;
+    } else {
+      return <Loading />;
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <WalletTabs {...{ activeTab }} />
 
       <input placeholder="Search" />
 
-      {activeTabValue === 'Transactions' && selectedAddress && (
-        <div>
-          Total: <DisplayNonce address={selectedAddress} />
-        </div>
-      )}
-
       <div>
         <div>Note: Placeholder data in the tables below</div>
-        <div style={{ opacity: 0.5 }}>
-          <AssetsTable data={data} />
-          <AssetsTable data={data} />
-          <AssetsTable data={data} />
-        </div>
+        <div style={{ opacity: 0.5 }}>{getTable()}</div>
       </div>
     </div>
   );
