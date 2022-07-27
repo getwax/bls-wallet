@@ -31,6 +31,11 @@ import LongPollingController from './LongPollingController';
 import isPermittedOrigin from './isPermittedOrigin';
 import TransactionsController from './TransactionsController';
 
+export type StorageConfig = {
+  standardStorage: CellCollection;
+  encryptedStorage: CellCollection;
+};
+
 export default class QuillController {
   networkController: NetworkController;
   keyringController: KeyringController;
@@ -52,11 +57,13 @@ export default class QuillController {
   cells: QuillStorageCells;
 
   constructor(
-    public storage: CellCollection,
-    public encryptedStorage: CellCollection,
+    public storage: StorageConfig,
     public currencyConversionConfig: CurrencyConversionConfig,
   ) {
-    this.cells = QuillStorageCells(storage, encryptedStorage);
+    this.cells = QuillStorageCells(
+      storage.standardStorage,
+      storage.encryptedStorage,
+    );
 
     this.networkController = new NetworkController(this.cells.network);
 
