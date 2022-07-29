@@ -19,9 +19,12 @@ import { QuillTransaction } from './types/Rpc';
 // fields that always have concrete values incrementally without breaking
 // existing clients.
 
-function QuillStorageCells(storage: CellCollection) {
+function QuillStorageCells(
+  standardStorage: CellCollection,
+  encryptedStorage: CellCollection,
+) {
   const rootCells = {
-    onboarding: storage.Cell(
+    onboarding: standardStorage.Cell(
       'onboarding',
       io.type({
         autoOpened: io.boolean,
@@ -32,7 +35,7 @@ function QuillStorageCells(storage: CellCollection) {
         completed: false,
       }),
     ),
-    keyring: storage.Cell(
+    keyring: encryptedStorage.Cell(
       'keyring',
       io.type({
         HDPhrase: io.string,
@@ -50,20 +53,20 @@ function QuillStorageCells(storage: CellCollection) {
         wallets: [],
       }),
     ),
-    transactions: storage.Cell(
+    transactions: standardStorage.Cell(
       'transactions',
       io.type({
         outgoing: io.array(QuillTransaction),
       }),
       () => ({ outgoing: [] }),
     ),
-    network: storage.Cell('network', ProviderConfig, () => {
+    network: standardStorage.Cell('network', ProviderConfig, () => {
       const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
       const config = builtinProviderConfigs[networkName];
 
       return config;
     }),
-    preferences: storage.Cell('preferences', Preferences, () => ({
+    preferences: standardStorage.Cell('preferences', Preferences, () => ({
       identities: {},
       selectedAddress: undefined,
       developerSettings: {

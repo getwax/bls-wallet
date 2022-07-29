@@ -1,7 +1,8 @@
 import { runtime, tabs } from 'webextension-polyfill';
 
-import QuillController from './QuillController';
+import QuillController, { StorageConfig } from './QuillController';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
+import encryptedLocalCellCollection from '../cells/encryptedLocalCellCollection';
 import { RpcRequest, toRpcResult } from '../types/Rpc';
 import toOkError from '../helpers/toOkError';
 import { castType } from '../cells/assertType';
@@ -13,8 +14,13 @@ import { assertConfig } from '../helpers/assert';
 (() => {
   console.log('Quill background script started');
 
+  const storage: StorageConfig = {
+    standardStorage: extensionLocalCellCollection,
+    encryptedStorage: encryptedLocalCellCollection,
+  };
+
   const quillController = new QuillController(
-    extensionLocalCellCollection,
+    storage,
     // FIXME: Config should be a file, not hardcoded.
     {
       api: 'https://min-api.cryptocompare.com/data/price',

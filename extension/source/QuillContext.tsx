@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
 
-import elcc from './cells/extensionLocalCellCollection';
+import extensionLocalCellCollection from './cells/extensionLocalCellCollection';
+import encryptedLocalCellCollection from './cells/encryptedLocalCellCollection';
 import assert from './helpers/assert';
 import QuillStorageCells from './QuillStorageCells';
 import QuillEthereumProvider from './QuillEthereumProvider';
 import EthersProvider from './EthersProvider';
-import CellCollection from './cells/CellCollection';
 import { FormulaCell } from './cells/FormulaCell';
 import QuillLongPollingCell from './QuillLongPollingCell';
 import TransformCell from './cells/TransformCell';
 import forEach from './cells/forEach';
+import { StorageConfig } from './background/QuillController';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -18,7 +19,12 @@ function getQuillContextValue() {
   assert(ethereum?.isQuill);
   assert(ethereum.rpc !== undefined);
 
-  const cells = QuillContextCells(elcc, ethereum);
+  const storage: StorageConfig = {
+    standardStorage: extensionLocalCellCollection,
+    encryptedStorage: encryptedLocalCellCollection,
+  };
+
+  const cells = QuillContextCells(storage, ethereum);
 
   forEach(cells.onboarding, (onboarding) => {
     if (!onboarding.autoOpened) {
@@ -65,10 +71,13 @@ export function QuillContextProvider({ children }: Props) {
 }
 
 function QuillContextCells(
-  storage: CellCollection,
+  storage: StorageConfig,
   ethereum: QuillEthereumProvider,
 ) {
-  const storageCells = QuillStorageCells(storage);
+  const storageCells = QuillStorageCells(
+    storage.standardStorage,
+    storage.encryptedStorage,
+  );
 
   const rpcLogging = TransformCell.Sub(
     storageCells.developerSettings,
