@@ -96,7 +96,7 @@ export const WalletDetail: FunctionComponent = () => {
   const quill = useQuill();
 
   const activeTab = useMemo(
-    () => new MemoryCell<'Assets' | 'Outbox' | 'Transactions'>('Assets'),
+    () => new MemoryCell<'Assets' | 'Outbox' | 'Transactions'>('Transactions'),
     [],
   );
 
@@ -106,13 +106,14 @@ export const WalletDetail: FunctionComponent = () => {
   const getTable = () => {
     if (activeTabValue === 'Assets') {
       return <AssetsTable data={data} />;
-    } else if (activeTabValue === 'Outbox') {
-      return <div>Outbox</div>;
-    } else if (activeTabValue === 'Transactions') {
-      return <TransactionsTable selectedAddress={selectedAddress} />;
-    } else {
-      return <Loading />;
     }
+    if (activeTabValue === 'Outbox') {
+      return <div>Outbox</div>;
+    }
+    if (activeTabValue === 'Transactions') {
+      return <TransactionsTable selectedAddress={selectedAddress || ''} />;
+    }
+    return <Loading />;
   };
 
   return (
@@ -122,8 +123,7 @@ export const WalletDetail: FunctionComponent = () => {
       <input placeholder="Search" />
 
       <div>
-        <div>Note: Placeholder data in the tables below</div>
-        <div style={{ opacity: 0.5 }}>{getTable()}</div>
+        <div>{getTable()}</div>
       </div>
     </div>
   );

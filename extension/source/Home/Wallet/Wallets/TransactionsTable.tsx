@@ -7,50 +7,43 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import {
-  CurrencyEth,
   ShareNetwork,
-  StopCircle,
-  CurrencyDollar,
   CaretLeft,
   CaretRight,
+  ArrowUpRight,
+  UserCircle,
 } from 'phosphor-react';
 
-import type { TokenData } from './WalletDetail';
+import { ethers } from 'ethers';
 import onAction from '../../../helpers/onAction';
 import DisplayNonce from './DisplayNonce';
 import useCell from '../../../cells/useCell';
 import { useQuill } from '../../../QuillContext';
 import Loading from '../../../components/Loading';
 import { QuillTransaction } from '../../../types/Rpc';
+import formatCompactAddress from '../../../helpers/formatCompactAddress';
 
-export const TableHeader: React.FunctionComponent = () => {
+interface ITransactionsTable {
+  selectedAddress: string;
+}
+
+export const TableHeader: React.FunctionComponent<ITransactionsTable> = ({
+  selectedAddress,
+}) => {
   return (
     <div className="flex justify-between p-6">
       <div className="flex gap-4">
         <div className="flex gap-2 items-center">
-          <ShareNetwork className="text-blue-500 icon-md" />
+          <UserCircle className="text-blue-500 icon-md" />
           <div className="">
-            <span className="text-blue-500">Network :</span> Mainnet
+            <span className="text-blue-500">From :</span>{' '}
+            {formatCompactAddress(selectedAddress)}
           </div>
-        </div>
-      </div>
-      <div className="flex gap-4 text-[13pt]">
-        <div className="flex gap-2 items-center">
-          <CurrencyEth className="text-blue-500 icon-md" />
-          <div className="">0.937 ETH</div>
-        </div>
-        <div className="flex gap-2 items-center text-disclaimer">
-          <CurrencyDollar className="text-blue-500 icon-md" />
-          <div className="">3,813.38 USD</div>
         </div>
       </div>
     </div>
   );
 };
-
-interface ITransactionsTable {
-  selectedAddress: string;
-}
 
 export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
   selectedAddress,
@@ -64,15 +57,58 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
     () => [
       {
         header: 'Created at',
-        accessorKey: 'createdAt',
+        accessorFn: (t) =>
+          new Intl.DateTimeFormat([], {
+            timeStyle: 'short',
+            dateStyle: 'medium',
+          }).format(t.createdAt),
       },
       {
-        header: 'From',
-        accessorKey: 'from',
+        header: 'Network',
+        accessorKey: 'chainId',
+        // TODO - show network name instead of id
+      },
+      {
+        header: 'Value',
+        accessorFn: (t) => {
+          const total = t.actions.reduce(
+            (acc, cur) => acc.add(ethers.BigNumber.from(cur.value)),
+            ethers.BigNumber.from(0),
+          );
+          return ethers.utils.formatEther(total);
+        },
       },
       {
         header: 'Status',
         accessorKey: 'status',
+      },
+      {
+        header: 'Tx Hash',
+        accessorFn: (t) => {
+          const placeholder =
+            '0xfbe7276011b411d474c5ec224e50912b5bab77f72f6294585a30649624961782';
+          return formatCompactAddress(placeholder);
+        },
+        cell: (t) => {
+          return (
+            <div
+              className="bg-blue-100 bg-opacity-40 px-3 m-auto flex items-center gap-2
+              active:bg-opacity-70 cursor-pointer text-blue-600 rounded-full w-max"
+              {...onAction(() =>
+                window.open(`https://etherscan.io/tx/${t.getValue()}`),
+              )}
+            >
+              {t.getValue()}
+              <ArrowUpRight />
+            </div>
+          );
+        },
+      },
+      {
+        header: 'Actions',
+        accessorFn: (t) => {
+          return `${t.actions.length} actions`;
+        },
       },
     ],
     [],
@@ -92,9 +128,9 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
 
   return (
     <div>
-      Total: <DisplayNonce address={selectedAddress} />
+      Nonce: <DisplayNonce address={selectedAddress} />
       <div className="mt-4 border border-grey-300 rounded-lg border-separate">
-        <TableHeader />
+        <TableHeader selectedAddress={selectedAddress} />
 
         <table className="w-full">
           <thead className="text-blue-500">
@@ -124,7 +160,7 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
                 >
                   {row.getVisibleCells().map((cell) => {
                     return (
-                      <td key={cell.id} className="py-3">
+                      <td key={cell.id} className="py-3 text-[10pt]">
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -138,7 +174,7 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
           </tbody>
         </table>
 
-        {/* <div className="bg-grey-100 px-4 py-2 border-t border-grey-300 flex justify-end gap-8">
+        <div className="bg-grey-100 px-4 py-2 border-t border-grey-300 flex justify-end gap-8">
           <div className="flex">
             <div>showing</div>
             <select
@@ -170,7 +206,7 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
               className="cursor-pointer icon-md"
             />
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );
