@@ -8,12 +8,12 @@ import {
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
 } from 'bls-wallet-clients';
-import elcc from './cells/extensionLocalCellCollection';
+import extensionLocalCellCollection from './cells/extensionLocalCellCollection';
+import encryptedLocalCellCollection from './cells/encryptedLocalCellCollection';
 import assert from './helpers/assert';
 import QuillStorageCells from './QuillStorageCells';
 import QuillEthereumProvider from './QuillEthereumProvider';
 import EthersProvider from './EthersProvider';
-import CellCollection from './cells/CellCollection';
 import { FormulaCell } from './cells/FormulaCell';
 import QuillLongPollingCell from './QuillLongPollingCell';
 import TransformCell from './cells/TransformCell';
@@ -21,6 +21,7 @@ import forEach from './cells/forEach';
 import { loadBlsNetworksConfig } from './BlsNetworksConfig';
 import { RpcClient } from './types/Rpc';
 import Config, { loadConfig } from './Config';
+import { StorageConfig } from './background/QuillController';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -32,7 +33,12 @@ function getQuillContextValue() {
   const config = loadConfig();
   const blsNetworksConfig = loadBlsNetworksConfig();
 
-  const cells = QuillContextCells(config, elcc, ethereum, ethereum.rpc);
+  const storage: StorageConfig = {
+    standardStorage: extensionLocalCellCollection,
+    encryptedStorage: encryptedLocalCellCollection,
+  };
+
+  const cells = QuillContextCells(config, storage, ethereum, ethereum.rpc);
 
   forEach(cells.onboarding, (onboarding) => {
     if (!onboarding.autoOpened) {
@@ -137,11 +143,15 @@ export function QuillContextProvider({ children }: Props) {
 
 function QuillContextCells(
   config: Config,
-  storage: CellCollection,
+  storage: StorageConfig,
   ethereum: QuillEthereumProvider,
   rpc: RpcClient,
 ) {
-  const storageCells = QuillStorageCells(config, storage);
+  const storageCells = QuillStorageCells(
+    config,
+    storage.standardStorage,
+    storage.encryptedStorage,
+  );
 
   const rpcLogging = TransformCell.Sub(
     storageCells.developerSettings,
