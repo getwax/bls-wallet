@@ -18,9 +18,13 @@ import defaultCurrency from './currencies/defaultCurrency';
 // fields that always have concrete values incrementally without breaking
 // existing clients.
 
-function QuillStorageCells(config: Config, storage: CellCollection) {
+function QuillStorageCells(
+  config: Config,
+  standardStorage: CellCollection,
+  encryptedStorage: CellCollection,
+) {
   const rootCells = {
-    onboarding: storage.Cell(
+    onboarding: standardStorage.Cell(
       'onboarding',
       io.type({
         autoOpened: io.boolean,
@@ -31,7 +35,7 @@ function QuillStorageCells(config: Config, storage: CellCollection) {
         completed: false,
       }),
     ),
-    keyring: storage.Cell(
+    keyring: encryptedStorage.Cell(
       'keyring',
       io.type({
         HDPhrase: io.string,
@@ -58,14 +62,14 @@ function QuillStorageCells(config: Config, storage: CellCollection) {
         wallets: [],
       })),
     ),
-    transactions: storage.Cell(
+    transactions: standardStorage.Cell(
       'transactions',
       io.type({
         outgoing: io.array(QuillTransaction),
       }),
       () => ({ outgoing: [] }),
     ),
-    network: storage.Cell('network', ProviderConfig, () => {
+    network: standardStorage.Cell('network', ProviderConfig, () => {
       const network = config.builtinNetworks[config.defaultNetwork];
 
       assert(
@@ -75,7 +79,7 @@ function QuillStorageCells(config: Config, storage: CellCollection) {
 
       return network;
     }),
-    preferences: storage.Cell(
+    preferences: standardStorage.Cell(
       'preferences',
       Preferences,
       async (): Promise<Preferences> => ({

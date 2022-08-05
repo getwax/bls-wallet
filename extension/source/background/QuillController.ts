@@ -31,6 +31,11 @@ import TransactionsController from './TransactionsController';
 import BlsNetworksConfig from '../BlsNetworksConfig';
 import Config from '../Config';
 
+export type StorageConfig = {
+  standardStorage: CellCollection;
+  encryptedStorage: CellCollection;
+};
+
 export default class QuillController {
   networkController: NetworkController;
   keyringController: KeyringController;
@@ -59,9 +64,13 @@ export default class QuillController {
   constructor(
     public config: Config,
     public blsNetworksConfig: BlsNetworksConfig,
-    public storage: CellCollection,
+    public storage: StorageConfig,
   ) {
-    this.cells = QuillStorageCells(config, storage);
+    this.cells = QuillStorageCells(
+      config,
+      storage.standardStorage,
+      storage.encryptedStorage,
+    );
 
     this.networkController = new NetworkController(this.cells.network);
 
