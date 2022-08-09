@@ -7,7 +7,6 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import {
-  ShareNetwork,
   CaretLeft,
   CaretRight,
   ArrowUpRight,
@@ -84,25 +83,36 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
       },
       {
         header: 'Tx Hash',
-        accessorFn: (t) => {
+        accessorFn: (_) => {
           const placeholder =
-            '0xfbe7276011b411d474c5ec224e50912b5bab77f72f6294585a30649624961782';
+            '0xfbe7276011b411d474c5ec224e50912b5bab77f72f6294585a3064962496178';
           return formatCompactAddress(placeholder);
         },
-        cell: (t) => {
-          return (
-            <div
-              className="bg-blue-100 bg-opacity-40 px-3 m-auto flex items-center gap-2
-              active:bg-opacity-70 cursor-pointer text-blue-600 rounded-full w-max"
-              {...onAction(() =>
-                window.open(`https://etherscan.io/tx/${t.getValue()}`),
-              )}
-            >
-              {t.getValue()}
-              <ArrowUpRight />
-            </div>
-          );
-        },
+        // eslint-disable-next-line react/no-unstable-nested-components
+        cell: (t) => (
+          <div
+            className={[
+              'bg-blue-100',
+              'bg-opacity-40',
+              'px-3',
+              'm-auto',
+              'flex',
+              'items-center',
+              'gap-2',
+              'active:bg-opacity-70',
+              'cursor-pointer',
+              'text-blue-600',
+              'rounded-full',
+              'w-max',
+            ].join(' ')}
+            {...onAction(() =>
+              window.open(`https://etherscan.io/tx/${t.getValue()}`),
+            )}
+          >
+            {t.getValue()}
+            <ArrowUpRight />
+          </div>
+        ),
       },
       {
         header: 'Actions',
@@ -174,7 +184,18 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
           </tbody>
         </table>
 
-        <div className="bg-grey-100 px-4 py-2 border-t border-grey-300 flex justify-end gap-8">
+        <div
+          className={[
+            'bg-grey-100',
+            'px-4',
+            'py-2',
+            'border-t',
+            'border-grey-300',
+            'flex',
+            'justify-end',
+            'gap-8',
+          ].join(' ')}
+        >
           <div className="flex">
             <div>showing</div>
             <select

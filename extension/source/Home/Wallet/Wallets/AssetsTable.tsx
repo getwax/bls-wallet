@@ -87,7 +87,16 @@ export const AssetsTable: React.FunctionComponent<IAssetsTable> = ({
   });
 
   return (
-    <div className="mt-4 border border-grey-300 rounded-lg border-separate opacity-50">
+    <div
+      className={[
+        'mt-4',
+        'border',
+        'border-grey-300',
+        'rounded-lg',
+        'border-separate',
+        'opacity-50',
+      ].join(' ')}
+    >
       <TableHeader />
 
       <table className="w-full">
