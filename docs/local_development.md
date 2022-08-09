@@ -90,6 +90,20 @@ cd ../extension
 yarn link bls-wallet-clients
 ```
 
+If you would like live updates to from the clients package to trigger reloads of the extension, be sure to comment out this section of `./extension/weback.config.js`:
+```javascript
+...
+module.exports = {
+  ...
+  watchOptions: {
+    // Remove this if you want to watch for changes
+    // from a linked package, such as bls-wallet-clients.
+    ignored: /node_modules/,
+  },
+  ...
+};
+```
+
 ### aggregator
 
 You will need to push up an `@experimental` version to 'bls-wallet-clients' on npm and update the version in `./aggregtor/src/deps.ts` until a local linking solution for deno is found. See https://github.com/alephjs/esm.sh/discussions/216 for details.
