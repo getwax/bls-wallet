@@ -1,6 +1,7 @@
 import { X } from 'phosphor-react';
 import { FunctionComponent, useState } from 'react';
 import Modal from 'react-modal';
+import Button from '../../../components/Button';
 import TransactionCard from '../../../Confirm/TransactionCard';
 import { SendTransactionParams } from '../../../types/Rpc';
 
@@ -19,15 +20,15 @@ const ActionsModal: FunctionComponent<{ actions: SendTransactionParams[] }> = ({
 
   return (
     <div>
-      <button
+      <Button
         className="text-blue-500 hover:underline cursor-pointer"
-        onClick={openModal}
+        onPress={() => openModal()}
       >
         {actions.length} actions
-      </button>
+      </Button>
       <Modal
         isOpen={modalIsOpen}
-        onRequestClose={closeModal}
+        onRequestClose={() => closeModal()}
         style={{
           content: {
             width: '35rem',
@@ -52,9 +53,9 @@ const ActionsModal: FunctionComponent<{ actions: SendTransactionParams[] }> = ({
           ].join(' ')}
         >
           <div className="">All Actions ({actions.length})</div>
-          <button onClick={closeModal}>
+          <Button onPress={() => closeModal()}>
             <X fontSize="20pt" />
-          </button>
+          </Button>
         </div>
 
         <div className="p-6">
