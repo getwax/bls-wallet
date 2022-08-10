@@ -70,7 +70,7 @@
   },
   "currencyConversion": {
     "api": "https://min-api.cryptocompare.com/data/price",
-    "apiKey": "injected-from-github-actions-environment",
+    "apiKey": "CRYPTO_COMPARE_API_KEY",
     "pollInterval": 30000
   }
 }
