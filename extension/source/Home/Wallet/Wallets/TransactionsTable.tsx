@@ -121,10 +121,7 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
       {
         header: 'Actions',
         accessorKey: 'actions',
-        // eslint-disable-next-line react/no-unstable-nested-components
-        cell: (t) => {
-          return <ActionsModal actions={t.getValue()} />;
-        },
+        cell: ActionsModal,
       },
     ],
     [],

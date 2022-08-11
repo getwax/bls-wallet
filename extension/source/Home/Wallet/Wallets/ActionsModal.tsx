@@ -1,14 +1,14 @@
 import { X } from 'phosphor-react';
-import { FunctionComponent, useState } from 'react';
+import { useState } from 'react';
 import Modal from 'react-modal';
 import Button from '../../../components/Button';
 import TransactionCard from '../../../Confirm/TransactionCard';
 import { SendTransactionParams } from '../../../types/Rpc';
 
-const ActionsModal: FunctionComponent<{ actions: SendTransactionParams[] }> = ({
-  actions,
-}) => {
+const ActionsModal = (cell: { getValue: () => SendTransactionParams[] }) => {
   const [modalIsOpen, setIsOpen] = useState(false);
+
+  const actions = cell.getValue();
 
   function openModal() {
     setIsOpen(true);
