@@ -4,6 +4,7 @@ import { BigNumber } from "ethers";
 import encodeMessageForSigning from "./encodeMessageForSigning";
 import type { Bundle } from "./types";
 import isValidEmptyBundle from "./isValidEmptyBundle";
+import { solidityKeccak256 } from "ethers/lib/utils";
 
 export default (domain: Uint8Array, chainId: number) =>
   (bundle: Bundle): boolean => {
@@ -25,6 +26,14 @@ export default (domain: Uint8Array, chainId: number) =>
         BigNumber.from(n2).toHexString(),
         BigNumber.from(n3).toHexString(),
       ]),
-      bundle.operations.map(encodeMessageForSigning(chainId)),
+      bundle.operations.map((op, i) =>
+        encodeMessageForSigning(
+          chainId,
+          solidityKeccak256(
+            ["uint256", "uint256", "uint256", "uint256"],
+            bundle.senderPublicKeys[i],
+          ),
+        )(op),
+      ),
     );
   };

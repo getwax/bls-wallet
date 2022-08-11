@@ -1,7 +1,7 @@
 import { keccak256, solidityPack } from "ethers/lib/utils";
 import { Operation } from "./types";
 
-export default (chainId: number) =>
+export default (chainId: number, publicKeyHash: string) =>
   (operation: Operation): string => {
     let encodedActionData = "0x";
 
@@ -18,7 +18,7 @@ export default (chainId: number) =>
     }
 
     return solidityPack(
-      ["uint256", "uint256", "bytes32"],
-      [chainId, operation.nonce, keccak256(encodedActionData)],
+      ["uint256", "bytes32", "uint256", "bytes32"],
+      [chainId, publicKeyHash, operation.nonce, keccak256(encodedActionData)],
     );
   };

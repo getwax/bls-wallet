@@ -88,7 +88,10 @@ contract VerificationGateway
 
         for (uint256 i = 0; i<opLength; i++) {
             // construct params for signature verification
-            messages[i] = messagePoint(bundle.operations[i]);
+            messages[i] = messagePoint(
+                keccak256(abi.encodePacked(bundle.senderPublicKeys[i])),
+                bundle.operations[i]
+            );
         }
 
         bool verified = blsLib.verifyMultiple(
@@ -362,6 +365,7 @@ contract VerificationGateway
     }
 
     function messagePoint(
+        bytes32 keyHash,
         IWallet.Operation memory op
     ) internal view returns (
         uint256[2] memory
@@ -381,6 +385,7 @@ contract VerificationGateway
             BLS_DOMAIN,
             abi.encodePacked(
                 block.chainid,
+                keyHash,
                 op.nonce,
                 keccak256(encodedActionData)
             )
