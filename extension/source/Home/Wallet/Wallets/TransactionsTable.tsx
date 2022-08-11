@@ -44,6 +44,33 @@ export const TableHeader: React.FunctionComponent<ITransactionsTable> = ({
   );
 };
 
+const TransactionTableCell = (cell: { getValue: () => string }) => {
+  return (
+    <div
+      className={[
+        'bg-blue-100',
+        'bg-opacity-40',
+        'px-3',
+        'm-auto',
+        'flex',
+        'items-center',
+        'gap-2',
+        'active:bg-opacity-70',
+        'cursor-pointer',
+        'text-blue-600',
+        'rounded-full',
+        'w-max',
+      ].join(' ')}
+      {...onAction(() =>
+        window.open(`https://etherscan.io/tx/${cell.getValue()}`),
+      )}
+    >
+      {cell.getValue()}
+      <ArrowUpRight />
+    </div>
+  );
+};
+
 export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
   selectedAddress,
 }) => {
@@ -88,31 +115,7 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
             '0xfbe7276011b411d474c5ec224e50912b5bab77f72f6294585a3064962496178';
           return formatCompactAddress(placeholder);
         },
-        // eslint-disable-next-line react/no-unstable-nested-components
-        cell: (t) => (
-          <div
-            className={[
-              'bg-blue-100',
-              'bg-opacity-40',
-              'px-3',
-              'm-auto',
-              'flex',
-              'items-center',
-              'gap-2',
-              'active:bg-opacity-70',
-              'cursor-pointer',
-              'text-blue-600',
-              'rounded-full',
-              'w-max',
-            ].join(' ')}
-            {...onAction(() =>
-              window.open(`https://etherscan.io/tx/${t.getValue()}`),
-            )}
-          >
-            {t.getValue()}
-            <ArrowUpRight />
-          </div>
-        ),
+        cell: TransactionTableCell,
       },
       {
         header: 'Actions',
