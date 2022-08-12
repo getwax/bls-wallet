@@ -148,6 +148,7 @@ contract BLSWallet is Initializable, IWallet
         bool success,
         bytes[] memory results
     ) {
+        incrementNonce(); // before operation to prevent reentrancy
         try this._performOperation(op) returns (
             bytes[] memory _results
         ) {
@@ -159,7 +160,6 @@ contract BLSWallet is Initializable, IWallet
             results = new bytes[](1);
             results[0] = returnData;
         }
-        incrementNonce(); // regardless of outcome of operation
     }
 
     /**
