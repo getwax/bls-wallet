@@ -21,6 +21,7 @@ import { useQuill } from '../../../QuillContext';
 import Loading from '../../../components/Loading';
 import { QuillTransaction } from '../../../types/Rpc';
 import formatCompactAddress from '../../../helpers/formatCompactAddress';
+import ActionsModal from './ActionsModal';
 
 interface ITransactionsTable {
   selectedAddress: string;
@@ -119,9 +120,8 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
       },
       {
         header: 'Actions',
-        accessorFn: (t) => {
-          return `${t.actions.length} actions`;
-        },
+        accessorKey: 'actions',
+        cell: ActionsModal,
       },
     ],
     [],
@@ -129,7 +129,7 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
 
   const table = useReactTable({
     columns,
-    data,
+    data: data.reverse(),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     initialState: { pagination: { pageSize: 5 } },
