@@ -24,7 +24,7 @@ export default class KeyringController {
   rpc = ensureType<PartialRpcImpl>()({
     eth_accounts: async ({ origin }) => {
       if (origin === window.location.origin) {
-        const walletsNetworkData = await this.getWalletsNetworkData();
+        const walletsNetworkData = await this.getAndUpdateWalletsNetworkData();
         const keyring = await this.keyring.read();
 
         return keyring.wallets.map((w) => {
@@ -99,7 +99,7 @@ export default class KeyringController {
     },
 
     pkHashToAddress: async ({ params: [publicKeyHash] }) => {
-      const walletsNetworkData = await this.getWalletsNetworkData();
+      const walletsNetworkData = await this.getAndUpdateWalletsNetworkData();
       const networkData = walletsNetworkData[publicKeyHash];
 
       assert(
@@ -172,49 +172,57 @@ export default class KeyringController {
     );
   }
 
-  async getWalletsNetworkData(): Promise<
+  async getAndUpdateWalletsNetworkData(): Promise<
     Record<string, { originalGateway: string; address: string } | undefined>
   > {
-    const walletsNetworkData: Record<
-      string,
-      { originalGateway: string; address: string }
-    > = {};
-
-    const network = await this.network.read();
+    // Load keyring & network
+    const [network, keyring] = await Promise.all([
+      this.network.read(),
+      this.keyring.read(),
+    ]);
+    const keyringCopy = mixtureCopy(keyring);
 
     const blsNetworkConfig = getBlsNetworkConfig(
       network,
       this.blsNetworksConfig,
     );
 
-    const keyring = mixtureCopy(await this.keyring.read());
-    let keyringUpdated = false;
-
-    await Promise.all(
-      keyring.wallets.map(async (wallet) => {
-        let networkDataForWallet = wallet.networks[network.networkKey];
-
-        if (networkDataForWallet === undefined) {
-          networkDataForWallet = {
-            originalGateway: blsNetworkConfig.addresses.verificationGateway,
-            address: await (
-              await this.BlsWalletWrapper(wallet.privateKey)
-            ).address,
-          };
-
-          // eslint-disable-next-line no-param-reassign
-          wallet.networks[network.networkKey] = networkDataForWallet;
-          keyringUpdated = true;
+    // Get network data for wallets
+    let shouldUpdateKeyring = false;
+    const networkDataForWallets = await Promise.all(
+      keyringCopy.wallets.map(async (w) => {
+        // Return existing network data
+        const walletNetworkData = w.networks[network.networkKey];
+        if (walletNetworkData) {
+          return walletNetworkData;
         }
 
-        walletsNetworkData[wallet.publicKeyHash] = networkDataForWallet;
+        // Otherwise generate new network data
+        shouldUpdateKeyring = true;
+        const { address } = await this.BlsWalletWrapper(w.privateKey);
+        return {
+          originalGateway: blsNetworkConfig.addresses.verificationGateway,
+          address,
+        };
       }),
     );
-
-    if (keyringUpdated) {
-      await this.keyring.write(keyring);
+    // TODO Find a better way where we don't have to loop through every entry.
+    for (const [i, w] of keyringCopy.wallets.entries()) {
+      w.networks[network.networkKey] = networkDataForWallets[i];
     }
 
-    return walletsNetworkData;
+    // Update keyring if new netowrk data was created
+    if (shouldUpdateKeyring) {
+      await this.keyring.write(keyringCopy);
+    }
+
+    // Return all wallet network data by PubKey hash
+    return keyringCopy.wallets.reduce(
+      (acc, w) => ({
+        ...acc,
+        [w.publicKeyHash]: w.networks[network.networkKey],
+      }),
+      {},
+    );
   }
 }

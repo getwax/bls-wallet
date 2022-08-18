@@ -49,7 +49,7 @@ export default class PreferencesController {
   rpc = ensureType<PartialRpcImpl>()({
     setSelectedAddress: async ({ params: [selectedAddress] }) => {
       const walletsNetworkData =
-        await this.keyringController.getWalletsNetworkData();
+        await this.keyringController.getAndUpdateWalletsNetworkData();
 
       for (const [publicKeyHash, walletNetworkData] of Object.entries(
         walletsNetworkData,
@@ -113,11 +113,11 @@ export default class PreferencesController {
       () => new Error('User already exists'),
     );
 
-    const $preferences = await this.preferences.read();
+    const prefs = await this.preferences.read();
 
     const selectedAddressPreferences =
-      $preferences.selectedPublicKeyHash &&
-      $preferences.identities[$preferences.selectedPublicKeyHash];
+      prefs.selectedPublicKeyHash &&
+      prefs.identities[prefs.selectedPublicKeyHash];
 
     await newUserPreferences.write({
       ...defaultAddressPreferences,

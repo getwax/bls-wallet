@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react';
+import { FunctionComponent, useMemo } from 'react';
 import Display from '../../../cells/components/Display';
 import Selector from '../../../cells/components/Selector';
 import { useQuill } from '../../../QuillContext';
@@ -6,12 +6,17 @@ import { useQuill } from '../../../QuillContext';
 const NetworkSettings: FunctionComponent = () => {
   const { cells, config } = useQuill();
 
+  const visibleNetworks = useMemo(() => {
+    return Object.values(config.builtinNetworks)
+      .filter((n) => !n?.hidden)
+      .map((n) => n?.displayName)
+      .filter(notUndefined);
+  }, [config.builtinNetworks]);
+
   return (
     <>
       <Selector
-        options={Object.values(config.builtinNetworks)
-          .map((n) => n?.displayName)
-          .filter(notUndefined)}
+        options={visibleNetworks}
         selection={cells.networkDisplayName}
       />
       <pre>

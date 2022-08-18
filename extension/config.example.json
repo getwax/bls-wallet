@@ -10,7 +10,8 @@
       "chainCurrencyName": "Ethereum",
       "chainCurrency": "ETH",
       "aggregatorUrl": "https://mainnet.blswallet.org",
-      "networkKey": "mainnet"
+      "networkKey": "mainnet",
+      "hidden": true,
     },
     "local": {
       "blockExplorerUrl": "N/A",
