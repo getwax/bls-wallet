@@ -47,8 +47,12 @@ yarn hardhat fundDeployer --network gethDev
 
 Deploy all `bls-wallet` contracts.
 ```sh
+git checkout 45def922036c441aa1559419470a131de3ce8ae4
 yarn hardhat run scripts/deploy_all.ts --network gethDev
+git checkout - # Switches back to the previous branch
 ```
+
+***Note***: We currently advise deploying contracts from version 45def9 using the `checkout` commands above for compatibility with the extension and contracts deployed to arbitrum testnet. This isn't necessary if you're working on the contracts in isolation or otherwise know how to workaround this issue. This should be improved in the future. [More information](https://github.com/web3well/bls-wallet/issues/295).
 
 ## Run
 
@@ -88,6 +92,20 @@ yarn build
 yarn link
 cd ../extension
 yarn link bls-wallet-clients
+```
+
+If you would like live updates to from the clients package to trigger reloads of the extension, be sure to comment out this section of `./extension/weback.config.js`:
+```javascript
+...
+module.exports = {
+  ...
+  watchOptions: {
+    // Remove this if you want to watch for changes
+    // from a linked package, such as bls-wallet-clients.
+    ignored: /node_modules/,
+  },
+  ...
+};
 ```
 
 ### aggregator
