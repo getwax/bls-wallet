@@ -62,7 +62,7 @@ export const builtinProviderConfigs = ensureType<
     networkKey: 'arbitrum-rinkeby',
   },
   'arbitrum-goerli': {
-    blockExplorerUrl: 'https://rinkeby-explorer.arbitrum.io',
+    blockExplorerUrl: 'https://goerli-rollup-explorer.arbitrum.io',
     chainId: '0x66eed', // 421613
     displayName: 'Arbitrum Goerli Test Network',
     logo: '',
