@@ -61,6 +61,16 @@ export const builtinProviderConfigs = ensureType<
     chainCurrency: 'ARETH',
     networkKey: 'arbitrum-rinkeby',
   },
+  'arbitrum-goerli': {
+    blockExplorerUrl: 'https://rinkeby-explorer.arbitrum.io',
+    chainId: '0x66eed', // 421613
+    displayName: 'Arbitrum Goerli Test Network',
+    logo: '',
+    rpcTarget: 'https://goerli-rollup.arbitrum.io/rpc',
+    chainCurrencyName: 'Arbitrum Ether',
+    chainCurrency: 'gARETH',
+    networkKey: 'arbitrum-goerli',
+  },
   arbitrum: {
     blockExplorerUrl: 'https://explorer.arbitrum.io',
     chainId: '0xa4b1', // 42161
