@@ -6,11 +6,13 @@ on:
       - 'main'
     paths:
       - 'aggregator/**'
+      - '.github/workflows/aggregator.yml'
   pull_request:
     branches:
       - 'main'
     paths:
       - 'aggregator/**'
+      - '.github/workflows/aggregator.yml'
 
 defaults:
   run:
