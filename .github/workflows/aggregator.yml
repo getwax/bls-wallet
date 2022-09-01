@@ -68,6 +68,8 @@ jobs:
     - working-directory: ./contracts
       run: yarn hardhat fundDeployer --network gethDev
     - working-directory: ./contracts
+      run: git fetch --depth 1 origin 45def922036c441aa1559419470a131de3ce8ae4
+    - working-directory: ./contracts
       run: git checkout 45def922036c441aa1559419470a131de3ce8ae4
     - working-directory: ./contracts
       run: yarn hardhat run scripts/deploy_all.ts --network gethDev
