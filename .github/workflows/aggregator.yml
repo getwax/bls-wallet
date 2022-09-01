@@ -68,8 +68,12 @@ jobs:
     - working-directory: ./contracts
       run: yarn hardhat fundDeployer --network gethDev
     - working-directory: ./contracts
+      # github uses a shallow clone for workflows, so we need this extra step before checking out
+      # the commit below
       run: git fetch --depth 1 origin 45def922036c441aa1559419470a131de3ce8ae4
     - working-directory: ./contracts
+      # Use this commit for the contracts for compatibility with bls-wallet-clients
+      # More info: https://github.com/web3well/bls-wallet/issues/295#issuecomment-1216127340
       run: git checkout 45def922036c441aa1559419470a131de3ce8ae4
     - working-directory: ./contracts
       run: yarn hardhat run scripts/deploy_all.ts --network gethDev
