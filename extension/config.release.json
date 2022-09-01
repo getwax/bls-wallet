@@ -71,7 +71,7 @@
   },
   "currencyConversion": {
     "api": "https://min-api.cryptocompare.com/data/price",
-    "apiKey": "CRYPTO_COMPARE_API_KEY",
+    "apiKey": "${CRYPTO_COMPARE_API_KEY}",
     "pollInterval": 30000
   }
 }

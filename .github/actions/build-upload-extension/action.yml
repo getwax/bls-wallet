@@ -27,12 +27,11 @@ runs:
     - working-directory: ./extension
       shell: bash
       run: |
-        cp config.release.json config.json
+        envsubst < config.release.json > config.json
         yarn install --frozen-lockfile
     - working-directory: ./extension
       shell: bash
       run: |
-        CRYPTO_COMPARE_API_KEY=${CRYPTO_COMPARE_API_KEY} \
         NETWORK_CONFIGS_DIR=../contracts/networks \
         yarn build:${{ inputs.browser }}
     - working-directory: ./extension

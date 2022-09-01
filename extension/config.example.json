@@ -11,7 +11,7 @@
       "chainCurrency": "ETH",
       "aggregatorUrl": "https://mainnet.blswallet.org",
       "networkKey": "mainnet",
-      "hidden": true,
+      "hidden": true
     },
     "local": {
       "blockExplorerUrl": "N/A",
