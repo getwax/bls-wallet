@@ -30,7 +30,7 @@ const getSingleConfig = (networkKey: string) => ({
 const network1 = "network1";
 const network2 = "network2";
 
-describe.only("MultiNetworkConfig", () => {
+describe("MultiNetworkConfig", () => {
   let validConfig: UnvalidatedMultiNetworkConfig;
 
   beforeEach(() => {
