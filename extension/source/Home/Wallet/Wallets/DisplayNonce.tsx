@@ -13,15 +13,15 @@ const DisplayNonce: FunctionComponent<{ address: string }> = ({ address }) => {
       new FormulaCell(
         { blockNumber: quill.cells.blockNumber, network: quill.cells.network },
         async ({ $network }) => {
-          const blsNetworkConfig = quill.blsNetworksConfig[$network.networkKey];
+          const netCfg = quill.multiNetworkConfig[$network.networkKey];
 
-          if (blsNetworkConfig === undefined) {
-            return `Missing bls network config for ${$network.displayName}`;
+          if (netCfg === undefined) {
+            return `Missing network config for ${$network.displayName}`;
           }
 
           const wallet = await BlsWalletWrapper.connect(
             await quill.rpc.lookupPrivateKey(address),
-            blsNetworkConfig.addresses.verificationGateway,
+            netCfg.addresses.verificationGateway,
             await quill.ethersProvider.read(),
           );
 

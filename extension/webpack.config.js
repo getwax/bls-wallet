@@ -14,7 +14,7 @@ const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const DotenvWebpackPlugin = require('dotenv-webpack');
 
-require('./buildBlsNetworksConfig');
+require('./buildMultiNetworkConfig');
 
 const viewsPath = path.join(__dirname, 'views');
 const sourcePath = path.join(__dirname, 'source');

@@ -9,19 +9,19 @@ fs.mkdirSync(path.join(__dirname, 'build'), { recursive: true });
 
 const networkFilenames = fs.readdirSync(networksConfigDir);
 
-const blsNetworksConfig = {};
+const multiNetworkConfig = {};
 
 for (const filename of networkFilenames) {
   if (!filename.endsWith('.json')) {
     throw new Error('Unexpected non-json file');
   }
 
-  blsNetworksConfig[filename.slice(0, -'.json'.length)] = JSON.parse(
+  multiNetworkConfig[filename.slice(0, -'.json'.length)] = JSON.parse(
     fs.readFileSync(path.join(networksConfigDir, filename), 'utf-8'),
   );
 }
 
 fs.writeFileSync(
-  path.join(__dirname, 'build', 'blsNetworksConfig.json'),
-  JSON.stringify(blsNetworksConfig, null, 2),
+  path.join(__dirname, 'build', 'multiNetworkConfig.json'),
+  JSON.stringify(multiNetworkConfig, null, 2),
 );

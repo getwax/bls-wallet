@@ -1,6 +1,5 @@
 /**
  * Config representing the deployed state of bls-wallet contracts
- * @deprecated Use MultiNetworkConfig instead.
  */
 export type NetworkConfig = {
   /**
@@ -48,7 +47,6 @@ type UnvalidatedConfig = Record<string, Record<string, unknown>>;
 
 /**
  * Validates and returns a network config.
- * @deprecated Use validateMultiConfig instead.
  *
  * @param cfg The config object to validate.
  */
