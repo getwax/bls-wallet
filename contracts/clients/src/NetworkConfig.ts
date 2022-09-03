@@ -1,5 +1,6 @@
 /**
  * Config representing the deployed state of bls-wallet contracts
+ * @deprecated Use MultiNetworkConfig instead.
  */
 export type NetworkConfig = {
   /**
@@ -43,13 +44,15 @@ export type NetworkConfig = {
 };
 
 type ReadFileFunc = (filePath: string) => Promise<string>;
+type UnvalidatedConfig = Record<string, Record<string, unknown>>;
 
 /**
  * Validates and returns a network config.
+ * @deprecated Use validateMultiConfig instead.
  *
  * @param cfg The config object to validate.
  */
-export function validateConfig(cfg: any): NetworkConfig {
+export function validateConfig(cfg: UnvalidatedConfig): NetworkConfig {
   return {
     parameters: assertUnknownRecord(cfg.parameters),
     addresses: {
@@ -75,6 +78,7 @@ export function validateConfig(cfg: any): NetworkConfig {
 
 /**
  * Retrieves, validates, and returns a network config.
+ * @deprecated Use getMultiConfig instead.
  *
  * @param networkConfigPath Path to config JSON file.
  * @param readFileFunc Callback to retrieve the config. This could be via fetch, fs.readFile, etc.

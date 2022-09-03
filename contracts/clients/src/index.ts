@@ -18,6 +18,11 @@ import { MockERC20__factory } from "../typechain/factories/MockERC20__factory";
 import type { MockERC20 } from "../typechain/MockERC20";
 
 import { NetworkConfig, getConfig, validateConfig } from "./NetworkConfig";
+import {
+  MultiNetworkConfig,
+  getMultiConfig,
+  validateMultiConfig,
+} from "./MultiNetworkConfig";
 
 export * from "./signer";
 
@@ -27,6 +32,9 @@ export {
   NetworkConfig,
   getConfig,
   validateConfig,
+  MultiNetworkConfig,
+  getMultiConfig,
+  validateMultiConfig,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
   VerificationGateway,

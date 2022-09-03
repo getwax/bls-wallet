@@ -187,31 +187,26 @@ export default class KeyringController {
       this.blsNetworksConfig,
     );
 
-    // Get network data for wallets
+    // Update network data for wallets
     let shouldUpdateKeyring = false;
-    const networkDataForWallets = await Promise.all(
-      keyringCopy.wallets.map(async (w) => {
-        // Return existing network data
+    await Promise.all(
+      keyringCopy.wallets.map(async (w, i) => {
         const walletNetworkData = w.networks[network.networkKey];
         if (walletNetworkData) {
-          return walletNetworkData;
+          return;
         }
 
-        // Otherwise generate new network data
+        // Create new network data
         shouldUpdateKeyring = true;
         const { address } = await this.BlsWalletWrapper(w.privateKey);
-        return {
+        keyringCopy.wallets[i].networks[network.networkKey] = {
           originalGateway: blsNetworkConfig.addresses.verificationGateway,
           address,
         };
       }),
     );
-    // TODO Find a better way where we don't have to loop through every entry.
-    for (const [i, w] of keyringCopy.wallets.entries()) {
-      w.networks[network.networkKey] = networkDataForWallets[i];
-    }
 
-    // Update keyring if new netowrk data was created
+    // Update keyring if new network data was created
     if (shouldUpdateKeyring) {
       await this.keyring.write(keyringCopy);
     }
