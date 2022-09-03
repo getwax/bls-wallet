@@ -12,7 +12,7 @@ import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
 import { IReadableCell } from '../cells/ICell';
 import getNetworkConfig from './getNetworkConfig';
-import { MultiNetworkConfig } from '../MutiNetworkConfig';
+import { MultiNetworkConfig } from '../MultiNetworkConfig';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred

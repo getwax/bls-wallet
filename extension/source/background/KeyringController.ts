@@ -6,7 +6,7 @@ import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
-import { MultiNetworkConfig } from '../MutiNetworkConfig';
+import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import { IReadableCell } from '../cells/ICell';
 import mixtureCopy from '../cells/mixtureCopy';
 import getNetworkConfig from './getNetworkConfig';

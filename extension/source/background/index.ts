@@ -10,7 +10,7 @@ import forEach from '../cells/forEach';
 import Debug from './Debug';
 import { FormulaCell } from '../cells/FormulaCell';
 import { assertConfig } from '../helpers/assert';
-import { loadMultiNetworkConfig } from '../MutiNetworkConfig';
+import { loadMultiNetworkConfig } from '../MultiNetworkConfig';
 import { loadConfig } from '../Config';
 
 (() => {

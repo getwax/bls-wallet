@@ -18,7 +18,7 @@ import { FormulaCell } from './cells/FormulaCell';
 import QuillLongPollingCell from './QuillLongPollingCell';
 import TransformCell from './cells/TransformCell';
 import forEach from './cells/forEach';
-import { loadMultiNetworkConfig } from './MutiNetworkConfig';
+import { loadMultiNetworkConfig } from './MultiNetworkConfig';
 import { RpcClient } from './types/Rpc';
 import Config, { loadConfig } from './Config';
 import { StorageConfig } from './background/QuillController';

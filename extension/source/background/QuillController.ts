@@ -28,7 +28,7 @@ import mapValues from '../helpers/mapValues';
 import LongPollingController from './LongPollingController';
 import isPermittedOrigin from './isPermittedOrigin';
 import TransactionsController from './TransactionsController';
-import { MultiNetworkConfig } from '../MutiNetworkConfig';
+import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import Config from '../Config';
 
 export type StorageConfig = {

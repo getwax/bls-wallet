@@ -1,5 +1,5 @@
 import assert from '../helpers/assert';
-import { MultiNetworkConfig } from '../MutiNetworkConfig';
+import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import { QuillState } from '../QuillStorageCells';
 
 export default function getNetworkConfig(
