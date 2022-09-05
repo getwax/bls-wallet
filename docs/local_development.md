@@ -1,6 +1,7 @@
 # Local Development
 
 These steps will setup this repo on your machine for local development for the majority of the components in this repo.
+By default the extension will connect to contracts already deployed on Arbitrum Nitro testnet and a public Aggregator running on https://arbitrum-testnet.blswallet.org/
 If you would like to target a remote network instead, add the addtional steps in [Remote Development](./remote_development.md) as well.
 
 ## Dependencies
@@ -28,7 +29,7 @@ Run the repo setup script
 ./setup.ts
 ```
 
-Then choose to target either a local Hardhat node or the Arbitrum Testnet.
+Then choose to target either a local Hardhat node or the Arbitrum Testnet. If you choose to run on Arbitrum Testnet skip ahead until tests.
 
 ### Chain (RPC Node)
 
@@ -54,7 +55,12 @@ git checkout - # Switches back to the previous branch
 
 ***Note***: We currently advise deploying contracts from version 45def9 using the `checkout` commands above for compatibility with the extension and contracts deployed to arbitrum testnet. This isn't necessary if you're working on the contracts in isolation or otherwise know how to workaround this issue. This should be improved in the future. [More information](https://github.com/web3well/bls-wallet/issues/295).
 
-## Run
+## Aggregator
+
+make these changes in aggregator > .env
+
+RPC_URL=http://localhost:8545
+NETWORK_CONFIG_PATH=../contracts/networks/local.json
 
 ```sh
 docker-compose up -d postgres # Or see local postgres instructions in ./aggregator/README.md#PostgreSQL
@@ -67,6 +73,14 @@ In a seperate terminal/shell instance
 cd ./extension
 yarn run dev:chrome # or dev:firefox, dev:opera
 ```
+
+## Extension
+
+make these changes in extension > .env
+
+AGGREGATOR_URL=http://localhost:3000/
+DEFAULT_CHAIN_ID=31337
+NETWORK_CONFIG=./contracts/networks/local.json
 
 ### Chrome
 
