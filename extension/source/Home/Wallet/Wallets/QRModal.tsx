@@ -1,8 +1,8 @@
-import { X } from "phosphor-react";
-import { useState } from "react";
-import Modal from "react-modal";
-import { QRCodeSVG } from "qrcode.react";
-import Button from "../../../components/Button";
+import { X } from 'phosphor-react';
+import { useState } from 'react';
+import Modal from 'react-modal';
+import { QRCodeSVG } from 'qrcode.react';
+import Button from '../../../components/Button';
 
 const QRCodeModal = (props: { address: string }) => {
   const [modalIsOpen, setIsOpen] = useState(false);
@@ -17,26 +17,26 @@ const QRCodeModal = (props: { address: string }) => {
         onRequestClose={() => setIsOpen(false)}
         style={{
           content: {
-            width: "35rem",
-            margin: "auto",
-            fontFamily: "montserrat",
+            width: '35rem',
+            margin: 'auto',
+            fontFamily: 'montserrat',
             padding: 0,
-            border: "none",
+            border: 'none',
           },
           overlay: {
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
           },
         }}
       >
         <div
           className={[
-            "bg-blue-700",
-            "p-4",
-            "text-white",
-            "text-[13pt]",
-            "flex",
-            "justify-between",
-          ].join(" ")}
+            'bg-blue-700',
+            'p-4',
+            'text-white',
+            'text-[13pt]',
+            'flex',
+            'justify-between',
+          ].join(' ')}
         >
           <Button onPress={() => setIsOpen(false)}>
             <X fontSize="20pt" />
