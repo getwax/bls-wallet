@@ -102,9 +102,9 @@ const config: HardhatUserConfig = {
       accounts,
       gasPrice: 1408857682, // 287938372,
     },
-    arbitrum_testnet_goerli: {
+    arbitrum_goerli: {
       // chainId: 421613
-      url: process.env.ARBITRUM_TESTNET_GOERLI_URL,
+      url: process.env.ARBITRUM_GOERLI_URL,
       accounts,
     },
     arbitrum: {
