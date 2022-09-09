@@ -1,7 +1,7 @@
 # Local Development
 
 These steps will setup this repo on your machine for local development for the majority of the components in this repo.
-By default the extension will connect to contracts already deployed on Arbitrum Nitro testnet and a public Aggregator running on https://arbitrum-testnet.blswallet.org/
+By default the extension will connect to contracts already deployed on Arbitrum Nitro testnet and a public Aggregator running on https://arbitrum-goerli.blswallet.org/
 If you would like to target a remote network instead, add the addtional steps in [Remote Development](./remote_development.md) as well.
 
 ## Dependencies
@@ -29,7 +29,7 @@ Run the repo setup script
 ./setup.ts
 ```
 
-Then choose to target either a local Hardhat node or the Arbitrum Testnet. If you choose to run on Arbitrum Testnet skip ahead until tests.
+Then choose to target either a local Hardhat node or the Arbitrum Testnet. If you choose to run on Arbitrum Goerli skip ahead until tests.
 
 ### Chain (RPC Node)
 
