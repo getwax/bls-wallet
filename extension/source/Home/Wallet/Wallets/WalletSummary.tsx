@@ -14,6 +14,7 @@ import type { IWallet } from './WalletWrapper';
 import Balance from './Balance';
 import onAction from '../../../helpers/onAction';
 import formatCompactAddress from '../../../helpers/formatCompactAddress';
+import QRCodeModal from './QRModal';
 
 interface IWalletSummary {
   onAction: () => void;
@@ -82,9 +83,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             >
               Send
             </Button>
-            <Button onPress={() => {}} className="btn-secondary">
-              Receive
-            </Button>
+            <QRCodeModal address={wallet.address} />
           </div>
 
           {/* <div className="mt-4 flex flex-col gap-1">
