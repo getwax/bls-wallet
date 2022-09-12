@@ -1,4 +1,4 @@
 .env*
-!.env.example
+!.env*.example
 cov_profile*
 /build
