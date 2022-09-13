@@ -154,8 +154,10 @@ contract BLSWallet is Initializable, IWallet
             success = true;
             results = _results;
         }
-        catch {
+        catch (bytes memory returnData) {
             success = false;
+            results = new bytes[](1);
+            results[0] = returnData;
         }
         incrementNonce(); // regardless of outcome of operation
     }
@@ -183,7 +185,14 @@ contract BLSWallet is Initializable, IWallet
             else {
                 (success, result) = address(a.contractAddress).call(a.encodedFunction);
             }
-            require(success);
+            if (success == false) {
+                bytes memory bstr = new bytes(1);
+                bstr[0] = bytes1(uint8(78)); // "N"
+                if (i < 10) {
+                    bstr[0] = bytes1(uint8(48 + i)); // "0" - "9"
+                }
+                require(success, string(bstr));
+            }
             results[i] = result;
         }
     }
