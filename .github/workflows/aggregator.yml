@@ -6,11 +6,13 @@ on:
       - 'main'
     paths:
       - 'aggregator/**'
+      - '.github/workflows/aggregator.yml'
   pull_request:
     branches:
       - 'main'
     paths:
       - 'aggregator/**'
+      - '.github/workflows/aggregator.yml'
 
 defaults:
   run:
@@ -70,7 +72,7 @@ jobs:
 
     - working-directory: ./
       run: docker-compose up -d postgres
-    - run: cp .env.example .env
+    - run: cp .env.local.example .env
     - run: deno test --allow-net --allow-env --allow-read --unstable
 
     # Cleanup
