@@ -1,7 +1,7 @@
 import Range from "../src/helpers/Range.ts";
 import {
-  assertEquals,
   assertBundleSucceeds,
+  assertEquals,
   BigNumber,
   BlsWalletWrapper,
   ethers,
@@ -255,7 +255,7 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient gas-based fee", asy
   });
 
   const baseFee = BigNumber.from(1_000_000).mul(1e9); // Note 1
-  const fee = BigNumber.from(1_950_000).mul(1e9);
+  const fee = BigNumber.from(1_900_000).mul(1e9);
 
   const [wallet1, wallet2] = await fx.setupWallets(2, {
     tokenBalance: fee.mul(10),
