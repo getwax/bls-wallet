@@ -26,8 +26,8 @@ export default class BlsWalletWrapper {
   private constructor(
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
-    public address: string,
-    public walletContract: BLSWallet,
+    public address?: string,
+    public walletContract?: BLSWallet,
   ) {}
 
   /** Get the wallet contract address for the given key, if it exists. */
@@ -110,10 +110,37 @@ export default class BlsWalletWrapper {
   }
 
   /**
+   * generates a static BLS Signer keypair without calling
+   * verification gateway
+   *
+   * @param privateKey private key to generate BlsSigner
+   * @param provider provider to fetch chainId from
+   * @returns BlsWalletWrapper without contract connection
+   */
+  static async generateStaticBlsSigner(
+    privateKey: string,
+    provider: ethers.providers.Provider,
+  ) {
+    const network = await provider.getNetwork();
+
+    const blsWalletSigner = await initBlsWalletSigner({
+      chainId: network.chainId,
+    });
+
+    return new BlsWalletWrapper(blsWalletSigner, privateKey);
+  }
+
+  /**
    * Get the next expected nonce for the wallet contract based on the latest
    * block.
    */
   async Nonce(): Promise<BigNumber> {
+    // throw if a static BLS Keypair was generated
+    // without connecting to contract wallet
+    if (!this.walletContract || !this.address) {
+      throw "BlsWalletWrapper was not instantiated with verification gateway";
+    }
+
     const code = await this.walletContract.provider.getCode(this.address);
 
     if (code === "0x") {
