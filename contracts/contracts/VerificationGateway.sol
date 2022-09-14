@@ -48,6 +48,7 @@ contract VerificationGateway
     event WalletOperationProcessed(
         address indexed wallet,
         uint256 nonce,
+        IWallet.ActionData[] actions,
         bool success,
         bytes[] results
     );
@@ -274,6 +275,7 @@ contract VerificationGateway
                 emit WalletOperationProcessed(
                     address(wallet),
                     bundle.operations[i].nonce,
+                    bundle.operations[i].actions,
                     successes[i],
                     results[i]
                 );
