@@ -1,45 +1,70 @@
 import { BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
+import { keccak256 } from 'ethers/lib/utils';
 import generateRandomHex from '../helpers/generateRandomHex';
-import { NETWORK_CONFIG } from '../env';
 import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
 import ensureType from '../helpers/ensureType';
+import { MultiNetworkConfig } from '../MultiNetworkConfig';
+import { IReadableCell } from '../cells/ICell';
+import mixtureCopy from '../cells/mixtureCopy';
+import getNetworkConfig from './getNetworkConfig';
 
 export default class KeyringController {
   constructor(
+    public multiNetworkConfig: MultiNetworkConfig,
     public InternalRpc: () => RpcClient,
     public keyring: QuillStorageCells['keyring'],
-    public selectedAddress: QuillStorageCells['selectedAddress'],
-    public ethersProvider: ethers.providers.Provider,
+    public selectedPublicKeyHash: QuillStorageCells['selectedPublicKeyHash'],
+    public network: QuillStorageCells['network'],
+    public ethersProvider: IReadableCell<ethers.providers.Provider>,
   ) {}
 
   rpc = ensureType<PartialRpcImpl>()({
     eth_accounts: async ({ origin }) => {
       if (origin === window.location.origin) {
-        return (await this.keyring.read()).wallets.map(
-          ({ address }) => address,
-        );
+        const walletsNetworkData = await this.getAndUpdateWalletsNetworkData();
+        const keyring = await this.keyring.read();
+
+        return keyring.wallets.map((w) => {
+          const address = walletsNetworkData[w.publicKeyHash]?.address;
+
+          assert(
+            address !== undefined,
+            () => new Error('Unexpected missing network data'),
+          );
+
+          return address;
+        });
       }
 
-      const selectedAddress = await this.selectedAddress.read();
+      const selectedPublicKeyHash = await this.selectedPublicKeyHash.read();
 
       // TODO (merge-ok) Expose no accounts if this origin has not been
       // approved, preventing account-requiring RPC methods from completing
       // successfully only show address if account is unlocked
       // https://github.com/web3well/bls-wallet/issues/224
-      return selectedAddress ? [selectedAddress] : [];
+      return selectedPublicKeyHash
+        ? [await this.InternalRpc().pkHashToAddress(selectedPublicKeyHash)]
+        : [];
     },
 
     eth_requestAccounts: async (_request) => {
-      const selectedAddress = await this.selectedAddress.read();
+      const selectedAddress = await this.selectedPublicKeyHash.read();
       const accounts = selectedAddress ? [selectedAddress] : [];
       return accounts;
     },
 
-    eth_coinbase: async (_request) =>
-      (await this.selectedAddress.read()) ?? null,
+    eth_coinbase: async (_request) => {
+      const selectedPublicKeyHash = await this.selectedPublicKeyHash.read();
+
+      if (selectedPublicKeyHash === undefined) {
+        return null;
+      }
+
+      return await this.InternalRpc().pkHashToAddress(selectedPublicKeyHash);
+    },
 
     /**
      * Creates a Deterministic Account based on seed phrase
@@ -62,14 +87,27 @@ export default class KeyringController {
 
     lookupPrivateKey: async ({ params: [rawAddress] }) => {
       const address = ethers.utils.getAddress(rawAddress);
+      const network = await this.network.read();
 
       const keyPair = (await this.keyring.read()).wallets.find(
-        (x) => x.address === address,
+        (x) => x.networks[network.networkKey]?.address === address,
       );
 
       assert(keyPair !== undefined, () => new Error('key does not exist'));
 
       return keyPair.privateKey;
+    },
+
+    pkHashToAddress: async ({ params: [publicKeyHash] }) => {
+      const walletsNetworkData = await this.getAndUpdateWalletsNetworkData();
+      const networkData = walletsNetworkData[publicKeyHash];
+
+      assert(
+        networkData !== undefined,
+        () => new Error('Unexpected missing network data'),
+      );
+
+      return networkData.address;
     },
 
     addAccount: async ({ params: [privateKey = generateRandomHex(256)] }) => {
@@ -80,17 +118,34 @@ export default class KeyringController {
         () => new Error('Wallet already exists'),
       );
 
-      const address = await this.BlsWalletAddress(privateKey);
+      const blsWalletWrapper = await this.BlsWalletWrapper(privateKey);
+      const network = await this.network.read();
 
-      wallets.push({ privateKey, address });
+      const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
+
+      wallets.push({
+        privateKey,
+        publicKeyHash: keccak256(blsWalletWrapper.PublicKeyStr()),
+        networks: {
+          [network.networkKey]: {
+            address: blsWalletWrapper.address,
+            originalGateway: netCfg.addresses.verificationGateway,
+          },
+        },
+      });
+
       await this.keyring.update({ wallets });
 
-      return address;
+      return blsWalletWrapper.address;
     },
 
     removeAccount: async ({ params: [address] }) => {
       const { wallets } = await this.keyring.read();
-      const newWallets = wallets.filter((w) => w.address !== address);
+      const network = await this.network.read();
+
+      const newWallets = wallets.filter(
+        (w) => w.networks[network.networkKey]?.address !== address,
+      );
 
       assert(
         newWallets.length < wallets.length,
@@ -101,11 +156,62 @@ export default class KeyringController {
     },
   });
 
-  async BlsWalletAddress(privateKey: string): Promise<string> {
-    return BlsWalletWrapper.Address(
+  async BlsWalletWrapper(privateKey: string): Promise<BlsWalletWrapper> {
+    const netCfg = getNetworkConfig(
+      await this.network.read(),
+      this.multiNetworkConfig,
+    );
+
+    return BlsWalletWrapper.connect(
       privateKey,
-      NETWORK_CONFIG.addresses.verificationGateway,
-      this.ethersProvider,
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
+    );
+  }
+
+  async getAndUpdateWalletsNetworkData(): Promise<
+    Record<string, { originalGateway: string; address: string } | undefined>
+  > {
+    // Load keyring & network
+    const [network, keyring] = await Promise.all([
+      this.network.read(),
+      this.keyring.read(),
+    ]);
+    const keyringCopy = mixtureCopy(keyring);
+
+    const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
+
+    // Update network data for wallets
+    let shouldUpdateKeyring = false;
+    await Promise.all(
+      keyringCopy.wallets.map(async (w, i) => {
+        const walletNetworkData = w.networks[network.networkKey];
+        if (walletNetworkData) {
+          return;
+        }
+
+        // Create new network data
+        shouldUpdateKeyring = true;
+        const { address } = await this.BlsWalletWrapper(w.privateKey);
+        keyringCopy.wallets[i].networks[network.networkKey] = {
+          originalGateway: netCfg.addresses.verificationGateway,
+          address,
+        };
+      }),
+    );
+
+    // Update keyring if new network data was created
+    if (shouldUpdateKeyring) {
+      await this.keyring.write(keyringCopy);
+    }
+
+    // Return all wallet network data by PubKey hash
+    return keyringCopy.wallets.reduce(
+      (acc, w) => ({
+        ...acc,
+        [w.publicKeyHash]: w.networks[network.networkKey],
+      }),
+      {},
     );
   }
 }

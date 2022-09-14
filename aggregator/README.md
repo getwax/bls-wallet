@@ -174,6 +174,10 @@ deno run -r --allow-net --allow-env --allow-read --unstable ./programs/aggregato
 - Are the BLS Wallet contracts deployed on the correct network?
 - Is `NETWORK_CONFIG_PATH` in `.env` set to the right config?
 
+#### Deno version
+
+Make sure your Deno version is [up to date.](https://deno.land/manual/getting_started/installation#updating)
+
 ### Notable Components
 
 - **src/chain**: Should contain all of the contract interactions, exposing more

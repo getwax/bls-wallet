@@ -21,8 +21,8 @@
     "build:firefox": "cross-env NODE_ENV=production cross-env TARGET_BROWSER=firefox webpack",
     "build:opera": "cross-env NODE_ENV=production cross-env TARGET_BROWSER=opera webpack",
     "build": "yarn run build:chrome && yarn run build:firefox && yarn run build:opera",
-    "check-ts": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx,.js --max-warnings 0",
+    "check-ts": "node buildMultiNetworkConfig.js && tsc --noEmit",
+    "lint": "./scripts/addFileStubsIfNeeded.sh && eslint . --ext .ts,.tsx,.js --max-warnings 0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
   "resolutions": {
@@ -36,7 +36,7 @@
     "advanced-css-reset": "^1.2.2",
     "async-mutex": "^0.3.2",
     "axios": "^0.27.2",
-    "bls-wallet-clients": "0.6.0-87eb0b5",
+    "bls-wallet-clients": "0.6.0-576802a",
     "browser-passworder": "^2.0.3",
     "bs58check": "^2.1.2",
     "crypto-browserify": "^3.12.0",

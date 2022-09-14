@@ -1,25 +1,24 @@
 import { ethers } from 'ethers';
 import * as io from 'io-ts';
+import { once } from 'lodash-es';
 
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
-import {
-  builtinChainIdToName,
-  builtinProviderConfigs,
-  ProviderConfig,
-} from './background/networks';
+import { ProviderConfig } from './background/ProviderConfig';
 import { Preferences, Theme } from './background/Preferences';
 import AsyncReturnType from './types/AsyncReturnType';
-import { DEFAULT_CHAIN_ID_HEX } from './env';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
 import { QuillTransaction } from './types/Rpc';
+import optional from './types/optional';
+import Config from './Config';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
 // existing clients.
 
 function QuillStorageCells(
+  config: Config,
   standardStorage: CellCollection,
   encryptedStorage: CellCollection,
 ) {
@@ -43,15 +42,24 @@ function QuillStorageCells(
         wallets: io.array(
           io.type({
             privateKey: io.string,
-            address: io.string,
+            publicKeyHash: io.string,
+            networks: io.record(
+              io.string,
+              optional(
+                io.type({
+                  originalGateway: io.string,
+                  address: io.string,
+                }),
+              ),
+            ),
           }),
         ),
       }),
-      () => ({
+      once(() => ({
         HDPhrase: ethers.Wallet.createRandom().mnemonic.phrase,
         nextHDIndex: 0,
         wallets: [],
-      }),
+      })),
     ),
     transactions: standardStorage.Cell(
       'transactions',
@@ -61,14 +69,18 @@ function QuillStorageCells(
       () => ({ outgoing: [] }),
     ),
     network: standardStorage.Cell('network', ProviderConfig, () => {
-      const networkName = builtinChainIdToName(DEFAULT_CHAIN_ID_HEX);
-      const config = builtinProviderConfigs[networkName];
+      const network = config.builtinNetworks[config.defaultNetwork];
 
-      return config;
+      assert(
+        network !== undefined,
+        () => new Error('Missing config for default network'),
+      );
+
+      return network;
     }),
     preferences: standardStorage.Cell('preferences', Preferences, () => ({
       identities: {},
-      selectedAddress: undefined,
+      selectedPublicKeyHash: undefined,
       developerSettings: {
         // For now, default to dev settings that are appropriate for the bls
         // wallet team. FIXME: The defaults that get bundled into the extension
@@ -85,9 +97,9 @@ function QuillStorageCells(
 
   const providerStateCells = {
     chainId: FormulaCell.Sub(rootCells.network, 'chainId'),
-    selectedAddress: TransformCell.Sub(
+    selectedPublicKeyHash: TransformCell.Sub(
       rootCells.preferences,
-      'selectedAddress',
+      'selectedPublicKeyHash',
     ),
     developerSettings: TransformCell.Sub(
       rootCells.preferences,
@@ -99,22 +111,22 @@ function QuillStorageCells(
     ...rootCells,
     providerState: new FormulaCell(
       providerStateCells,
-      ({ $chainId, $developerSettings, $selectedAddress }) => ({
+      ({ $chainId, $developerSettings, $selectedPublicKeyHash }) => ({
         chainId: $chainId,
         developerSettings: $developerSettings,
-        selectedAddress: $selectedAddress,
+        selectedPublicKeyHash: $selectedPublicKeyHash,
       }),
     ),
     ...providerStateCells,
 
     theme: new FormulaCell(
       { preferences: rootCells.preferences },
-      ({ $preferences: { selectedAddress, identities } }): Theme => {
-        if (selectedAddress === undefined) {
+      ({ $preferences: { selectedPublicKeyHash, identities } }): Theme => {
+        if (selectedPublicKeyHash === undefined) {
           return 'light';
         }
 
-        const identity = identities[selectedAddress];
+        const identity = identities[selectedPublicKeyHash];
         assert(identity !== undefined);
 
         return identity.theme;

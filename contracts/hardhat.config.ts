@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 
-import { HardhatUserConfig, task } from "hardhat/config";
+import { HardhatUserConfig, task, types } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
@@ -21,6 +21,28 @@ task("accounts", "Prints the list of accounts", async (_taskArgs, hre) => {
     console.log(account.address);
   }
 });
+
+// Don't run this unless you really need to...
+task("privateKeys", "Prints the private keys for accounts")
+  .addParam("force", "Whether the command should be run", false, types.boolean)
+  .setAction(async ({ force }: { force: boolean }, hre) => {
+    if (!force) {
+      throw new Error("are you sure you want to run this task? (--force true)");
+    }
+
+    const separator = "-".repeat(3);
+    console.log(separator);
+
+    for (let i = 0; i < accounts.count; i++) {
+      const wallet = hre.ethers.Wallet.fromMnemonic(
+        accounts.mnemonic,
+        `m/44'/60'/0'/0/${i}`,
+      );
+      console.log(`${i}: ${wallet.address}`);
+      console.log(wallet.privateKey);
+      console.log(separator);
+    }
+  });
 
 task("fundDeployer", "Sends ETH to create2Deployer contract from first signer")
   .addOptionalParam("amount", "Amount of ETH to send", "1.0")
