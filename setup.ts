@@ -13,7 +13,12 @@ const components = [
   { name: "aggregator-proxy" },
   { name: "contracts" },
   { name: "contracts/clients" },
-  { name: "extension" },
+  { name: "extension",
+    config: {
+      source: "./extension/config.example.json",
+      dest: "./extension/config.json"
+    },
+  },
 ];
 
 async function runYarn(name: string): Promise<void> {
@@ -29,28 +34,28 @@ console.log("initializing git submodules...");
 await shell.run(..."git submodule update --init --recursive".split(" "));
 
 console.log(`setting up components (${components.map(c => c.name).join(", ")})...`);
-await Promise.all(components.map(async ({ name, skipYarn }) => {
+await Promise.all(components.map(async ({ name, skipYarn, config }) => {
   if (!skipYarn) {
     console.log(`yarn installing in ${name}...`);
     await runYarn(name);
   }
 
-  const envFilePath = `./${name}/.env`;
-  const envExampleFilePath = `${envFilePath}.example`;
+  const configFilePath = config?.dest ?? `./${name}/.env`;
+  const configExampleFilePath = config?.source ??`${configFilePath}.example`;
 
   const [envExists, envExampleExists] = await Promise.all([
-    exists(envFilePath),
-    exists(envExampleFilePath)
+    exists(configFilePath),
+    exists(configExampleFilePath)
   ]);
 
   if (envExists) {
-    console.warn(`${envExampleFilePath} already exists`);
+    console.warn(`${configExampleFilePath} already exists`);
     return;
   }
 
   if (envExampleExists) {
-    console.log(`copying ${envExampleFilePath} to ${envFilePath}...`);
-    await Deno.copyFile(envExampleFilePath, envFilePath);
+    console.log(`copying ${configExampleFilePath} to ${configFilePath}...`);
+    await Deno.copyFile(configExampleFilePath, configFilePath);
   }
 }));
 
