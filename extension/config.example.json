@@ -35,6 +35,17 @@
       "aggregatorUrl": "https://arbitrum-testnet.blswallet.org",
       "networkKey": "arbitrum-testnet"
     },
+    "arbitrum-goerli": {
+      "blockExplorerUrl": "https://goerli-rollup-explorer.arbitrum.io",
+      "chainId": "0x66EED",
+      "displayName": "Arbitrum Goerli",
+      "logo": "",
+      "rpcTarget": "https://goerli-rollup.arbitrum.io/rpc",
+      "chainCurrencyName": "Ethereum",
+      "chainCurrency": "ETH",
+      "aggregatorUrl": "https://arbitrum-goerli.blswallet.org",
+      "networkKey": "arbitrum-goerli"
+    },
     "arbitrum": {
       "blockExplorerUrl": "https://explorer.arbitrum.io",
       "chainId": "0xa4b1",
@@ -44,7 +55,8 @@
       "chainCurrencyName": "Ether",
       "chainCurrency": "ETH",
       "aggregatorUrl": "https://arbitrum.blswallet.org",
-      "networkKey": "arbitrum"
+      "networkKey": "arbitrum",
+      "hidden": true
     },
     "optimism-kovan": {
       "blockExplorerUrl": "https://kovan-optimistic.etherscan.io",
@@ -55,7 +67,8 @@
       "chainCurrencyName": "Optimistic Kovan Ether",
       "chainCurrency": "KOR",
       "aggregatorUrl": "https://optimism-kovan.blswallet.org",
-      "networkKey": "optimism-kovan"
+      "networkKey": "optimism-kovan",
+      "hidden": true
     },
     "optimism": {
       "blockExplorerUrl": "https://optimistic.etherscan.io",
@@ -66,7 +79,8 @@
       "chainCurrencyName": "Ether",
       "chainCurrency": "ETH",
       "aggregatorUrl": "https://optimism.blswallet.org",
-      "networkKey": "optimism"
+      "networkKey": "optimism",
+      "hidden": true
     }
   },
   "currencyConversion": {
