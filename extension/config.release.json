@@ -1,5 +1,5 @@
 {
-  "defaultNetwork": "local",
+  "defaultNetwork": "arbitrum-goerli",
   "builtinNetworks": {
     "mainnet": {
       "blockExplorerUrl": "http://etherscan.io/",
