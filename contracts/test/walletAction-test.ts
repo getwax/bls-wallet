@@ -323,14 +323,14 @@ describe("WalletActions", async function () {
     ).wait();
 
     // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
-    // get the "results" argument.
-    const results = r.events[0].args.results[0]; // For errors this is "Error(string)"
-    const errorArgBytesString: string = "0x" + results.substring(10); // remove methodId (4bytes after 0x)
-    const errorIndexString = ethers.utils.defaultAbiCoder.decode(
+    // Get the first (only) result from "results" argument.
+    const result = r.events[0].args.results[0]; // For errors this is "Error(string)"
+    const errorArgBytesString: string = "0x" + result.substring(10); // remove methodId (4bytes after 0x)
+    const errorString = ethers.utils.defaultAbiCoder.decode(
       ["string"],
       errorArgBytesString,
     )[0]; // decoded bytes is a string of the action index that errored.
-    expect(errorIndexString).to.equal("1"); // expect the failing action index to be "1"
+    expect(errorString).to.equal("1 - ERC20: transfer from the zero address");
 
     const recipientBalance = await th.testToken.balanceOf(recipient.address);
 
