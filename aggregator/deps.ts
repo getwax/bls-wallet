@@ -49,7 +49,7 @@ export type {
   PublicKey,
   Signature,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.7.0";
+} from "https://esm.sh/bls-wallet-clients@0.7.1";
 
 export {
   Aggregator as AggregatorClient,
@@ -59,10 +59,10 @@ export {
   getConfig,
   MockERC20__factory,
   VerificationGateway__factory,
-} from "https://esm.sh/bls-wallet-clients@0.7.0";
+} from "https://esm.sh/bls-wallet-clients@0.7.1";
 
 // Workaround for esbuild's export-star bug
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.7.0";
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.7.1";
 const {
   bundleFromDto,
   bundleToDto,
