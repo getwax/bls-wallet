@@ -10,6 +10,8 @@ import forEach from '../cells/forEach';
 import Debug from './Debug';
 import { FormulaCell } from '../cells/FormulaCell';
 import { assertConfig } from '../helpers/assert';
+import { loadMultiNetworkConfig } from '../MultiNetworkConfig';
+import { loadConfig } from '../Config';
 
 (() => {
   console.log('Quill background script started');
@@ -20,21 +22,9 @@ import { assertConfig } from '../helpers/assert';
   };
 
   const quillController = new QuillController(
+    loadConfig(),
+    loadMultiNetworkConfig(),
     storage,
-    // FIXME: Config should be a file, not hardcoded.
-    {
-      api: 'https://min-api.cryptocompare.com/data/price',
-
-      // Note: We can afford to poll relatively frequently because we only fetch
-      // currency information when we actually need it, via the magic of cells.
-      // TODO: Enable even more aggressive polling intervals by tying
-      // `LongPollingCell`s to user activity (mouse movement, etc). This would
-      // require some visible indication that the value is not being updated
-      // though (like a grey filter) so that if you keep the window open on the
-      // side of your screen you can get an indication that the value isn't
-      // being kept up to date.
-      pollInterval: 30_000,
-    },
   );
 
   setupOnboardingTrigger(quillController);
