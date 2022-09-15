@@ -18,7 +18,7 @@ import { FormulaCell } from './cells/FormulaCell';
 import QuillLongPollingCell from './QuillLongPollingCell';
 import TransformCell from './cells/TransformCell';
 import forEach from './cells/forEach';
-import { loadBlsNetworksConfig } from './BlsNetworksConfig';
+import { loadMultiNetworkConfig } from './MultiNetworkConfig';
 import { RpcClient } from './types/Rpc';
 import Config, { loadConfig } from './Config';
 import { StorageConfig } from './background/QuillController';
@@ -31,7 +31,7 @@ function getQuillContextValue() {
   assert(ethereum.rpc !== undefined);
 
   const config = loadConfig();
-  const blsNetworksConfig = loadBlsNetworksConfig();
+  const multiNetworkConfig = loadMultiNetworkConfig();
 
   const storage: StorageConfig = {
     standardStorage: extensionLocalCellCollection,
@@ -70,9 +70,9 @@ function getQuillContextValue() {
   forEach(debugUtils, async ({ network, ethersProvider, keyring }) => {
     window.debug ??= {};
 
-    const blsNetworkConfig = blsNetworksConfig[network.networkKey];
+    const netCfg = multiNetworkConfig[network.networkKey];
 
-    if (blsNetworkConfig === undefined) {
+    if (netCfg === undefined) {
       window.debug.contracts = undefined;
       return;
     }
@@ -80,17 +80,17 @@ function getQuillContextValue() {
     window.debug.contracts = {
       // eslint-disable-next-line camelcase
       verificationGateway: VerificationGateway__factory.connect(
-        blsNetworkConfig.addresses.verificationGateway,
+        netCfg.addresses.verificationGateway,
         ethersProvider,
       ),
       // eslint-disable-next-line camelcase
       testToken: MockERC20__factory.connect(
-        blsNetworkConfig.addresses.testToken,
+        netCfg.addresses.testToken,
         ethersProvider,
       ),
       // eslint-disable-next-line camelcase
       aggregatorUtilities: AggregatorUtilities__factory.connect(
-        blsNetworkConfig.addresses.utilities,
+        netCfg.addresses.utilities,
         ethersProvider,
       ),
     };
@@ -99,7 +99,7 @@ function getQuillContextValue() {
       keyring.wallets.map((w) =>
         BlsWalletWrapper.connect(
           w.privateKey,
-          blsNetworkConfig.addresses.verificationGateway,
+          netCfg.addresses.verificationGateway,
           ethersProvider,
         ),
       ),
@@ -112,7 +112,7 @@ function getQuillContextValue() {
     rpc: ethereum.rpc,
     cells,
     config,
-    blsNetworksConfig,
+    multiNetworkConfig,
   };
 }
 

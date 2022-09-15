@@ -10,7 +10,7 @@ import forEach from '../cells/forEach';
 import Debug from './Debug';
 import { FormulaCell } from '../cells/FormulaCell';
 import { assertConfig } from '../helpers/assert';
-import { loadBlsNetworksConfig } from '../BlsNetworksConfig';
+import { loadMultiNetworkConfig } from '../MultiNetworkConfig';
 import { loadConfig } from '../Config';
 
 (() => {
@@ -23,7 +23,7 @@ import { loadConfig } from '../Config';
 
   const quillController = new QuillController(
     loadConfig(),
-    loadBlsNetworksConfig(),
+    loadMultiNetworkConfig(),
     storage,
   );
 

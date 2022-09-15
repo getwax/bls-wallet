@@ -27,21 +27,21 @@ runs:
     - working-directory: ./extension
       shell: bash
       run: |
-        cp config.release.json config.json
+        envsubst < config.release.json > config.json
         yarn install --frozen-lockfile
     - working-directory: ./extension
       shell: bash
       run: |
-        CRYPTO_COMPARE_API_KEY=${CRYPTO_COMPARE_API_KEY} \
         NETWORK_CONFIGS_DIR=../contracts/networks \
         yarn build:${{ inputs.browser }}
     - working-directory: ./extension
       shell: bash
       run: mv ./extension/${{ inputs.file-name }} ./extension/quill-${{ inputs.file-name }}
 
-    - uses: softprops/action-gh-release@v1
+    - uses: svenstaro/upload-release-action@v2
       with:
-        tag_name: ${{ inputs.tag-name }}
+        tag: ${{ inputs.tag-name }}
         # Note: This path is from repo root
-        # working-directory is not applied 
-        files: ./extension/extension/quill-${{ inputs.file-name }}
+        # working-directory is not applied
+        file: ./extension/extension/quill-${{ inputs.file-name }}
+        overwrite: true

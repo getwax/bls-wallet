@@ -28,7 +28,7 @@ import mapValues from '../helpers/mapValues';
 import LongPollingController from './LongPollingController';
 import isPermittedOrigin from './isPermittedOrigin';
 import TransactionsController from './TransactionsController';
-import BlsNetworksConfig from '../BlsNetworksConfig';
+import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import Config from '../Config';
 
 export type StorageConfig = {
@@ -63,7 +63,7 @@ export default class QuillController {
 
   constructor(
     public config: Config,
-    public blsNetworksConfig: BlsNetworksConfig,
+    public multiNetworkConfig: MultiNetworkConfig,
     public storage: StorageConfig,
   ) {
     this.cells = QuillStorageCells(
@@ -80,7 +80,7 @@ export default class QuillController {
     );
 
     this.keyringController = new KeyringController(
-      blsNetworksConfig,
+      multiNetworkConfig,
       () => this.internalRpc,
       this.cells.keyring,
       this.cells.selectedPublicKeyHash,
@@ -105,7 +105,7 @@ export default class QuillController {
     );
 
     this.aggregatorController = new AggregatorController(
-      blsNetworksConfig,
+      multiNetworkConfig,
       () => this.internalRpc,
       this.networkController,
       this.keyringController,

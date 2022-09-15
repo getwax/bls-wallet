@@ -43,9 +43,6 @@ jobs:
         node-version: ${{ env.NODEJS_VERSION }}
         cache: yarn
         cache-dependency-path: extension/yarn.lock
-    # Valid network config not needed to test build.
-    - working-directory: ./contracts/networks
-      run: echo "{}" > "local.json"
     - run: cp config.example.json config.json
     - run: yarn install --frozen-lockfile
     # For now, just check that chrome builds

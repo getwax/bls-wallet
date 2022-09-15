@@ -1,5 +1,3 @@
-import "source-map-support/register";
-
 import { BigNumber } from "ethers";
 import { keccak256, arrayify } from "ethers/lib/utils";
 import { expect } from "chai";

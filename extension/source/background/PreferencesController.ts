@@ -22,7 +22,7 @@ export default class PreferencesController {
   rpc = ensureType<PartialRpcImpl>()({
     setSelectedAddress: async ({ params: [selectedAddress] }) => {
       const walletsNetworkData =
-        await this.keyringController.getWalletsNetworkData();
+        await this.keyringController.getAndUpdateWalletsNetworkData();
 
       for (const [publicKeyHash, walletNetworkData] of Object.entries(
         walletsNetworkData,

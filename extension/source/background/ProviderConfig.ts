@@ -1,4 +1,5 @@
 import * as io from 'io-ts';
+import optional from '../types/optional';
 
 export const ProviderConfig = io.type({
   /**
@@ -44,6 +45,10 @@ export const ProviderConfig = io.type({
    * Unique key for network (used for infura)
    */
   networkKey: io.string,
+  /**
+   * Whether this provider should be displayed in extension (default: true)
+   */
+  hidden: optional(io.boolean),
 });
 
 export type ProviderConfig = io.TypeOf<typeof ProviderConfig>;

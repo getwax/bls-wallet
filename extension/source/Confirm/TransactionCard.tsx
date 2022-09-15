@@ -37,7 +37,7 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
         <div className="break-all">
           details:{' '}
           <span className="font-bold">{loading ? 'loading...' : method}</span>
-          <div className="text-[9pt] font-normal">{data}</div>
+          <div className="text-[9pt] mt-2 font-normal">{data}</div>
         </div>
       </div>
 

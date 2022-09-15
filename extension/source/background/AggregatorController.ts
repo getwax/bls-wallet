@@ -11,8 +11,8 @@ import NetworkController from './NetworkController';
 import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
 import { IReadableCell } from '../cells/ICell';
-import getBlsNetworkConfig from './getBlsNetworkConfig';
-import BlsNetworksConfig from '../BlsNetworksConfig';
+import getNetworkConfig from './getNetworkConfig';
+import { MultiNetworkConfig } from '../MultiNetworkConfig';
 
 export default class AggregatorController {
   // This is just kept in memory because it supports setting the preferred
@@ -30,7 +30,7 @@ export default class AggregatorController {
   > = {};
 
   constructor(
-    public blsNetworksConfig: BlsNetworksConfig,
+    public multiNetworkConfig: MultiNetworkConfig,
     public InternalRpc: () => RpcClient,
     public networkController: NetworkController,
     public keyringController: KeyringController,
@@ -63,16 +63,13 @@ export default class AggregatorController {
 
       const network = await this.networkController.network.read();
 
-      const blsNetworkConfig = getBlsNetworkConfig(
-        network,
-        this.blsNetworksConfig,
-      );
+      const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
 
       const ethersProvider = await this.ethersProvider.read();
 
       const wallet = await BlsWalletWrapper.connect(
         privateKey,
-        blsNetworkConfig.addresses.verificationGateway,
+        netCfg.addresses.verificationGateway,
         ethersProvider,
       );
 

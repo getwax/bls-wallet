@@ -1,6 +1,7 @@
 # Local Development
 
 These steps will setup this repo on your machine for local development for the majority of the components in this repo.
+By default the extension will connect to contracts already deployed on Arbitrum Nitro testnet and a public Aggregator running on https://arbitrum-goerli.blswallet.org/
 If you would like to target a remote network instead, add the addtional steps in [Remote Development](./remote_development.md) as well.
 
 ## Dependencies
@@ -28,7 +29,7 @@ Run the repo setup script
 ./setup.ts
 ```
 
-Then choose to target either a local Hardhat node or the Arbitrum Testnet.
+Then choose to target either a local Hardhat node or the Arbitrum Testnet. If you choose to run on Arbitrum Goerli skip ahead until tests.
 
 ### Chain (RPC Node)
 
@@ -50,7 +51,12 @@ Deploy all `bls-wallet` contracts.
 yarn hardhat run scripts/deploy_all.ts --network gethDev
 ```
 
-## Run
+## Aggregator
+
+make these changes in aggregator > .env
+
+RPC_URL=http://localhost:8545
+NETWORK_CONFIG_PATH=../contracts/networks/local.json
 
 ```sh
 docker-compose up -d postgres # Or see local postgres instructions in ./aggregator/README.md#PostgreSQL
@@ -62,6 +68,16 @@ In a seperate terminal/shell instance
 ```sh
 cd ./extension
 yarn run dev:chrome # or dev:firefox, dev:opera
+```
+
+## Extension
+
+make these changes in extension > .env
+
+```
+AGGREGATOR_URL=http://localhost:3000/
+DEFAULT_CHAIN_ID=31337
+NETWORK_CONFIG=./contracts/networks/local.json
 ```
 
 ### Chrome
@@ -88,6 +104,20 @@ yarn build
 yarn link
 cd ../extension
 yarn link bls-wallet-clients
+```
+
+If you would like live updates to from the clients package to trigger reloads of the extension, be sure to comment out this section of `./extension/weback.config.js`:
+```javascript
+...
+module.exports = {
+  ...
+  watchOptions: {
+    // Remove this if you want to watch for changes
+    // from a linked package, such as bls-wallet-clients.
+    ignored: /node_modules/,
+  },
+  ...
+};
 ```
 
 ### aggregator

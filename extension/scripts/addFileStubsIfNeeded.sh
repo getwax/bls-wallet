@@ -9,7 +9,7 @@ if [ ! -f "$PROJECT_DIR/config.json" ]; then
   echo {} >"$PROJECT_DIR/config.json"
 fi
 
-if [ ! -f "$PROJECT_DIR/build/blsNetworksConfig.json" ]; then
+if [ ! -f "$PROJECT_DIR/build/multiNetworkConfig.json" ]; then
   mkdir -p "$PROJECT_DIR/build"
-  echo {} >"$PROJECT_DIR/build/blsNetworksConfig.json"
+  echo {} >"$PROJECT_DIR/build/multiNetworkConfig.json"
 fi

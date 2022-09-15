@@ -14,7 +14,7 @@ const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const DotenvWebpackPlugin = require('dotenv-webpack');
 
-require('./buildBlsNetworksConfig');
+require('./buildMultiNetworkConfig');
 
 const viewsPath = path.join(__dirname, 'views');
 const sourcePath = path.join(__dirname, 'source');
@@ -53,6 +53,11 @@ const getExtensionFileType = (browser) => {
 
 module.exports = {
   devtool: 'source-map', // https://github.com/webpack/webpack/issues/1194#issuecomment-560382342
+  watchOptions: {
+    // Remove this if you want to watch for changes
+    // from a linked package, such as bls-wallet-clients.
+    ignored: /node_modules/,
+  },
 
   stats: {
     all: false,
