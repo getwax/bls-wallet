@@ -48,6 +48,15 @@ export default class BlsWalletWrapper {
       verificationGatewayAddress,
       signerOrProvider,
     );
+    const pubKeyHash = blsWalletSigner.getPublicKeyHash(privateKey);
+
+    // Check for an existing wallet
+    const existingAddress = await verificationGateway.walletFromHash(
+      pubKeyHash,
+    );
+    if (!BigNumber.from(existingAddress).isZero()) {
+      return existingAddress;
+    }
 
     const [proxyAdminAddress, blsWalletLogicAddress] = await Promise.all([
       verificationGateway.walletProxyAdmin(),
@@ -61,7 +70,7 @@ export default class BlsWalletWrapper {
 
     return ethers.utils.getCreate2Address(
       verificationGatewayAddress,
-      blsWalletSigner.getPublicKeyHash(privateKey),
+      pubKeyHash,
       ethers.utils.solidityKeccak256(
         ["bytes", "bytes"],
         [
