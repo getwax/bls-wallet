@@ -5,7 +5,7 @@ import { ethers, network } from "hardhat";
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
-import { BigNumber } from "ethers";
+import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 // import splitHex256 from "../shared/helpers/splitHex256";
@@ -288,11 +288,21 @@ describe("WalletActions", async function () {
     const th = new TokenHelper(fx);
     const [sender, recipient] = await th.walletTokenSetup();
 
-    await (
+    const r: ContractReceipt = await (
       await fx.verificationGateway.processBundle(
         sender.sign({
           nonce: await sender.Nonce(),
           actions: [
+            // Send tokens to recipient.
+            {
+              ethValue: 0,
+              contractAddress: th.testToken.address,
+              encodedFunction: th.testToken.interface.encodeFunctionData(
+                "transfer",
+                [recipient.address, th.userStartAmount],
+              ),
+            },
+
             // Try to send ourselves a lot of tokens from address zero, which
             // obviously shouldn't work.
             {
@@ -307,20 +317,20 @@ describe("WalletActions", async function () {
                 ],
               ),
             },
-
-            // Send tokens to recipient.
-            {
-              ethValue: 0,
-              contractAddress: th.testToken.address,
-              encodedFunction: th.testToken.interface.encodeFunctionData(
-                "transfer",
-                [recipient.address, th.userStartAmount],
-              ),
-            },
           ],
         }),
       )
     ).wait();
+
+    // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
+    // Get the first (only) result from "results" argument.
+    const result = r.events[0].args.results[0]; // For errors this is "Error(string)"
+    const errorArgBytesString: string = "0x" + result.substring(10); // remove methodId (4bytes after 0x)
+    const errorString = ethers.utils.defaultAbiCoder.decode(
+      ["string"],
+      errorArgBytesString,
+    )[0]; // decoded bytes is a string of the action index that errored.
+    expect(errorString).to.equal("1 - ERC20: transfer from the zero address");
 
     const recipientBalance = await th.testToken.balanceOf(recipient.address);
 
