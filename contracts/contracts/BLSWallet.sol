@@ -154,8 +154,10 @@ contract BLSWallet is Initializable, IWallet
             success = true;
             results = _results;
         }
-        catch {
+        catch (bytes memory returnData) {
             success = false;
+            results = new bytes[](1);
+            results[0] = returnData;
         }
         incrementNonce(); // regardless of outcome of operation
     }
@@ -183,9 +185,29 @@ contract BLSWallet is Initializable, IWallet
             else {
                 (success, result) = address(a.contractAddress).call(a.encodedFunction);
             }
-            require(success);
+            if (success == false) {
+                bytes memory indexByte = new bytes(1);
+                indexByte[0] = bytes1(uint8(78)); // "N";
+                if (i < 10) {
+                    indexByte[0] = bytes1(uint8(48 + i)); // "0" - "9"
+                }
+                string memory message = string.concat(
+                    string(indexByte),
+                    " - ",
+                    abi.decode(stripMethodId(result), (string)) // remove "Error" methodId, it gets added again on this throw
+                );
+                revert(message);
+            }
             results[i] = result;
         }
+    }
+
+    function stripMethodId(bytes memory encodedFunction) pure private returns(bytes memory) {
+        bytes memory params = new bytes(encodedFunction.length - 4);
+        for (uint256 i=0; i<params.length; i++) {
+            params[i] = encodedFunction[i+4];
+        }
+        return params;
     }
 
     function clearApprovedProxyAdminFunctionHash() public onlyTrustedGateway {

@@ -48,7 +48,9 @@ contract VerificationGateway
     event WalletOperationProcessed(
         address indexed wallet,
         uint256 nonce,
-        bool result
+        IWallet.ActionData[] actions,
+        bool success,
+        bytes[] results
     );
 
     event PendingBLSKeySet(
@@ -273,7 +275,9 @@ contract VerificationGateway
                 emit WalletOperationProcessed(
                     address(wallet),
                     bundle.operations[i].nonce,
-                    successes[i]
+                    bundle.operations[i].actions,
+                    successes[i],
+                    results[i]
                 );
             }
         }
