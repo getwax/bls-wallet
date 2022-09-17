@@ -16,30 +16,45 @@ import {
   BLSWallet__factory,
   // eslint-disable-next-line camelcase
   TransparentUpgradeableProxy__factory,
+  VerificationGateway,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
 } from "../typechain";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
+/**
+ * Class representing a BLS Wallet
+ */
 export default class BlsWalletWrapper {
   private constructor(
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
     public address: string,
     public walletContract: BLSWallet,
+    public verificationGateway: VerificationGateway,
   ) {}
 
-  /** Get the wallet contract address for the given key, if it exists. */
+  /**
+   * Gets the address for this wallet.
+   *
+   * This could be:
+   *  - The address the wallet is registered to on the VerificationGateway.
+   *  - The expected address if it has not already be created/registered.
+   *  - The original wallet address before it was recovered to another key pair.
+   *
+   * Throws an exception if wallet was recovered to a different private key.
+   *
+   * @param privateKey private key associated with the wallet
+   * @param verificationGatewayAddress address of the VerficationGateway contract
+   * @param signerOrProvider ethers.js Signer or Provider
+   * @param blsWalletSigner (optional) a BLS Wallet signer
+   * @returns The wallet's address
+   */
   static async Address(
     privateKey: string,
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
-    /**
-     * Internal value associated with the bls-wallet-signer library that can be
-     * provided as an optimization, otherwise it will be created
-     * automatically.
-     */
     blsWalletSigner?: BlsWalletSigner,
   ): Promise<string> {
     blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
@@ -50,43 +65,37 @@ export default class BlsWalletWrapper {
     );
     const pubKeyHash = blsWalletSigner.getPublicKeyHash(privateKey);
 
-    // Check for an existing wallet
     const existingAddress = await verificationGateway.walletFromHash(
       pubKeyHash,
     );
-    if (!BigNumber.from(existingAddress).isZero()) {
+    const hasExistingAddress = !BigNumber.from(existingAddress).isZero();
+    if (hasExistingAddress) {
       return existingAddress;
     }
 
-    const [proxyAdminAddress, blsWalletLogicAddress] = await Promise.all([
-      verificationGateway.walletProxyAdmin(),
-      verificationGateway.blsWalletLogic(),
-    ]);
-
-    const initFunctionParams =
-      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
-        verificationGatewayAddress,
-      ]);
-
-    return ethers.utils.getCreate2Address(
-      verificationGatewayAddress,
+    const expectedAddress = await this.ExpectedAddress(
+      verificationGateway,
       pubKeyHash,
-      ethers.utils.solidityKeccak256(
-        ["bytes", "bytes"],
-        [
-          TransparentUpgradeableProxy__factory.bytecode,
-          ethers.utils.defaultAbiCoder.encode(
-            ["address", "address", "bytes"],
-            [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
-          ),
-        ],
-      ),
     );
+    this.validateWalletNotRecovered(
+      blsWalletSigner,
+      verificationGateway,
+      expectedAddress,
+      privateKey,
+    );
+
+    return expectedAddress;
   }
 
   /**
-   * Instantiate a `BLSWallet` associated with the provided key if the
-   * associated wallet contract already exists.
+   * Instantiate a `BLSWallet` associated with the provided private key.
+   *
+   * Throws an exception if wallet was recovered to a different private key.
+   *
+   * @param privateKey private key associated with the wallet
+   * @param verificationGatewayAddress address of the VerficationGateway contract
+   * @param provider ethers.js Provider
+   * @returns a BLS Wallet
    */
   static async connect(
     privateKey: string,
@@ -95,9 +104,15 @@ export default class BlsWalletWrapper {
   ): Promise<BlsWalletWrapper> {
     const network = await provider.getNetwork();
 
-    const blsWalletSigner = await initBlsWalletSigner({
-      chainId: network.chainId,
-    });
+    const [blsWalletSigner, verificationGateway] = await Promise.all([
+      initBlsWalletSigner({
+        chainId: network.chainId,
+      }),
+      VerificationGateway__factory.connect(
+        verificationGatewayAddress,
+        provider,
+      ),
+    ]);
 
     const contractAddress = await BlsWalletWrapper.Address(
       privateKey,
@@ -115,6 +130,7 @@ export default class BlsWalletWrapper {
       privateKey,
       contractAddress,
       walletContract,
+      verificationGateway,
     );
   }
 
@@ -208,5 +224,58 @@ export default class BlsWalletWrapper {
         : (await signerOrProvider.getNetwork()).chainId;
 
     return await initBlsWalletSigner({ chainId });
+  }
+
+  // Calculates the expected address the wallet will be created at
+  private static async ExpectedAddress(
+    verificationGateway: VerificationGateway,
+    pubKeyHash: string,
+  ): Promise<string> {
+    const [proxyAdminAddress, blsWalletLogicAddress] = await Promise.all([
+      verificationGateway.walletProxyAdmin(),
+      verificationGateway.blsWalletLogic(),
+    ]);
+
+    const initFunctionParams =
+      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
+        verificationGateway.address,
+      ]);
+
+    return ethers.utils.getCreate2Address(
+      verificationGateway.address,
+      pubKeyHash,
+      ethers.utils.solidityKeccak256(
+        ["bytes", "bytes"],
+        [
+          TransparentUpgradeableProxy__factory.bytecode,
+          ethers.utils.defaultAbiCoder.encode(
+            ["address", "address", "bytes"],
+            [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
+          ),
+        ],
+      ),
+    );
+  }
+
+  private static async validateWalletNotRecovered(
+    blsWalletSigner: BlsWalletSigner,
+    verificationGateway: VerificationGateway,
+    walletAddress: string,
+    privateKey: string,
+  ): Promise<void> {
+    const pubKeyHash = blsWalletSigner.getPublicKeyHash(privateKey);
+    const existingPubKeyHash = await verificationGateway.hashFromWallet(
+      walletAddress,
+    );
+
+    const walletIsAlreadyRegistered =
+      !BigNumber.from(existingPubKeyHash).isZero();
+    const pubKeyHashesDoNotMatch = pubKeyHash !== existingPubKeyHash;
+
+    if (walletIsAlreadyRegistered && pubKeyHashesDoNotMatch) {
+      throw new Error(
+        `wallet at ${walletAddress} has been recovered from public key hash ${pubKeyHash} to ${existingPubKeyHash}`,
+      );
+    }
   }
 }

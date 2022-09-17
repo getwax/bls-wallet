@@ -168,6 +168,27 @@ describe("Recovery", async function () {
         .recoverWallet(addressSignature, hash1, salt, safeKey)
     ).wait();
 
+    /**
+     * wallet1 is now using wallet2's public & private keys.
+     * Re-init wallet1 instance using the new private key.
+     *
+     * TODO (merge-ok) we need to:
+     * - Update these tests to use a recoverWallet function
+     *   on BlsWalletWrapper so it can properly update its
+     *   internal state on recovery.
+     * and/or
+     * - Update BlsWalletWrapper to throw exceptions and/or
+     *   update internal state when it detects wallet recovery
+     *   has occured on the wallet it represents. This may also
+     *   need to be done on other wallet recovery/upgrade paths.
+     *
+     */
+    wallet1 = await BlsWalletWrapper.connect(
+      wallet2.privateKey,
+      vg.address,
+      vg.provider,
+    );
+
     // key reset via recovery
     expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash2);
     expect(await vg.walletFromHash(hash2)).to.eql(wallet1.address);
@@ -183,11 +204,11 @@ describe("Recovery", async function () {
       await walletAttacker.Nonce(),
     );
     await fx.call(
-      wallet2,
+      wallet1,
       vg,
       "setPendingBLSKeyForWallet",
       [],
-      await wallet2.Nonce(),
+      await wallet1.Nonce(),
     );
 
     expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
@@ -196,13 +217,13 @@ describe("Recovery", async function () {
     );
     expect(await vg.walletFromHash(hash2)).to.equal(blsWallet.address);
 
-    // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
+    // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
     const res = await fx.callStatic(
-      wallet2,
+      wallet1,
       fx.verificationGateway,
       "setTrustedBLSGateway",
       [hash2, fx.verificationGateway.address],
-      3,
+      await wallet1.Nonce(),
     );
     expect(res.successes[0]).to.equal(true);
   });
