@@ -1,6 +1,10 @@
-import { BlsWalletWrapper } from 'bls-wallet-clients';
-import { ethers } from 'ethers';
-import { keccak256 } from 'ethers/lib/utils';
+import {
+  BlsWalletWrapper,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+} from 'bls-wallet-clients';
+import { ethers, BigNumberish } from 'ethers';
+import { solidityPack, keccak256 } from 'ethers/lib/utils';
 import generateRandomHex from '../helpers/generateRandomHex';
 import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
@@ -154,6 +158,65 @@ export default class KeyringController {
 
       await this.keyring.update({ wallets: newWallets });
     },
+
+    addRecoveryWallet: async ({
+      params: [recoveryWalletHash, recoveryWalletAddress, recoverySaltHash],
+    }) => {
+      // Create new private key for the wallet we are recovering to.
+      const newPrivateKey = generateRandomHex(256);
+
+      const addressSignature = await this.signWalletAddress(
+        recoveryWalletAddress,
+        newPrivateKey,
+      );
+
+      const netCfg = getNetworkConfig(
+        await this.network.read(),
+        this.multiNetworkConfig,
+      );
+
+      // Get instance of the new wallet, so we can get the public key
+      // to pass to the recoverWallet method.
+      const newWalletWrapper = await this.BlsWalletWrapper(newPrivateKey);
+
+      const signerPublicKeyHash = await this.selectedPublicKeyHash.read();
+
+      assert(
+        signerPublicKeyHash !== undefined,
+        () => new Error('Selected public key hash not found'),
+      );
+
+      // eslint-disable-next-line camelcase
+      const verificationGatewayContract = VerificationGateway__factory.connect(
+        netCfg.addresses.verificationGateway,
+        await this.ethersProvider.read(),
+      );
+
+      const tx = {
+        from: signerPublicKeyHash,
+        to: verificationGatewayContract.address,
+        value: '0',
+        data: verificationGatewayContract.interface.encodeFunctionData(
+          'recoverWallet',
+          [
+            addressSignature,
+            recoveryWalletHash,
+            recoverySaltHash,
+            newWalletWrapper.PublicKey(),
+          ],
+        ),
+      };
+
+      this.InternalRpc().eth_sendTransaction({
+        ...tx,
+        gas: undefined,
+        gasPrice: undefined,
+        data: undefined,
+      });
+
+      // Add new private key
+      await this.InternalRpc().addAccount(newPrivateKey);
+    },
   });
 
   async BlsWalletWrapper(privateKey: string): Promise<BlsWalletWrapper> {
@@ -213,5 +276,23 @@ export default class KeyringController {
       }),
       {},
     );
+  }
+
+  async signWalletAddress(
+    senderAddress: string,
+    signerPrivateKey: string,
+  ): Promise<[BigNumberish, BigNumberish]> {
+    const netCfg = getNetworkConfig(
+      await this.network.read(),
+      this.multiNetworkConfig,
+    );
+
+    const addressMessage = solidityPack(['address'], [senderAddress]);
+    const wallet = await BlsWalletWrapper.connect(
+      signerPrivateKey,
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
+    );
+    return wallet.signMessage(addressMessage);
   }
 }
