@@ -17,7 +17,7 @@ const GeneralSettings: FunctionComponent = () => {
     [],
   );
 
-  const $orderPreference = useCell(orderPreference) ?? 'trade';
+  const orderPreferenceValue = useCell(orderPreference) ?? 'trade';
 
   const currency = useCell(cells.currency);
   const currencyConversion = useCell(cells.currencyConversion);
@@ -25,7 +25,7 @@ const GeneralSettings: FunctionComponent = () => {
   let currencies: string[];
 
   if (
-    $orderPreference === 'trade' &&
+    orderPreferenceValue === 'trade' &&
     currency &&
     currency in currencyOrderings
   ) {
