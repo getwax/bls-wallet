@@ -159,20 +159,37 @@ export default class KeyringController {
       await this.keyring.update({ wallets: newWallets });
     },
 
+    /**
+     * Recovers an existing BLS wallet and adds the new
+     * recovered wallet to the keyring
+     * @param recoveryWalletAddress Smart contract address
+     * of wallet being recovered
+     * @param recoverySaltHash Salt used to set the recovery
+     * hash on the wallet that is being recovered
+     */
     addRecoveryWallet: async ({
-      params: [recoveryWalletHash, recoveryWalletAddress, recoverySaltHash],
+      params: [recoveryWalletAddress, recoverySaltHash],
     }) => {
+      const netCfg = getNetworkConfig(
+        await this.network.read(),
+        this.multiNetworkConfig,
+      );
+
+      // eslint-disable-next-line camelcase
+      const verificationGatewayContract = VerificationGateway__factory.connect(
+        netCfg.addresses.verificationGateway,
+        await this.ethersProvider.read(),
+      );
+
+      const recoveryWalletHash =
+        await verificationGatewayContract.hashFromWallet(recoveryWalletAddress);
+
       // Create new private key for the wallet we are recovering to.
       const newPrivateKey = generateRandomHex(256);
 
       const addressSignature = await this.signWalletAddress(
         recoveryWalletAddress,
         newPrivateKey,
-      );
-
-      const netCfg = getNetworkConfig(
-        await this.network.read(),
-        this.multiNetworkConfig,
       );
 
       // Get instance of the new wallet, so we can get the public key
@@ -184,12 +201,6 @@ export default class KeyringController {
       assert(
         signerPublicKeyHash !== undefined,
         () => new Error('Selected public key hash not found'),
-      );
-
-      // eslint-disable-next-line camelcase
-      const verificationGatewayContract = VerificationGateway__factory.connect(
-        netCfg.addresses.verificationGateway,
-        await this.ethersProvider.read(),
       );
 
       const tx = {
