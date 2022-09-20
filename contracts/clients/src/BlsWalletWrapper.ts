@@ -57,6 +57,7 @@ export default class BlsWalletWrapper {
     const initFunctionParams =
       BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
         verificationGatewayAddress,
+        ethers.constants.AddressZero, // TODO: 4337 EntryPoint address
       ]);
 
     return ethers.utils.getCreate2Address(

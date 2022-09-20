@@ -6,7 +6,7 @@ pragma abicoder v2;
 //To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IWallet.sol";
-
+import "./interfaces/UserOperation4337.sol";
 
 /** Minimal upgradable smart contract wallet.
     Generic calls can only be requested by its trusted gateway.
@@ -23,6 +23,7 @@ contract BLSWallet is Initializable, IWallet
 
     // BLS variables
     address public trustedBLSGateway;
+    address public trustedEntryPoint;
     address pendingBLSGateway;
     uint256 pendingGatewayTime;
 
@@ -49,10 +50,12 @@ contract BLSWallet is Initializable, IWallet
     );
 
     function initialize(
-        address blsGateway
+        address blsGateway,
+        address entryPoint
     ) external initializer {
         nonce = 0;
         trustedBLSGateway = blsGateway;
+        trustedEntryPoint = entryPoint;
     }
 
     receive() external payable {}
@@ -144,7 +147,7 @@ contract BLSWallet is Initializable, IWallet
      */
     function performOperation(
         IWallet.Operation calldata op
-    ) public payable onlyTrustedGateway thisNonce(op.nonce) returns (
+    ) public payable onlyTrusted thisNonce(op.nonce) returns (
         bool success,
         bytes[] memory results
     ) {
@@ -221,6 +224,25 @@ contract BLSWallet is Initializable, IWallet
         nonce++;
     }
 
+    // --- <4337> ---
+
+    function validateUserOp(
+        UserOperation4337 calldata userOp,
+        bytes32 requestId,
+        address aggregator,
+        uint256 missingWalletFunds
+    ) external view {
+        require(aggregator == trustedBLSGateway);
+        require(userOp.nonce == nonce);
+        require(missingWalletFunds == 0);
+    }
+
+    function getAggregator() public view returns (address) {
+        return trustedBLSGateway;
+    }
+
+    // --- </4337> ---
+
     modifier onlyThis() {
         require(msg.sender == address(this), "BLSWallet: only callable from this");
          _;
@@ -232,6 +254,15 @@ contract BLSWallet is Initializable, IWallet
         ;
         require(isTrustedGateway, "BLSWallet: only callable from trusted gateway");
          _;
+    }
+
+    modifier onlyTrusted() {
+        require(
+            msg.sender == trustedBLSGateway ||
+            msg.sender == trustedEntryPoint,
+            "BLSWallet: only callable from trusted gateway or 4337 entry point"
+        );
+        _;
     }
 
     modifier thisNonce(uint256 opNonce) {

@@ -17,7 +17,7 @@ interface IWallet {
         bytes encodedFunction;
     }
 
-    function initialize(address gateway) external;
+    function initialize(address gateway, address entryPoint) external;
     function nonce() external returns (uint256);
 
     function performOperation(

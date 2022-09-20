@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./interfaces/IWallet.sol";
+import "./interfaces/UserOperation4337.sol";
 
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
@@ -26,7 +27,7 @@ contract VerificationGateway
     ProxyAdmin public immutable walletProxyAdmin;
     address public immutable blsWalletLogic;
     mapping(bytes32 => IWallet) public walletFromHash;
-    mapping(IWallet => bytes32) public hashFromWallet;
+    mapping(IWallet => uint256[BLS_KEY_LEN]) public blsKeyFromWallet;
 
     //mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
     mapping(bytes32 => uint256[BLS_KEY_LEN]) public pendingBLSPublicKeyFromHash;
@@ -100,6 +101,16 @@ contract VerificationGateway
         require(verified, "VG: Sig not verified");
     }
 
+    function hashFromWallet(IWallet wallet) public view returns (bytes32) {
+        uint256[BLS_KEY_LEN] memory blsKey = blsKeyFromWallet[wallet];
+        
+        if (blsLib.isZeroBLSKey(blsKey)) {
+            return bytes32(0);
+        }
+
+        return keccak256(abi.encodePacked(blsKey));
+    }
+
     /**
     If an existing wallet contract wishes to be called by this verification
     gateway, it can directly register itself with a simple signed msg.
@@ -115,7 +126,7 @@ contract VerificationGateway
     ) public {
         require(blsLib.isZeroBLSKey(publicKey) == false, "VG: publicKey must be non-zero");
         IWallet wallet = IWallet(msg.sender);
-        bytes32 existingHash = hashFromWallet[wallet];
+        bytes32 existingHash = hashFromWallet(wallet);
         if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
             // set it instantly
             safeSetWallet(messageSenderSignature, publicKey, wallet);
@@ -130,7 +141,7 @@ contract VerificationGateway
 
     function setPendingBLSKeyForWallet() public {
         IWallet wallet = IWallet(msg.sender);
-        bytes32 existingHash = hashFromWallet[wallet];
+        bytes32 existingHash = hashFromWallet(wallet);
         require(existingHash != bytes32(0), "VG: hash does not exist for caller");
         if (
             (pendingBLSPublicKeyTimeFromHash[existingHash] != 0) &&
@@ -299,7 +310,7 @@ contract VerificationGateway
                 address(walletProxyAdmin),
                 getInitializeData()
             )));
-            updateWalletHashMappings(publicKeyHash, blsWallet);
+            updateWalletHashMappings(publicKey, blsWallet);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
@@ -328,25 +339,22 @@ contract VerificationGateway
             blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
             "VG: Signature not verified for wallet address."
         );
-        bytes32 publicKeyHash = keccak256(abi.encodePacked(
-            publicKey
-        ));
         emit BLSKeySetForWallet(publicKey, wallet);
-        updateWalletHashMappings(publicKeyHash, wallet);
+        updateWalletHashMappings(publicKey, wallet);
     }
 
     /** @dev Only to be called on wallet creation, and in `safeSetWallet` */
     function updateWalletHashMappings(
-        bytes32 publicKeyHash,
+        uint256[BLS_KEY_LEN] memory blsKey,
         IWallet wallet
     ) private {
         // remove reference from old hash
-        bytes32 oldHash = hashFromWallet[wallet];
+        bytes32 oldHash = hashFromWallet(wallet);
         walletFromHash[oldHash] = IWallet(address(0));
 
         // update new hash / wallet mappings
-        walletFromHash[publicKeyHash] = wallet;
-        hashFromWallet[wallet] = publicKeyHash;
+        walletFromHash[keccak256(abi.encodePacked(blsKey))] = wallet;
+        blsKeyFromWallet[wallet] = blsKey;
     }
 
     function getInitializeData() private view returns (bytes memory) {
@@ -387,4 +395,49 @@ contract VerificationGateway
         );
     }
 
+    // --- <4337> ---
+
+    // These functions seem to exist to allow clients (aka nodes) to rely on logic defined on-chain
+    // so that they don't need to implement anything specific to any signature aggregation scheme.
+    // For our prototype we can do this specific implementation and make this work without these
+    // functions. Later, it might be necessary to add these for compatibility with clients relying
+    // on this generic technique.
+    // function validateUserOpSignature(
+    //     UserOperation4337 calldata userOp,
+    //     bool offChainSigCheck
+    // ) external view returns (
+    //     bytes memory sigForUserOp,
+    //     bytes memory sigForAggregation,
+    //     bytes memory offChainSigInfo
+    // ) {}
+    // function aggregateSignatures(
+    //     bytes[] calldata sigsForAggregation
+    // ) external view returns (bytes memory aggregatesSignature) {}
+
+    function validateSignatures(
+        UserOperation4337[] calldata userOps,
+        bytes calldata signature
+    ) view external {
+        uint256[2][] memory messages = new uint256[2][](userOps.length);
+        uint256[BLS_KEY_LEN][] memory senderPublicKeys = new uint256[BLS_KEY_LEN][](userOps.length);
+
+        for (uint256 i = 0; i < userOps.length; i++) {
+            messages[i] = blsLib.hashToPoint(
+                BLS_DOMAIN,
+                abi.encode(userOps[i])
+            );
+
+            senderPublicKeys[i] = blsKeyFromWallet[IWallet(userOps[i].sender)];
+        }
+
+        bool verified = blsLib.verifyMultiple(
+            abi.decode(signature, (uint256[2])),
+            senderPublicKeys,
+            messages
+        );
+
+        require(verified, "VG: Sig not verified");
+    }
+
+    // --- </4337> ---
 }
