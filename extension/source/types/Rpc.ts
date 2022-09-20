@@ -166,7 +166,7 @@ export const rpcMap = {
   },
   addRecoveryWallet: {
     origin: '<quill>',
-    Params: io.tuple([io.string, io.string, io.string]),
+    Params: io.tuple([io.string, io.string]),
     Response: io.void,
   },
 
