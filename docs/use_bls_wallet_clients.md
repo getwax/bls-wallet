@@ -16,7 +16,7 @@ yarn add bls-wallet-clients
 
 ```typescript
 import { providers } from "ethers";
-import { Aggregator, BLSWalletWrapper, getConfig } from "bls-wallet-clients";
+import { Aggregator, BlsWalletWrapper, getConfig } from "bls-wallet-clients";
 ```
 
 ### Deno
@@ -25,7 +25,7 @@ You can use [esm.sh](https://esm.sh/) or a similar service to get Deno compatibl
 
 ```typescript
 import { providers } from "https://esm.sh/ethers@latest";
-import { Aggregator, BLSWalletWrapper, getConfig } from "https://esm.sh/bls-wallet-clients@latest";
+import { Aggregator, BlsWalletWrapper, getConfig } from "https://esm.sh/bls-wallet-clients@latest";
 ```
 
 ## Get Deployed Contract Addresses
@@ -37,38 +37,49 @@ If you would like to deploy to a remote network, see [Remote development](./remo
 ## Send a transaction
 
 ```typescript
-import { readFile } from "fs/promises";
+import { readFile } from 'fs/promises';
 
+// import fetch from 'node-fetch'; // Add this if using nodejs<18
+import { ethers, providers } from 'ethers';
+import { Aggregator, BlsWalletWrapper, getConfig } from 'bls-wallet-clients';
+
+// globalThis.fetch = fetch; // Add this if using nodejs<18
 
 // Instantiate a provider via browser extension, such as Metamask 
-const provider = providers.Web3Provider(window.ethereum);
+// const provider = new providers.Web3Provider(window.ethereum);
 // Or via RPC
-const provider = providers.JsonRpcProvider();
+const provider = new providers.JsonRpcProvider('https://goerli-rollup.arbitrum.io/rpc');
 // See https://docs.ethers.io/v5/getting-started/ for more options
 
 // Get the deployed contract addresses for the network.
 // Here, we will get the Arbitrum testnet.
 // See local_development.md for deploying locally and
 // remote_development.md for deploying to a remote network.
-const netCfg = await getConfig("../contracts/networks/arbitrum-testnet.json", async (path) => readFile(path));
+const netCfg = await getConfig(
+  '../contracts/networks/arbitrum-goerli.json',
+  async (path) => readFile(path),
+);
 
-const privateKey = "0x...";
+// 32 random bytes
+const privateKey = '0x0001020304050607080910111213141516171819202122232425262728293031';
 
 // Note that if a wallet doesn't yet exist, it will be
 // lazily created on the first transaction.
-const wallet = await BlsWallerWrapper.connect(
+const wallet = await BlsWalletWrapper.connect(
   privateKey,
-  netCfg.contracts.verificationGateway,
+  netCfg.addresses.verificationGateway,
   provider
 );
 
-const erc20Address = "0x...";
+const erc20Address = netCfg.addresses.testToken; // Or some other ERC20 token
 const erc20Abi = [
-    "function transfer(address to, uint amount) returns (bool)",
+    'function mint(address to, uint amount) returns (bool)',
 ];
 const erc20 = new ethers.Contract(erc20Address, erc20Abi, provider);
 
-const recipientAddress = "0x...";
+console.log('Contract wallet:', wallet.address);
+console.log('Test token:', erc20.address);
+
 const nonce = await wallet.Nonce();
 // All of the actions in a bundle are atomic, if one
 // action fails they will all fail.
@@ -76,16 +87,41 @@ const bundle = wallet.sign({
   nonce,
   actions: [
     {
-      contract: erc20,
-      method: "transfer",
-      args: [recipientAddress, ethers.utils.parseUnits("1", 18)],
+      // Mint ourselves one test token
+      ethValue: 0,
+      contractAddress: erc20.address,
+      encodedFunction: erc20.interface.encodeFunctionData(
+        'mint',
+        [wallet.address, ethers.utils.parseUnits('1', 18)],
+      ),
     },
-
   ],
 });
 
-const aggregator = new Aggregator("https://rinkarby.blswallet.org");
-await aggregator.add(bundle);
+const aggregator = new Aggregator('https://arbitrum-goerli.blswallet.org');
+
+console.log('Sending bundle to the aggregator');
+const addResult = await aggregator.add(bundle);
+
+if ('failures' in addResult) {
+  throw addResult.failures.join('\n');
+}
+
+console.log('Bundle hash:', addResult.hash);
+
+const checkConfirmation = async () => {
+  console.log('Checking for confirmation')
+  const maybeReceipt = await aggregator.lookupReceipt(addResult.hash);
+
+  if (maybeReceipt === undefined) {
+    return;
+  }
+
+  console.log('Confirmed in block', maybeReceipt.blockNumber);
+  provider.off('block', checkConfirmation);
+};
+
+provider.on('block', checkConfirmation);
 ```
 
 ## More
