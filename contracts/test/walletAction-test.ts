@@ -58,7 +58,7 @@ describe("WalletActions", async function () {
 
     const initFunctionParams = BLSWallet.interface.encodeFunctionData(
       "initialize",
-      [fx.verificationGateway.address],
+      [fx.verificationGateway.address, ethers.constants.AddressZero],
     );
 
     const calculatedAddress = ethers.utils.getCreate2Address(
