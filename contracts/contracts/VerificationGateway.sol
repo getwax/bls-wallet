@@ -358,7 +358,7 @@ contract VerificationGateway
     }
 
     function getInitializeData() private view returns (bytes memory) {
-        return abi.encodeWithSignature("initialize(address)", address(this));
+        return abi.encodeWithSignature("initialize(address,address)", address(this), address(0));
     }
 
     modifier onlyWallet(bytes32 hash) {
