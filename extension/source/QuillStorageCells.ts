@@ -12,7 +12,6 @@ import assert from './helpers/assert';
 import { QuillTransaction } from './types/Rpc';
 import optional from './types/optional';
 import Config from './Config';
-import defaultCurrency from './currencies/defaultCurrency';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
