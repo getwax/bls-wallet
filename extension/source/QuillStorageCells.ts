@@ -84,7 +84,7 @@ function QuillStorageCells(
       Preferences,
       async (): Promise<Preferences> => ({
         selectedPublicKeyHash: undefined,
-        currency: await defaultCurrency(),
+        currency: 'USD',
         theme: 'light',
         defaultPublicKeyHash: undefined,
         contacts: [],
