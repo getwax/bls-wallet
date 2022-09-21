@@ -8,7 +8,7 @@ This walkthrough will show you how to submit an ERC20 transfer to the BLS Wallet
 # npm
 npm install bls-wallet-clients
 # yarn
-yarn install bls-wallet-clients
+yarn add bls-wallet-clients
 # deno in example further below
 ```
 
