@@ -12,8 +12,6 @@ yarn add bls-wallet-clients
 # deno in example further below
 ```
 
-You will also need to have [ethers](https://docs.ethers.io) installed.
-
 ## Import
 
 ```typescript
