@@ -2,6 +2,7 @@ import {
   BlsWalletWrapper,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
+  Aggregator,
 } from 'bls-wallet-clients';
 import { ethers, BigNumberish } from 'ethers';
 import { solidityPack, keccak256 } from 'ethers/lib/utils';
@@ -170,63 +171,23 @@ export default class KeyringController {
     addRecoveryWallet: async ({
       params: [recoveryWalletAddress, recoverySaltHash],
     }) => {
-      const netCfg = getNetworkConfig(
-        await this.network.read(),
-        this.multiNetworkConfig,
-      );
+      // Currently just using wallet 0 as the recovery signer.  However,
+      // a wallet can only be used as a signer for recovery once.  So we may
+      // want to generate a new 'temporary' wallet to use as signer.  So that
+      // the quill wallet can recover more than once.
+      const [signerWalletAddress] = await this.InternalRpc().eth_accounts();
 
-      // eslint-disable-next-line camelcase
-      const verificationGatewayContract = VerificationGateway__factory.connect(
-        netCfg.addresses.verificationGateway,
-        await this.ethersProvider.read(),
-      );
-
-      const recoveryWalletHash =
-        await verificationGatewayContract.hashFromWallet(recoveryWalletAddress);
-
-      // Create new private key for the wallet we are recovering to.
-      const newPrivateKey = generateRandomHex(256);
-
-      const addressSignature = await this.signWalletAddress(
+      const newPrivateKey = await this.recoverWallet(
         recoveryWalletAddress,
-        newPrivateKey,
+        recoverySaltHash,
+        signerWalletAddress,
       );
 
-      // Get instance of the new wallet, so we can get the public key
-      // to pass to the recoverWallet method.
-      const newWalletWrapper = await this.BlsWalletWrapper(newPrivateKey);
-
-      const signerPublicKeyHash = await this.selectedPublicKeyHash.read();
-
-      assert(
-        signerPublicKeyHash !== undefined,
-        () => new Error('Selected public key hash not found'),
-      );
-
-      const tx = {
-        from: signerPublicKeyHash,
-        to: verificationGatewayContract.address,
-        value: '0',
-        data: verificationGatewayContract.interface.encodeFunctionData(
-          'recoverWallet',
-          [
-            addressSignature,
-            recoveryWalletHash,
-            recoverySaltHash,
-            newWalletWrapper.PublicKey(),
-          ],
-        ),
-      };
-
-      this.InternalRpc().eth_sendTransaction({
-        ...tx,
-        gas: undefined,
-        gasPrice: undefined,
-        data: undefined,
-      });
-
-      // Add new private key
-      await this.InternalRpc().addAccount(newPrivateKey);
+      // TODO do something with the private key. We want to add this private
+      // key to the quill extension but we need to wait until recovery is
+      // finished.  As the wallet address won't be the deterministic address
+      // from the private key.  It'll be the address of the recovered wallet.
+      console.log('New private key of the recovered wallet: ', newPrivateKey);
     },
   });
 
@@ -305,5 +266,75 @@ export default class KeyringController {
       await this.ethersProvider.read(),
     );
     return wallet.signMessage(addressMessage);
+  }
+
+  async recoverWallet(
+    recoveryWalletAddress: string,
+    recoverySaltHash: string,
+    signerWalletAddress: string,
+  ): Promise<String> {
+    const network = await this.network.read();
+    const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
+
+    // Create new private key for the wallet we are recovering to.
+    const newPrivateKey = generateRandomHex(256);
+
+    const addressSignature = await this.signWalletAddress(
+      recoveryWalletAddress,
+      newPrivateKey,
+    );
+
+    // Get instance of the new wallet, so we can get the public key
+    // to pass to the recoverWallet method.
+    const newWalletWrapper = await this.BlsWalletWrapper(newPrivateKey);
+
+    // eslint-disable-next-line camelcase
+    const verificationGatewayContract = VerificationGateway__factory.connect(
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
+    );
+
+    const recoveryWalletHash = await verificationGatewayContract.hashFromWallet(
+      recoveryWalletAddress,
+    );
+
+    const privateKey = await this.InternalRpc().lookupPrivateKey(
+      signerWalletAddress,
+    );
+    const signerWallet = await this.BlsWalletWrapper(privateKey);
+
+    const nonce = await BlsWalletWrapper.Nonce(
+      signerWallet.PublicKey(),
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
+    );
+
+    // Thought about using this.InternalRpc().eth_sendTransaction() here.
+    // However since a wallet can only be used as a signer for recovery once
+    // that would cause issues.
+    const bundle = signerWallet.sign({
+      nonce,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: verificationGatewayContract.address,
+          encodedFunction:
+            verificationGatewayContract.interface.encodeFunctionData(
+              'recoverWallet',
+              [
+                addressSignature,
+                recoveryWalletHash,
+                recoverySaltHash,
+                newWalletWrapper.PublicKey(),
+              ],
+            ),
+        },
+      ],
+    });
+
+    const agg = new Aggregator('http://localhost:3000');
+    const result = await agg.add(bundle);
+
+    return newPrivateKey;
   }
 }
