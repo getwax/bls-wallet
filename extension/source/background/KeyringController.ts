@@ -177,7 +177,7 @@ export default class KeyringController {
       // the quill wallet can recover more than once.
       const [signerWalletAddress] = await this.InternalRpc().eth_accounts();
 
-      const newPrivateKey = await this.recoverWallet(
+      const { privateKey, txHash } = await this.recoverWallet(
         recoveryWalletAddress,
         recoverySaltHash,
         signerWalletAddress,
@@ -187,7 +187,10 @@ export default class KeyringController {
       // key to the quill extension but we need to wait until recovery is
       // finished.  As the wallet address won't be the deterministic address
       // from the private key.  It'll be the address of the recovered wallet.
-      console.log('New private key of the recovered wallet: ', newPrivateKey);
+      console.log('New private key of the recovered wallet: ', {
+        privateKey,
+        txHash,
+      });
     },
   });
 
@@ -272,7 +275,7 @@ export default class KeyringController {
     recoveryWalletAddress: string,
     recoverySaltHash: string,
     signerWalletAddress: string,
-  ): Promise<String> {
+  ): Promise<{ txHash: string; privateKey: string }> {
     const network = await this.network.read();
     const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
 
@@ -332,9 +335,15 @@ export default class KeyringController {
       ],
     });
 
-    const agg = new Aggregator('http://localhost:3000');
+    const { aggregatorUrl } = network;
+    const agg = new Aggregator(aggregatorUrl);
     const result = await agg.add(bundle);
 
-    return newPrivateKey;
+    assert(!('failures' in result), () => new Error(JSON.stringify(result)));
+
+    return {
+      privateKey: newPrivateKey,
+      txHash: result.hash,
+    };
   }
 }
