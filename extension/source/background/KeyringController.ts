@@ -167,30 +167,21 @@ export default class KeyringController {
      * of wallet being recovered
      * @param recoverySaltHash Salt used to set the recovery
      * hash on the wallet that is being recovered
+     * @param signerWalletPrivateKey the private key of the wallet that is used
+     * to generate the recovery hash. This wallet will sign the 'recoverWallet'
+     * request.
      */
     addRecoveryWallet: async ({
-      params: [recoveryWalletAddress, recoverySaltHash],
+      params: [recoveryWalletAddress, recoverySaltHash, signerWalletPrivateKey],
     }) => {
-      // Currently just using wallet 0 as the recovery signer.  However,
-      // a wallet can only be used as a signer for recovery once.  So we may
-      // want to generate a new 'temporary' wallet to use as signer.  So that
-      // the quill wallet can recover more than once.
-      const [signerWalletAddress] = await this.InternalRpc().eth_accounts();
-
-      const { privateKey, txHash } = await this.recoverWallet(
+      const privateKey = await this.recoverWallet(
         recoveryWalletAddress,
         recoverySaltHash,
-        signerWalletAddress,
+        signerWalletPrivateKey,
       );
 
-      // TODO do something with the private key. We want to add this private
-      // key to the quill extension but we need to wait until recovery is
-      // finished.  As the wallet address won't be the deterministic address
-      // from the private key.  It'll be the address of the recovered wallet.
-      console.log('New private key of the recovered wallet: ', {
-        privateKey,
-        txHash,
-      });
+      // Add new private key to the keyring
+      await this.InternalRpc().addAccount(privateKey);
     },
   });
 
@@ -274,8 +265,8 @@ export default class KeyringController {
   async recoverWallet(
     recoveryWalletAddress: string,
     recoverySaltHash: string,
-    signerWalletAddress: string,
-  ): Promise<{ txHash: string; privateKey: string }> {
+    signerWalletPrivateKey: string,
+  ): Promise<string> {
     const network = await this.network.read();
     const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
 
@@ -301,10 +292,7 @@ export default class KeyringController {
       recoveryWalletAddress,
     );
 
-    const privateKey = await this.InternalRpc().lookupPrivateKey(
-      signerWalletAddress,
-    );
-    const signerWallet = await this.BlsWalletWrapper(privateKey);
+    const signerWallet = await this.BlsWalletWrapper(signerWalletPrivateKey);
 
     const nonce = await BlsWalletWrapper.Nonce(
       signerWallet.PublicKey(),
@@ -313,8 +301,9 @@ export default class KeyringController {
     );
 
     // Thought about using this.InternalRpc().eth_sendTransaction() here.
-    // However since a wallet can only be used as a signer for recovery once
-    // that would cause issues.
+    // However since we are generating a wallet on the fly and not using
+    // an existing wallet in the keyring I am calling creating a bundle
+    // manually and submitting it to the aggregator.
     const bundle = signerWallet.sign({
       nonce,
       actions: [
@@ -341,9 +330,6 @@ export default class KeyringController {
 
     assert(!('failures' in result), () => new Error(JSON.stringify(result)));
 
-    return {
-      privateKey: newPrivateKey,
-      txHash: result.hash,
-    };
+    return newPrivateKey;
   }
 }
