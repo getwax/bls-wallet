@@ -104,7 +104,7 @@ console.log('Sending bundle to the aggregator');
 const addResult = await aggregator.add(bundle);
 
 if ('failures' in addResult) {
-  throw addResult.failures.join('\n');
+  throw new Error(addResult.failures.join('\n'));
 }
 
 console.log('Bundle hash:', addResult.hash);
