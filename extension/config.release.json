@@ -18,7 +18,7 @@
       "chainId": "0x7a69",
       "displayName": "Local Network",
       "logo": "",
-      "rpcTarget": "http://localhost:8545",
+      "rpcTarget": "http://127.0.0.1:8545",
       "chainCurrencyName": "Ethereum",
       "chainCurrency": "ETH",
       "aggregatorUrl": "http://localhost:3000",
