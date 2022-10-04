@@ -2,13 +2,9 @@ name: extension
 
 on:
   push:
-    branches:
-      - 'main'
     paths:
       - 'extension/**'
   pull_request:
-    branches:
-      - 'main'
     paths:
       - 'extension/**'
 
