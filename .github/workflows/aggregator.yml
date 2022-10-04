@@ -2,6 +2,8 @@ name: aggregator
 
 on:
   push:
+    branches:
+      - 'main'
     paths:
       - 'aggregator/**'
       # Check for breaking changes from contracts

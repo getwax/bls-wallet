@@ -2,6 +2,8 @@ name: contracts
 
 on:
   push:
+    branches:
+      - 'main'
     paths:
       - 'contracts/**'
       - '!contracts/clients/**'

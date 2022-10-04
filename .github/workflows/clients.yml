@@ -2,6 +2,8 @@ name: clients
 
 on:
   push:
+    branches:
+      - 'main'
     paths:
       - 'contracts/clients/**'
   pull_request:

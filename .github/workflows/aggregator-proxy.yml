@@ -2,6 +2,8 @@ name: aggregator-proxy
 
 on:
   push:
+    branches:
+      - 'main'
     paths:
       - 'aggregator-proxy/**'
   pull_request:
