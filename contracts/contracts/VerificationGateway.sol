@@ -88,8 +88,25 @@ contract VerificationGateway
 
         for (uint256 i = 0; i<opLength; i++) {
             // construct params for signature verification
+            bytes32 keyHash = keccak256(abi.encodePacked(bundle.senderPublicKeys[i]));
+            address walletAddress = address(walletFromHash[keyHash]);
+            if (walletAddress == address(0)) {
+                walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
+                    bytes1(0xff),
+                    address(this),
+                    keyHash,
+                    keccak256(abi.encodePacked(
+                        type(TransparentUpgradeableProxy).creationCode,
+                        abi.encode(
+                            address(blsWalletLogic),
+                            address(walletProxyAdmin),
+                            getInitializeData()
+                        )
+                    ))
+                )))));
+            }
             messages[i] = messagePoint(
-                keccak256(abi.encodePacked(bundle.senderPublicKeys[i])),
+                walletAddress,
                 bundle.operations[i]
             );
         }
@@ -373,7 +390,7 @@ contract VerificationGateway
     }
 
     function messagePoint(
-        bytes32 keyHash,
+        address walletAddress,
         IWallet.Operation memory op
     ) internal view returns (
         uint256[2] memory
@@ -393,7 +410,7 @@ contract VerificationGateway
             BLS_DOMAIN,
             abi.encodePacked(
                 block.chainid,
-                keyHash,
+                walletAddress,
                 op.nonce,
                 keccak256(encodedActionData)
             )
