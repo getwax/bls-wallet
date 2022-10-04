@@ -17,8 +17,7 @@ const signWalletAddress = async (
   const addressMessage = solidityPack(["address"], [senderAddr]);
   const wallet = await BlsWalletWrapper.connect(
     signerPrivKey,
-    fx.verificationGateway.address,
-    fx.provider,
+    fx.verificationGateway,
   );
   return wallet.signMessage(addressMessage);
 };
@@ -134,7 +133,14 @@ describe("Recovery", async function () {
   });
 
   it("should recover before bls key update", async function () {
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
+    let recoveredWalletNonce = 1;
+    await fx.call(
+      wallet1,
+      blsWallet,
+      "setRecoveryHash",
+      [recoveryHash],
+      recoveredWalletNonce++,
+    );
 
     const attackSignature = await signWalletAddress(
       fx,
@@ -149,11 +155,27 @@ describe("Recovery", async function () {
       vg,
       "setBLSKeyForWallet",
       [attackSignature, walletAttacker.PublicKey()],
-      1,
+      recoveredWalletNonce++,
     );
+    const pendingKey = await Promise.all(
+      [0, 1, 2, 3].map(async (i) =>
+        (await vg.pendingBLSPublicKeyFromHash(hash1, i)).toHexString(),
+      ),
+    );
+    expect(pendingKey).to.deep.equal(walletAttacker.PublicKey());
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
-    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 2);
+    // NB: advancing the time makes an empty tx with lazywallet[1]
+    // Here this seems to be wallet2, not wallet (wallet being recovered)
+    // recoveredWalletNonce++
+
+    await fx.call(
+      wallet1,
+      vg,
+      "setPendingBLSKeyForWallet",
+      [],
+      recoveredWalletNonce++,
+    );
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -173,6 +195,9 @@ describe("Recovery", async function () {
     expect(await vg.walletFromHash(hash2)).to.eql(wallet1.address);
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2 + 1); // wait remainder the time
+    // NB: advancing the time makes an empty tx with lazywallet[1]
+    // Here this seems to be wallet1, the wallet being recovered
+    recoveredWalletNonce++;
 
     // check attacker's key not set after waiting full safety delay
     await fx.call(
@@ -182,12 +207,13 @@ describe("Recovery", async function () {
       [],
       await walletAttacker.Nonce(),
     );
+    await wallet2.syncWallet(vg);
     await fx.call(
       wallet2,
       vg,
       "setPendingBLSKeyForWallet",
       [],
-      await wallet2.Nonce(),
+      recoveredWalletNonce++, // await wallet2.Nonce(),
     );
 
     expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
@@ -199,10 +225,10 @@ describe("Recovery", async function () {
     // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
     const res = await fx.callStatic(
       wallet2,
-      fx.verificationGateway,
+      vg,
       "setTrustedBLSGateway",
-      [hash2, fx.verificationGateway.address],
-      3,
+      [hash2, vg.address],
+      recoveredWalletNonce, // await wallet2.Nonce(),
     );
     expect(res.successes[0]).to.equal(true);
   });

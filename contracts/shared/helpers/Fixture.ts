@@ -112,14 +112,16 @@ export default class Fixture {
       return async () => {
         const wallet = await BlsWalletWrapper.connect(
           `0x${secretNumber.toString(16)}`,
-          verificationGateway.address,
-          verificationGateway.provider,
+          verificationGateway,
         );
 
         // Perform an empty transaction to trigger wallet creation
         await (
           await verificationGateway.processBundle(
-            wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
+            wallet.sign({
+              nonce: BigNumber.from(0),
+              actions: [],
+            }),
           )
         ).wait();
 
@@ -152,14 +154,14 @@ export default class Fixture {
     );
   }
 
-  bundleFrom(
+  async bundleFrom(
     wallet: BlsWalletWrapper,
     contract: Contract,
     method: string,
     params: any[],
     nonce: BigNumberish,
     ethValue: BigNumberish = 0,
-  ): Bundle {
+  ): Promise<Bundle> {
     return this.blsWalletSigner.aggregate([
       wallet.sign({
         nonce: nonce,
@@ -187,7 +189,14 @@ export default class Fixture {
   ) {
     await (
       await this.verificationGateway.processBundle(
-        this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+        await this.bundleFrom(
+          wallet,
+          contract,
+          method,
+          params,
+          nonce,
+          ethValue,
+        ),
       )
     ).wait();
   }
@@ -201,7 +210,7 @@ export default class Fixture {
     ethValue: BigNumberish = 0,
   ) {
     return await this.verificationGateway.callStatic.processBundle(
-      this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+      await this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
     );
   }
 

@@ -4,10 +4,9 @@ import { BigNumber } from "ethers";
 import encodeMessageForSigning from "./encodeMessageForSigning";
 import type { Bundle } from "./types";
 import isValidEmptyBundle from "./isValidEmptyBundle";
-import { solidityKeccak256 } from "ethers/lib/utils";
 
 export default (domain: Uint8Array, chainId: number) =>
-  (bundle: Bundle): boolean => {
+  (bundle: Bundle, walletAddress: string): boolean => {
     // hubbleBls verifier incorrectly rejects empty bundles
     if (isValidEmptyBundle(bundle)) {
       return true;
@@ -27,13 +26,7 @@ export default (domain: Uint8Array, chainId: number) =>
         BigNumber.from(n3).toHexString(),
       ]),
       bundle.operations.map((op, i) =>
-        encodeMessageForSigning(
-          chainId,
-          solidityKeccak256(
-            ["uint256", "uint256", "uint256", "uint256"],
-            bundle.senderPublicKeys[i],
-          ),
-        )(op),
+        encodeMessageForSigning(chainId)(op, walletAddress),
       ),
     );
   };

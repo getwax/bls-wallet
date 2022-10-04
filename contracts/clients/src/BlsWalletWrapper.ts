@@ -16,19 +16,39 @@ import {
   BLSWallet__factory,
   // eslint-disable-next-line camelcase
   TransparentUpgradeableProxy__factory,
+  VerificationGateway,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
-} from "../typechain";
+} from "../../typechain";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
 export default class BlsWalletWrapper {
+  public address: string;
   private constructor(
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
-    public address: string,
+    verificationGateway: VerificationGateway,
     public walletContract: BLSWallet,
-  ) {}
+  ) {
+    this.address = walletContract.address;
+  }
+
+  static async BLSWallet(
+    privateKey: string,
+    verificationGateway: VerificationGateway,
+  ): Promise<BLSWallet> {
+    const contractAddress = await BlsWalletWrapper.Address(
+      privateKey,
+      verificationGateway.address,
+      verificationGateway.provider,
+    );
+
+    return BLSWallet__factory.connect(
+      contractAddress,
+      verificationGateway.provider,
+    );
+  }
 
   /** Get the wallet contract address for the given key, if it exists. */
   static async Address(
@@ -48,6 +68,12 @@ export default class BlsWalletWrapper {
       verificationGatewayAddress,
       signerOrProvider,
     );
+    let address = await verificationGateway.walletFromHash(
+      blsWalletSigner.getPublicKeyHash(privateKey),
+    );
+    if (!BigNumber.from(address).isZero()) {
+      return address;
+    }
 
     const [proxyAdminAddress, blsWalletLogicAddress] = await Promise.all([
       verificationGateway.walletProxyAdmin(),
@@ -59,7 +85,7 @@ export default class BlsWalletWrapper {
         verificationGatewayAddress,
       ]);
 
-    return ethers.utils.getCreate2Address(
+    address = ethers.utils.getCreate2Address(
       verificationGatewayAddress,
       blsWalletSigner.getPublicKeyHash(privateKey),
       ethers.utils.solidityKeccak256(
@@ -73,6 +99,7 @@ export default class BlsWalletWrapper {
         ],
       ),
     );
+    return address;
   }
 
   /**
@@ -81,31 +108,33 @@ export default class BlsWalletWrapper {
    */
   static async connect(
     privateKey: string,
-    verificationGatewayAddress: string,
-    provider: ethers.providers.Provider,
+    verificationGateway: VerificationGateway,
   ): Promise<BlsWalletWrapper> {
-    const network = await provider.getNetwork();
-
     const blsWalletSigner = await initBlsWalletSigner({
-      chainId: network.chainId,
+      chainId: (await verificationGateway.provider.getNetwork()).chainId,
     });
 
-    const contractAddress = await BlsWalletWrapper.Address(
-      privateKey,
-      verificationGatewayAddress,
-      provider,
-    );
-
-    const walletContract = BLSWallet__factory.connect(
-      contractAddress,
-      provider,
-    );
-
-    return new BlsWalletWrapper(
+    const blsWalletWrapper = new BlsWalletWrapper(
       blsWalletSigner,
       privateKey,
-      contractAddress,
-      walletContract,
+      verificationGateway,
+      await BlsWalletWrapper.BLSWallet(privateKey, verificationGateway),
+    );
+
+    await blsWalletWrapper.syncWallet(verificationGateway);
+    return blsWalletWrapper;
+  }
+
+  async syncWallet(verificationGateway: VerificationGateway) {
+    this.address = await BlsWalletWrapper.Address(
+      this.privateKey,
+      verificationGateway.address,
+      verificationGateway.provider,
+    );
+
+    this.walletContract = BLSWallet__factory.connect(
+      this.address,
+      verificationGateway.provider,
     );
   }
 
@@ -114,7 +143,9 @@ export default class BlsWalletWrapper {
    * block.
    */
   async Nonce(): Promise<BigNumber> {
-    const code = await this.walletContract.provider.getCode(this.address);
+    const code = await this.walletContract.provider.getCode(
+      this.walletContract.address,
+    );
 
     if (code === "0x") {
       // The wallet doesn't exist yet. Wallets are lazily created, so the nonce
@@ -164,7 +195,11 @@ export default class BlsWalletWrapper {
 
   /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
   sign(operation: Operation): Bundle {
-    return this.blsWalletSigner.sign(operation, this.privateKey);
+    return this.blsWalletSigner.sign(
+      operation,
+      this.privateKey,
+      this.walletContract.address,
+    );
   }
 
   /** Sign a message */
