@@ -59,7 +59,7 @@ export {
   getConfig,
   MockERC20__factory,
   VerificationGateway__factory,
-} from "https://esm.sh/bls-wallet-clients@0.8.0-2d28b7b;
+} from "https://esm.sh/bls-wallet-clients@0.8.0-2d28b7b";
 
 // Workaround for esbuild's export-star bug
 import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.8.0-2d28b7b";
