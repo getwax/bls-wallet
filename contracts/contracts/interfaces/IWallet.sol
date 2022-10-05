@@ -5,7 +5,6 @@ pragma abicoder v2;
 /** Interface for a contract wallet that can perform Operations
  */
 interface IWallet {
-
     struct Operation {
         uint256 nonce;
         IWallet.ActionData[] actions;
@@ -17,7 +16,9 @@ interface IWallet {
         bytes encodedFunction;
     }
 
-    function initialize(address gateway) external;
+    function initialize(uint256[4] memory _blsKey, address gateway) external;
+    function getBlsKey() external returns (uint256[4] memory);
+    function setBlsKey(uint256[4] memory newBlsKey) external;
     function nonce() external returns (uint256);
 
     function performOperation(

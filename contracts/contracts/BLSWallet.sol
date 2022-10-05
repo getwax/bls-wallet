@@ -13,6 +13,7 @@ import "./interfaces/IWallet.sol";
  */
 contract BLSWallet is Initializable, IWallet
 {
+    uint256[4] public blsKey;
     uint256 public nonce;
     bytes32 public recoveryHash;
     bytes32 pendingRecoveryHash;
@@ -49,14 +50,24 @@ contract BLSWallet is Initializable, IWallet
     );
 
     function initialize(
+        uint256[4] memory _blsKey,
         address blsGateway
     ) external initializer {
+        blsKey = _blsKey;
         nonce = 0;
         trustedBLSGateway = blsGateway;
     }
 
     receive() external payable {}
     fallback() external payable {}
+
+    function getBlsKey() external view returns (uint256[4] memory) {
+        return blsKey;
+    }
+
+    function setBlsKey(uint256[4] memory newBlsKey) external onlyTrustedGateway {
+        blsKey = newBlsKey;
+    }
 
     /**
     Wallet can update its recovery hash
