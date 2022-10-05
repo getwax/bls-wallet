@@ -244,46 +244,6 @@ contract VerificationGateway
     }
 
     /**
-    Base function for verifying and processing BLS-signed transactions.
-    Creates a new contract wallet per bls key if existing wallet not found.
-    Can be called with a single operation with no actions.
-    */
-    function processBundle(
-        Bundle memory bundle
-    ) external returns (
-        bool[] memory successes,
-        bytes[][] memory results
-    ) {
-        // revert if signature not verified
-        verify(bundle);
-
-        uint256 opLength = bundle.operations.length;
-        successes = new bool[](opLength);
-        results = new bytes[][](opLength);
-        for (uint256 i = 0; i<opLength; i++) {
-            IWallet wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
-
-            // check nonce then perform action
-            if (bundle.operations[i].nonce == wallet.nonce()) {
-                // request wallet perform operation
-                (
-                    bool success,
-                    bytes[] memory resultSet
-                ) = wallet.performOperation(bundle.operations[i]);
-                successes[i] = success;
-                results[i] = resultSet;
-                emit WalletOperationProcessed(
-                    address(wallet),
-                    bundle.operations[i].nonce,
-                    bundle.operations[i].actions,
-                    successes[i],
-                    results[i]
-                );
-            }
-        }
-    }
-
-    /**
     Gets the wallet contract associated with the public key, creating it if
     needed.
      */
