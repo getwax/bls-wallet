@@ -17,7 +17,8 @@ const signWalletAddress = async (
   const addressMessage = solidityPack(["address"], [senderAddr]);
   const wallet = await BlsWalletWrapper.connect(
     signerPrivKey,
-    fx.verificationGateway,
+    fx.verificationGateway.address,
+    fx.verificationGateway.provider,
   );
   return wallet.signMessage(addressMessage);
 };
@@ -207,7 +208,7 @@ describe("Recovery", async function () {
       [],
       await walletAttacker.Nonce(),
     );
-    await wallet2.syncWallet(vg);
+    await wallet2.syncWallet(vg as any);
     await fx.call(
       wallet2,
       vg,

@@ -112,7 +112,8 @@ export default class Fixture {
       return async () => {
         const wallet = await BlsWalletWrapper.connect(
           `0x${secretNumber.toString(16)}`,
-          verificationGateway,
+          verificationGateway.address,
+          verificationGateway.provider,
         );
 
         // Perform an empty transaction to trigger wallet creation

@@ -28,7 +28,6 @@ export default class BlsWalletWrapper {
   private constructor(
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
-    verificationGateway: VerificationGateway,
     public walletContract: BLSWallet,
   ) {
     this.address = walletContract.address;
@@ -108,8 +107,13 @@ export default class BlsWalletWrapper {
    */
   static async connect(
     privateKey: string,
-    verificationGateway: VerificationGateway,
+    verificationGatewayAddress: string,
+    provider: ethers.providers.Provider,
   ): Promise<BlsWalletWrapper> {
+    const verificationGateway = VerificationGateway__factory.connect(
+      verificationGatewayAddress,
+      provider,
+    );
     const blsWalletSigner = await initBlsWalletSigner({
       chainId: (await verificationGateway.provider.getNetwork()).chainId,
     });
@@ -117,11 +121,9 @@ export default class BlsWalletWrapper {
     const blsWalletWrapper = new BlsWalletWrapper(
       blsWalletSigner,
       privateKey,
-      verificationGateway,
       await BlsWalletWrapper.BLSWallet(privateKey, verificationGateway),
     );
 
-    await blsWalletWrapper.syncWallet(verificationGateway);
     return blsWalletWrapper;
   }
 
