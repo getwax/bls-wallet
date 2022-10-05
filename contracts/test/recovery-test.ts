@@ -208,6 +208,16 @@ describe("Recovery", async function () {
       [],
       await walletAttacker.Nonce(),
     );
+    /**
+     * TODO (merge-ok)
+     *
+     * Event thought typechain types are symlinked between contracts
+     * and clients, there appears to be a mismatch here passing in
+     * VerificationGateway. This may be due to differing typescript
+     * versions between contracts and clients, or something else.
+     *
+     * For now cast to 'any'.
+     */
     await wallet2.syncWallet(vg as any);
     await fx.call(
       wallet2,
