@@ -295,31 +295,4 @@ contract VerificationGateway
         );
         _;
     }
-
-    function messagePoint(
-        IWallet.Operation memory op
-    ) internal view returns (
-        uint256[2] memory
-    ) {
-        bytes memory encodedActionData;
-        IWallet.ActionData memory a;
-        for (uint256 i=0; i<op.actions.length; i++) {
-            a = op.actions[i];
-            encodedActionData = abi.encodePacked(
-                encodedActionData,
-                a.ethValue,
-                a.contractAddress,
-                keccak256(a.encodedFunction)
-            );
-        }
-        return blsLib.hashToPoint(
-            BLS_DOMAIN,
-            abi.encodePacked(
-                block.chainid,
-                op.nonce,
-                keccak256(encodedActionData)
-            )
-        );
-    }
-
 }
