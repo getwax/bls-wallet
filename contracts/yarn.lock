@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@account-abstraction/contracts@^0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@account-abstraction/contracts/-/contracts-0.2.0.tgz#d353fd4b26d8867a3c0067fc0e20da03c99ca2dd"
+  integrity sha512-CbPYA7o55u1S5Fee5qIWffD/4dxJ7v+86Si8TOUOE/tAMUWP+nzU1kHKUwFrM/HT8OxAQpeXccCD4UtROLtfwA==
+
 "@babel/code-frame@7.12.11":
   version "7.12.11"
   resolved "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.12.11.tgz"

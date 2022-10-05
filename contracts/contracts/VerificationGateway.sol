@@ -7,6 +7,9 @@ import "./lib/IBLS.sol"; // to use a deployed BLS library
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
+import "@account-abstraction/contracts/interfaces/UserOperation.sol";
+import "@account-abstraction/contracts/bls/BLSHelper.sol";
+
 import "./interfaces/IWallet.sol";
 
 /**
@@ -26,19 +29,12 @@ contract VerificationGateway
     ProxyAdmin public immutable walletProxyAdmin;
     address public immutable blsWalletLogic;
     mapping(bytes32 => IWallet) public walletFromHash;
-    mapping(IWallet => bytes32) public hashFromWallet;
+    mapping(IWallet => uint256[BLS_KEY_LEN]) public blsKeyFromWallet;
 
     //mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
     mapping(bytes32 => uint256[BLS_KEY_LEN]) public pendingBLSPublicKeyFromHash;
     mapping(bytes32 => uint256[2]) public pendingMessageSenderSignatureFromHash;
     mapping(bytes32 => uint256) public pendingBLSPublicKeyTimeFromHash;
-
-    /** Aggregated signature with corresponding senders + operations */
-    struct Bundle {
-        uint256[2] signature;
-        uint256[BLS_KEY_LEN][] senderPublicKeys;
-        IWallet.Operation[] operations;
-    }
 
     event WalletCreated(
         address indexed wallet,
@@ -76,28 +72,118 @@ contract VerificationGateway
     }
 
     /** Throw if bundle not valid or signature verification fails */
-    function verify(
-        Bundle memory bundle
-    ) public view {
-        uint256 opLength = bundle.operations.length;
-        require(
-            opLength == bundle.senderPublicKeys.length,
-            "VG: Sender/op length mismatch"
-        );
-        uint256[2][] memory messages = new uint256[2][](opLength);
+    function validateSignatures(
+        UserOperation[] calldata userOps,
+        bytes calldata signature
+    ) view external {
+        uint256[2][] memory messages = new uint256[2][](userOps.length);
+        uint256[BLS_KEY_LEN][] memory senderPublicKeys = new uint256[BLS_KEY_LEN][](userOps.length);
 
-        for (uint256 i = 0; i<opLength; i++) {
-            // construct params for signature verification
-            messages[i] = messagePoint(bundle.operations[i]);
+        for (uint256 i = 0; i < userOps.length; i++) {
+            messages[i] = blsLib.hashToPoint(
+                BLS_DOMAIN,
+                abi.encodePacked(getRequestId(userOps[i]))
+            );
+
+            senderPublicKeys[i] = blsKeyFromWallet[IWallet(userOps[i].sender)];
         }
 
         bool verified = blsLib.verifyMultiple(
-            bundle.signature,
-            bundle.senderPublicKeys,
+            abi.decode(signature, (uint256[2])),
+            senderPublicKeys,
             messages
         );
 
         require(verified, "VG: Sig not verified");
+    }
+
+    // TODO
+    // function validateUserOpSignature(
+    //     UserOperation4337 calldata userOp,
+    //     bool offChainSigCheck
+    // ) external view returns (
+    //     bytes memory sigForUserOp,
+    //     bytes memory sigForAggregation,
+    //     bytes memory offChainSigInfo
+    // ) {}
+
+    //copied from BLS.sol
+    uint256 public constant N = 21888242871839275222246405745257275088696311157297823662689037894645226208583;
+
+    function aggregateSignatures(
+        bytes[] calldata signatures
+    ) external pure returns (bytes memory aggregateSignature) {
+        BLSHelper.XY[] memory points = new BLSHelper.XY[](signatures.length);
+        for (uint i = 0; i < points.length; i++) {
+            (uint x, uint y) = abi.decode(signatures[i], (uint, uint));
+            points[i] = BLSHelper.XY(x, y);
+        }
+        BLSHelper.XY memory sum = BLSHelper.sum(points, N);
+        return abi.encode(sum.x, sum.y);
+    }
+
+    /**
+     * get a hash of userOp
+     * NOTE: this hash is not the same as UserOperation.hash()
+     *  (slightly less efficient, since it uses memory userOp)
+     */
+    function getUserOpHash(UserOperation memory userOp) internal pure returns (bytes32) {
+        return keccak256(abi.encode(
+                userOp.sender,
+                userOp.nonce,
+                keccak256(userOp.initCode),
+                keccak256(userOp.callData),
+                userOp.callGasLimit,
+                userOp.verificationGasLimit,
+                userOp.preVerificationGas,
+                userOp.maxFeePerGas,
+                userOp.maxPriorityFeePerGas,
+                keccak256(userOp.paymasterAndData)
+            ));
+    }
+
+    /**
+     * return the BLS "message" for the given UserOp.
+     * the wallet should sign this value using its public-key
+     */
+    function userOpToMessage(UserOperation memory userOp) public view returns (uint256[2] memory) {
+        bytes32 hashPublicKey = _getUserOpPubkeyHash(userOp);
+        return _userOpToMessage(userOp, hashPublicKey);
+    }
+
+    function _userOpToMessage(UserOperation memory userOp, bytes32 publicKeyHash) internal view returns (uint256[2] memory) {
+        bytes32 requestId = _getRequestId(userOp, publicKeyHash);
+        return blsLib.hashToPoint(BLS_DOMAIN, abi.encodePacked(requestId));
+    }
+
+    //return the public-key hash of a userOp.
+    // if its a constructor UserOp, then return constructor hash.
+    function _getUserOpPubkeyHash(UserOperation memory userOp) internal view returns (bytes32 hashPublicKey) {
+        if (userOp.initCode.length == 0) {
+            uint256[4] memory publicKey = blsKeyFromWallet[IWallet(userOp.sender)];
+            hashPublicKey = keccak256(abi.encode(publicKey));
+        } else {
+            hashPublicKey = keccak256(userOp.initCode);
+        }
+    }
+
+    function getRequestId(UserOperation memory userOp) public view returns (bytes32) {
+        bytes32 hashPublicKey = _getUserOpPubkeyHash(userOp);
+        return _getRequestId(userOp, hashPublicKey);
+    }
+
+    function _getRequestId(UserOperation memory userOp, bytes32 hashPublicKey) internal view returns (bytes32) {
+        return keccak256(abi.encode(getUserOpHash(userOp), hashPublicKey, address(this), block.chainid));
+    }
+
+    function hashFromWallet(IWallet wallet) public view returns (bytes32) {
+        uint256[BLS_KEY_LEN] memory blsKey = blsKeyFromWallet[wallet];
+
+        if (blsLib.isZeroBLSKey(blsKey)) {
+            return bytes32(0);
+        }
+
+        return keccak256(abi.encodePacked(blsKey));
     }
 
     /**
@@ -115,7 +201,7 @@ contract VerificationGateway
     ) public {
         require(blsLib.isZeroBLSKey(publicKey) == false, "VG: publicKey must be non-zero");
         IWallet wallet = IWallet(msg.sender);
-        bytes32 existingHash = hashFromWallet[wallet];
+        bytes32 existingHash = hashFromWallet(wallet);
         if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
             // set it instantly
             safeSetWallet(messageSenderSignature, publicKey, wallet);
@@ -130,7 +216,7 @@ contract VerificationGateway
 
     function setPendingBLSKeyForWallet() public {
         IWallet wallet = IWallet(msg.sender);
-        bytes32 existingHash = hashFromWallet[wallet];
+        bytes32 existingHash = hashFromWallet(wallet);
         require(existingHash != bytes32(0), "VG: hash does not exist for caller");
         if (
             (pendingBLSPublicKeyTimeFromHash[existingHash] != 0) &&
@@ -259,7 +345,7 @@ contract VerificationGateway
                 address(walletProxyAdmin),
                 getInitializeData()
             )));
-            updateWalletHashMappings(publicKeyHash, blsWallet);
+            updateWalletHashMappings(publicKey, blsWallet);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
@@ -288,25 +374,22 @@ contract VerificationGateway
             blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
             "VG: Signature not verified for wallet address."
         );
-        bytes32 publicKeyHash = keccak256(abi.encodePacked(
-            publicKey
-        ));
         emit BLSKeySetForWallet(publicKey, wallet);
-        updateWalletHashMappings(publicKeyHash, wallet);
+        updateWalletHashMappings(publicKey, wallet);
     }
 
     /** @dev Only to be called on wallet creation, and in `safeSetWallet` */
     function updateWalletHashMappings(
-        bytes32 publicKeyHash,
+        uint256[BLS_KEY_LEN] memory blsKey,
         IWallet wallet
     ) private {
         // remove reference from old hash
-        bytes32 oldHash = hashFromWallet[wallet];
+        bytes32 oldHash = hashFromWallet(wallet);
         walletFromHash[oldHash] = IWallet(address(0));
 
         // update new hash / wallet mappings
-        walletFromHash[publicKeyHash] = wallet;
-        hashFromWallet[wallet] = publicKeyHash;
+        walletFromHash[keccak256(abi.encodePacked(blsKey))] = wallet;
+        blsKeyFromWallet[wallet] = blsKey;
     }
 
     function getInitializeData() private view returns (bytes memory) {
