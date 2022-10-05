@@ -16,23 +16,23 @@ contract BLSExpander {
         verificationGateway = VerificationGateway(gateway);
     }
 
-    // eg approve and transfers of a token contract
-    function blsCallMultiCheckRewardIncrease(
-        IERC20 tokenRewardAddress,
-        uint256 tokenRewardAmount,
-        VerificationGateway.Bundle calldata bundle
-        // uint256[4][] calldata publicKeys,
-        // uint256[2] memory signature,
-        // VerificationGateway.TxSet[] calldata txs
-    ) external returns (uint256 balanceIncrease) {
-        uint256 balanceBefore = tokenRewardAddress.balanceOf(tx.origin);
+    // // eg approve and transfers of a token contract
+    // function blsCallMultiCheckRewardIncrease(
+    //     IERC20 tokenRewardAddress,
+    //     uint256 tokenRewardAmount,
+    //     VerificationGateway.Bundle calldata bundle
+    //     // uint256[4][] calldata publicKeys,
+    //     // uint256[2] memory signature,
+    //     // VerificationGateway.TxSet[] calldata txs
+    // ) external returns (uint256 balanceIncrease) {
+    //     uint256 balanceBefore = tokenRewardAddress.balanceOf(tx.origin);
 
-        verificationGateway.processBundle(bundle);
+    //     verificationGateway.processBundle(bundle);
 
-        uint256 balanceAfter = tokenRewardAddress.balanceOf(tx.origin);
-        balanceIncrease = balanceAfter - balanceBefore;
-        require(balanceIncrease >= tokenRewardAmount, "BLSExpander: Insufficient reward");
-    }
+    //     uint256 balanceAfter = tokenRewardAddress.balanceOf(tx.origin);
+    //     balanceIncrease = balanceAfter - balanceBefore;
+    //     require(balanceIncrease >= tokenRewardAmount, "BLSExpander: Insufficient reward");
+    // }
 
 
     // eg approve and transfers of a token contract
@@ -89,34 +89,34 @@ contract BLSExpander {
     //     );
     // }
 
-    // eg airdrop
-    function blsCallMultiSameCallerContractFunction(
-        uint256[4] calldata publicKey,
-        uint256 nonce,
-        uint256[2] calldata signature,
-        address contractAddress,
-        bytes4 methodId,
-        bytes[] calldata encodedParamSets
-    ) external {
-        uint256 length = encodedParamSets.length;
+    // // eg airdrop
+    // function blsCallMultiSameCallerContractFunction(
+    //     uint256[4] calldata publicKey,
+    //     uint256 nonce,
+    //     uint256[2] calldata signature,
+    //     address contractAddress,
+    //     bytes4 methodId,
+    //     bytes[] calldata encodedParamSets
+    // ) external {
+    //     uint256 length = encodedParamSets.length;
 
-        VerificationGateway.Bundle memory bundle;
-        bundle.signature = signature;
+    //     VerificationGateway.Bundle memory bundle;
+    //     bundle.signature = signature;
 
-        bundle.senderPublicKeys = new uint256[4][](1);
-        bundle.senderPublicKeys[0] = publicKey;
+    //     bundle.senderPublicKeys = new uint256[4][](1);
+    //     bundle.senderPublicKeys[0] = publicKey;
 
-        bundle.operations = new IWallet.Operation[](1);
-        bundle.operations[0].nonce = nonce;
-        bundle.operations[0].actions = new IWallet.ActionData[](length);
-        for (uint256 i=0; i<length; i++) {
-            bundle.operations[0].actions[i].ethValue = 0;
-            bundle.operations[0].actions[i].contractAddress = contractAddress;
-            bundle.operations[0].actions[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
-        }
+    //     bundle.operations = new IWallet.Operation[](1);
+    //     bundle.operations[0].nonce = nonce;
+    //     bundle.operations[0].actions = new IWallet.ActionData[](length);
+    //     for (uint256 i=0; i<length; i++) {
+    //         bundle.operations[0].actions[i].ethValue = 0;
+    //         bundle.operations[0].actions[i].contractAddress = contractAddress;
+    //         bundle.operations[0].actions[i].encodedFunction = abi.encodePacked(methodId, encodedParamSets[i]);
+    //     }
 
-        verificationGateway.processBundle(bundle);
-    }
+    //     verificationGateway.processBundle(bundle);
+    // }
 
     // eg identical txs from multiple accounts
     // function blsCallMultiSameContractFunctionParams(
