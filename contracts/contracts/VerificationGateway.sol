@@ -26,6 +26,8 @@ contract VerificationGateway
     IBLS public immutable blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
     address public immutable blsWalletLogic;
+    address public immutable entryPoint;
+    address public immutable aggregateSigValidator;
     mapping(bytes32 => BLSWallet) public walletFromHash;
 
     //mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
@@ -61,11 +63,15 @@ contract VerificationGateway
     constructor(
         IBLS bls,
         address blsWalletImpl,
-        address proxyAdmin
+        address proxyAdmin,
+        address _entryPoint,
+        address _aggregateSigValidator
     ) {
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
         walletProxyAdmin = ProxyAdmin(proxyAdmin);
+        entryPoint = _entryPoint;
+        aggregateSigValidator = _aggregateSigValidator;
     }
 
     function hashFromWallet(BLSWallet wallet) public view returns (bytes32) {
@@ -285,7 +291,13 @@ contract VerificationGateway
     }
 
     function getInitializeData(uint256[BLS_KEY_LEN] memory blsKey) private view returns (bytes memory) {
-        return abi.encodeWithSelector(BLSWallet.initialize.selector, blsKey, address(this));
+        return abi.encodeWithSelector(
+            BLSWallet.initialize.selector,
+            blsKey,
+            address(this),
+            entryPoint,
+            aggregateSigValidator
+        );
     }
 
     modifier onlyWallet(bytes32 hash) {

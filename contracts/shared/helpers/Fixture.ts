@@ -20,6 +20,8 @@ import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
 import { VerificationGateway, BLSOpen, ProxyAdmin } from "../../typechain";
+import { EntryPoint } from "@account-abstraction/contracts";
+import { AggregateSigValidator } from "../../clients/typechain";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -34,6 +36,8 @@ export default class Fixture {
 
     public lazyBlsWallets: (() => Promise<BlsWalletWrapper>)[],
 
+    public entryPoint: EntryPoint,
+    public aggregateSigValidator: AggregateSigValidator,
     public verificationGateway: VerificationGateway,
 
     public blsLibrary: BLSOpen,
@@ -61,9 +65,16 @@ export default class Fixture {
 
     // deploy wallet implementation contract
     const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
+
+    // TODO: Why do we ignore errors here?
     try {
       await (
-        await blsWalletImpl.initialize(ethers.constants.AddressZero)
+        await blsWalletImpl.initialize(
+          [0, 0, 0, 0],
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+          ethers.constants.AddressZero,
+        )
       ).wait();
     } catch (e) {}
 
@@ -71,12 +82,32 @@ export default class Fixture {
     const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
     const proxyAdmin = (await ProxyAdmin.deploy()) as ProxyAdmin;
     await proxyAdmin.deployed();
+
+    const entryPoint = (await create2Fixture.create2Contract(
+      "EntryPoint",
+      ethers.utils.defaultAbiCoder.encode(
+        ["uint256", "uint32"],
+        [ethers.utils.parseEther("2"), 2],
+      ),
+    )) as EntryPoint;
+
+    const aggregateSigValidator = (await create2Fixture.create2Contract(
+      "AggregateSigValidator",
+      ethers.utils.defaultAbiCoder.encode(["address"], [bls.address]),
+    )) as EntryPoint;
+
     // deploy Verification Gateway
     const verificationGateway = (await create2Fixture.create2Contract(
       "VerificationGateway",
       ethers.utils.defaultAbiCoder.encode(
         ["address", "address", "address"],
-        [bls.address, blsWalletImpl.address, proxyAdmin.address],
+        [
+          bls.address,
+          blsWalletImpl.address,
+          proxyAdmin.address,
+          entryPoint.address,
+          aggregateSigValidator.address,
+        ],
       ),
     )) as VerificationGateway;
     await (
@@ -133,6 +164,8 @@ export default class Fixture {
       signers,
       addresses,
       lazyBlsWallets,
+      entryPoint,
+      aggregateSigValidator,
       verificationGateway,
       bls,
       blsExpander,
