@@ -1,6 +1,7 @@
 import {
   BigNumber,
   BlsWalletSigner,
+  BlsWalletWrapper,
   Bundle,
   delay,
   ethers,
@@ -151,15 +152,22 @@ export default class BundleService {
       };
     }
 
-    const signedCorrectly = this.blsWalletSigner.verify(bundle);
+    const walletAddresses = await Promise.all(bundle.senderPublicKeys.map(
+      (pubKey) => BlsWalletWrapper.AddressFromPublicKey(
+        pubKey, this.ethereumService.verificationGateway
+      )
+    ));
 
     const failures: TransactionFailure[] = [];
 
-    if (signedCorrectly === false) {
-      failures.push({
+    for (const walletAddr of walletAddresses) {
+      const signedCorrectly = this.blsWalletSigner.verify(bundle, walletAddr);
+      if (!signedCorrectly) {
+        failures.push({
         type: "invalid-signature",
-        description: "invalid signature",
-      });
+          description: `invalid signature for wallet address ${walletAddr}`,
+        });
+      }
     }
 
     failures.push(...await this.ethereumService.checkNonces(bundle));
