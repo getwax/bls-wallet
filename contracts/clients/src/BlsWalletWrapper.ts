@@ -1,5 +1,5 @@
-import { ethers, BigNumber } from "ethers";
-import { solidityKeccak256 } from "ethers/lib/utils";
+import { ethers, BigNumber, BigNumberish } from "ethers";
+import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
 
 import {
   BlsWalletSigner,
@@ -49,7 +49,7 @@ export default class BlsWalletWrapper {
     );
   }
 
-  /** Get the wallet contract address for the given key, if it exists. */
+  /** Get the wallet contract address for the given private key */
   static async Address(
     privateKey: string,
     verificationGatewayAddress: string,
@@ -67,38 +67,33 @@ export default class BlsWalletWrapper {
       verificationGatewayAddress,
       signerOrProvider,
     );
-    let address = await verificationGateway.walletFromHash(
-      blsWalletSigner.getPublicKeyHash(privateKey),
+    const pubKeyHash = blsWalletSigner.getPublicKeyHash(privateKey);
+
+    const existingAddress = await verificationGateway.walletFromHash(
+      pubKeyHash,
     );
-    if (!BigNumber.from(address).isZero()) {
-      return address;
+    if (!BigNumber.from(existingAddress).isZero()) {
+      return existingAddress;
     }
 
-    const [proxyAdminAddress, blsWalletLogicAddress] = await Promise.all([
-      verificationGateway.walletProxyAdmin(),
-      verificationGateway.blsWalletLogic(),
-    ]);
+    return this.ExpectedAddress(verificationGateway, pubKeyHash);
+  }
 
-    const initFunctionParams =
-      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
-        verificationGatewayAddress,
-      ]);
+  /** Get the wallet contract address for the given public key */
+  static async AddressFromPublicKey(
+    publicKey: PublicKey,
+    verificationGateway: VerificationGateway,
+  ): Promise<string> {
+    const pubKeyHash = keccak256(solidityPack(["uint256[4]"], [publicKey]));
 
-    address = ethers.utils.getCreate2Address(
-      verificationGatewayAddress,
-      blsWalletSigner.getPublicKeyHash(privateKey),
-      ethers.utils.solidityKeccak256(
-        ["bytes", "bytes"],
-        [
-          TransparentUpgradeableProxy__factory.bytecode,
-          ethers.utils.defaultAbiCoder.encode(
-            ["address", "address", "bytes"],
-            [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
-          ),
-        ],
-      ),
+    const existingAddress = await verificationGateway.walletFromHash(
+      pubKeyHash,
     );
-    return address;
+    if (!BigNumber.from(existingAddress).isZero()) {
+      return existingAddress;
+    }
+
+    return this.ExpectedAddress(verificationGateway, pubKeyHash);
   }
 
   /**
@@ -236,5 +231,36 @@ export default class BlsWalletWrapper {
         : (await signerOrProvider.getNetwork()).chainId;
 
     return await initBlsWalletSigner({ chainId });
+  }
+
+  // Calculates the expected address the wallet will be created at
+  private static async ExpectedAddress(
+    verificationGateway: VerificationGateway,
+    pubKeyHash: string,
+  ): Promise<string> {
+    const [proxyAdminAddress, blsWalletLogicAddress] = await Promise.all([
+      verificationGateway.walletProxyAdmin(),
+      verificationGateway.blsWalletLogic(),
+    ]);
+
+    const initFunctionParams =
+      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
+        verificationGateway.address,
+      ]);
+
+    return ethers.utils.getCreate2Address(
+      verificationGateway.address,
+      pubKeyHash,
+      ethers.utils.solidityKeccak256(
+        ["bytes", "bytes"],
+        [
+          TransparentUpgradeableProxy__factory.bytecode,
+          ethers.utils.defaultAbiCoder.encode(
+            ["address", "address", "bytes"],
+            [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],
+          ),
+        ],
+      ),
+    );
   }
 }
