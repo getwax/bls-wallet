@@ -2,19 +2,20 @@
 pragma solidity >=0.8.4 <0.9.0;
 pragma abicoder v2;
 
-
 //To avoid constructor params having forbidden evm bytecodes on Optimism
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import "./interfaces/IWallet.sol";
 
+import "@account-abstraction/contracts/interfaces/UserOperation.sol";
+
+import "./interfaces/IWallet.sol";
 
 /** Minimal upgradable smart contract wallet.
     Generic calls can only be requested by its trusted gateway.
  */
 contract BLSWallet is Initializable, IWallet
 {
-    uint256[4] public blsKey;
     uint256 public nonce;
+    uint256[4] public blsKey;
     bytes32 public recoveryHash;
     bytes32 pendingRecoveryHash;
     uint256 pendingRecoveryHashTime;
@@ -23,7 +24,9 @@ contract BLSWallet is Initializable, IWallet
     uint256 pendingPAFunctionTime;
 
     // BLS variables
-    address public trustedBLSGateway;
+    address public blsGateway;
+    address public entryPoint;
+    address public aggregator;
     address pendingBLSGateway;
     uint256 pendingGatewayTime;
 
@@ -51,11 +54,15 @@ contract BLSWallet is Initializable, IWallet
 
     function initialize(
         uint256[4] memory _blsKey,
-        address blsGateway
+        address _blsGateway,
+        address _entryPoint,
+        address _aggregator
     ) external initializer {
-        blsKey = _blsKey;
         nonce = 0;
-        trustedBLSGateway = blsGateway;
+        blsKey = _blsKey;
+        blsGateway = _blsGateway;
+        entryPoint = _entryPoint;
+        aggregator = _aggregator;
     }
 
     receive() external payable {}
@@ -65,7 +72,7 @@ contract BLSWallet is Initializable, IWallet
         return blsKey;
     }
 
-    function setBlsKey(uint256[4] memory newBlsKey) external onlyTrustedGateway {
+    function setBlsKey(uint256[4] memory newBlsKey) external onlyGateway {
         blsKey = newBlsKey;
     }
 
@@ -88,8 +95,8 @@ contract BLSWallet is Initializable, IWallet
     /**
     Wallet can migrate to a new gateway, eg additional signature support
      */
-    function setTrustedGateway(address blsGateway) public onlyTrustedGateway {
-        pendingBLSGateway = blsGateway;
+    function setTrustedGateway(address _blsGateway) public onlyGateway {
+        pendingBLSGateway = _blsGateway;
         pendingGatewayTime = block.timestamp + 604800; // 1 week from now
         emit PendingGatewaySet(pendingBLSGateway);
     }
@@ -97,7 +104,7 @@ contract BLSWallet is Initializable, IWallet
     /**
     Prepare wallet with desired implementation contract to upgrade to.
     */
-    function setProxyAdminFunctionHash(bytes32 encodedFunctionHash) public onlyTrustedGateway {
+    function setProxyAdminFunctionHash(bytes32 encodedFunctionHash) public onlyGateway {
         pendingPAFunctionHash = encodedFunctionHash;
         pendingPAFunctionTime = block.timestamp + 604800; // 1 week from now
         emit PendingProxyAdminFunctionHashSet(encodedFunctionHash);
@@ -118,11 +125,11 @@ contract BLSWallet is Initializable, IWallet
         if (pendingGatewayTime != 0 &&
             block.timestamp > pendingGatewayTime
         ) {
-            address previousGateway = trustedBLSGateway;
-            trustedBLSGateway = pendingBLSGateway;
+            address previousGateway = blsGateway;
+            blsGateway = pendingBLSGateway;
             pendingGatewayTime = 0;
             pendingBLSGateway = address(0);
-            emit GatewayUpdated(previousGateway, trustedBLSGateway);
+            emit GatewayUpdated(previousGateway, blsGateway);
         }
         if (
             pendingPAFunctionTime != 0 &&
@@ -140,7 +147,7 @@ contract BLSWallet is Initializable, IWallet
         pendingRecoveryHash = bytes32(0);
     }
 
-    function recover() public onlyTrustedGateway {
+    function recover() public onlyGateway {
         // clear any pending operations
         clearPendingRecoveryHash();
         pendingGatewayTime = 0;
@@ -155,7 +162,7 @@ contract BLSWallet is Initializable, IWallet
      */
     function performOperation(
         IWallet.Operation calldata op
-    ) public payable onlyTrustedGateway thisNonce(op.nonce) returns (
+    ) public payable onlyEntryPoint thisNonce(op.nonce) returns (
         bool success,
         bytes[] memory results
     ) {
@@ -221,7 +228,7 @@ contract BLSWallet is Initializable, IWallet
         return params;
     }
 
-    function clearApprovedProxyAdminFunctionHash() public onlyTrustedGateway {
+    function clearApprovedProxyAdminFunctionHash() public onlyGateway {
         approvedProxyAdminFunctionHash = 0;
     }
 
@@ -232,22 +239,44 @@ contract BLSWallet is Initializable, IWallet
         nonce++;
     }
 
+    function validateUserOp(
+        UserOperation calldata userOp,
+        bytes32 requestId,
+        address _aggregator,
+        uint256 missingWalletFunds
+    ) external view {
+        require(_aggregator == aggregator);
+        require(userOp.nonce == nonce);
+        require(missingWalletFunds == 0);
+    }
+
+    function getAggregator() public view returns (address) {
+        return aggregator;
+    }
+
     modifier onlyThis() {
         require(msg.sender == address(this), "BLSWallet: only callable from this");
          _;
     }
 
-    modifier onlyTrustedGateway() {
-        bool isTrustedGateway =
-            (msg.sender == trustedBLSGateway)
+    modifier onlyGateway() {
+        bool isGateway =
+            (msg.sender == blsGateway)
         ;
-        require(isTrustedGateway, "BLSWallet: only callable from trusted gateway");
+        require(isGateway, "BLSWallet: only callable from gateway");
          _;
+    }
+
+    modifier onlyEntryPoint() {
+        require(
+            msg.sender == entryPoint,
+            "BLSWallet: only callable from 4337 entry point"
+        );
+        _;
     }
 
     modifier thisNonce(uint256 opNonce) {
         require(opNonce == nonce, "BLSWallet: only callable with current nonce");
         _;
     }
-
 }

@@ -16,7 +16,13 @@ interface IWallet {
         bytes encodedFunction;
     }
 
-    function initialize(uint256[4] memory _blsKey, address gateway) external;
+    function initialize(
+        uint256[4] memory _blsKey,
+        address _blsGateway,
+        address _entryPoint,
+        address _aggregator
+    ) external;
+
     function getBlsKey() external returns (uint256[4] memory);
     function setBlsKey(uint256[4] memory newBlsKey) external;
     function nonce() external returns (uint256);
