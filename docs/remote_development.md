@@ -66,15 +66,7 @@ PRIVATE_KEY_ADMIN=PK1
 
 ### Extension
 
-Check the [controller constants file](../extension/source/Controllers/constants.ts) to see if your network is already added. If not, you will need to add chainid & supported networks entries for your network/chain. These changes can be committed.
-
-Then, update this value in `./extension/.env`.
-```
-...
-
-DEFAULT_CHAIN_ID=YOUR_CHAIN_ID
-...
-```
+Check the [`config.json` file](../extension//config.json) to see if your network is already added. If not, you will need to add the relevant properties for your network/chain. These changes can be committed.
 
 ## Run
 
