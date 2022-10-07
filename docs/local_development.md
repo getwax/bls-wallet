@@ -58,6 +58,8 @@ make these changes in aggregator > .env
 RPC_URL=http://localhost:8545
 NETWORK_CONFIG_PATH=../contracts/networks/local.json
 
+In a seperate terminal/shell instance
+
 ```sh
 docker-compose up -d postgres # Or see local postgres instructions in ./aggregator/README.md#PostgreSQL
 cd ./aggregator
