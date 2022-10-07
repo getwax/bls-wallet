@@ -72,26 +72,25 @@ Check the [`config.json` file](../extension//config.json) to see if your network
 
 Follow the remaing instruction in [Local Development](./local_development.md) starting with the `Run` section.
 
-## Example: Arbitrum Testnet (Rinkeby Arbitrum Testnet)
+## Example: Arbitrum Testnet (Arbitrum Goerli Testnet)
 
-You will need two ETH addresses with Rinkeby ETH and their private keys (PK0 & PK1) for running the aggregator. It is NOT recommended that you use any primary wallets with ETH Mainnet assets.
+You will need two ETH addresses with Abitrum Goerli ETH and their private keys (PRIVATE_KEY_AGG & PRIVATE_KEY_ADMIN) for running the aggregator. It is **NOT** recommended that you use any primary wallets with ETH Mainnet assets.
 
-You can get Rinkeby ETH at https://app.mycrypto.com/faucet, and transfer it into the Arbitrum testnet via https://bridge.arbitrum.io/. Make sure when doing so that your network is set to Rinkeby in your web3 wallet extension, such as MetaMask.
+You can get Goerli ETH at https://goerlifaucet.com/ or https://app.mycrypto.com/faucet, and transfer it into the Arbitrum testnet via https://bridge.arbitrum.io/. Make sure when doing so that your network is set to Goerli in your web3 wallet extension, such as MetaMask.
 
 Update these values in `./aggregator/.env`.
 ```
-RPC_URL=https://rinkeby.arbitrum.io/rpc
+RPC_URL=https://goerli-rollup.arbitrum.io/rpc
 ...
-NETWORK_CONFIG_PATH=../contracts/networks/arbitrum-testnet.json
+NETWORK_CONFIG_PATH=../contracts/networks/arbitrum-goerli.json
 PRIVATE_KEY_AGG=PK0
 PRIVATE_KEY_ADMIN=PK1
 ...
 ```
 
-And then update this value in `./extension/.env`.
-```
+And then ensure the `defaultNetwork` value in `./extension/config.json` is set to `arbitrum-goerli`.
+```json
 ...
-
-DEFAULT_CHAIN_ID=421611
+"defaultNetwork": "arbitrum-goerli",
 ...
 ```
