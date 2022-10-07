@@ -30,7 +30,7 @@ Next, connect your dApp to Quill just like you would any other extension wallet.
 ```typescript
 import { providers } from 'ethers';
 
-const provider = providers.Web3Provider(window.ethereum);
+const provider = new providers.Web3Provider(window.ethereum);
 
 await window.ethereum.request({ method: "eth_accounts" });
 ```
