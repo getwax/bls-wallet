@@ -43,3 +43,7 @@ runAggregatorProxy(
 
 ## Instant wallet with dapp-sponsored transaction
 ![Instant wallet with dapp-sponsored transaction](./../docs/images/system-overview/instant-wallet-with-dapp-sponsored-txs.jpg)
+
+## Example dApp using a proxy aggregator
+
+- https://github.com/JohnGuilding/single-pool-dex

@@ -113,6 +113,7 @@ See the [System Overview](./system_overview.md) for more details on what's happe
 
 - https://github.com/kautukkundan/BLSWallet-ERC20-demo 
 - https://github.com/voltrevo/bls-wallet-billboard
+- https://github.com/JohnGuilding/single-pool-dex
 
 ## Coming soon
 
