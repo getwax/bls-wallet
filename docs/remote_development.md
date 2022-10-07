@@ -8,7 +8,7 @@ Follow the instructions for [Local Development](./local_development.md), replaci
 
 ### Deployer account
 
-BLS Wallet contract deploys use `CREATE2` to maintain consistent addresses across networks. As such, a create2 deployer contract is used and listed in `./contracts/.env` under the environment variables `DEPLOYER_MNEMONIC` & `DEPLOYER_SET_INDEX`. The HD address will need to be funded in order to deploy the contracts.
+BLS Wallet contract deploys use `CREATE2` to maintain consistent addresses across networks. As such, a create2 deployer contract is used and listed in `./contracts/.env` under the environment variables `DEPLOYER_MNEMONIC` & `DEPLOYER_SET_INDEX`. The hierarchical deterministic (HD) wallet address will need to be funded in order to deploy the contracts.
 
 If you do not need consistent addresses, for example on a local or testnet network, you can replace the `DEPLOYER_MNEMONIC` with another seed phrase which already has a funded account.
 
