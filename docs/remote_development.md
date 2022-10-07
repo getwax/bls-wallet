@@ -68,10 +68,6 @@ PRIVATE_KEY_ADMIN=PK1
 
 Check the [`config.json` file](../extension//config.json) to see if your network is already added. If not, you will need to add the relevant properties for your network/chain. These changes can be committed.
 
-## Run
-
-Follow the remaing instruction in [Local Development](./local_development.md) starting with the `Run` section.
-
 ## Example: Arbitrum Testnet (Arbitrum Goerli Testnet)
 
 You will need two ETH addresses with Abitrum Goerli ETH and their private keys (PRIVATE_KEY_AGG & PRIVATE_KEY_ADMIN) for running the aggregator. It is **NOT** recommended that you use any primary wallets with ETH Mainnet assets.
