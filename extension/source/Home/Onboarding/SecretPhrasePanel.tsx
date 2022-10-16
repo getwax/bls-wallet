@@ -17,8 +17,8 @@ const SecretPhrasePanel: FunctionComponent<{
     setMnemonic(mnemonicPhrase.split(' '));
   };
 
-  const validateAndSetMnemonic = (mnemonic: string) => {
-    const split = mnemonic.split(' ');
+  const validateAndSetMnemonic = (m: string) => {
+    const split = m.split(' ');
     if (split.length === 12) {
       setMnemonic(split);
     }
