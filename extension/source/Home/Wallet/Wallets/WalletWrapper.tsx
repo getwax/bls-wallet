@@ -3,6 +3,7 @@ import useCell from '../../../cells/useCell';
 import Button from '../../../components/Button';
 import Loading from '../../../components/Loading';
 import { useQuill } from '../../../QuillContext';
+import ImportWalletModal from './AddWalletModal';
 /* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
 import { WalletSummary } from './WalletSummary';
 
@@ -25,9 +26,12 @@ export const WalletsWrapper: FunctionComponent = () => {
     <div className="">
       <div className="flex justify-between place-items-center">
         <div className="text-body">Wallets</div>
-        <Button onPress={rpc.addHDAccount} className="btn-secondary">
-          Add
-        </Button>
+        <div className="flex gap-2">
+          <ImportWalletModal />
+          <Button onPress={rpc.addHDAccount} className="btn-primary">
+            Add
+          </Button>
+        </div>
       </div>
 
       {!ethAccounts && <Loading />}
