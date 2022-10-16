@@ -30,7 +30,7 @@ export const useInputDecode = (functionData: string): UseInputDecodeValues => {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [method, setMethod] = useState<string>('CONTRACT INTERACTION');
-  const [args, setArgs] = useState<ethers.utils.Result>([]);
+  const [allArgs, setAllArgs] = useState<ethers.utils.Result>([]);
 
   useEffect(() => {
     const getMethod = async () => {
@@ -39,7 +39,7 @@ export const useInputDecode = (functionData: string): UseInputDecodeValues => {
       const data = functionData?.replace(/\s+/g, '');
       const { funcSig, args } = await getMethodFromRegistry(data);
       setMethod(funcSig);
-      setArgs(args);
+      setAllArgs(args);
 
       setLoading(false);
     };
@@ -49,5 +49,5 @@ export const useInputDecode = (functionData: string): UseInputDecodeValues => {
     }
   }, [functionData, quill]);
 
-  return { loading, method, args };
+  return { loading, method, args: allArgs };
 };

@@ -40,10 +40,11 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
           <div className="text-[9pt] mt-2 font-mono">
             {loading
               ? 'loading params...'
-              : args.map((arg, i) => (
-                  <div key={i}>
-                  {i + 1}. {arg.toString()}
-                </div>
+              : // prettier-ignore
+                args.map((arg, i) => (
+                  <div key={arg}>
+                    {i + 1}. {arg.toString()}
+                  </div>
                 ))}
           </div>
         </div>
