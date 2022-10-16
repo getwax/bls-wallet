@@ -35,6 +35,16 @@ npm package which provides easy to use constructs to interact with the contracts
 
 Prototype browser extension used to manage BLS Wallets and sign transactions.
 
+## Contract Addresses: Aribitrum Goerli 
+    
+    "create2Deployer": "0x036d996D6855B83cd80142f2933d8C2617dA5617"
+    "precompileCostEstimator": "0x22E4a5251C1F02de8369Dd6f192033F6CB7531A4"
+    "blsLibrary": "0xF8a11BA6eceC43e23c9896b857128a4269290e39"
+    "verificationGateway": "0xAf96d6e0817Ff8658f0E2a39b641920fAzfF0957"
+    "blsExpander": "0x376E7c0dA79423F772C2837744F81a7A0ff4bA47"
+    "utilities": "0x957e58EfEB6cE40F95f3dBFAaCD9465Df5C29E23"
+    "testToken": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+
 ## Ways to Contribute
 
 - [Work on an open issue](https://github.com/web3well/bls-wallet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
