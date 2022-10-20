@@ -5,7 +5,7 @@ import { once } from 'lodash-es';
 import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
 import { ProviderConfig } from './background/ProviderConfig';
-import { Preferences, Theme } from './background/Preferences';
+import { Preferences } from './background/Preferences';
 import AsyncReturnType from './types/AsyncReturnType';
 import { FormulaCell } from './cells/FormulaCell';
 import assert from './helpers/assert';
@@ -78,21 +78,30 @@ function QuillStorageCells(
 
       return network;
     }),
-    preferences: standardStorage.Cell('preferences', Preferences, () => ({
-      identities: {},
-      selectedPublicKeyHash: undefined,
-      developerSettings: {
-        // For now, default to dev settings that are appropriate for the bls
-        // wallet team. FIXME: The defaults that get bundled into the extension
-        // should probably be configurable.
-        breakOnAssertionFailures: true,
-        exposeEthereumRpc: false,
-        rpcLogging: {
-          background: true,
-          inPage: true,
+    preferences: standardStorage.Cell(
+      'preferences',
+      Preferences,
+      async (): Promise<Preferences> => ({
+        selectedPublicKeyHash: undefined,
+        currency: 'USD',
+        theme: 'light',
+        defaultPublicKeyHash: undefined,
+        contacts: [],
+        customTokens: [],
+        customNfts: [],
+        developerSettings: {
+          // For now, default to dev settings that are appropriate for the bls
+          // wallet team. FIXME: The defaults that get bundled into the
+          // extension should probably be configurable.
+          breakOnAssertionFailures: true,
+          exposeEthereumRpc: false,
+          rpcLogging: {
+            background: true,
+            inPage: true,
+          },
         },
-      },
-    })),
+      }),
+    ),
   };
 
   const providerStateCells = {
@@ -119,19 +128,8 @@ function QuillStorageCells(
     ),
     ...providerStateCells,
 
-    theme: new FormulaCell(
-      { preferences: rootCells.preferences },
-      ({ $preferences: { selectedPublicKeyHash, identities } }): Theme => {
-        if (selectedPublicKeyHash === undefined) {
-          return 'light';
-        }
-
-        const identity = identities[selectedPublicKeyHash];
-        assert(identity !== undefined);
-
-        return identity.theme;
-      },
-    ),
+    theme: FormulaCell.Sub(rootCells.preferences, 'theme'),
+    currency: TransformCell.Sub(rootCells.preferences, 'currency'),
 
     breakOnAssertionFailures: TransformCell.Sub(
       providerStateCells.developerSettings,
