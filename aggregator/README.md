@@ -29,6 +29,34 @@ you might have:
 If you don't have a `.env`, you will need to append `--env <name>` to all
 commands.
 
+#### Environment Variables
+
+| Name                         | Example Value                                                      | Description                                                                                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RPC_URL                      | https://localhost:8545                                             | The RPC endpoint for an EVM node that the BLS Wallet contracts are deployed on                                                                                       |
+| USE_TEST_NET                 | false                                                              | Whether to set all transaction's `gasPrice` to 0. Workaround for some networks                                                                                       |
+| ORIGIN                       | http://localhost:3000                                              | The origin for the aggregator client. Used only in manual tests                                                                                                      |
+| PORT                         | 3000                                                               | The port to bind the aggregator to                                                                                                                                   |
+| NETWORK_CONFIG_PATH          | ../contracts/networks/local.json                                   | Path to the network config file, which contains information on deployed BLS Wallet contracts                                                                         |
+| PRIVATE_KEY_AGG              | 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 | Private key for the EOA account used to submit bundles on chain                                                                                                      |
+| PRIVATE_KEY_ADMIN            | 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d | Private key for the admin EOA account. Used only in tests                                                                                                            |
+| TEST_BLS_WALLETS_SECRET      | test-bls-wallets-secret                                            | Secret used to seed BLS Wallet private keys during tests                                                                                                             |
+| PG_HOST                      | 127.0.0.1                                                          | Postgres database host                                                                                                                                               |
+| PG_PORT                      | 5432                                                               | Postgres database port                                                                                                                                               |
+| PG_USER                      | bls                                                                | Postgres database user                                                                                                                                               |
+| PG_PASSWORD                  | generate-a-strong-password                                         | Postgres database password                                                                                                                                           |
+| PG_DB_NAME                   | bls_aggregator                                                     | Postgres database name                                                                                                                                               |
+| BUNDLE_TABLE_NAME            | bundles                                                            | Postgres table name for bundles                                                                                                                                      |
+| BUNDLE_QUERY_LIMIT           | 100                                                                | Maximum number of bundles returned from Postgres                                                                                                                     |
+| MAX_AGGREGATION_SIZE         | 12                                                                 | Maximum number of actions from bundles which will be aggregated together for submission on chain                                                                     |
+| MAX_AGGREGATION_DELAY_MILLIS | 5000                                                               | Maximum amount of time in milliseconds aggregator will wait before submitting bundles on chain                                                                       |
+| MAX_UNCONFIRMED_AGGREGATIONS | 3                                                                  | Maximum unconfirmed bundle aggregations that will be submitted on chain. Multiplied with `MAX_AGGREGATION_SIZE` to determine maximum of unconfirmed on chain actions |
+| LOG_QUERIES                  | false                                                              | Whether to print Postgres queries in event log.`TEST_LOGGING` must be enabled                                                                                        |
+| TEST_LOGGING                 | false                                                              | Whether to print aggregator server events to stdout. Useful for debugging & logging.                                                                                 |
+| FEE_TYPE                     | ether OR token:0xabcd...1234                                       | The fee type the aggregator will accept. Either `ether` for ETH/chains native currency or `token:0xabcd...1234` (token contract address) for an ERC20 token          |
+| FEE_PER_GAS                  | 0                                                                  | Minimum amount per gas (gasPrice) the aggregator will accept in ETH/chain native currency/ERC20 tokens                                                               |
+| FEE_PER_BYTE                 | 0                                                                  | Minimum amount per calldata byte the aggregator will accept in ETH/chain native currency/ERC20 tokens (rollup L1 cost)                                               |
+
 ### PostgreSQL
 
 #### With docker-compose
@@ -170,13 +198,16 @@ deno run -r --allow-net --allow-env --allow-read --unstable ./programs/aggregato
 
 #### Transaction reverted: function call to a non-contract account
 
-- Is `./contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol`'s `COST_ESTIMATOR_ADDRESS` set to the right precompile cost estimator's contract address?
+- Is `./contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol`'s
+  `COST_ESTIMATOR_ADDRESS` set to the right precompile cost estimator's contract
+  address?
 - Are the BLS Wallet contracts deployed on the correct network?
 - Is `NETWORK_CONFIG_PATH` in `.env` set to the right config?
 
 #### Deno version
 
-Make sure your Deno version is [up to date.](https://deno.land/manual/getting_started/installation#updating)
+Make sure your Deno version is
+[up to date.](https://deno.land/manual/getting_started/installation#updating)
 
 ### Notable Components
 
