@@ -1,11 +1,11 @@
-import { FunctionComponent } from 'react';
-import useCell from '../../../cells/useCell';
-import Button from '../../../components/Button';
-import Loading from '../../../components/Loading';
-import { useQuill } from '../../../QuillContext';
-import ImportWalletModal from './AddWalletModal';
+import { FunctionComponent } from "react";
+import useCell from "../../../cells/useCell";
+import Button from "../../../components/Button";
+import Loading from "../../../components/Loading";
+import { useQuill } from "../../../QuillContext";
+import RecoverWalletModal from "./Recovery/RecoverWalletModal";
 /* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
-import { WalletSummary } from './WalletSummary';
+import { WalletSummary } from "./WalletSummary";
 
 export interface IWallet {
   address: string;
@@ -27,7 +27,7 @@ export const WalletsWrapper: FunctionComponent = () => {
       <div className="flex justify-between place-items-center">
         <div className="text-body">Wallets</div>
         <div className="flex gap-2">
-          <ImportWalletModal />
+          <RecoverWalletModal />
           <Button onPress={rpc.addHDAccount} className="btn-primary">
             Add
           </Button>
