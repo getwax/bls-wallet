@@ -1,4 +1,4 @@
-import { ethers, wordlists } from 'ethers';
+import { ethers } from 'ethers';
 import { FunctionComponent, useEffect, useState } from 'react';
 import { FilePlus, Cardholder, Warning } from 'phosphor-react';
 import Button from '../../components/Button';
@@ -23,7 +23,7 @@ const SecretPhrasePanel: FunctionComponent<{
       try {
         ethers.Wallet.fromMnemonic(mnemonicInput);
         setError(false);
-      } catch (error) {
+      } catch (e) {
         setError(true);
       }
     }
@@ -89,7 +89,18 @@ const SecretPhrasePanel: FunctionComponent<{
             )}
 
             {error && (
-              <div className="bg-alert-400 p-4 mt-4 text-[10pt] rounded-md flex gap-4 bg-opacity-20">
+              <div
+                className={[
+                  'bg-alert-400',
+                  'p-4',
+                  'mt-4',
+                  'text-[10pt]',
+                  'rounded-md',
+                  'flex',
+                  'gap-4',
+                  'bg-opacity-20',
+                ].join(' ')}
+              >
                 <Warning className="text-alert-500 mt-1" size={64} />
                 <div className="align-text-top">
                   Please enter correct 12 word mnemonic compatible with BIP-39
