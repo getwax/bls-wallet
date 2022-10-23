@@ -1,6 +1,6 @@
-import { ethers } from 'ethers';
-import { FunctionComponent, useState } from 'react';
-import { FilePlus, Cardholder } from 'phosphor-react';
+import { ethers, wordlists } from 'ethers';
+import { FunctionComponent, useEffect, useState } from 'react';
+import { FilePlus, Cardholder, Warning } from 'phosphor-react';
 import Button from '../../components/Button';
 
 import ReviewSecretPhrasePanel from './ReviewSecretPhrasePanel';
@@ -11,6 +11,23 @@ const SecretPhrasePanel: FunctionComponent<{
 }> = () => {
   const [mnemonic, setMnemonic] = useState<string[]>([]);
   const [mnemonicInput, setMnemonicInput] = useState<string>('');
+  const [error, setError] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (mnemonicInput !== '') {
+      if (mnemonicInput.split(' ').length !== 12) {
+        setError(true);
+        return;
+      }
+
+      try {
+        ethers.Wallet.fromMnemonic(mnemonicInput);
+        setError(false);
+      } catch (error) {
+        setError(true);
+      }
+    }
+  }, [mnemonicInput]);
 
   const createMnemonic = () => {
     const mnemonicPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
@@ -19,7 +36,7 @@ const SecretPhrasePanel: FunctionComponent<{
 
   const validateAndSetMnemonic = (m: string) => {
     const split = m.split(' ');
-    if (split.length === 12) {
+    if (!error) {
       setMnemonic(split);
     }
   };
@@ -56,18 +73,30 @@ const SecretPhrasePanel: FunctionComponent<{
                 'border-opacity-25',
                 'focus:border-opacity-25',
               ].join(' ')}
-              placeholder="12 word Mnemonic (space separated)"
+              placeholder="existing 12 word Mnemonic (space separated)"
               onChange={(e) => {
                 setMnemonicInput(e.target.value);
               }}
             />
-            <Button
-              className="btn-secondary"
-              onPress={() => validateAndSetMnemonic(mnemonicInput)}
-              iconLeft={<Cardholder size={20} />}
-            >
-              Use Existing Mnemonic
-            </Button>
+            {mnemonicInput !== '' && !error && (
+              <Button
+                className="btn-secondary"
+                onPress={() => validateAndSetMnemonic(mnemonicInput)}
+                iconLeft={<Cardholder size={20} />}
+              >
+                Use Existing Mnemonic
+              </Button>
+            )}
+
+            {error && (
+              <div className="bg-alert-400 p-4 mt-4 text-[10pt] rounded-md flex gap-4 bg-opacity-20">
+                <Warning className="text-alert-500 mt-1" size={64} />
+                <div className="align-text-top">
+                  Please enter correct 12 word mnemonic compatible with BIP-39
+                  standard, separated by space.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
