@@ -6,6 +6,7 @@ import Button from '../../../components/Button';
 const ImportWalletModal = () => {
   const [modalIsOpen, setIsOpen] = useState(false);
   const [recoveryHash, setRecoveryHash] = useState('');
+  const [recoverySalt, setRecoverySalt] = useState('');
 
   const handleRecover = () => {
     console.log(recoveryHash);
@@ -26,7 +27,7 @@ const ImportWalletModal = () => {
             fontFamily: 'montserrat',
             padding: 0,
             border: 'none',
-            height: '18rem',
+            height: '22rem',
           },
           overlay: {
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -56,6 +57,21 @@ const ImportWalletModal = () => {
               placeholder="Recovery Hash"
               onChange={(e) => {
                 setRecoveryHash(e.target.value);
+              }}
+            />
+
+            <input
+              type="text"
+              className={[
+                'bg-opacity-5',
+                'border-opacity-45',
+                'focus:border-opacity-85',
+                'h-10',
+                'text-[10pt]',
+              ].join(' ')}
+              placeholder="Recovery Salt"
+              onChange={(e) => {
+                setRecoverySalt(e.target.value);
               }}
             />
 
