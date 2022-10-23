@@ -1,10 +1,10 @@
-import { FunctionComponent, useState } from "react";
-import Modal from "react-modal";
-import Button from "../../../../components/Button";
-import Range from "../../../../helpers/Range";
-import StepOneInfo from "./StepOneInfo";
-import StepThreeRecover from "./StepThreeRecover";
-import StepTwoWalletCreation from "./StepTwoWalletCreation";
+import { FunctionComponent, useState } from 'react';
+import Modal from 'react-modal';
+import Button from '../../../../components/Button';
+import Range from '../../../../helpers/Range';
+import StepOneInfo from './StepOneInfo';
+import StepThreeRecover from './StepThreeRecover';
+import StepTwoWalletCreation from './StepTwoWalletCreation';
 
 const WorkflowNumbers: FunctionComponent<{
   max: number;
@@ -16,13 +16,13 @@ const WorkflowNumbers: FunctionComponent<{
         <div
           key={i}
           className={[
-            "icon-lg",
-            "rounded-full",
-            "text-center",
-            "leading-8",
-            "cursor-pointer",
-            ...(i <= current ? ["bg-blue-500", "text-white"] : ["text-black"]),
-          ].join(" ")}
+            'icon-lg',
+            'rounded-full',
+            'text-center',
+            'leading-8',
+            'cursor-pointer',
+            ...(i <= current ? ['bg-blue-500', 'text-white'] : ['text-black']),
+          ].join(' ')}
         >
           {i + 1}
         </div>
@@ -34,7 +34,7 @@ const WorkflowNumbers: FunctionComponent<{
 const RecoverWalletModal = () => {
   const [modalIsOpen, setIsOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
-  const [walletAddress, setWalletAddress] = useState<string>("");
+  const [walletAddress, setWalletAddress] = useState<string>('');
 
   return (
     <div>
@@ -46,15 +46,15 @@ const RecoverWalletModal = () => {
         onRequestClose={() => setIsOpen(false)}
         style={{
           content: {
-            width: "35rem",
-            margin: "auto",
-            fontFamily: "montserrat",
+            width: '35rem',
+            margin: 'auto',
+            fontFamily: 'montserrat',
             padding: 0,
-            border: "none",
-            height: "25rem",
+            border: 'none',
+            height: '25rem',
           },
           overlay: {
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
           },
         }}
       >

@@ -1,13 +1,13 @@
-import { CaretRight, CircleNotch, CopySimple } from "phosphor-react";
-import { FunctionComponent, useEffect, useState } from "react";
-import Button from "../../../../components/Button";
-import { useQuill } from "../../../../QuillContext";
+import { CaretRight, CircleNotch, CopySimple } from 'phosphor-react';
+import { FunctionComponent, useEffect, useState } from 'react';
+import Button from '../../../../components/Button';
+import { useQuill } from '../../../../QuillContext';
 
 const StepTwoWalletCreation: FunctionComponent<{
   onComplete: () => void;
   setWalletToParent: (address: string) => void;
 }> = ({ onComplete, setWalletToParent }) => {
-  const [walletAddress, setWalletAddress] = useState<string>("");
+  const [walletAddress, setWalletAddress] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
   const { rpc } = useQuill();
@@ -22,6 +22,7 @@ const StepTwoWalletCreation: FunctionComponent<{
     };
 
     createWallet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -30,8 +31,8 @@ const StepTwoWalletCreation: FunctionComponent<{
         <div className="text-[14pt]">Recovery Wallet</div>
         <div className="text-[10pt] text-grey-700 leading-loose">
           This is the address where your instant wallet will be recovered to.
-          All your tokens will be transferred to this smart contract wallet's
-          address
+          All your tokens will be transferred to this smart contract
+          wallet&apos;s address
         </div>
         <br />
         <div className="text-[10pt] text-grey-700 leading-loose font-bold mt-2">
@@ -48,6 +49,7 @@ const StepTwoWalletCreation: FunctionComponent<{
           ) : (
             <div className="flex justify-between">
               <div className="font-mono text-[11pt]">{walletAddress}</div>
+              {/* eslint-disable-next-line */}
               <div
                 className="cursor-pointer"
                 onClick={() => navigator.clipboard.writeText(walletAddress)}

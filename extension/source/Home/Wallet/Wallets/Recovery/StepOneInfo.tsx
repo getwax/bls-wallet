@@ -1,6 +1,6 @@
-import { CaretRight } from "phosphor-react";
-import { FunctionComponent } from "react";
-import Button from "../../../../components/Button";
+import { CaretRight } from 'phosphor-react';
+import { FunctionComponent } from 'react';
+import Button from '../../../../components/Button';
 
 const StepOneInfo: FunctionComponent<{
   onComplete: () => void;

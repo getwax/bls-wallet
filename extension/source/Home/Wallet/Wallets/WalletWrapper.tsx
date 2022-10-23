@@ -1,11 +1,11 @@
-import { FunctionComponent } from "react";
-import useCell from "../../../cells/useCell";
-import Button from "../../../components/Button";
-import Loading from "../../../components/Loading";
-import { useQuill } from "../../../QuillContext";
-import RecoverWalletModal from "./Recovery/RecoverWalletModal";
+import { FunctionComponent } from 'react';
+import useCell from '../../../cells/useCell';
+import Button from '../../../components/Button';
+import Loading from '../../../components/Loading';
+import { useQuill } from '../../../QuillContext';
+import RecoverWalletModal from './Recovery/RecoverWalletModal';
 /* eslint import/no-cycle: "warn" -- TODO (merge-ok) Fix import cycle */
-import { WalletSummary } from "./WalletSummary";
+import { WalletSummary } from './WalletSummary';
 
 export interface IWallet {
   address: string;
