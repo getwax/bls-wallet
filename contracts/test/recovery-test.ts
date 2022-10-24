@@ -285,4 +285,52 @@ describe("Recovery", async function () {
         .recoverWallet(addressSignature, hashAttacker, salt, wallet1Key),
     ).to.be.rejectedWith("VG: Signature not verified for wallet address");
   });
+
+  it("should NOT allow a bundle to be executed on a wallet with the same BLS pubkey but different address (replay attack)", async function () {
+    // Run empty operation on wallet 2 to align nonces after recovery.
+    const emptyBundle = wallet2.sign({
+      nonce: await wallet2.Nonce(),
+      actions: [],
+    });
+    const emptyBundleTxn = await fx.verificationGateway.processBundle(
+      emptyBundle,
+    );
+    await emptyBundleTxn.wait();
+
+    // Set wallet 1's pubkey to wallet 2's through recovery
+    // This will also unregister wallet 2 from VG
+    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
+
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      wallet2.privateKey,
+    );
+
+    const recoveryTxn = await fx.verificationGateway
+      .connect(recoverySigner)
+      .recoverWallet(addressSignature, hash1, salt, wallet2.PublicKey());
+    await recoveryTxn.wait();
+
+    const [wallet1PubkeyHash, wallet2PubkeyHash, wallet1Nonce, wallet2Nonce] =
+      await Promise.all([
+        vg.hashFromWallet(wallet1.address),
+        vg.hashFromWallet(wallet2.address),
+        wallet1.Nonce(),
+        wallet2.Nonce(),
+      ]);
+    expect(wallet1PubkeyHash).to.eql(hash2);
+    expect(wallet2PubkeyHash).to.eql(hash2);
+    expect(wallet1Nonce.toNumber()).to.eql(wallet2Nonce.toNumber());
+
+    // Attempt to run a bundle from wallet 2 through wallet 1
+    // Signiuture verification should fail as addresses differ
+    const invalidBundle = wallet2.sign({
+      nonce: await wallet2.Nonce(),
+      actions: [],
+    });
+    await expect(
+      fx.verificationGateway.processBundle(invalidBundle),
+    ).to.be.rejectedWith("VG: Sig not verified");
+  });
 });
