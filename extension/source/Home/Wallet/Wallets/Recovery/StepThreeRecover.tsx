@@ -17,7 +17,7 @@ const StepThreeRecover: FunctionComponent<{
     const pk = await rpc.lookupPrivateKey(walletAddress);
     await rpc.addRecoveryWallet(
       instantWalletAddress,
-      ethers.utils.hexlify(ethers.utils.toUtf8Bytes(salt)),
+      ethers.utils.formatBytes32String(salt),
       pk,
     );
     onComplete();
