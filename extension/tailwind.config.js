@@ -48,6 +48,7 @@ module.exports = {
     },
     fontFamily: {
       sans: ['Montserrat'],
+      mono: ['Noto Sans Mono'],
     },
     fontSize: {
       disclaimer: '12pt',

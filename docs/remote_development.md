@@ -8,7 +8,7 @@ Follow the instructions for [Local Development](./local_development.md), replaci
 
 ### Deployer account
 
-BLS Wallet contract deploys use `CREATE2` to maintain consistent addresses across networks. As such, a create2 deployer contract is used and listed in `./contracts/.env` under the environment variables `DEPLOYER_MNEMONIC` & `DEPLOYER_SET_INDEX`. The HD address will need to be funded in order to deploy the contracts.
+BLS Wallet contract deploys use `CREATE2` to maintain consistent addresses across networks. As such, a create2 deployer contract is used and listed in `./contracts/.env` under the environment variables `DEPLOYER_MNEMONIC` & `DEPLOYER_SET_INDEX`. The hierarchical deterministic (HD) wallet address will need to be funded in order to deploy the contracts.
 
 If you do not need consistent addresses, for example on a local or testnet network, you can replace the `DEPLOYER_MNEMONIC` with another seed phrase which already has a funded account.
 
@@ -66,40 +66,27 @@ PRIVATE_KEY_ADMIN=PK1
 
 ### Extension
 
-Check the [controller constants file](../extension/source/Controllers/constants.ts) to see if your network is already added. If not, you will need to add chainid & supported networks entries for your network/chain. These changes can be committed.
+Check the [`config.json` file](../extension//config.json) to see if your network is already added. If not, you will need to add the relevant properties for your network/chain. These changes can be committed.
 
-Then, update this value in `./extension/.env`.
-```
-...
+## Example: Arbitrum Testnet (Arbitrum Goerli Testnet)
 
-DEFAULT_CHAIN_ID=YOUR_CHAIN_ID
-...
-```
+You will need two ETH addresses with Abitrum Goerli ETH and their private keys (PRIVATE_KEY_AGG & PRIVATE_KEY_ADMIN) for running the aggregator. It is **NOT** recommended that you use any primary wallets with ETH Mainnet assets.
 
-## Run
-
-Follow the remaing instruction in [Local Development](./local_development.md) starting with the `Run` section.
-
-## Example: Arbitrum Testnet (Rinkeby Arbitrum Testnet)
-
-You will need two ETH addresses with Rinkeby ETH and their private keys (PK0 & PK1) for running the aggregator. It is NOT recommended that you use any primary wallets with ETH Mainnet assets.
-
-You can get Rinkeby ETH at https://app.mycrypto.com/faucet, and transfer it into the Arbitrum testnet via https://bridge.arbitrum.io/. Make sure when doing so that your network is set to Rinkeby in your web3 wallet extension, such as MetaMask.
+You can get Goerli ETH at https://goerlifaucet.com/ or https://app.mycrypto.com/faucet, and transfer it into the Arbitrum testnet via https://bridge.arbitrum.io/. Make sure when doing so that your network is set to Goerli in your web3 wallet extension, such as MetaMask.
 
 Update these values in `./aggregator/.env`.
 ```
-RPC_URL=https://rinkeby.arbitrum.io/rpc
+RPC_URL=https://goerli-rollup.arbitrum.io/rpc
 ...
-NETWORK_CONFIG_PATH=../contracts/networks/arbitrum-testnet.json
+NETWORK_CONFIG_PATH=../contracts/networks/arbitrum-goerli.json
 PRIVATE_KEY_AGG=PK0
 PRIVATE_KEY_ADMIN=PK1
 ...
 ```
 
-And then update this value in `./extension/.env`.
-```
+And then ensure the `defaultNetwork` value in `./extension/config.json` is set to `arbitrum-goerli`.
+```json
 ...
-
-DEFAULT_CHAIN_ID=421611
+"defaultNetwork": "arbitrum-goerli",
 ...
 ```
