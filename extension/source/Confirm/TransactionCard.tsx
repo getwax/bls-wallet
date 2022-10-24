@@ -14,7 +14,7 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
   gas,
   gasPrice,
 }) => {
-  const { loading, method } = useInputDecode(data || '0x', to);
+  const { loading, method, args } = useInputDecode(data || '0x');
 
   return (
     <div className="bg-white rounded-md p-4 border border-blue-400">
@@ -37,7 +37,16 @@ const TransactionCard: React.FC<SendTransactionParams> = ({
         <div className="break-all">
           details:{' '}
           <span className="font-bold">{loading ? 'loading...' : method}</span>
-          <div className="text-[9pt] mt-2 font-normal">{data}</div>
+          <div className="text-[9pt] mt-2 font-mono">
+            {loading
+              ? 'loading params...'
+              : // prettier-ignore
+                args.map((arg, i) => (
+                  <div key={arg}>
+                    {i + 1}. {arg.toString()}
+                  </div>
+                ))}
+          </div>
         </div>
       </div>
 
