@@ -35,6 +35,14 @@ npm package which provides easy to use constructs to interact with the contracts
 
 Prototype browser extension used to manage BLS Wallets and sign transactions.
 
+
+## Contract Deployments
+
+See [./contracts/networks](./contracts/networks/) for a list of all contract deployment (network) manifests. Have an L2/rollup testnet you'd like BLS Wallet deployed on? [Open an issue](https://github.com/web3well/bls-wallet/issues/new) or [Deploy it yourself](./docs/remote_development.md)
+
+- [Arbitrum Goerli](./contracts/networks/arbitrum-goerli.json)
+- [Arbitrum Rinkby](./contracts/networks/arbitrum-testnet.json) (deprecated, outdated)
+
 ## Ways to Contribute
 
 - [Work on an open issue](https://github.com/web3well/bls-wallet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
