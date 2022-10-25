@@ -195,8 +195,29 @@ export default class KeyringController {
 
       // Add new private key to the keyring
       await this.InternalRpc().addAccount(privateKey);
+      await this.swapContractWalletAddress(privateKey, recoveryWalletAddress);
     },
   });
+
+  async swapContractWalletAddress(pKey: string, newAddress: string) {
+    const network = await this.network.read();
+    const { wallets } = await this.keyring.read();
+
+    const currentWallet = wallets.find((w) => w.privateKey === pKey);
+    // get all wallets without the current wallet
+    const updatedWallets = wallets.filter((w) => w.privateKey !== pKey);
+
+    if (currentWallet) {
+      const networkDetails = currentWallet.networks[network.networkKey];
+      if (networkDetails) {
+        networkDetails.address = newAddress;
+      }
+      currentWallet.networks[network.networkKey] = networkDetails;
+      // push the updated wallet to all wallets array
+      updatedWallets.push(currentWallet);
+    }
+    await this.keyring.update({ wallets: updatedWallets });
+  }
 
   async BlsWalletWrapper(privateKey: string): Promise<BlsWalletWrapper> {
     const netCfg = getNetworkConfig(
