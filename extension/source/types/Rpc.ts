@@ -1,5 +1,4 @@
 import * as io from 'io-ts';
-import { BlsWalletWrapper } from 'bls-wallet-clients';
 import assertType from '../cells/assertType';
 import isType from '../cells/isType';
 
