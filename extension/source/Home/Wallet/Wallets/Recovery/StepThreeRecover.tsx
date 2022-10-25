@@ -6,19 +6,18 @@ import { useQuill } from '../../../../QuillContext';
 
 const StepThreeRecover: FunctionComponent<{
   onComplete: () => void;
-  walletAddress: string;
-}> = ({ onComplete, walletAddress }) => {
+  walletPrivateKey: string;
+}> = ({ onComplete, walletPrivateKey }) => {
   const { rpc } = useQuill();
 
   const [salt, setSalt] = useState<string>('');
   const [instantWalletAddress, setInstantWalletAddress] = useState<string>('');
 
   const handleRecover = async () => {
-    const pk = await rpc.lookupPrivateKey(walletAddress);
     await rpc.addRecoveryWallet(
       instantWalletAddress,
       ethers.utils.formatBytes32String(salt),
-      pk,
+      walletPrivateKey,
     );
     onComplete();
   };
@@ -28,7 +27,8 @@ const StepThreeRecover: FunctionComponent<{
       <div className="flex-grow">
         <div className="text-[14pt]">Almost There</div>
         <div className="text-[10pt] text-grey-700 leading-loose">
-          Your instant wallet will be recovered to {walletAddress}
+          Your instant wallet recovery is in process. Once finished the same
+          wallet will be visible inside Quill.
           <br />
           <div
             className={[

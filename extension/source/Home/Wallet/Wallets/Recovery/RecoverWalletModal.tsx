@@ -34,7 +34,7 @@ const WorkflowNumbers: FunctionComponent<{
 const RecoverWalletModal = () => {
   const [modalIsOpen, setIsOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
-  const [walletAddress, setWalletAddress] = useState<string>('');
+  const [walletPrivateKey, setWalletPrivateKey] = useState<string>('');
 
   return (
     <div>
@@ -71,14 +71,14 @@ const RecoverWalletModal = () => {
                 />,
                 <StepTwoWalletCreation
                   key={2}
-                  setWalletToParent={setWalletAddress}
+                  setWalletToParent={setWalletPrivateKey}
                   onComplete={() => {
                     setPageIndex(2);
                   }}
                 />,
                 <StepThreeRecover
                   key={3}
-                  walletAddress={walletAddress}
+                  walletPrivateKey={walletPrivateKey}
                   onComplete={() => setIsOpen(false)}
                 />,
               ][pageIndex]

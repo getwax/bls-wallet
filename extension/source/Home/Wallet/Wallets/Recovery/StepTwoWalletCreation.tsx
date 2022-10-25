@@ -15,9 +15,9 @@ const StepTwoWalletCreation: FunctionComponent<{
   useEffect(() => {
     const createWallet = async () => {
       setLoading(true);
-      const address = await rpc.addHDAccount();
+      const { address, privateKey } = await rpc.createTempAccount();
       setWalletAddress(address);
-      setWalletToParent(address);
+      setWalletToParent(privateKey);
       setLoading(false);
     };
 
@@ -30,9 +30,8 @@ const StepTwoWalletCreation: FunctionComponent<{
       <div className="flex-grow">
         <div className="text-[14pt]">Recovery Wallet</div>
         <div className="text-[10pt] text-grey-700 leading-loose">
-          This is the address where your instant wallet will be recovered to.
-          All your tokens will be transferred to this smart contract
-          wallet&apos;s address
+          This is the wallet address which will be used to recover your instant
+          wallet.
         </div>
         <br />
         <div className="text-[10pt] text-grey-700 leading-loose font-bold mt-2">

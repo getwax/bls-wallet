@@ -115,6 +115,19 @@ export default class KeyringController {
       return networkData.address;
     },
 
+    createTempAccount: async (_request) => {
+      const pKey = generateRandomHex(256);
+      const { wallets } = await this.keyring.read();
+
+      assert(
+        wallets.every((w) => w.privateKey !== pKey),
+        () => new Error('Wallet already exists'),
+      );
+
+      const { address, privateKey } = await this.BlsWalletWrapper(pKey);
+      return { address, privateKey };
+    },
+
     addAccount: async ({ params: [privateKey = generateRandomHex(256)] }) => {
       const { wallets } = await this.keyring.read();
 
