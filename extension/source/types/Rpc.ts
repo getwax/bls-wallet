@@ -1,4 +1,5 @@
 import * as io from 'io-ts';
+import { BlsWalletWrapper } from 'bls-wallet-clients';
 import assertType from '../cells/assertType';
 import isType from '../cells/isType';
 
@@ -143,6 +144,11 @@ export const rpcMap = {
     origin: '<quill>',
     Params: optional(emptyTuple),
     Response: io.string,
+  },
+  createTempAccount: {
+    origin: '<quill>',
+    Params: optional(emptyTuple),
+    Response: io.type({ address: io.string, privateKey: io.string }),
   },
   setHDPhrase: {
     origin: '<quill>',

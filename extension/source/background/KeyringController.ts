@@ -115,6 +115,19 @@ export default class KeyringController {
       return networkData.address;
     },
 
+    createTempAccount: async (_request) => {
+      const pKey = generateRandomHex(256);
+      const { wallets } = await this.keyring.read();
+
+      assert(
+        wallets.every((w) => w.privateKey !== pKey),
+        () => new Error('Wallet already exists'),
+      );
+
+      const { address, privateKey } = await this.BlsWalletWrapper(pKey);
+      return { address, privateKey };
+    },
+
     addAccount: async ({ params: [privateKey = generateRandomHex(256)] }) => {
       const { wallets } = await this.keyring.read();
 
@@ -182,8 +195,29 @@ export default class KeyringController {
 
       // Add new private key to the keyring
       await this.InternalRpc().addAccount(privateKey);
+      await this.swapContractWalletAddress(privateKey, recoveryWalletAddress);
     },
   });
+
+  async swapContractWalletAddress(pKey: string, newAddress: string) {
+    const network = await this.network.read();
+    const { wallets } = await this.keyring.read();
+
+    const currentWallet = wallets.find((w) => w.privateKey === pKey);
+    // get all wallets without the current wallet
+    const updatedWallets = wallets.filter((w) => w.privateKey !== pKey);
+
+    if (currentWallet) {
+      const networkDetails = currentWallet.networks[network.networkKey];
+      if (networkDetails) {
+        networkDetails.address = newAddress;
+      }
+      currentWallet.networks[network.networkKey] = networkDetails;
+      // push the updated wallet to all wallets array
+      updatedWallets.push(currentWallet);
+    }
+    await this.keyring.update({ wallets: updatedWallets });
+  }
 
   async BlsWalletWrapper(privateKey: string): Promise<BlsWalletWrapper> {
     const netCfg = getNetworkConfig(
