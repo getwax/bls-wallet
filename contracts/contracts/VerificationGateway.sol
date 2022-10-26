@@ -195,7 +195,9 @@ contract VerificationGateway
 
         // ensure not calling Ownable functions of ProxyAdmin
         require((selectorId != Ownable.transferOwnership.selector)
-            && (selectorId != Ownable.renounceOwnership.selector));
+            && (selectorId != Ownable.renounceOwnership.selector),
+            "VG: cannot change ownership"
+        );
 
         wallet.setAnyPending();
 
