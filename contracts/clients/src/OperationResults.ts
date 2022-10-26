@@ -107,6 +107,13 @@ const getError = (
   return decodeError(errorData);
 };
 
+/**
+ * Gets the results of operations (and actions) run through VerificationGateway.processBundle.
+ * Decodes unsuccessful operations into an error message and the index of the action that failed.
+ *
+ * @param transactionReceipt Transaction receipt from a VerificationGateway.processBundle transaction
+ * @returns An array of decoded operation results
+ */
 export const getOperationResults = (
   txnReceipt: ContractReceipt,
 ): OperationResult[] => {
