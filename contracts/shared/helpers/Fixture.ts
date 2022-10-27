@@ -119,7 +119,10 @@ export default class Fixture {
         // Perform an empty transaction to trigger wallet creation
         await (
           await verificationGateway.processBundle(
-            wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
+            wallet.sign({
+              nonce: BigNumber.from(0),
+              actions: [],
+            }),
           )
         ).wait();
 

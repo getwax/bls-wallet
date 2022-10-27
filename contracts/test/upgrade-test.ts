@@ -99,7 +99,7 @@ describe("Upgrade", async function () {
     const wallet = await BlsWalletWrapper.connect(
       blsSecret,
       fx.verificationGateway.address,
-      fx.provider,
+      fx.verificationGateway.provider,
     );
     // Sign simple address message
     const addressMessage = solidityPack(["address"], [walletAddress]);
@@ -284,13 +284,13 @@ describe("Upgrade", async function () {
     const wallet1 = await BlsWalletWrapper.connect(
       lazyWallet1.privateKey,
       vg1.address,
-      fx.provider,
+      vg1.provider,
     );
 
     const wallet2 = await BlsWalletWrapper.connect(
       lazyWallet2.privateKey,
       vg1.address,
-      fx.provider,
+      vg1.provider,
     );
 
     const hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);

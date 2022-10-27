@@ -8,8 +8,6 @@ on:
       - 'contracts/**'
       - '!contracts/clients/**'
   pull_request:
-    branches:
-      - 'main'
     paths:
       - 'contracts/**'
       - '!contracts/clients/**'

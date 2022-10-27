@@ -88,7 +88,27 @@ contract VerificationGateway
 
         for (uint256 i = 0; i<opLength; i++) {
             // construct params for signature verification
-            messages[i] = messagePoint(bundle.operations[i]);
+            bytes32 keyHash = keccak256(abi.encodePacked(bundle.senderPublicKeys[i]));
+            address walletAddress = address(walletFromHash[keyHash]);
+            if (walletAddress == address(0)) {
+                walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
+                    bytes1(0xff),
+                    address(this),
+                    keyHash,
+                    keccak256(abi.encodePacked(
+                        type(TransparentUpgradeableProxy).creationCode,
+                        abi.encode(
+                            address(blsWalletLogic),
+                            address(walletProxyAdmin),
+                            getInitializeData()
+                        )
+                    ))
+                )))));
+            }
+            messages[i] = messagePoint(
+                walletAddress,
+                bundle.operations[i]
+            );
         }
 
         bool verified = blsLib.verifyMultiple(
@@ -162,12 +182,22 @@ contract VerificationGateway
         // ensure first parameter is the calling wallet address
         bytes memory encodedAddress = abi.encode(address(wallet));
         uint8 selectorOffset = 4;
+        bytes4 selectorId = 0;
         for (uint256 i=0; i<32; i++) {
+            if (i<4) {
+                selectorId |= bytes4(encodedFunction[i]) >> i*8;
+            }
             require(
                 (encodedFunction[selectorOffset+i] == encodedAddress[i]),
                 "VG: first param to proxy admin is not calling wallet"
             );
         }
+
+        // ensure not calling Ownable functions of ProxyAdmin
+        require((selectorId != Ownable.transferOwnership.selector)
+            && (selectorId != Ownable.renounceOwnership.selector),
+            "VG: cannot change ownership"
+        );
 
         wallet.setAnyPending();
 
@@ -362,6 +392,7 @@ contract VerificationGateway
     }
 
     function messagePoint(
+        address walletAddress,
         IWallet.Operation memory op
     ) internal view returns (
         uint256[2] memory
@@ -381,6 +412,7 @@ contract VerificationGateway
             BLS_DOMAIN,
             abi.encodePacked(
                 block.chainid,
+                walletAddress,
                 op.nonce,
                 keccak256(encodedActionData)
             )
