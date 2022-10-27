@@ -1,10 +1,14 @@
 import { expect } from "chai";
-import { BigNumber } from "ethers";
+import { BigNumber, ContractReceipt } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
 import { BLSOpen, ProxyAdmin } from "../typechain";
-import { ActionData, BlsWalletWrapper } from "../clients/src";
+import {
+  ActionData,
+  BlsWalletWrapper,
+  getOperationResults,
+} from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
@@ -13,6 +17,14 @@ import {
   proxyAdminCall,
 } from "../shared/helpers/callProxyAdmin";
 import Create2Fixture from "../shared/helpers/Create2Fixture";
+
+const expectOperationsToSucceed = (txnReceipt: ContractReceipt) => {
+  const opResults = getOperationResults(txnReceipt);
+  for (const opRes of opResults) {
+    expect(opRes.success).to.eql(true);
+    expect(opRes.error).to.eql(undefined);
+  }
+};
 
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
@@ -47,10 +59,11 @@ describe("Upgrade", async function () {
     const wallet = await fx.lazyBlsWallets[0]();
 
     // prepare call
-    await proxyAdminCall(fx, wallet, "upgrade", [
+    const txnReceipt1 = await proxyAdminCall(fx, wallet, "upgrade", [
       wallet.address,
       mockWalletUpgraded.address,
     ]);
+    expectOperationsToSucceed(txnReceipt1);
 
     // Advance time one week
     const latestTimestamp = (await ethers.provider.getBlock("latest"))
@@ -62,10 +75,11 @@ describe("Upgrade", async function () {
     ]);
 
     // make call
-    await proxyAdminCall(fx, wallet, "upgrade", [
+    const txnReceipt2 = await proxyAdminCall(fx, wallet, "upgrade", [
       wallet.address,
       mockWalletUpgraded.address,
     ]);
+    expectOperationsToSucceed(txnReceipt2);
 
     const newBLSWallet = MockWalletUpgraded.attach(wallet.address);
     await (await newBLSWallet.setNewData(wallet.address)).wait();
@@ -114,10 +128,13 @@ describe("Upgrade", async function () {
     const changeProxyAction = bundle.operations[0].actions[0];
 
     // prepare call
-    await proxyAdminCall(fx, walletOldVg, "changeProxyAdmin", [
-      walletAddress,
-      proxyAdmin2Address,
-    ]);
+    const txnReceipt = await proxyAdminCall(
+      fx,
+      walletOldVg,
+      "changeProxyAdmin",
+      [walletAddress, proxyAdmin2Address],
+    );
+    expectOperationsToSucceed(txnReceipt);
 
     // Advance time one week
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
@@ -346,5 +363,55 @@ describe("Upgrade", async function () {
     );
     expect(await vg1.walletFromHash(hash2)).to.equal(wallet1.address);
     expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash2);
+  });
+
+  it("should NOT allow walletAdminCall where first param is not calling wallet", async function () {
+    const wallet1 = await fx.lazyBlsWallets[0]();
+    const wallet2 = await fx.lazyBlsWallets[1]();
+
+    const txnReceipt = await proxyAdminCall(fx, wallet1, "upgrade", [
+      wallet2.address,
+      wallet2.address,
+    ]);
+    const opResults = getOperationResults(txnReceipt);
+
+    expect(opResults).to.have.lengthOf(1);
+    expect(opResults[0].error.actionIndex.toNumber()).to.eql(0);
+    expect(opResults[0].error.message).to.eql(
+      "VG: first param to proxy admin is not calling wallet",
+    );
+  });
+
+  it("should NOT allow walletAdminCall to ProxyAdmin.transferOwnership", async function () {
+    const wallet = await fx.lazyBlsWallets[0]();
+
+    const txnReceipt = await proxyAdminCall(fx, wallet, "transferOwnership", [
+      wallet.address,
+    ]);
+    const opResults = getOperationResults(txnReceipt);
+
+    expect(opResults).to.have.lengthOf(1);
+    expect(opResults[0].error.actionIndex.toNumber()).to.eql(0);
+    expect(opResults[0].error.message).to.eql("VG: cannot change ownership");
+  });
+
+  /**
+   * TODO Figure why renounceOwnership call failed without error message
+   * result comes back as ["0x"] and success as false, figure out why.
+   */
+  it.skip("should NOT allow walletAdminCall to ProxyAdmin.renounceOwnership", async function () {
+    const wallet = await fx.lazyBlsWallets[0]();
+
+    const txnReceipt = await proxyAdminCall(
+      fx,
+      wallet,
+      "renounceOwnership",
+      [],
+    );
+    const opResults = getOperationResults(txnReceipt);
+
+    expect(opResults).to.have.lengthOf(1);
+    expect(opResults[0].error.actionIndex.toNumber()).to.eql(0);
+    expect(opResults[0].error.message).to.eql("VG: cannot change ownership");
   });
 });
