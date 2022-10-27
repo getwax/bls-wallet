@@ -6,7 +6,6 @@ import {
 } from 'bls-wallet-clients';
 import { ethers, BigNumberish } from 'ethers';
 import { solidityPack, keccak256 } from 'ethers/lib/utils';
-import generateRandomHex from '../helpers/generateRandomHex';
 import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
@@ -15,6 +14,7 @@ import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import { IReadableCell } from '../cells/ICell';
 import mixtureCopy from '../cells/mixtureCopy';
 import getNetworkConfig from './getNetworkConfig';
+import randFr from '../helpers/randFr';
 
 export default class KeyringController {
   constructor(
@@ -116,7 +116,7 @@ export default class KeyringController {
     },
 
     createTempAccount: async (_request) => {
-      const pKey = generateRandomHex(256);
+      const pKey = randFr().serializeToHexStr();
       const { wallets } = await this.keyring.read();
 
       assert(
@@ -128,7 +128,9 @@ export default class KeyringController {
       return { address, privateKey };
     },
 
-    addAccount: async ({ params: [privateKey = generateRandomHex(256)] }) => {
+    addAccount: async ({
+      params: [privateKey = randFr().serializeToHexStr()],
+    }) => {
       const { wallets } = await this.keyring.read();
 
       assert(
@@ -180,7 +182,7 @@ export default class KeyringController {
      * of wallet being recovered
      * @param recoverySaltHash Salt used to set the recovery
      * hash on the wallet that is being recovered
-     * @param signerWalletPrivateKey the private key of the wallet that is used
+     * @param signerWalletPrivateKey The private key of the wallet that is used
      * to generate the recovery hash. This wallet will sign the 'recoverWallet'
      * request.
      */
@@ -305,7 +307,7 @@ export default class KeyringController {
     const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
 
     // Create new private key for the wallet we are recovering to.
-    const newPrivateKey = generateRandomHex(256);
+    const newPrivateKey = randFr().serializeToHexStr();
 
     const addressSignature = await this.signWalletAddress(
       recoveryWalletAddress,

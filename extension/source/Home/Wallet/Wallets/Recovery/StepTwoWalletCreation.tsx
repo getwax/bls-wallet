@@ -39,7 +39,7 @@ const StepTwoWalletCreation: FunctionComponent<{
         </div>
         <div className="mt-4 bg-grey-900 bg-opacity-25 rounded-md p-5">
           {loading ? (
-            <div className="flex gap-4 text-[12pt] items-center ">
+            <div className="flex gap-4 text-[12pt] items-center">
               Generating wallet
               <div className="animate-spin relative">
                 <CircleNotch size={30} />
