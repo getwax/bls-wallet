@@ -32,10 +32,16 @@ const WorkflowNumbers: FunctionComponent<{
 };
 
 const RecoverWalletModal = () => {
-  const [modalIsOpen, setIsOpen] = useState(false);
-  const [pageIndex, setPageIndex] = useState(0);
+  const [modalIsOpen, setIsOpen] = useState<boolean>(false);
+  const [pageIndex, setPageIndex] = useState<number>(0);
   const [walletPrivateKey, setWalletPrivateKey] = useState<string>('');
   const [walletAddress, setWalletAddress] = useState<string>('');
+
+  const onRecoverComplete = () => {
+    setWalletPrivateKey('');
+    setWalletAddress('');
+    setIsOpen(false);
+  };
 
   return (
     <div>
@@ -88,7 +94,7 @@ const RecoverWalletModal = () => {
                   onBack={() => {
                     setPageIndex(1);
                   }}
-                  onComplete={() => setIsOpen(false)}
+                  onComplete={() => onRecoverComplete()}
                 />,
               ][pageIndex]
             }

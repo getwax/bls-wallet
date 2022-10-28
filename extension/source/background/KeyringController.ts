@@ -116,7 +116,7 @@ export default class KeyringController {
     },
 
     createTempAccount: async (_request) => {
-      const pKey = randFr().serializeToHexStr();
+      const pKey = `0x${randFr().serializeToHexStr()}`;
       const { wallets } = await this.keyring.read();
 
       assert(
@@ -129,7 +129,7 @@ export default class KeyringController {
     },
 
     addAccount: async ({
-      params: [privateKey = randFr().serializeToHexStr()],
+      params: [privateKey = `0x${randFr().serializeToHexStr()}`],
     }) => {
       const { wallets } = await this.keyring.read();
 
@@ -307,7 +307,7 @@ export default class KeyringController {
     const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
 
     // Create new private key for the wallet we are recovering to.
-    const newPrivateKey = randFr().serializeToHexStr();
+    const newPrivateKey = `0x${randFr().serializeToHexStr()}`;
 
     const addressSignature = await this.signWalletAddress(
       recoveryWalletAddress,
