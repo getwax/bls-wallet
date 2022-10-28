@@ -72,7 +72,7 @@ const RecoverWalletModal = () => {
                 />,
                 <StepTwoWalletCreation
                   key={2}
-                  setWalletToParent={setWalletPrivateKey}
+                  setWalletPkToParent={setWalletPrivateKey}
                   setWalletAddressToParent={setWalletAddress}
                   walletAddress={walletAddress}
                   onBack={() => {

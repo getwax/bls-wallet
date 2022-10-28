@@ -6,13 +6,13 @@ import { useQuill } from '../../../../QuillContext';
 const StepTwoWalletCreation: FunctionComponent<{
   onBack: () => void;
   onComplete: () => void;
-  setWalletToParent: (address: string) => void;
+  setWalletPkToParent: (address: string) => void;
   setWalletAddressToParent: (address: string) => void;
   walletAddress: string;
 }> = ({
   onBack,
   onComplete,
-  setWalletToParent,
+  setWalletPkToParent,
   walletAddress,
   setWalletAddressToParent,
 }) => {
@@ -25,14 +25,13 @@ const StepTwoWalletCreation: FunctionComponent<{
       setLoading(true);
       const { address, privateKey } = await rpc.createTempAccount();
       setWalletAddressToParent(address);
-      setWalletToParent(privateKey);
+      setWalletPkToParent(privateKey);
       setLoading(false);
     };
 
     if (!walletAddress) {
       createWallet();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletAddress]);
 
   return (
