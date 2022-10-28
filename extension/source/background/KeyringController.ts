@@ -15,6 +15,7 @@ import { IReadableCell } from '../cells/ICell';
 import mixtureCopy from '../cells/mixtureCopy';
 import getNetworkConfig from './getNetworkConfig';
 import randFr from '../helpers/randFr';
+import generateRandomHex from '../helpers/generateRandomHex';
 
 export default class KeyringController {
   constructor(
@@ -128,10 +129,7 @@ export default class KeyringController {
       return { address, privateKey };
     },
 
-    addAccount: async ({ params: [privateKey] }) => {
-      if (!privateKey) {
-        privateKey = `0x${(await randFr()).serializeToHexStr()}`;
-      }
+    addAccount: async ({ params: [privateKey = generateRandomHex(256)] }) => {
       const { wallets } = await this.keyring.read();
 
       assert(
