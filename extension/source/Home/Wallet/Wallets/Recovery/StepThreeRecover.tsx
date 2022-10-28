@@ -1,13 +1,14 @@
 import { ethers } from 'ethers';
-import { Download } from 'phosphor-react';
+import { Download, CaretLeft } from 'phosphor-react';
 import { FunctionComponent, useState } from 'react';
 import Button from '../../../../components/Button';
 import { useQuill } from '../../../../QuillContext';
 
 const StepThreeRecover: FunctionComponent<{
+  onBack: () => void;
   onComplete: () => void;
   walletPrivateKey: string;
-}> = ({ onComplete, walletPrivateKey }) => {
+}> = ({ onBack, onComplete, walletPrivateKey }) => {
   const { rpc } = useQuill();
 
   const [salt, setSalt] = useState<string>('');
@@ -76,7 +77,15 @@ const StepThreeRecover: FunctionComponent<{
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        <Button
+          onPress={() => onBack()}
+          className="btn-primary h-10 text-[10pt] w-1/3"
+          iconLeft={<CaretLeft size={15} />}
+        >
+          Back
+        </Button>
+
         <Button
           onPress={() => handleRecover()}
           className="btn-primary h-10 text-[10pt] w-1/3"

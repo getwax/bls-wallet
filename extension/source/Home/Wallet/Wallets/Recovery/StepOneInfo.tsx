@@ -11,14 +11,14 @@ const StepOneInfo: FunctionComponent<{
         <div className="text-[14pt]">Recover existing wallet in Quill</div>
         <div className="text-[10pt] text-grey-700 leading-loose">
           You can recover existing instant BLS wallets into Quill. This is a
-          simple 2 step process which requires you to copy-paste some stuff from
+          simple 2 step process which requires you to copy-paste two values from
           Quill to the instant wallet and then again from instant wallet to
           Quill
         </div>
         <br />
         <div className="text-[10pt] text-grey-700 leading-loose font-bold mt-2">
           Do not close this modal until you have completed all the steps that
-          follows else you will lose access to your original keys!
+          follow, else you will lose access to your original keys!
         </div>
       </div>
 

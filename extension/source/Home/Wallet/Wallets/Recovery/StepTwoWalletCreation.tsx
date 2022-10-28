@@ -1,14 +1,22 @@
-import { CaretRight, CircleNotch, CopySimple } from 'phosphor-react';
+import { CaretRight, CaretLeft, CircleNotch, CopySimple } from 'phosphor-react';
 import { FunctionComponent, useEffect, useState } from 'react';
 import Button from '../../../../components/Button';
 import { useQuill } from '../../../../QuillContext';
 
 const StepTwoWalletCreation: FunctionComponent<{
+  onBack: () => void;
   onComplete: () => void;
   setWalletToParent: (address: string) => void;
-}> = ({ onComplete, setWalletToParent }) => {
-  const [walletAddress, setWalletAddress] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
+  setWalletAddressToParent: (address: string) => void;
+  walletAddress: string;
+}> = ({
+  onBack,
+  onComplete,
+  setWalletToParent,
+  walletAddress,
+  setWalletAddressToParent,
+}) => {
+  const [loading, setLoading] = useState<boolean>(!walletAddress);
 
   const { rpc } = useQuill();
 
@@ -16,14 +24,16 @@ const StepTwoWalletCreation: FunctionComponent<{
     const createWallet = async () => {
       setLoading(true);
       const { address, privateKey } = await rpc.createTempAccount();
-      setWalletAddress(address);
+      setWalletAddressToParent(address);
       setWalletToParent(privateKey);
       setLoading(false);
     };
 
-    createWallet();
+    if (!walletAddress) {
+      createWallet();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [walletAddress]);
 
   return (
     <div className="flex flex-col gap-4 h-full">
@@ -60,7 +70,15 @@ const StepTwoWalletCreation: FunctionComponent<{
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        <Button
+          onPress={() => onBack()}
+          className="btn-primary h-10 text-[10pt] w-1/3"
+          iconLeft={<CaretLeft size={15} />}
+        >
+          Back
+        </Button>
+
         <Button
           onPress={() => onComplete()}
           className="btn-primary h-10 text-[10pt] w-1/3"

@@ -35,6 +35,7 @@ const RecoverWalletModal = () => {
   const [modalIsOpen, setIsOpen] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [walletPrivateKey, setWalletPrivateKey] = useState<string>('');
+  const [walletAddress, setWalletAddress] = useState<string>('');
 
   return (
     <div>
@@ -72,6 +73,11 @@ const RecoverWalletModal = () => {
                 <StepTwoWalletCreation
                   key={2}
                   setWalletToParent={setWalletPrivateKey}
+                  setWalletAddressToParent={setWalletAddress}
+                  walletAddress={walletAddress}
+                  onBack={() => {
+                    setPageIndex(0);
+                  }}
                   onComplete={() => {
                     setPageIndex(2);
                   }}
@@ -79,6 +85,9 @@ const RecoverWalletModal = () => {
                 <StepThreeRecover
                   key={3}
                   walletPrivateKey={walletPrivateKey}
+                  onBack={() => {
+                    setPageIndex(1);
+                  }}
                   onComplete={() => setIsOpen(false)}
                 />,
               ][pageIndex]
