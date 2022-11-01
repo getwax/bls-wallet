@@ -21,7 +21,7 @@ import forEach from './cells/forEach';
 import { loadMultiNetworkConfig } from './MultiNetworkConfig';
 import { RpcClient } from './types/Rpc';
 import Config, { loadConfig } from './Config';
-import { StorageConfig } from './background/QuillController';
+import { QuillCellCollections } from './background/QuillController';
 
 export type QuillContextValue = ReturnType<typeof getQuillContextValue>;
 
@@ -33,12 +33,15 @@ function getQuillContextValue() {
   const config = loadConfig();
   const multiNetworkConfig = loadMultiNetworkConfig();
 
-  const storage: StorageConfig = {
-    standardStorage: extensionLocalCellCollection,
-    encryptedStorage: encryptedLocalCellCollection,
-  };
-
-  const cells = QuillContextCells(config, storage, ethereum, ethereum.rpc);
+  const cells = QuillContextCells(
+    config,
+    {
+      encrypted: encryptedLocalCellCollection,
+      unencrypted: extensionLocalCellCollection,
+    },
+    ethereum,
+    ethereum.rpc,
+  );
 
   forEach(cells.onboarding, (onboarding) => {
     if (!onboarding.autoOpened) {
@@ -143,15 +146,11 @@ export function QuillContextProvider({ children }: Props) {
 
 function QuillContextCells(
   config: Config,
-  storage: StorageConfig,
+  cellCollections: QuillCellCollections,
   ethereum: QuillEthereumProvider,
   rpc: RpcClient,
 ) {
-  const storageCells = QuillStorageCells(
-    config,
-    storage.standardStorage,
-    storage.encryptedStorage,
-  );
+  const storageCells = QuillStorageCells(config, cellCollections);
 
   const rpcLogging = TransformCell.Sub(
     storageCells.developerSettings,

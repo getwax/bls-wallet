@@ -2,7 +2,6 @@ import { ethers } from 'ethers';
 import * as io from 'io-ts';
 import { once } from 'lodash-es';
 
-import CellCollection from './cells/CellCollection';
 import TransformCell from './cells/TransformCell';
 import { ProviderConfig } from './background/ProviderConfig';
 import { Preferences } from './background/Preferences';
@@ -12,6 +11,7 @@ import assert from './helpers/assert';
 import { QuillTransaction } from './types/Rpc';
 import optional from './types/optional';
 import Config from './Config';
+import type { QuillCellCollections } from './background/QuillController';
 
 // FIXME: If defaults were built into our io types, we could easily add new
 // fields that always have concrete values incrementally without breaking
@@ -19,11 +19,10 @@ import Config from './Config';
 
 function QuillStorageCells(
   config: Config,
-  standardStorage: CellCollection,
-  encryptedStorage: CellCollection,
+  { encrypted, unencrypted }: QuillCellCollections,
 ) {
   const rootCells = {
-    onboarding: standardStorage.Cell(
+    onboarding: unencrypted.Cell(
       'onboarding',
       io.type({
         autoOpened: io.boolean,
@@ -34,7 +33,7 @@ function QuillStorageCells(
         completed: false,
       }),
     ),
-    keyring: encryptedStorage.Cell(
+    keyring: encrypted.Cell(
       'keyring',
       io.type({
         HDPhrase: io.string,
@@ -61,14 +60,14 @@ function QuillStorageCells(
         wallets: [],
       })),
     ),
-    transactions: encryptedStorage.Cell(
+    transactions: encrypted.Cell(
       'transactions',
       io.type({
         outgoing: io.array(QuillTransaction),
       }),
       () => ({ outgoing: [] }),
     ),
-    network: encryptedStorage.Cell('network', ProviderConfig, () => {
+    network: encrypted.Cell('network', ProviderConfig, () => {
       const network = config.builtinNetworks[config.defaultNetwork];
 
       assert(
@@ -78,7 +77,7 @@ function QuillStorageCells(
 
       return network;
     }),
-    preferences: encryptedStorage.Cell(
+    preferences: encrypted.Cell(
       'preferences',
       Preferences,
       async (): Promise<Preferences> => ({

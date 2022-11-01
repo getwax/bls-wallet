@@ -31,9 +31,9 @@ import TransactionsController from './TransactionsController';
 import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import Config from '../Config';
 
-export type StorageConfig = {
-  standardStorage: CellCollection;
-  encryptedStorage: CellCollection;
+export type QuillCellCollections = {
+  encrypted: CellCollection;
+  unencrypted: CellCollection;
 };
 
 export default class QuillController {
@@ -64,13 +64,9 @@ export default class QuillController {
   constructor(
     public config: Config,
     public multiNetworkConfig: MultiNetworkConfig,
-    public storage: StorageConfig,
+    public cellCollections: QuillCellCollections,
   ) {
-    this.cells = QuillStorageCells(
-      config,
-      storage.standardStorage,
-      storage.encryptedStorage,
-    );
+    this.cells = QuillStorageCells(config, cellCollections);
 
     this.networkController = new NetworkController(this.cells.network);
 

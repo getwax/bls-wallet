@@ -1,6 +1,6 @@
 import { runtime, tabs } from 'webextension-polyfill';
 
-import QuillController, { StorageConfig } from './QuillController';
+import QuillController from './QuillController';
 import extensionLocalCellCollection from '../cells/extensionLocalCellCollection';
 import encryptedLocalCellCollection from '../cells/encryptedLocalCellCollection';
 import { RpcRequest, toRpcResult } from '../types/Rpc';
@@ -16,15 +16,13 @@ import { loadConfig } from '../Config';
 (() => {
   console.log('Quill background script started');
 
-  const storage: StorageConfig = {
-    standardStorage: extensionLocalCellCollection,
-    encryptedStorage: encryptedLocalCellCollection,
-  };
-
   const quillController = new QuillController(
     loadConfig(),
     loadMultiNetworkConfig(),
-    storage,
+    {
+      encrypted: encryptedLocalCellCollection,
+      unencrypted: extensionLocalCellCollection,
+    },
   );
 
   setupOnboardingTrigger(quillController);
