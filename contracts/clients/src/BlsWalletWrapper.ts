@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import { ethers, BigNumber } from "ethers";
 import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
 
