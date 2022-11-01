@@ -7,7 +7,7 @@ import { BlsWalletWrapper, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import { BLSWallet, VerificationGateway } from "../typechain";
+import { BLSWallet, VerificationGateway } from "../typechain-types";
 
 const signWalletAddress = async (
   fx: Fixture,

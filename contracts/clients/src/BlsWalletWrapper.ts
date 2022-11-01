@@ -21,7 +21,7 @@ import {
   VerificationGateway,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
-} from "../typechain";
+} from "../typechain-types";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 

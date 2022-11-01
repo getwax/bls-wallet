@@ -1,5 +1,5 @@
 import { BigNumber } from "ethers";
-import { VerificationGateway } from "../../typechain";
+import { VerificationGateway } from "../../typechain-types";
 
 export type Bundle = Parameters<VerificationGateway["processBundle"]>[0];
 export type Operation = Bundle["operations"][number];

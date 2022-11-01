@@ -13,7 +13,7 @@
     "yarn": ">=1.0.0"
   },
   "scripts": {
-    "build": "rm -rf dist && mkdir dist && cp -rH typechain dist/typechain && find ./dist/typechain -type f \\! -name '*.d.ts' -name '*.ts' -delete && tsc",
+    "build": "rm -rf dist && mkdir dist && cp -rH typechain-types dist/typechain-types && find ./dist/typechain-types -type f \\! -name '*.d.ts' -name '*.ts' -delete && tsc",
     "watch": "tsc -w",
     "test": "mocha --require ts-node/register --require source-map-support/register --require ./test/init.ts **/*.test.ts",
     "premerge": "yarn test",

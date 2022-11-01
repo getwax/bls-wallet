@@ -3,7 +3,7 @@ import { BigNumber, ContractReceipt } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import { BLSOpen, ProxyAdmin } from "../typechain";
+import { BLSOpen, ProxyAdmin } from "../typechain-types";
 import {
   ActionData,
   BlsWalletWrapper,
