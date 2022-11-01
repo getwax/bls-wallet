@@ -61,14 +61,14 @@ function QuillStorageCells(
         wallets: [],
       })),
     ),
-    transactions: standardStorage.Cell(
+    transactions: encryptedStorage.Cell(
       'transactions',
       io.type({
         outgoing: io.array(QuillTransaction),
       }),
       () => ({ outgoing: [] }),
     ),
-    network: standardStorage.Cell('network', ProviderConfig, () => {
+    network: encryptedStorage.Cell('network', ProviderConfig, () => {
       const network = config.builtinNetworks[config.defaultNetwork];
 
       assert(
@@ -78,7 +78,7 @@ function QuillStorageCells(
 
       return network;
     }),
-    preferences: standardStorage.Cell(
+    preferences: encryptedStorage.Cell(
       'preferences',
       Preferences,
       async (): Promise<Preferences> => ({
