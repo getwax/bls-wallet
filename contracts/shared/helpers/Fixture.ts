@@ -19,7 +19,11 @@ import {
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
-import { VerificationGateway, BLSOpen, ProxyAdmin } from "../../typechain-types";
+import {
+  VerificationGateway,
+  BLSOpen,
+  ProxyAdmin,
+} from "../../typechain-types";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
