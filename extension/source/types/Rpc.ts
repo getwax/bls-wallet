@@ -52,6 +52,7 @@ export const QuillTransaction = io.type({
   createdAt: io.number,
   bundleHash: io.string,
   actions: io.array(SendTransactionParams),
+  txHash: io.string,
 });
 
 export type QuillTransaction = io.TypeOf<typeof QuillTransaction>;
@@ -210,6 +211,16 @@ export const rpcMap = {
     origin: '<quill>',
     Params: io.array(SendTransactionParams),
     Response: io.string,
+  },
+  updateTransactionBundleHash: {
+    origin: '<quill>',
+    Params: io.tuple([io.string, io.string]),
+    Response: io.void,
+  },
+  updateTransactionHashByBundleHash: {
+    origin: '<quill>',
+    Params: io.tuple([io.string, io.string]),
+    Response: io.void,
   },
 
   // AggregatorController

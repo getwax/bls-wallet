@@ -43,7 +43,7 @@ export default class AggregatorController {
       // TODO: If `origin === window.location.origin` (ie the tx is coming from
       // inside Quill), then we should really inline the information from the
       // dialog rather than using it.
-      await this.InternalRpc().requestTransaction(...params);
+      const knownTxId = await this.InternalRpc().requestTransaction(...params);
 
       // FIXME: We should not be assuming that the first from is the same as all
       // the other froms!
@@ -91,6 +91,11 @@ export default class AggregatorController {
         aggregatorUrl,
       };
 
+      await this.InternalRpc().updateTransactionBundleHash(
+        knownTxId,
+        result.hash,
+      );
+
       return result.hash;
     },
     eth_getTransactionByHash: async ({ params: [hash] }) => {
@@ -130,15 +135,23 @@ export default class AggregatorController {
         optional(
           io.type({
             transactionIndex: io.number,
+            transactionHash: io.string,
             blockHash: io.string,
             blockNumber: io.number,
           }),
         ),
       );
 
+      if (bundleReceipt) {
+        this.InternalRpc().updateTransactionHashByBundleHash(
+          hash,
+          bundleReceipt.transactionHash,
+        );
+      }
+
       return (
         bundleReceipt && {
-          transactionHash: hash,
+          transactionHash: bundleReceipt.transactionHash,
           transactionIndex: bundleReceipt.transactionIndex,
           blockHash: bundleReceipt.blockHash,
           blockNumber: bundleReceipt.blockNumber,
