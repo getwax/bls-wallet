@@ -18,6 +18,11 @@ Browser.storage.onChanged.addListener((changes) => {
 // don't keep a copy of the password
 const PASSWORD = 'TEMP_PASSWORD';
 
+// TODO: Salt should be generated randomly on startup and stored unencrypted
+const SALT = 'TEMP_SALT';
+
+const passwordKeyPromise = encryptor.keyFromPassword(PASSWORD, SALT);
+
 export default new CellCollection({
   async read<T>(key: string, type: io.Type<T>): Promise<T | undefined> {
     const readResult = (await Browser.storage.local.get(key))[key];
@@ -27,8 +32,7 @@ export default new CellCollection({
     }
 
     const payload = JSON.parse(readResult);
-    const { salt } = payload;
-    const passwordKey = await encryptor.keyFromPassword(PASSWORD, salt);
+    const passwordKey = await passwordKeyPromise;
     const decryptedValue = await encryptor.decryptWithKey(passwordKey, payload);
 
     assertType(decryptedValue, type);
@@ -48,10 +52,8 @@ export default new CellCollection({
 
     assertType(value, type);
 
-    const salt = encryptor.generateSalt();
-    const passwordKey = await encryptor.keyFromPassword(PASSWORD, salt);
+    const passwordKey = await passwordKeyPromise;
     const encryptedPayload = await encryptor.encryptWithKey(passwordKey, value);
-    encryptedPayload.salt = salt;
 
     Browser.storage.local.set({
       [key]: JSON.stringify(encryptedPayload),

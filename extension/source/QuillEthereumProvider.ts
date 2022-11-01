@@ -56,7 +56,7 @@ export default class QuillEthereumProvider extends (EventEmitter as new () => Ty
 
     const selectedAddress = new FormulaCell({ state }, ({ $state }) => {
       if ($state.selectedPublicKeyHash === undefined) {
-        return undefined;
+        return Promise.resolve(undefined);
       }
 
       return this.request({
