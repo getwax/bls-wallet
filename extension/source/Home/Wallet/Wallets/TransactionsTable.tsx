@@ -78,7 +78,9 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
   const quill = useQuill();
   const transactions = useCell(quill.cells.transactions);
   const data =
-    transactions?.outgoing.filter((t) => t.from === selectedAddress) || [];
+    transactions?.outgoing.filter(
+      (t) => t.from.toUpperCase() === selectedAddress.toUpperCase(),
+    ) || [];
 
   const columns = React.useMemo<ColumnDef<QuillTransaction>[]>(
     () => [
