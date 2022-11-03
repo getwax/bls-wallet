@@ -205,6 +205,8 @@ export default class BundleService {
 
     return {
       transactionIndex: receipt.transactionIndex,
+      transactionHash: receipt.transactionHash,
+      bundleHash: hash,
       blockHash: receipt.blockHash,
       blockNumber: receipt.blockNumber,
     };
