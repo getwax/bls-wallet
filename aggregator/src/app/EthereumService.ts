@@ -309,6 +309,7 @@ export default class EthereumService {
           ["string"],
           errorArgBytesString,
         )[0]; // decoded bytes is a string of the action index that errored.
+
         console.error(errorString)
       }
 
