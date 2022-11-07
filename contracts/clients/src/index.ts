@@ -1,5 +1,7 @@
 import Aggregator from "./Aggregator";
 import BlsWalletWrapper from "./BlsWalletWrapper";
+import BlsProvider from "./BlsProvider";
+import BlsSigner from "./BlsSigner";
 
 // eslint-disable-next-line camelcase
 import { VerificationGateway__factory } from "../typechain-types/factories/contracts/VerificationGateway__factory";
@@ -51,4 +53,6 @@ export {
   // eslint-disable-next-line camelcase
   MockERC20__factory,
   MockERC20,
+  BlsProvider,
+  BlsSigner
 };
