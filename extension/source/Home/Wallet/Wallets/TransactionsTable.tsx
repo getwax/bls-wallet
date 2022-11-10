@@ -66,7 +66,7 @@ const TransactionTableCell = (cell: { getValue: () => string }) => {
         window.open(`https://etherscan.io/tx/${cell.getValue()}`),
       )}
     >
-      {cell.getValue()}
+      {formatCompactAddress(cell.getValue())}
       <ArrowUpRight />
     </div>
   );
@@ -78,7 +78,9 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
   const quill = useQuill();
   const transactions = useCell(quill.cells.transactions);
   const data =
-    transactions?.outgoing.filter((t) => t.from === selectedAddress) || [];
+    transactions?.outgoing.filter(
+      (t) => t.from.toUpperCase() === selectedAddress.toUpperCase(),
+    ) || [];
 
   const columns = React.useMemo<ColumnDef<QuillTransaction>[]>(
     () => [
@@ -111,10 +113,8 @@ export const TransactionsTable: React.FunctionComponent<ITransactionsTable> = ({
       },
       {
         header: 'Tx Hash',
-        accessorFn: (_) => {
-          const placeholder =
-            '0xfbe7276011b411d474c5ec224e50912b5bab77f72f6294585a3064962496178';
-          return formatCompactAddress(placeholder);
+        accessorFn: (t) => {
+          return t.txHash;
         },
         cell: TransactionTableCell,
       },
