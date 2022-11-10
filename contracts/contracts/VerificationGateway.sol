@@ -182,22 +182,24 @@ contract VerificationGateway
         // ensure first parameter is the calling wallet address
         bytes memory encodedAddress = abi.encode(address(wallet));
         uint8 selectorOffset = 4;
-        bytes4 selectorId = 0;
-        for (uint256 i=0; i<32; i++) {
-            if (i<4) {
-                selectorId |= bytes4(encodedFunction[i]) >> i*8;
-            }
-            require(
-                (encodedFunction[selectorOffset+i] == encodedAddress[i]),
-                "VG: first param to proxy admin is not calling wallet"
-            );
-        }
+
+        bytes4 selectorId = bytes4(encodedFunction);
 
         // ensure not calling Ownable functions of ProxyAdmin
         require((selectorId != Ownable.transferOwnership.selector)
             && (selectorId != Ownable.renounceOwnership.selector),
             "VG: cannot change ownership"
         );
+
+        if (selectorId != Ownable.owner.selector) {
+            require(encodedFunction.length >= 32, "VG: Expected admin params");
+            for (uint256 i=0; i<32; i++) {
+                require(
+                    (encodedFunction[selectorOffset+i] == encodedAddress[i]),
+                    "VG: first param to proxy admin is not calling wallet"
+                );
+            }
+        }
 
         wallet.setAnyPending();
 
