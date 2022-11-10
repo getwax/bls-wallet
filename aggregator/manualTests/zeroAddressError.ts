@@ -42,16 +42,7 @@ console.log("Sending via ethereumService");
 
 (async () => {
   try {
-    const r: any = await ethereumService.submitBundle(bundle);
-
-    // no args if no error
-    const result = r.events[0].args.results[0]; // For errors this is "Error(string)"
-    const errorArgBytesString: string = "0x" + result.substring(10); // remove methodId (4bytes after 0x)
-    const errorString = ethers.utils.defaultAbiCoder.decode(
-      ["string"],
-      errorArgBytesString,
-    )[0]; // decoded bytes is a string of the action index that errored.
-    console.log('Revert error: ', errorString)
+    await ethereumService.submitBundle(bundle);
   } catch (error) {
     console.error(error.stack);
     Deno.exit(1);

@@ -235,11 +235,16 @@ export default class AggregationStrategy {
       let success: boolean;
 
       if (bundleResult.success) {
-        const [operationResults] = bundleResult.returnValue;
+        const [operationStatuses, results] = bundleResult.returnValue;
+
+        // TODO: is it possible to decode this?
+        // Here is an example when I try to send more ETH than an account has:results =
+        // results = [ "0x4e487b710000000000000000000000000000000000000000000000000000000000000011" ]
+        console.log(results);
 
         // We require that at least one operation succeeds, even though
         // processBundle doesn't revert in this case.
-        success = operationResults.some((opSuccess) => opSuccess === true);
+        success = operationStatuses.some((opSuccess) => opSuccess === true);
       } else {
         success = false;
       }
