@@ -3,7 +3,7 @@ import { utils, BigNumber, Signer, Contract } from "ethers";
 import { BlsWalletWrapper } from "../../clients/src";
 
 import Fixture from "./Fixture";
-import { IERC20 } from "../../typechain";
+import { IERC20 } from "../../typechain-types";
 
 export default class TokenHelper {
   static readonly initialSupply = utils.parseUnits("1000000");

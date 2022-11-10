@@ -15,6 +15,10 @@ on:
       # Check for breaking changes from contracts
       - 'contracts/**'
       - '.github/workflows/aggregator.yml'
+    branches-ignore:
+      # Changes targeting this branch should be tested+fixed when being merged
+      # into main
+      - contract-updates
 
 defaults:
   run:

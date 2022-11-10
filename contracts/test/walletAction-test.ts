@@ -326,9 +326,7 @@ describe("WalletActions", async function () {
     const opResults = getOperationResults(r);
     expect(opResults).to.have.lengthOf(1);
     expect(opResults[0].error.actionIndex.toNumber()).to.eql(1);
-    expect(opResults[0].error.message).to.eql(
-      "ERC20: transfer from the zero address",
-    );
+    expect(opResults[0].error.message).to.eql("ERC20: insufficient allowance");
 
     const recipientBalance = await th.testToken.balanceOf(recipient.address);
 

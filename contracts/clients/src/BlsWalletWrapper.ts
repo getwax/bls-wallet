@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import { ethers, BigNumber } from "ethers";
 import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
 
@@ -19,7 +21,7 @@ import {
   VerificationGateway,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
-} from "../typechain";
+} from "../typechain-types";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
