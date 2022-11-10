@@ -191,11 +191,14 @@ contract VerificationGateway
             "VG: cannot change ownership"
         );
 
-        for (uint256 i=0; i<32; i++) {
-            require(
-                (encodedFunction[selectorOffset+i] == encodedAddress[i]),
-                "VG: first param to proxy admin is not calling wallet"
-            );
+        if (selectorId != Ownable.owner.selector) {
+            require(encodedFunction.length >= 32, "VG: Expected admin params");
+            for (uint256 i=0; i<32; i++) {
+                require(
+                    (encodedFunction[selectorOffset+i] == encodedAddress[i]),
+                    "VG: first param to proxy admin is not calling wallet"
+                );
+            }
         }
 
         wallet.setAnyPending();

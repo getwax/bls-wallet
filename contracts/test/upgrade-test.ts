@@ -26,6 +26,17 @@ const expectOperationsToSucceed = (txnReceipt: ContractReceipt) => {
   }
 };
 
+const expectOperationFailure = (
+  txnReceipt: ContractReceipt,
+  errorMessage: string,
+) => {
+  const opResults = getOperationResults(txnReceipt);
+  expect(opResults).to.have.lengthOf(1);
+  expect(opResults[0].success).to.equal(false);
+  expect(opResults[0].error.actionIndex.toNumber()).to.eql(0);
+  expect(opResults[0].error.message).to.eql(errorMessage);
+};
+
 describe("Upgrade", async function () {
   this.beforeAll(async function () {
     // deploy the deployer contract for the transient hardhat network
@@ -373,11 +384,8 @@ describe("Upgrade", async function () {
       wallet2.address,
       wallet2.address,
     ]);
-    const opResults = getOperationResults(txnReceipt);
-
-    expect(opResults).to.have.lengthOf(1);
-    expect(opResults[0].error.actionIndex.toNumber()).to.eql(0);
-    expect(opResults[0].error.message).to.eql(
+    expectOperationFailure(
+      txnReceipt,
       "VG: first param to proxy admin is not calling wallet",
     );
   });
@@ -388,17 +396,9 @@ describe("Upgrade", async function () {
     const txnReceipt = await proxyAdminCall(fx, wallet, "transferOwnership", [
       wallet.address,
     ]);
-    const opResults = getOperationResults(txnReceipt);
-
-    expect(opResults).to.have.lengthOf(1);
-    expect(opResults[0].error.actionIndex.toNumber()).to.eql(0);
-    expect(opResults[0].error.message).to.eql("VG: cannot change ownership");
+    expectOperationFailure(txnReceipt, "VG: cannot change ownership");
   });
 
-  /**
-   * TODO Figure why renounceOwnership call failed without error message
-   * result comes back as ["0x"] and success as false, figure out why.
-   */
   it("should NOT allow walletAdminCall to ProxyAdmin.renounceOwnership", async function () {
     const wallet = await fx.lazyBlsWallets[0]();
 
@@ -408,10 +408,13 @@ describe("Upgrade", async function () {
       "renounceOwnership",
       [],
     );
-    const opResults = getOperationResults(txnReceipt);
+    expectOperationFailure(txnReceipt, "VG: cannot change ownership");
+  });
 
-    expect(opResults).to.have.lengthOf(1);
-    expect(opResults[0].error.actionIndex.toNumber()).to.eql(0);
-    expect(opResults[0].error.message).to.eql("VG: cannot change ownership");
+  it("call function with no params", async function () {
+    const wallet = await fx.lazyBlsWallets[0]();
+
+    const txnReceipt = await proxyAdminCall(fx, wallet, "owner", []);
+    expectOperationsToSucceed(txnReceipt);
   });
 });
