@@ -1,3 +1,5 @@
+import { BigNumber, ContractReceipt } from "ethers";
+import { Log } from "@ethersproject/abstract-provider";
 import { Bundle, bundleToDto } from "./signer";
 
 // TODO: Rename to BundleFailure?
@@ -35,9 +37,33 @@ export type EstimateFeeResponse = {
 
 export type BundleReceipt = {
   transactionIndex: string;
+  transactionHash: string;
+  bundleHash: string;
   blockHash: string;
   blockNumber: string;
 };
+
+// TODO: Messing around with returning the receipt type that ethers expects 
+// export interface BundleReceipt extends ContractReceipt {
+//   bundleHash: string;
+//   to: string;
+//   from: string;
+//   contractAddress: string;
+//   transactionIndex: number;
+//   root?: string;
+//   gasUsed: BigNumber;
+//   logsBloom: string;
+//   blockHash: string;
+//   transactionHash: string;
+//   logs: Array<Log>;
+//   blockNumber: number;
+//   confirmations: number;
+//   cumulativeGasUsed: BigNumber;
+//   effectiveGasPrice: BigNumber;
+//   byzantium: boolean;
+//   type: number;
+//   status?: number;
+// }
 
 export default class Aggregator {
   origin: string;

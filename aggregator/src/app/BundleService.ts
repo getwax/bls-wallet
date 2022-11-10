@@ -209,6 +209,24 @@ export default class BundleService {
       bundleHash: hash,
       blockHash: receipt.blockHash,
       blockNumber: receipt.blockNumber,
+      // TODO: Messing around with returning the receipt type that ethers expects 
+      // to: receipt.to,
+      // from: receipt.from,
+      // contractAddress: receipt.contractAddress,
+      // transactionIndex: receipt.transactionIndex,
+      // gasUsed: receipt.gasUsed,
+      // logsBloom: receipt.logsBloom,
+      // blockHash: receipt.blockHash,
+      // transactionHash: receipt.transactionHash,
+      // logs: receipt.logs,
+      // blockNumber: receipt.blockNumber,
+      // confirmations: receipt.confirmations,
+      // cumulativeGasUsed: receipt.cumulativeGasUsed,
+      // effectiveGasPrice: receipt.effectiveGasPrice,
+      // byzantium: receipt.byzantium,
+      // type: receipt.type,
+      // bundleHash: hash,
+      // BlockHash: receipt.blockHash,
     };
   }
 
