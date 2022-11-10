@@ -14,12 +14,9 @@ import {
 
 import {
   BLSWallet,
-  // eslint-disable-next-line camelcase
   BLSWallet__factory,
-  // eslint-disable-next-line camelcase
   TransparentUpgradeableProxy__factory,
   VerificationGateway,
-  // eslint-disable-next-line camelcase
   VerificationGateway__factory,
 } from "../typechain-types";
 
