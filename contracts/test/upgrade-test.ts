@@ -399,7 +399,7 @@ describe("Upgrade", async function () {
    * TODO Figure why renounceOwnership call failed without error message
    * result comes back as ["0x"] and success as false, figure out why.
    */
-  it.skip("should NOT allow walletAdminCall to ProxyAdmin.renounceOwnership", async function () {
+  it("should NOT allow walletAdminCall to ProxyAdmin.renounceOwnership", async function () {
     const wallet = await fx.lazyBlsWallets[0]();
 
     const txnReceipt = await proxyAdminCall(

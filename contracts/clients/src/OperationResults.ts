@@ -1,8 +1,26 @@
 import { BigNumber, ContractReceipt, utils } from "ethers";
+import assert from "./helpers/assert";
 import { ActionData } from "./signer";
 
+const errorSelectors = {
+  Error: calculateAndCheckSelector("Error(string)", "0x08c379a0"),
+
+  Panic: calculateAndCheckSelector("Panic(uint256)", "0x4e487b71"),
+
+  ActionError: calculateAndCheckSelector(
+    "ActionError(uint256,bytes)",
+    "0x5c667601",
+  ),
+};
+
+const actionErrorId = utils
+  .keccak256(new TextEncoder().encode("ActionError(uint256,bytes)"))
+  .slice(0, 10);
+
+assert(actionErrorId === "0x5c667601");
+
 type OperationResultError = {
-  actionIndex: BigNumber;
+  actionIndex?: BigNumber;
   message: string;
 };
 
@@ -25,22 +43,57 @@ const getError = (
 
   // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
   // Get the first (only) result from "results" argument.
-  const [errorResult] = results;
-  // remove methodId (4bytes after 0x)
-  const errorArgBytesString = `0x${errorResult.substring(10)}`;
-  const errorString = utils.defaultAbiCoder.decode(
-    ["string"],
-    errorArgBytesString,
-  )[0]; // decoded bytes is a string of the action index that errored.
+  const [errorData] = results;
 
-  const splitErrorString = errorString.split(" - ");
-  if (splitErrorString.length !== 2) {
-    throw new Error("unexpected error message format");
+  if (!errorData.startsWith(errorSelectors.ActionError)) {
+    throw new Error(
+      [
+        `errorResult does not begin with ActionError selector`,
+        `(${errorSelectors.ActionError}): ${errorData}`,
+      ].join(" "),
+    );
+  }
+
+  // remove methodId (4bytes after 0x)
+  const actionErrorArgBytes = `0x${errorData.slice(10)}`;
+
+  let actionIndex: BigNumber | undefined;
+  let message: string;
+
+  try {
+    const [actionIndexDecoded, actionErrorData] = utils.defaultAbiCoder.decode(
+      ["uint256", "bytes"],
+      actionErrorArgBytes,
+    ) as [BigNumber, string];
+
+    actionIndex = actionIndexDecoded;
+
+    const actionErrorDataBody = `0x${actionErrorData.slice(10)}`;
+
+    if (actionErrorData.startsWith(errorSelectors.Error)) {
+      [message] = utils.defaultAbiCoder.decode(["string"], actionErrorDataBody);
+    } else if (actionErrorData.startsWith(errorSelectors.Panic)) {
+      const [panicCode] = utils.defaultAbiCoder.decode(
+        ["uint256"],
+        actionErrorDataBody,
+      ) as [BigNumber];
+
+      message = [
+        `Panic: ${panicCode.toHexString()}`,
+        "(See Panic(uint256) in the solidity docs:",
+        "https://docs.soliditylang.org/_/downloads/en/latest/pdf/)",
+      ].join(" ");
+    } else {
+      message = `Unexpected action error data: ${actionErrorData}`;
+    }
+  } catch (error) {
+    console.error(error);
+    message = `Unexpected error data: ${errorData}`;
   }
 
   return {
-    actionIndex: BigNumber.from(splitErrorString[0]),
-    message: splitErrorString[1],
+    actionIndex,
+    message,
   };
 };
 
@@ -101,3 +154,18 @@ export const getOperationResults = (
     [],
   );
 };
+
+function calculateSelector(signature: string) {
+  return utils.keccak256(new TextEncoder().encode(signature)).slice(0, 10);
+}
+
+function calculateAndCheckSelector(signature: string, expected: string) {
+  const selector = calculateSelector(signature);
+
+  assert(
+    selector === expected,
+    `Selector for ${signature} was not ${expected}`,
+  );
+
+  return selector;
+}
