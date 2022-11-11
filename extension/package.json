@@ -36,7 +36,7 @@
     "advanced-css-reset": "^1.2.2",
     "async-mutex": "^0.3.2",
     "axios": "^0.27.2",
-    "bls-wallet-clients": "0.8.0-2d28b7b",
+    "bls-wallet-clients": "0.8.0-bc3d146",
     "browser-passworder": "^2.0.3",
     "bs58check": "^2.1.2",
     "crypto-browserify": "^3.12.0",
