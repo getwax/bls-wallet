@@ -87,7 +87,7 @@ export default class BlsProvider extends JsonRpcProvider {
 
     let getBundleReceipt = async () =>
       await aggregator.lookupReceipt(transactionHash);
-    let bundleExists = (result: BundleReceipt) => !result.transactionHash;
+    let bundleExists = (result: BundleReceipt) => !result?.transactionHash;
     bundleReceipt = await poll(getBundleReceipt, bundleExists, 3000);
 
     // TODO: ERROR HANDLING

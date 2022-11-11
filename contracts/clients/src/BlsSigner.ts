@@ -16,12 +16,12 @@ import { BigNumber } from "@ethersproject/bignumber";
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
 import { ActionDataDto } from "./signer/types";
-import { ethers } from "ethers";
 
 export const _constructorGuard = {};
 
 export default class BlsSigner extends Signer {
   readonly provider: BlsProvider;
+  wallet!: BlsWalletWrapper;
   _index: number;
   _address: string;
 
@@ -55,9 +55,24 @@ export default class BlsSigner extends Signer {
     }
   }
 
+  async initWallet(
+    privateKey: string,
+    verificationGateway: string,
+    provider: Provider,
+  ) {
+    this.wallet = await BlsWalletWrapper.connect(
+      privateKey,
+      verificationGateway,
+      provider,
+    );
+  }
+
   async sendTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<TransactionResponse> {
+    if (!this.wallet) {
+      throw new Error("Call this.init() to initialize the wallet.");
+    }
     try {
       // TODO: dynamically add this
       const verificationGateway = "0x3C17E9cF70B774bCf32C66C8aB83D19661Fc27E2";
@@ -70,23 +85,14 @@ export default class BlsSigner extends Signer {
         encodedFunction: transaction.data?.toString() ?? "0x",
       };
 
-      const HDPhrase = ethers.Wallet.createRandom().mnemonic.phrase;
-      const node = ethers.utils.HDNode.fromMnemonic(HDPhrase);
-      const { privateKey } = node.derivePath("m/44'/60'/0'/0/0");
-      const wallet = await BlsWalletWrapper.connect(
-        privateKey,
-        verificationGateway,
-        provider,
-      );
-
       const nonce = (
         await BlsWalletWrapper.Nonce(
-          wallet.PublicKey(),
+          this.wallet.PublicKey(),
           verificationGateway,
           provider,
         )
       ).toString();
-      const bundle = wallet.sign({ nonce, actions: [action] });
+      const bundle = this.wallet.sign({ nonce, actions: [action] });
 
       const agg = provider.aggregator;
       const result = await agg.add(bundle);
@@ -99,7 +105,7 @@ export default class BlsSigner extends Signer {
         action,
         nonce,
         result.hash,
-        wallet.address,
+        this.wallet.address,
       );
     } catch (error) {
       throw new Error(`sendTransaction - error sending transaction: ${error}`);
@@ -107,8 +113,11 @@ export default class BlsSigner extends Signer {
   }
 
   async getAddress(): Promise<string> {
+    if (!this.wallet) {
+      throw new Error("Call this.init() to initialize the wallet.");
+    }
     if (this._address == null) {
-      const privateKey = ""; // TODO: Implement this and dynamically add verificationGateway
+      const privateKey = this.wallet.privateKey; // TODO: Think about privateKey management and dynamically add verificationGateway
       const verificationGateway = "0x3C17E9cF70B774bCf32C66C8aB83D19661Fc27E2";
       this._address = await BlsWalletWrapper.Address(
         privateKey,
