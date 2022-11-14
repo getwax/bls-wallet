@@ -885,10 +885,10 @@ bech32@1.1.4:
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
 
-bls-wallet-clients@0.8.0-bc3d146:
-  version "0.8.0-bc3d146"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.8.0-bc3d146.tgz#2e9343607f30c3891c616e0b77f4e00a12774c52"
-  integrity sha512-DgFPCVCLZ1xqBpLqztI0PldBZc3s37wm1LBqGvHQqcJfjRHP+DO6wahq7BtoiZ5sz7SeMiORCkFWPdh3rlaF0w==
+bls-wallet-clients@0.8.0-940dd11:
+  version "0.8.0-940dd11"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.8.0-940dd11.tgz#6488e58b1fad12e577ec06d10a3c4f9763c1e395"
+  integrity sha512-f5zqGf5dAq7IPXbrsNLdvEX0lJx2/7DBOqbkvHABGEWEKnHd32tMKDZxUeGt/cPV+2W0nKmQk3uYPNGCEuC6EA==
   dependencies:
     "@thehubbleproject/bls" "^0.5.1"
     ethers "5.5.4"
