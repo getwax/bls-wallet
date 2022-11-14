@@ -21,6 +21,7 @@ contract VerificationGateway
     /** Domain chosen arbitrarily */
     bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
     uint8 constant BLS_KEY_LEN = 4;
+    uint256 constant NONCE_GAS_LIMIT = 50000;
 
     IBLS public immutable blsLib;
     ProxyAdmin public immutable walletProxyAdmin;
@@ -296,7 +297,10 @@ contract VerificationGateway
             IWallet wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
 
             // check nonce then perform action
-            if (bundle.operations[i].nonce == wallet.nonce()) {
+            if (
+                bundle.operations[i].nonce ==
+                wallet.nonce{ gas: NONCE_GAS_LIMIT }()
+            ) {
                 // request wallet perform operation
                 (
                     bool success,
