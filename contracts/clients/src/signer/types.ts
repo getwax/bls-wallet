@@ -1,9 +1,9 @@
-import { BigNumberish } from "ethers";
+import { BigNumberish, BytesLike } from "ethers";
 
 export type ActionData = {
   ethValue: BigNumberish;
   contractAddress: string;
-  encodedFunction: string;
+  encodedFunction: BytesLike;
 };
 
 export type Operation = {
