@@ -12,6 +12,7 @@ export function bundleToDto(bundle: Bundle): BundleDto {
     ]),
     operations: bundle.operations.map((op) => ({
       nonce: BigNumber.from(op.nonce).toHexString(),
+      gasLimit: BigNumber.from(op.gasLimit).toHexString(),
       actions: op.actions.map((a) => ({
         ethValue: BigNumber.from(a.ethValue).toHexString(),
         contractAddress: a.contractAddress,

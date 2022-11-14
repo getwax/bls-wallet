@@ -420,6 +420,7 @@ contract VerificationGateway
                 block.chainid,
                 walletAddress,
                 op.nonce,
+                op.gasLimit,
                 keccak256(encodedActionData)
             )
         );

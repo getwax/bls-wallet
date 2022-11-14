@@ -18,7 +18,13 @@ export default (chainId: number) =>
     }
 
     return solidityPack(
-      ["uint256", "address", "uint256", "bytes32"],
-      [chainId, walletAddress, operation.nonce, keccak256(encodedActionData)],
+      ["uint256", "address", "uint256", "uint256", "bytes32"],
+      [
+        chainId,
+        walletAddress,
+        operation.nonce,
+        operation.gasLimit,
+        keccak256(encodedActionData),
+      ],
     );
   };

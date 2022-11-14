@@ -8,7 +8,12 @@ export type ActionData = {
 
 export type Operation = {
   nonce: BigNumberish;
+  gasLimit: BigNumberish;
   actions: ActionData[];
+};
+
+export type OperationInput = Omit<Operation, "gasLimit"> & {
+  gasLimit?: BigNumberish;
 };
 
 export type Bundle = {
@@ -28,6 +33,7 @@ export type ActionDataDto = {
 
 export type OperationDto = {
   nonce: string;
+  gasLimit: string;
   actions: ActionDataDto[];
 };
 

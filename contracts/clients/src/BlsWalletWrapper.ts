@@ -7,7 +7,7 @@ import {
   BlsWalletSigner,
   initBlsWalletSigner,
   Bundle,
-  Operation,
+  OperationInput,
   PublicKey,
   Signature,
 } from "./signer";
@@ -222,7 +222,7 @@ export default class BlsWalletWrapper {
   }
 
   /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
-  sign(operation: Operation): Bundle {
+  sign(operation: OperationInput): Bundle {
     return this.blsWalletSigner.sign(
       operation,
       this.privateKey,

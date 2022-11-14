@@ -8,6 +8,7 @@ interface IWallet {
 
     struct Operation {
         uint256 nonce;
+        uint256 gasLimit;
         IWallet.ActionData[] actions;
     }
 
