@@ -80,6 +80,24 @@ const verificationGateway = VerificationGateway__factory.connect(
 await verificationGateway.processBundle(bundle);
 ```
 
+You can get the results of the operations in a bundle using `getOperationResults`.
+
+```ts
+import { getOperationResults } from 'bls-wallet-clients';
+
+...
+
+const txn = await verificationGateway.processBundle(bundle);
+const txnReceipt = txn.wait();
+const opResults = getOperationResults(txnReceipt);
+
+// Includes data from WalletOperationProcessed event,
+// as well as parsed errors with action index
+const { error } = opResults[0];
+console.log(error?.actionIndex); // ex. 0 (as BigNumber)
+console.log(error?.message); // ex. "some require failure message"
+```
+
 ## Signer
 
 Utilities for signing, aggregating and verifying transaction bundles using the

@@ -19,7 +19,11 @@ import {
 import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
-import { VerificationGateway, BLSOpen, ProxyAdmin } from "../../typechain";
+import {
+  VerificationGateway,
+  BLSOpen,
+  ProxyAdmin,
+} from "../../typechain-types";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -119,7 +123,10 @@ export default class Fixture {
         // Perform an empty transaction to trigger wallet creation
         await (
           await verificationGateway.processBundle(
-            wallet.sign({ nonce: BigNumber.from(0), actions: [] }),
+            wallet.sign({
+              nonce: BigNumber.from(0),
+              actions: [],
+            }),
           )
         ).wait();
 

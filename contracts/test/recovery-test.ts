@@ -7,7 +7,7 @@ import { BlsWalletWrapper, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
-import { BLSWallet, VerificationGateway } from "../typechain";
+import { BLSWallet, VerificationGateway } from "../typechain-types";
 
 const signWalletAddress = async (
   fx: Fixture,
@@ -18,7 +18,7 @@ const signWalletAddress = async (
   const wallet = await BlsWalletWrapper.connect(
     signerPrivKey,
     fx.verificationGateway.address,
-    fx.provider,
+    fx.verificationGateway.provider,
   );
   return wallet.signMessage(addressMessage);
 };
@@ -134,7 +134,14 @@ describe("Recovery", async function () {
   });
 
   it("should recover before bls key update", async function () {
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
+    let recoveredWalletNonce = 1;
+    await fx.call(
+      wallet1,
+      blsWallet,
+      "setRecoveryHash",
+      [recoveryHash],
+      recoveredWalletNonce++,
+    );
 
     const attackSignature = await signWalletAddress(
       fx,
@@ -149,11 +156,27 @@ describe("Recovery", async function () {
       vg,
       "setBLSKeyForWallet",
       [attackSignature, walletAttacker.PublicKey()],
-      1,
+      recoveredWalletNonce++,
     );
+    const pendingKey = await Promise.all(
+      [0, 1, 2, 3].map(async (i) =>
+        (await vg.pendingBLSPublicKeyFromHash(hash1, i)).toHexString(),
+      ),
+    );
+    expect(pendingKey).to.deep.equal(walletAttacker.PublicKey());
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
-    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 2);
+    // NB: advancing the time makes an empty tx with lazywallet[1]
+    // Here this seems to be wallet2, not wallet (wallet being recovered)
+    // recoveredWalletNonce++
+
+    await fx.call(
+      wallet1,
+      vg,
+      "setPendingBLSKeyForWallet",
+      [],
+      recoveredWalletNonce++,
+    );
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -173,6 +196,9 @@ describe("Recovery", async function () {
     expect(await vg.walletFromHash(hash2)).to.eql(wallet1.address);
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2 + 1); // wait remainder the time
+    // NB: advancing the time makes an empty tx with lazywallet[1]
+    // Here this seems to be wallet1, the wallet being recovered
+    recoveredWalletNonce++;
 
     // check attacker's key not set after waiting full safety delay
     await fx.call(
@@ -182,12 +208,23 @@ describe("Recovery", async function () {
       [],
       await walletAttacker.Nonce(),
     );
+    /**
+     * TODO (merge-ok)
+     *
+     * Event thought typechain types are symlinked between contracts
+     * and clients, there appears to be a mismatch here passing in
+     * VerificationGateway. This may be due to differing typescript
+     * versions between contracts and clients, or something else.
+     *
+     * For now cast to 'any'.
+     */
+    await wallet2.syncWallet(vg as any);
     await fx.call(
       wallet2,
       vg,
       "setPendingBLSKeyForWallet",
       [],
-      await wallet2.Nonce(),
+      recoveredWalletNonce++, // await wallet2.Nonce(),
     );
 
     expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
@@ -199,10 +236,10 @@ describe("Recovery", async function () {
     // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
     const res = await fx.callStatic(
       wallet2,
-      fx.verificationGateway,
+      vg,
       "setTrustedBLSGateway",
-      [hash2, fx.verificationGateway.address],
-      3,
+      [hash2, vg.address],
+      recoveredWalletNonce, // await wallet2.Nonce(),
     );
     expect(res.successes[0]).to.equal(true);
   });
@@ -247,5 +284,53 @@ describe("Recovery", async function () {
         .connect(recoverySigner)
         .recoverWallet(addressSignature, hashAttacker, salt, wallet1Key),
     ).to.be.rejectedWith("VG: Signature not verified for wallet address");
+  });
+
+  it("should NOT allow a bundle to be executed on a wallet with the same BLS pubkey but different address (replay attack)", async function () {
+    // Run empty operation on wallet 2 to align nonces after recovery.
+    const emptyBundle = wallet2.sign({
+      nonce: await wallet2.Nonce(),
+      actions: [],
+    });
+    const emptyBundleTxn = await fx.verificationGateway.processBundle(
+      emptyBundle,
+    );
+    await emptyBundleTxn.wait();
+
+    // Set wallet 1's pubkey to wallet 2's through recovery
+    // This will also unregister wallet 2 from VG
+    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
+
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      wallet2.privateKey,
+    );
+
+    const recoveryTxn = await fx.verificationGateway
+      .connect(recoverySigner)
+      .recoverWallet(addressSignature, hash1, salt, wallet2.PublicKey());
+    await recoveryTxn.wait();
+
+    const [wallet1PubkeyHash, wallet2PubkeyHash, wallet1Nonce, wallet2Nonce] =
+      await Promise.all([
+        vg.hashFromWallet(wallet1.address),
+        vg.hashFromWallet(wallet2.address),
+        wallet1.Nonce(),
+        wallet2.Nonce(),
+      ]);
+    expect(wallet1PubkeyHash).to.eql(hash2);
+    expect(wallet2PubkeyHash).to.eql(hash2);
+    expect(wallet1Nonce.toNumber()).to.eql(wallet2Nonce.toNumber());
+
+    // Attempt to run a bundle from wallet 2 through wallet 1
+    // Signiuture verification should fail as addresses differ
+    const invalidBundle = wallet2.sign({
+      nonce: await wallet2.Nonce(),
+      actions: [],
+    });
+    await expect(
+      fx.verificationGateway.processBundle(invalidBundle),
+    ).to.be.rejectedWith("VG: Sig not verified");
   });
 });
