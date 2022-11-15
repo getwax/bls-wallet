@@ -26,21 +26,23 @@ describe("Signer test", async function () {
     signers = getRandomSigners(4);
     provider = ethers.provider;
 
-    const tx = await fundedSigners[0].sendTransaction({
-      to: await signers[0].getAddress(),
-      value: parseEther("1000.0"),
-    });
-    await tx.wait();
-    const txTwo = await fundedSigners[0].sendTransaction({
-      to: await signers[1].getAddress(),
-      value: parseEther("1000.0"),
-    });
-    await txTwo.wait();
+    const fundSigner = async (signer) => {
+      const tx = await fundedSigners[0].sendTransaction({
+        to: await signer.getAddress(),
+        value: parseEther("1000.0"),
+      });
+      return tx.wait();
+    };
+
+    // Give all signers some Ether
+    await Promise.all(
+      signers.map((signer) => {
+        return fundSigner(signer);
+      }),
+    );
   });
 
   it("Test a send ETH transaction", async function () {
-    const balance = await provider.getBalance(await signers[0].getAddress());
-
     const walletBalanceBefore = await provider.getBalance(
       await signers[1].getAddress(),
     );
@@ -68,14 +70,14 @@ describe("Signer test", async function () {
       await mockERC20.transfer(await signers[0].getAddress(), tokenSupply);
     });
 
-    it("balanceOf call", async function () {
+    it("balanceOf() call", async function () {
       const initialBalance = await mockERC20.balanceOf(
         await signers[0].getAddress(),
       );
       expect(initialBalance).to.equal(tokenSupply);
     });
 
-    it("transfer call", async function () {
+    it("transfer() call", async function () {
       const initialBalance = await mockERC20.balanceOf(
         await signers[1].getAddress(),
       );
@@ -92,7 +94,7 @@ describe("Signer test", async function () {
       expect(newBalance).to.equal(tokenSupply.div(2));
     });
 
-    it("Approve and transferFrom calls", async function () {
+    it("approve() and transferFrom() calls", async function () {
       const initialBalance = await mockERC20.balanceOf(
         await signers[1].getAddress(),
       );
