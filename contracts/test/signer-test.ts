@@ -4,16 +4,38 @@ import { ethers } from "hardhat";
 import { parseEther } from "ethers/lib/utils";
 import { utils } from "ethers";
 
+// Would we want to do this?
+function getRandomSigners(numSigners: number) {
+  const signers = [];
+  const provider = ethers.provider;
+  for (let i = 0; i < numSigners; i++) {
+    const pKey = ethers.Wallet.createRandom().privateKey;
+    const wallet = new ethers.Wallet(pKey);
+    signers.push(wallet.connect(provider));
+  }
+  return signers;
+}
+
 describe("Signer test", async function () {
+  let fundedSigners;
   let signers;
   let provider;
 
-  beforeEach(async function () {
-    signers = await ethers.getSigners();
+  this.beforeAll(async function () {
+    fundedSigners = await ethers.getSigners();
+    signers = getRandomSigners(4);
     provider = ethers.provider;
+
+    const tx = await fundedSigners[0].sendTransaction({
+      to: await signers[0].getAddress(),
+      value: parseEther("1000.0"),
+    });
+    await tx.wait();
   });
 
   it("Test a send ETH transaction", async function () {
+    const balance = await provider.getBalance(await signers[0].getAddress());
+    console.log("signer one balance: ", ethers.utils.formatEther(balance));
     const walletBalanceBefore = await provider.getBalance(
       await signers[1].getAddress(),
     );
