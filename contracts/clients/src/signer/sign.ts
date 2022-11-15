@@ -1,5 +1,4 @@
 import { signer } from "@thehubbleproject/bls";
-import { constants } from "ethers";
 
 import encodeMessageForSigning from "./encodeMessageForSigning";
 import { Bundle, OperationInput } from "./types";
@@ -16,7 +15,7 @@ export default (
   ): Bundle => {
     const operation = {
       ...operationInput,
-      gasLimit: operationInput.gasLimit ?? constants.MaxUint256,
+      gasLimit: operationInput.gasLimit ?? 0,
     };
 
     const signer = signerFactory.getSigner(domain, privateKey);
