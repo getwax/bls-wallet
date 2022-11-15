@@ -4,7 +4,8 @@ import { ethers } from "hardhat";
 import { parseEther } from "ethers/lib/utils";
 import { utils } from "ethers";
 
-// Would we want to do this?
+// After the Signer/Provider work is done, we should
+// swap these out with BLS signers.
 function getRandomSigners(numSigners: number) {
   const signers = [];
   const provider = ethers.provider;
