@@ -31,11 +31,16 @@ describe("Signer test", async function () {
       value: parseEther("1000.0"),
     });
     await tx.wait();
+    const txTwo = await fundedSigners[0].sendTransaction({
+      to: await signers[1].getAddress(),
+      value: parseEther("1000.0"),
+    });
+    await txTwo.wait();
   });
 
   it("Test a send ETH transaction", async function () {
     const balance = await provider.getBalance(await signers[0].getAddress());
-    console.log("signer one balance: ", ethers.utils.formatEther(balance));
+
     const walletBalanceBefore = await provider.getBalance(
       await signers[1].getAddress(),
     );
@@ -63,7 +68,14 @@ describe("Signer test", async function () {
       await mockERC20.transfer(await signers[0].getAddress(), tokenSupply);
     });
 
-    it("Test sending ERC20 token from signer zero", async function () {
+    it("balanceOf call", async function () {
+      const initialBalance = await mockERC20.balanceOf(
+        await signers[0].getAddress(),
+      );
+      expect(initialBalance).to.equal(tokenSupply);
+    });
+
+    it("transfer call", async function () {
       const initialBalance = await mockERC20.balanceOf(
         await signers[1].getAddress(),
       );
@@ -78,6 +90,36 @@ describe("Signer test", async function () {
         await signers[1].getAddress(),
       );
       expect(newBalance).to.equal(tokenSupply.div(2));
+    });
+
+    it("Approve and transferFrom calls", async function () {
+      const initialBalance = await mockERC20.balanceOf(
+        await signers[1].getAddress(),
+      );
+
+      const erc20ToTransfer = parseEther("11.0");
+
+      const txApprove = await mockERC20
+        .connect(signers[0])
+        .approve(
+          await signers[1].getAddress(),
+          ethers.BigNumber.from(10).pow(18).mul(11),
+        );
+      txApprove.wait();
+
+      const txTransferFrom = await mockERC20
+        .connect(signers[1])
+        .transferFrom(
+          await signers[0].getAddress(),
+          await signers[1].getAddress(),
+          ethers.BigNumber.from(10).pow(18).mul(11),
+        );
+      txTransferFrom.wait();
+
+      const newBalance = await mockERC20.balanceOf(
+        await signers[1].getAddress(),
+      );
+      expect(newBalance.sub(initialBalance)).to.equal(erc20ToTransfer);
     });
   });
 });
