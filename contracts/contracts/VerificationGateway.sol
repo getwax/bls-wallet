@@ -295,27 +295,41 @@ contract VerificationGateway
         results = new bytes[][](opLength);
         for (uint256 i = 0; i<opLength; i++) {
             IWallet wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
+            IWallet.Operation memory op = bundle.operations[i];
 
-            // check nonce then perform action
-            if (
-                bundle.operations[i].nonce ==
-                wallet.nonce{ gas: NONCE_GAS_LIMIT }()
-            ) {
-                // request wallet perform operation
-                (
-                    bool success,
-                    bytes[] memory resultSet
-                ) = wallet.performOperation(bundle.operations[i]);
-                successes[i] = success;
-                results[i] = resultSet;
-                emit WalletOperationProcessed(
-                    address(wallet),
-                    bundle.operations[i].nonce,
-                    bundle.operations[i].actions,
-                    successes[i],
-                    results[i]
-                );
+            if (op.nonce != wallet.nonce{ gas: NONCE_GAS_LIMIT }()) {
+                // Don't process operation if the nonce is not correct
+                continue;
             }
+
+            uint256 gasAvailable = 63 * gasleft() / 64;
+            uint256 gasLimit = op.gasLimit;
+
+            if (gasLimit > gasAvailable) {
+                // Don't process operation if there is not enough gas
+                continue;
+            }
+
+            if (gasLimit == 0) {
+                // A zero gasLimit is used to mean that no gasLimit has been
+                // set, and we provide the available gas instead
+                gasLimit = gasAvailable;
+            }
+
+            // request wallet perform operation
+            (
+                bool success,
+                bytes[] memory resultSet
+            ) = wallet.performOperation{ gas: gasLimit }(op);
+            successes[i] = success;
+            results[i] = resultSet;
+            emit WalletOperationProcessed(
+                address(wallet),
+                op.nonce,
+                op.actions,
+                successes[i],
+                results[i]
+            );
         }
     }
 
