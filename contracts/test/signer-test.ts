@@ -17,7 +17,7 @@ function getRandomSigners(numSigners: number) {
   return signers;
 }
 
-describe("Signer test", async function () {
+describe("Signer tests", async function () {
   let fundedSigners;
   let signers;
   let provider;
@@ -123,6 +123,38 @@ describe("Signer test", async function () {
         await signers[1].getAddress(),
       );
       expect(newBalance.sub(initialBalance)).to.equal(erc20ToTransfer);
+    });
+  });
+
+  describe("ERC721", async function () {
+    // features:
+    // mintable: will create a mint function only callable by privileged accounts
+    // Enumerable: will give you access to on-chain Tokens enumeration and functions such as “totalSupply”,
+    // URI Storage: to be able to associate URIs to our NFTs
+
+    // Burnable
+    // Pausable
+    // Permit
+    // Votes
+    // Flash Minting
+    // Snapshots
+
+    let mockERC721;
+
+    this.beforeAll(async function () {
+      const MockERC721 = await ethers.getContractFactory("MockERC721");
+      mockERC721 = await MockERC721.deploy("AnyNFT", "NFT");
+      await mockERC721.deployed();
+    });
+
+    it("safeMint() call", async function () {
+      const nftUri = "ipfs://test.url/";
+      const mint = await mockERC721
+        .connect(signers[0])
+        .safeMint(signers[1].address, nftUri);
+      mint.wait();
+
+      expect(await mockERC721.totalSupply()).to.equal(1);
     });
   });
 });
