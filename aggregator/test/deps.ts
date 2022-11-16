@@ -15,7 +15,7 @@ export function assertEquals<L, R extends L>(left: L, right: R) {
 
 export function assertBundleSucceeds(res: AddBundleResponse) {
   if ("failures" in res) {
-    throw new AssertionError("expected bundle to succeed");
+    throw new AssertionError(`expected bundle to succeed. failures: ${JSON.stringify(res.failures)}`);
   }
 }
 

@@ -178,6 +178,10 @@ export default class QuillController {
         this.transactionsController.rpc.updateTransactionStatus,
       promptUser: this.transactionsController.rpc.promptUser,
       requestTransaction: this.transactionsController.rpc.requestTransaction,
+      updateTransactionBundleHash:
+        this.transactionsController.rpc.updateTransactionBundleHash,
+      updateTransactionHashByBundleHash:
+        this.transactionsController.rpc.updateTransactionHashByBundleHash,
 
       debugMe: async ({ params: [a, b, c] }) => {
         console.log('debugMe', { a, b, c });

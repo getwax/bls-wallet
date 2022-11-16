@@ -10,6 +10,7 @@ import { parseEther, solidityPack } from "ethers/lib/utils";
 import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
 // import splitHex256 from "../shared/helpers/splitHex256";
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
+import { getOperationResults } from "../clients/src";
 
 describe("WalletActions", async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
@@ -322,15 +323,10 @@ describe("WalletActions", async function () {
       )
     ).wait();
 
-    // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
-    // Get the first (only) result from "results" argument.
-    const result = r.events[0].args.results[0]; // For errors this is "Error(string)"
-    const errorArgBytesString: string = "0x" + result.substring(10); // remove methodId (4bytes after 0x)
-    const errorString = ethers.utils.defaultAbiCoder.decode(
-      ["string"],
-      errorArgBytesString,
-    )[0]; // decoded bytes is a string of the action index that errored.
-    expect(errorString).to.equal("1 - ERC20: transfer from the zero address");
+    const opResults = getOperationResults(r);
+    expect(opResults).to.have.lengthOf(1);
+    expect(opResults[0].error.actionIndex.toNumber()).to.eql(1);
+    expect(opResults[0].error.message).to.eql("ERC20: insufficient allowance");
 
     const recipientBalance = await th.testToken.balanceOf(recipient.address);
 

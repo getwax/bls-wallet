@@ -8,10 +8,9 @@ export default (
     domain: Uint8Array,
     chainId: number,
   ) =>
-  (operation: Operation, privateKey: string): Bundle => {
-    const message = encodeMessageForSigning(chainId)(operation);
+  (operation: Operation, privateKey: string, walletAddress: string): Bundle => {
     const signer = signerFactory.getSigner(domain, privateKey);
-
+    const message = encodeMessageForSigning(chainId)(operation, walletAddress);
     const signature = signer.sign(message);
 
     return {

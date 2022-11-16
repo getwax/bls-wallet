@@ -6,7 +6,7 @@ import deployerContract, {
   defaultDeployerAddress,
   defaultDeployerWallet,
 } from "../shared/helpers/deployDeployer";
-import { Create2Deployer } from "../typechain";
+import { Create2Deployer } from "../typechain-types";
 
 describe("Deployer", async function () {
   let Create2Deployer: ContractFactory;

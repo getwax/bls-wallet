@@ -12,6 +12,9 @@ const weiPerToken = BigNumber.from(10).pow(18);
 const samples = (() => {
   const dummy256HexString = "0x" + "0123456789".repeat(10).slice(0, 64);
   const contractAddress = dummy256HexString;
+  // Random addresses
+  const walletAddress = "0x1337AF0f4b693fd1c36d7059a0798Ff05a60DFFE";
+  const otherWalletAddress = "0x42C8157D539825daFD6586B119db53761a2a91CD";
 
   const bundleTemplate: Operation = {
     nonce: BigNumber.from(123),
@@ -37,6 +40,8 @@ const samples = (() => {
     bundleTemplate,
     privateKey,
     otherPrivateKey,
+    walletAddress,
+    otherWalletAddress,
   };
 })();
 
@@ -47,23 +52,24 @@ describe("index", () => {
       domain,
     });
 
-    const { bundleTemplate, privateKey, otherPrivateKey } = samples;
+    const { bundleTemplate, privateKey, otherPrivateKey, walletAddress } =
+      samples;
 
-    const bundle = sign(bundleTemplate, privateKey);
+    const bundle = sign(bundleTemplate, privateKey, walletAddress);
 
     expect(bundle.signature).to.deep.equal([
-      "0x0f8af80a400b731f4f2ddcd29816f296cca75e34816d466512a703631de3bb69",
-      "0x023d76b485531a8dbc087b2d6f25563ad7f6d81d25f5f123186d0ec26da5e2d0",
+      "0x2c1b0dc6643375e05a6f2ba3d23b1ce941253010b13a127e22f5db647dc37952",
+      "0x0338f96fc67ce194a74a459791865ac2eb304fc214fd0962775078d12aea5b7e",
     ]);
 
-    expect(verify(bundle)).to.equal(true);
+    expect(verify(bundle, walletAddress)).to.equal(true);
 
     const bundleBadSig = {
       ...bundle,
-      signature: sign(bundleTemplate, otherPrivateKey).signature,
+      signature: sign(bundleTemplate, otherPrivateKey, walletAddress).signature,
     };
 
-    expect(verify(bundleBadSig)).to.equal(false);
+    expect(verify(bundleBadSig, walletAddress)).to.equal(false);
 
     const bundleBadMessage: Bundle = {
       senderPublicKeys: bundle.senderPublicKeys,
@@ -83,7 +89,7 @@ describe("index", () => {
       signature: bundle.signature,
     };
 
-    expect(verify(bundleBadMessage)).to.equal(false);
+    expect(verify(bundleBadMessage, walletAddress)).to.equal(false);
   });
 
   it("aggregates transactions", async () => {
@@ -92,38 +98,50 @@ describe("index", () => {
       domain,
     });
 
-    const { bundleTemplate, privateKey } = samples;
+    const {
+      bundleTemplate,
+      privateKey,
+      otherPrivateKey,
+      walletAddress,
+      otherWalletAddress,
+    } = samples;
 
-    const bundle1 = sign(bundleTemplate, privateKey);
-    const bundle2 = aggregate([bundle1, bundle1]);
+    const bundle1 = sign(bundleTemplate, privateKey, walletAddress);
+    const bundle2 = sign(bundleTemplate, otherPrivateKey, otherWalletAddress);
+    const aggBundle = aggregate([bundle1, bundle2]);
 
-    expect(bundle2.signature).to.deep.equal([
-      "0x0008678ea56953fdca1b007b2685d3ed164b11de015f0a87ee844860c8e6cf30",
-      "0x2bc51003125b2da84a01e639c3c2be270a9b93ed82498bffbead65c6f07df708",
+    expect(aggBundle.signature).to.deep.equal([
+      "0x2319fc81d339dce4678c73429dfd2f11766742ed1e41df5a2ba2bf4863d877b5",
+      "0x1bb25c15ad1f2f967a80a7a65c7593fcd66b59bf092669707baf2db726e8e714",
     ]);
 
-    expect(verify(bundle2)).to.equal(true);
+    expect(verify(bundle1, walletAddress)).to.equal(true);
+    expect(verify(bundle2, otherWalletAddress)).to.equal(true);
 
-    const bundle2BadMessage: Bundle = {
-      ...bundle2,
+    expect(verify(bundle1, otherWalletAddress)).to.equal(false);
+    expect(verify(bundle2, walletAddress)).to.equal(false);
+
+    const aggBundleBadMessage: Bundle = {
+      ...aggBundle,
       operations: [
-        bundle2.operations[0],
+        aggBundle.operations[0],
         {
-          ...bundle2.operations[1],
+          ...aggBundle.operations[1],
 
           // Pretend this client signed to pay a million tokens
           actions: [
             {
-              ...bundle2.operations[1].actions[0],
+              ...aggBundle.operations[1].actions[0],
               ethValue: weiPerToken.mul(1000000),
             },
-            ...bundle2.operations[1].actions.slice(1),
+            ...aggBundle.operations[1].actions.slice(1),
           ],
         },
       ],
     };
 
-    expect(verify(bundle2BadMessage)).to.equal(false);
+    expect(verify(aggBundleBadMessage, walletAddress)).to.equal(false);
+    expect(verify(aggBundleBadMessage, otherWalletAddress)).to.equal(false);
   });
 
   it("can aggregate transactions which already have multiple subTransactions", async () => {
@@ -132,7 +150,7 @@ describe("index", () => {
       domain,
     });
 
-    const { bundleTemplate, privateKey } = samples;
+    const { bundleTemplate, privateKey, walletAddress } = samples;
 
     const bundles = Range(4).map((i) =>
       sign(
@@ -146,6 +164,7 @@ describe("index", () => {
           ],
         },
         privateKey,
+        walletAddress,
       ),
     );
 
@@ -154,7 +173,7 @@ describe("index", () => {
 
     const aggAggBundle = aggregate([aggBundle1, aggBundle2]);
 
-    expect(verify(aggAggBundle)).to.equal(true);
+    expect(verify(aggAggBundle, walletAddress)).to.equal(true);
   });
 
   it("generates expected publicKeyStr", async () => {
@@ -194,6 +213,6 @@ describe("index", () => {
 
     const emptyBundle = aggregate([]);
 
-    expect(verify(emptyBundle)).to.equal(true);
+    expect(verify(emptyBundle, samples.walletAddress)).to.equal(true);
   });
 });

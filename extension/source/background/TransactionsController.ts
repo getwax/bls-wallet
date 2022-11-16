@@ -96,6 +96,7 @@ export default class TransactionsController {
         createdAt: +new Date(),
         status: TransactionStatus.NEW,
         bundleHash: '',
+        txHash: '',
         actions: params.map((p) => ({
           ...p,
           value: p.value || '0x0',
@@ -147,6 +148,40 @@ export default class TransactionsController {
         return transaction;
       }
       throw new Error('Transaction not found');
+    },
+
+    updateTransactionBundleHash: async ({ params: [id, bundleHash] }) => {
+      const { outgoing: transactions } = await this.transactions.read();
+      const transaction = transactions.find((t) => t.id === id);
+
+      assert(
+        transaction !== undefined,
+        () => new Error('Transaction not found'),
+      );
+
+      transaction.bundleHash = bundleHash;
+
+      const updatedTx = transactions.filter((t) => t.id !== id);
+      updatedTx.push(transaction);
+      await this.transactions.update({ outgoing: updatedTx });
+    },
+
+    updateTransactionHashByBundleHash: async ({
+      params: [bundleHash, txHash],
+    }) => {
+      const { outgoing: transactions } = await this.transactions.read();
+      const transaction = transactions.find((t) => t.bundleHash === bundleHash);
+
+      assert(
+        transaction !== undefined,
+        () => new Error('Transaction not found'),
+      );
+
+      transaction.txHash = txHash;
+
+      const updatedTx = transactions.filter((t) => t.bundleHash !== bundleHash);
+      updatedTx.push(transaction);
+      await this.transactions.update({ outgoing: updatedTx });
     },
 
     updateTransactionStatus: async ({ params: [id, status] }) => {
