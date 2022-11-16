@@ -1,6 +1,6 @@
 *
 !/dist/src/**/*
-!/dist/typechain/**/*
+!/dist/typechain-types/**/*
 !/src/**/*
 !/package.json
 !/README.md

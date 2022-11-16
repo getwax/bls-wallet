@@ -1,17 +1,24 @@
-import { BigNumber } from "ethers";
-import { VerificationGateway } from "../../typechain";
+import { BigNumberish, BytesLike } from "ethers";
 
-export type Bundle = Parameters<VerificationGateway["processBundle"]>[0];
-export type Operation = Bundle["operations"][number];
+export type ActionData = {
+  ethValue: BigNumberish;
+  contractAddress: string;
+  encodedFunction: BytesLike;
+};
+
+export type Operation = {
+  nonce: BigNumberish;
+  actions: ActionData[];
+};
+
+export type Bundle = {
+  signature: [BigNumberish, BigNumberish];
+  senderPublicKeys: [BigNumberish, BigNumberish, BigNumberish, BigNumberish][];
+  operations: Operation[];
+};
 
 export type PublicKey = Bundle["senderPublicKeys"][number];
 export type Signature = Bundle["signature"];
-
-export type ActionData = {
-  ethValue: BigNumber;
-  contractAddress: string;
-  encodedFunction: string;
-};
 
 export type ActionDataDto = {
   ethValue: string;

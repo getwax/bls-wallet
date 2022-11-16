@@ -59,6 +59,23 @@ task("fundDeployer", "Sends ETH to create2Deployer contract from first signer")
     await txnRes.wait();
   });
 
+task("sendEth", "Sends ETH to an address")
+  .addParam("address", "Address to send ETH to", undefined, types.string)
+  .addOptionalParam("amount", "Amount of ETH to send", "1.0")
+  .setAction(
+    async ({ address, amount }: { address: string; amount: string }, hre) => {
+      const [account0] = await hre.ethers.getSigners();
+
+      console.log(`${account0.address} -> ${address} ${amount} ETH`);
+
+      const txnRes = await account0.sendTransaction({
+        to: address,
+        value: hre.ethers.utils.parseEther(amount),
+      });
+      await txnRes.wait();
+    },
+  );
+
 // Do any needed pre-test setup here.
 task("test").setAction(async (_taskArgs, _hre, runSuper) => {
   chai.use(chaiAsPromised);

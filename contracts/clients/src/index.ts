@@ -4,20 +4,20 @@ import BlsProvider from "./BlsProvider";
 import BlsSigner from "./BlsSigner";
 
 // eslint-disable-next-line camelcase
-import { VerificationGateway__factory } from "../typechain/factories/VerificationGateway__factory";
-import type { VerificationGateway } from "../typechain/VerificationGateway";
+import { VerificationGateway__factory } from "../typechain-types/factories/contracts/VerificationGateway__factory";
+import type { VerificationGateway } from "../typechain-types/contracts/VerificationGateway";
 
 // eslint-disable-next-line camelcase
-import { AggregatorUtilities__factory } from "../typechain/factories/AggregatorUtilities__factory";
-import type { AggregatorUtilities } from "../typechain/AggregatorUtilities";
+import { AggregatorUtilities__factory } from "../typechain-types/factories/contracts/AggregatorUtilities__factory";
+import type { AggregatorUtilities } from "../typechain-types/contracts/AggregatorUtilities";
 
 // eslint-disable-next-line camelcase
-import { ERC20__factory } from "../typechain/factories/ERC20__factory";
-import type { ERC20 } from "../typechain/ERC20";
+import { ERC20__factory } from "../typechain-types/factories/@openzeppelin/contracts/token/ERC20/ERC20__factory";
+import type { ERC20 } from "../typechain-types/@openzeppelin/contracts/token/ERC20/ERC20";
 
 // eslint-disable-next-line camelcase
-import { MockERC20__factory } from "../typechain/factories/MockERC20__factory";
-import type { MockERC20 } from "../typechain/MockERC20";
+import { MockERC20__factory } from "../typechain-types/factories/contracts/mock/MockERC20__factory";
+import type { MockERC20 } from "../typechain-types/contracts/mock/MockERC20";
 
 import { NetworkConfig, getConfig, validateConfig } from "./NetworkConfig";
 import {
@@ -25,6 +25,8 @@ import {
   getMultiConfig,
   validateMultiConfig,
 } from "./MultiNetworkConfig";
+
+import { OperationResult, getOperationResults } from "./OperationResults";
 
 export * from "./signer";
 
@@ -37,6 +39,8 @@ export {
   MultiNetworkConfig,
   getMultiConfig,
   validateMultiConfig,
+  OperationResult,
+  getOperationResults,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
   VerificationGateway,
