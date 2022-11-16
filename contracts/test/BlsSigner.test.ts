@@ -25,17 +25,26 @@ describe.only("BlsSigner tests", () => {
       name: "localhost",
       chainId: 0x7a69,
     };
-
     // FIXME: Unsure on how to manage the private key!
     const privateKey = Wallet.createRandom().privateKey;
-    const verificationGateway = "0x3C17E9cF70B774bCf32C66C8aB83D19661Fc27E2";
+    const verificationGateway = "0x689A095B4507Bfa302eef8551F90fB322B3451c6";
+
+    regularProvider = new JsonRpcProvider(rpcUrl);
+    regularSigner = regularProvider.getSigner();
 
     blsProvider = new BlsProvider(aggregatorUrl, rpcUrl, network);
     blsSigner = blsProvider.getSigner();
     await blsSigner.initWallet(privateKey, verificationGateway, blsProvider);
 
-    regularProvider = new JsonRpcProvider("http://localhost:8545");
-    regularSigner = regularProvider.getSigner();
+    const fundedWallet = new ethers.Wallet(
+      "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+      regularProvider,
+    );
+
+    await fundedWallet.sendTransaction({
+      to: await blsSigner.getAddress(),
+      value: parseEther("1000"),
+    });
   });
 
   // 1. Create BlsWallet
