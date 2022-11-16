@@ -75,7 +75,7 @@ export default class BlsSigner extends Signer {
     }
     try {
       // TODO: dynamically add this
-      const verificationGateway = "0x3C17E9cF70B774bCf32C66C8aB83D19661Fc27E2";
+      const verificationGateway = "0x689A095B4507Bfa302eef8551F90fB322B3451c6";
       const provider = this.provider;
 
       // Converts an ethers transactionRequest to a BLS Wallet ActionDataDto
@@ -118,7 +118,7 @@ export default class BlsSigner extends Signer {
     }
     if (this._address == null) {
       const privateKey = this.wallet.privateKey; // TODO: Think about privateKey management and dynamically add verificationGateway
-      const verificationGateway = "0x3C17E9cF70B774bCf32C66C8aB83D19661Fc27E2";
+      const verificationGateway = "0x689A095B4507Bfa302eef8551F90fB322B3451c6";
       this._address = await BlsWalletWrapper.Address(
         privateKey,
         verificationGateway,

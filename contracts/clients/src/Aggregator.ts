@@ -1,3 +1,4 @@
+import fetch from "node-fetch";
 import { BigNumber, ContractReceipt } from "ethers";
 import { Log } from "@ethersproject/abstract-provider";
 import { Bundle, bundleToDto } from "./signer";
@@ -43,7 +44,7 @@ export type BundleReceipt = {
   blockNumber: string;
 };
 
-// TODO: Messing around with returning the receipt type that ethers expects 
+// TODO: Messing around with returning the receipt type that ethers expects
 // export interface BundleReceipt extends ContractReceipt {
 //   bundleHash: string;
 //   to: string;
