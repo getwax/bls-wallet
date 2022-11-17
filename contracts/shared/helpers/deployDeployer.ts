@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import { ethers } from "hardhat";
 import { Wallet } from "ethers";
-import { Create2Deployer } from "../../typechain";
+import { Create2Deployer } from "../../typechain-types";
 import defaultDeployerWalletHardhat from "./defaultDeployerWallet";
 
 dotenv.config();

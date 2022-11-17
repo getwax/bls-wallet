@@ -7,8 +7,6 @@ on:
     paths:
       - 'extension/**'
   pull_request:
-    branches:
-      - 'main'
     paths:
       - 'extension/**'
 
