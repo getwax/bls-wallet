@@ -141,7 +141,7 @@ export default class BlsSigner extends Signer {
       confirmations: 1,
       from,
       nonce: BigNumber.from(nonce).toNumber(),
-      gasLimit: BigNumber.from("0x0"), // TODO: Should this value be calculated?
+      gasLimit: BigNumber.from("0x0"),
       value: BigNumber.from(action.ethValue),
       data: action.encodedFunction,
       chainId: chainId,
@@ -177,19 +177,9 @@ export default class BlsSigner extends Signer {
     return this.wallet.sign({ nonce, actions: [action] });
   }
 
-  // UN-IMPLEMENTED METHODS
+  // // UN-IMPLEMENTED METHODS
   connect(provider: Provider): BlsSigner {
     throw new Error("connect() is not implemented");
-  }
-
-  connectUnchecked(): JsonRpcSigner {
-    throw new Error("connectUnchecked() is not implemented");
-  }
-
-  sendUncheckedTransaction(
-    transaction: Deferrable<TransactionRequest>,
-  ): Promise<string> {
-    throw new Error("sendUncheckedTransaction() is not implemented");
   }
 
   async signMessage(message: Bytes | string): Promise<string> {
@@ -204,16 +194,38 @@ export default class BlsSigner extends Signer {
     );
   }
 
-  async _legacySignMessage(message: Bytes | string): Promise<string> {
-    throw new Error("_legacySignMessage() is not implemented");
-  }
-
   async _signTypedData(
     domain: TypedDataDomain,
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>,
   ): Promise<string> {
     throw new Error("_signTypedData() is not implemented");
+  }
+
+  connectUnchecked(): JsonRpcSigner {
+    throw new Error("connectUnchecked() is not implemented");
+  }
+
+  sendUncheckedTransaction(
+    transaction: Deferrable<TransactionRequest>,
+  ): Promise<string> {
+    throw new Error("sendUncheckedTransaction() is not implemented");
+  }
+
+  async _legacySignMessage(message: Bytes | string): Promise<string> {
+    throw new Error("_legacySignMessage() is not implemented");
+  }
+
+  checkTransaction(
+    transaction: Deferrable<TransactionRequest>,
+  ): Deferrable<TransactionRequest> {
+    throw new Error("checkTransaction() is not implemented");
+  }
+
+  async populateTransaction(
+    transaction: Deferrable<TransactionRequest>,
+  ): Promise<TransactionRequest> {
+    throw new Error("populateTransaction() is not implemented");
   }
 
   #verifyInit = () => {

@@ -65,16 +65,9 @@ export default class BlsProvider extends JsonRpcProvider {
     bundle: Bundle,
     signer: BlsSigner,
   ): Promise<TransactionResponse> {
-    // TODO: Add test case
-    if ((await Promise.resolve(bundle)) instanceof String) {
-      throw new Error(
-        "sendTransaction() does not accept arguments of type String. Type must be Bundle",
-      );
-    }
     try {
       const agg = this.aggregator;
-      // TODO: Is this hacky if we're checking if the type is string above? Would a better approach be to create a specialised "sendBlsTransaction" function?
-      const result = await agg.add(bundle as Bundle);
+      const result = await agg.add(bundle);
 
       if ("failures" in result) {
         throw new Error(result.failures.join("\n"));
@@ -181,5 +174,17 @@ export default class BlsProvider extends JsonRpcProvider {
       byzantium: false,
       type: 2,
     };
+  }
+
+  // UN-IMPLEMENTED METHODS
+  async call(
+    transaction: Deferrable<TransactionRequest>,
+    blockTag?: BlockTag | Promise<BlockTag>,
+  ): Promise<string> {
+    throw new Error("call() is not implemented");
+  }
+
+  async getTransaction(hash: string): Promise<TransactionResponse> {
+    throw new Error("getTransaction() is not implemented");
   }
 }
