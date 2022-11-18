@@ -61,12 +61,28 @@ describe("BlsProvider tests", () => {
     });
   });
 
-  it("should return a valid signer successfully", async () => {
+  it("should return a valid signer", async () => {
     // Arrange & Act
     const blsSigner = blsProvider.getSigner();
 
     // Assert
     expect(blsSigner._isSigner).to.true;
+  });
+
+  it("should return a new signer if one has not been instantiated", async () => {
+    // Arrange & Act
+    const newBlsProvider = new BlsProvider(
+      aggregatorUrl,
+      verificationGateway,
+      rpcUrl,
+      network,
+    );
+    const newBlsSigner = newBlsProvider.getSigner();
+    await newBlsSigner.initWallet(privateKey);
+
+    // Assert
+    expect(newBlsSigner).to.not.equal(blsSigner);
+    expect(newBlsSigner).to.equal(newBlsProvider.getSigner());
   });
 
   // it("'call' executes a transaction successfully", async () => {
@@ -75,7 +91,7 @@ describe("BlsProvider tests", () => {
   //   // Assert
   // });
 
-  it.only("'estimateGas' returns an estimate for the amount of gas required in a transaction successfully", async () => {
+  it("'estimateGas' should execute without throwing an error", async () => {
     // Arrange
     const recipient = signers[1].address;
     const transactionAmount = parseEther("1");
@@ -84,20 +100,12 @@ describe("BlsProvider tests", () => {
       value: transactionAmount,
     };
 
-    // Act
+    // Act & Assert
     const gasEstimate = await blsProvider.estimateGas(transactionRequest);
     console.log("gasEstimate", gasEstimate);
-    
-    // Assert
   });
 
   // it("'getTransaction' returns the transaction with hash", async () => {
-  //   // Arrange
-  //   // Act
-  //   // Assert
-  // });
-
-  // it("'getTransactionReceipt' returns the transaction receipt given correct hash", async () => {
   //   // Arrange
   //   // Act
   //   // Assert

@@ -177,7 +177,7 @@ export default class BlsSigner extends Signer {
     return this.wallet.sign({ nonce, actions: [action] });
   }
 
-  // NON IMPLEMENTED METHODS
+  // UN-IMPLEMENTED METHODS
   connect(provider: Provider): BlsSigner {
     throw new Error("changing providers is not supported");
   }
@@ -220,7 +220,9 @@ export default class BlsSigner extends Signer {
 
   #verifyInit = () => {
     if (!this.wallet || !this.verificationGatewayAddress) {
-      throw new Error("Call this.init() to initialize the wallet.");
+      throw new Error(
+        "To perform this operation, ensure you have instantiated a BlsSigner and have called this.init() to initialize the wallet.",
+      );
     }
   };
 }

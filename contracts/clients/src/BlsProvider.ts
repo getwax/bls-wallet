@@ -3,8 +3,9 @@ import {
   TransactionReceipt,
   TransactionResponse,
   TransactionRequest,
+  BlockTag,
 } from "@ethersproject/abstract-provider";
-import { Deferrable } from "@ethersproject/properties";
+import { Deferrable, resolveProperties } from "@ethersproject/properties";
 import { BigNumber } from "@ethersproject/bignumber";
 import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "@ethersproject/units";
@@ -17,6 +18,7 @@ import { _constructorGuard } from "./BlsSigner";
 export default class BlsProvider extends JsonRpcProvider {
   readonly aggregator: Aggregator;
   readonly verificationGatewayAddress: string;
+  signer!: BlsSigner;
 
   constructor(
     aggregatorUrl: string,
@@ -27,6 +29,28 @@ export default class BlsProvider extends JsonRpcProvider {
     super(url, network);
     this.aggregator = new Aggregator(aggregatorUrl);
     this.verificationGatewayAddress = verificationGatewayAddress;
+  }
+
+  async estimateGas(
+    transaction: Deferrable<TransactionRequest>,
+  ): Promise<BigNumber> {
+    try {
+      const action: ActionDataDto = {
+        ethValue: transaction.value?.toString() ?? "0",
+        contractAddress: transaction.to?.toString()!, // TODO: Unsure about this... should we be stating something is nullable then telling the compiler it's not???
+        encodedFunction: transaction.data?.toString() ?? "0x",
+      };
+
+      const signer = this.getSigner();
+      const bundle = await signer.signBlsTransaction(action);
+
+      const aggregator = this.aggregator;
+      const gasEstimate = await aggregator.estimateFee(bundle);
+
+      return parseEther(gasEstimate.feeRequired);
+    } catch (error) {
+      throw new Error(`estimateGas() - an unexpected error occured: ${error}`);
+    }
   }
 
   async sendTransaction(
@@ -42,7 +66,7 @@ export default class BlsProvider extends JsonRpcProvider {
     signer: BlsSigner,
   ): Promise<TransactionResponse> {
     // If signedTransaction/bundle = is of type string => throw error
-    if (await Promise.resolve(bundle) instanceof String) {
+    if ((await Promise.resolve(bundle)) instanceof String) {
       throw new Error(
         "sendTransaction() does not accept arguments of type String. Type must be Bundle",
       );
@@ -76,7 +100,13 @@ export default class BlsProvider extends JsonRpcProvider {
   }
 
   getSigner(addressOrIndex?: string | number): BlsSigner {
-    return new BlsSigner(_constructorGuard, this, addressOrIndex);
+    if (this.signer) {
+      return this.signer;
+    }
+
+    const signer = new BlsSigner(_constructorGuard, this, addressOrIndex);
+    this.signer = signer;
+    return signer;
   }
 
   async getTransactionReceipt(

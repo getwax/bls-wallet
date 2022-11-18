@@ -116,7 +116,10 @@ describe("BlsSigner tests", () => {
         to: signers[2].address,
         value: parseEther("1"),
       }),
-    ).to.be.rejectedWith(Error, "Call this.init() to initialize the wallet.");
+    ).to.be.rejectedWith(
+      Error,
+      "To perform this operation, ensure you have instantiated a BlsSigner and have called this.init() to initialize the wallet.",
+    );
   });
 
   it("BlsSigner - 'getAddress' gets the account address successfully", async () => {
