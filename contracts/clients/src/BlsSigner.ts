@@ -15,13 +15,14 @@ import { BigNumber } from "@ethersproject/bignumber";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
-import { ActionDataDto } from "./signer/types";
+import { ActionDataDto, Bundle } from "./signer/types";
 
 export const _constructorGuard = {};
 
 export default class BlsSigner extends Signer {
   readonly provider: BlsProvider;
-  wallet!: BlsWalletWrapper;
+  wallet!: BlsWalletWrapper; // TODO: Add checks to ensure property is initialised before use
+  verificationGatewayAddress!: string; // TODO: Add checks to ensure property is initialised before use
   _index: number;
   _address: string;
 
@@ -32,6 +33,7 @@ export default class BlsSigner extends Signer {
   ) {
     super();
     this.provider = provider;
+    this.verificationGatewayAddress = this.provider.verificationGatewayAddress;
 
     if (constructorGuard !== _constructorGuard) {
       throw new Error(
@@ -55,27 +57,19 @@ export default class BlsSigner extends Signer {
     }
   }
 
-  async initWallet(
-    privateKey: string,
-    verificationGateway: string,
-    provider: Provider,
-  ) {
+  async initWallet(privateKey: string) {
     this.wallet = await BlsWalletWrapper.connect(
       privateKey,
-      verificationGateway,
-      provider,
+      this.verificationGatewayAddress,
+      this.provider,
     );
   }
 
   async sendTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<TransactionResponse> {
-    if (!this.wallet) {
-      throw new Error("Call this.init() to initialize the wallet.");
-    }
+    this.#verifyInit();
     try {
-      // TODO: dynamically add this
-      const verificationGateway = "0x689A095B4507Bfa302eef8551F90fB322B3451c6";
       const provider = this.provider;
 
       // Converts an ethers transactionRequest to a BLS Wallet ActionDataDto
@@ -88,12 +82,12 @@ export default class BlsSigner extends Signer {
       const nonce = (
         await BlsWalletWrapper.Nonce(
           this.wallet.PublicKey(),
-          verificationGateway,
+          this.verificationGatewayAddress,
           provider,
         )
       ).toString();
-      const bundle = this.wallet.sign({ nonce, actions: [action] });
 
+      const bundle = this.wallet.sign({ nonce, actions: [action] });
       const agg = provider.aggregator;
       const result = await agg.add(bundle);
 
@@ -103,46 +97,48 @@ export default class BlsSigner extends Signer {
 
       return this.constructTransactionResponse(
         action,
-        nonce,
         result.hash,
         this.wallet.address,
+        nonce,
       );
     } catch (error) {
-      throw new Error(`sendTransaction - error sending transaction: ${error}`);
+      throw new Error(
+        `BlsSigner "sendTransaction()" - error sending transaction: ${error}`,
+      );
     }
   }
 
   async getAddress(): Promise<string> {
-    if (!this.wallet) {
-      throw new Error("Call this.init() to initialize the wallet.");
+    this.#verifyInit();
+    if (this._address) {
+      return this._address;
     }
-    if (this._address == null) {
-      const privateKey = this.wallet.privateKey; // TODO: Think about privateKey management and dynamically add verificationGateway
-      const verificationGateway = "0x689A095B4507Bfa302eef8551F90fB322B3451c6";
-      this._address = await BlsWalletWrapper.Address(
-        privateKey,
-        verificationGateway,
-        this.provider,
-      );
-    }
-    return this._address;
-  }
 
-  async signMessage(message: Bytes | string): Promise<string> {
-    return await this.signMessage(message);
+    this._address = this.wallet.address;
+    return this._address;
   }
 
   // Construct a response following the ethers interface
   async constructTransactionResponse(
     action: ActionDataDto,
-    nonce: string,
     hash: string,
     from: string,
+    nonce?: string,
   ): Promise<TransactionResponse> {
+    this.#verifyInit();
     const chainId = await this.getChainId();
+    if (!nonce) {
+      nonce = (
+        await BlsWalletWrapper.Nonce(
+          this.wallet.PublicKey(),
+          this.verificationGatewayAddress,
+          this.provider,
+        )
+      ).toString();
+    }
     return {
       hash,
-      confirmations: 0,
+      confirmations: 1,
       from,
       nonce: BigNumber.from(nonce).toNumber(),
       gasLimit: BigNumber.from("0x0"), // TODO: Should this value be calculated?
@@ -167,6 +163,20 @@ export default class BlsSigner extends Signer {
     ]);
   }
 
+  // TODO: JsonRpcSigner does not implement this method so should we do the same thing? Issue is it is used by the sendTransaction() method in the provider
+  async signBlsTransaction(action: ActionDataDto): Promise<Bundle> {
+    this.#verifyInit();
+    const nonce = (
+      await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this,
+      )
+    ).toString();
+
+    return this.wallet.sign({ nonce, actions: [action] });
+  }
+
   // NON IMPLEMENTED METHODS
   connect(provider: Provider): BlsSigner {
     throw new Error("changing providers is not supported");
@@ -182,10 +192,18 @@ export default class BlsSigner extends Signer {
     throw new Error("sendUncheckedTransaction is not supported");
   }
 
+  async signMessage(message: Bytes | string): Promise<string> {
+    throw new Error(
+      "signMessage(message: Bytes | string): Promise<string> not implemented",
+    );
+  }
+
   async signTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<string> {
-    throw new Error("signTransaction is not supported");
+    throw new Error(
+      "signTransaction is not supported, use 'signBlsTransaction(action: ActionDataDto): Promise<Bundle>' instead",
+    );
   }
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
@@ -199,4 +217,10 @@ export default class BlsSigner extends Signer {
   ): Promise<string> {
     throw new Error("_signTypedData is not supported");
   }
+
+  #verifyInit = () => {
+    if (!this.wallet || !this.verificationGatewayAddress) {
+      throw new Error("Call this.init() to initialize the wallet.");
+    }
+  };
 }
