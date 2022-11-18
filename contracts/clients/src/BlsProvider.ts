@@ -5,7 +5,7 @@ import {
   TransactionRequest,
   BlockTag,
 } from "@ethersproject/abstract-provider";
-import { Deferrable, resolveProperties } from "@ethersproject/properties";
+import { Deferrable } from "@ethersproject/properties";
 import { BigNumber } from "@ethersproject/bignumber";
 import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "@ethersproject/units";
@@ -57,7 +57,7 @@ export default class BlsProvider extends JsonRpcProvider {
     signedTransaction: string | Promise<string>,
   ): Promise<TransactionResponse> {
     throw new Error(
-      "sendTransaction(signedTransaction: string | Promise<string>): Promise<TransactionResponse> not implemented. Call 'sendBlsTransaction()' instead",
+      "sendTransaction() is not implemented. Call 'sendBlsTransaction()' instead",
     );
   }
 
@@ -65,7 +65,7 @@ export default class BlsProvider extends JsonRpcProvider {
     bundle: Bundle,
     signer: BlsSigner,
   ): Promise<TransactionResponse> {
-    // If signedTransaction/bundle = is of type string => throw error
+    // TODO: Add test case
     if ((await Promise.resolve(bundle)) instanceof String) {
       throw new Error(
         "sendTransaction() does not accept arguments of type String. Type must be Bundle",
@@ -136,6 +136,7 @@ export default class BlsProvider extends JsonRpcProvider {
     let bundleReceipt: BundleReceipt | undefined;
     const aggregator = this.aggregator;
 
+    // TODO: Add timeout functionality
     async function poll(fn: Function, fnCondition: Function, ms: number) {
       let result = await fn();
 
@@ -155,7 +156,7 @@ export default class BlsProvider extends JsonRpcProvider {
 
     let getBundleReceipt = async () =>
       await aggregator.lookupReceipt(transactionHash);
-    let bundleExists = (result: BundleReceipt) => !result; // result instanceof Promise?
+    let bundleExists = (result: BundleReceipt) => !result;
     bundleReceipt = await poll(getBundleReceipt, bundleExists, 2000);
 
     // TODO: ERROR HANDLING

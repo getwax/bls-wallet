@@ -21,8 +21,8 @@ export const _constructorGuard = {};
 
 export default class BlsSigner extends Signer {
   readonly provider: BlsProvider;
-  wallet!: BlsWalletWrapper; // TODO: Add checks to ensure property is initialised before use
-  verificationGatewayAddress!: string; // TODO: Add checks to ensure property is initialised before use
+  wallet!: BlsWalletWrapper;
+  verificationGatewayAddress!: string;
   _index: number;
   _address: string;
 
@@ -103,7 +103,7 @@ export default class BlsSigner extends Signer {
       );
     } catch (error) {
       throw new Error(
-        `BlsSigner "sendTransaction()" - error sending transaction: ${error}`,
+        `sendTransaction() - an unexpected error occured: ${error}`,
       );
     }
   }
@@ -179,35 +179,33 @@ export default class BlsSigner extends Signer {
 
   // UN-IMPLEMENTED METHODS
   connect(provider: Provider): BlsSigner {
-    throw new Error("changing providers is not supported");
+    throw new Error("connect() is not implemented");
   }
 
   connectUnchecked(): JsonRpcSigner {
-    throw new Error("UncheckedJsonRpcSigner is not supported");
+    throw new Error("connectUnchecked() is not implemented");
   }
 
   sendUncheckedTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<string> {
-    throw new Error("sendUncheckedTransaction is not supported");
+    throw new Error("sendUncheckedTransaction() is not implemented");
   }
 
   async signMessage(message: Bytes | string): Promise<string> {
-    throw new Error(
-      "signMessage(message: Bytes | string): Promise<string> not implemented",
-    );
+    throw new Error("signMessage() is not implemented");
   }
 
   async signTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<string> {
     throw new Error(
-      "signTransaction is not supported, use 'signBlsTransaction(action: ActionDataDto): Promise<Bundle>' instead",
+      "signTransaction() is not implemented, call 'signBlsTransaction()' instead",
     );
   }
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
-    throw new Error("_legacySignMessage is not supported");
+    throw new Error("_legacySignMessage() is not implemented");
   }
 
   async _signTypedData(
@@ -215,7 +213,7 @@ export default class BlsSigner extends Signer {
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>,
   ): Promise<string> {
-    throw new Error("_signTypedData is not supported");
+    throw new Error("_signTypedData() is not implemented");
   }
 
   #verifyInit = () => {

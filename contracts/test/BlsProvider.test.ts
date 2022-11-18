@@ -1,31 +1,29 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { ethers } from "hardhat";
-import { Wallet } from "ethers";
-import { TransactionRequest } from "@ethersproject/abstract-provider";
+import { expect } from "chai";
+import { Wallet } from "@ethersproject/wallet";
+import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Networkish } from "@ethersproject/networks";
+import { parseEther } from "ethers/lib/utils";
 
-import BlsSigner from "../clients/src/BlsSigner";
 import BlsProvider from "../clients/src/BlsProvider";
-import { expect, assert } from "chai";
-import { formatEther, parseEther } from "ethers/lib/utils";
+import BlsSigner from "../clients/src/BlsSigner";
 
-describe("BlsProvider tests", () => {
-  let signers: SignerWithAddress[];
+let signers: SignerWithAddress[];
 
-  let aggregatorUrl: string;
-  let verificationGateway: string;
-  let rpcUrl: string;
-  let network: Networkish;
+let aggregatorUrl: string;
+let verificationGateway: string;
+let rpcUrl: string;
+let network: Networkish;
 
-  let privateKey: string;
+let privateKey: string;
+let blsProvider: BlsProvider;
+let blsSigner: BlsSigner;
 
-  let blsProvider: BlsProvider;
-  let blsSigner: BlsSigner;
+let regularProvider: JsonRpcProvider;
+let regularSigner: JsonRpcSigner;
 
-  let regularProvider: JsonRpcProvider;
-  let regularSigner: JsonRpcSigner;
-
+describe.only("BlsProvider", () => {
   beforeEach(async () => {
     signers = await ethers.getSigners();
     aggregatorUrl = "http://localhost:3000";
@@ -85,13 +83,7 @@ describe("BlsProvider tests", () => {
     expect(newBlsSigner).to.equal(newBlsProvider.getSigner());
   });
 
-  // it("'call' executes a transaction successfully", async () => {
-  //   // Arrange
-  //   // Act
-  //   // Assert
-  // });
-
-  it("'estimateGas' should execute without throwing an error", async () => {
+  it("should estimate gas without throwing an error", async () => {
     // Arrange
     const recipient = signers[1].address;
     const transactionAmount = parseEther("1");
@@ -105,13 +97,7 @@ describe("BlsProvider tests", () => {
     console.log("gasEstimate", gasEstimate);
   });
 
-  // it("'getTransaction' returns the transaction with hash", async () => {
-  //   // Arrange
-  //   // Act
-  //   // Assert
-  // });
-
-  it("blsProvider 'sendTransaction' sends a transaction successfully", async () => {
+  it("should send ETH given a valid bundle successfully", async () => {
     // Arrange
     const recipient = signers[1].address;
     const expectedBalance = parseEther("1");
@@ -140,7 +126,7 @@ describe("BlsProvider tests", () => {
     ).to.equal(expectedBalance);
   });
 
-  it("blsProvider 'getTransactionReceipt' should get a transaction receipt successfully", async () => {
+  it("should retrieve a transaction receipt given a valid hash", async () => {
     // Arrange
     const recipient = signers[1].address;
     const transactionResponse = await blsSigner.sendTransaction({
@@ -188,7 +174,7 @@ describe("BlsProvider tests", () => {
   });
 
   // TODO: is "included in the block" terminology correct?
-  it("'waitForTransaction' should resolve once transaction hash is included in the block", async () => {
+  it("should wait for a transaction and resolve once transaction hash is included in the block", async () => {
     // Arrange
     const recipient = signers[1].address;
     const transactionResponse = await blsSigner.sendTransaction({
@@ -235,3 +221,11 @@ describe("BlsProvider tests", () => {
     expect(transactionReceipt).to.have.property("type").to.equal(2);
   });
 });
+
+// describe("JsonRpcProvider", () => {
+//   beforeEach(() => {
+//     rpcUrl = "http://localhost:8545";
+//     regularProvider = new JsonRpcProvider(rpcUrl);
+//     regularSigner = regularProvider.getSigner();
+//   });
+// });
