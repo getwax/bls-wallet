@@ -160,10 +160,10 @@ export default class AggregationStrategy {
       };
     }
 
-    const [previousFee, ...fees] = (await this.#measureFees([
+    const [previousFee, ...fees] = await this.#measureFees([
       previousAggregateBundle,
       ...includedRows.map((r) => r.bundle),
-    ]));
+    ]);
 
     const firstFailureIndex = await this.#findFirstFailureIndex(
       previousAggregateBundle,
@@ -176,6 +176,10 @@ export default class AggregationStrategy {
 
     if (firstFailureIndex !== nil) {
       const failedRow = includedRows[firstFailureIndex];
+      const errorReason = fees[firstFailureIndex].errorReason;
+      if (errorReason) {
+        failedRow.submitError = errorReason.message || '';
+      }
       failedRows.push(failedRow);
 
       includedRows = includedRows.slice(
@@ -207,6 +211,7 @@ export default class AggregationStrategy {
   async #measureFees(bundles: Bundle[]): Promise<{
     success: boolean;
     fee: BigNumber;
+    errorReason: OperationResultError | null;
   }[]> {
     const es = this.ethereumService;
     const feeToken = this.#FeeToken();
@@ -231,27 +236,34 @@ export default class AggregationStrategy {
       assert(after.success);
 
       const bundleResult = processBundleResults[i];
-
-      let success: boolean;
-
-      if (bundleResult.success) {
-        const [operationStatuses, results] = bundleResult.returnValue;
-
-        // TODO: is it possible to decode this?
-        // Here is an example when I try to send more ETH than an account has:results =
-        // results = [ "0x4e487b710000000000000000000000000000000000000000000000000000000000000011" ]
-        console.log(results);
-
-        // We require that at least one operation succeeds, even though
-        // processBundle doesn't revert in this case.
-        success = operationStatuses.some((opSuccess) => opSuccess === true);
-      } else {
-        success = false;
+      const fee = after.returnValue[0].sub(before.returnValue[0]);
+      if (!bundleResult.success) {
+        return { success: false, fee, errorReason: null };
       }
 
-      const fee = after.returnValue[0].sub(before.returnValue[0]);
+      const [operationStatuses, results] = bundleResult.returnValue;
 
-      return { success, fee };
+      let errorReason: OperationResultError | null = null;
+      // We require that at least one operation succeeds, even though
+      // processBundle doesn't revert in this case.
+      const success = operationStatuses.some((opSuccess: boolean) => opSuccess === true);
+      if (!success) {
+        const error = results.map((result: string[]) => {
+          try {
+            if (result[0]) {
+              return decodeError(result[0]);
+            }
+            return;
+          } catch (err) {
+            return;
+          }
+        });
+        errorReason = error[0] !== undefined
+          ? error[0]
+          : null;
+      }
+
+      return { success, fee, errorReason };
     });
   }
 
@@ -449,3 +461,89 @@ export default class AggregationStrategy {
     return left;
   }
 }
+
+// The below code is temporary till the functions are exposed in the client module
+
+function calculateSelector(signature: string) {
+  return ethers.utils.keccak256(new TextEncoder().encode(signature)).slice(0, 10);
+}
+
+function calculateAndCheckSelector(signature: string, expected: string) {
+  const selector = calculateSelector(signature);
+
+  assert(
+    selector === expected,
+    `Selector for ${signature} was not ${expected}`,
+  );
+
+  return selector;
+}
+
+const errorSelectors = {
+  Error: calculateAndCheckSelector("Error(string)", "0x08c379a0"),
+
+  Panic: calculateAndCheckSelector("Panic(uint256)", "0x4e487b71"),
+
+  ActionError: calculateAndCheckSelector(
+    "ActionError(uint256,bytes)",
+    "0x5c667601",
+  ),
+};
+
+type OperationResultError = {
+  actionIndex?: BigNumber;
+  message: string;
+};
+
+export const decodeError = (errorData: string) => {
+  if (!errorData.startsWith(errorSelectors.ActionError)) {
+    throw new Error(
+      [
+        `errorResult does not begin with ActionError selector`,
+        `(${errorSelectors.ActionError}): ${errorData}`,
+      ].join(" "),
+    );
+  }
+
+  // remove methodId (4bytes after 0x)
+  const actionErrorArgBytes = `0x${errorData.slice(10)}`;
+
+  let actionIndex: BigNumber | undefined;
+  let message: string;
+
+  try {
+    const [actionIndexDecoded, actionErrorData] = ethers.utils.defaultAbiCoder.decode(
+      ["uint256", "bytes"],
+      actionErrorArgBytes,
+    ) as [BigNumber, string];
+
+    actionIndex = actionIndexDecoded;
+
+    const actionErrorDataBody = `0x${actionErrorData.slice(10)}`;
+
+    if (actionErrorData.startsWith(errorSelectors.Error)) {
+      [message] = ethers.utils.defaultAbiCoder.decode(["string"], actionErrorDataBody);
+    } else if (actionErrorData.startsWith(errorSelectors.Panic)) {
+      const [panicCode] = ethers.utils.defaultAbiCoder.decode(
+        ["uint256"],
+        actionErrorDataBody,
+      ) as [BigNumber];
+
+      message = [
+        `Panic: ${panicCode.toHexString()}`,
+        "(See Panic(uint256) in the solidity docs:",
+        "https://docs.soliditylang.org/_/downloads/en/latest/pdf/)",
+      ].join(" ");
+    } else {
+      message = `Unexpected action error data: ${actionErrorData}`;
+    }
+  } catch (error) {
+    console.error(error);
+    message = `Unexpected error data: ${errorData}`;
+  }
+  return {
+    actionIndex,
+    message,
+  };
+}
+

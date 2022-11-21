@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
 
-import { ethers, MockERC20__factory } from "../deps.ts";
+import { ethers, MockERC20__factory, AggregatorClient } from "../deps.ts";
 
 import EthereumService from "../src/app/EthereumService.ts";
 import * as env from "../test/env.ts";
@@ -8,16 +8,17 @@ import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 
 const { addresses } = await getNetworkConfig();
+const client = new AggregatorClient(env.ORIGIN);
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
-const ethereumService = await EthereumService.create(
-  (evt) => {
-    console.log(evt);
-  },
-  addresses.verificationGateway,
-  addresses.utilities,
-  env.PRIVATE_KEY_AGG,
-);
+// const ethereumService = await EthereumService.create(
+//   (evt) => {
+//     console.log(evt);
+//   },
+//   addresses.verificationGateway,
+//   addresses.utilities,
+//   env.PRIVATE_KEY_AGG,
+// );
 
 const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
 const [wallet] = await TestBlsWallets(provider, 1);
@@ -38,11 +39,16 @@ const bundle = wallet.sign({
     }],
 });
 
-console.log("Sending via ethereumService");
+console.log("Sending via ethereumService or agg");
 
 (async () => {
   try {
-    await ethereumService.submitBundle(bundle);
+    // Test directly with ethereum service
+    // await ethereumService.submitBundle(bundle);
+
+    // test by submitting request to the agg
+    const res = await client.add(bundle);
+    console.log(res)
   } catch (error) {
     console.error(error.stack);
     Deno.exit(1);

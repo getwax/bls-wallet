@@ -27,6 +27,7 @@ type RawRow = {
   bundle: string;
   eligibleAfter: string;
   nextEligibilityDelay: string;
+  submitError: string;
 };
 
 type Row = {
@@ -35,6 +36,7 @@ type Row = {
   bundle: Bundle;
   eligibleAfter: BigNumber;
   nextEligibilityDelay: BigNumber;
+  submitError: string;
 };
 
 type InsertRow = Omit<Row, "id">;
@@ -52,6 +54,7 @@ const tableOptions: TableOptions = {
   id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
   hash: { type: DataType.VarChar },
   bundle: { type: DataType.VarChar },
+  submitError: { type: DataType.VarChar },
   eligibleAfter: { type: DataType.VarChar },
   nextEligibilityDelay: { type: DataType.VarChar },
 };
@@ -143,6 +146,17 @@ export default class BundleTable {
           "eligibleAfter" <= '${toUint256Hex(blockNumber)}'
         ORDER BY "id" ASC
         LIMIT ${limit}
+      `,
+    );
+    return rows.map(fromRawRow);
+  }
+
+  async findBundle(hash: string) {
+    const rows: RawRow[] = await this.queryClient.query(
+      `
+        SELECT * from ${this.safeName}
+        WHERE
+            "hash" = '${hash}'
       `,
     );
     return rows.map(fromRawRow);

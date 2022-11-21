@@ -302,20 +302,16 @@ export default class EthereumService {
 
       const attemptResult = await attempt();
 
-      try {
-        if (attemptResult.value.events[0]?.args?.results[0]) {
-          const result = attemptResult.value.events[0].args.results[0]; // For errors this is "Error(string)"
-          const errorArgBytesString = `0x${result.substring(10)}`; // remove methodId (4bytes after 0x)
-          const errorString = ethers.utils.defaultAbiCoder.decode(
-            ["string"],
-            errorArgBytesString,
-          )[0]; // decoded bytes is a string of the action index that errored.
-
-          console.error(errorString)
-        }
-      } catch (err) {
-        console.log(err)
-      }
+      // Figure out a good way to bubble up this error
+      // try {
+      //   if (attemptResult.value.events[0]?.args?.results[0]) {
+      //     const result = attemptResult.value.events[0].args.results[0];
+      //     const error = decodeError(result);
+      //     console.error(error)
+      //   }
+      // } catch (err) {
+      //   console.log(err)
+      // }
 
       if (attemptResult.type === "receipt") {
         return attemptResult.value;
