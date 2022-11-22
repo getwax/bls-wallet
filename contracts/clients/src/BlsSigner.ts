@@ -15,7 +15,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
-import { ActionDataDto, Bundle } from "./signer/types";
+import { ActionData, Bundle } from "./signer/types";
 
 export const _constructorGuard = {};
 
@@ -72,8 +72,8 @@ export default class BlsSigner extends Signer {
     try {
       const provider = this.provider;
 
-      // Converts an ethers transactionRequest to a BLS Wallet ActionDataDto
-      const action: ActionDataDto = {
+      // Converts an ethers transactionRequest to a BLS Wallet ActionData
+      const action: ActionData = {
         ethValue: transaction.value?.toString() ?? "0",
         contractAddress: transaction.to?.toString()!, // TODO: Unsure about this... should we be stating something is nullable then telling the compiler it's not???
         encodedFunction: transaction.data?.toString() ?? "0x",
@@ -120,7 +120,7 @@ export default class BlsSigner extends Signer {
 
   // Construct a response following the ethers interface
   async constructTransactionResponse(
-    action: ActionDataDto,
+    action: ActionData,
     hash: string,
     from: string,
     nonce?: string,
@@ -143,7 +143,7 @@ export default class BlsSigner extends Signer {
       nonce: BigNumber.from(nonce).toNumber(),
       gasLimit: BigNumber.from("0x0"),
       value: BigNumber.from(action.ethValue),
-      data: action.encodedFunction,
+      data: action.encodedFunction.toString(),
       chainId: chainId,
       wait: (confirmations?: number) => {
         return this.provider.waitForTransaction(hash, confirmations);
@@ -164,7 +164,7 @@ export default class BlsSigner extends Signer {
   }
 
   // TODO: JsonRpcSigner does not implement this method so should we do the same thing? Issue is it is used by the sendTransaction() method in the provider
-  async signBlsTransaction(action: ActionDataDto): Promise<Bundle> {
+  async signBlsTransaction(action: ActionData): Promise<Bundle> {
     this.#verifyInit();
     const nonce = (
       await BlsWalletWrapper.Nonce(
@@ -216,11 +216,12 @@ export default class BlsSigner extends Signer {
     throw new Error("_legacySignMessage() is not implemented");
   }
 
-  checkTransaction(
-    transaction: Deferrable<TransactionRequest>,
-  ): Deferrable<TransactionRequest> {
-    throw new Error("checkTransaction() is not implemented");
-  }
+  // TODO: Why is this cause the tests to fail on blsSigner.initWallet()???????
+  // checkTransaction(
+  //   transaction: Deferrable<TransactionRequest>,
+  // ): Deferrable<TransactionRequest> {
+  //   throw new Error("checkTransaction() is not implemented");
+  // }
 
   async populateTransaction(
     transaction: Deferrable<TransactionRequest>,

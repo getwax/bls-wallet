@@ -10,7 +10,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "@ethersproject/units";
 
-import { ActionDataDto, Bundle } from "./signer/types";
+import { ActionData, Bundle } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner from "./BlsSigner";
 import { _constructorGuard } from "./BlsSigner";
@@ -36,7 +36,7 @@ export default class BlsProvider extends JsonRpcProvider {
     transaction: Deferrable<TransactionRequest>,
   ): Promise<BigNumber> {
     try {
-      const action: ActionDataDto = {
+      const action: ActionData = {
         ethValue: transaction.value?.toString() ?? "0",
         contractAddress: transaction.to?.toString()!, // TODO: Unsure about this... should we be stating something is nullable then telling the compiler it's not???
         encodedFunction: transaction.data?.toString() ?? "0x",
@@ -75,7 +75,7 @@ export default class BlsProvider extends JsonRpcProvider {
       }
 
       // TODO: We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
-      const actionDataDto: ActionDataDto = {
+      const actionDataDto: ActionData = {
         ethValue: bundle.operations[0].actions[0].ethValue.toString(),
         contractAddress:
           bundle.operations[0].actions[0].contractAddress.toString(),
