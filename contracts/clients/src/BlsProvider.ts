@@ -14,6 +14,7 @@ import { ActionDataDto, Bundle } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner from "./BlsSigner";
 import { _constructorGuard } from "./BlsSigner";
+import poll from "./helpers/poll";
 
 export default class BlsProvider extends JsonRpcProvider {
   readonly aggregator: Aggregator;
@@ -121,6 +122,7 @@ export default class BlsProvider extends JsonRpcProvider {
     );
   }
 
+  // 1 & 2
   async _getTransactionReceipt(
     transactionHash: string,
     confirmations: number,
@@ -129,28 +131,10 @@ export default class BlsProvider extends JsonRpcProvider {
     let bundleReceipt: BundleReceipt | undefined;
     const aggregator = this.aggregator;
 
-    // TODO: Add timeout functionality
-    async function poll(fn: Function, fnCondition: Function, ms: number) {
-      let result = await fn();
-
-      while (fnCondition(result)) {
-        await wait(ms);
-        result = await fn();
-      }
-      return result;
-    }
-
-    function wait(ms = 1000) {
-      return new Promise((resolve) => {
-        console.log(`Polling transaction reciept every ${ms} ms...`);
-        setTimeout(resolve, ms);
-      });
-    }
-
     let getBundleReceipt = async () =>
       await aggregator.lookupReceipt(transactionHash);
     let bundleExists = (result: BundleReceipt) => !result;
-    bundleReceipt = await poll(getBundleReceipt, bundleExists, 2000);
+    bundleReceipt = await poll(getBundleReceipt, bundleExists, 10, 2000);
 
     // TODO: ERROR HANDLING
     if (bundleReceipt === undefined) {
@@ -177,14 +161,15 @@ export default class BlsProvider extends JsonRpcProvider {
   }
 
   // UN-IMPLEMENTED METHODS
-  async call(
-    transaction: Deferrable<TransactionRequest>,
-    blockTag?: BlockTag | Promise<BlockTag>,
-  ): Promise<string> {
-    throw new Error("call() is not implemented");
-  }
+  // TODO: Why is this cause the tests to fail on blsSigner.initWallet()???????
+  // async call(
+  //   transaction: Deferrable<TransactionRequest>,
+  //   blockTag?: BlockTag | Promise<BlockTag>,
+  // ): Promise<string> {
+  //   throw new Error("call() is not implemented");
+  // }
 
-  async getTransaction(hash: string): Promise<TransactionResponse> {
-    throw new Error("getTransaction() is not implemented");
-  }
+  // async getTransaction(hash: string): Promise<TransactionResponse> {
+  //   throw new Error("getTransaction() is not implemented");
+  // }
 }
