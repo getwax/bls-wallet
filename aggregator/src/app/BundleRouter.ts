@@ -24,12 +24,13 @@ export default function BundleRouter(bundleService: BundleService) {
   router.get(
     "bundleReceipt/:hash",
     async (ctx) => {
-      // check pending
       const pendingBundle = await bundleService.lookupBundle(ctx.params.hash!);
       if (pendingBundle) {
         ctx.response.status = 202;
         ctx.response.body = {
+          status: "pending",
           submitError: pendingBundle.submitError,
+          receipt: null,
         };
         return;
       }
@@ -41,7 +42,11 @@ export default function BundleRouter(bundleService: BundleService) {
         return;
       }
 
-      ctx.response.body = receipt;
+      ctx.response.body = {
+        status: "done",
+        submitError: null,
+        receipt
+      };
     },
   );
 
