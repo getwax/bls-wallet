@@ -19,7 +19,7 @@ const actionErrorId = utils
 
 assert(actionErrorId === "0x5c667601");
 
-export type OperationResultError = {
+type OperationResultError = {
   actionIndex?: BigNumber;
   message: string;
 };
@@ -28,12 +28,23 @@ export type OperationResult = {
   walletAddress: string;
   nonce: BigNumber;
   actions: ActionData[];
-  success: boolean;
+  success: Boolean;
   results: string[];
   error?: OperationResultError;
 };
 
-export const decodeError = (errorData: string) => {
+const getError = (
+  success: boolean,
+  results: string[],
+): OperationResultError | undefined => {
+  if (success) {
+    return undefined;
+  }
+
+  // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
+  // Get the first (only) result from "results" argument.
+  const [errorData] = results;
+
   if (!errorData.startsWith(errorSelectors.ActionError)) {
     throw new Error(
       [
@@ -79,25 +90,11 @@ export const decodeError = (errorData: string) => {
     console.error(error);
     message = `Unexpected error data: ${errorData}`;
   }
+
   return {
     actionIndex,
     message,
   };
-};
-
-const getError = (
-  success: boolean,
-  results: string[],
-): OperationResultError | undefined => {
-  if (success) {
-    return undefined;
-  }
-
-  // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
-  // Get the first (only) result from "results" argument.
-  const [errorData] = results;
-
-  return decodeError(errorData);
 };
 
 export const getOperationResults = (
