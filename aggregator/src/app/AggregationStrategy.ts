@@ -254,7 +254,7 @@ export default class AggregationStrategy {
               return decodeError(result[0]);
             }
             return;
-          } catch (err) {
+          } catch (_err) {
             return;
           }
         });

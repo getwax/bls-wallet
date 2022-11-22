@@ -49,6 +49,7 @@ const sampleRows: BundleRow[] = [
       ],
       signature: ["0x00", "0x00"],
     },
+    submitError: "",
     eligibleAfter: BigNumber.from(0),
     nextEligibilityDelay: BigNumber.from(1),
   },

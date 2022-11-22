@@ -2,7 +2,7 @@
 
 import { ethers, MockERC20__factory, AggregatorClient } from "../deps.ts";
 
-import EthereumService from "../src/app/EthereumService.ts";
+// import EthereumService from "../src/app/EthereumService.ts";
 import * as env from "../test/env.ts";
 import TestBlsWallets from "./helpers/TestBlsWallets.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
