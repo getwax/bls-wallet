@@ -147,19 +147,15 @@ describe.only("BlsProvider", () => {
     expect(transactionReceipt)
       .to.have.property("contractAddress")
       .to.equal("0x");
-    // expect(transactionReceipt)
-    //   .to.have.property("transactionIndex")
-    //   .to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionIndex"); //.to.equal("0x");
     expect(transactionReceipt)
       .to.have.property("gasUsed")
       .to.equal(parseEther("0"));
     expect(transactionReceipt).to.have.property("logsBloom").to.equal("");
-    // expect(transactionReceipt).to.have.property("blockHash").to.equal("0x");
-    // expect(transactionReceipt)
-    //   .to.have.property("transactionHash")
-    //   .to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockHash"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionHash"); //.to.equal("0x");
     expect(transactionReceipt).to.have.property("logs").to.deep.equal([]);
-    // expect(transactionReceipt).to.have.property("blockNumber").to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockNumber"); //.to.equal("0x");
     expect(transactionReceipt)
       .to.have.property("confirmations")
       .to.equal(transactionResponse.confirmations);
@@ -210,19 +206,15 @@ describe.only("BlsProvider", () => {
     expect(transactionReceipt)
       .to.have.property("contractAddress")
       .to.equal("0x");
-    // expect(transactionReceipt)
-    //   .to.have.property("transactionIndex")
-    //   .to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionIndex"); //.to.equal("0x");
     expect(transactionReceipt)
       .to.have.property("gasUsed")
       .to.equal(parseEther("0"));
     expect(transactionReceipt).to.have.property("logsBloom").to.equal("");
-    // expect(transactionReceipt).to.have.property("blockHash").to.equal("0x");
-    // expect(transactionReceipt)
-    //   .to.have.property("transactionHash")
-    //   .to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockHash"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionHash"); //.to.equal("0x");
     expect(transactionReceipt).to.have.property("logs").to.deep.equal([]);
-    // expect(transactionReceipt).to.have.property("blockNumber").to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockNumber"); //.to.equal("0x");
     expect(transactionReceipt).to.have.property("confirmations").to.equal(1);
     expect(transactionReceipt)
       .to.have.property("cumulativeGasUsed")

@@ -79,13 +79,11 @@ export default class BlsSigner extends Signer {
         encodedFunction: transaction.data?.toString() ?? "0x",
       };
 
-      const nonce = (
-        await BlsWalletWrapper.Nonce(
-          this.wallet.PublicKey(),
-          this.verificationGatewayAddress,
-          provider,
-        )
-      ).toString();
+      const nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        provider,
+      );
 
       const bundle = this.wallet.sign({ nonce, actions: [action] });
       const agg = provider.aggregator;
@@ -123,18 +121,16 @@ export default class BlsSigner extends Signer {
     action: ActionData,
     hash: string,
     from: string,
-    nonce?: string,
+    nonce?: BigNumber,
   ): Promise<TransactionResponse> {
     this.#verifyInit();
     const chainId = await this.getChainId();
     if (!nonce) {
-      nonce = (
-        await BlsWalletWrapper.Nonce(
-          this.wallet.PublicKey(),
-          this.verificationGatewayAddress,
-          this.provider,
-        )
-      ).toString();
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
     }
     return {
       hash,

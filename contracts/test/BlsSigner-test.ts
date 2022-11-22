@@ -5,6 +5,7 @@ import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "ethers/lib/utils";
+import { BigNumber } from "@ethersproject/bignumber";
 
 import BlsProvider from "../clients/src/BlsProvider";
 import BlsSigner from "../clients/src/BlsSigner";
@@ -76,6 +77,46 @@ describe.only("BlsSigner", () => {
     expect(
       (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
     ).to.equal(expectedBalance);
+  });
+
+  it("should return a transaction response when sending a transaction", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const expectedNonce = await BlsWalletWrapper.Nonce(
+      blsSigner.wallet.PublicKey(),
+      blsSigner.verificationGatewayAddress,
+      blsProvider,
+    );
+    const expectedChainId = await blsSigner.getChainId();
+
+    // Act
+    const transactionResponse = await blsSigner.sendTransaction({
+      to: recipient,
+      value: transactionAmount,
+    });
+
+    // Assert
+    expect(transactionResponse).to.be.an("object");
+    expect(transactionResponse).to.have.property("hash");
+    expect(transactionResponse).to.have.property("confirmations").to.equal(1);
+    expect(transactionResponse)
+      .to.have.property("from")
+      .to.equal(blsSigner.wallet.address);
+    expect(transactionResponse)
+      .to.have.property("nonce")
+      .to.equal(expectedNonce);
+    expect(transactionResponse)
+      .to.have.property("gasLimit")
+      .to.equal(BigNumber.from("0x0"));
+    expect(transactionResponse)
+      .to.have.property("value")
+      .to.equal(BigNumber.from(transactionAmount));
+    expect(transactionResponse).to.have.property("data");
+    expect(transactionResponse)
+      .to.have.property("chainId")
+      .to.equal(expectedChainId);
+    expect(transactionResponse).to.have.property("wait");
   });
 
   it("should throw an error when initWallet() has not been called", async () => {
