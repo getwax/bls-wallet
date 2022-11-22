@@ -79,6 +79,19 @@ describe.only("BlsSigner", () => {
     ).to.equal(expectedBalance);
   });
 
+  it("should throw and join errors when sending a transaction", async () => {
+    // Arrange, Act & Assert
+    await expect(
+      blsSigner.sendTransaction({
+        to: signers[1].address,
+        value: parseEther("-1"), // Invalid value
+      }),
+    ).to.be.rejectedWith(
+      Error,
+      "field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix\\nfield operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5",
+    );
+  });
+
   it("should return a transaction response when sending a transaction", async () => {
     // Arrange
     const recipient = signers[1].address;

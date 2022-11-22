@@ -69,41 +69,43 @@ export default class BlsSigner extends Signer {
     transaction: Deferrable<TransactionRequest>,
   ): Promise<TransactionResponse> {
     this.#verifyInit();
-    try {
-      const provider = this.provider;
+    const provider = this.provider;
 
-      // Converts an ethers transactionRequest to a BLS Wallet ActionData
-      const action: ActionData = {
-        ethValue: transaction.value?.toString() ?? "0",
-        contractAddress: transaction.to?.toString()!, // TODO: Unsure about this... should we be stating something is nullable then telling the compiler it's not???
-        encodedFunction: transaction.data?.toString() ?? "0x",
-      };
+    // Converts an ethers transactionRequest to a BLS Wallet ActionData
+    const action: ActionData = {
+      ethValue: transaction.value?.toString() ?? "0",
+      contractAddress: transaction.to?.toString()!, // TODO: Unsure about this... should we be stating something is nullable then telling the compiler it's not???
+      encodedFunction: transaction.data?.toString() ?? "0x",
+    };
 
-      const nonce = await BlsWalletWrapper.Nonce(
-        this.wallet.PublicKey(),
-        this.verificationGatewayAddress,
-        provider,
-      );
+    const nonce = await BlsWalletWrapper.Nonce(
+      this.wallet.PublicKey(),
+      this.verificationGatewayAddress,
+      provider,
+    );
 
-      const bundle = this.wallet.sign({ nonce, actions: [action] });
-      const agg = provider.aggregator;
-      const result = await agg.add(bundle);
+    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    const agg = provider.aggregator;
+    const result = await agg.add(bundle);
 
-      if ("failures" in result) {
-        throw new Error(result.failures.join("\n"));
-      }
-
-      return this.constructTransactionResponse(
-        action,
-        result.hash,
-        this.wallet.address,
-        nonce,
-      );
-    } catch (error) {
+    if ("failures" in result) {
       throw new Error(
-        `sendTransaction() - an unexpected error occured: ${error}`,
+        JSON.stringify(
+          result.failures
+            .map((failure) => {
+              return `${failure.description}`;
+            })
+            .join("\n"),
+        ),
       );
     }
+
+    return this.constructTransactionResponse(
+      action,
+      result.hash,
+      this.wallet.address,
+      nonce,
+    );
   }
 
   async getAddress(): Promise<string> {
