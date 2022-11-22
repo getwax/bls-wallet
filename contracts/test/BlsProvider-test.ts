@@ -173,7 +173,20 @@ describe.only("BlsProvider", () => {
     expect(transactionReceipt).to.have.property("type").to.equal(2);
   });
 
-  // TODO: is "included in the block" terminology correct?
+  it("should throw an error when the transaction receipt cannot be found", async () => {
+    // Arrange
+    const invalidTransactionHash = ethers.utils.id("invalid hash");
+    const retries = 1; // Setting this to 1 as we do not to wait in order for the logic to be correctly tested
+
+    // Act & Assert
+    await expect(
+      blsProvider._getTransactionReceipt(invalidTransactionHash, 1, retries),
+    ).to.be.rejectedWith(
+      Error,
+      `Could not find bundle receipt for transaction hash: ${invalidTransactionHash}`,
+    );
+  });
+
   it("should wait for a transaction and resolve once transaction hash is included in the block", async () => {
     // Arrange
     const recipient = signers[1].address;

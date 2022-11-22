@@ -107,38 +107,38 @@ export default class BlsProvider extends JsonRpcProvider {
     transactionHash: string | Promise<string>,
   ): Promise<TransactionReceipt> {
     const resolvedTransactionHash = await transactionHash;
-    return this._getTransactionReceipt(resolvedTransactionHash, 1, 0);
+    return this._getTransactionReceipt(resolvedTransactionHash, 1, 10);
   }
 
   async waitForTransaction(
     transactionHash: string,
     confirmations?: number,
-    timeout?: number,
+    retries?: number,
   ): Promise<TransactionReceipt> {
     return this._getTransactionReceipt(
       transactionHash,
       confirmations == null ? 1 : confirmations,
-      timeout || 0,
+      retries == null ? 10 : retries,
     );
   }
 
-  // 1 & 2
   async _getTransactionReceipt(
     transactionHash: string,
     confirmations: number,
-    timeout: number,
+    retries: number,
   ): Promise<TransactionReceipt> {
     let bundleReceipt: BundleReceipt | undefined;
     const aggregator = this.aggregator;
 
-    let getBundleReceipt = async () =>
+    const getBundleReceipt = async () =>
       await aggregator.lookupReceipt(transactionHash);
-    let bundleExists = (result: BundleReceipt) => !result;
-    bundleReceipt = await poll(getBundleReceipt, bundleExists, 10, 2000);
+    const bundleExists = (result: BundleReceipt) => !result;
+    bundleReceipt = await poll(getBundleReceipt, bundleExists, retries, 2000);
 
-    // TODO: ERROR HANDLING
     if (bundleReceipt === undefined) {
-      throw new Error("Could not find bundle receipt");
+      throw new Error(
+        `Could not find bundle receipt for transaction hash: ${transactionHash}`,
+      );
     }
 
     return {
