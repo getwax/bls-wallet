@@ -302,17 +302,6 @@ export default class EthereumService {
 
       const attemptResult = await attempt();
 
-      // Figure out a good way to bubble up this error
-      // try {
-      //   if (attemptResult.value.events[0]?.args?.results[0]) {
-      //     const result = attemptResult.value.events[0].args.results[0];
-      //     const error = decodeError(result);
-      //     console.error(error)
-      //   }
-      // } catch (err) {
-      //   console.log(err)
-      // }
-
       if (attemptResult.type === "receipt") {
         return attemptResult.value;
       }

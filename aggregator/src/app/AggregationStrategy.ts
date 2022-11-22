@@ -247,6 +247,8 @@ export default class AggregationStrategy {
       // We require that at least one operation succeeds, even though
       // processBundle doesn't revert in this case.
       const success = operationStatuses.some((opSuccess: boolean) => opSuccess === true);
+
+      // If operation is not successful, attempt to decode an error message
       if (!success) {
         const error = results.map((result: string[]) => {
           try {
