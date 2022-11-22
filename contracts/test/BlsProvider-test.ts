@@ -199,7 +199,7 @@ describe.only("BlsProvider", () => {
     const transactionReceipt = await blsProvider.waitForTransaction(
       transactionResponse.hash,
       1,
-      0,
+      10,
     );
 
     // Assert
