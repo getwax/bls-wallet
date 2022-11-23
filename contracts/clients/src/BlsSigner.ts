@@ -57,6 +57,7 @@ export default class BlsSigner extends Signer {
     }
   }
 
+  // TODO: 1. Are we happy with init pattern? 
   async initWallet(privateKey: string) {
     this.wallet = await BlsWalletWrapper.connect(
       privateKey,
@@ -74,7 +75,7 @@ export default class BlsSigner extends Signer {
     // Converts an ethers transactionRequest to a BLS Wallet ActionData
     const action: ActionData = {
       ethValue: transaction.value?.toString() ?? "0",
-      contractAddress: transaction.to?.toString()!, // TODO: Unsure about this... should we be stating something is nullable then telling the compiler it's not???
+      contractAddress: transaction.to?.toString()!, // TODO: 2. Unsure about this... should we be stating something is nullable then telling the compiler it's not???
       encodedFunction: transaction.data?.toString() ?? "0x",
     };
 
@@ -161,7 +162,7 @@ export default class BlsSigner extends Signer {
     ]);
   }
 
-  // TODO: JsonRpcSigner does not implement this method so should we do the same thing? Issue is it is used by the sendTransaction() method in the provider
+  // TODO: 3. JsonRpcSigner does not implement this method so should we do the same thing? Issue is it is used by the sendTransaction() method in the provider
   async signBlsTransaction(action: ActionData): Promise<Bundle> {
     this.#verifyInit();
     const nonce = (

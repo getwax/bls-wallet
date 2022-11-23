@@ -38,7 +38,7 @@ export default class BlsProvider extends JsonRpcProvider {
     try {
       const action: ActionData = {
         ethValue: transaction.value?.toString() ?? "0",
-        contractAddress: transaction.to?.toString()!, // TODO: Unsure about this... should we be stating something is nullable then telling the compiler it's not???
+        contractAddress: transaction.to?.toString()!, // TODO: 1. Unsure about this... should we be stating something is nullable then telling the compiler it's not???
         encodedFunction: transaction.data?.toString() ?? "0x",
       };
 
@@ -145,6 +145,7 @@ export default class BlsProvider extends JsonRpcProvider {
       );
     }
 
+    // TODO: 2. How do we fill out these missing values?
     return {
       to: "0x",
       from: "0x",
@@ -165,7 +166,7 @@ export default class BlsProvider extends JsonRpcProvider {
   }
 
   // UN-IMPLEMENTED METHODS
-  // TODO: Why is this cause the tests to fail on blsSigner.initWallet()???????
+  // TODO: Why is this causing the tests to fail on blsSigner.initWallet()???????
   // async call(
   //   transaction: Deferrable<TransactionRequest>,
   //   blockTag?: BlockTag | Promise<BlockTag>,
