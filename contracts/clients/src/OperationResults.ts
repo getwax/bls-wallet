@@ -19,7 +19,7 @@ const actionErrorId = utils
 
 assert(actionErrorId === "0x5c667601");
 
-type OperationResultError = {
+export type OperationResultError = {
   actionIndex?: BigNumber;
   message: string;
 };
@@ -28,23 +28,18 @@ export type OperationResult = {
   walletAddress: string;
   nonce: BigNumber;
   actions: ActionData[];
-  success: Boolean;
+  success: boolean;
   results: string[];
   error?: OperationResultError;
 };
 
-const getError = (
-  success: boolean,
-  results: string[],
-): OperationResultError | undefined => {
-  if (success) {
-    return undefined;
-  }
-
-  // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
-  // Get the first (only) result from "results" argument.
-  const [errorData] = results;
-
+/**
+ * Checks if a operation result error string is valid and returns
+ * the decoded error.
+ *
+ * @param errorData An error string returned by an operation result.
+ */
+export const decodeError = (errorData: string): OperationResultError => {
   if (!errorData.startsWith(errorSelectors.ActionError)) {
     throw new Error(
       [
@@ -95,6 +90,21 @@ const getError = (
     actionIndex,
     message,
   };
+};
+
+const getError = (
+  success: boolean,
+  results: string[],
+): OperationResultError | undefined => {
+  if (success) {
+    return undefined;
+  }
+
+  // Single event "WalletOperationProcessed(address indexed wallet, uint256 nonce, bool success, bytes[] results)"
+  // Get the first (only) result from "results" argument.
+  const [errorData] = results;
+
+  return decodeError(errorData);
 };
 
 export const getOperationResults = (
