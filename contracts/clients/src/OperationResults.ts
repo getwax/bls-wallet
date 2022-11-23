@@ -33,7 +33,13 @@ export type OperationResult = {
   error?: OperationResultError;
 };
 
-export const decodeError = (errorData: string) => {
+/**
+ * Checks if a operation result error string is valid and returns
+ * the decoded error.
+ *
+ * @param errorData An error string returned by an operation result.
+ */
+export const decodeError = (errorData: string): OperationResultError => {
   if (!errorData.startsWith(errorSelectors.ActionError)) {
     throw new Error(
       [

@@ -24,7 +24,12 @@ import {
   validateMultiConfig,
 } from "./MultiNetworkConfig";
 
-import { OperationResult, getOperationResults } from "./OperationResults";
+import {
+  OperationResult,
+  getOperationResults,
+  decodeError,
+  OperationResultError,
+} from "./OperationResults";
 
 export * from "./signer";
 
@@ -38,7 +43,9 @@ export {
   getMultiConfig,
   validateMultiConfig,
   OperationResult,
+  OperationResultError,
   getOperationResults,
+  decodeError,
   // eslint-disable-next-line camelcase
   VerificationGateway__factory,
   VerificationGateway,
