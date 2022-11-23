@@ -68,13 +68,15 @@ describe.only("BlsProvider", () => {
   });
 
   it("should return a new signer if one has not been instantiated", async () => {
-    // Arrange & Act
+    // Arrange
     const newBlsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       rpcUrl,
       network,
     );
+
+    // Act
     const newBlsSigner = newBlsProvider.getSigner();
     await newBlsSigner.initWallet(privateKey);
 
@@ -92,9 +94,32 @@ describe.only("BlsProvider", () => {
       value: transactionAmount,
     };
 
-    // Act & Assert
-    const gasEstimate = await blsProvider.estimateGas(transactionRequest);
-    console.log("gasEstimate", gasEstimate);
+    // Act
+    const gasEstimate = async () =>
+      await blsProvider.estimateGas(transactionRequest);
+
+    // Assert
+    await expect(gasEstimate()).to.not.be.rejected;
+  });
+
+  it("should catch and throw an updated error when an exception occurs estimating gas", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("-1");
+    const transactionRequest = {
+      to: recipient,
+      value: transactionAmount,
+    };
+
+    // Act
+    const gasEstimate = async () =>
+      await blsProvider.estimateGas(transactionRequest);
+
+    // Assert
+    await expect(gasEstimate()).to.be.rejectedWith(
+      Error,
+      'estimateGas() - an unexpected error occured: Error: value must be a string (argument="value", value=undefined, code=INVALID_ARGUMENT, version=units/5.5.0)',
+    );
   });
 
   it("should send ETH given a valid bundle successfully", async () => {
@@ -174,10 +199,16 @@ describe.only("BlsProvider", () => {
     const invalidTransactionHash = ethers.utils.id("invalid hash");
     const retries = 1; // Setting this to 1 as we do not to wait in order for the logic to be correctly tested
 
-    // Act & Assert
-    await expect(
-      blsProvider._getTransactionReceipt(invalidTransactionHash, 1, retries),
-    ).to.be.rejectedWith(
+    // Act
+    const result = async () =>
+      await blsProvider._getTransactionReceipt(
+        invalidTransactionHash,
+        1,
+        retries,
+      );
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
       Error,
       `Could not find bundle receipt for transaction hash: ${invalidTransactionHash}`,
     );

@@ -79,14 +79,19 @@ describe.only("BlsSigner", () => {
     ).to.equal(expectedBalance);
   });
 
-  it("should throw and join errors when sending a transaction", async () => {
-    // Arrange, Act & Assert
-    await expect(
-      blsSigner.sendTransaction({
+  it("should catch and join errors when sending an invalid transaction", async () => {
+    // Arrange
+    const invalidValue = parseEther("-1");
+
+    // Act
+    const result = async () =>
+      await blsSigner.sendTransaction({
         to: signers[1].address,
-        value: parseEther("-1"), // Invalid value
-      }),
-    ).to.be.rejectedWith(
+        value: invalidValue,
+      });
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
       Error,
       "field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix\\nfield operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5",
     );
@@ -132,7 +137,7 @@ describe.only("BlsSigner", () => {
     expect(transactionResponse).to.have.property("wait");
   });
 
-  it("should throw an error when initWallet() has not been called", async () => {
+  it("should throw an error when a signer has not been initialized", async () => {
     // Arrange
     const newBlsProvider = new BlsProvider(
       aggregatorUrl,
@@ -142,13 +147,15 @@ describe.only("BlsSigner", () => {
     );
     const uninitialisedBlsSigner = newBlsProvider.getSigner();
 
-    // Act & Assert
-    await expect(
-      uninitialisedBlsSigner.sendTransaction({
+    // Act
+    const result = async () =>
+      await uninitialisedBlsSigner.sendTransaction({
         to: signers[2].address,
         value: parseEther("1"),
-      }),
-    ).to.be.rejectedWith(
+      });
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
       Error,
       "To perform this operation, ensure you have instantiated a BlsSigner and have called this.init() to initialize the wallet.",
     );
@@ -210,20 +217,22 @@ describe.only("BlsSigner", () => {
   });
 
   it("should throw an error when signTransaction() is called", async () => {
-    // Arrange, Act & Assert
-    await expect(
-      blsSigner.signTransaction({
+    // Arrange & Act
+    const result = async () =>
+      await blsSigner.signTransaction({
         to: "",
         value: parseEther("1"),
-      }),
-    ).to.be.rejectedWith(
+      });
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
       Error,
       "signTransaction() is not implemented, call 'signBlsTransaction()' instead",
     );
   });
 });
 
-describe("JsonRpcSigner", () => {
+describe.only("JsonRpcSigner", () => {
   beforeEach(() => {
     rpcUrl = "http://localhost:8545";
     regularProvider = new JsonRpcProvider(rpcUrl);
