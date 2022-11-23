@@ -256,13 +256,12 @@ export default class AggregationStrategy {
               return decodeError(result[0]);
             }
             return;
-          } catch (_err) {
+          } catch (err) {
+            console.error(err);
             return;
           }
         });
-        errorReason = error[0] !== undefined
-          ? error[0]
-          : null;
+        errorReason = error[0] ?? null;
       }
 
       return { success, fee, errorReason };
