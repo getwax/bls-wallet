@@ -1,13 +1,15 @@
 import { ethers } from "hardhat";
-import { expect } from "chai";
+import chai, { expect } from "chai";
+import spies from "chai-spies";
 import { Wallet } from "@ethersproject/wallet";
 import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "ethers/lib/utils";
 
-import BlsProvider from "../clients/src/BlsProvider";
-import BlsSigner from "../clients/src/BlsSigner";
+import { BlsProvider, BlsSigner, BlsWalletWrapper } from "../clients/src";
+
+chai.use(spies);
 
 let signers: SignerWithAddress[];
 
@@ -149,6 +151,32 @@ describe.only("BlsProvider", () => {
     expect(
       (await blsProvider.getBalance(recipient)).sub(balanceBefore),
     ).to.equal(expectedBalance);
+  });
+
+  it("should get the account nonce when the signer constructs the transaction response", async () => {
+    // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+    const recipient = signers[1].address;
+    const expectedBalance = parseEther("1");
+
+    const unsignedTransaction = {
+      ethValue: expectedBalance.toString(),
+      contractAddress: recipient,
+      encodedFunction: "0x",
+    };
+    const signedTransaction = await blsSigner.signBlsTransaction(
+      unsignedTransaction,
+    );
+
+    // Act
+    await blsProvider.sendBlsTransaction(
+      signedTransaction,
+      blsSigner,
+    );
+
+    // Assert
+    // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse". This unit test is concerned with the latter being called.
+    expect(spy).to.have.been.called.twice;
   });
 
   it("should join failures and throw an error when sending an invalid transaction", async () => {

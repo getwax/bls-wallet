@@ -7,9 +7,7 @@ import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "ethers/lib/utils";
 import { BigNumber } from "@ethersproject/bignumber";
 
-import BlsProvider from "../clients/src/BlsProvider";
-import BlsSigner from "../clients/src/BlsSigner";
-import { ActionDataDto, BlsWalletWrapper } from "../clients/src";
+import { BlsProvider, BlsSigner, ActionDataDto, BlsWalletWrapper } from "../clients/src";
 
 let signers: SignerWithAddress[];
 
