@@ -79,7 +79,7 @@ describe.only("BlsSigner", () => {
     ).to.equal(expectedBalance);
   });
 
-  it("should catch and join errors when sending an invalid transaction", async () => {
+  it("should join failures and throw an error when sending an invalid transaction", async () => {
     // Arrange
     const invalidValue = parseEther("-1");
 

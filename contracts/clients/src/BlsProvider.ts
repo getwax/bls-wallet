@@ -66,31 +66,35 @@ export default class BlsProvider extends JsonRpcProvider {
     bundle: Bundle,
     signer: BlsSigner,
   ): Promise<TransactionResponse> {
-    try {
-      const agg = this.aggregator;
-      const result = await agg.add(bundle);
+    const agg = this.aggregator;
+    const result = await agg.add(bundle);
 
-      if ("failures" in result) {
-        throw new Error(result.failures.join("\n"));
-      }
-
-      // TODO: We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
-      const actionDataDto: ActionData = {
-        ethValue: bundle.operations[0].actions[0].ethValue.toString(),
-        contractAddress:
-          bundle.operations[0].actions[0].contractAddress.toString(),
-        encodedFunction:
-          bundle.operations[0].actions[0].encodedFunction.toString(),
-      };
-
-      return signer.constructTransactionResponse(
-        actionDataDto,
-        result.hash,
-        signer._address,
+    if ("failures" in result) {
+      throw new Error(
+        JSON.stringify(
+          result.failures
+            .map((failure) => {
+              return `${failure.description}`;
+            })
+            .join("\n"),
+        ),
       );
-    } catch (error) {
-      throw error;
     }
+
+    // TODO: We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
+    const actionDataDto: ActionData = {
+      ethValue: bundle.operations[0].actions[0].ethValue.toString(),
+      contractAddress:
+        bundle.operations[0].actions[0].contractAddress.toString(),
+      encodedFunction:
+        bundle.operations[0].actions[0].encodedFunction.toString(),
+    };
+
+    return signer.constructTransactionResponse(
+      actionDataDto,
+      result.hash,
+      signer._address,
+    );
   }
 
   getSigner(addressOrIndex?: string | number): BlsSigner {

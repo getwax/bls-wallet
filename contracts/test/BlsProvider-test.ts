@@ -122,7 +122,7 @@ describe.only("BlsProvider", () => {
     );
   });
 
-  it("should send ETH given a valid bundle successfully", async () => {
+  it("should send ETH (empty call) given a valid bundle successfully", async () => {
     // Arrange
     const recipient = signers[1].address;
     const expectedBalance = parseEther("1");
@@ -149,6 +149,30 @@ describe.only("BlsProvider", () => {
     expect(
       (await blsProvider.getBalance(recipient)).sub(balanceBefore),
     ).to.equal(expectedBalance);
+  });
+
+  it("should join failures and throw an error when sending an invalid transaction", async () => {
+    // Arrange
+    const invalidEthValue = parseEther("-1");
+
+    const unsignedTransaction = {
+      ethValue: invalidEthValue,
+      contractAddress: signers[1].address,
+      encodedFunction: "0x",
+    };
+    const signedTransaction = await blsSigner.signBlsTransaction(
+      unsignedTransaction,
+    );
+
+    // Act
+    const result = async () =>
+      await blsProvider.sendBlsTransaction(signedTransaction, blsSigner);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix\\nfield operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5",
+    );
   });
 
   it("should retrieve a transaction receipt given a valid hash", async () => {
