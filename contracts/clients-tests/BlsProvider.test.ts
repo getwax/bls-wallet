@@ -25,7 +25,7 @@ let blsSigner: BlsSigner;
 let regularProvider: JsonRpcProvider;
 let regularSigner: JsonRpcSigner;
 
-describe.only("BlsProvider", () => {
+describe("BlsProvider", () => {
   beforeEach(async () => {
     signers = await ethers.getSigners();
     aggregatorUrl = "http://localhost:3000";

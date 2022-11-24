@@ -12,6 +12,7 @@
     "check-ts": "tsc --noEmit",
     "lint": "eslint . --ext .ts",
     "test": "hardhat test",
+    "test-clients": "hardhat test ./clients-tests/*",
     "premerge": "rm -rf artifacts cache typechain-types && hardhat compile && lint && check-ts && yarn --cwd clients premerge && test"
   },
   "author": "James Zaki",
