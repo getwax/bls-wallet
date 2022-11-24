@@ -124,6 +124,22 @@ describe.only("BlsProvider", () => {
     );
   });
 
+  it("should throw an error estimating gas when 'transaction.to' has not been defined", async () => {
+    // Arrange
+    const transaction = {
+      value: parseEther("1"),
+    };
+
+    // Act
+    const result = async () => await blsProvider.estimateGas(transaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "Transaction.to should be defined",
+    );
+  });
+
   it("should send ETH (empty call) given a valid bundle successfully", async () => {
     // Arrange
     const recipient = signers[1].address;
@@ -169,10 +185,7 @@ describe.only("BlsProvider", () => {
     );
 
     // Act
-    await blsProvider.sendBlsTransaction(
-      signedTransaction,
-      blsSigner,
-    );
+    await blsProvider.sendBlsTransaction(signedTransaction, blsSigner);
 
     // Assert
     // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse". This unit test is concerned with the latter being called.
@@ -217,7 +230,7 @@ describe.only("BlsProvider", () => {
     );
 
     // Assert
-    // TODO: How do we test the assertions commented out as the bundle receipt is received as part of the _getTransactionReceipt() method?
+    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     expect(transactionReceipt).to.be.an("object");
     expect(transactionReceipt).to.have.property("to").to.equal("0x");
     expect(transactionReceipt).to.have.property("from").to.equal("0x");
@@ -282,7 +295,7 @@ describe.only("BlsProvider", () => {
     );
 
     // Assert
-    // TODO: How do we test the assertions commented out as the bundle receipt is received as part of the _getTransactionReceipt() method?
+    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     expect(transactionReceipt).to.be.an("object");
     expect(transactionReceipt).to.have.property("to").to.equal("0x");
     expect(transactionReceipt).to.have.property("from").to.equal("0x");

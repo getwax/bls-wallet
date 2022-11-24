@@ -35,10 +35,14 @@ export default class BlsProvider extends JsonRpcProvider {
   async estimateGas(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<BigNumber> {
+    if (!transaction.to) {
+      throw new Error("Transaction.to should be defined");
+    }
+
     try {
       const action: ActionData = {
         ethValue: transaction.value?.toString() ?? "0",
-        contractAddress: transaction.to?.toString()!, // TODO: 1. Unsure about this... should we be stating something is nullable then telling the compiler it's not???
+        contractAddress: transaction.to.toString(),
         encodedFunction: transaction.data?.toString() ?? "0x",
       };
 
@@ -145,7 +149,7 @@ export default class BlsProvider extends JsonRpcProvider {
       );
     }
 
-    // TODO: 2. How do we fill out these missing values?
+    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     return {
       to: "0x",
       from: "0x",

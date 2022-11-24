@@ -57,7 +57,6 @@ export default class BlsSigner extends Signer {
     }
   }
 
-  // TODO: 1. Are we happy with init pattern? 
   async initWallet(privateKey: string) {
     this.wallet = await BlsWalletWrapper.connect(
       privateKey,
@@ -72,10 +71,14 @@ export default class BlsSigner extends Signer {
     this.#verifyInit();
     const provider = this.provider;
 
+    if (!transaction.to) {
+      throw new Error("Transaction.to should be defined");
+    }
+
     // Converts an ethers transactionRequest to a BLS Wallet ActionData
     const action: ActionData = {
       ethValue: transaction.value?.toString() ?? "0",
-      contractAddress: transaction.to?.toString()!, // TODO: 2. Unsure about this... should we be stating something is nullable then telling the compiler it's not???
+      contractAddress: transaction.to.toString(),
       encodedFunction: transaction.data?.toString() ?? "0x",
     };
 
@@ -162,7 +165,6 @@ export default class BlsSigner extends Signer {
     ]);
   }
 
-  // TODO: 3. JsonRpcSigner does not implement this method so should we do the same thing? Issue is it is used by the sendTransaction() method in the provider
   async signBlsTransaction(action: ActionData): Promise<Bundle> {
     this.#verifyInit();
     const nonce = (
@@ -215,7 +217,7 @@ export default class BlsSigner extends Signer {
     throw new Error("_legacySignMessage() is not implemented");
   }
 
-  // TODO: Why is this cause the tests to fail on blsSigner.initWallet()???????
+  // TODO: Why is this causing the tests to fail on blsSigner.initWallet()???????
   // checkTransaction(
   //   transaction: Deferrable<TransactionRequest>,
   // ): Deferrable<TransactionRequest> {

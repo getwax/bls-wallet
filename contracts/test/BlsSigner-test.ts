@@ -7,7 +7,12 @@ import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "ethers/lib/utils";
 import { BigNumber } from "@ethersproject/bignumber";
 
-import { BlsProvider, BlsSigner, ActionDataDto, BlsWalletWrapper } from "../clients/src";
+import {
+  BlsProvider,
+  BlsSigner,
+  ActionDataDto,
+  BlsWalletWrapper,
+} from "../clients/src";
 
 let signers: SignerWithAddress[];
 
@@ -75,6 +80,22 @@ describe.only("BlsSigner", () => {
     expect(
       (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
     ).to.equal(expectedBalance);
+  });
+
+  it("should throw an error sending a transaction when 'transaction.to' has not been defined", async () => {
+    // Arrange
+    const transaction = {
+      value: parseEther("1"),
+    };
+
+    // Act
+    const result = async () => await blsProvider.estimateGas(transaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "Transaction.to should be defined",
+    );
   });
 
   it("should join failures and throw an error when sending an invalid transaction", async () => {
@@ -230,7 +251,7 @@ describe.only("BlsSigner", () => {
   });
 });
 
-describe.only("JsonRpcSigner", () => {
+describe("JsonRpcSigner", () => {
   beforeEach(() => {
     rpcUrl = "http://localhost:8545";
     regularProvider = new JsonRpcProvider(rpcUrl);
