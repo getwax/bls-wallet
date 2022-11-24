@@ -168,17 +168,4 @@ export default class BlsProvider extends JsonRpcProvider {
       type: 2,
     };
   }
-
-  // UN-IMPLEMENTED METHODS
-  // TODO: Why is this causing the tests to fail on blsSigner.initWallet()???????
-  // async call(
-  //   transaction: Deferrable<TransactionRequest>,
-  //   blockTag?: BlockTag | Promise<BlockTag>,
-  // ): Promise<string> {
-  //   throw new Error("call() is not implemented");
-  // }
-
-  // async getTransaction(hash: string): Promise<TransactionResponse> {
-  //   throw new Error("getTransaction() is not implemented");
-  // }
 }
