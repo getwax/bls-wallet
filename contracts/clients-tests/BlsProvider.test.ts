@@ -41,7 +41,6 @@ describe("BlsProvider", () => {
       name: "localhost",
       chainId: 0x7a69,
     };
-    // FIXME: Unsure on best way to manage the private key! Leave it up to dapps/wallets?
     privateKey = Wallet.createRandom().privateKey;
 
     regularProvider = new JsonRpcProvider(rpcUrl);

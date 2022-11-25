@@ -6,6 +6,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Networkish } from "@ethersproject/networks";
 import { parseEther } from "ethers/lib/utils";
 import { BigNumber } from "@ethersproject/bignumber";
+import { resolveProperties } from "@ethersproject/properties";
 
 import {
   BlsProvider,
@@ -38,7 +39,7 @@ describe("BlsSigner", () => {
       name: "localhost",
       chainId: 0x7a69,
     };
-    // FIXME: Unsure on how to manage the private key! Leave it up to dapps/wallets?
+
     privateKey = Wallet.createRandom().privateKey;
 
     regularProvider = new JsonRpcProvider(rpcUrl);
@@ -249,10 +250,55 @@ describe("BlsSigner", () => {
       "signTransaction() is not implemented, call 'signBlsTransaction()' instead",
     );
   });
+
+  it("should check transaction", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      to: recipient,
+      value: transactionAmount,
+    };
+
+    // Act
+    const result = blsSigner.checkTransaction(transaction);
+
+    // Assert
+    expect(result.to).to.equal(recipient);
+    expect(result.value).to.equal(transactionAmount);
+
+    const resolvedResult = await resolveProperties(result);
+    expect(resolvedResult.from).to.equal(await blsSigner.getAddress());
+  });
+
+  it("should populate transaction", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      to: recipient,
+      value: transactionAmount,
+    };
+
+    // Act
+    const result = await blsSigner.populateTransaction(transaction);
+
+    // Assert
+    expect(result.to).to.equal(recipient);
+    expect(result.value).to.equal(transactionAmount);
+    expect(result.from).to.equal(await blsSigner.getAddress());
+    expect(result.type).to.equal(2);
+    expect(result).to.have.property("maxFeePerGas");
+    expect(result).to.have.property("maxPriorityFeePerGas");
+    expect(result).to.have.property("nonce");
+    expect(result).to.have.property("gasLimit");
+    expect(result.chainId).to.equal(31337);
+  });
 });
 
 describe("JsonRpcSigner", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    signers = await ethers.getSigners();
     rpcUrl = "http://localhost:8545";
     regularProvider = new JsonRpcProvider(rpcUrl);
     regularSigner = regularProvider.getSigner();
@@ -286,5 +332,49 @@ describe("JsonRpcSigner", () => {
     expect(
       (await regularProvider.getBalance(recipient)).sub(recipientBalanceBefore),
     ).to.equal(expectedBalance);
+  });
+
+  it("should check transaction", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      to: recipient,
+      value: transactionAmount,
+    };
+
+    // Act
+    const result = regularSigner.checkTransaction(transaction);
+
+    // Assert
+    expect(result.to).to.equal(recipient);
+    expect(result.value).to.equal(transactionAmount);
+
+    const resolvedResult = await resolveProperties(result);
+    expect(resolvedResult.from).to.equal(await regularSigner.getAddress());
+  });
+
+  it("should populate transaction", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      to: recipient,
+      value: transactionAmount,
+    };
+
+    // Act
+    const result = await regularSigner.populateTransaction(transaction);
+
+    // Assert
+    expect(result.to).to.equal(recipient);
+    expect(result.value).to.equal(transactionAmount);
+    expect(result.from).to.equal(signers[0].address);
+    expect(result.type).to.equal(2);
+    expect(result).to.have.property("maxFeePerGas");
+    expect(result).to.have.property("maxPriorityFeePerGas");
+    expect(result).to.have.property("nonce");
+    expect(result).to.have.property("gasLimit");
+    expect(result.chainId).to.equal(31337);
   });
 });

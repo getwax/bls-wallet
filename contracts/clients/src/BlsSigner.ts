@@ -217,19 +217,6 @@ export default class BlsSigner extends Signer {
     throw new Error("_legacySignMessage() is not implemented");
   }
 
-  // TODO: Why is this causing the tests to fail on blsSigner.initWallet()???????
-  // checkTransaction(
-  //   transaction: Deferrable<TransactionRequest>,
-  // ): Deferrable<TransactionRequest> {
-  //   throw new Error("checkTransaction() is not implemented");
-  // }
-
-  async populateTransaction(
-    transaction: Deferrable<TransactionRequest>,
-  ): Promise<TransactionRequest> {
-    throw new Error("populateTransaction() is not implemented");
-  }
-
   #verifyInit = () => {
     if (!this.wallet || !this.verificationGatewayAddress) {
       throw new Error(
