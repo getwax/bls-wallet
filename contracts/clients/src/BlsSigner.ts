@@ -37,7 +37,7 @@ export default class BlsSigner extends Signer {
 
     if (constructorGuard !== _constructorGuard) {
       throw new Error(
-        "do not call the BlsSigner constructor directly; use provider.getSigner",
+        "do not call the BlsSigner constructor directly; use provider.getSigner.",
       );
     }
 
@@ -53,7 +53,7 @@ export default class BlsSigner extends Signer {
       this._index = addressOrIndex;
     } else {
       throw new Error(`
-        invalid address or index. addressOrIndex: ${addressOrIndex}`);
+        invalid address or index. addressOrIndex: ${addressOrIndex}.`);
     }
   }
 
@@ -69,13 +69,12 @@ export default class BlsSigner extends Signer {
     transaction: Deferrable<TransactionRequest>,
   ): Promise<TransactionResponse> {
     this.#verifyInit();
-    const provider = this.provider;
 
     if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined");
+      throw new TypeError("Transaction.to should be defined.");
     }
 
-    // Converts an ethers transactionRequest to a BLS Wallet ActionData
+    // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
     const action: ActionData = {
       ethValue: transaction.value?.toString() ?? "0",
       contractAddress: transaction.to.toString(),
@@ -85,12 +84,11 @@ export default class BlsSigner extends Signer {
     const nonce = await BlsWalletWrapper.Nonce(
       this.wallet.PublicKey(),
       this.verificationGatewayAddress,
-      provider,
+      this.provider,
     );
 
     const bundle = this.wallet.sign({ nonce, actions: [action] });
-    const agg = provider.aggregator;
-    const result = await agg.add(bundle);
+    const result = await this.provider.aggregator.add(bundle);
 
     if ("failures" in result) {
       throw new Error(JSON.stringify(result.failures));
@@ -114,7 +112,7 @@ export default class BlsSigner extends Signer {
     return this._address;
   }
 
-  // Construct a response following the ethers interface
+  // Construct a response that follows the ethers TransactionResponse type
   async constructTransactionResponse(
     action: ActionData,
     hash: string,
@@ -130,6 +128,8 @@ export default class BlsSigner extends Signer {
         this.provider,
       );
     }
+
+    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     return {
       hash,
       confirmations: 1,
@@ -157,39 +157,37 @@ export default class BlsSigner extends Signer {
     ]);
   }
 
-  async signBlsTransaction(action: ActionData): Promise<Bundle> {
-    this.#verifyInit();
-    const nonce = (
-      await BlsWalletWrapper.Nonce(
-        this.wallet.PublicKey(),
-        this.verificationGatewayAddress,
-        this,
-      )
-    ).toString();
-
-    return this.wallet.sign({ nonce, actions: [action] });
-  }
-
-  /** Sign a message */
-  signBlsMessage(message: string): Signature {
-    return this.wallet.signMessage(message);
-  }
-
-  // // UN-IMPLEMENTED METHODS
-  connect(provider: Provider): BlsSigner {
-    throw new Error("connect() is not implemented");
-  }
-
-  async signMessage(message: Bytes | string): Promise<string> {
-    throw new Error("signMessage() is not implemented");
-  }
-
   async signTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<string> {
     throw new Error(
-      "signTransaction() is not implemented, call 'signBlsTransaction()' instead",
+      "signTransaction() is not implemented, call 'signBlsTransaction()' instead.",
     );
+  }
+
+  async signBlsTransaction(action: ActionData): Promise<Bundle> {
+    this.#verifyInit();
+    const nonce = await BlsWalletWrapper.Nonce(
+      this.wallet.PublicKey(),
+      this.verificationGatewayAddress,
+      this,
+    );
+
+    return this.wallet.sign({ nonce, actions: [action] });
+  }
+
+  async signMessage(message: Bytes | string): Promise<string> {
+    throw new Error("signMessage() is not implemented.");
+  }
+
+  /** Sign a message */
+  signBlsMessage(message: string): Signature {
+    this.#verifyInit();
+    return this.wallet.signMessage(message);
+  }
+
+  connect(provider: Provider): BlsSigner {
+    throw new Error("connect() is not implemented.");
   }
 
   async _signTypedData(
@@ -197,21 +195,21 @@ export default class BlsSigner extends Signer {
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>,
   ): Promise<string> {
-    throw new Error("_signTypedData() is not implemented");
+    throw new Error("_signTypedData() is not implemented.");
   }
 
   connectUnchecked(): JsonRpcSigner {
-    throw new Error("connectUnchecked() is not implemented");
+    throw new Error("connectUnchecked() is not implemented.");
   }
 
   async sendUncheckedTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<string> {
-    throw new Error("sendUncheckedTransaction() is not implemented");
+    throw new Error("sendUncheckedTransaction() is not implemented.");
   }
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
-    throw new Error("_legacySignMessage() is not implemented");
+    throw new Error("_legacySignMessage() is not implemented.");
   }
 
   #verifyInit = () => {

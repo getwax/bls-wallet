@@ -12,8 +12,7 @@ import { parseEther } from "@ethersproject/units";
 
 import { ActionData, Bundle } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
-import BlsSigner from "./BlsSigner";
-import { _constructorGuard } from "./BlsSigner";
+import BlsSigner, { _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
 
 export default class BlsProvider extends JsonRpcProvider {
@@ -36,7 +35,7 @@ export default class BlsProvider extends JsonRpcProvider {
     transaction: Deferrable<TransactionRequest>,
   ): Promise<BigNumber> {
     if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined");
+      throw new TypeError("Transaction.to should be defined.");
     }
 
     try {
@@ -49,8 +48,7 @@ export default class BlsProvider extends JsonRpcProvider {
       const signer = this.getSigner();
       const bundle = await signer.signBlsTransaction(action);
 
-      const aggregator = this.aggregator;
-      const gasEstimate = await aggregator.estimateFee(bundle);
+      const gasEstimate = await this.aggregator.estimateFee(bundle);
 
       return parseEther(gasEstimate.feeRequired);
     } catch (error) {
@@ -62,7 +60,7 @@ export default class BlsProvider extends JsonRpcProvider {
     signedTransaction: string | Promise<string>,
   ): Promise<TransactionResponse> {
     throw new Error(
-      "sendTransaction() is not implemented. Call 'sendBlsTransaction()' instead",
+      "sendTransaction() is not implemented. Call 'sendBlsTransaction()' instead.",
     );
   }
 
@@ -70,15 +68,15 @@ export default class BlsProvider extends JsonRpcProvider {
     bundle: Bundle,
     signer: BlsSigner,
   ): Promise<TransactionResponse> {
-    const agg = this.aggregator;
-    const result = await agg.add(bundle);
+    const result = await this.aggregator.add(bundle);
 
     if ("failures" in result) {
       throw new Error(JSON.stringify(result.failures));
     }
 
-    // TODO: We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
-    const actionDataDto: ActionData = {
+    // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
+    // We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
+    const actionData: ActionData = {
       ethValue: bundle.operations[0].actions[0].ethValue.toString(),
       contractAddress:
         bundle.operations[0].actions[0].contractAddress.toString(),
@@ -87,9 +85,9 @@ export default class BlsProvider extends JsonRpcProvider {
     };
 
     return signer.constructTransactionResponse(
-      actionDataDto,
+      actionData,
       result.hash,
-      signer._address,
+      signer.wallet.address,
     );
   }
 
@@ -128,16 +126,15 @@ export default class BlsProvider extends JsonRpcProvider {
     retries: number,
   ): Promise<TransactionReceipt> {
     let bundleReceipt: BundleReceipt | undefined;
-    const aggregator = this.aggregator;
 
     const getBundleReceipt = async () =>
-      await aggregator.lookupReceipt(transactionHash);
+      await this.aggregator.lookupReceipt(transactionHash);
     const bundleExists = (result: BundleReceipt) => !result;
     bundleReceipt = await poll(getBundleReceipt, bundleExists, retries, 2000);
 
     if (bundleReceipt === undefined) {
       throw new Error(
-        `Could not find bundle receipt for transaction hash: ${transactionHash}`,
+        `Could not find bundle receipt for transaction hash: ${transactionHash}.`,
       );
     }
 

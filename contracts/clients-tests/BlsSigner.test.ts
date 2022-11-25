@@ -11,10 +11,13 @@ import { resolveProperties } from "@ethersproject/properties";
 import {
   BlsProvider,
   BlsSigner,
-  ActionDataDto,
+  ActionData,
   BlsWalletWrapper,
+  NetworkConfig,
 } from "../clients/src";
+import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
+let networkConfig: NetworkConfig;
 let signers: SignerWithAddress[];
 
 let aggregatorUrl: string;
@@ -31,9 +34,11 @@ let regularSigner: JsonRpcSigner;
 
 describe("BlsSigner", () => {
   beforeEach(async () => {
+    networkConfig = await getNetworkConfig("local");
     signers = await ethers.getSigners();
+
     aggregatorUrl = "http://localhost:3000";
-    verificationGateway = "0x689A095B4507Bfa302eef8551F90fB322B3451c6";
+    verificationGateway = networkConfig.addresses.verificationGateway;
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -59,7 +64,7 @@ describe("BlsSigner", () => {
     );
 
     await fundedWallet.sendTransaction({
-      to: await blsSigner.getAddress(),
+      to: blsSigner.wallet.address,
       value: parseEther("1"),
     });
   });
@@ -95,11 +100,11 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined",
+      "Transaction.to should be defined.",
     );
   });
 
-  it("should join failures and throw an error when sending an invalid transaction", async () => {
+  it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
     // Arrange
     const invalidValue = parseEther("-1");
 
@@ -165,12 +170,12 @@ describe("BlsSigner", () => {
       rpcUrl,
       network,
     );
-    const uninitialisedBlsSigner = newBlsProvider.getSigner();
+    const uninitializedBlsSigner = newBlsProvider.getSigner();
 
     // Act
     const result = async () =>
-      await uninitialisedBlsSigner.sendTransaction({
-        to: signers[2].address,
+      await uninitializedBlsSigner.sendTransaction({
+        to: signers[1].address,
         value: parseEther("1"),
       });
 
@@ -199,7 +204,7 @@ describe("BlsSigner", () => {
   it("should sign a transaction to create a bundle", async () => {
     // Arrange
     const recipient = signers[1].address;
-    const action: ActionDataDto = {
+    const action: ActionData = {
       ethValue: "1",
       contractAddress: recipient,
       encodedFunction: "0x",
@@ -240,14 +245,14 @@ describe("BlsSigner", () => {
     // Arrange & Act
     const result = async () =>
       await blsSigner.signTransaction({
-        to: "",
+        to: signers[1].address,
         value: parseEther("1"),
       });
 
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      "signTransaction() is not implemented, call 'signBlsTransaction()' instead",
+      "signTransaction() is not implemented, call 'signBlsTransaction()' instead.",
     );
   });
 
@@ -305,7 +310,7 @@ describe("BlsSigner", () => {
     // Assert
     expect(signMessage()).to.be.rejectedWith(
       Error,
-      "signMessage() is not implemented",
+      "signMessage() is not implemented.",
     );
   });
 
@@ -335,18 +340,18 @@ describe("JsonRpcSigner", () => {
 
   it("should retrieve the account address", async () => {
     // Arrange
-    const expectedAddress = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266";
+    const expectedAddress = signers[0].address;
 
     // Act
     const address = await regularSigner.getAddress();
 
     // Assert
-    expect(address.toLowerCase()).to.equal(expectedAddress);
+    expect(address).to.equal(expectedAddress);
   });
 
   it("should send ETH (empty call) successfully", async () => {
     // Arrange
-    const recipient = signers[2].address;
+    const recipient = signers[1].address;
     const expectedBalance = parseEther("1");
     const recipientBalanceBefore = await regularProvider.getBalance(recipient);
 

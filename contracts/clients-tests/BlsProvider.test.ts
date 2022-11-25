@@ -5,18 +5,20 @@ import { Wallet } from "@ethersproject/wallet";
 import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Networkish } from "@ethersproject/networks";
-import { parseEther, formatEther } from "ethers/lib/utils";
+import { parseEther, formatEther, id } from "ethers/lib/utils";
 
 import {
   BlsProvider,
   BlsSigner,
   BlsWalletWrapper,
   MockERC20__factory,
+  NetworkConfig,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
 chai.use(spies);
 
+let networkConfig: NetworkConfig;
 let signers: SignerWithAddress[];
 
 let aggregatorUrl: string;
@@ -33,9 +35,11 @@ let regularSigner: JsonRpcSigner;
 
 describe("BlsProvider", () => {
   beforeEach(async () => {
+    networkConfig = await getNetworkConfig("local");
     signers = await ethers.getSigners();
+
     aggregatorUrl = "http://localhost:3000";
-    verificationGateway = "0x689A095B4507Bfa302eef8551F90fB322B3451c6";
+    verificationGateway = networkConfig.addresses.verificationGateway;
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -61,7 +65,7 @@ describe("BlsProvider", () => {
     );
 
     await fundedWallet.sendTransaction({
-      to: await blsSigner.getAddress(),
+      to: blsSigner.wallet.address,
       value: parseEther("1"),
     });
   });
@@ -95,9 +99,8 @@ describe("BlsProvider", () => {
   it("calls a getter method on a contract using call()", async () => {
     // Arrange
     const expectedSupply = "1000000.0";
-    const { addresses } = await getNetworkConfig("local");
     const testERC20 = MockERC20__factory.connect(
-      addresses.testToken,
+      networkConfig.addresses.testToken,
       blsProvider,
     );
 
@@ -133,10 +136,10 @@ describe("BlsProvider", () => {
   it("should catch and throw an updated error when an exception occurs estimating gas", async () => {
     // Arrange
     const recipient = signers[1].address;
-    const transactionAmount = parseEther("-1");
+    const invalidValue = parseEther("-1");
     const transactionRequest = {
       to: recipient,
-      value: transactionAmount,
+      value: invalidValue,
     };
 
     // Act
@@ -162,7 +165,7 @@ describe("BlsProvider", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined",
+      "Transaction.to should be defined.",
     );
   });
 
@@ -218,7 +221,7 @@ describe("BlsProvider", () => {
     expect(spy).to.have.been.called.twice;
   });
 
-  it("should join failures and throw an error when sending an invalid transaction", async () => {
+  it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
     // Arrange
     const invalidEthValue = parseEther("-1");
 
@@ -287,7 +290,7 @@ describe("BlsProvider", () => {
 
   it("should throw an error when the transaction receipt cannot be found", async () => {
     // Arrange
-    const invalidTransactionHash = ethers.utils.id("invalid hash");
+    const invalidTransactionHash = id("invalid hash");
     const retries = 1; // Setting this to 1 as we do not to wait in order for the logic to be correctly tested
 
     // Act
@@ -301,7 +304,7 @@ describe("BlsProvider", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      `Could not find bundle receipt for transaction hash: ${invalidTransactionHash}`,
+      `Could not find bundle receipt for transaction hash: ${invalidTransactionHash}.`,
     );
   });
 
@@ -389,20 +392,13 @@ describe("BlsProvider", () => {
     expect(transactionResponse)
       .to.have.property("confirmations")
       .to.equal(expectedTransactionResponse.confirmations);
-    // expect(transactionResponse)
-    //   .to.have.property("from")
-    //   .to.equal(expectedTransactionResponse.from);
-    // console.log("blsSigner _address      ", blsSigner._address);
-    // console.log("blsSigner getAddress    ", await blsSigner.getAddress());
+    // TODO: Why is this different to signer wallet address? Uncomment logs below and run test to see problem.
+    // Will investigate this again when I look at bls-wallet #412.
     // console.log("blsSigner wallet.address", blsSigner.wallet.address);
     // console.log("Signer from:            ", expectedTransactionResponse.from);
-    // console.log(
-    //   "Actual from:            ",
-    //   "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-    // );
     expect(transactionResponse)
       .to.have.property("from")
-      .to.equal("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"); // TODO: Why is this different to signer wallet address? Uncomment logs above and run tests to see problem
+      .to.equal("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC");
     expect(transactionResponse).to.have.property("gasPrice");
     expect(transactionResponse).to.have.property("maxPriorityFeePerGas");
     expect(transactionResponse).to.have.property("maxFeePerGas");
@@ -435,9 +431,8 @@ describe("JsonRpcProvider", () => {
   it("calls a getter method on a contract", async () => {
     // Arrange
     const expectedSupply = "1000000.0";
-    const { addresses } = await getNetworkConfig("local");
     const testERC20 = MockERC20__factory.connect(
-      addresses.testToken,
+      networkConfig.addresses.testToken,
       regularProvider,
     );
 
