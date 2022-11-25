@@ -72,7 +72,7 @@ export default class BlsSigner extends Signer {
     const provider = this.provider;
 
     if (!transaction.to) {
-      throw new Error("Transaction.to should be defined");
+      throw new TypeError("Transaction.to should be defined");
     }
 
     // Converts an ethers transactionRequest to a BLS Wallet ActionData
@@ -93,15 +93,7 @@ export default class BlsSigner extends Signer {
     const result = await agg.add(bundle);
 
     if ("failures" in result) {
-      throw new Error(
-        JSON.stringify(
-          result.failures
-            .map((failure) => {
-              return `${failure.description}`;
-            })
-            .join("\n"),
-        ),
-      );
+      throw new Error(JSON.stringify(result.failures));
     }
 
     return this.constructTransactionResponse(

@@ -94,7 +94,7 @@ describe("BlsSigner", () => {
 
     // Assert
     await expect(result()).to.be.rejectedWith(
-      Error,
+      TypeError,
       "Transaction.to should be defined",
     );
   });
@@ -113,7 +113,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      "field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix\\nfield operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5",
+      '[{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix"},{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5"}]',
     );
   });
 

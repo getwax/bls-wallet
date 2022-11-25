@@ -36,7 +36,7 @@ export default class BlsProvider extends JsonRpcProvider {
     transaction: Deferrable<TransactionRequest>,
   ): Promise<BigNumber> {
     if (!transaction.to) {
-      throw new Error("Transaction.to should be defined");
+      throw new TypeError("Transaction.to should be defined");
     }
 
     try {
@@ -74,15 +74,7 @@ export default class BlsProvider extends JsonRpcProvider {
     const result = await agg.add(bundle);
 
     if ("failures" in result) {
-      throw new Error(
-        JSON.stringify(
-          result.failures
-            .map((failure) => {
-              return `${failure.description}`;
-            })
-            .join("\n"),
-        ),
-      );
+      throw new Error(JSON.stringify(result.failures));
     }
 
     // TODO: We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
