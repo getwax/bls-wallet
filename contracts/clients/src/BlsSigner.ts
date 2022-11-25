@@ -15,7 +15,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
-import { ActionData, Bundle } from "./signer/types";
+import { ActionData, Bundle, Signature } from "./signer";
 
 export const _constructorGuard = {};
 
@@ -178,6 +178,11 @@ export default class BlsSigner extends Signer {
     return this.wallet.sign({ nonce, actions: [action] });
   }
 
+  /** Sign a message */
+  signBlsMessage(message: string): Signature {
+    return this.wallet.signMessage(message);
+  }
+
   // // UN-IMPLEMENTED METHODS
   connect(provider: Provider): BlsSigner {
     throw new Error("connect() is not implemented");
@@ -207,7 +212,7 @@ export default class BlsSigner extends Signer {
     throw new Error("connectUnchecked() is not implemented");
   }
 
-  sendUncheckedTransaction(
+  async sendUncheckedTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<string> {
     throw new Error("sendUncheckedTransaction() is not implemented");

@@ -90,7 +90,7 @@ describe("BlsSigner", () => {
     };
 
     // Act
-    const result = async () => await blsProvider.estimateGas(transaction);
+    const result = async () => await blsSigner.sendTransaction(transaction);
 
     // Assert
     await expect(result()).to.be.rejectedWith(
@@ -293,6 +293,35 @@ describe("BlsSigner", () => {
     expect(result).to.have.property("nonce");
     expect(result).to.have.property("gasLimit");
     expect(result.chainId).to.equal(31337);
+  });
+
+  it("should throw an error when signMessage is called", async () => {
+    // Arrange
+    const message = "Hello World";
+
+    // Act
+    const signMessage = async () => await blsSigner.signMessage(message);
+
+    // Assert
+    expect(signMessage()).to.be.rejectedWith(
+      Error,
+      "signMessage() is not implemented",
+    );
+  });
+
+  it("should sign message using signBlsMessage", () => {
+    // Arrange
+    const address = signers[1].address;
+    const expectedSignature = blsSigner.wallet.blsWalletSigner.signMessage(
+      address,
+      blsSigner.wallet.privateKey,
+    );
+
+    // Act
+    const signedMessage = blsSigner.signBlsMessage(address);
+
+    // Assert
+    expect(signedMessage).to.deep.equal(expectedSignature);
   });
 });
 
