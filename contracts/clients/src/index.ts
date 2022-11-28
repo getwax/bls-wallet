@@ -54,5 +54,5 @@ export {
   MockERC20__factory,
   MockERC20,
   BlsProvider,
-  BlsSigner
+  BlsSigner,
 };

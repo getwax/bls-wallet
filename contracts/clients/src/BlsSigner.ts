@@ -1,17 +1,5 @@
-import { JsonRpcSigner } from "@ethersproject/providers";
-import {
-  TransactionResponse,
-  TransactionRequest,
-  Provider,
-} from "@ethersproject/abstract-provider";
-import {
-  Signer,
-  TypedDataDomain,
-  TypedDataField,
-} from "@ethersproject/abstract-signer";
-import { Bytes } from "@ethersproject/bytes";
-import { Deferrable } from "@ethersproject/properties";
-import { BigNumber } from "@ethersproject/bignumber";
+import { ethers, BigNumber, Signer, Bytes } from "ethers";
+import { Deferrable } from "ethers/lib/utils";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
@@ -23,7 +11,6 @@ export default class BlsSigner extends Signer {
   override readonly provider: BlsProvider;
   readonly verificationGatewayAddress!: string;
   wallet!: BlsWalletWrapper;
-  
   _index: number;
   _address: string;
 
@@ -67,8 +54,8 @@ export default class BlsSigner extends Signer {
   }
 
   override async sendTransaction(
-    transaction: Deferrable<TransactionRequest>,
-  ): Promise<TransactionResponse> {
+    transaction: Deferrable<ethers.providers.TransactionRequest>,
+  ): Promise<ethers.providers.TransactionResponse> {
     this.#verifyInit();
 
     if (!transaction.to) {
@@ -119,7 +106,7 @@ export default class BlsSigner extends Signer {
     hash: string,
     from: string,
     nonce?: BigNumber,
-  ): Promise<TransactionResponse> {
+  ): Promise<ethers.providers.TransactionResponse> {
     this.#verifyInit();
     const chainId = await this.getChainId();
     if (!nonce) {
@@ -159,7 +146,7 @@ export default class BlsSigner extends Signer {
   }
 
   override async signTransaction(
-    transaction: Deferrable<TransactionRequest>,
+    transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
     throw new Error(
       "signTransaction() is not implemented, call 'signBlsTransaction()' instead.",
@@ -187,24 +174,24 @@ export default class BlsSigner extends Signer {
     return this.wallet.signMessage(message);
   }
 
-  override connect(provider: Provider): BlsSigner {
+  override connect(provider: ethers.providers.Provider): BlsSigner {
     throw new Error("connect() is not implemented.");
   }
 
   async _signTypedData(
-    domain: TypedDataDomain,
-    types: Record<string, Array<TypedDataField>>,
+    domain: any,
+    types: Record<string, Array<any>>,
     value: Record<string, any>,
   ): Promise<string> {
     throw new Error("_signTypedData() is not implemented.");
   }
 
-  connectUnchecked(): JsonRpcSigner {
+  connectUnchecked(): ethers.providers.JsonRpcSigner {
     throw new Error("connectUnchecked() is not implemented.");
   }
 
   async sendUncheckedTransaction(
-    transaction: Deferrable<TransactionRequest>,
+    transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
     throw new Error("sendUncheckedTransaction() is not implemented.");
   }

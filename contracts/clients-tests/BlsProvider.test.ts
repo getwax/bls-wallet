@@ -1,11 +1,10 @@
-import { ethers } from "hardhat";
+/* eslint-disable camelcase */
+import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import spies from "chai-spies";
-import { Wallet } from "@ethersproject/wallet";
-import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Networkish } from "@ethersproject/networks";
+import { ethers, Wallet } from "ethers";
 import { parseEther, formatEther, id } from "ethers/lib/utils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
   BlsProvider,
@@ -24,19 +23,19 @@ let signers: SignerWithAddress[];
 let aggregatorUrl: string;
 let verificationGateway: string;
 let rpcUrl: string;
-let network: Networkish;
+let network: ethers.providers.Networkish;
 
 let privateKey: string;
 let blsProvider: BlsProvider;
 let blsSigner: BlsSigner;
 
-let regularProvider: JsonRpcProvider;
-let regularSigner: JsonRpcSigner;
+let regularProvider: ethers.providers.JsonRpcProvider;
+let regularSigner: ethers.providers.JsonRpcSigner;
 
 describe("BlsProvider", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
-    signers = await ethers.getSigners();
+    signers = await hardhatEthers.getSigners();
 
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = networkConfig.addresses.verificationGateway;
@@ -47,7 +46,7 @@ describe("BlsProvider", () => {
     };
     privateKey = Wallet.createRandom().privateKey;
 
-    regularProvider = new JsonRpcProvider(rpcUrl);
+    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     regularSigner = regularProvider.getSigner();
 
     blsProvider = new BlsProvider(
@@ -75,7 +74,8 @@ describe("BlsProvider", () => {
     const blsSigner = blsProvider.getSigner();
 
     // Assert
-    expect(blsSigner._isSigner).to.true;
+    /* eslint-disable-next-line no-unused-expressions */
+    expect(blsSigner._isSigner).to.be.true;
   });
 
   it("should return a new signer if one has not been instantiated", async () => {
@@ -218,6 +218,7 @@ describe("BlsProvider", () => {
 
     // Assert
     // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse". This unit test is concerned with the latter being called.
+    /* eslint-disable-next-line no-unused-expressions */
     expect(spy).to.have.been.called.twice;
   });
 
@@ -266,15 +267,15 @@ describe("BlsProvider", () => {
     expect(transactionReceipt)
       .to.have.property("contractAddress")
       .to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionIndex"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionIndex"); // .to.equal("0x");
     expect(transactionReceipt)
       .to.have.property("gasUsed")
       .to.equal(parseEther("0"));
     expect(transactionReceipt).to.have.property("logsBloom").to.equal("");
-    expect(transactionReceipt).to.have.property("blockHash"); //.to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionHash"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockHash"); // .to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionHash"); // .to.equal("0x");
     expect(transactionReceipt).to.have.property("logs").to.deep.equal([]);
-    expect(transactionReceipt).to.have.property("blockNumber"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockNumber"); // .to.equal("0x");
     expect(transactionReceipt)
       .to.have.property("confirmations")
       .to.equal(transactionResponse.confirmations);
@@ -331,15 +332,15 @@ describe("BlsProvider", () => {
     expect(transactionReceipt)
       .to.have.property("contractAddress")
       .to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionIndex"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionIndex"); // .to.equal("0x");
     expect(transactionReceipt)
       .to.have.property("gasUsed")
       .to.equal(parseEther("0"));
     expect(transactionReceipt).to.have.property("logsBloom").to.equal("");
-    expect(transactionReceipt).to.have.property("blockHash"); //.to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionHash"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockHash"); // .to.equal("0x");
+    expect(transactionReceipt).to.have.property("transactionHash"); // .to.equal("0x");
     expect(transactionReceipt).to.have.property("logs").to.deep.equal([]);
-    expect(transactionReceipt).to.have.property("blockNumber"); //.to.equal("0x");
+    expect(transactionReceipt).to.have.property("blockNumber"); // .to.equal("0x");
     expect(transactionReceipt).to.have.property("confirmations").to.equal(1);
     expect(transactionReceipt)
       .to.have.property("cumulativeGasUsed")
@@ -422,9 +423,9 @@ describe("BlsProvider", () => {
 
 describe("JsonRpcProvider", () => {
   beforeEach(async () => {
-    signers = await ethers.getSigners();
+    signers = await hardhatEthers.getSigners();
     rpcUrl = "http://localhost:8545";
-    regularProvider = new JsonRpcProvider(rpcUrl);
+    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     regularSigner = regularProvider.getSigner();
   });
 

@@ -1,20 +1,12 @@
-import { JsonRpcProvider } from "@ethersproject/providers";
-import {
-  TransactionReceipt,
-  TransactionResponse,
-  TransactionRequest,
-} from "@ethersproject/abstract-provider";
-import { Deferrable } from "@ethersproject/properties";
-import { BigNumber } from "@ethersproject/bignumber";
-import { Networkish } from "@ethersproject/networks";
-import { parseEther } from "@ethersproject/units";
+import { ethers, BigNumber } from "ethers";
+import { parseEther, Deferrable } from "ethers/lib/utils";
 
 import { ActionData, Bundle } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner, { _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
 
-export default class BlsProvider extends JsonRpcProvider {
+export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
   readonly verificationGatewayAddress: string;
   signer!: BlsSigner;
@@ -23,7 +15,7 @@ export default class BlsProvider extends JsonRpcProvider {
     aggregatorUrl: string,
     verificationGatewayAddress: string,
     url?: string,
-    network?: Networkish,
+    network?: ethers.providers.Networkish,
   ) {
     super(url, network);
     this.aggregator = new Aggregator(aggregatorUrl);
@@ -31,7 +23,7 @@ export default class BlsProvider extends JsonRpcProvider {
   }
 
   override async estimateGas(
-    transaction: Deferrable<TransactionRequest>,
+    transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<BigNumber> {
     if (!transaction.to) {
       throw new TypeError("Transaction.to should be defined.");
@@ -57,7 +49,7 @@ export default class BlsProvider extends JsonRpcProvider {
 
   override async sendTransaction(
     signedTransaction: string | Promise<string>,
-  ): Promise<TransactionResponse> {
+  ): Promise<ethers.providers.TransactionResponse> {
     throw new Error(
       "sendTransaction() is not implemented. Call 'sendBlsTransaction()' instead.",
     );
@@ -66,7 +58,7 @@ export default class BlsProvider extends JsonRpcProvider {
   async sendBlsTransaction(
     bundle: Bundle,
     signer: BlsSigner,
-  ): Promise<TransactionResponse> {
+  ): Promise<ethers.providers.TransactionResponse> {
     const result = await this.aggregator.add(bundle);
 
     if ("failures" in result) {
@@ -102,7 +94,7 @@ export default class BlsProvider extends JsonRpcProvider {
 
   override async getTransactionReceipt(
     transactionHash: string | Promise<string>,
-  ): Promise<TransactionReceipt> {
+  ): Promise<ethers.providers.TransactionReceipt> {
     const resolvedTransactionHash = await transactionHash;
     return this._getTransactionReceipt(resolvedTransactionHash, 1, 10);
   }
@@ -111,7 +103,7 @@ export default class BlsProvider extends JsonRpcProvider {
     transactionHash: string,
     confirmations?: number,
     retries?: number,
-  ): Promise<TransactionReceipt> {
+  ): Promise<ethers.providers.TransactionReceipt> {
     return this._getTransactionReceipt(
       transactionHash,
       confirmations == null ? 1 : confirmations,
@@ -123,13 +115,17 @@ export default class BlsProvider extends JsonRpcProvider {
     transactionHash: string,
     confirmations: number,
     retries: number,
-  ): Promise<TransactionReceipt> {
-    let bundleReceipt: BundleReceipt | undefined;
-
+  ): Promise<ethers.providers.TransactionReceipt> {
     const getBundleReceipt = async () =>
       await this.aggregator.lookupReceipt(transactionHash);
     const bundleExists = (result: BundleReceipt) => !result;
-    bundleReceipt = await poll(getBundleReceipt, bundleExists, retries, 2000);
+
+    const bundleReceipt = await poll(
+      getBundleReceipt,
+      bundleExists,
+      retries,
+      2000,
+    );
 
     if (bundleReceipt === undefined) {
       throw new Error(

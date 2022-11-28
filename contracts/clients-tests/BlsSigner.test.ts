@@ -1,12 +1,8 @@
-import { ethers } from "hardhat";
+import { ethers as hardhatEthers } from "hardhat";
 import { expect } from "chai";
-import { Wallet } from "@ethersproject/wallet";
-import { JsonRpcProvider, JsonRpcSigner } from "@ethersproject/providers";
+import { ethers, Wallet, BigNumber } from "ethers";
+import { parseEther, resolveProperties } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { Networkish } from "@ethersproject/networks";
-import { parseEther } from "ethers/lib/utils";
-import { BigNumber } from "@ethersproject/bignumber";
-import { resolveProperties } from "@ethersproject/properties";
 
 import {
   BlsProvider,
@@ -23,19 +19,19 @@ let signers: SignerWithAddress[];
 let aggregatorUrl: string;
 let verificationGateway: string;
 let rpcUrl: string;
-let network: Networkish;
+let network: ethers.providers.Networkish;
 
 let privateKey: string;
 let blsProvider: BlsProvider;
 let blsSigner: BlsSigner;
 
-let regularProvider: JsonRpcProvider;
-let regularSigner: JsonRpcSigner;
+let regularProvider: ethers.providers.JsonRpcProvider;
+let regularSigner: ethers.providers.JsonRpcSigner;
 
 describe("BlsSigner", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
-    signers = await ethers.getSigners();
+    signers = await hardhatEthers.getSigners();
 
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = networkConfig.addresses.verificationGateway;
@@ -47,7 +43,7 @@ describe("BlsSigner", () => {
 
     privateKey = Wallet.createRandom().privateKey;
 
-    regularProvider = new JsonRpcProvider(rpcUrl);
+    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     blsProvider = new BlsProvider(
       aggregatorUrl,
@@ -332,9 +328,9 @@ describe("BlsSigner", () => {
 
 describe("JsonRpcSigner", () => {
   beforeEach(async () => {
-    signers = await ethers.getSigners();
+    signers = await hardhatEthers.getSigners();
     rpcUrl = "http://localhost:8545";
-    regularProvider = new JsonRpcProvider(rpcUrl);
+    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     regularSigner = regularProvider.getSigner();
   });
 
