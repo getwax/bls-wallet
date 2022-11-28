@@ -20,11 +20,12 @@ import { ActionData, Bundle, Signature } from "./signer";
 export const _constructorGuard = {};
 
 export default class BlsSigner extends Signer {
-  readonly provider: BlsProvider;
+  override readonly provider: BlsProvider;
+  readonly verificationGatewayAddress!: string;
   wallet!: BlsWalletWrapper;
-  verificationGatewayAddress!: string;
-  _index: number;
-  _address: string;
+  
+  readonly _index: number;
+  readonly _address: string;
 
   constructor(
     constructorGuard: any,
@@ -65,7 +66,7 @@ export default class BlsSigner extends Signer {
     );
   }
 
-  async sendTransaction(
+  override async sendTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<TransactionResponse> {
     this.#verifyInit();
@@ -157,7 +158,7 @@ export default class BlsSigner extends Signer {
     ]);
   }
 
-  async signTransaction(
+  override async signTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<string> {
     throw new Error(
@@ -176,7 +177,7 @@ export default class BlsSigner extends Signer {
     return this.wallet.sign({ nonce, actions: [action] });
   }
 
-  async signMessage(message: Bytes | string): Promise<string> {
+  override async signMessage(message: Bytes | string): Promise<string> {
     throw new Error("signMessage() is not implemented.");
   }
 
@@ -186,7 +187,7 @@ export default class BlsSigner extends Signer {
     return this.wallet.signMessage(message);
   }
 
-  connect(provider: Provider): BlsSigner {
+  override connect(provider: Provider): BlsSigner {
     throw new Error("connect() is not implemented.");
   }
 

@@ -3,7 +3,6 @@ import {
   TransactionReceipt,
   TransactionResponse,
   TransactionRequest,
-  BlockTag,
 } from "@ethersproject/abstract-provider";
 import { Deferrable } from "@ethersproject/properties";
 import { BigNumber } from "@ethersproject/bignumber";
@@ -31,7 +30,7 @@ export default class BlsProvider extends JsonRpcProvider {
     this.verificationGatewayAddress = verificationGatewayAddress;
   }
 
-  async estimateGas(
+  override async estimateGas(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<BigNumber> {
     if (!transaction.to) {
@@ -56,7 +55,7 @@ export default class BlsProvider extends JsonRpcProvider {
     }
   }
 
-  async sendTransaction(
+  override async sendTransaction(
     signedTransaction: string | Promise<string>,
   ): Promise<TransactionResponse> {
     throw new Error(
@@ -91,7 +90,7 @@ export default class BlsProvider extends JsonRpcProvider {
     );
   }
 
-  getSigner(addressOrIndex?: string | number): BlsSigner {
+  override getSigner(addressOrIndex?: string | number): BlsSigner {
     if (this.signer) {
       return this.signer;
     }
@@ -101,14 +100,14 @@ export default class BlsProvider extends JsonRpcProvider {
     return signer;
   }
 
-  async getTransactionReceipt(
+  override async getTransactionReceipt(
     transactionHash: string | Promise<string>,
   ): Promise<TransactionReceipt> {
     const resolvedTransactionHash = await transactionHash;
     return this._getTransactionReceipt(resolvedTransactionHash, 1, 10);
   }
 
-  async waitForTransaction(
+  override async waitForTransaction(
     transactionHash: string,
     confirmations?: number,
     retries?: number,
