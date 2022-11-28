@@ -53,6 +53,4 @@ export {
   // eslint-disable-next-line camelcase
   MockERC20__factory,
   MockERC20,
-  BlsProvider,
-  BlsSigner,
 };
