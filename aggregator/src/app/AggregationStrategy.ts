@@ -238,7 +238,10 @@ export default class AggregationStrategy {
       const bundleResult = processBundleResults[i];
       const fee = after.returnValue[0].sub(before.returnValue[0]);
       if (!bundleResult.success) {
-        return { success: false, fee, errorReason: null };
+        const errorReason: OperationResultError = {
+          message: "Unknown error reason",
+        };
+        return { success: false, fee, errorReason };
       }
 
       const [operationStatuses, results] = bundleResult.returnValue;
