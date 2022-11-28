@@ -24,8 +24,8 @@ export default class BlsSigner extends Signer {
   readonly verificationGatewayAddress!: string;
   wallet!: BlsWalletWrapper;
   
-  readonly _index: number;
-  readonly _address: string;
+  _index: number;
+  _address: string;
 
   constructor(
     constructorGuard: any,
