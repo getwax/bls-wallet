@@ -17,7 +17,6 @@ export default async function poll(
 
 function wait(milliseconds = 1000) {
   return new Promise((resolve) => {
-    console.log(`Polling every ${milliseconds} milliseconds...`);
     setTimeout(resolve, milliseconds);
   });
 }
