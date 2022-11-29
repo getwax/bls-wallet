@@ -35,8 +35,16 @@ export type EstimateFeeResponse = {
 
 export type BundleReceipt = {
   transactionIndex: string;
+  transactionHash: string;
+  bundleHash: string;
   blockHash: string;
-  blockNumber: string;
+  blockNumber: number;
+};
+
+export type BundleReceiptResponse = {
+  status: string;
+  submitError: string | null;
+  receipt: BundleReceipt | null;
 };
 
 export default class Aggregator {
@@ -74,7 +82,9 @@ export default class Aggregator {
     return result as EstimateFeeResponse;
   }
 
-  async lookupReceipt(hash: string): Promise<BundleReceipt | undefined> {
+  async lookupReceipt(
+    hash: string,
+  ): Promise<BundleReceiptResponse | undefined> {
     const response = await fetch(`${this.origin}/bundleReceipt/${hash}`);
 
     if (response.status === 404) {

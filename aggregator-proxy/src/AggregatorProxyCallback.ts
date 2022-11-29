@@ -62,7 +62,7 @@ export default function AggregatorProxyCallback(
     if (lookupResult === undefined) {
       ctx.status = 404;
     } else {
-      ctx.status = 200;
+      ctx.status = lookupResult.status === 'pending' ? 202 : 200;
       ctx.body = lookupResult;
     }
   });

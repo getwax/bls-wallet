@@ -5,6 +5,8 @@ import {
   ERC20,
   ERC20__factory,
   ethers,
+  decodeError,
+  OperationResultError
 } from "../../deps.ts";
 
 import nil from "../helpers/nil.ts";
@@ -464,90 +466,5 @@ export default class AggregationStrategy {
 
     return left;
   }
-}
-
-// The below code is temporary till the functions are exposed in the client module
-
-function calculateSelector(signature: string) {
-  return ethers.utils.keccak256(new TextEncoder().encode(signature)).slice(0, 10);
-}
-
-function calculateAndCheckSelector(signature: string, expected: string) {
-  const selector = calculateSelector(signature);
-
-  assert(
-    selector === expected,
-    `Selector for ${signature} was not ${expected}`,
-  );
-
-  return selector;
-}
-
-const errorSelectors = {
-  Error: calculateAndCheckSelector("Error(string)", "0x08c379a0"),
-
-  Panic: calculateAndCheckSelector("Panic(uint256)", "0x4e487b71"),
-
-  ActionError: calculateAndCheckSelector(
-    "ActionError(uint256,bytes)",
-    "0x5c667601",
-  ),
-};
-
-type OperationResultError = {
-  actionIndex?: BigNumber;
-  message: string;
-};
-
-export const decodeError = (errorData: string) => {
-  if (!errorData.startsWith(errorSelectors.ActionError)) {
-    throw new Error(
-      [
-        `errorResult does not begin with ActionError selector`,
-        `(${errorSelectors.ActionError}): ${errorData}`,
-      ].join(" "),
-    );
-  }
-
-  // remove methodId (4bytes after 0x)
-  const actionErrorArgBytes = `0x${errorData.slice(10)}`;
-
-  let actionIndex: BigNumber | undefined;
-  let message: string;
-
-  try {
-    const [actionIndexDecoded, actionErrorData] = ethers.utils.defaultAbiCoder.decode(
-      ["uint256", "bytes"],
-      actionErrorArgBytes,
-    ) as [BigNumber, string];
-
-    actionIndex = actionIndexDecoded;
-
-    const actionErrorDataBody = `0x${actionErrorData.slice(10)}`;
-
-    if (actionErrorData.startsWith(errorSelectors.Error)) {
-      [message] = ethers.utils.defaultAbiCoder.decode(["string"], actionErrorDataBody);
-    } else if (actionErrorData.startsWith(errorSelectors.Panic)) {
-      const [panicCode] = ethers.utils.defaultAbiCoder.decode(
-        ["uint256"],
-        actionErrorDataBody,
-      ) as [BigNumber];
-
-      message = [
-        `Panic: ${panicCode.toHexString()}`,
-        "(See Panic(uint256) in the solidity docs:",
-        "https://docs.soliditylang.org/_/downloads/en/latest/pdf/)",
-      ].join(" ");
-    } else {
-      message = `Unexpected action error data: ${actionErrorData}`;
-    }
-  } catch (error) {
-    console.error(error);
-    message = `Unexpected error data: ${errorData}`;
-  }
-  return {
-    actionIndex,
-    message,
-  };
 }
 
