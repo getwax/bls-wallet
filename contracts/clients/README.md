@@ -83,7 +83,7 @@ await verificationGateway.processBundle(bundle);
 You can get the results of the operations in a bundle using `getOperationResults`.
 
 ```ts
-import { getOperationResults } from 'bls-wallet-clients';
+import { getOperationResults, decodeError } from 'bls-wallet-clients';
 
 ...
 
@@ -96,6 +96,13 @@ const opResults = getOperationResults(txnReceipt);
 const { error } = opResults[0];
 console.log(error?.actionIndex); // ex. 0 (as BigNumber)
 console.log(error?.message); // ex. "some require failure message"
+
+// If you want more granular ability to decode an error message
+// you can use the decodeError function.
+const errorData = '0x5c66760100000000.............000000000000';
+const opResultError = decodeError(errorData);
+console.log(opResultError.actionIndex); // ex. 0 (as BigNumber)
+console.log(opResultError.message); // ex. "ERC20: insufficient allowance"
 ```
 
 ## Signer
