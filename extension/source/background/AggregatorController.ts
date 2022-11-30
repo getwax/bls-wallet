@@ -1,14 +1,11 @@
-import * as io from 'io-ts';
 import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
-import assertType from '../cells/assertType';
 
 import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
-import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
 import { IReadableCell } from '../cells/ICell';
 import getNetworkConfig from './getNetworkConfig';
