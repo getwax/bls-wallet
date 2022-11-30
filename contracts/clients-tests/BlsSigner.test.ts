@@ -5,8 +5,7 @@ import { parseEther, resolveProperties } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
-  BlsProvider,
-  BlsSigner,
+  Experimental,
   ActionData,
   BlsWalletWrapper,
   NetworkConfig,
@@ -22,8 +21,8 @@ let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
 let privateKey: string;
-let blsProvider: BlsProvider;
-let blsSigner: BlsSigner;
+let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
+let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
 let regularSigner: ethers.providers.JsonRpcSigner;
@@ -45,7 +44,7 @@ describe("BlsSigner", () => {
 
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
-    blsProvider = new BlsProvider(
+    blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
       rpcUrl,
@@ -161,7 +160,7 @@ describe("BlsSigner", () => {
 
   it("should throw an error when invalid private key is supplied", async () => {
     // Arrange
-    const newBlsProvider = new BlsProvider(
+    const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
       rpcUrl,

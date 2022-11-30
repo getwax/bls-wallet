@@ -7,8 +7,7 @@ import { parseEther, formatEther, id } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
-  BlsProvider,
-  BlsSigner,
+  Experimental,
   BlsWalletWrapper,
   MockERC20__factory,
   NetworkConfig,
@@ -26,8 +25,8 @@ let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
 let privateKey: string;
-let blsProvider: BlsProvider;
-let blsSigner: BlsSigner;
+let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
+let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
 let regularSigner: ethers.providers.JsonRpcSigner;
@@ -49,7 +48,7 @@ describe("BlsProvider", () => {
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     regularSigner = regularProvider.getSigner();
 
-    blsProvider = new BlsProvider(
+    blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
       rpcUrl,
@@ -78,7 +77,7 @@ describe("BlsProvider", () => {
 
   it("should return a new signer if one has not been instantiated", async () => {
     // Arrange
-    const newBlsProvider = new BlsProvider(
+    const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
       rpcUrl,
@@ -133,7 +132,7 @@ describe("BlsProvider", () => {
 
   it("should throw an error when this.signer has not been assigned", async () => {
     // Arrange
-    const newBlsProvider = new BlsProvider(
+    const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
       rpcUrl,
