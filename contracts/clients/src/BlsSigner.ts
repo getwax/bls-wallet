@@ -120,13 +120,15 @@ export default class BlsSigner extends Signer {
     // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     return {
       hash,
-      confirmations: 1,
+      to: action.contractAddress,
       from,
       nonce: BigNumber.from(nonce).toNumber(),
       gasLimit: BigNumber.from("0x0"),
-      value: BigNumber.from(action.ethValue),
       data: action.encodedFunction.toString(),
+      value: BigNumber.from(action.ethValue),
       chainId: chainId,
+      type: 2,
+      confirmations: 1,
       wait: (confirmations?: number) => {
         return this.provider.waitForTransaction(hash, confirmations);
       },

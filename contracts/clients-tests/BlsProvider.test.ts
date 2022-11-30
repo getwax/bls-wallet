@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import spies from "chai-spies";
-import { ethers, Wallet } from "ethers";
+import { BigNumber, ethers, Wallet } from "ethers";
 import { parseEther, formatEther, id } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -261,32 +261,35 @@ describe("BlsProvider", () => {
 
     // Assert
     // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
-    expect(transactionReceipt).to.be.an("object");
-    expect(transactionReceipt).to.have.property("to").to.equal("0x");
-    expect(transactionReceipt).to.have.property("from").to.equal("0x");
     expect(transactionReceipt)
-      .to.have.property("contractAddress")
-      .to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionIndex"); // .to.equal("0x");
-    expect(transactionReceipt)
-      .to.have.property("gasUsed")
-      .to.equal(parseEther("0"));
-    expect(transactionReceipt).to.have.property("logsBloom").to.equal("");
-    expect(transactionReceipt).to.have.property("blockHash"); // .to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionHash"); // .to.equal("0x");
-    expect(transactionReceipt).to.have.property("logs").to.deep.equal([]);
-    expect(transactionReceipt).to.have.property("blockNumber"); // .to.equal("0x");
-    expect(transactionReceipt)
-      .to.have.property("confirmations")
-      .to.equal(transactionResponse.confirmations);
-    expect(transactionReceipt)
-      .to.have.property("cumulativeGasUsed")
-      .to.equal(parseEther("0"));
-    expect(transactionReceipt)
-      .to.have.property("effectiveGasPrice")
-      .to.equal(parseEther("0"));
-    expect(transactionReceipt).to.have.property("byzantium").to.equal(false);
-    expect(transactionReceipt).to.have.property("type").to.equal(2);
+      .to.be.an("object")
+      .that.deep.includes({
+        to: "0x",
+        from: "0x",
+        contractAddress: "0x",
+        // gasUsed: BigNumber.from("0"),
+        logsBloom: "",
+        logs: [],
+        confirmations: transactionResponse.confirmations,
+        // cumulativeGasUsed: parseEther("0"),
+        // effectiveGasPrice: parseEther("0"),
+        byzantium: false,
+        type: 2,
+      });
+
+    expect(transactionReceipt).to.include.keys(
+      "transactionIndex",
+      "blockHash",
+      "transactionHash",
+      "blockNumber",
+    );
+
+    // TODO: parseEther() doesn't work when asserting this way ^.
+    // Expects BigNumber { value: "0" } from transactionReceipt,
+    // but this returns { _hex: '0x00', _isBigNumber: true }.
+    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
   });
 
   it("should throw an error when the transaction receipt cannot be found", async () => {
@@ -326,30 +329,33 @@ describe("BlsProvider", () => {
 
     // Assert
     // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
-    expect(transactionReceipt).to.be.an("object");
-    expect(transactionReceipt).to.have.property("to").to.equal("0x");
-    expect(transactionReceipt).to.have.property("from").to.equal("0x");
-    expect(transactionReceipt)
-      .to.have.property("contractAddress")
-      .to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionIndex"); // .to.equal("0x");
-    expect(transactionReceipt)
-      .to.have.property("gasUsed")
-      .to.equal(parseEther("0"));
-    expect(transactionReceipt).to.have.property("logsBloom").to.equal("");
-    expect(transactionReceipt).to.have.property("blockHash"); // .to.equal("0x");
-    expect(transactionReceipt).to.have.property("transactionHash"); // .to.equal("0x");
-    expect(transactionReceipt).to.have.property("logs").to.deep.equal([]);
-    expect(transactionReceipt).to.have.property("blockNumber"); // .to.equal("0x");
-    expect(transactionReceipt).to.have.property("confirmations").to.equal(1);
-    expect(transactionReceipt)
-      .to.have.property("cumulativeGasUsed")
-      .to.equal(parseEther("0"));
-    expect(transactionReceipt)
-      .to.have.property("effectiveGasPrice")
-      .to.equal(parseEther("0"));
-    expect(transactionReceipt).to.have.property("byzantium").to.equal(false);
-    expect(transactionReceipt).to.have.property("type").to.equal(2);
+    expect(transactionReceipt).to.be.an("object").that.deep.includes({
+      to: "0x",
+      from: "0x",
+      contractAddress: "0x",
+      // gasUsed: BigNumber.from("0"),
+      logsBloom: "",
+      logs: [],
+      confirmations: transactionResponse.confirmations,
+      // cumulativeGasUsed: parseEther("0"),
+      // effectiveGasPrice: parseEther("0"),
+      byzantium: false,
+      type: 2,
+    });
+
+    expect(transactionReceipt).to.include.keys(
+      "transactionIndex",
+      "blockHash",
+      "transactionHash",
+      "blockNumber",
+    );
+
+    // TODO: parseEther() doesn't work when asserting this way ^.
+    // Expects BigNumber { value: "0" } from transactionReceipt,
+    // but this returns { _hex: '0x00', _isBigNumber: true }.
+    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
   });
 
   it("gets a transaction given a valid transaction hash", async () => {
@@ -373,51 +379,37 @@ describe("BlsProvider", () => {
 
     // Assert
     // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
-    expect(transactionResponse).to.be.an("object");
-    expect(transactionResponse)
-      .to.have.property("hash")
-      .to.equal(transactionReceipt.transactionHash);
-    expect(transactionResponse).to.have.property("type").to.equal(2);
-    expect(transactionResponse)
-      .to.have.property("accessList")
-      .to.deep.equal([]);
-    expect(transactionResponse)
-      .to.have.property("blockHash")
-      .to.equal(transactionReceipt.blockHash);
-    expect(transactionResponse)
-      .to.have.property("blockNumber")
-      .to.equal(transactionReceipt.blockNumber);
-    expect(transactionResponse)
-      .to.have.property("transactionIndex")
-      .to.equal(transactionReceipt.transactionIndex);
-    expect(transactionResponse)
-      .to.have.property("confirmations")
-      .to.equal(expectedTransactionResponse.confirmations);
-    // TODO: Why is this different to signer wallet address? Uncomment logs below and run test to see problem.
-    // Will investigate this again when I look at bls-wallet #412.
-    // console.log("blsSigner wallet.address", blsSigner.wallet.address);
-    // console.log("Signer from:            ", expectedTransactionResponse.from);
-    expect(transactionResponse)
-      .to.have.property("from")
-      .to.equal("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC");
-    expect(transactionResponse).to.have.property("gasPrice");
-    expect(transactionResponse).to.have.property("maxPriorityFeePerGas");
-    expect(transactionResponse).to.have.property("maxFeePerGas");
-    expect(transactionResponse).to.have.property("gasLimit");
-    expect(transactionResponse)
-      .to.have.property("to")
-      .to.equal(verificationGateway);
-    expect(transactionResponse).to.have.property("value");
-    expect(transactionResponse).to.have.property("nonce");
-    expect(transactionResponse).to.have.property("data");
-    expect(transactionResponse).to.have.property("r");
-    expect(transactionResponse).to.have.property("s");
-    expect(transactionResponse).to.have.property("v");
-    expect(transactionResponse).to.have.property("creates").to.equal(null);
-    expect(transactionResponse)
-      .to.have.property("chainId")
-      .to.equal(expectedTransactionResponse.chainId);
-    expect(transactionResponse).to.have.property("wait");
+    expect(transactionResponse).to.be.an("object").that.deep.includes({
+      hash: transactionReceipt.transactionHash,
+      to: verificationGateway,
+      // TODO: Why is this different to signer wallet address? Uncomment logs below and run test to see problem.
+      // Will investigate this again when I look at bls-wallet #412.
+      // console.log("blsSigner wallet.address", blsSigner.wallet.address);
+      // console.log("Signer from:            ", expectedTransactionResponse.from);
+      from: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      chainId: expectedTransactionResponse.chainId,
+      type: 2,
+      accessList: [],
+      blockNumber: transactionReceipt.blockNumber,
+      blockHash: transactionReceipt.blockHash,
+      confirmations: expectedTransactionResponse.confirmations,
+      transactionIndex: transactionReceipt.transactionIndex,
+      creates: null,
+    });
+
+    expect(transactionResponse).to.include.keys(
+      "nonce",
+      "gasLimit",
+      "gasPrice",
+      "data",
+      "value",
+      "r",
+      "s",
+      "v",
+      "maxPriorityFeePerGas",
+      "maxFeePerGas",
+      "wait",
+    );
   });
 });
 
@@ -468,68 +460,30 @@ describe("JsonRpcProvider", () => {
     );
 
     // Assert
-    expect(transactionResponse).to.be.an("object");
-    expect(transactionResponse)
-      .to.have.property("hash")
-      .to.equal(expectedTransactionResponse.hash);
-    expect(transactionResponse)
-      .to.have.property("type")
-      .to.equal(expectedTransactionResponse.type);
-    expect(transactionResponse)
-      .to.have.property("accessList")
-      .to.deep.equal(expectedTransactionResponse.accessList);
-    expect(transactionResponse)
-      .to.have.property("blockHash")
-      .to.equal(expectedTransactionResponse.blockHash);
-    expect(transactionResponse)
-      .to.have.property("blockNumber")
-      .to.equal(expectedTransactionResponse.blockNumber);
-    expect(transactionResponse)
-      .to.have.property("transactionIndex")
-      .to.equal(0);
-    expect(transactionResponse)
-      .to.have.property("confirmations")
-      .to.equal(expectedTransactionResponse.confirmations);
-    expect(transactionResponse)
-      .to.have.property("from")
-      .to.equal(expectedTransactionResponse.from);
-    expect(transactionResponse)
-      .to.have.property("gasPrice")
-      .to.equal(expectedTransactionResponse.gasPrice);
-    expect(transactionResponse)
-      .to.have.property("maxPriorityFeePerGas")
-      .to.equal(expectedTransactionResponse.maxPriorityFeePerGas);
-    expect(transactionResponse)
-      .to.have.property("maxFeePerGas")
-      .to.equal(expectedTransactionResponse.maxFeePerGas);
-    expect(transactionResponse)
-      .to.have.property("gasLimit")
-      .to.equal(expectedTransactionResponse.gasLimit);
-    expect(transactionResponse)
-      .to.have.property("to")
-      .to.equal(expectedTransactionResponse.to);
-    expect(transactionResponse)
-      .to.have.property("value")
-      .to.equal(expectedTransactionResponse.value);
-    expect(transactionResponse)
-      .to.have.property("nonce")
-      .to.equal(expectedTransactionResponse.nonce);
-    expect(transactionResponse)
-      .to.have.property("data")
-      .to.equal(expectedTransactionResponse.data);
-    expect(transactionResponse)
-      .to.have.property("r")
-      .to.equal(expectedTransactionResponse.r);
-    expect(transactionResponse)
-      .to.have.property("s")
-      .to.equal(expectedTransactionResponse.s);
-    expect(transactionResponse)
-      .to.have.property("v")
-      .to.equal(expectedTransactionResponse.v);
-    expect(transactionResponse).to.have.property("creates").to.equal(null);
-    expect(transactionResponse)
-      .to.have.property("chainId")
-      .to.equal(expectedTransactionResponse.chainId);
-    expect(transactionResponse).to.have.property("wait");
+    expect(transactionResponse).to.be.an("object").that.deep.includes({
+      hash: expectedTransactionResponse.hash,
+      type: expectedTransactionResponse.type,
+      accessList: expectedTransactionResponse.accessList,
+      blockHash: expectedTransactionResponse.blockHash,
+      blockNumber: expectedTransactionResponse.blockNumber,
+      transactionIndex: 0,
+      confirmations: expectedTransactionResponse.confirmations,
+      from: expectedTransactionResponse.from,
+      gasPrice: expectedTransactionResponse.gasPrice,
+      maxPriorityFeePerGas: expectedTransactionResponse.maxPriorityFeePerGas,
+      maxFeePerGas: expectedTransactionResponse.maxFeePerGas,
+      gasLimit: expectedTransactionResponse.gasLimit,
+      to: expectedTransactionResponse.to,
+      value: expectedTransactionResponse.value,
+      nonce: expectedTransactionResponse.nonce,
+      data: expectedTransactionResponse.data,
+      r: expectedTransactionResponse.r,
+      s: expectedTransactionResponse.s,
+      v: expectedTransactionResponse.v,
+      creates: null,
+      chainId: expectedTransactionResponse.chainId,
+    });
+
+    expect(transactionResponse).to.include.keys("wait");
   });
 });

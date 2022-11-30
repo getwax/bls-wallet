@@ -133,29 +133,30 @@ describe("BlsSigner", () => {
     const transactionResponse = await blsSigner.sendTransaction({
       to: recipient,
       value: transactionAmount,
+      data: "0x",
     });
 
     // Assert
-    expect(transactionResponse).to.be.an("object");
-    expect(transactionResponse).to.have.property("hash");
-    expect(transactionResponse).to.have.property("confirmations").to.equal(1);
-    expect(transactionResponse)
-      .to.have.property("from")
-      .to.equal(blsSigner.wallet.address);
-    expect(transactionResponse)
-      .to.have.property("nonce")
-      .to.equal(expectedNonce);
-    expect(transactionResponse)
-      .to.have.property("gasLimit")
-      .to.equal(BigNumber.from("0x0"));
-    expect(transactionResponse)
-      .to.have.property("value")
-      .to.equal(BigNumber.from(transactionAmount));
-    expect(transactionResponse).to.have.property("data");
-    expect(transactionResponse)
-      .to.have.property("chainId")
-      .to.equal(expectedChainId);
-    expect(transactionResponse).to.have.property("wait");
+    expect(transactionResponse).to.be.an("object").that.includes({
+      hash: transactionResponse.hash,
+      to: recipient,
+      from: blsSigner.wallet.address,
+      nonce: 0,
+      // gasLimit: BigNumber.from("0x0"),
+      data: "0x",
+      // value: BigNumber.from(transactionAmount),
+      chainId: expectedChainId,
+      type: 2,
+      confirmations: 1,
+    });
+
+    // TODO: BigNumber.from() doesn't work when asserting this way ^.
+    // Expects { value: "0" } from transactionReceipt,
+    // but this returns { _hex: '0x00', _isBigNumber: true }.
+    expect(transactionResponse.gasLimit).to.equal(BigNumber.from("0x0"));
+    expect(transactionResponse.value).to.equal(
+      BigNumber.from(transactionAmount),
+    );
   });
 
   it("should throw an error when a signer has not been initialized", async () => {
@@ -265,11 +266,12 @@ describe("BlsSigner", () => {
     const result = blsSigner.checkTransaction(transaction);
 
     // Assert
-    expect(result.to).to.equal(recipient);
-    expect(result.value).to.equal(transactionAmount);
-
     const resolvedResult = await resolveProperties(result);
-    expect(resolvedResult.from).to.equal(await blsSigner.getAddress());
+    expect(resolvedResult).to.be.an("object").that.includes({
+      to: recipient,
+      value: transactionAmount,
+      from: blsSigner.wallet.address,
+    });
   });
 
   it("should populate transaction", async () => {
@@ -285,15 +287,20 @@ describe("BlsSigner", () => {
     const result = await blsSigner.populateTransaction(transaction);
 
     // Assert
-    expect(result.to).to.equal(recipient);
-    expect(result.value).to.equal(transactionAmount);
-    expect(result.from).to.equal(await blsSigner.getAddress());
-    expect(result.type).to.equal(2);
-    expect(result).to.have.property("maxFeePerGas");
-    expect(result).to.have.property("maxPriorityFeePerGas");
-    expect(result).to.have.property("nonce");
-    expect(result).to.have.property("gasLimit");
-    expect(result.chainId).to.equal(31337);
+    expect(result).to.be.an("object").that.includes({
+      to: recipient,
+      value: transactionAmount,
+      from: blsSigner.wallet.address,
+      type: 2,
+      nonce: 0,
+      chainId: 31337,
+    });
+
+    expect(result).to.include.keys(
+      "maxFeePerGas",
+      "maxPriorityFeePerGas",
+      "gasLimit",
+    );
   });
 
   it("should throw an error when signMessage is called", async () => {
@@ -377,11 +384,14 @@ describe("JsonRpcSigner", () => {
     const result = regularSigner.checkTransaction(transaction);
 
     // Assert
-    expect(result.to).to.equal(recipient);
-    expect(result.value).to.equal(transactionAmount);
-
     const resolvedResult = await resolveProperties(result);
-    expect(resolvedResult.from).to.equal(await regularSigner.getAddress());
+    expect(resolvedResult)
+      .to.be.an("object")
+      .that.includes({
+        to: recipient,
+        value: transactionAmount,
+        from: await regularSigner.getAddress(),
+      });
   });
 
   it("should populate transaction", async () => {
@@ -397,14 +407,19 @@ describe("JsonRpcSigner", () => {
     const result = await regularSigner.populateTransaction(transaction);
 
     // Assert
-    expect(result.to).to.equal(recipient);
-    expect(result.value).to.equal(transactionAmount);
-    expect(result.from).to.equal(signers[0].address);
-    expect(result.type).to.equal(2);
-    expect(result).to.have.property("maxFeePerGas");
-    expect(result).to.have.property("maxPriorityFeePerGas");
-    expect(result).to.have.property("nonce");
-    expect(result).to.have.property("gasLimit");
-    expect(result.chainId).to.equal(31337);
+    expect(result).to.be.an("object").that.includes({
+      to: recipient,
+      value: transactionAmount,
+      from: signers[0].address,
+      type: 2,
+      nonce: 0,
+      chainId: 31337,
+    });
+
+    expect(result).to.include.keys(
+      "maxFeePerGas",
+      "maxPriorityFeePerGas",
+      "gasLimit",
+    );
   });
 });
