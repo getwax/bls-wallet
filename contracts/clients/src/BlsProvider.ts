@@ -106,8 +106,8 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   ): Promise<ethers.providers.TransactionReceipt> {
     return this._getTransactionReceipt(
       transactionHash,
-      confirmations == null ? 1 : confirmations,
-      retries == null ? 10 : retries,
+      confirmations ?? 1,
+      retries ?? 10,
     );
   }
 
@@ -127,7 +127,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       2000,
     );
 
-    if (bundleReceipt === undefined) {
+    if (!bundleReceipt) {
       throw new Error(
         `Could not find bundle receipt for transaction hash: ${transactionHash}.`,
       );

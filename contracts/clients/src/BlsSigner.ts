@@ -15,7 +15,7 @@ export default class BlsSigner extends Signer {
   _address: string;
 
   constructor(
-    constructorGuard: any,
+    constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
     readonly addressOrIndex?: string | number,
   ) {
@@ -29,7 +29,7 @@ export default class BlsSigner extends Signer {
       );
     }
 
-    if (addressOrIndex == null) {
+    if (addressOrIndex === null || addressOrIndex === undefined) {
       addressOrIndex = 0;
     }
 
