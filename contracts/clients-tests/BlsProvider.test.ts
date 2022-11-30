@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import spies from "chai-spies";
-import { BigNumber, ethers, Wallet } from "ethers";
+import { ethers, Wallet } from "ethers";
 import { parseEther, formatEther, id } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -43,7 +43,10 @@ describe("BlsProvider", () => {
       name: "localhost",
       chainId: 0x7a69,
     };
-    privateKey = Wallet.createRandom().privateKey;
+
+    // random private key
+    privateKey =
+      "0x8f0e5883cf5dfcea371ddb4ef53f73ab1e2881ab291821547cf7034787c8572e";
 
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     regularSigner = regularProvider.getSigner();
@@ -270,50 +273,6 @@ describe("BlsProvider", () => {
     );
   });
 
-  it("should retrieve a transaction receipt given a valid hash", async () => {
-    // Arrange
-    const recipient = signers[1].address;
-    const transactionResponse = await blsSigner.sendTransaction({
-      to: recipient,
-      value: parseEther("1"),
-    });
-
-    // Act
-    const transactionReceipt = await blsProvider.getTransactionReceipt(
-      transactionResponse.hash,
-    );
-
-    // Assert
-    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
-    expect(transactionReceipt).to.be.an("object").that.deep.includes({
-      to: "0x",
-      from: "0x",
-      contractAddress: "0x",
-      // gasUsed: BigNumber.from("0"),
-      logsBloom: "",
-      logs: [],
-      confirmations: transactionResponse.confirmations,
-      // cumulativeGasUsed: parseEther("0"),
-      // effectiveGasPrice: parseEther("0"),
-      byzantium: false,
-      type: 2,
-    });
-
-    expect(transactionReceipt).to.include.keys(
-      "transactionIndex",
-      "blockHash",
-      "transactionHash",
-      "blockNumber",
-    );
-
-    // TODO: parseEther() doesn't work when asserting this way ^.
-    // Expects BigNumber { value: "0" } from transactionReceipt,
-    // but this returns { _hex: '0x00', _isBigNumber: true }.
-    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
-  });
-
   it("should throw an error when the transaction receipt cannot be found", async () => {
     // Arrange
     const invalidTransactionHash = id("invalid hash");
@@ -347,6 +306,50 @@ describe("BlsProvider", () => {
       transactionResponse.hash,
       1,
       10,
+    );
+
+    // Assert
+    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
+    expect(transactionReceipt).to.be.an("object").that.deep.includes({
+      to: "0x",
+      from: "0x",
+      contractAddress: "0x",
+      // gasUsed: BigNumber.from("0"),
+      logsBloom: "",
+      logs: [],
+      confirmations: transactionResponse.confirmations,
+      // cumulativeGasUsed: parseEther("0"),
+      // effectiveGasPrice: parseEther("0"),
+      byzantium: false,
+      type: 2,
+    });
+
+    expect(transactionReceipt).to.include.keys(
+      "transactionIndex",
+      "blockHash",
+      "transactionHash",
+      "blockNumber",
+    );
+
+    // TODO: parseEther() doesn't work when asserting this way ^.
+    // Expects BigNumber { value: "0" } from transactionReceipt,
+    // but this returns { _hex: '0x00', _isBigNumber: true }.
+    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
+  });
+
+  it("should retrieve a transaction receipt given a valid hash", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionResponse = await blsSigner.sendTransaction({
+      to: recipient,
+      value: parseEther("1"),
+    });
+
+    // Act
+    const transactionReceipt = await blsProvider.getTransactionReceipt(
+      transactionResponse.hash,
     );
 
     // Assert

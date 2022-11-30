@@ -45,8 +45,8 @@ const Experimental_ = {
  * Instable in the sense that the APIs will be less functional, less well-tested, and/or are expected to change.
  */
 namespace Experimental {
-  export let BlsProvider = Experimental_.BlsProvider;
-  export let BlsSigner = Experimental_.BlsSigner;
+  export const BlsProvider = Experimental_.BlsProvider;
+  export const BlsSigner = Experimental_.BlsSigner;
 }
 
 export {

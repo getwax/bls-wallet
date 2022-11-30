@@ -1,6 +1,6 @@
 import { ethers as hardhatEthers } from "hardhat";
 import { expect } from "chai";
-import { ethers, Wallet, BigNumber } from "ethers";
+import { ethers, BigNumber } from "ethers";
 import { parseEther, resolveProperties, RLP } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -40,7 +40,9 @@ describe("BlsSigner", () => {
       chainId: 0x7a69,
     };
 
-    privateKey = Wallet.createRandom().privateKey;
+    // random private key
+    privateKey =
+      "0x8f0e5883cf5dfcea371ddb4ef53f73ab1e2881ab291821547cf7034787c8572e";
 
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
@@ -313,7 +315,7 @@ describe("BlsSigner", () => {
       value: transactionAmount,
       from: blsSigner.wallet.address,
       type: 2,
-      nonce: 0,
+      nonce: 1,
       chainId: 31337,
     });
 
