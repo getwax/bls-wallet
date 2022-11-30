@@ -34,7 +34,7 @@ export type EstimateFeeResponse = {
 };
 
 export type BundleReceipt = {
-  transactionIndex: string;
+  transactionIndex: number;
   transactionHash: string;
   bundleHash: string;
   blockHash: string;

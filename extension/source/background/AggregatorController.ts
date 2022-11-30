@@ -126,21 +126,10 @@ export default class AggregatorController {
 
       const aggregator = new Aggregator(knownTx.aggregatorUrl);
 
-      // FIXME: Aggregator/bls-wallet-clients: The response we're getting is
-      // different from the type annotation.
-      const bundleReceipt: unknown = await aggregator.lookupReceipt(hash);
-
-      assertType(
-        bundleReceipt,
-        optional(
-          io.type({
-            transactionIndex: io.number,
-            transactionHash: io.string,
-            blockHash: io.string,
-            blockNumber: io.number,
-          }),
-        ),
-      );
+      const bundleReceiptResponse = await aggregator.lookupReceipt(hash);
+      // If receipt doesn't exist, set to undefined to be consistent with
+      // the return type
+      const bundleReceipt = bundleReceiptResponse?.receipt || undefined;
 
       if (bundleReceipt) {
         this.InternalRpc().updateTransactionHashByBundleHash(
@@ -152,7 +141,7 @@ export default class AggregatorController {
       return (
         bundleReceipt && {
           transactionHash: bundleReceipt.transactionHash,
-          transactionIndex: bundleReceipt.transactionIndex,
+          transactionIndex: parseInt(bundleReceipt.transactionIndex),
           blockHash: bundleReceipt.blockHash,
           blockNumber: bundleReceipt.blockNumber,
           from: knownTx.from,
