@@ -42,7 +42,7 @@ const Experimental_ = {
 
 /**
  * The Experimental namespace exposes APIs that are unstable.
- * Instable in the sense that the APIs will be less functional, less well-tested, and/or are expected to change.
+ * Unstable in the sense that the APIs will be less functional, less well-tested, and/or are expected to change.
  */
 namespace Experimental {
   export const BlsProvider = Experimental_.BlsProvider;

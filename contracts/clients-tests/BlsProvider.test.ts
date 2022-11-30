@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import spies from "chai-spies";
-import { ethers, Wallet } from "ethers";
+import { ethers } from "ethers";
 import { parseEther, formatEther, id } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -88,7 +88,9 @@ describe("BlsProvider", () => {
     );
 
     // Act
-    const newPrivateKey = Wallet.createRandom().privateKey;
+    // random private key
+    const newPrivateKey =
+      "0xe9a7000c19ed2a79122feeda76640e43afe6da9789f6126e54ec55e769d33711";
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
 
     // Assert
