@@ -141,7 +141,7 @@ export default class AggregatorController {
       return (
         bundleReceipt && {
           transactionHash: bundleReceipt.transactionHash,
-          transactionIndex: parseInt(bundleReceipt.transactionIndex),
+          transactionIndex: bundleReceipt.transactionIndex,
           blockHash: bundleReceipt.blockHash,
           blockNumber: bundleReceipt.blockNumber,
           from: knownTx.from,
