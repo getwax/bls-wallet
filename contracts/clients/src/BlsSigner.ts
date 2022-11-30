@@ -1,9 +1,9 @@
 import { ethers, BigNumber, Signer, Bytes } from "ethers";
-import { Deferrable } from "ethers/lib/utils";
+import { Deferrable, hexlify, isBytes, RLP } from "ethers/lib/utils";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
-import { ActionData, Bundle, Signature } from "./signer";
+import { ActionData, bundleToDto } from "./signer";
 
 export const _constructorGuard = {};
 
@@ -154,30 +154,37 @@ export default class BlsSigner extends Signer {
   override async signTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
-    throw new Error(
-      "signTransaction() is not implemented, call 'signBlsTransaction()' instead.",
-    );
-  }
-
-  async signBlsTransaction(action: ActionData): Promise<Bundle> {
     await this.initPromise;
+
+    if (!transaction.to) {
+      throw new TypeError("Transaction.to should be defined.");
+    }
+
+    const action: ActionData = {
+      ethValue: transaction.value?.toString() ?? "0",
+      contractAddress: transaction.to.toString(),
+      encodedFunction: transaction.data?.toString() ?? "0x",
+    };
+
     const nonce = await BlsWalletWrapper.Nonce(
       this.wallet.PublicKey(),
       this.verificationGatewayAddress,
       this,
     );
 
-    return this.wallet.sign({ nonce, actions: [action] });
-  }
-
-  override async signMessage(message: Bytes | string): Promise<string> {
-    throw new Error("signMessage() is not implemented.");
+    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    return JSON.stringify(bundleToDto(bundle));
   }
 
   /** Sign a message */
-  async signBlsMessage(message: string): Promise<Signature> {
+  override async signMessage(message: Bytes | string): Promise<string> {
     await this.initPromise;
-    return this.wallet.signMessage(message);
+    if (isBytes(message)) {
+      message = hexlify(message);
+    }
+
+    const signedMessage = this.wallet.signMessage(message);
+    return RLP.encode(signedMessage);
   }
 
   override connect(provider: ethers.providers.Provider): BlsSigner {

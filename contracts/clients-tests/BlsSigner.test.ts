@@ -1,7 +1,7 @@
 import { ethers as hardhatEthers } from "hardhat";
 import { expect } from "chai";
 import { ethers, Wallet, BigNumber } from "ethers";
-import { parseEther, resolveProperties } from "ethers/lib/utils";
+import { parseEther, resolveProperties, RLP } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
@@ -212,11 +212,32 @@ describe("BlsSigner", () => {
     expect(address).to.equal(expectedAddress);
   });
 
-  it("should sign a transaction to create a bundle", async () => {
+  it("should throw an error signing a transaction when transaction.to has not been defined", async () => {
+    // Arrange
+    const transaction = {
+      value: parseEther("1"),
+    };
+
+    // Act
+    const result = async () => await blsSigner.sendTransaction(transaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      TypeError,
+      "Transaction.to should be defined.",
+    );
+  });
+
+  it("should sign a transaction to create a bundleDto and serialize the result", async () => {
     // Arrange
     const recipient = signers[1].address;
+    const transaction = {
+      value: "1000000000000000000",
+      to: recipient,
+      data: "0x",
+    };
     const action: ActionData = {
-      ethValue: "1",
+      ethValue: parseEther("1"),
       contractAddress: recipient,
       encodedFunction: "0x",
     };
@@ -246,25 +267,11 @@ describe("BlsSigner", () => {
     );
 
     // Act
-    const bundle = await blsSigner.signBlsTransaction(action);
+    const signedTransaction = await blsSigner.signTransaction(transaction);
 
     // Assert
-    expect(bundle.signature).to.deep.equal(expectedBundle.signature);
-  });
-
-  it("should throw an error when signTransaction() is called", async () => {
-    // Arrange & Act
-    const result = async () =>
-      await blsSigner.signTransaction({
-        to: signers[1].address,
-        value: parseEther("1"),
-      });
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      Error,
-      "signTransaction() is not implemented, call 'signBlsTransaction()' instead.",
-    );
+    const bundleDto = JSON.parse(signedTransaction);
+    expect(bundleDto.signature).to.deep.equal(expectedBundle.signature);
   });
 
   it("should check transaction", async () => {
@@ -317,33 +324,43 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should throw an error when signMessage is called", async () => {
-    // Arrange
-    const message = "Hello World";
-
-    // Act
-    const signMessage = async () => await blsSigner.signMessage(message);
-
-    // Assert
-    expect(signMessage()).to.be.rejectedWith(
-      Error,
-      "signMessage() is not implemented.",
-    );
-  });
-
-  it("should sign message using signBlsMessage", async () => {
+  it("should sign message of type string", async () => {
     // Arrange
     const address = signers[1].address;
-    const expectedSignature = blsSigner.wallet.blsWalletSigner.signMessage(
-      address,
-      blsSigner.wallet.privateKey,
-    );
+    const blsWalletSignerSignature =
+      blsSigner.wallet.blsWalletSigner.signMessage(
+        address,
+        blsSigner.wallet.privateKey,
+      );
+
+    const expectedSignature = RLP.encode(blsWalletSignerSignature);
 
     // Act
-    const signedMessage = await blsSigner.signBlsMessage(address);
+    const signedMessage = await blsSigner.signMessage(address);
 
     // Assert
     expect(signedMessage).to.deep.equal(expectedSignature);
+    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+  });
+
+  it("should sign message of type bytes", async () => {
+    // Arrange
+    const bytes: number[] = [68, 219, 115, 219, 26, 248, 170, 165]; // random bytes
+    const hexString = ethers.utils.hexlify(bytes);
+    const blsWalletSignerSignature =
+      blsSigner.wallet.blsWalletSigner.signMessage(
+        hexString,
+        blsSigner.wallet.privateKey,
+      );
+
+    const expectedSignature = RLP.encode(blsWalletSignerSignature);
+
+    // Act
+    const signedMessage = await blsSigner.signMessage(bytes);
+
+    // Assert
+    expect(signedMessage).to.deep.equal(expectedSignature);
+    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
   });
 });
 

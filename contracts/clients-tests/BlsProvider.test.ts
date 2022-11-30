@@ -180,20 +180,17 @@ describe("BlsProvider", () => {
     const balanceBefore = await blsProvider.getBalance(recipient);
 
     const unsignedTransaction = {
-      ethValue: expectedBalance.toString(),
-      contractAddress: recipient,
-      encodedFunction: "0x",
+      value: expectedBalance.toString(),
+      to: recipient,
+      data: "0x",
     };
 
-    const signedTransaction = await blsSigner.signBlsTransaction(
+    const signedTransaction = await blsSigner.signTransaction(
       unsignedTransaction,
     );
 
     // Act
-    const transaction = await blsProvider.sendBlsTransaction(
-      signedTransaction,
-      blsSigner,
-    );
+    const transaction = await blsProvider.sendTransaction(signedTransaction);
     await transaction.wait();
 
     // Assert
@@ -209,20 +206,44 @@ describe("BlsProvider", () => {
     const expectedBalance = parseEther("1");
 
     const unsignedTransaction = {
-      ethValue: expectedBalance.toString(),
-      contractAddress: recipient,
-      encodedFunction: "0x",
+      value: expectedBalance.toString(),
+      to: recipient,
+      data: "0x",
     };
-    const signedTransaction = await blsSigner.signBlsTransaction(
+    const signedTransaction = await blsSigner.signTransaction(
       unsignedTransaction,
     );
 
     // Act
-    await blsProvider.sendBlsTransaction(signedTransaction, blsSigner);
+    await blsProvider.sendTransaction(signedTransaction);
 
     // Assert
     // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse". This unit test is concerned with the latter being called.
     expect(spy).to.have.been.called.twice;
+  });
+
+  it("should throw an error sending a transaction when this.signer is not defined", async () => {
+    // Arrange
+    const newBlsProvider = new Experimental.BlsProvider(
+      aggregatorUrl,
+      verificationGateway,
+      rpcUrl,
+      network,
+    );
+    const signedTransaction = blsSigner.signTransaction({
+      to: signers[0].address,
+      value: parseEther("1"),
+    });
+
+    // Act
+    const result = async () =>
+      await newBlsProvider.sendTransaction(signedTransaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "Call provider.getSigner first.",
+    );
   });
 
   it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
@@ -230,17 +251,17 @@ describe("BlsProvider", () => {
     const invalidEthValue = parseEther("-1");
 
     const unsignedTransaction = {
-      ethValue: invalidEthValue,
-      contractAddress: signers[1].address,
-      encodedFunction: "0x",
+      value: invalidEthValue,
+      to: signers[1].address,
+      data: "0x",
     };
-    const signedTransaction = await blsSigner.signBlsTransaction(
+    const signedTransaction = await blsSigner.signTransaction(
       unsignedTransaction,
     );
 
     // Act
     const result = async () =>
-      await blsProvider.sendBlsTransaction(signedTransaction, blsSigner);
+      await blsProvider.sendTransaction(signedTransaction);
 
     // Assert
     await expect(result()).to.be.rejectedWith(

@@ -1,7 +1,7 @@
 import { ethers, BigNumber } from "ethers";
 import { parseEther, Deferrable } from "ethers/lib/utils";
 
-import { ActionData, Bundle } from "./signer/types";
+import { ActionDataDto, BundleDto } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner, { _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
@@ -29,12 +29,6 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       throw new TypeError("Transaction.to should be defined.");
     }
 
-    const action: ActionData = {
-      ethValue: transaction.value?.toString() ?? "0",
-      contractAddress: transaction.to.toString(),
-      encodedFunction: transaction.data?.toString() ?? "0x",
-    };
-
     // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
     // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
     // We do not want to pass the private key to this method.
@@ -42,25 +36,27 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       throw new Error("Call provider.getSigner first");
     }
 
-    const bundle = await this.signer.signBlsTransaction(action);
+    const signedTransaction = await this.signer.signTransaction(transaction);
+    const bundleDto: BundleDto = JSON.parse(signedTransaction);
 
-    const gasEstimate = await this.aggregator.estimateFee(bundle);
+    const gasEstimate = await this.aggregator.estimateFee(bundleDto);
     return parseEther(gasEstimate.feeRequired);
   }
 
   override async sendTransaction(
     signedTransaction: string | Promise<string>,
   ): Promise<ethers.providers.TransactionResponse> {
-    throw new Error(
-      "sendTransaction() is not implemented. Call 'sendBlsTransaction()' instead.",
-    );
-  }
+    // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
+    // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
+    // We do not want to pass the private key to this method.
+    if (!this.signer) {
+      throw new Error("Call provider.getSigner first.");
+    }
 
-  async sendBlsTransaction(
-    bundle: Bundle,
-    signer: BlsSigner,
-  ): Promise<ethers.providers.TransactionResponse> {
-    const result = await this.aggregator.add(bundle);
+    const resolvedTransaction = await signedTransaction;
+
+    const bundleDto: BundleDto = JSON.parse(resolvedTransaction);
+    const result = await this.aggregator.add(bundleDto);
 
     if ("failures" in result) {
       throw new Error(JSON.stringify(result.failures));
@@ -68,18 +64,16 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
 
     // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
     // We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
-    const actionData: ActionData = {
-      ethValue: bundle.operations[0].actions[0].ethValue.toString(),
-      contractAddress:
-        bundle.operations[0].actions[0].contractAddress.toString(),
-      encodedFunction:
-        bundle.operations[0].actions[0].encodedFunction.toString(),
+    const actionData: ActionDataDto = {
+      ethValue: bundleDto.operations[0].actions[0].ethValue,
+      contractAddress: bundleDto.operations[0].actions[0].contractAddress,
+      encodedFunction: bundleDto.operations[0].actions[0].encodedFunction,
     };
 
-    return signer.constructTransactionResponse(
+    return this.signer.constructTransactionResponse(
       actionData,
       result.hash,
-      signer.wallet.address,
+      this.signer.wallet.address,
     );
   }
 
