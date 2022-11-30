@@ -14,14 +14,18 @@ export default class BlsSigner extends Signer {
   _index: number;
   _address: string;
 
+  readonly initPromise: Promise<void>;
+
   constructor(
     constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
+    privateKey: string,
     readonly addressOrIndex?: string | number,
   ) {
     super();
     this.provider = provider;
     this.verificationGatewayAddress = this.provider.verificationGatewayAddress;
+    this.initPromise = this.initializeWallet(privateKey);
 
     if (constructorGuard !== _constructorGuard) {
       throw new Error(
@@ -45,7 +49,7 @@ export default class BlsSigner extends Signer {
     }
   }
 
-  async initWallet(privateKey: string) {
+  private async initializeWallet(privateKey: string) {
     this.wallet = await BlsWalletWrapper.connect(
       privateKey,
       this.verificationGatewayAddress,
@@ -56,7 +60,7 @@ export default class BlsSigner extends Signer {
   override async sendTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<ethers.providers.TransactionResponse> {
-    this.#verifyInit();
+    await this.initPromise;
 
     if (!transaction.to) {
       throw new TypeError("Transaction.to should be defined.");
@@ -91,7 +95,7 @@ export default class BlsSigner extends Signer {
   }
 
   async getAddress(): Promise<string> {
-    this.#verifyInit();
+    await this.initPromise;
     if (this._address) {
       return this._address;
     }
@@ -107,7 +111,7 @@ export default class BlsSigner extends Signer {
     from: string,
     nonce?: BigNumber,
   ): Promise<ethers.providers.TransactionResponse> {
-    this.#verifyInit();
+    await this.initPromise;
     const chainId = await this.getChainId();
     if (!nonce) {
       nonce = await BlsWalletWrapper.Nonce(
@@ -156,7 +160,7 @@ export default class BlsSigner extends Signer {
   }
 
   async signBlsTransaction(action: ActionData): Promise<Bundle> {
-    this.#verifyInit();
+    await this.initPromise;
     const nonce = await BlsWalletWrapper.Nonce(
       this.wallet.PublicKey(),
       this.verificationGatewayAddress,
@@ -171,8 +175,8 @@ export default class BlsSigner extends Signer {
   }
 
   /** Sign a message */
-  signBlsMessage(message: string): Signature {
-    this.#verifyInit();
+  async signBlsMessage(message: string): Promise<Signature> {
+    await this.initPromise;
     return this.wallet.signMessage(message);
   }
 
@@ -201,12 +205,4 @@ export default class BlsSigner extends Signer {
   async _legacySignMessage(message: Bytes | string): Promise<string> {
     throw new Error("_legacySignMessage() is not implemented.");
   }
-
-  #verifyInit = () => {
-    if (!this.wallet || !this.verificationGatewayAddress) {
-      throw new Error(
-        "To perform this operation, ensure you have instantiated a BlsSigner and have called this.init() to initialize the wallet.",
-      );
-    }
-  };
 }

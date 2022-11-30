@@ -51,8 +51,7 @@ describe("BlsSigner", () => {
       rpcUrl,
       network,
     );
-    blsSigner = blsProvider.getSigner();
-    await blsSigner.initWallet(privateKey);
+    blsSigner = blsProvider.getSigner(privateKey);
 
     const fundedWallet = new ethers.Wallet(
       "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
@@ -60,7 +59,7 @@ describe("BlsSigner", () => {
     );
 
     await fundedWallet.sendTransaction({
-      to: blsSigner.wallet.address,
+      to: await blsSigner.getAddress(),
       value: parseEther("1"),
     });
   });
@@ -160,7 +159,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should throw an error when a signer has not been initialized", async () => {
+  it("should throw an error when invalid private key is supplied", async () => {
     // Arrange
     const newBlsProvider = new BlsProvider(
       aggregatorUrl,
@@ -168,11 +167,11 @@ describe("BlsSigner", () => {
       rpcUrl,
       network,
     );
-    const uninitializedBlsSigner = newBlsProvider.getSigner();
+    const newBlsSigner = newBlsProvider.getSigner("invalidPrivateKey");
 
     // Act
     const result = async () =>
-      await uninitializedBlsSigner.sendTransaction({
+      await newBlsSigner.sendTransaction({
         to: signers[1].address,
         value: parseEther("1"),
       });
@@ -180,8 +179,23 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      "To perform this operation, ensure you have instantiated a BlsSigner and have called this.init() to initialize the wallet.",
+      "Expect hex but got invalidPrivateKey",
     );
+  });
+
+  it("should not throw an error when invalid private key is supplied after a valid getSigner call", async () => {
+    // Arrange
+    const newBlsSigner = blsProvider.getSigner("invalidPrivateKey");
+
+    // Act
+    const result = async () =>
+      await newBlsSigner.sendTransaction({
+        to: signers[1].address,
+        value: parseEther("1"),
+      });
+
+    // Assert
+    await expect(result()).to.not.be.rejectedWith(Error);
   });
 
   it("should retrieve the account address", async () => {
@@ -318,7 +332,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should sign message using signBlsMessage", () => {
+  it("should sign message using signBlsMessage", async () => {
     // Arrange
     const address = signers[1].address;
     const expectedSignature = blsSigner.wallet.blsWalletSigner.signMessage(
@@ -327,7 +341,7 @@ describe("BlsSigner", () => {
     );
 
     // Act
-    const signedMessage = blsSigner.signBlsMessage(address);
+    const signedMessage = await blsSigner.signBlsMessage(address);
 
     // Assert
     expect(signedMessage).to.deep.equal(expectedSignature);

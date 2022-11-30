@@ -55,8 +55,7 @@ describe("BlsProvider", () => {
       rpcUrl,
       network,
     );
-    blsSigner = blsProvider.getSigner();
-    await blsSigner.initWallet(privateKey);
+    blsSigner = blsProvider.getSigner(privateKey);
 
     const fundedWallet = new ethers.Wallet(
       "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
@@ -64,14 +63,14 @@ describe("BlsProvider", () => {
     );
 
     await fundedWallet.sendTransaction({
-      to: blsSigner.wallet.address,
+      to: await blsSigner.getAddress(),
       value: parseEther("1"),
     });
   });
 
   it("should return a valid signer", async () => {
     // Arrange & Act
-    const blsSigner = blsProvider.getSigner();
+    const blsSigner = blsProvider.getSigner(privateKey);
 
     // Assert
     expect(blsSigner._isSigner).to.be.true;
@@ -87,12 +86,12 @@ describe("BlsProvider", () => {
     );
 
     // Act
-    const newBlsSigner = newBlsProvider.getSigner();
-    await newBlsSigner.initWallet(privateKey);
+    const newPrivateKey = Wallet.createRandom().privateKey;
+    const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
 
     // Assert
     expect(newBlsSigner).to.not.equal(blsSigner);
-    expect(newBlsSigner).to.equal(newBlsProvider.getSigner());
+    expect(newBlsSigner).to.equal(newBlsProvider.getSigner(newPrivateKey));
   });
 
   it("calls a getter method on a contract using call()", async () => {
@@ -132,23 +131,30 @@ describe("BlsProvider", () => {
     await expect(gasEstimate()).to.not.be.rejected;
   });
 
-  it("should catch and throw an updated error when an exception occurs estimating gas", async () => {
+  it("should throw an error when this.signer has not been assigned", async () => {
     // Arrange
+    const newBlsProvider = new BlsProvider(
+      aggregatorUrl,
+      verificationGateway,
+      rpcUrl,
+      network,
+    );
+
     const recipient = signers[1].address;
-    const invalidValue = parseEther("-1");
+    const value = parseEther("1");
     const transactionRequest = {
       to: recipient,
-      value: invalidValue,
+      value,
     };
 
     // Act
     const gasEstimate = async () =>
-      await blsProvider.estimateGas(transactionRequest);
+      await newBlsProvider.estimateGas(transactionRequest);
 
     // Assert
     await expect(gasEstimate()).to.be.rejectedWith(
       Error,
-      'estimateGas() - an unexpected error occured: Error: value must be a string (argument="value", value=undefined, code=INVALID_ARGUMENT, version=units/5.5.0)',
+      "Call provider.getSigner first",
     );
   });
 

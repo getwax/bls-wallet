@@ -29,22 +29,23 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       throw new TypeError("Transaction.to should be defined.");
     }
 
-    try {
-      const action: ActionData = {
-        ethValue: transaction.value?.toString() ?? "0",
-        contractAddress: transaction.to.toString(),
-        encodedFunction: transaction.data?.toString() ?? "0x",
-      };
+    const action: ActionData = {
+      ethValue: transaction.value?.toString() ?? "0",
+      contractAddress: transaction.to.toString(),
+      encodedFunction: transaction.data?.toString() ?? "0x",
+    };
 
-      const signer = this.getSigner();
-      const bundle = await signer.signBlsTransaction(action);
-
-      const gasEstimate = await this.aggregator.estimateFee(bundle);
-
-      return parseEther(gasEstimate.feeRequired);
-    } catch (error) {
-      throw new Error(`estimateGas() - an unexpected error occured: ${error}`);
+    // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
+    // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
+    // We do not want to pass the private key to this method.
+    if (!this.signer) {
+      throw new Error("Call provider.getSigner first");
     }
+
+    const bundle = await this.signer.signBlsTransaction(action);
+
+    const gasEstimate = await this.aggregator.estimateFee(bundle);
+    return parseEther(gasEstimate.feeRequired);
   }
 
   override async sendTransaction(
@@ -82,12 +83,20 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
   }
 
-  override getSigner(addressOrIndex?: string | number): BlsSigner {
+  override getSigner(
+    privateKey: string,
+    addressOrIndex?: string | number,
+  ): BlsSigner {
     if (this.signer) {
       return this.signer;
     }
 
-    const signer = new BlsSigner(_constructorGuard, this, addressOrIndex);
+    const signer = new BlsSigner(
+      _constructorGuard,
+      this,
+      privateKey,
+      addressOrIndex,
+    );
     this.signer = signer;
     return signer;
   }
