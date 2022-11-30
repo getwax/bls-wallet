@@ -141,7 +141,7 @@ describe("BlsSigner", () => {
       hash: transactionResponse.hash,
       to: recipient,
       from: blsSigner.wallet.address,
-      nonce: 0,
+      // nonce: expectedNonce,
       // gasLimit: BigNumber.from("0x0"),
       data: "0x",
       // value: BigNumber.from(transactionAmount),
@@ -153,6 +153,7 @@ describe("BlsSigner", () => {
     // TODO: BigNumber.from() doesn't work when asserting this way ^.
     // Expects { value: "0" } from transactionReceipt,
     // but this returns { _hex: '0x00', _isBigNumber: true }.
+    expect(transactionResponse.nonce).to.equal(expectedNonce);
     expect(transactionResponse.gasLimit).to.equal(BigNumber.from("0x0"));
     expect(transactionResponse.value).to.equal(
       BigNumber.from(transactionAmount),
@@ -412,13 +413,13 @@ describe("JsonRpcSigner", () => {
       value: transactionAmount,
       from: signers[0].address,
       type: 2,
-      nonce: 0,
       chainId: 31337,
     });
 
     expect(result).to.include.keys(
       "maxFeePerGas",
       "maxPriorityFeePerGas",
+      "nonce",
       "gasLimit",
     );
   });
