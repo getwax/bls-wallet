@@ -74,7 +74,6 @@ describe("BlsProvider", () => {
     const blsSigner = blsProvider.getSigner();
 
     // Assert
-    /* eslint-disable-next-line no-unused-expressions */
     expect(blsSigner._isSigner).to.be.true;
   });
 
@@ -218,7 +217,6 @@ describe("BlsProvider", () => {
 
     // Assert
     // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse". This unit test is concerned with the latter being called.
-    /* eslint-disable-next-line no-unused-expressions */
     expect(spy).to.have.been.called.twice;
   });
 
@@ -261,21 +259,19 @@ describe("BlsProvider", () => {
 
     // Assert
     // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
-    expect(transactionReceipt)
-      .to.be.an("object")
-      .that.deep.includes({
-        to: "0x",
-        from: "0x",
-        contractAddress: "0x",
-        // gasUsed: BigNumber.from("0"),
-        logsBloom: "",
-        logs: [],
-        confirmations: transactionResponse.confirmations,
-        // cumulativeGasUsed: parseEther("0"),
-        // effectiveGasPrice: parseEther("0"),
-        byzantium: false,
-        type: 2,
-      });
+    expect(transactionReceipt).to.be.an("object").that.deep.includes({
+      to: "0x",
+      from: "0x",
+      contractAddress: "0x",
+      // gasUsed: BigNumber.from("0"),
+      logsBloom: "",
+      logs: [],
+      confirmations: transactionResponse.confirmations,
+      // cumulativeGasUsed: parseEther("0"),
+      // effectiveGasPrice: parseEther("0"),
+      byzantium: false,
+      type: 2,
+    });
 
     expect(transactionReceipt).to.include.keys(
       "transactionIndex",

@@ -38,4 +38,12 @@ module.exports = {
     // TODO (merge-ok) Remove and fix lint error
     "node/no-unpublished-import": ["warn"],
   },
+  overrides: [
+    {
+      files: ["*.test.ts"],
+      rules: {
+        "no-unused-expressions": "off",
+      },
+    },
+  ],
 };

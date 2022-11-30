@@ -126,7 +126,7 @@ export default class BlsSigner extends Signer {
       gasLimit: BigNumber.from("0x0"),
       data: action.encodedFunction.toString(),
       value: BigNumber.from(action.ethValue),
-      chainId: chainId,
+      chainId,
       type: 2,
       confirmations: 1,
       wait: (confirmations?: number) => {
