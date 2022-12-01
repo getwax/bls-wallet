@@ -127,7 +127,6 @@ describe("BlsSigner", () => {
       blsSigner.verificationGatewayAddress,
       blsProvider,
     );
-    const expectedChainId = await blsSigner.getChainId();
 
     // Act
     const transactionResponse = await blsSigner.sendTransaction({
@@ -141,18 +140,12 @@ describe("BlsSigner", () => {
       hash: transactionResponse.hash,
       to: recipient,
       from: blsSigner.wallet.address,
-      // nonce: expectedNonce,
-      // gasLimit: BigNumber.from("0x0"),
       data: "0x",
-      // value: BigNumber.from(transactionAmount),
-      chainId: expectedChainId,
+      chainId: 31337,
       type: 2,
       confirmations: 1,
     });
 
-    // TODO: BigNumber.from() doesn't work when asserting this way ^.
-    // Expects { value: "0" } from transactionReceipt,
-    // but this returns { _hex: '0x00', _isBigNumber: true }.
     expect(transactionResponse.nonce).to.equal(expectedNonce);
     expect(transactionResponse.gasLimit).to.equal(BigNumber.from("0x0"));
     expect(transactionResponse.value).to.equal(

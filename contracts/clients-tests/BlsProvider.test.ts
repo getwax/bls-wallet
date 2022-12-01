@@ -223,7 +223,8 @@ describe("BlsProvider", () => {
     await blsProvider.sendTransaction(signedTransaction);
 
     // Assert
-    // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse". This unit test is concerned with the latter being called.
+    // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse".
+    // This unit test is concerned with the latter being called.
     expect(spy).to.have.been.called.twice;
   });
 
@@ -316,15 +317,16 @@ describe("BlsProvider", () => {
       to: "0x",
       from: "0x",
       contractAddress: "0x",
-      // gasUsed: BigNumber.from("0"),
       logsBloom: "",
       logs: [],
       confirmations: transactionResponse.confirmations,
-      // cumulativeGasUsed: parseEther("0"),
-      // effectiveGasPrice: parseEther("0"),
       byzantium: false,
       type: 2,
     });
+
+    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
 
     expect(transactionReceipt).to.include.keys(
       "transactionIndex",
@@ -332,13 +334,6 @@ describe("BlsProvider", () => {
       "transactionHash",
       "blockNumber",
     );
-
-    // TODO: parseEther() doesn't work when asserting this way ^.
-    // Expects BigNumber { value: "0" } from transactionReceipt,
-    // but this returns { _hex: '0x00', _isBigNumber: true }.
-    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
   });
 
   it("should retrieve a transaction receipt given a valid hash", async () => {
@@ -360,15 +355,16 @@ describe("BlsProvider", () => {
       to: "0x",
       from: "0x",
       contractAddress: "0x",
-      // gasUsed: BigNumber.from("0"),
       logsBloom: "",
       logs: [],
       confirmations: transactionResponse.confirmations,
-      // cumulativeGasUsed: parseEther("0"),
-      // effectiveGasPrice: parseEther("0"),
       byzantium: false,
       type: 2,
     });
+
+    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
 
     expect(transactionReceipt).to.include.keys(
       "transactionIndex",
@@ -376,13 +372,6 @@ describe("BlsProvider", () => {
       "transactionHash",
       "blockNumber",
     );
-
-    // TODO: parseEther() doesn't work when asserting this way ^.
-    // Expects BigNumber { value: "0" } from transactionReceipt,
-    // but this returns { _hex: '0x00', _isBigNumber: true }.
-    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
   });
 
   it("gets a transaction given a valid transaction hash", async () => {

@@ -40,6 +40,7 @@ module.exports = {
   },
   overrides: [
     {
+      // chai expect statements
       files: ["*.test.ts"],
       rules: {
         "no-unused-expressions": "off",
