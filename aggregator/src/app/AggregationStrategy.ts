@@ -33,13 +33,11 @@ export default class AggregationStrategy {
     public config = AggregationStrategy.defaultConfig,
   ) {}
 
-  async run(eligibleRows: BundleRow[]): (
-    Promise<{
-      aggregateBundle: Bundle | nil;
-      includedRows: BundleRow[];
-      failedRows: BundleRow[];
-    }>
-  ) {
+  async run(eligibleRows: BundleRow[]): Promise<{
+    aggregateBundle: Bundle | nil;
+    includedRows: BundleRow[];
+    failedRows: BundleRow[];
+  }> {
     let aggregateBundle = this.blsWalletSigner.aggregate([]);
     const includedRows: BundleRow[] = [];
     const failedRows: BundleRow[] = [];
@@ -122,14 +120,12 @@ export default class AggregationStrategy {
   async #augmentAggregateBundle(
     previousAggregateBundle: Bundle,
     eligibleRows: BundleRow[],
-  ): (
-    Promise<{
-      aggregateBundle: Bundle;
-      includedRows: BundleRow[];
-      failedRows: BundleRow[];
-      remainingEligibleRows: BundleRow[];
-    }>
-  ) {
+  ): Promise<{
+    aggregateBundle: Bundle;
+    includedRows: BundleRow[];
+    failedRows: BundleRow[];
+    remainingEligibleRows: BundleRow[];
+  }> {
     let aggregateBundle: Bundle | nil = nil;
     let includedRows: BundleRow[] = [];
     const failedRows: BundleRow[] = [];
@@ -268,46 +264,9 @@ export default class AggregationStrategy {
       .estimateGas
       .processBundle(bundle);
 
-    const callDataSize = ethers.utils.hexDataLength(
-      this.ethereumService.verificationGateway.interface
-        .encodeFunctionData("processBundle", [bundle]),
-    );
+    const gasPrice = await this.ethereumService.wallet.provider.getGasPrice();
 
-    return (
-      gasEstimate.mul(this.config.fees.perGas).add(
-        this.config.fees.perByte.mul(callDataSize),
-      )
-    );
-  }
-
-  /**
-   * Get a lower bound for the fee that is required for processing the
-   * bundle.
-   *
-   * This exists because it's a very good lower bound and it's very fast.
-   * Therefore, when there's an insufficient fee bundle:
-   * - This lower bound is usually enough to find it
-   * - Finding it this way is much more efficient
-   */
-  #measureRequiredFeeLowerBound(bundle: Bundle) {
-    const callDataEmptyBundleSize = ethers.utils.hexDataLength(
-      this.ethereumService.verificationGateway.interface
-        .encodeFunctionData("processBundle", [
-          this.blsWalletSigner.aggregate([]),
-        ]),
-    );
-
-    const callDataSize = ethers.utils.hexDataLength(
-      this.ethereumService.verificationGateway.interface
-        .encodeFunctionData("processBundle", [bundle]),
-    );
-
-    // We subtract the size of an empty bundle because it represents the number
-    // of *additional* bytes added when aggregating. The bundle doesn't
-    // necessarily have to pay the initial overhead to be viable.
-    const callDataMarginalSize = callDataSize - callDataEmptyBundleSize;
-
-    return this.config.fees.perByte.mul(callDataMarginalSize);
+    return gasEstimate.mul(gasPrice);
   }
 
   async #findFirstFailureIndex(
@@ -353,64 +312,24 @@ export default class AggregationStrategy {
       return { success, fee, requiredFee };
     };
 
-    // This calculation is entirely local and cheap. It can find a failing
-    // bundle, but it might not be the *first* failing bundle.
-    const fastFailureIndex = (() => {
-      for (let i = 0; i < len; i++) {
-        // If the actual call failed then we consider it a failure, even if the
-        // fee is somehow met (e.g. if zero fee is required).
-        if (fees[i].success === false) {
-          return i;
-        }
-
-        // Because the required fee mostly comes from the calldata size, this
-        // should find the first insufficient fee most of the time.
-        const lowerBound = this.#measureRequiredFeeLowerBound(bundles[i]);
-
-        if (fees[i].fee.lt(lowerBound)) {
-          return i;
-        }
-      }
-    })();
-
     let left = 0;
     let leftRequiredFee = BigNumber.from(0);
     let right: number;
     let rightRequiredFee: BigNumber;
 
-    if (fastFailureIndex !== nil) {
-      // Having a fast failure index is not enough because it might not be the
-      // first. To establish that it really is the first, we need to ensure that
-      // all bundles up to that index are ok (indeed, this is the assumption
-      // that is relied upon outside - that the subset before the first failing
-      // index can proceed without further checking).
+    // If we don't have a failing index, we still need to establish that there
+    // is a failing index to be found. This is because it's a requirement of
+    // the upcoming bisect logic that there is a failing bundle in
+    // `bundles.slice(left, right)`.
 
-      const { success, requiredFee } = await checkFirstN(fastFailureIndex);
+    const { success, requiredFee } = await checkFirstN(bundles.length);
 
-      if (success) {
-        return fastFailureIndex;
-      }
-
-      // In case of failure, we now know there as a failing index in a more
-      // narrow range, so we can at least restrict the bisect to this smaller
-      // range.
-      right = fastFailureIndex;
-      rightRequiredFee = requiredFee;
-    } else {
-      // If we don't have a failing index, we still need to establish that there
-      // is a failing index to be found. This is because it's a requirement of
-      // the upcoming bisect logic that there is a failing bundle in
-      // `bundles.slice(left, right)`.
-
-      const { success, requiredFee } = await checkFirstN(bundles.length);
-
-      if (success) {
-        return nil;
-      }
-
-      right = bundles.length;
-      rightRequiredFee = requiredFee;
+    if (success) {
+      return nil;
     }
+
+    right = bundles.length;
+    rightRequiredFee = requiredFee;
 
     // Do a bisect to narrow in on the (first) culprit.
     while (right - left > 1) {
