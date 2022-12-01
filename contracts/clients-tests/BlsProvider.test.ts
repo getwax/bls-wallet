@@ -398,10 +398,11 @@ describe("BlsProvider", () => {
     expect(transactionResponse).to.be.an("object").that.deep.includes({
       hash: transactionReceipt.transactionHash,
       to: verificationGateway,
-      // TODO: Why is this different to signer wallet address? Uncomment logs below and run test to see problem.
+      // TODO: Why is this hardhat account 2 instead of blsSigner.wallet.address?
       // Will investigate this again when I look at bls-wallet #412.
-      // console.log("blsSigner wallet.address", blsSigner.wallet.address);
-      // console.log("Signer from:            ", expectedTransactionResponse.from);
+      // Account #2: 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC (10000 ETH)
+      // Private Key: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+
       from: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
       chainId: expectedTransactionResponse.chainId,
       type: 2,

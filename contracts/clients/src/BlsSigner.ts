@@ -177,6 +177,7 @@ export default class BlsSigner extends Signer {
   }
 
   /** Sign a message */
+  // TODO: Come back to this once we support EIP-1271
   override async signMessage(message: Bytes | string): Promise<string> {
     await this.initPromise;
     if (isBytes(message)) {
