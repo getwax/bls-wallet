@@ -180,7 +180,7 @@ export default class AggregationStrategy {
       const failedRow = includedRows[firstFailureIndex];
       const errorReason = fees[firstFailureIndex].errorReason;
       if (errorReason) {
-        failedRow.submitError = errorReason.message || '';
+        failedRow.submitError = errorReason.message;
       }
       failedRows.push(failedRow);
 
@@ -213,7 +213,7 @@ export default class AggregationStrategy {
   async #measureFees(bundles: Bundle[]): Promise<{
     success: boolean;
     fee: BigNumber;
-    errorReason: OperationResultError | null;
+    errorReason: OperationResultError | nil;
   }[]> {
     const es = this.ethereumService;
     const feeToken = this.#FeeToken();
@@ -248,7 +248,7 @@ export default class AggregationStrategy {
 
       const [operationStatuses, results] = bundleResult.returnValue;
 
-      let errorReason: OperationResultError | null = null;
+      let errorReason: OperationResultError | nil;
       // We require that at least one operation succeeds, even though
       // processBundle doesn't revert in this case.
       const success = operationStatuses.some((opSuccess: boolean) => opSuccess === true);
@@ -266,7 +266,7 @@ export default class AggregationStrategy {
             return;
           }
         });
-        errorReason = error[0] ?? null;
+        errorReason = error[0];
       }
 
       return { success, fee, errorReason };

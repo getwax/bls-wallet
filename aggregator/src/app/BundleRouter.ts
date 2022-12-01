@@ -30,7 +30,7 @@ export default function BundleRouter(bundleService: BundleService) {
         ctx.response.body = {
           status: "pending",
           submitError: pendingBundle.submitError,
-          receipt: null,
+          receipt: nil,
         };
         return;
       }
@@ -44,7 +44,7 @@ export default function BundleRouter(bundleService: BundleService) {
 
       ctx.response.body = {
         status: "done",
-        submitError: null,
+        submitError: nil,
         receipt
       };
     },

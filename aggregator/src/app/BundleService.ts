@@ -184,7 +184,6 @@ export default class BundleService {
         bundle,
         eligibleAfter: await this.ethereumService.BlockNumber(),
         nextEligibilityDelay: BigNumber.from(1),
-        submitError: ''
       });
 
       this.emit({
@@ -201,9 +200,8 @@ export default class BundleService {
     });
   }
 
-  async lookupBundle(hash: string) {
-    const bundleArray = await this.bundleTable.findBundle(hash);
-    return bundleArray[0] ? bundleArray[0] : nil;
+  lookupBundle(hash: string) {
+    return this.bundleTable.findBundle(hash);
   }
 
   // TODO (merge-ok) Remove lint ignore when this hits db

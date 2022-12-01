@@ -1,6 +1,6 @@
 import AggregationStrategy from "../src/app/AggregationStrategy.ts";
 import { BundleRow } from "../src/app/BundleTable.ts";
-import {assertEquals, BigNumber, ethers} from "./deps.ts";
+import { assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 
@@ -98,7 +98,6 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
   const bundleRow: BundleRow = {
     id: 0,
     hash: "0x0",
-    submitError: "",
     bundle,
     eligibleAfter: BigNumber.from(0),
     nextEligibilityDelay: BigNumber.from(1),
@@ -152,7 +151,6 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
   const bundleRow: BundleRow = {
     id: 0,
     hash: "0x0",
-    submitError: "",
     bundle,
     eligibleAfter: BigNumber.from(0),
     nextEligibilityDelay: BigNumber.from(1),
