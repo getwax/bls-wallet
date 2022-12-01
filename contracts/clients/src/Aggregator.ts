@@ -1,3 +1,4 @@
+import fetch from "node-fetch";
 import { Bundle, bundleToDto } from "./signer";
 
 // TODO: Rename to BundleFailure?
@@ -35,6 +36,8 @@ export type EstimateFeeResponse = {
 
 export type BundleReceipt = {
   transactionIndex: string;
+  transactionHash: string;
+  bundleHash: string;
   blockHash: string;
   blockNumber: string;
 };
