@@ -43,8 +43,8 @@ export type BundleReceipt = {
 
 export type BundleReceiptResponse = {
   status: string;
-  submitError: string | null;
-  receipt: BundleReceipt | null;
+  submitError?: string;
+  receipt?: BundleReceipt;
 };
 
 export default class Aggregator {
