@@ -108,6 +108,14 @@ export default class AggregationStrategy {
       eligibleRows = remainingEligibleRows;
     }
 
+    if (includedRows.length === 0) {
+      return {
+        aggregateBundle: nil,
+        includedRows: [],
+        failedRows: [],
+      };
+    }
+
     if (
       this.config.fees?.allowLosses === false &&
       !this.#checkBundlePaysRequiredFee(aggregateBundle, BigNumber.from(0))
@@ -122,9 +130,7 @@ export default class AggregationStrategy {
     }
 
     return {
-      aggregateBundle: aggregateBundle.operations.length > 0
-        ? aggregateBundle
-        : nil,
+      aggregateBundle,
       includedRows,
       failedRows,
     };
