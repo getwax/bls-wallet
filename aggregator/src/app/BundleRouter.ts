@@ -25,28 +25,17 @@ export default function BundleRouter(bundleService: BundleService) {
     "bundleReceipt/:hash",
     async (ctx) => {
       const pendingBundle = await bundleService.lookupBundle(ctx.params.hash!);
-      if (pendingBundle) {
-        ctx.response.status = 202;
-        ctx.response.body = {
-          status: "pending",
-          submitError: pendingBundle.submitError,
-          receipt: nil,
-        };
-        return;
-      }
-
       const receipt = await bundleService.lookupReceipt(ctx.params.hash!);
 
       if (receipt === nil) {
         ctx.response.status = 404;
+        ctx.response.body = {
+          submitError: pendingBundle?.submitError,
+        };
         return;
       }
 
-      ctx.response.body = {
-        status: "done",
-        submitError: nil,
-        receipt
-      };
+      ctx.response.body = receipt;
     },
   );
 

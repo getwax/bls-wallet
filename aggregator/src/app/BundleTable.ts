@@ -62,7 +62,6 @@ const tableOptions: TableOptions = {
 
 function fromRawRow(rawRow: RawRow): Row {
   const parseResult = parseBundleDto(JSON.parse(rawRow.bundle));
-  console.log('blake..', parseResult);
   if ("failures" in parseResult) {
     throw new Error(parseResult.failures.join("\n"));
   }

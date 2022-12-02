@@ -123,10 +123,7 @@ export default class AggregatorController {
 
       const aggregator = new Aggregator(knownTx.aggregatorUrl);
 
-      const bundleReceiptResponse = await aggregator.lookupReceipt(hash);
-      // If receipt doesn't exist, set to undefined to be consistent with
-      // the return type
-      const bundleReceipt = bundleReceiptResponse?.receipt || undefined;
+      const bundleReceipt = await aggregator.lookupReceipt(hash);
 
       if (bundleReceipt) {
         this.InternalRpc().updateTransactionHashByBundleHash(
