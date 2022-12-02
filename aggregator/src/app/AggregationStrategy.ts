@@ -105,7 +105,7 @@ export default class AggregationStrategy {
     };
   }
 
-  async estimateFee(bundle: Bundle) {
+  async estimateFee(bundle: Bundle, bundleOverheadGas?: BigNumber) {
     const es = this.ethereumService;
     const feeToken = this.#FeeToken();
 
@@ -143,7 +143,10 @@ export default class AggregationStrategy {
       throw new ClientReportableError("Failed to statically process bundle");
     }
 
-    const feeRequired = await this.#measureRequiredFee(bundle);
+    const feeRequired = await this.#measureRequiredFee(
+      bundle,
+      bundleOverheadGas,
+    );
 
     const successes = bundleResult.returnValue.successes;
 
@@ -294,18 +297,30 @@ export default class AggregationStrategy {
     );
   }
 
-  async #measureRequiredFee(bundle: Bundle) {
+  async #measureRequiredFee(bundle: Bundle, bundleOverheadGas?: BigNumber) {
     if (this.config.fees === nil) {
       return BigNumber.from(0);
     }
+
+    bundleOverheadGas ??= await this.#measureBundleOverheadGas();
 
     const gasEstimate = await this.ethereumService.verificationGateway
       .estimateGas
       .processBundle(bundle);
 
+    const marginalGasEstimate = gasEstimate.sub(bundleOverheadGas);
+
+    const bundleOverheadGasContribution = BigNumber.from(
+      Math.ceil(
+        bundleOverheadGas.toNumber() / this.config.fees.breakevenOperationCount,
+      ),
+    );
+
+    const requiredGas = marginalGasEstimate.add(bundleOverheadGasContribution);
+
     const gasPrice = await this.ethereumService.wallet.provider.getGasPrice();
 
-    const ethWeiFee = gasEstimate.mul(gasPrice);
+    const ethWeiFee = requiredGas.mul(gasPrice);
 
     const token = this.#FeeToken();
 
@@ -320,6 +335,12 @@ export default class AggregationStrategy {
     const ethWeiOverTokenWei = decimalAdj * this.config.fees.ethValueInTokens;
 
     return BigNumber.from(Math.ceil(ethWeiFee.toNumber() * ethWeiOverTokenWei));
+  }
+
+  async #measureBundleOverheadGas() {
+    return await this.ethereumService.verificationGateway
+      .estimateGas
+      .processBundle(this.blsWalletSigner.aggregate([]));
   }
 
   async #findFirstFailureIndex(
