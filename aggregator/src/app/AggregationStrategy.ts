@@ -312,7 +312,8 @@ export default class AggregationStrategy {
 
     const bundleOverheadGasContribution = BigNumber.from(
       Math.ceil(
-        bundleOverheadGas.toNumber() / this.config.fees.breakevenOperationCount,
+        bundleOverheadGas.toNumber() /
+          this.config.fees.breakevenOperationCount * bundle.operations.length,
       ),
     );
 
