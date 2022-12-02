@@ -1,9 +1,10 @@
 import { HTTPMethods } from "../../deps.ts";
 
-type AppEvent = (
+type AppEvent =
   | { type: "listening"; data: { port: number } }
   | { type: "db-query"; data: { sql: string; params: unknown[] } }
   | { type: "waiting-unconfirmed-space" }
+  | { type: "aggregate-bundle-unprofitable" }
   | {
     type: "submission-attempt";
     data: { publicKeyShorts: string[]; attemptNumber: number };
@@ -19,7 +20,7 @@ type AppEvent = (
   | { type: "submission-sent"; data: { hash: string } }
   | {
     type: "submission-confirmed";
-    data: { hash: string; bundleHashes: string[], blockNumber: number };
+    data: { hash: string; bundleHashes: string[]; blockNumber: number };
   }
   | { type: "warning"; data: string }
   | {
@@ -48,7 +49,6 @@ type AppEvent = (
       status: number;
       duration: number;
     };
-  }
-);
+  };
 
 export default AppEvent;

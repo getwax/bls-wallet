@@ -55,9 +55,7 @@ export const BREAKEVEN_OPERATION_COUNT = requireIntEnv(
   "BREAKEVEN_OPERATION_COUNT",
 );
 
-export const ALLOW_LOSSES_ON_SMALL_BUNDLES = requireBoolEnv(
-  "ALLOW_LOSSES_ON_SMALL_BUNDLES",
-);
+export const ALLOW_LOSSES = requireBoolEnv("ALLOW_LOSSES");
 
 export const FEE_TYPE = requireEnv("FEE_TYPE");
 

@@ -82,3 +82,5 @@ export {
 } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
 
 export type { TableOptions } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
+
+export { Semaphore } from "https://deno.land/x/semaphore@v1.1.2/mod.ts";
