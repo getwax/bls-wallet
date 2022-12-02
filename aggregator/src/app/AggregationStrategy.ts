@@ -4,7 +4,6 @@ import {
   Bundle,
   ERC20,
   ERC20__factory,
-  ethers,
 } from "../../deps.ts";
 
 import nil from "../helpers/nil.ts";
@@ -17,14 +16,52 @@ import { BundleRow } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
 import ClientReportableError from "./helpers/ClientReportableError.ts";
 
+type FeeConfig =
+  | {
+    type: "ether";
+    breakevenOperationCount: number;
+  }
+  | {
+    type: "token";
+    address: string;
+    ethValueInTokens: number;
+    breakevenOperationCount: number;
+  }
+  | nil;
+
+const envFeeConfig = ((): FeeConfig => {
+  if (!env.REQUIRE_FEES) {
+    return nil;
+  }
+
+  if (env.FEE_TYPE === "ether") {
+    return {
+      type: "ether",
+      breakevenOperationCount: env.BREAKEVEN_OPERATION_COUNT,
+    };
+  }
+
+  const feeTypeParts = env.FEE_TYPE.split(":");
+  assert(feeTypeParts.length === 2);
+  assert(feeTypeParts[0] === "token");
+
+  const address = feeTypeParts[1];
+  assert(/^0x[0-9a-fA-F]*$/.test(address));
+
+  assert(env.ETH_VALUE_IN_TOKENS !== nil);
+
+  return {
+    type: "token",
+    address,
+    ethValueInTokens: env.ETH_VALUE_IN_TOKENS,
+    breakevenOperationCount: env.BREAKEVEN_OPERATION_COUNT,
+  };
+})();
+
 export default class AggregationStrategy {
   static defaultConfig = {
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
-    fees: {
-      type: env.FEE_TYPE,
-      perGas: env.FEE_PER_GAS,
-      perByte: env.FEE_PER_BYTE,
-    },
+    fees: envFeeConfig,
   };
 
   constructor(
@@ -247,26 +284,42 @@ export default class AggregationStrategy {
   }
 
   #FeeToken(): ERC20 | nil {
-    const feeType = this.config.fees.type;
-
-    if (feeType === "ether") {
+    if (this.config.fees?.type !== "token") {
       return nil;
     }
 
     return ERC20__factory.connect(
-      feeType.slice("token:".length),
+      this.config.fees.address,
       this.ethereumService.wallet.provider,
     );
   }
 
   async #measureRequiredFee(bundle: Bundle) {
+    if (this.config.fees === nil) {
+      return BigNumber.from(0);
+    }
+
     const gasEstimate = await this.ethereumService.verificationGateway
       .estimateGas
       .processBundle(bundle);
 
     const gasPrice = await this.ethereumService.wallet.provider.getGasPrice();
 
-    return gasEstimate.mul(gasPrice);
+    const ethWeiFee = gasEstimate.mul(gasPrice);
+
+    const token = this.#FeeToken();
+
+    if (!token) {
+      return ethWeiFee;
+    }
+
+    const decimals = await token.decimals();
+    const decimalAdj = 10 ** (decimals - 18);
+
+    assert(this.config.fees?.type === "token");
+    const ethWeiOverTokenWei = decimalAdj * this.config.fees.ethValueInTokens;
+
+    return BigNumber.from(Math.ceil(ethWeiFee.toNumber() * ethWeiOverTokenWei));
   }
 
   async #findFirstFailureIndex(
