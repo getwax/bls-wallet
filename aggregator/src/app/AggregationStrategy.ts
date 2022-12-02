@@ -1,6 +1,7 @@
 import {
   BigNumber,
   BlsWalletSigner,
+  BlsWalletWrapper,
   Bundle,
   ERC20,
   ERC20__factory,
@@ -372,9 +373,42 @@ export default class AggregationStrategy {
   }
 
   async #measureBundleOverheadGas() {
-    return await this.ethereumService.verificationGateway
-      .estimateGas
-      .processBundle(this.blsWalletSigner.aggregate([]));
+    // The simple way to do this would be to estimate the gas of an empty
+    // bundle. However, an empty bundle is a bit of a special case, in
+    // particular the on-chain BLS library outright refuses to validate it. So
+    // instead we estimate one operation and two operations and extrapolate
+    // backwards to zero operations.
+
+    const blsWallet = await BlsWalletWrapper.connect(
+      env.PRIVATE_KEY_AGG,
+      this.ethereumService.verificationGateway.address,
+      this.ethereumService.wallet.provider,
+    );
+
+    const nonce = await blsWallet.Nonce();
+
+    const bundle1 = blsWallet.sign({
+      nonce,
+      actions: [],
+    });
+
+    const bundle2 = blsWallet.sign({
+      nonce: nonce.add(1),
+      actions: [],
+    });
+
+    const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
+      this.ethereumService.verificationGateway.estimateGas.processBundle(
+        bundle1,
+      ),
+      this.ethereumService.verificationGateway.estimateGas.processBundle(
+        this.blsWalletSigner.aggregate([bundle1, bundle2]),
+      ),
+    ]);
+
+    const opMarginalGasEstimate = twoOpGasEstimate.sub(oneOpGasEstimate);
+
+    return oneOpGasEstimate.sub(opMarginalGasEstimate);
   }
 
   async #TokenDecimals(): Promise<number> {

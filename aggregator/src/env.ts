@@ -3,6 +3,7 @@ import {
   requireBoolEnv,
   requireEnv,
   requireIntEnv,
+  requireNumberEnv,
 } from "./helpers/envTools.ts";
 import nil from "./helpers/nil.ts";
 
@@ -51,7 +52,7 @@ export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");
 
 export const REQUIRE_FEES = requireBoolEnv("REQUIRE_FEES");
 
-export const BREAKEVEN_OPERATION_COUNT = requireIntEnv(
+export const BREAKEVEN_OPERATION_COUNT = requireNumberEnv(
   "BREAKEVEN_OPERATION_COUNT",
 );
 
