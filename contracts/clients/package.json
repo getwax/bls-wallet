@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@thehubbleproject/bls": "^0.5.1",
-    "ethers": "5.5.4"
+    "ethers": "5.5.4",
+    "node-fetch": "2"
   },
   "devDependencies": {
     "@types/chai": "^4.3.3",

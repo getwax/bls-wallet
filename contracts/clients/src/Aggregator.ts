@@ -1,3 +1,4 @@
+import fetch from "node-fetch";
 import { Bundle, bundleToDto } from "./signer";
 
 // TODO: Rename to BundleFailure?
