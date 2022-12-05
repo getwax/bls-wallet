@@ -39,9 +39,11 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
     {
       maxAggregationSize: 12,
       fees: {
-        type: `token:${fx.testErc20.address}`,
-        perGas: BigNumber.from(1000000000),
-        perByte: BigNumber.from(10000000000000),
+        type: "token",
+        address: fx.testErc20.address,
+        allowLosses: true,
+        breakevenOperationCount: 4.5,
+        ethValueInTokens: 1300,
       },
     },
   );
@@ -121,9 +123,11 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
     {
       maxAggregationSize: 12,
       fees: {
-        type: `token:${fx.testErc20.address}`,
-        perGas: BigNumber.from(1000000000),
-        perByte: BigNumber.from(10000000000000),
+        type: "token",
+        address: fx.testErc20.address,
+        allowLosses: true,
+        breakevenOperationCount: 4.5,
+        ethValueInTokens: 1300,
       },
     },
   );
@@ -141,10 +145,12 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
           [
             "0x0000000000000000000000000000000000000000",
             wallet.address,
-            ethers.BigNumber.from("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+            ethers.BigNumber.from(
+              "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            ),
           ],
         ),
-      }
+      },
     ],
   });
 
@@ -161,7 +167,7 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
   const expectedFailedRow = {
     ...bundleRow,
     submitError: "ERC20: insufficient allowance",
-  }
+  };
   assertEquals(aggregationResult, {
     aggregateBundle: undefined,
     includedRows: [],

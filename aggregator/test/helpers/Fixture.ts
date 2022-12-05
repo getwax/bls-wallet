@@ -44,8 +44,8 @@ export const aggregationStrategyDefaultTestConfig:
     maxAggregationSize: 12,
     fees: {
       type: "ether",
-      perGas: BigNumber.from(0),
-      perByte: BigNumber.from(0),
+      allowLosses: true,
+      breakevenOperationCount: 4.5,
     },
   };
 
