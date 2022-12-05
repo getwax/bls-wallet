@@ -8,6 +8,7 @@ import {
   ERC20__factory,
   OperationResultError,
   Semaphore,
+  shuffled,
 } from "../../deps.ts";
 
 import nil from "../helpers/nil.ts";
@@ -126,7 +127,45 @@ export default class AggregationStrategy {
       );
 
       if (!success) {
-        this.emit({ type: "aggregate-bundle-unprofitable", errorReason });
+        this.emit({
+          type: "aggregate-bundle-unprofitable",
+          reason: errorReason?.message,
+        });
+
+        if (
+          aggregateBundle.operations.length >=
+            this.config.fees.breakevenOperationCount
+        ) {
+          this.emit({ type: "unprofitable-despite-breakeven-operations" });
+
+          // This is unexpected: We have enough operations to breakeven, but the
+          // bundle is unprofitable instead.
+          //
+          // This could happen due to small variations on a bundle that is
+          // borderline, but it could also happen due to an intentional attack.
+          // In the simplest case, an attacker submits two bundles that both pay
+          // when simulated in isolation, but the first sets state that prevents
+          // payment on the second bundle. We need to do something about this
+          // because it could otherwise put us into a state that might never
+          // resolve - next time we form a bundle, we'll run into the same issue
+          // because the bundles will be considered again in the same order.
+          //
+          // To fix this, we simply mark half the bundles as failed. We could
+          // isolate the issue by doing a lot of in-order reprocessing, but
+          // having this defense in place should prevent the attack in the first
+          // place, so false-positives here are a minor concern (keeping in mind
+          // these bundles will still get retried later).
+
+          let failureSample = shuffled(includedRows);
+          failureSample = failureSample.slice(0, failureSample.length / 2);
+
+          for (const row of failureSample) {
+            row.submitError =
+              "Included in failure sample for unprofitable bundle";
+          }
+
+          failedRows.push(...failureSample);
+        }
 
         return {
           aggregateBundle: nil,

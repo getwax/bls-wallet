@@ -1,4 +1,4 @@
-import { HTTPMethods, OperationResultError } from "../../deps.ts";
+import { HTTPMethods } from "../../deps.ts";
 
 type AppEvent =
   | { type: "listening"; data: { port: number } }
@@ -6,8 +6,9 @@ type AppEvent =
   | { type: "waiting-unconfirmed-space" }
   | {
     type: "aggregate-bundle-unprofitable";
-    errorReason?: OperationResultError;
+    reason?: string;
   }
+  | { type: "unprofitable-despite-breakeven-operations" }
   | {
     type: "submission-attempt";
     data: { publicKeyShorts: string[]; attemptNumber: number };
