@@ -1,14 +1,11 @@
-import * as io from 'io-ts';
 import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
-import assertType from '../cells/assertType';
 
 import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
 import KeyringController from './KeyringController';
 import NetworkController from './NetworkController';
-import optional from '../types/optional';
 import TransactionsController from './TransactionsController';
 import { IReadableCell } from '../cells/ICell';
 import getNetworkConfig from './getNetworkConfig';
@@ -126,21 +123,7 @@ export default class AggregatorController {
 
       const aggregator = new Aggregator(knownTx.aggregatorUrl);
 
-      // FIXME: Aggregator/bls-wallet-clients: The response we're getting is
-      // different from the type annotation.
-      const bundleReceipt: unknown = await aggregator.lookupReceipt(hash);
-
-      assertType(
-        bundleReceipt,
-        optional(
-          io.type({
-            transactionIndex: io.number,
-            transactionHash: io.string,
-            blockHash: io.string,
-            blockNumber: io.number,
-          }),
-        ),
-      );
+      const bundleReceipt = await aggregator.lookupReceipt(hash);
 
       if (bundleReceipt) {
         this.InternalRpc().updateTransactionHashByBundleHash(
