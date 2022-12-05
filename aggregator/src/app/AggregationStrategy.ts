@@ -267,7 +267,7 @@ export default class AggregationStrategy {
     failedRows: BundleRow[];
     remainingEligibleRows: BundleRow[];
   }> {
-    const candidateRows: BundleRow[] = []; // TODO: Rename?
+    const candidateRows: BundleRow[] = [];
     // TODO (merge-ok): Count gas instead, have idea
     // or way to query max gas per txn (submission).
     let actionCount = countActions(previousAggregateBundle);
