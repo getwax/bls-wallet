@@ -15,6 +15,7 @@ import {
 
 import assertExists from "../helpers/assertExists.ts";
 import { parseBundleDto } from "./parsers.ts";
+import nil from "../helpers/nil.ts";
 
 /**
  * Representation used when talking to the database. It's 'raw' in the sense
@@ -27,6 +28,7 @@ type RawRow = {
   bundle: string;
   eligibleAfter: string;
   nextEligibilityDelay: string;
+  submitError: string | null;
 };
 
 type Row = {
@@ -35,6 +37,7 @@ type Row = {
   bundle: Bundle;
   eligibleAfter: BigNumber;
   nextEligibilityDelay: BigNumber;
+  submitError?: string;
 };
 
 type InsertRow = Omit<Row, "id">;
@@ -52,19 +55,20 @@ const tableOptions: TableOptions = {
   id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
   hash: { type: DataType.VarChar },
   bundle: { type: DataType.VarChar },
+  submitError: { type: DataType.VarChar, nullable: true },
   eligibleAfter: { type: DataType.VarChar },
   nextEligibilityDelay: { type: DataType.VarChar },
 };
 
 function fromRawRow(rawRow: RawRow): Row {
   const parseResult = parseBundleDto(JSON.parse(rawRow.bundle));
-
   if ("failures" in parseResult) {
     throw new Error(parseResult.failures.join("\n"));
   }
 
   return {
     ...rawRow,
+    submitError: rawRow.submitError ?? nil,
     bundle: bundleFromDto(parseResult.success),
     eligibleAfter: BigNumber.from(rawRow.eligibleAfter),
     nextEligibilityDelay: BigNumber.from(rawRow.nextEligibilityDelay),
@@ -74,6 +78,7 @@ function fromRawRow(rawRow: RawRow): Row {
 function toInsertRawRow(row: InsertRow): InsertRawRow {
   return {
     ...row,
+    submitError: row.submitError ?? null,
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
@@ -83,6 +88,7 @@ function toInsertRawRow(row: InsertRow): InsertRawRow {
 function toRawRow(row: Row): RawRow {
   return {
     ...row,
+    submitError: row.submitError ?? null,
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
@@ -146,6 +152,17 @@ export default class BundleTable {
       `,
     );
     return rows.map(fromRawRow);
+  }
+
+  async findBundle(hash: string) {
+    const rows: RawRow[] = await this.queryClient.query(
+      `
+        SELECT * from ${this.safeName}
+        WHERE
+            "hash" = '${hash}'
+      `,
+    );
+    return rows.map(fromRawRow)[0];
   }
 
   async count(): Promise<bigint> {

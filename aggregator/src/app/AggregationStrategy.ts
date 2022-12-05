@@ -3,8 +3,10 @@ import {
   BlsWalletSigner,
   BlsWalletWrapper,
   Bundle,
+  decodeError,
   ERC20,
   ERC20__factory,
+  OperationResultError,
   Semaphore,
 } from "../../deps.ts";
 
@@ -72,8 +74,8 @@ export default class AggregationStrategy {
 
   #tokenDecimals?: number;
 
-  // The concurrency of #checkBundlePaysRequiredFee is limited by this semaphore
-  // because it can be called on many bundles in parallel
+  // The concurrency of #checkBundle is limited by this semaphore because it can
+  // be called on many bundles in parallel
   #checkBundleSemaphore = new Semaphore(8);
 
   constructor(
@@ -117,17 +119,21 @@ export default class AggregationStrategy {
       };
     }
 
-    if (
-      this.config.fees?.allowLosses === false &&
-      !this.#checkBundlePaysRequiredFee(aggregateBundle, BigNumber.from(0))
-    ) {
-      this.emit({ type: "aggregate-bundle-unprofitable" });
+    if (this.config.fees?.allowLosses === false) {
+      const { success, errorReason } = await this.#checkBundle(
+        aggregateBundle,
+        BigNumber.from(0),
+      );
 
-      return {
-        aggregateBundle: nil,
-        includedRows: [],
-        failedRows,
-      };
+      if (!success) {
+        this.emit({ type: "aggregate-bundle-unprofitable", errorReason });
+
+        return {
+          aggregateBundle: nil,
+          includedRows: [],
+          failedRows,
+        };
+      }
     }
 
     return {
@@ -238,18 +244,33 @@ export default class AggregationStrategy {
     // Checking in parallel here. Concurrency is limited by a semaphore used in
     // #checkBundlePaysRequiredFee.
     const rowChecks = await Promise.all(
-      candidateRows.map((r) =>
-        this.#checkBundlePaysRequiredFee(r.bundle, bundleOverheadGas)
-      ),
+      candidateRows.map((r) => this.#checkBundle(r.bundle, bundleOverheadGas)),
     );
+
+    const includedRows: BundleRow[] = [];
+    const failedRows: BundleRow[] = [];
+
+    for (const [i, { success, errorReason }] of rowChecks.entries()) {
+      const row = candidateRows[i];
+
+      if (success) {
+        includedRows.push(row);
+      } else {
+        if (errorReason) {
+          row.submitError = errorReason.message;
+        }
+
+        failedRows.push(row);
+      }
+    }
 
     return {
       aggregateBundle: this.blsWalletSigner.aggregate([
         previousAggregateBundle,
-        ...candidateRows.map((r) => r.bundle),
+        ...includedRows.map((r) => r.bundle),
       ]),
-      includedRows: candidateRows.filter((_row, i) => rowChecks[i]),
-      failedRows: candidateRows.filter((_row, i) => !rowChecks[i]),
+      includedRows,
+      failedRows,
       remainingEligibleRows: eligibleRows,
     };
   }
@@ -257,6 +278,7 @@ export default class AggregationStrategy {
   async #measureFees(bundles: Bundle[]): Promise<{
     success: boolean;
     fee: BigNumber;
+    errorReason: OperationResultError | nil;
   }[]> {
     const es = this.ethereumService;
     const feeToken = this.#FeeToken();
@@ -281,22 +303,40 @@ export default class AggregationStrategy {
       assert(after.success);
 
       const bundleResult = processBundleResults[i];
-
-      let success: boolean;
-
-      if (bundleResult.success) {
-        const [operationResults] = bundleResult.returnValue;
-
-        // We require that at least one operation succeeds, even though
-        // processBundle doesn't revert in this case.
-        success = operationResults.some((opSuccess) => opSuccess === true);
-      } else {
-        success = false;
+      const fee = after.returnValue[0].sub(before.returnValue[0]);
+      if (!bundleResult.success) {
+        const errorReason: OperationResultError = {
+          message: "Unknown error reason",
+        };
+        return { success: false, fee, errorReason };
       }
 
-      const fee = after.returnValue[0].sub(before.returnValue[0]);
+      const [operationStatuses, results] = bundleResult.returnValue;
 
-      return { success, fee };
+      let errorReason: OperationResultError | nil;
+      // We require that at least one operation succeeds, even though
+      // processBundle doesn't revert in this case.
+      const success = operationStatuses.some((opSuccess: boolean) =>
+        opSuccess === true
+      );
+
+      // If operation is not successful, attempt to decode an error message
+      if (!success) {
+        const error = results.map((result: string[]) => {
+          try {
+            if (result[0]) {
+              return decodeError(result[0]);
+            }
+            return;
+          } catch (err) {
+            console.error(err);
+            return;
+          }
+        });
+        errorReason = error[0];
+      }
+
+      return { success, fee, errorReason };
     });
   }
 
@@ -352,14 +392,14 @@ export default class AggregationStrategy {
     return BigNumber.from(Math.ceil(ethWeiFee.toNumber() * ethWeiOverTokenWei));
   }
 
-  async #checkBundlePaysRequiredFee(
+  async #checkBundle(
     bundle: Bundle,
     bundleOverheadGas?: BigNumber,
-  ) {
+  ): Promise<{ success: boolean; errorReason?: OperationResultError }> {
     return await this.#checkBundleSemaphore.use(async () => {
       const [
         requiredFee,
-        [{ success, fee }],
+        [{ success, fee, errorReason }],
       ] = await Promise.all([
         this.#measureRequiredFee(
           bundle,
@@ -368,7 +408,14 @@ export default class AggregationStrategy {
         this.#measureFees([bundle]),
       ]);
 
-      return success && fee.gte(requiredFee);
+      if (success && fee.lt(requiredFee)) {
+        return {
+          success: false,
+          errorReason: { message: "Insufficient fee" },
+        };
+      }
+
+      return { success, errorReason };
     });
   }
 

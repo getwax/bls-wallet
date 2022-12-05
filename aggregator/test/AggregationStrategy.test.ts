@@ -1,6 +1,6 @@
 import AggregationStrategy from "../src/app/AggregationStrategy.ts";
 import { BundleRow } from "../src/app/BundleTable.ts";
-import { assertEquals, BigNumber } from "./deps.ts";
+import { assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 
@@ -109,5 +109,62 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
     aggregateBundle: bundle,
     includedRows: [bundleRow],
     failedRows: [],
+  });
+});
+
+Fixture.test("includes submitError on failed row when bundle callStaticSequence fails", async (fx) => {
+  const [wallet] = await fx.setupWallets(1);
+
+  const aggregationStrategy = new AggregationStrategy(
+    fx.blsWalletSigner,
+    fx.ethereumService,
+    {
+      maxAggregationSize: 12,
+      fees: {
+        type: `token:${fx.testErc20.address}`,
+        perGas: BigNumber.from(1000000000),
+        perByte: BigNumber.from(10000000000000),
+      },
+    },
+  );
+
+  const nonce = await wallet.Nonce();
+
+  const bundle = wallet.sign({
+    nonce,
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
+          "transferFrom",
+          [
+            "0x0000000000000000000000000000000000000000",
+            wallet.address,
+            ethers.BigNumber.from("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+          ],
+        ),
+      }
+    ],
+  });
+
+  const bundleRow: BundleRow = {
+    id: 0,
+    hash: "0x0",
+    bundle,
+    eligibleAfter: BigNumber.from(0),
+    nextEligibilityDelay: BigNumber.from(1),
+  };
+
+  const aggregationResult = await aggregationStrategy.run([bundleRow]);
+
+  const expectedFailedRow = {
+    ...bundleRow,
+    submitError: "ERC20: insufficient allowance",
+  }
+  assertEquals(aggregationResult, {
+    aggregateBundle: undefined,
+    includedRows: [],
+    failedRows: [expectedFailedRow],
   });
 });

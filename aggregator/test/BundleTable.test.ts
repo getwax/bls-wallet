@@ -2,6 +2,7 @@ import { assertEquals, BigNumber } from "./deps.ts";
 
 import BundleTable, { BundleRow } from "../src/app/BundleTable.ts";
 import createQueryClient from "../src/app/createQueryClient.ts";
+import nil from "../src/helpers/nil.ts";
 
 let counter = 0;
 
@@ -51,6 +52,7 @@ const sampleRows: BundleRow[] = [
     },
     eligibleAfter: BigNumber.from(0),
     nextEligibilityDelay: BigNumber.from(1),
+    submitError: nil,
   },
 ];
 

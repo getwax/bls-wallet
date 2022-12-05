@@ -200,6 +200,10 @@ export default class BundleService {
     });
   }
 
+  lookupBundle(hash: string) {
+    return this.bundleTable.findBundle(hash);
+  }
+
   // TODO (merge-ok) Remove lint ignore when this hits db
   // deno-lint-ignore require-await
   async lookupReceipt(hash: string) {
