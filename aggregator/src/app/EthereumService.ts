@@ -42,10 +42,9 @@ type CallHelper<T> = {
   resultDecoder: (result: BytesLike) => T;
 };
 
-type CallResult<T> = (
+type CallResult<T> =
   | { success: true; returnValue: T }
-  | { success: false; returnValue: undefined }
-);
+  | { success: false; returnValue: undefined };
 
 type MapCallHelperReturns<T> = T extends CallHelper<unknown>[]
   ? (T extends [CallHelper<infer First>, ...infer Rest]
@@ -71,6 +70,7 @@ export default class EthereumService {
   constructor(
     public emit: (evt: AppEvent) => void,
     public wallet: Wallet,
+    public blsWalletWrapper: BlsWalletWrapper,
     public blsWalletSigner: BlsWalletSigner,
     verificationGatewayAddress: string,
     utilitiesAddress: string,
@@ -100,6 +100,33 @@ export default class EthereumService {
     aggPrivateKey: string,
   ): Promise<EthereumService> {
     const wallet = EthereumService.Wallet(aggPrivateKey);
+
+    const blsWalletWrapper = await BlsWalletWrapper.connect(
+      aggPrivateKey,
+      verificationGatewayAddress,
+      wallet.provider,
+    );
+
+    const blsNonce = await blsWalletWrapper.Nonce();
+
+    if (blsNonce.eq(0)) {
+      if (!env.AUTO_CREATE_INTERNAL_BLS_WALLET) {
+        throw new Error([
+          "Required internal bls wallet does not exist. Either enable",
+          "AUTO_CREATE_INTERNAL_BLS_WALLET or run",
+          "./programs/createInternalBlsWallet.ts",
+        ].join(" "));
+      }
+
+      await (await VerificationGateway__factory.connect(
+        verificationGatewayAddress,
+        wallet,
+      ).processBundle(blsWalletWrapper.sign({
+        nonce: 0,
+        actions: [],
+      }))).wait();
+    }
+
     const nextNonce = BigNumber.from(await wallet.getTransactionCount());
     const chainId = await wallet.getChainId();
     const blsWalletSigner = await initBlsWalletSigner({ chainId });
@@ -107,6 +134,7 @@ export default class EthereumService {
     return new EthereumService(
       emit,
       wallet,
+      blsWalletWrapper,
       blsWalletSigner,
       verificationGatewayAddress,
       utilitiesAddress,
@@ -211,10 +239,10 @@ export default class EthereumService {
   async callStaticSequenceWithMeasure<Measure, CallReturn>(
     measureCall: CallHelper<Measure>,
     calls: CallHelper<CallReturn>[],
-  ): (Promise<{
+  ): Promise<{
     measureResults: CallResult<Measure>[];
     callResults: CallResult<CallReturn>[];
-  }>) {
+  }> {
     const fullCalls: CallHelper<unknown>[] = [measureCall];
 
     for (const call of calls) {

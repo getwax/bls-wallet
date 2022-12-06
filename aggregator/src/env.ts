@@ -72,3 +72,7 @@ if (FEE_TYPE.startsWith("token:") && ETH_VALUE_IN_TOKENS === nil) {
     "token",
   ].join(" "));
 }
+
+export const AUTO_CREATE_INTERNAL_BLS_WALLET = requireBoolEnv(
+  "AUTO_CREATE_INTERNAL_BLS_WALLET",
+);

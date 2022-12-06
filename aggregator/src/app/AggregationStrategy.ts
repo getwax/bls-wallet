@@ -302,7 +302,7 @@ export default class AggregationStrategy {
       };
     }
 
-    const bundleOverheadGas = await this.#measureBundleOverheadGas();
+    const bundleOverheadGas = await this.measureBundleOverheadGas();
 
     // Checking in parallel here. Concurrency is limited by a semaphore used in
     // #checkBundlePaysRequiredFee.
@@ -419,7 +419,7 @@ export default class AggregationStrategy {
       return BigNumber.from(0);
     }
 
-    bundleOverheadGas ??= await this.#measureBundleOverheadGas();
+    bundleOverheadGas ??= await this.measureBundleOverheadGas();
 
     const gasEstimate = await this.ethereumService.verificationGateway
       .estimateGas
@@ -452,7 +452,15 @@ export default class AggregationStrategy {
     assert(this.config.fees?.type === "token");
     const ethWeiOverTokenWei = decimalAdj * this.config.fees.ethValueInTokens;
 
-    return BigNumber.from(Math.ceil(ethWeiFee.toNumber() * ethWeiOverTokenWei));
+    console.log({ ethWeiFee: ethWeiFee.toNumber(), ethWeiOverTokenWei });
+
+    // Note the use of .toString below. Without it, BigNumber recognizes that
+    // the float64 number cannot accurately represent integers in this range
+    // and throws an overflow. However, this number is ultimately an estimation
+    // with a margin of error, and the rounding caused by float64 is acceptable.
+    return BigNumber.from(
+      Math.ceil(ethWeiFee.toNumber() * ethWeiOverTokenWei).toString(),
+    );
   }
 
   async #checkBundle(
@@ -482,36 +490,28 @@ export default class AggregationStrategy {
     });
   }
 
-  async #measureBundleOverheadGas() {
+  async measureBundleOverheadGas() {
     // The simple way to do this would be to estimate the gas of an empty
     // bundle. However, an empty bundle is a bit of a special case, in
     // particular the on-chain BLS library outright refuses to validate it. So
     // instead we estimate one operation and two operations and extrapolate
     // backwards to zero operations.
 
-    const blsWallet = await BlsWalletWrapper.connect(
-      env.PRIVATE_KEY_AGG,
-      this.ethereumService.verificationGateway.address,
-      this.ethereumService.wallet.provider,
-    );
+    const es = this.ethereumService;
+    const wallet = es.blsWalletWrapper;
 
-    const nonce = await blsWallet.Nonce();
+    const nonce = await wallet.Nonce();
 
-    const bundle1 = blsWallet.sign({
-      nonce,
-      actions: [],
-    });
+    // It's a requirement that this wallet has already been created. Otherwise,
+    // wallet creation would be included in the bundle overhead.
+    assert(nonce.gt(0));
 
-    const bundle2 = blsWallet.sign({
-      nonce: nonce.add(1),
-      actions: [],
-    });
+    const bundle1 = wallet.sign({ nonce, actions: [] });
+    const bundle2 = wallet.sign({ nonce: nonce.add(1), actions: [] });
 
     const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
-      this.ethereumService.verificationGateway.estimateGas.processBundle(
-        bundle1,
-      ),
-      this.ethereumService.verificationGateway.estimateGas.processBundle(
+      es.verificationGateway.estimateGas.processBundle(bundle1),
+      es.verificationGateway.estimateGas.processBundle(
         this.blsWalletSigner.aggregate([bundle1, bundle2]),
       ),
     ]);
