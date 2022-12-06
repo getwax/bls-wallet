@@ -452,8 +452,6 @@ export default class AggregationStrategy {
     assert(this.config.fees?.type === "token");
     const ethWeiOverTokenWei = decimalAdj * this.config.fees.ethValueInTokens;
 
-    console.log({ ethWeiFee: ethWeiFee.toNumber(), ethWeiOverTokenWei });
-
     // Note the use of .toString below. Without it, BigNumber recognizes that
     // the float64 number cannot accurately represent integers in this range
     // and throws an overflow. However, this number is ultimately an estimation
