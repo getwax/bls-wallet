@@ -71,7 +71,7 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
 
   const feeEstimation = await aggregationStrategy.estimateFee(bundle);
 
-  const safetyDivisor = 100;
+  const safetyDivisor = 5;
   const safetyPremium = feeEstimation.feeRequired.div(safetyDivisor);
 
   // Due to small fluctuations is gas estimation, we add a little safety premium
