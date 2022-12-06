@@ -1,10 +1,11 @@
 import AggregationStrategy from "../src/app/AggregationStrategy.ts";
 import { BundleRow } from "../src/app/BundleTable.ts";
+import assert from "../src/helpers/assert.ts";
 import { assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 
-Fixture.test("zero fee estimate from default test config", async (fx) => {
+Fixture.test("nonzero fee estimate from default test config", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
 
   const bundle = wallet.sign({
@@ -23,11 +24,9 @@ Fixture.test("zero fee estimate from default test config", async (fx) => {
 
   const feeEstimation = await fx.aggregationStrategy.estimateFee(bundle);
 
-  assertEquals(feeEstimation, {
-    feeDetected: BigNumber.from(0),
-    feeRequired: BigNumber.from(0),
-    successes: [true],
-  });
+  assertEquals(feeEstimation.feeDetected, BigNumber.from(0));
+  assert(feeEstimation.feeRequired.gt(0));
+  assertEquals(feeEstimation.successes, [true]);
 });
 
 Fixture.test("includes bundle in aggregation when estimated fee is provided", async (fx) => {
