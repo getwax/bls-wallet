@@ -73,6 +73,9 @@ export type AggregationStrategyResult = {
   failedRows: BundleRow[];
 };
 
+export type AggregationStrategyConfig =
+  typeof AggregationStrategy["defaultConfig"];
+
 export default class AggregationStrategy {
   static defaultConfig = {
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,

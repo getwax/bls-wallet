@@ -23,7 +23,9 @@ import nil, { isNotNil } from "../../src/helpers/nil.ts";
 import getNetworkConfig from "../../src/helpers/getNetworkConfig.ts";
 import BundleService from "../../src/app/BundleService.ts";
 import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
-import AggregationStrategy from "../../src/app/AggregationStrategy.ts";
+import AggregationStrategy, {
+  AggregationStrategyConfig,
+} from "../../src/app/AggregationStrategy.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -39,15 +41,14 @@ export const bundleServiceDefaultTestConfig:
     maxEligibilityDelay: 300,
   };
 
-export const aggregationStrategyDefaultTestConfig:
-  typeof AggregationStrategy.defaultConfig = {
-    maxAggregationSize: 12,
-    fees: {
-      type: "ether",
-      allowLosses: true,
-      breakevenOperationCount: 4.5,
-    },
-  };
+export const aggregationStrategyDefaultTestConfig: AggregationStrategyConfig = {
+  maxAggregationSize: 12,
+  fees: {
+    type: "ether",
+    allowLosses: true,
+    breakevenOperationCount: 4.5,
+  },
+};
 
 export default class Fixture {
   static test(
