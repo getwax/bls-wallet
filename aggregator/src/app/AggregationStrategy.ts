@@ -118,7 +118,7 @@ export default class AggregationStrategy {
       return {
         aggregateBundle: nil,
         includedRows: [],
-        failedRows: [],
+        failedRows,
       };
     }
 
