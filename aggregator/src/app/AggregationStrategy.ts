@@ -207,54 +207,22 @@ export default class AggregationStrategy {
   }
 
   async estimateFee(bundle: Bundle, bundleOverheadGas?: BigNumber) {
-    const es = this.ethereumService;
-    const feeToken = this.#FeeToken();
-
-    const balanceCall = feeToken
-      ? es.Call(feeToken, "balanceOf", [es.wallet.address])
-      : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]);
-
-    const [
-      balanceResultBefore,
-      bundleResult,
-      balanceResultAfter,
-    ] = await es.callStaticSequence(
-      balanceCall,
-      es.Call(
-        es.verificationGateway,
-        "processBundle",
-        [bundle],
-      ),
-      balanceCall,
-    );
-
-    if (
-      balanceResultBefore.returnValue === undefined ||
-      balanceResultAfter.returnValue === undefined
-    ) {
-      throw new ClientReportableError("Failed to get balance");
-    }
-
-    const balanceBefore = balanceResultBefore.returnValue[0];
-    const balanceAfter = balanceResultAfter.returnValue[0];
-
-    const feeDetected = balanceAfter.sub(balanceBefore);
-
-    if (bundleResult.returnValue === undefined) {
-      throw new ClientReportableError("Failed to statically process bundle");
-    }
+    const [{ operationStatuses: successes, fee: feeDetected, errorReason }] =
+      await this
+        .#measureFees([
+          bundle,
+        ]);
 
     const feeRequired = await this.#measureRequiredFee(
       bundle,
       bundleOverheadGas,
     );
 
-    const successes = bundleResult.returnValue.successes;
-
     return {
       feeDetected,
       feeRequired,
       successes,
+      errorReason,
     };
   }
 
@@ -340,6 +308,7 @@ export default class AggregationStrategy {
 
   async #measureFees(bundles: Bundle[]): Promise<{
     success: boolean;
+    operationStatuses: boolean[];
     fee: BigNumber;
     errorReason: OperationResultError | nil;
   }[]> {
@@ -371,7 +340,12 @@ export default class AggregationStrategy {
         const errorReason: OperationResultError = {
           message: "Unknown error reason",
         };
-        return { success: false, fee, errorReason };
+        return {
+          success: false,
+          operationStatuses: bundles[i].operations.map(() => false),
+          fee,
+          errorReason,
+        };
       }
 
       const [operationStatuses, results] = bundleResult.returnValue;
@@ -399,7 +373,7 @@ export default class AggregationStrategy {
         errorReason = error[0];
       }
 
-      return { success, fee, errorReason };
+      return { success, operationStatuses, fee, errorReason };
     });
   }
 

@@ -137,22 +137,47 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
 });
 
 Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
+  const es = fx.ethereumService;
+
   const bundleService = await createBundleService(fx, {
     type: "ether",
     allowLosses: true,
     breakevenOperationCount: 4.5,
   });
 
-  const fee = BigNumber.from(2_000_000); // wei
-
   const [wallet] = await fx.setupWallets(1, { tokenBalance: 0 });
+  const nonce = await wallet.Nonce();
 
   await (await fx.adminWallet.sendTransaction({
     to: wallet.address,
-    value: fee,
+    value: 1,
   })).wait();
 
-  const es = fx.ethereumService;
+  const estimation = await bundleService.aggregationStrategy.estimateFee(
+    wallet.sign({
+      nonce,
+      actions: [
+        {
+          ethValue: 1,
+          contractAddress: es.utilities.address,
+          encodedFunction: es.utilities.interface.encodeFunctionData(
+            "sendEthToTxOrigin",
+          ),
+        },
+      ],
+    }),
+  );
+
+  assertEquals(estimation.successes, [true]);
+
+  const fee = estimation.feeRequired
+    .add(estimation.feeRequired.div(5)); // +20% safety margin
+
+  await (await fx.adminWallet.sendTransaction({
+    to: wallet.address,
+    value: fee
+      .sub(1), // Already sent 1 wei before
+  })).wait();
 
   const bundle = wallet.sign({
     nonce: await wallet.Nonce(),
