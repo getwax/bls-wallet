@@ -428,6 +428,17 @@ describe("BlsProvider", () => {
       "wait",
     );
   });
+
+  it("should return the connection info for the provider", async () => {
+    // Arrange
+    const expectedConnection = regularProvider.connection;
+
+    // Act
+    const connection = blsProvider.connection;
+
+    // Assert
+    expect(connection).to.deep.equal(expectedConnection);
+  });
 });
 
 describe("JsonRpcProvider", () => {
