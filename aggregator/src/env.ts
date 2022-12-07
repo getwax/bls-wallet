@@ -80,6 +80,10 @@ export const AUTO_CREATE_INTERNAL_BLS_WALLET = requireBoolEnv(
 
 export const PRIORITY_FEE_PER_GAS = requireBigNumberEnv("PRIORITY_FEE_PER_GAS");
 
+/**
+ * Used to determine the expected basefee when submitting bundles. Note that
+ * this gets passed onto users.
+ */
 export const PREVIOUS_BASE_FEE_PERCENT_INCREASE = requireNumberEnv(
   "PREVIOUS_BASE_FEE_PERCENT_INCREASE",
 );
