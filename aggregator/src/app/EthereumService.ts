@@ -22,6 +22,7 @@ import AppEvent from "./AppEvent.ts";
 import toPublicKeyShort from "./helpers/toPublicKeyShort.ts";
 import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import ExplicitAny from "../helpers/ExplicitAny.ts";
+import nil from "../helpers/nil.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -289,7 +290,10 @@ export default class EthereumService {
     const processBundleArgs: Parameters<VerificationGateway["processBundle"]> =
       [
         bundle,
-        { nonce: this.NextNonce() },
+        {
+          nonce: this.NextNonce(),
+          ...await this.GasConfig(),
+        },
       ];
 
     const attempt = async () => {
@@ -357,6 +361,21 @@ export default class EthereumService {
     }
 
     throw new Error("Expected return or throw from attempt loop");
+  }
+
+  async GasConfig() {
+    const block = await this.wallet.provider.getBlock("latest");
+    const previousBaseFee = block.baseFeePerGas;
+    assert(previousBaseFee !== null && previousBaseFee !== nil);
+
+    return {
+      maxFeePerGas: previousBaseFee
+        .add(
+          previousBaseFee.mul(env.PREVIOUS_BASE_FEE_PERCENT_INCREASE).div(100),
+        )
+        .add(env.PRIORITY_FEE_PER_GAS),
+      maxPriorityFeePerGas: env.PRIORITY_FEE_PER_GAS,
+    };
   }
 
   private static Wallet(privateKey: string) {

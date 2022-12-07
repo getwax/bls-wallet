@@ -39,6 +39,8 @@ export default async function app(emit: (evt: AppEvent) => void) {
   const aggregationStrategy = new AggregationStrategy(
     ethereumService.blsWalletSigner,
     ethereumService,
+    AggregationStrategy.defaultConfig,
+    emit,
   );
 
   const bundleService = new BundleService(

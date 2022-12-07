@@ -1,6 +1,7 @@
 import AggregationStrategy from "../src/app/AggregationStrategy.ts";
 import { BundleRow } from "../src/app/BundleTable.ts";
 import assert from "../src/helpers/assert.ts";
+import nil from "../src/helpers/nil.ts";
 import { assertEquals, BigNumber, ethers } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
@@ -106,11 +107,9 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
 
   const aggregationResult = await aggregationStrategy.run([bundleRow]);
 
-  assertEquals(aggregationResult, {
-    aggregateBundle: bundle,
-    includedRows: [bundleRow],
-    failedRows: [],
-  });
+  assertEquals(aggregationResult.aggregateBundle, bundle);
+  assertEquals(aggregationResult.includedRows, [bundleRow]);
+  assertEquals(aggregationResult.failedRows, []);
 });
 
 Fixture.test("includes submitError on failed row when bundle callStaticSequence fails", async (fx) => {
@@ -167,9 +166,8 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
     ...bundleRow,
     submitError: "ERC20: insufficient allowance",
   };
-  assertEquals(aggregationResult, {
-    aggregateBundle: undefined,
-    includedRows: [],
-    failedRows: [expectedFailedRow],
-  });
+
+  assertEquals(aggregationResult.aggregateBundle, nil);
+  assertEquals(aggregationResult.includedRows, []);
+  assertEquals(aggregationResult.failedRows, [expectedFailedRow]);
 });

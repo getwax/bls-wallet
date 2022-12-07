@@ -4,13 +4,13 @@ import { AggregatorClient, ethers } from "../deps.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
 
 import * as env from "../test/env.ts";
-import TestBlsWallets from "./helpers/TestBlsWallets.ts";
+import TestBlsWallet from "./helpers/TestBlsWallet.ts";
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 
 const client = new AggregatorClient(env.ORIGIN);
 
-const [wallet] = await TestBlsWallets(provider, 1);
+const wallet = await TestBlsWallet(provider);
 
 const adminWallet = AdminWallet(provider);
 

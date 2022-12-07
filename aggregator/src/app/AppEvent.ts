@@ -5,8 +5,31 @@ type AppEvent =
   | { type: "db-query"; data: { sql: string; params: unknown[] } }
   | { type: "waiting-unconfirmed-space" }
   | {
+    type: "running-strategy";
+    data: {
+      eligibleRows: number;
+    };
+  }
+  | {
+    type: "completed-strategy";
+    data: {
+      includedRows: number;
+      expectedFee: string;
+      expectedMaxCost: string;
+    };
+  }
+  | {
+    type: "failed-row";
+    data: {
+      publicKeyShorts: string[];
+      submitError?: string;
+    };
+  }
+  | {
     type: "aggregate-bundle-unprofitable";
-    reason?: string;
+    data: {
+      reason?: string;
+    };
   }
   | { type: "unprofitable-despite-breakeven-operations" }
   | {
@@ -24,7 +47,16 @@ type AppEvent =
   | { type: "submission-sent"; data: { hash: string } }
   | {
     type: "submission-confirmed";
-    data: { hash: string; bundleHashes: string[]; blockNumber: number };
+    data: {
+      hash: string;
+      bundleHashes: string[];
+      blockNumber: number;
+      profit: string;
+      cost: string;
+      expectedMaxCost: string;
+      actualFee: string;
+      expectedFee: string;
+    };
   }
   | { type: "warning"; data: string }
   | {

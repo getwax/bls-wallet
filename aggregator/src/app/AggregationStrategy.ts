@@ -1,11 +1,11 @@
 import {
   BigNumber,
   BlsWalletSigner,
-  BlsWalletWrapper,
   Bundle,
   decodeError,
   ERC20,
   ERC20__factory,
+  ethers,
   OperationResultError,
   Semaphore,
   shuffled,
@@ -18,8 +18,8 @@ import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
 import { BundleRow } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
-import ClientReportableError from "./helpers/ClientReportableError.ts";
 import AppEvent from "./AppEvent.ts";
+import bigSum from "./helpers/bigSum.ts";
 
 type FeeConfig =
   | {
@@ -70,6 +70,8 @@ const envFeeConfig = ((): FeeConfig => {
 export type AggregationStrategyResult = {
   aggregateBundle: Bundle | nil;
   includedRows: BundleRow[];
+  expectedFee: BigNumber;
+  expectedMaxCost: BigNumber;
   failedRows: BundleRow[];
 };
 
@@ -96,14 +98,18 @@ export default class AggregationStrategy {
   ) {}
 
   async run(eligibleRows: BundleRow[]): Promise<AggregationStrategyResult> {
+    eligibleRows = await this.#filterRows(eligibleRows);
+
     let aggregateBundle = this.blsWalletSigner.aggregate([]);
     const includedRows: BundleRow[] = [];
     const failedRows: BundleRow[] = [];
+    let expectedFee = BigNumber.from(0);
 
     while (eligibleRows.length > 0) {
       const {
         aggregateBundle: newAggregateBundle,
         includedRows: newIncludedRows,
+        expectedFees,
         failedRows: newFailedRows,
         remainingEligibleRows,
       } = await this.#augmentAggregateBundle(
@@ -113,6 +119,7 @@ export default class AggregationStrategy {
 
       aggregateBundle = newAggregateBundle;
       includedRows.push(...newIncludedRows);
+      expectedFee = expectedFee.add(bigSum(expectedFees));
       failedRows.push(...newFailedRows);
       eligibleRows = remainingEligibleRows;
     }
@@ -121,19 +128,29 @@ export default class AggregationStrategy {
       return {
         aggregateBundle: nil,
         includedRows: [],
+        expectedFee: BigNumber.from(0),
+        expectedMaxCost: BigNumber.from(0),
         failedRows,
       };
     }
 
+    const aggregateBundleCheck = await this.#checkBundle(
+      aggregateBundle,
+      BigNumber.from(0),
+    );
+
     let result: AggregationStrategyResult = {
       aggregateBundle,
       includedRows,
+      expectedFee,
+      expectedMaxCost: aggregateBundleCheck.expectedMaxCost,
       failedRows,
     };
 
     if (this.config.fees?.allowLosses === false) {
-      result = await this.#preventLosses(
+      result = this.#preventLosses(
         result,
+        aggregateBundleCheck.errorReason,
         this.config.fees.breakevenOperationCount,
       );
     }
@@ -145,32 +162,42 @@ export default class AggregationStrategy {
    * This is not guaranteed to prevent losses. We cannot 100% know what is going
    * to happen until the bundle is actually submitted on chain.
    */
-  async #preventLosses(
+  #preventLosses(
     result: AggregationStrategyResult,
+    errorReason: OperationResultError | nil,
     breakevenOperationCount: number,
-  ): Promise<AggregationStrategyResult> {
+  ): AggregationStrategyResult {
     if (result.aggregateBundle === nil) {
       return result;
     }
 
-    const { aggregateBundle, includedRows, failedRows } = result;
-
-    const { success, errorReason } = await this.#checkBundle(
+    const {
       aggregateBundle,
-      BigNumber.from(0),
-    );
+      expectedFee,
+      expectedMaxCost,
+      includedRows,
+      failedRows,
+    } = result;
 
-    if (success) {
+    if (expectedFee.gte(expectedMaxCost)) {
       return result;
     }
 
     this.emit({
       type: "aggregate-bundle-unprofitable",
-      reason: errorReason?.message,
+      data: {
+        reason: errorReason?.message,
+      },
     });
 
     if (aggregateBundle.operations.length < breakevenOperationCount) {
-      return result;
+      return {
+        aggregateBundle: nil,
+        includedRows: [],
+        expectedFee: BigNumber.from(0),
+        expectedMaxCost: BigNumber.from(0),
+        failedRows,
+      };
     }
 
     this.emit({ type: "unprofitable-despite-breakeven-operations" });
@@ -205,6 +232,8 @@ export default class AggregationStrategy {
     return {
       aggregateBundle: nil,
       includedRows: [],
+      expectedFee: BigNumber.from(0),
+      expectedMaxCost: BigNumber.from(0),
       failedRows,
     };
   }
@@ -216,17 +245,85 @@ export default class AggregationStrategy {
           bundle,
         ]);
 
-    const feeRequired = await this.#measureRequiredFee(
+    const feeInfo = await this.#measureFeeInfo(
       bundle,
       bundleOverheadGas,
     );
 
     return {
       feeDetected,
-      feeRequired,
+      feeRequired: feeInfo?.requiredFee ?? BigNumber.from(0),
       successes,
       errorReason,
     };
+  }
+
+  /**
+   * Removes rows that conflict with each other because they contain an
+   * operation for the same wallet and the same nonce.
+   */
+  async #filterRows(rows: BundleRow[]) {
+    const rowsByKeyAndNonce = new Map<string, BundleRow[]>();
+
+    for (const row of rows) {
+      for (let i = 0; i < row.bundle.operations.length; i++) {
+        const publicKey = row.bundle.senderPublicKeys[i];
+        const operation = row.bundle.operations[i];
+
+        const keyAndNonce = ethers.utils.solidityPack([
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+        ], [...publicKey, operation.nonce]);
+
+        const entry = rowsByKeyAndNonce.get(keyAndNonce) ?? [];
+        entry.push(row);
+        rowsByKeyAndNonce.set(keyAndNonce, entry);
+      }
+    }
+
+    let filteredRows = rows;
+
+    for (let rowGroup of rowsByKeyAndNonce.values()) {
+      rowGroup = rowGroup.filter((r) => filteredRows.includes(r));
+
+      if (rowGroup.length <= 1) {
+        continue;
+      }
+
+      const bestRow = await this.#pickBest(rowGroup);
+      const conflictingRows = rowGroup.filter((r) => r !== bestRow);
+
+      filteredRows = filteredRows.filter((r) => !conflictingRows.includes(r));
+    }
+
+    return filteredRows;
+  }
+
+  async #pickBest(rows: BundleRow[]) {
+    assert(rows.length > 0);
+
+    const results = await Promise.all(
+      rows.map((r) => this.#checkBundle(r.bundle)),
+    );
+
+    const excessFees = results.map((res) =>
+      res.expectedFee.sub(res.requiredFee)
+    );
+
+    let bestExcessFee = excessFees[0];
+    let bestExcessFeeIndex = 0;
+
+    for (let i = 1; i < excessFees.length; i++) {
+      if (excessFees[i].gt(bestExcessFee)) {
+        bestExcessFee = excessFees[i];
+        bestExcessFeeIndex = i;
+      }
+    }
+
+    return rows[bestExcessFeeIndex];
   }
 
   async #augmentAggregateBundle(
@@ -235,6 +332,7 @@ export default class AggregationStrategy {
   ): Promise<{
     aggregateBundle: Bundle;
     includedRows: BundleRow[];
+    expectedFees: BigNumber[];
     failedRows: BundleRow[];
     remainingEligibleRows: BundleRow[];
   }> {
@@ -265,6 +363,7 @@ export default class AggregationStrategy {
       return {
         aggregateBundle: previousAggregateBundle,
         includedRows: [],
+        expectedFees: [],
         failedRows: [],
 
         // If we're not able to include anything more, don't consider any rows
@@ -282,13 +381,17 @@ export default class AggregationStrategy {
     );
 
     const includedRows: BundleRow[] = [];
+    const expectedFees: BigNumber[] = [];
     const failedRows: BundleRow[] = [];
 
-    for (const [i, { success, errorReason }] of rowChecks.entries()) {
+    for (
+      const [i, { success, expectedFee, errorReason }] of rowChecks.entries()
+    ) {
       const row = candidateRows[i];
 
       if (success) {
         includedRows.push(row);
+        expectedFees.push(expectedFee);
       } else {
         if (errorReason) {
           row.submitError = errorReason.message;
@@ -304,6 +407,7 @@ export default class AggregationStrategy {
         ...includedRows.map((r) => r.bundle),
       ]),
       includedRows,
+      expectedFees,
       failedRows,
       remainingEligibleRows: eligibleRows,
     };
@@ -391,16 +495,15 @@ export default class AggregationStrategy {
     );
   }
 
-  async #measureRequiredFee(bundle: Bundle, bundleOverheadGas?: BigNumber) {
+  async #measureFeeInfo(bundle: Bundle, bundleOverheadGas?: BigNumber) {
     if (this.config.fees === nil) {
-      return BigNumber.from(0);
+      return nil;
     }
 
     bundleOverheadGas ??= await this.measureBundleOverheadGas();
 
     const gasEstimate = await this.ethereumService.verificationGateway
-      .estimateGas
-      .processBundle(bundle);
+      .estimateGas.processBundle(bundle);
 
     const marginalGasEstimate = gasEstimate.sub(bundleOverheadGas);
 
@@ -413,14 +516,17 @@ export default class AggregationStrategy {
 
     const requiredGas = marginalGasEstimate.add(bundleOverheadGasContribution);
 
-    const gasPrice = await this.ethereumService.wallet.provider.getGasPrice();
+    const { maxFeePerGas } = await this.ethereumService.GasConfig();
 
-    const ethWeiFee = requiredGas.mul(gasPrice);
+    const ethWeiFee = requiredGas.mul(maxFeePerGas);
 
     const token = this.#FeeToken();
 
     if (!token) {
-      return ethWeiFee;
+      return {
+        requiredFee: ethWeiFee,
+        expectedMaxCost: gasEstimate.mul(maxFeePerGas),
+      };
     }
 
     const decimals = await this.#TokenDecimals();
@@ -433,35 +539,57 @@ export default class AggregationStrategy {
     // the float64 number cannot accurately represent integers in this range
     // and throws an overflow. However, this number is ultimately an estimation
     // with a margin of error, and the rounding caused by float64 is acceptable.
-    return BigNumber.from(
+    const tokenWeiFee = BigNumber.from(
       Math.ceil(ethWeiFee.toNumber() * ethWeiOverTokenWei).toString(),
     );
+
+    return {
+      requiredFee: tokenWeiFee,
+      expectedMaxCost: gasEstimate.mul(maxFeePerGas),
+    };
   }
 
   async #checkBundle(
     bundle: Bundle,
     bundleOverheadGas?: BigNumber,
-  ): Promise<{ success: boolean; errorReason?: OperationResultError }> {
+  ): Promise<
+    {
+      success: boolean;
+      expectedFee: BigNumber;
+      requiredFee: BigNumber;
+      expectedMaxCost: BigNumber;
+      errorReason?: OperationResultError;
+    }
+  > {
     return await this.#checkBundleSemaphore.use(async () => {
       const [
-        requiredFee,
+        feeInfo,
         [{ success, fee, errorReason }],
       ] = await Promise.all([
-        this.#measureRequiredFee(
+        this.#measureFeeInfo(
           bundle,
           bundleOverheadGas,
         ),
         this.#measureFees([bundle]),
       ]);
 
-      if (success && fee.lt(requiredFee)) {
+      if (success && feeInfo && fee.lt(feeInfo.requiredFee)) {
         return {
           success: false,
+          expectedFee: fee,
+          requiredFee: feeInfo.requiredFee,
+          expectedMaxCost: feeInfo.expectedMaxCost,
           errorReason: { message: "Insufficient fee" },
         };
       }
 
-      return { success, errorReason };
+      return {
+        success,
+        expectedFee: fee,
+        requiredFee: feeInfo?.requiredFee ?? BigNumber.from(0),
+        expectedMaxCost: feeInfo?.expectedMaxCost ?? BigNumber.from(0),
+        errorReason,
+      };
     });
   }
 

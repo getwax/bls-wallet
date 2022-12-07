@@ -1,5 +1,6 @@
 import {
   optionalNumberEnv,
+  requireBigNumberEnv,
   requireBoolEnv,
   requireEnv,
   requireIntEnv,
@@ -75,4 +76,10 @@ if (FEE_TYPE.startsWith("token:") && ETH_VALUE_IN_TOKENS === nil) {
 
 export const AUTO_CREATE_INTERNAL_BLS_WALLET = requireBoolEnv(
   "AUTO_CREATE_INTERNAL_BLS_WALLET",
+);
+
+export const PRIORITY_FEE_PER_GAS = requireBigNumberEnv("PRIORITY_FEE_PER_GAS");
+
+export const PREVIOUS_BASE_FEE_PERCENT_INCREASE = requireNumberEnv(
+  "PREVIOUS_BASE_FEE_PERCENT_INCREASE",
 );
