@@ -24,7 +24,7 @@ describe("Signer tests", async function () {
 
   this.beforeAll(async function () {
     fundedSigners = await ethers.getSigners();
-    signers = getRandomSigners(4);
+    signers = getRandomSigners(5);
     provider = ethers.provider;
 
     const fundSigner = async (signer) => {
@@ -127,18 +127,6 @@ describe("Signer tests", async function () {
   });
 
   describe("ERC721", async function () {
-    // features:
-    // mintable: will create a mint function only callable by privileged accounts
-    // Enumerable: will give you access to on-chain Tokens enumeration and functions such as “totalSupply”,
-    // URI Storage: to be able to associate URIs to our NFTs
-
-    // Burnable
-    // Pausable
-    // Permit
-    // Votes
-    // Flash Minting
-    // Snapshots
-
     let mockERC721;
 
     this.beforeAll(async function () {
@@ -155,6 +143,59 @@ describe("Signer tests", async function () {
       mint.wait();
 
       expect(await mockERC721.totalSupply()).to.equal(1);
+    });
+
+    it("balanceOf() call", async function () {
+      // Mint some tokens to signer[2]
+      const nftUri = "ipfs://test.url/";
+      const mint = await mockERC721
+        .connect(signers[0])
+        .safeMint(signers[2].address, nftUri);
+      mint.wait();
+
+      // Check getting address from signer and passing it to a balanceOf call
+      expect(await mockERC721.balanceOf(signers[2].address)).to.equal(1);
+    });
+
+    it("transfer() call", async function () {
+      // Mint a token to signer[3]
+      const nftUri = "ipfs://test.url/";
+      const mint = await mockERC721
+        .connect(signers[0])
+        .safeMint(signers[3].address, nftUri);
+      mint.wait();
+      const receipt = await provider.getTransactionReceipt(mint.hash);
+      const tokenId = receipt.logs[0].topics[3]; // This is the tokenID
+
+      // Check signer[3] owns the token
+      expect(await mockERC721.ownerOf(tokenId)).to.equal(signers[3].address);
+
+      // Transfer the token from signer 3 to signer 2
+      await mockERC721
+        .connect(signers[3])
+        .transferFrom(signers[3].address, signers[2].address, tokenId);
+
+      // Check signer[2] now owns the token
+      expect(await mockERC721.ownerOf(tokenId)).to.equal(signers[2].address);
+    });
+
+    it("approve() call", async function () {
+      // Mint a token to signer[4]
+      const nftUri = "ipfs://test.url/";
+      const mint = await mockERC721
+        .connect(signers[0])
+        .safeMint(signers[4].address, nftUri);
+      mint.wait();
+      const receipt = await provider.getTransactionReceipt(mint.hash);
+      const tokenId = receipt.logs[0].topics[3]; // This is the tokenID
+
+      // Approve the token for signer[1] address
+      await mockERC721.connect(signers[4]).approve(signers[1].address, tokenId);
+
+      // Check signer[1]'s address is now an approved address for the token
+      expect(await mockERC721.getApproved(tokenId)).to.equal(
+        signers[1].address,
+      );
     });
   });
 });
