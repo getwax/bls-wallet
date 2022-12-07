@@ -148,6 +148,7 @@ contract BLSWallet is Initializable, IWallet
         bool success,
         bytes[] memory results
     ) {
+        incrementNonce(); // before operation to prevent reentrancy
         try this._performOperation(op) returns (
             bytes[] memory _results
         ) {
@@ -159,7 +160,6 @@ contract BLSWallet is Initializable, IWallet
             results = new bytes[](1);
             results[0] = returnData;
         }
-        incrementNonce(); // regardless of outcome of operation
     }
 
     /**
@@ -185,19 +185,11 @@ contract BLSWallet is Initializable, IWallet
             else {
                 (success, result) = address(a.contractAddress).call(a.encodedFunction);
             }
+
             if (success == false) {
-                bytes memory indexByte = new bytes(1);
-                indexByte[0] = bytes1(uint8(78)); // "N";
-                if (i < 10) {
-                    indexByte[0] = bytes1(uint8(48 + i)); // "0" - "9"
-                }
-                string memory message = string.concat(
-                    string(indexByte),
-                    " - ",
-                    abi.decode(stripMethodId(result), (string)) // remove "Error" methodId, it gets added again on this throw
-                );
-                revert(message);
+                revert IWallet.ActionError(i, result);
             }
+
             results[i] = result;
         }
     }

@@ -5,6 +5,8 @@ import {
   ERC20,
   ERC20__factory,
   ethers,
+  decodeError,
+  OperationResultError
 } from "../../deps.ts";
 
 import nil from "../helpers/nil.ts";
@@ -160,10 +162,10 @@ export default class AggregationStrategy {
       };
     }
 
-    const [previousFee, ...fees] = (await this.#measureFees([
+    const [previousFee, ...fees] = await this.#measureFees([
       previousAggregateBundle,
       ...includedRows.map((r) => r.bundle),
-    ]));
+    ]);
 
     const firstFailureIndex = await this.#findFirstFailureIndex(
       previousAggregateBundle,
@@ -176,6 +178,10 @@ export default class AggregationStrategy {
 
     if (firstFailureIndex !== nil) {
       const failedRow = includedRows[firstFailureIndex];
+      const errorReason = fees[firstFailureIndex].errorReason;
+      if (errorReason) {
+        failedRow.submitError = errorReason.message;
+      }
       failedRows.push(failedRow);
 
       includedRows = includedRows.slice(
@@ -207,6 +213,7 @@ export default class AggregationStrategy {
   async #measureFees(bundles: Bundle[]): Promise<{
     success: boolean;
     fee: BigNumber;
+    errorReason: OperationResultError | nil;
   }[]> {
     const es = this.ethereumService;
     const feeToken = this.#FeeToken();
@@ -231,22 +238,38 @@ export default class AggregationStrategy {
       assert(after.success);
 
       const bundleResult = processBundleResults[i];
-
-      let success: boolean;
-
-      if (bundleResult.success) {
-        const [operationResults] = bundleResult.returnValue;
-
-        // We require that at least one operation succeeds, even though
-        // processBundle doesn't revert in this case.
-        success = operationResults.some((opSuccess) => opSuccess === true);
-      } else {
-        success = false;
+      const fee = after.returnValue[0].sub(before.returnValue[0]);
+      if (!bundleResult.success) {
+        const errorReason: OperationResultError = {
+          message: "Unknown error reason",
+        };
+        return { success: false, fee, errorReason };
       }
 
-      const fee = after.returnValue[0].sub(before.returnValue[0]);
+      const [operationStatuses, results] = bundleResult.returnValue;
 
-      return { success, fee };
+      let errorReason: OperationResultError | nil;
+      // We require that at least one operation succeeds, even though
+      // processBundle doesn't revert in this case.
+      const success = operationStatuses.some((opSuccess: boolean) => opSuccess === true);
+
+      // If operation is not successful, attempt to decode an error message
+      if (!success) {
+        const error = results.map((result: string[]) => {
+          try {
+            if (result[0]) {
+              return decodeError(result[0]);
+            }
+            return;
+          } catch (err) {
+            console.error(err);
+            return;
+          }
+        });
+        errorReason = error[0];
+      }
+
+      return { success, fee, errorReason };
     });
   }
 
@@ -444,3 +467,4 @@ export default class AggregationStrategy {
     return left;
   }
 }
+

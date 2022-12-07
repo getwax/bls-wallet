@@ -2649,10 +2649,10 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.2.1.tgz#5057e4206eadb4a97f7c0b6e197a505042fc3814"
   integrity sha512-QXUSXI3QVc/gJME0dBpXrag1kbzOqCjCX8/b54ntNyW6sjtoqxqRk3LTmXzaJoh71zMsDCjM+47jS7XiwN/+fQ==
 
-bls-wallet-clients@0.7.3:
-  version "0.7.3"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.7.3.tgz#22fae2434c67b642d172023f259131233e396eb7"
-  integrity sha512-u2mwyf5+1KHYCyeutfl4jhEDCmsW/C+S54QKbicUkU26MvAGJ76/TxSOOIBiWTjzVDdDUBdJ/zQRoRd35GSGcQ==
+bls-wallet-clients@0.8.0-efa2e06:
+  version "0.8.0-efa2e06"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.8.0-efa2e06.tgz#b095696bfed5ccdf6bc7db20b19b81433de0f497"
+  integrity sha512-LGl+wLnK2OJsjmVDcFXmh270efAnysyW6EWDeKMQKl3la/KZs41OsmdpSW2Exf/wclZuRHdCSwT57+kvBiCMgQ==
   dependencies:
     "@thehubbleproject/bls" "^0.5.1"
     ethers "5.5.4"

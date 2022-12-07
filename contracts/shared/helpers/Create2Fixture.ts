@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-ethers";
 import { ethers } from "hardhat";
 import { Wallet, BigNumber, Contract, ContractFactory } from "ethers";
 import deployerContract from "./deployDeployer";
-import { Create2Deployer } from "../../typechain";
+import { Create2Deployer } from "../../typechain-types";
 
 export default class Create2Fixture {
   private constructor(public deployerWallet?: Wallet) {}
