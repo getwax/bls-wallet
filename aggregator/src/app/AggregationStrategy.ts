@@ -70,6 +70,7 @@ const envFeeConfig = ((): FeeConfig => {
 export type AggregationStrategyResult = {
   aggregateBundle: Bundle | nil;
   includedRows: BundleRow[];
+  bundleOverheadCost: BigNumber;
   expectedFee: BigNumber;
   expectedMaxCost: BigNumber;
   failedRows: BundleRow[];
@@ -100,6 +101,8 @@ export default class AggregationStrategy {
   async run(eligibleRows: BundleRow[]): Promise<AggregationStrategyResult> {
     eligibleRows = await this.#filterRows(eligibleRows);
 
+    const bundleOverheadGas = await this.measureBundleOverheadGas();
+
     let aggregateBundle = this.blsWalletSigner.aggregate([]);
     const includedRows: BundleRow[] = [];
     const failedRows: BundleRow[] = [];
@@ -115,6 +118,7 @@ export default class AggregationStrategy {
       } = await this.#augmentAggregateBundle(
         aggregateBundle,
         eligibleRows,
+        bundleOverheadGas,
       );
 
       aggregateBundle = newAggregateBundle;
@@ -128,6 +132,9 @@ export default class AggregationStrategy {
       return {
         aggregateBundle: nil,
         includedRows: [],
+        bundleOverheadCost: bundleOverheadGas.mul(
+          (await this.ethereumService.GasConfig()).maxFeePerGas,
+        ),
         expectedFee: BigNumber.from(0),
         expectedMaxCost: BigNumber.from(0),
         failedRows,
@@ -142,6 +149,9 @@ export default class AggregationStrategy {
     let result: AggregationStrategyResult = {
       aggregateBundle,
       includedRows,
+      bundleOverheadCost: bundleOverheadGas.mul(
+        (await this.ethereumService.GasConfig()).maxFeePerGas,
+      ),
       expectedFee,
       expectedMaxCost: aggregateBundleCheck.expectedMaxCost,
       failedRows,
@@ -194,6 +204,7 @@ export default class AggregationStrategy {
       return {
         aggregateBundle: nil,
         includedRows: [],
+        bundleOverheadCost: result.bundleOverheadCost,
         expectedFee: BigNumber.from(0),
         expectedMaxCost: BigNumber.from(0),
         failedRows,
@@ -232,6 +243,7 @@ export default class AggregationStrategy {
     return {
       aggregateBundle: nil,
       includedRows: [],
+      bundleOverheadCost: result.bundleOverheadCost,
       expectedFee: BigNumber.from(0),
       expectedMaxCost: BigNumber.from(0),
       failedRows,
@@ -329,6 +341,7 @@ export default class AggregationStrategy {
   async #augmentAggregateBundle(
     previousAggregateBundle: Bundle,
     eligibleRows: BundleRow[],
+    bundleOverheadGas: BigNumber,
   ): Promise<{
     aggregateBundle: Bundle;
     includedRows: BundleRow[];
@@ -371,8 +384,6 @@ export default class AggregationStrategy {
         remainingEligibleRows: [],
       };
     }
-
-    const bundleOverheadGas = await this.measureBundleOverheadGas();
 
     // Checking in parallel here. Concurrency is limited by a semaphore used in
     // #checkBundlePaysRequiredFee.

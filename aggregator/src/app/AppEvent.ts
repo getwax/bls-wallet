@@ -14,6 +14,7 @@ type AppEvent =
     type: "completed-strategy";
     data: {
       includedRows: number;
+      bundleOverheadCost: string;
       expectedFee: string;
       expectedMaxCost: string;
     };

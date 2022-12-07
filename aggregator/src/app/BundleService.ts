@@ -254,6 +254,7 @@ export default class BundleService {
       const {
         aggregateBundle,
         includedRows,
+        bundleOverheadCost,
         expectedFee,
         expectedMaxCost,
         failedRows,
@@ -264,6 +265,7 @@ export default class BundleService {
         type: "completed-strategy",
         data: {
           includedRows: includedRows.length,
+          bundleOverheadCost: ethers.utils.formatEther(bundleOverheadCost),
           expectedFee: ethers.utils.formatEther(expectedFee),
           expectedMaxCost: ethers.utils.formatEther(expectedMaxCost),
         },
