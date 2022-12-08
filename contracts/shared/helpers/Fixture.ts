@@ -169,10 +169,10 @@ export default class Fixture {
   ): Bundle {
     return this.blsWalletSigner.aggregate([
       wallet.sign({
-        nonce: nonce,
+        nonce,
         actions: [
           {
-            ethValue: ethValue,
+            ethValue,
             contractAddress: contract.address,
             encodedFunction: contract.interface.encodeFunctionData(
               method,

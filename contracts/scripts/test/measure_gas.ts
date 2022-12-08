@@ -21,7 +21,7 @@ async function logGasForTransfers() {
   for (let i = 0; i < transferCounts.length; i++) {
     const transferCount = transferCounts[i];
     const gasResults = {
-      transferCount: transferCount,
+      transferCount,
       estimate: -1,
       limit: -1,
       used: -1,
