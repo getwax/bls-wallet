@@ -71,7 +71,7 @@ describe("BlsProvider", () => {
     });
   });
 
-  it("should return a valid signer", async () => {
+  it("should return a valid signer", () => {
     // Arrange & Act
     const blsSigner = blsProvider.getSigner(privateKey);
 
@@ -80,7 +80,7 @@ describe("BlsProvider", () => {
     expect(blsSigner).to.be.instanceOf(BlsSigner);
   });
 
-  it("should return a valid unchecked bls signer", async () => {
+  it("should return a valid unchecked bls signer", () => {
     // Arrange & Act
     const uncheckedBlsSigner = blsProvider.getUncheckedSigner(privateKey);
 
@@ -440,7 +440,7 @@ describe("BlsProvider", () => {
     );
   });
 
-  it("should return the connection info for the provider", async () => {
+  it("should return the connection info for the provider", () => {
     // Arrange
     const expectedConnection = regularProvider.connection;
 
@@ -449,6 +449,17 @@ describe("BlsProvider", () => {
 
     // Assert
     expect(connection).to.deep.equal(expectedConnection);
+  });
+
+  it("should return the list of accounts managed by the provider", async () => {
+    // Arrange
+    const expectedAccounts = await regularProvider.listAccounts();
+
+    // Act
+    const accounts = await blsProvider.listAccounts();
+
+    // Assert
+    expect(accounts).to.deep.equal(expectedAccounts);
   });
 });
 

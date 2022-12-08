@@ -359,7 +359,7 @@ describe("BlsSigner", () => {
     expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
   });
 
-  it("should connect to an unchecked bls signer", async () => {
+  it("should connect to an unchecked bls signer", () => {
     // Arrange & Act
     const uncheckedBlsSigner = blsSigner.connectBlsUnchecked(privateKey);
 
@@ -368,7 +368,7 @@ describe("BlsSigner", () => {
     expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
   });
 
-  it("should throw an error when calling connectUnchecked", async () => {
+  it("should throw an error when calling connectUnchecked", () => {
     // Arrange & Act
     const result = () => blsSigner.connectUnchecked();
 
