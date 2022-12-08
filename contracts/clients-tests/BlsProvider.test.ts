@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import spies from "chai-spies";
-import { ethers } from "ethers";
+import { ethers, BigNumber } from "ethers";
 import { parseEther, formatEther, id } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -13,6 +13,7 @@ import {
   NetworkConfig,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
+import BlsSigner, { UncheckedBlsSigner } from "../clients/src/BlsSigner";
 
 chai.use(spies);
 
@@ -76,6 +77,16 @@ describe("BlsProvider", () => {
 
     // Assert
     expect(blsSigner._isSigner).to.be.true;
+    expect(blsSigner).to.be.instanceOf(BlsSigner);
+  });
+
+  it("should return a valid unchecked bls signer", async () => {
+    // Arrange & Act
+    const uncheckedBlsSigner = blsProvider.getUncheckedSigner(privateKey);
+
+    // Assert
+    expect(uncheckedBlsSigner._isSigner).to.be.true;
+    expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
   });
 
   it("should return a new signer if one has not been instantiated", async () => {
@@ -324,9 +335,9 @@ describe("BlsProvider", () => {
       type: 2,
     });
 
-    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
+    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(BigNumber.from("0"));
 
     expect(transactionReceipt).to.include.keys(
       "transactionIndex",
@@ -362,9 +373,9 @@ describe("BlsProvider", () => {
       type: 2,
     });
 
-    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
+    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(BigNumber.from("0"));
 
     expect(transactionReceipt).to.include.keys(
       "transactionIndex",

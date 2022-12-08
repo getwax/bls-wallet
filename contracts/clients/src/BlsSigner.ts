@@ -200,17 +200,56 @@ export default class BlsSigner extends Signer {
     throw new Error("_signTypedData() is not implemented.");
   }
 
-  connectUnchecked(): ethers.providers.JsonRpcSigner {
-    throw new Error("connectUnchecked() is not implemented.");
+  connectUnchecked(): BlsSigner {
+    throw new Error(
+      "connectUnchecked() is not implemented. Use connectBlsUnchecked instead.",
+    );
+  }
+
+  // When we use regular "connectUnchecked", we need to pass the private key into the method as that is a required
+  // argument for the BlsSigner constructor. This breaks liskov substitution as the subclass method signature is different.
+  connectBlsUnchecked(privateKey: string): BlsSigner {
+    return new UncheckedBlsSigner(
+      _constructorGuard,
+      this.provider,
+      privateKey,
+      this._address || this._index,
+    );
   }
 
   async sendUncheckedTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
-    throw new Error("sendUncheckedTransaction() is not implemented.");
+    const transactionResponse = await this.sendTransaction(transaction);
+    return transactionResponse.hash;
   }
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
     throw new Error("_legacySignMessage() is not implemented.");
+  }
+}
+
+export class UncheckedBlsSigner extends BlsSigner {
+  override async sendTransaction(
+    transaction: Deferrable<ethers.providers.TransactionRequest>,
+  ): Promise<ethers.providers.TransactionResponse> {
+    const transactionResponse = await super.sendTransaction(transaction);
+    return {
+      hash: transactionResponse.hash,
+      nonce: 1,
+      gasLimit: BigNumber.from(0),
+      gasPrice: BigNumber.from(0),
+      data: "",
+      value: BigNumber.from(0),
+      chainId: 0,
+      confirmations: 0,
+      from: "",
+      wait: (confirmations?: number) => {
+        return this.provider.waitForTransaction(
+          transactionResponse.hash,
+          confirmations,
+        );
+      },
+    };
   }
 }
