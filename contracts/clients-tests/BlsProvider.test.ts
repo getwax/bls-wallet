@@ -461,6 +461,38 @@ describe("BlsProvider", () => {
     // Assert
     expect(accounts).to.deep.equal(expectedAccounts);
   });
+
+  it("should send an rpc request to the provider", async () => {
+    // Arrange
+    const expectedBlockNumber = await regularProvider.send(
+      "eth_blockNumber",
+      [],
+    );
+    const expectedChainId = await regularProvider.send("eth_chainId", []);
+    const expectedAccounts = await regularProvider.send("eth_accounts", []);
+
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const hexTx = ethers.providers.JsonRpcProvider.hexlifyTransaction({
+      to: recipient,
+      value: transactionAmount,
+    });
+    const balanceBefore = await regularProvider.getBalance(recipient);
+
+    // Act
+    const blockNumber = await blsProvider.send("eth_blockNumber", []);
+    const chainId = await blsProvider.send("eth_chainId", []);
+    const accounts = await blsProvider.send("eth_accounts", []);
+    await blsProvider.send("eth_sendTransaction", [hexTx]);
+
+    // Assert
+    expect(blockNumber).to.equal(expectedBlockNumber);
+    expect(chainId).to.equal(expectedChainId);
+    expect(accounts).to.deep.equal(expectedAccounts);
+    expect(
+      (await regularProvider.getBalance(signers[1].address)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
+  });
 });
 
 describe("JsonRpcProvider", () => {
