@@ -22,6 +22,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     this.verificationGatewayAddress = verificationGatewayAddress;
   }
 
+  // TODO: bls-wallet #410 estimate gas for a transaction
   override async estimateGas(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<BigNumber> {
