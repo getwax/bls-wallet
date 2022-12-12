@@ -169,7 +169,7 @@ export default class BlsSigner extends Signer {
     const nonce = await BlsWalletWrapper.Nonce(
       this.wallet.PublicKey(),
       this.verificationGatewayAddress,
-      this,
+      this.provider,
     );
 
     const bundle = this.wallet.sign({ nonce, actions: [action] });
