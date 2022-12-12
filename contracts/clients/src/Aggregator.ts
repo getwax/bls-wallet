@@ -34,6 +34,10 @@ export type EstimateFeeResponse = {
   successes: boolean[];
 };
 
+export type BundleReceiptError = {
+  submitError: string | undefined;
+};
+
 export type BundleReceipt = {
   transactionIndex: number;
   transactionHash: string;
@@ -43,6 +47,7 @@ export type BundleReceipt = {
 };
 
 export default class Aggregator {
+  private readonly fetchImpl;
   origin: string;
 
   constructor(url: string) {
@@ -53,6 +58,7 @@ export default class Aggregator {
     }
 
     this.origin = new URL(url).origin;
+    this.fetchImpl = globalThis.fetch ?? fetch;
   }
 
   async add(
@@ -77,18 +83,16 @@ export default class Aggregator {
     return result as EstimateFeeResponse;
   }
 
-  async lookupReceipt(hash: string): Promise<BundleReceipt | undefined> {
-    const response = await fetch(`${this.origin}/bundleReceipt/${hash}`);
-
-    if (response.status === 404) {
-      return undefined;
-    }
-
-    return await response.json();
+  async lookupReceipt(
+    hash: string,
+  ): Promise<BundleReceipt | BundleReceiptError | undefined> {
+    return this.jsonGet<BundleReceipt | BundleReceiptError>(
+      `${this.origin}/bundleReceipt/${hash}`,
+    );
   }
 
   async jsonPost(path: string, body: unknown): Promise<unknown> {
-    const resp = await fetch(`${this.origin}${path}`, {
+    const resp = await this.fetchImpl(`${this.origin}${path}`, {
       method: "POST",
       body: JSON.stringify(body),
       headers: {
@@ -107,5 +111,17 @@ export default class Aggregator {
     }
 
     return json;
+  }
+
+  private async jsonGet<T>(path: string): Promise<T | undefined> {
+    const resp = await this.fetchImpl(path);
+    const json = await resp.json();
+
+    const isValidNonEmptyJson = json && Object.keys(json).length;
+    if (isValidNonEmptyJson) {
+      return json as T;
+    }
+
+    return undefined;
   }
 }
