@@ -56,6 +56,11 @@ jobs:
       run: |
         ./programs/aggregator.ts &
         sleep 10
-        yarn test-clients
+        ECHO "Running aggregator"
+
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn test-clients
+
 
 
