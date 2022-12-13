@@ -35,7 +35,6 @@ export default class BlsWalletWrapper {
     this.address = walletContract.address;
   }
 
-  // test commit
   static async BLSWallet(
     privateKey: string,
     verificationGateway: VerificationGateway,
