@@ -12,9 +12,9 @@ runs:
       shell: bash
       run: cp .env.local.example .env
 
+    # wait 10 seconds to allow the aggregator to spin up
     - working-directory: ./aggregator
       shell: bash
       run: |
         deno run --allow-read --allow-env --allow-net ./programs/aggregator.ts &
-      # wait 10 seconds to allow the aggregator to spin up
         sleep 10
