@@ -57,7 +57,7 @@ jobs:
     - working-directory: ./aggregator
       shell: bash
       run: |
-        ./programs/aggregator.ts &
+        deno run --allow-read --allow-env --allow-net ./programs/aggregator.ts &
         sleep 10
 
     - working-directory: ./contracts
