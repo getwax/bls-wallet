@@ -50,7 +50,7 @@ jobs:
     - working-directory: ./
       run: docker-compose up -d postgres
 
-    - working-directory: ./
+    - working-directory: ./aggregator
       run: cp .env.local.example .env
 
     - working-directory: ./aggregator
