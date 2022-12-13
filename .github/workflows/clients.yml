@@ -53,10 +53,9 @@ jobs:
 
     - working-directory: ./aggregator
       shell: bash
-      run: ./programs/aggregator.ts &
-
-    - working-directory: ./contracts
-      shell: bash
-      run: yarn test-clients
+      run: |
+        ./programs/aggregator.ts &
+        sleep 10
+        yarn test-clients
 
 
