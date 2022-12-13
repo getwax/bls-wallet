@@ -24,9 +24,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: ./.github/actions/setup-contracts-clients
-    - uses: denoland/setup-deno@v1
-      with:
-        deno-version: ${{ env.DENO_VERSION }}
     - run: yarn build
 
   test:
@@ -40,23 +37,11 @@ jobs:
         deno-version: ${{ env.DENO_VERSION }}
     - run: yarn test
 
-    - working-directory: ./contracts
-      run: yarn hardhat node &
-    - working-directory: ./contracts
-      run: yarn hardhat fundDeployer --network gethDev
-    - working-directory: ./contracts
-      run: yarn hardhat run scripts/deploy_all.ts --network gethDev
+    # run local node and deploy contracts
+    - uses: ./.github/actions/local-contract-deploy
 
-    - working-directory: ./
-      run: docker-compose up -d postgres
-
-    - working-directory: ./aggregator
-      run: cp .env.local.example .env
-
-    - working-directory: ./aggregator
-      run: |
-        deno run --allow-read --allow-env --allow-net ./programs/aggregator.ts &
-        sleep 10
+    # spin up aggregator instance
+    - uses: ./.github/actions/local-aggregator-deploy
 
     - working-directory: ./contracts
       run: yarn test-clients
