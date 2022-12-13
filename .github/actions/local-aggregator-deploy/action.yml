@@ -5,12 +5,15 @@ runs:
   using: composite
   steps:
     - working-directory: ./
+      shell: bash
       run: docker-compose up -d postgres
 
     - working-directory: ./aggregator
+      shell: bash
       run: cp .env.local.example .env
 
     - working-directory: ./aggregator
+      shell: bash
       run: |
         deno run --allow-read --allow-env --allow-net ./programs/aggregator.ts &
       # wait 10 seconds to allow the aggregator to spin up
