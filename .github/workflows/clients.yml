@@ -30,3 +30,36 @@ jobs:
     - uses: actions/checkout@v3
     - uses: ./.github/actions/setup-contracts-clients
     - run: yarn test
+
+  integration-test:
+    runs-on: ubuntu-latest
+
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn hardhat node &
+
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn hardhat fundDeployer --network gethDev
+
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn hardhat run scripts/deploy_all.ts --network gethDev
+
+    - working-directory: ./
+      shell: bash
+      run: docker-compose up -d postgres
+
+    - working-directory: ./aggregator
+      shell: bash
+      run: cp .env.local.example .env
+
+    - working-directory: ./aggregator
+      shell: bash
+      run: ./programs/aggregator.ts &
+
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn test-clients
+
+
