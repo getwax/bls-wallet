@@ -41,13 +41,13 @@ jobs:
     - run: yarn test
 
     - working-directory: ./contracts
-      run: yarn hardhat node &
-      run: yarn hardhat fundDeployer --network gethDev
-      run: yarn hardhat run scripts/deploy_all.ts --network gethDev
+    - run: yarn hardhat node &
+    - run: yarn hardhat fundDeployer --network gethDev
+    - run: yarn hardhat run scripts/deploy_all.ts --network gethDev
 
     - working-directory: ./
-      run: docker-compose up -d postgres
-      run: cp .env.local.example .env
+    - run: docker-compose up -d postgres
+    - run: cp .env.local.example .env
 
     - working-directory: ./aggregator
       run: |
