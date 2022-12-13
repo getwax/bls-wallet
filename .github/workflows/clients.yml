@@ -35,16 +35,16 @@ jobs:
     - uses: denoland/setup-deno@v1
       with:
         deno-version: ${{ env.DENO_VERSION }}
+    
+    # run unit tests
     - run: yarn test
 
-    # run local node and deploy contracts
+    # run Hardhat node and deploy contracts
     - uses: ./.github/actions/local-contract-deploy
 
     # spin up aggregator instance
     - uses: ./.github/actions/local-aggregator-deploy
 
+    # run integration tests
     - working-directory: ./contracts
       run: yarn test-clients
-
-
-

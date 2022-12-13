@@ -1,4 +1,4 @@
-name: Locally Contract Deploy
+name: Local Contract Deploy
 description: Runs a Hardhat node & deploys contracts
 
 runs:
