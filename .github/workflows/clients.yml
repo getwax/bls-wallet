@@ -31,9 +31,6 @@ jobs:
     - uses: ./.github/actions/setup-contracts-clients
     - run: yarn test
 
-  integration-test:
-    runs-on: ubuntu-latest
-
     - working-directory: ./contracts
       shell: bash
       run: yarn hardhat node &
