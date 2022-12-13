@@ -1,0 +1,17 @@
+name: Locally Contract Deploy
+description: Runs a Hardhat node & deploys contracts
+
+runs:
+  using: composite
+  steps:
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn hardhat node &
+
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn hardhat fundDeployer --network gethDev
+
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn hardhat run scripts/deploy_all.ts --network gethDev
