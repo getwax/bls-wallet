@@ -361,21 +361,73 @@ describe("BlsSigner", () => {
 
   it("should connect to an unchecked bls signer", () => {
     // Arrange & Act
-    const uncheckedBlsSigner = blsSigner.connectBlsUnchecked(privateKey);
+    const uncheckedBlsSigner = blsSigner.connectUnchecked();
 
     // Assert
     expect(uncheckedBlsSigner._isSigner).to.be.true;
     expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
   });
 
-  it("should throw an error when calling connectUnchecked", () => {
+  it("should await the init promise when connecting to an unchecked bls signer", async () => {
     // Arrange & Act
-    const result = () => blsSigner.connectUnchecked();
+    // random private key
+    const newPrivateKey =
+      "0x35b5fe04e9c24433f0489e241c2678f429f226a4b8da520695631bb7af12d4f9";
+    const newBlsSigner = blsProvider.getSigner(newPrivateKey);
+    const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
+
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      value: transactionAmount,
+      to: recipient,
+    };
+    const balanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
+      transaction,
+    );
+    await uncheckedResponse.wait();
 
     // Assert
-    expect(result).to.throw(
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
+  });
+
+  it("should throw an error getting the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
+    // Arrange & Act
+    // This test is identical to the above test except this one uses a new instance of a provider, yet fails to find the tx receipt
+    const newBlsProvider = new Experimental.BlsProvider(
+      aggregatorUrl,
+      verificationGateway,
+      rpcUrl,
+      network,
+    );
+    // random private key
+    const newPrivateKey =
+      "0x35b5fe04e9c24433f0489e241c2678f429f226a4b8da520695631bb7af12d4f9";
+    const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
+    const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
+
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      value: transactionAmount,
+      to: recipient,
+    };
+
+    // Act
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
+      transaction,
+    );
+    const result = async () => await uncheckedResponse.wait();
+
+    // Assert
+    expect(result()).to.be.rejectedWith(
       Error,
-      "connectUnchecked() is not implemented. Use connectBlsUnchecked instead.",
+      `Could not find bundle receipt for transaction hash: ${uncheckedResponse.hash}.`,
     );
   });
 
@@ -403,7 +455,7 @@ describe("BlsSigner", () => {
 
   it("should send ETH (empty call) using an unchecked bls signer", async () => {
     // Arrange
-    const uncheckedBlsSigner = blsSigner.connectBlsUnchecked(privateKey);
+    const uncheckedBlsSigner = blsSigner.connectUnchecked();
 
     const recipient = signers[1].address;
     const transactionAmount = parseEther("1");

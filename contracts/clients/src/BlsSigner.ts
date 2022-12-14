@@ -49,9 +49,10 @@ export default class BlsSigner extends Signer {
     }
   }
 
-  private async initializeWallet(privateKey: string) {
+  private async initializeWallet(privateKey: string | Promise<string>) {
+    const resolvedPrivateKey = await privateKey;
     this.wallet = await BlsWalletWrapper.connect(
-      privateKey,
+      resolvedPrivateKey,
       this.verificationGatewayAddress,
       this.provider,
     );
@@ -201,18 +202,15 @@ export default class BlsSigner extends Signer {
   }
 
   connectUnchecked(): BlsSigner {
-    throw new Error(
-      "connectUnchecked() is not implemented. Use connectBlsUnchecked instead.",
-    );
-  }
-
-  // When we use regular "connectUnchecked", we need to pass the private key into the method as that is a required
-  // argument for the BlsSigner constructor. This breaks liskov substitution as the subclass method signature is different.
-  connectBlsUnchecked(privateKey: string): BlsSigner {
     return new UncheckedBlsSigner(
       _constructorGuard,
       this.provider,
-      privateKey,
+      // Modify this arg to take a priv key OR promise that will eventually resolve to one, then do similar initPromise guards in this class.
+      this.wallet?.privateKey ??
+        (async () => {
+          await this.initPromise;
+          return this.wallet.privateKey;
+        })(),
       this._address || this._index,
     );
   }
@@ -233,6 +231,8 @@ export class UncheckedBlsSigner extends BlsSigner {
   override async sendTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<ethers.providers.TransactionResponse> {
+    await this.initPromise;
+
     const transactionResponse = await super.sendTransaction(transaction);
     return {
       hash: transactionResponse.hash,

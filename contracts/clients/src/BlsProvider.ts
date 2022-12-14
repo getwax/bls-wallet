@@ -99,9 +99,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     privateKey: string,
     addressOrIndex?: string,
   ): UncheckedBlsSigner {
-    return this.getSigner(privateKey, addressOrIndex).connectBlsUnchecked(
-      privateKey,
-    );
+    return this.getSigner(privateKey, addressOrIndex).connectUnchecked();
   }
 
   override async getTransactionReceipt(
