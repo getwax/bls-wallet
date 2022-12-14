@@ -408,9 +408,10 @@ describe("BlsSigner", () => {
     ).to.equal(transactionAmount);
   });
 
-  it("should throw an error getting the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
+  // TODO (merge-ok) https://github.com/web3well/bls-wallet/issues/427
+  // This test is identical to the above test except this one uses a new instance of a provider, yet fails to find the tx receipt
+  it.skip("should get the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
     // Arrange & Act
-    // This test is identical to the above test except this one uses a new instance of a provider, yet fails to find the tx receipt
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
@@ -429,18 +430,18 @@ describe("BlsSigner", () => {
       value: transactionAmount,
       to: recipient,
     };
+    const balanceBefore = await blsProvider.getBalance(recipient);
 
     // Act
     const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
       transaction,
     );
-    const result = async () => await uncheckedResponse.wait();
+    await uncheckedResponse.wait();
 
     // Assert
-    expect(result()).to.be.rejectedWith(
-      Error,
-      `Could not find bundle receipt for transaction hash: ${uncheckedResponse.hash}.`,
-    );
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
   });
 
   it("should send ETH (empty call) via an unchecked transaction", async () => {

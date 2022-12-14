@@ -19,7 +19,7 @@ export default class BlsSigner extends Signer {
   constructor(
     constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
-    privateKey: string,
+    privateKey: string | Promise<string>,
     readonly addressOrIndex?: string | number,
   ) {
     super();
@@ -205,7 +205,6 @@ export default class BlsSigner extends Signer {
     return new UncheckedBlsSigner(
       _constructorGuard,
       this.provider,
-      // Modify this arg to take a priv key OR promise that will eventually resolve to one, then do similar initPromise guards in this class.
       this.wallet?.privateKey ??
         (async () => {
           await this.initPromise;
