@@ -15,6 +15,8 @@ import {
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 import BlsSigner, { UncheckedBlsSigner } from "../clients/src/BlsSigner";
 
+// TODO: bls-wallet 414 Setup integration tests for BlsProvider & BlsSigner
+// Can this be put in a test config/init file?
 chai.use(spies);
 
 let networkConfig: NetworkConfig;
@@ -129,6 +131,7 @@ describe("BlsProvider", () => {
     expect(formatEther(result)).to.equal(expectedSupply);
   });
 
+  // TODO: bls-wallet #410 estimate gas for a transaction
   it("should estimate gas without throwing an error", async () => {
     // Arrange
     const recipient = signers[1].address;
