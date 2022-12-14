@@ -174,7 +174,7 @@ describe("BlsProvider", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined.",
+      "Transaction.to should be defined",
     );
   });
 
@@ -248,7 +248,7 @@ describe("BlsProvider", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      "Call provider.getSigner first.",
+      "Call provider.getSigner first",
     );
   });
 
@@ -292,7 +292,7 @@ describe("BlsProvider", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      `Could not find bundle receipt for transaction hash: ${invalidTransactionHash}.`,
+      `Could not find bundle receipt for transaction hash: ${invalidTransactionHash}`,
     );
   });
 

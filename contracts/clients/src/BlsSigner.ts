@@ -29,7 +29,7 @@ export default class BlsSigner extends Signer {
 
     if (constructorGuard !== _constructorGuard) {
       throw new Error(
-        "do not call the BlsSigner constructor directly; use provider.getSigner.",
+        "do not call the BlsSigner constructor directly; use provider.getSigner",
       );
     }
 
@@ -45,7 +45,7 @@ export default class BlsSigner extends Signer {
       this._index = addressOrIndex;
     } else {
       throw new Error(`
-        invalid address or index. addressOrIndex: ${addressOrIndex}.`);
+        invalid address or index. addressOrIndex: ${addressOrIndex}`);
     }
   }
 
@@ -63,7 +63,7 @@ export default class BlsSigner extends Signer {
     await this.initPromise;
 
     if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined.");
+      throw new TypeError("Transaction.to should be defined");
     }
 
     // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
@@ -157,7 +157,7 @@ export default class BlsSigner extends Signer {
     await this.initPromise;
 
     if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined.");
+      throw new TypeError("Transaction.to should be defined");
     }
 
     const action: ActionData = {
@@ -189,7 +189,7 @@ export default class BlsSigner extends Signer {
   }
 
   override connect(provider: ethers.providers.Provider): BlsSigner {
-    throw new Error("connect() is not implemented.");
+    throw new Error("connect() is not implemented");
   }
 
   async _signTypedData(
@@ -197,20 +197,20 @@ export default class BlsSigner extends Signer {
     types: Record<string, Array<any>>,
     value: Record<string, any>,
   ): Promise<string> {
-    throw new Error("_signTypedData() is not implemented.");
+    throw new Error("_signTypedData() is not implemented");
   }
 
   connectUnchecked(): ethers.providers.JsonRpcSigner {
-    throw new Error("connectUnchecked() is not implemented.");
+    throw new Error("connectUnchecked() is not implemented");
   }
 
   async sendUncheckedTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
-    throw new Error("sendUncheckedTransaction() is not implemented.");
+    throw new Error("sendUncheckedTransaction() is not implemented");
   }
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
-    throw new Error("_legacySignMessage() is not implemented.");
+    throw new Error("_legacySignMessage() is not implemented");
   }
 }

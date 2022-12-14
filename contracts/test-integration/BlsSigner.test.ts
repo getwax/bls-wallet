@@ -96,7 +96,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined.",
+      "Transaction.to should be defined",
     );
   });
 
@@ -219,7 +219,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined.",
+      "Transaction.to should be defined",
     );
   });
 
