@@ -1,6 +1,5 @@
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
-import spies from "chai-spies";
 import { ethers, BigNumber } from "ethers";
 import {
   parseEther,
@@ -19,10 +18,6 @@ import {
   MockERC20__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
-
-// TODO: bls-wallet 414 Setup integration tests for BlsProvider & BlsSigner
-// Can this be put in a test config/init file?
-chai.use(spies);
 
 let networkConfig: NetworkConfig;
 let signers: SignerWithAddress[];

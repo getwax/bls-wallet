@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
+import spies from "chai-spies";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import defaultDeployerWallets from "./shared/helpers/defaultDeployerWallet";
@@ -79,6 +80,7 @@ task("sendEth", "Sends ETH to an address")
 // Do any needed pre-test setup here.
 task("test").setAction(async (_taskArgs, _hre, runSuper) => {
   chai.use(chaiAsPromised);
+  chai.use(spies);
   await runSuper();
 });
 
