@@ -1,7 +1,13 @@
 import { ethers as hardhatEthers } from "hardhat";
-import { expect } from "chai";
+import chai, { expect } from "chai";
+import spies from "chai-spies";
 import { ethers, BigNumber } from "ethers";
-import { parseEther, resolveProperties, RLP } from "ethers/lib/utils";
+import {
+  parseEther,
+  resolveProperties,
+  RLP,
+  formatEther,
+} from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
@@ -9,8 +15,14 @@ import {
   ActionData,
   BlsWalletWrapper,
   NetworkConfig,
+  // eslint-disable-next-line camelcase
+  MockERC20__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
+
+// TODO: bls-wallet 414 Setup integration tests for BlsProvider & BlsSigner
+// Can this be put in a test config/init file?
+chai.use(spies);
 
 let networkConfig: NetworkConfig;
 let signers: SignerWithAddress[];
@@ -356,6 +368,166 @@ describe("BlsSigner", () => {
     // Assert
     expect(signedMessage).to.deep.equal(expectedSignature);
     expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+  });
+
+  it("should get the balance of an account", async () => {
+    // Arrange
+    const expectedBalance = await regularProvider.getBalance(
+      blsSigner.wallet.address,
+    );
+
+    // Act
+    const result = await blsSigner.getBalance();
+
+    // Assert
+    expect(result).to.equal(expectedBalance);
+  });
+
+  it("should get the balance of an account at specific block height", async () => {
+    // Arrange
+    const expectedBalance = parseEther("0");
+
+    // Act
+    const result = await blsSigner.getBalance("earliest");
+
+    // Assert
+    expect(result).to.equal(expectedBalance);
+  });
+
+  it("should get the chain id the wallet is connected to", async () => {
+    // Arrange
+    const { chainId: expectedChainId } = await regularProvider.getNetwork();
+
+    // Act
+    const result = await blsSigner.getChainId();
+
+    // Assert
+    expect(result).to.equal(expectedChainId);
+  });
+
+  it("should get the current gas price", async () => {
+    // Arrange
+    const expectedGasPrice = await regularProvider.getGasPrice();
+
+    // Act
+    const result = await blsSigner.getGasPrice();
+
+    // Assert
+    expect(result).to.equal(expectedGasPrice);
+  });
+
+  it("should get the number of transactions the account has sent", async () => {
+    // Arrange
+    const expectedTransactionCount = await regularProvider.getTransactionCount(
+      blsSigner.wallet.address,
+    );
+
+    // Act
+    const result = await blsSigner.getTransactionCount();
+
+    // Assert
+    expect(result).to.equal(expectedTransactionCount);
+  });
+
+  it("should get the number of transactions the account has sent at the specified block tag", async () => {
+    // Arrange
+    const expectedTransactionCount = 0;
+
+    // Act
+    const result = await blsSigner.getTransactionCount("earliest");
+
+    // Assert
+    expect(result).to.equal(expectedTransactionCount);
+  });
+
+  it("should return the result of call using the transactionRequest, with the signer account address being used as the from field", async () => {
+    // Arrange
+    const spy = chai.spy.on(Experimental.BlsProvider.prototype, "call");
+
+    // eslint-disable-next-line camelcase
+    const testERC20 = MockERC20__factory.connect(
+      networkConfig.addresses.testToken,
+      blsProvider,
+    );
+
+    const transaction = {
+      to: testERC20.address,
+      data: testERC20.interface.encodeFunctionData("totalSupply"),
+      // Explicitly omit 'from'
+    };
+
+    // Act
+    const result = await blsSigner.call(transaction);
+
+    // Assert
+    expect(formatEther(result)).to.equal("1000000.0");
+    expect(spy).to.have.been.called.once;
+    expect(spy).to.have.been.called.with({
+      to: testERC20.address,
+      data: testERC20.interface.encodeFunctionData("totalSupply"),
+      from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
+    });
+  });
+
+  // TODO: bls-wallet #410 estimate gas for a transaction
+  it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
+    // Arrange
+    const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");
+
+    const transaction = {
+      to: signers[1].address,
+      value: parseEther("1"),
+      // Explicitly omit 'from'
+    };
+
+    // Act
+    const gasEstimate = async () => await blsSigner.estimateGas(transaction);
+
+    // Assert
+    await expect(gasEstimate()).to.not.be.rejected;
+    expect(spy).to.have.been.called.once;
+    expect(spy).to.have.been.called.with({
+      to: signers[1].address,
+      value: parseEther("1"),
+      from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
+    });
+  });
+
+  it("should throw an error when ENS name is not a string", async () => {
+    // Arrange
+    const ensName = null;
+
+    // Act
+    const result = async () => await blsSigner.resolveName(ensName);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(Error, "invalid ENS name");
+  });
+
+  it("should throw an error when ENS name fails formatting checks", async () => {
+    // Arrange
+    const ensName = ethers.utils.formatBytes32String("invalid");
+
+    // Act
+    const result = async () => await blsSigner.resolveName(ensName);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(Error, "invalid address");
+  });
+
+  // ENS is not supported by hardhat so we are checking the correct error behaviour in this scenario
+  it("should throw an error when passing in a correct ENS name", async () => {
+    // Arrange
+    const ensName = "vitalik.eth";
+
+    // Act
+    const result = async () => await blsSigner.resolveName(ensName);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "network does not support ENS",
+    );
   });
 });
 
