@@ -47,4 +47,4 @@ jobs:
 
     # run integration tests
     - working-directory: ./contracts
-      run: yarn test-clients
+      run: yarn test-integration
