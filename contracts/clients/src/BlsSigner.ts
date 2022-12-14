@@ -206,7 +206,7 @@ export default class BlsSigner extends Signer {
       _constructorGuard,
       this.provider,
       this.wallet?.privateKey ??
-        (async () => {
+        (async (): Promise<string> => {
           await this.initPromise;
           return this.wallet.privateKey;
         })(),
