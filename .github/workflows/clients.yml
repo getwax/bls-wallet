@@ -51,11 +51,11 @@ jobs:
 
     # print logs
     # - uses: actions/checkout@v2
-    - run: mkdir -p artifacts/aggregator
+    # - run: mkdir -p artifacts/aggregator
 
-    - run: echo test > artifacts/aggregator/aggLogs.txt
+    # - run: echo test > artifacts/aggregator/aggLogs.txt
 
     - uses: actions/upload-artifact@v3
       with:
         name: aggregator-logs
-        path: artifacts/aggregator/aggLogs.txt
+        path: aggLogs.txt
