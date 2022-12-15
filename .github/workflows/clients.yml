@@ -49,4 +49,4 @@ jobs:
     - working-directory: ./contracts
       run: yarn test-integration
 
-    - uses: ./.github/actions/publish-artifacts
+    # - uses: ./.github/actions/publish-artifacts
