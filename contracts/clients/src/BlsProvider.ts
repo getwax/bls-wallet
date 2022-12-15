@@ -135,7 +135,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       getBundleReceipt,
       bundleExists,
       retries,
-      2000,
+      5000,
     );
 
     console.log("AGGREGATOR", this.aggregator);
