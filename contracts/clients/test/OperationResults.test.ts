@@ -1,10 +1,24 @@
 import { expect } from "chai";
 import { BigNumber, ContractReceipt, utils } from "ethers";
-import { getOperationResults, errorSelectors } from "../src/OperationResults";
+import {
+  decodeError,
+  getOperationResults,
+  errorSelectors,
+} from "../src/OperationResults";
 
-const encodeErrorResult = (actionIndex: number, message: string): string => {
-  const encodedMessage = utils.defaultAbiCoder.encode(["string"], [message]);
-  const actionErrorData = `${errorSelectors.Error}${encodedMessage.slice(2)}`;
+const encodeErrorResult = (
+  actionIndex: number,
+  actionErrorSelector: string,
+  message?: string,
+  encodedMessage?: string,
+): string => {
+  if (!message && !encodedMessage) {
+    throw new Error("message or encodedMessage required");
+  }
+
+  const errorMessage =
+    encodedMessage ?? utils.defaultAbiCoder.encode(["string"], [message]);
+  const actionErrorData = `${actionErrorSelector}${errorMessage.slice(2)}`;
   const encodedErrorMessage = utils.defaultAbiCoder.encode(
     ["uint256", "bytes"],
     [actionIndex, actionErrorData],
@@ -14,12 +28,98 @@ const encodeErrorResult = (actionIndex: number, message: string): string => {
 
 describe("OperationResults", () => {
   describe("decodeError", () => {
-    it("TODO all branches", () => {
-      // no-op
+    it("fails if error data does not start with ActionError selector", () => {
+      const errorData = "does not compute";
+      expect(() => decodeError(errorData)).to.throw(
+        `errorResult does not begin with ActionError selector (${errorSelectors.ActionError}): ${errorData}`,
+      );
+    });
+
+    it("parses error data", () => {
+      const actionIndex = 43770;
+      const msg = "hello";
+      const errorData = encodeErrorResult(
+        actionIndex,
+        errorSelectors.Error,
+        msg,
+      );
+
+      const { actionIndex: actionIdxBn, message } = decodeError(errorData);
+      expect(actionIdxBn?.toNumber()).to.eql(actionIndex);
+      expect(message).to.eql(msg);
+    });
+
+    it("parses panic error data", () => {
+      const actionIndex = 1337;
+      const panicCode = BigNumber.from(42);
+      const panicActionErrorData = utils.defaultAbiCoder.encode(
+        ["uint256"],
+        [panicCode],
+      );
+      const errorData = encodeErrorResult(
+        actionIndex,
+        errorSelectors.Panic,
+        undefined,
+        panicActionErrorData,
+      );
+
+      const { actionIndex: actionIdxBn, message } = decodeError(errorData);
+      expect(actionIdxBn?.toNumber()).to.eql(actionIndex);
+      expect(message).to.eql(
+        `Panic: ${panicCode.toHexString()} (See Panic(uint256) in the solidity docs: https://docs.soliditylang.org/_/downloads/en/latest/pdf/)`,
+      );
+    });
+
+    it("handles unexpected error data", () => {
+      const actionIndex = 707;
+      const msg = "lol";
+      const errorData = encodeErrorResult(
+        actionIndex,
+        errorSelectors.ActionError,
+        msg,
+      );
+      // There is probably a better way to extract
+      // the exact hex value of the unexpected action error data.
+      const actionErrDataStart = 202;
+      const actionErrorData = errorData.slice(
+        actionErrDataStart,
+        actionErrDataStart + 200,
+      );
+
+      const { actionIndex: actionIdxBn, message } = decodeError(errorData);
+      expect(actionIdxBn?.toNumber()).to.eql(actionIndex);
+      expect(message).to.eql(
+        `Unexpected action error data: 0x${actionErrorData}`,
+      );
+    });
+
+    it("handles exceptions when parsing error data", () => {
+      const encodedErrorMessage = utils.defaultAbiCoder.encode(
+        ["uint256"],
+        [0],
+      );
+      const errorData = `${
+        errorSelectors.ActionError
+      }${encodedErrorMessage.slice(2)}`;
+
+      expect(decodeError(errorData)).to.deep.equal({
+        actionIndex: undefined,
+        message: `Unexpected error data: ${errorData}`,
+      });
     });
   });
 
   describe("getOperationResults", () => {
+    it("fails if no events are in transaction", () => {
+      const txnReceipt = {
+        transactionHash: "0x111111",
+      } as unknown as ContractReceipt;
+
+      expect(() => getOperationResults(txnReceipt)).to.throw(
+        `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
+      );
+    });
+
     it("fails if no WalletOperationProcessed events are in transaction", () => {
       const event = { event: "Other" };
       const txnReceipt = {
@@ -48,7 +148,11 @@ describe("OperationResults", () => {
 
       const errorActionIndex = 0;
       const errorMessage = "halt and catch fire";
-      const errorResult = encodeErrorResult(errorActionIndex, errorMessage);
+      const errorResult = encodeErrorResult(
+        errorActionIndex,
+        errorSelectors.Error,
+        errorMessage,
+      );
 
       const failedEvent = {
         event: "WalletOperationProcessed",
