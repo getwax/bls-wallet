@@ -107,7 +107,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     transactionHash: string | Promise<string>,
   ): Promise<ethers.providers.TransactionReceipt> {
     const resolvedTransactionHash = await transactionHash;
-    return this._getTransactionReceipt(resolvedTransactionHash, 1, 20);
+    return this._getTransactionReceipt(resolvedTransactionHash, 1, 10);
   }
 
   override async waitForTransaction(
@@ -118,7 +118,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return this._getTransactionReceipt(
       transactionHash,
       confirmations ?? 1,
-      retries ?? 20,
+      retries ?? 10,
     );
   }
 
@@ -135,12 +135,8 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       getBundleReceipt,
       bundleExists,
       retries,
-      5000,
+      2000,
     );
-
-    console.log("AGGREGATOR", this.aggregator);
-    console.log("TRANSACTION_HASH", transactionHash);
-    console.log("BUNDLE_RECEIPT", bundleReceipt);
 
     if (!bundleReceipt) {
       throw new Error(
