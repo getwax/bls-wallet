@@ -10,7 +10,7 @@ runs:
 
     - working-directory: ./aggregator
       shell: bash
-      run: cp .env.local.example .env
+      run: cp .env.test .env
 
     - working-directory: ./aggregator
       shell: bash

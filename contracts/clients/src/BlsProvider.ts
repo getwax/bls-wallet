@@ -131,6 +131,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       2000,
     );
 
+    console.log("AGGREGATOR", this.aggregator);
+    console.log("TRANSACTION_HASH", transactionHash);
+    console.log("BUNDLE_RECEIPT", bundleReceipt);
+
     if (!bundleReceipt) {
       throw new Error(
         `Could not find bundle receipt for transaction hash: ${transactionHash}`,
