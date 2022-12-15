@@ -35,7 +35,7 @@ let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 let regularProvider: ethers.providers.JsonRpcProvider;
 let regularSigner: ethers.providers.JsonRpcSigner;
 
-describe.only("BlsSigner", () => {
+describe("BlsSigner", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
     signers = await hardhatEthers.getSigners();
