@@ -1,7 +1,11 @@
-import { BlsWalletWrapper } from 'bls-wallet-clients';
-import { ethers } from 'ethers';
-import { keccak256 } from 'ethers/lib/utils';
-import generateRandomHex from '../helpers/generateRandomHex';
+import {
+  BlsWalletWrapper,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+  Aggregator,
+} from 'bls-wallet-clients';
+import { ethers, BigNumberish } from 'ethers';
+import { solidityPack, keccak256 } from 'ethers/lib/utils';
 import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
@@ -10,6 +14,8 @@ import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import { IReadableCell } from '../cells/ICell';
 import mixtureCopy from '../cells/mixtureCopy';
 import getNetworkConfig from './getNetworkConfig';
+import randFr from '../helpers/randFr';
+import generateRandomHex from '../helpers/generateRandomHex';
 
 export default class KeyringController {
   constructor(
@@ -110,6 +116,19 @@ export default class KeyringController {
       return networkData.address;
     },
 
+    createTempAccount: async (_request) => {
+      const pKey = `0x${(await randFr()).serializeToHexStr()}`;
+      const { wallets } = await this.keyring.read();
+
+      assert(
+        wallets.every((w) => w.privateKey !== pKey),
+        () => new Error('Wallet already exists'),
+      );
+
+      const { address, privateKey } = await this.BlsWalletWrapper(pKey);
+      return { address, privateKey };
+    },
+
     addAccount: async ({ params: [privateKey = generateRandomHex(256)] }) => {
       const { wallets } = await this.keyring.read();
 
@@ -154,7 +173,52 @@ export default class KeyringController {
 
       await this.keyring.update({ wallets: newWallets });
     },
+
+    /**
+     * Recovers an existing BLS wallet and adds the new
+     * recovered wallet to the keyring
+     * @param recoveryWalletAddress Smart contract address
+     * of wallet being recovered
+     * @param recoverySaltHash Salt used to set the recovery
+     * hash on the wallet that is being recovered
+     * @param signerWalletPrivateKey The private key of the wallet that is used
+     * to generate the recovery hash. This wallet will sign the 'recoverWallet'
+     * request.
+     */
+    addRecoveryWallet: async ({
+      params: [recoveryWalletAddress, recoverySaltHash, signerWalletPrivateKey],
+    }) => {
+      const privateKey = await this.recoverWallet(
+        recoveryWalletAddress,
+        recoverySaltHash,
+        signerWalletPrivateKey,
+      );
+
+      // Add new private key to the keyring
+      await this.InternalRpc().addAccount(privateKey);
+      await this.swapContractWalletAddress(privateKey, recoveryWalletAddress);
+    },
   });
+
+  async swapContractWalletAddress(pKey: string, newAddress: string) {
+    const network = await this.network.read();
+    const { wallets } = await this.keyring.read();
+
+    const currentWallet = wallets.find((w) => w.privateKey === pKey);
+    // get all wallets without the current wallet
+    const updatedWallets = wallets.filter((w) => w.privateKey !== pKey);
+
+    if (currentWallet) {
+      const networkDetails = currentWallet.networks[network.networkKey];
+      if (networkDetails) {
+        networkDetails.address = newAddress;
+      }
+      currentWallet.networks[network.networkKey] = networkDetails;
+      // push the updated wallet to all wallets array
+      updatedWallets.push(currentWallet);
+    }
+    await this.keyring.update({ wallets: updatedWallets });
+  }
 
   async BlsWalletWrapper(privateKey: string): Promise<BlsWalletWrapper> {
     const netCfg = getNetworkConfig(
@@ -213,5 +277,94 @@ export default class KeyringController {
       }),
       {},
     );
+  }
+
+  async signWalletAddress(
+    senderAddress: string,
+    signerPrivateKey: string,
+  ): Promise<[BigNumberish, BigNumberish]> {
+    const netCfg = getNetworkConfig(
+      await this.network.read(),
+      this.multiNetworkConfig,
+    );
+
+    const addressMessage = solidityPack(['address'], [senderAddress]);
+    const wallet = await BlsWalletWrapper.connect(
+      signerPrivateKey,
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
+    );
+    return wallet.signMessage(addressMessage);
+  }
+
+  async recoverWallet(
+    recoveryWalletAddress: string,
+    recoverySaltHash: string,
+    signerWalletPrivateKey: string,
+  ): Promise<string> {
+    const network = await this.network.read();
+    const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
+
+    // Create new private key for the wallet we are recovering to.
+    const newPrivateKey = `0x${(await randFr()).serializeToHexStr()}`;
+
+    const addressSignature = await this.signWalletAddress(
+      recoveryWalletAddress,
+      newPrivateKey,
+    );
+
+    // Get instance of the new wallet, so we can get the public key
+    // to pass to the recoverWallet method.
+    const newWalletWrapper = await this.BlsWalletWrapper(newPrivateKey);
+
+    // eslint-disable-next-line camelcase
+    const verificationGatewayContract = VerificationGateway__factory.connect(
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
+    );
+
+    const recoveryWalletHash = await verificationGatewayContract.hashFromWallet(
+      recoveryWalletAddress,
+    );
+
+    const signerWallet = await this.BlsWalletWrapper(signerWalletPrivateKey);
+
+    const nonce = await BlsWalletWrapper.Nonce(
+      signerWallet.PublicKey(),
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
+    );
+
+    // Thought about using this.InternalRpc().eth_sendTransaction() here.
+    // However since we are generating a wallet on the fly and not using
+    // an existing wallet in the keyring I am calling creating a bundle
+    // manually and submitting it to the aggregator.
+    const bundle = signerWallet.sign({
+      nonce,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: verificationGatewayContract.address,
+          encodedFunction:
+            verificationGatewayContract.interface.encodeFunctionData(
+              'recoverWallet',
+              [
+                addressSignature,
+                recoveryWalletHash,
+                recoverySaltHash,
+                newWalletWrapper.PublicKey(),
+              ],
+            ),
+        },
+      ],
+    });
+
+    const { aggregatorUrl } = network;
+    const agg = new Aggregator(aggregatorUrl);
+    const result = await agg.add(bundle);
+
+    assert(!('failures' in result), () => new Error(JSON.stringify(result)));
+
+    return newPrivateKey;
   }
 }

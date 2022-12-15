@@ -165,7 +165,9 @@ export default class QuillController {
       lookupPrivateKey: this.keyringController.rpc.lookupPrivateKey,
       pkHashToAddress: this.keyringController.rpc.pkHashToAddress,
       addAccount: this.keyringController.rpc.addAccount,
+      createTempAccount: this.keyringController.rpc.createTempAccount,
       removeAccount: this.keyringController.rpc.removeAccount,
+      addRecoveryWallet: this.keyringController.rpc.addRecoveryWallet,
 
       // TransactionsController
       createTransaction: this.transactionsController.rpc.createTransaction,

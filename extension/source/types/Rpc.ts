@@ -145,6 +145,11 @@ export const rpcMap = {
     Params: optional(emptyTuple),
     Response: io.string,
   },
+  createTempAccount: {
+    origin: '<quill>',
+    Params: optional(emptyTuple),
+    Response: io.type({ address: io.string, privateKey: io.string }),
+  },
   setHDPhrase: {
     origin: '<quill>',
     Params: io.tuple([io.string]),
@@ -163,6 +168,11 @@ export const rpcMap = {
   removeAccount: {
     origin: '<quill>',
     Params: io.tuple([io.string]),
+    Response: io.void,
+  },
+  addRecoveryWallet: {
+    origin: '<quill>',
+    Params: io.tuple([io.string, io.string, io.string]),
     Response: io.void,
   },
 
