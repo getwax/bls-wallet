@@ -18,6 +18,7 @@ import {
   MockERC20__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
+import { UncheckedBlsSigner } from "../clients/src/BlsSigner";
 
 let networkConfig: NetworkConfig;
 let signers: SignerWithAddress[];
@@ -363,6 +364,138 @@ describe("BlsSigner", () => {
     // Assert
     expect(signedMessage).to.deep.equal(expectedSignature);
     expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+  });
+
+  it("should connect to an unchecked bls signer", () => {
+    // Arrange & Act
+    const uncheckedBlsSigner = blsSigner.connectUnchecked();
+
+    // Assert
+    expect(uncheckedBlsSigner._isSigner).to.be.true;
+    expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
+  });
+
+  it("should await the init promise when connecting to an unchecked bls signer", async () => {
+    // Arrange & Act
+    // random private key
+    const newPrivateKey =
+      "0x35b5fe04e9c24433f0489e241c2678f429f226a4b8da520695631bb7af12d4f9";
+    const newBlsSigner = blsProvider.getSigner(newPrivateKey);
+    const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
+
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      value: transactionAmount,
+      to: recipient,
+    };
+    const balanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
+      transaction,
+    );
+    await uncheckedResponse.wait();
+
+    // Assert
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
+  });
+
+  // TODO (merge-ok) https://github.com/web3well/bls-wallet/issues/427
+  // This test is identical to the above test except this one uses a new instance of a provider, yet fails to find the tx receipt
+  it.skip("should get the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
+    // Arrange & Act
+    const newBlsProvider = new Experimental.BlsProvider(
+      aggregatorUrl,
+      verificationGateway,
+      rpcUrl,
+      network,
+    );
+    // random private key
+    const newPrivateKey =
+      "0x35b5fe04e9c24433f0489e241c2678f429f226a4b8da520695631bb7af12d4f9";
+    const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
+    const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
+
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      value: transactionAmount,
+      to: recipient,
+    };
+    const balanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
+      transaction,
+    );
+    await uncheckedResponse.wait();
+
+    // Assert
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
+  });
+
+  it("should send ETH (empty call) via an unchecked transaction", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      value: transactionAmount,
+      to: recipient,
+    };
+    const balanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const uncheckedTransactionHash = await blsSigner.sendUncheckedTransaction(
+      transaction,
+    );
+    await blsProvider.getTransactionReceipt(uncheckedTransactionHash);
+
+    // Assert
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
+  });
+
+  it("should send ETH (empty call) using an unchecked bls signer", async () => {
+    // Arrange
+    const uncheckedBlsSigner = blsSigner.connectUnchecked();
+
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const transaction = {
+      value: transactionAmount,
+      to: recipient,
+    };
+    const balanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
+      transaction,
+    );
+    await uncheckedResponse.wait();
+
+    // Assert
+    expect(uncheckedResponse).to.be.an("object").that.includes({
+      hash: uncheckedResponse.hash,
+      nonce: 1,
+      data: "",
+      chainId: 0,
+      confirmations: 0,
+      from: "",
+    });
+
+    expect(uncheckedResponse.gasLimit).to.equal(BigNumber.from("0"));
+    expect(uncheckedResponse.gasPrice).to.equal(BigNumber.from("0"));
+    expect(uncheckedResponse.value).to.equal(BigNumber.from("0"));
+
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
   });
 
   it("should get the balance of an account", async () => {

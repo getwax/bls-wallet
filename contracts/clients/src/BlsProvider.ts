@@ -3,7 +3,7 @@ import { parseEther, Deferrable } from "ethers/lib/utils";
 
 import { ActionDataDto, BundleDto } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
-import BlsSigner, { _constructorGuard } from "./BlsSigner";
+import BlsSigner, { UncheckedBlsSigner, _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
@@ -94,6 +94,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
     this.signer = signer;
     return signer;
+  }
+
+  override getUncheckedSigner(
+    privateKey: string,
+    addressOrIndex?: string,
+  ): UncheckedBlsSigner {
+    return this.getSigner(privateKey, addressOrIndex).connectUnchecked();
   }
 
   override async getTransactionReceipt(
