@@ -50,7 +50,6 @@ jobs:
       run: yarn test-integration
 
     - uses: actions/upload-artifact@v3
-      working-directory: ./aggregator
       with:
         name: aggregator-logs
-        path: ./aggLogs.txt
+        path: ./aggregator/aggLogs.txt
