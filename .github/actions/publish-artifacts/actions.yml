@@ -1,0 +1,16 @@
+name: Public Artifacts
+description: publishs aggregator logs
+
+runs:
+  using: composite
+  steps:
+  - shell: bash
+  - uses: actions/checkout@v2
+  - run: mkdir -p artifacts/aggregator
+
+  - run: echo hello > artifacts/aggregator/aggLogs.txt
+
+  - uses: actions/upload-artifact@v3
+    with:
+      name: aggregator-logs
+      path: artifacts/aggregator/aggLogs.txt
