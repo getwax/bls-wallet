@@ -48,3 +48,6 @@ jobs:
     # run integration tests
     - working-directory: ./contracts
       run: yarn test-integration
+      
+    # print logs
+    - uses: ./.github/actions/upload-artifact

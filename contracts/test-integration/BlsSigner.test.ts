@@ -107,7 +107,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should send ETH (empty call) successfully", async () => {
+  it.only("should send ETH (empty call) successfully", async () => {
     // Arrange
     const recipient = signers[1].address;
     const expectedBalance = parseEther("1");
