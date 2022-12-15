@@ -1,11 +1,16 @@
-steps:
-- uses: actions/checkout@v2
+name: save artifacts
+description: saves logs to artifact
 
-- run: mkdir -p artifacts/aggregator
+runs:
+  using: composite
+  steps:
+  - uses: actions/checkout@v2
 
-- run: echo test > artifacts/aggregator/aggLogs.txt
+  - run: mkdir -p artifacts/aggregator
 
-- uses: actions/upload-artifact@v3
-  with:
-    name: aggregator-logs
-    path: artifacts/aggregator/aggLogs.txt
+  - run: echo test > artifacts/aggregator/aggLogs.txt
+
+  - uses: actions/upload-artifact@v3
+    with:
+      name: aggregator-logs
+      path: artifacts/aggregator/aggLogs.txt
