@@ -25,9 +25,23 @@ Exposes typed functions for interacting with the Aggregator's HTTP API.
 ```ts
 import { Aggregator } from 'bls-wallet-clients';
 
-const aggregator = new Aggregator('https://rinkarby.blswallet.org');
+const aggregator = new Aggregator('https://arbitrum-goerli.blswallet.org');
+const resp = await aggregator.add(bundle); // See BlsWalletWrapper section below
+// Aggregator did not accept bundle
+if ("failures" in resp) {
+  throw new Error(resp.failures.join(", "));
+}
 
-await aggregator.add(...);
+let receipt;
+while (!receipt) {
+  receipt = await aggregator.lookupReceipt(resp.hash);
+  // There was an issue submitting the bundle on chain
+  if (receipt && "submitError" in receipt) {
+    throw new Error(receipt.submitError);
+  }
+  // Some function which waits i.e. setTimeout
+  await sleep(5000);
+}
 ```
 
 ## BlsWalletWrapper

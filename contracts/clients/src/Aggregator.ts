@@ -34,6 +34,10 @@ export type EstimateFeeResponse = {
   successes: boolean[];
 };
 
+export type BundleReceiptError = {
+  submitError: string | undefined;
+};
+
 export type BundleReceipt = {
   transactionIndex: number;
   transactionHash: string;
@@ -42,9 +46,19 @@ export type BundleReceipt = {
   blockNumber: number;
 };
 
+/**
+ * Client used to interact with a BLS Wallet Aggregator instance
+ */
 export default class Aggregator {
+  // Fetch implementation to use
+  private readonly fetchImpl;
   origin: string;
 
+  /**
+   * Constructs an Aggregator object
+   *
+   * @param url URL of the aggregator instance
+   */
   constructor(url: string) {
     const parsedUrl = new URL(url);
 
@@ -53,8 +67,16 @@ export default class Aggregator {
     }
 
     this.origin = new URL(url).origin;
+    // Prefer runtime's imeplmentation of fetch over node-fetch
+    this.fetchImpl = globalThis.fetch ?? fetch;
   }
 
+  /**
+   * Sends a bundle to the aggregator
+   *
+   * @param bundle Bundle to send
+   * @returns The hash of the bundle or an array of failures if the aggregator did not accept the bundle
+   */
   async add(
     bundle: Bundle,
   ): Promise<{ hash: string } | { failures: TransactionFailure[] }> {
@@ -71,24 +93,36 @@ export default class Aggregator {
     return json;
   }
 
+  /**
+   * Estimates the fee required for a bundle by the aggreagtor to submit it.
+   *
+   * @param bundle Bundle to estimates the fee for
+   * @returns Estimate of the fee needed to submit the bundle
+   */
   async estimateFee(bundle: Bundle): Promise<EstimateFeeResponse> {
     const result = await this.jsonPost("/estimateFee", bundleToDto(bundle));
 
     return result as EstimateFeeResponse;
   }
 
-  async lookupReceipt(hash: string): Promise<BundleReceipt | undefined> {
-    const response = await fetch(`${this.origin}/bundleReceipt/${hash}`);
-
-    if (response.status === 404) {
-      return undefined;
-    }
-
-    return await response.json();
+  /**
+   * Looks for a transaction receipt for a Bundle sent to the aggregator.
+   * This will return undefined if the bundle has not yet been submitted by the aggregator.
+   *
+   * @param hash Hash of the bundle to find a transaction receipt for.
+   * @returns The bundle receipt, a submission error if the aggregator was unable to submit the bundle on chain, or undefined if the receipt was not found.
+   */
+  async lookupReceipt(
+    hash: string,
+  ): Promise<BundleReceipt | BundleReceiptError | undefined> {
+    return this.jsonGet<BundleReceipt | BundleReceiptError>(
+      `${this.origin}/bundleReceipt/${hash}`,
+    );
   }
 
+  // Note: This should be private instead of exposed. Leaving as is for compatibility.
   async jsonPost(path: string, body: unknown): Promise<unknown> {
-    const resp = await fetch(`${this.origin}${path}`, {
+    const resp = await this.fetchImpl(`${this.origin}${path}`, {
       method: "POST",
       body: JSON.stringify(body),
       headers: {
@@ -107,5 +141,17 @@ export default class Aggregator {
     }
 
     return json;
+  }
+
+  private async jsonGet<T>(path: string): Promise<T | undefined> {
+    const resp = await this.fetchImpl(path);
+    const json = await resp.json();
+
+    const isValidNonEmptyJson = json && Object.keys(json).length;
+    if (isValidNonEmptyJson) {
+      return json as T;
+    }
+
+    return undefined;
   }
 }

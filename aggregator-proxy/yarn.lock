@@ -452,9 +452,6 @@
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/@ethersproject/rlp/-/rlp-5.5.0.tgz#530f4f608f9ca9d4f89c24ab95db58ab56ab99a0"
   integrity sha512-hLv8XaQ8PTI9g2RHoQGf/WSxBfTB/NudRacbzdxmst5VHAqd1sMibWG7SENzT5Dj3yZ3kJYx+WiRYEcQTAkcYA==
-  dependencies:
-    "@ethersproject/bytes" "^5.5.0"
-    "@ethersproject/logger" "^5.5.0"
 
 "@ethersproject/rlp@5.6.0", "@ethersproject/rlp@^5.5.0", "@ethersproject/rlp@^5.6.0":
   version "5.6.0"
@@ -885,13 +882,14 @@ bech32@1.1.4:
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
 
-bls-wallet-clients@0.8.0-56f33ec:
-  version "0.8.0-56f33ec"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.8.0-56f33ec.tgz#a0ed67df429c6c1d39ddd272accfb7087c5e6613"
-  integrity sha512-uHKV4ep+K2MqArNsarM1nRCQwls5DymUSyZcLh5WWJAQM1Ht9hwBv5Hjti/TXqP3MEw3HsZZPvBwZKvFx33hEA==
+bls-wallet-clients@0.8.1-758c7c4:
+  version "0.8.1-758c7c4"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.8.1-758c7c4.tgz#1366b8c704912bdacc933c44061a3198dec80ec5"
+  integrity sha512-bvI0BJVKZow1y/0BDmhFSlr3ScQQDofUX+6J+BB9pLMu2WIQogmfpLqHsH5oOOq+RQbR/ivNoknR+YU4Un0HRQ==
   dependencies:
     "@thehubbleproject/bls" "^0.5.1"
     ethers "5.5.4"
+    node-fetch "2.6.7"
 
 bn.js@^4.11.9:
   version "4.12.0"
@@ -1352,7 +1350,7 @@ negotiator@0.6.3:
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.3.tgz#58e323a72fedc0d6f9cd4d31fe49f51479590ccd"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
 
-node-fetch@2:
+node-fetch@2, node-fetch@2.6.7:
   version "2.6.7"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.7.tgz#24de9fba827e3b4ae44dc8b20256a379160052ad"
   integrity sha512-ZjMPFEfVx5j+y2yF35Kzx5sF7kDzxuDj6ziH4FFbOp87zKDZNx8yExJIb05OGF4Nlt9IHFIMBkRl41VdvcNdbQ==
