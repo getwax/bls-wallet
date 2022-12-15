@@ -49,4 +49,8 @@ jobs:
     - working-directory: ./contracts
       run: yarn test-integration
 
-    # - uses: ./.github/actions/publish-artifacts
+    - uses: actions/upload-artifact@v3
+      working-directory: ./aggregator
+      with:
+        name: aggregator-logs
+        path: ./aggLogs.txt
