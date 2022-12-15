@@ -2,7 +2,7 @@
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import spies from "chai-spies";
-import { ethers } from "ethers";
+import { ethers, BigNumber } from "ethers";
 import { parseEther, formatEther, id } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -13,6 +13,7 @@ import {
   NetworkConfig,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
+import BlsSigner, { UncheckedBlsSigner } from "../clients/src/BlsSigner";
 
 // TODO: bls-wallet 414 Setup integration tests for BlsProvider & BlsSigner
 // Can this be put in a test config/init file?
@@ -72,12 +73,22 @@ describe("BlsProvider", () => {
     });
   });
 
-  it("should return a valid signer", async () => {
+  it("should return a valid signer", () => {
     // Arrange & Act
     const blsSigner = blsProvider.getSigner(privateKey);
 
     // Assert
     expect(blsSigner._isSigner).to.be.true;
+    expect(blsSigner).to.be.instanceOf(BlsSigner);
+  });
+
+  it("should return a valid unchecked bls signer", () => {
+    // Arrange & Act
+    const uncheckedBlsSigner = blsProvider.getUncheckedSigner(privateKey);
+
+    // Assert
+    expect(uncheckedBlsSigner._isSigner).to.be.true;
+    expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
   });
 
   it("should return a new signer if one has not been instantiated", async () => {
@@ -327,9 +338,9 @@ describe("BlsProvider", () => {
       type: 2,
     });
 
-    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
+    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(BigNumber.from("0"));
 
     expect(transactionReceipt).to.include.keys(
       "transactionIndex",
@@ -365,9 +376,9 @@ describe("BlsProvider", () => {
       type: 2,
     });
 
-    expect(transactionReceipt.gasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(parseEther("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(parseEther("0"));
+    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.cumulativeGasUsed).to.equal(BigNumber.from("0"));
+    expect(transactionReceipt.effectiveGasPrice).to.equal(BigNumber.from("0"));
 
     expect(transactionReceipt).to.include.keys(
       "transactionIndex",
@@ -430,6 +441,60 @@ describe("BlsProvider", () => {
       "maxFeePerGas",
       "wait",
     );
+  });
+
+  it("should return the connection info for the provider", () => {
+    // Arrange
+    const expectedConnection = regularProvider.connection;
+
+    // Act
+    const connection = blsProvider.connection;
+
+    // Assert
+    expect(connection).to.deep.equal(expectedConnection);
+  });
+
+  it("should return the list of accounts managed by the provider", async () => {
+    // Arrange
+    const expectedAccounts = await regularProvider.listAccounts();
+
+    // Act
+    const accounts = await blsProvider.listAccounts();
+
+    // Assert
+    expect(accounts).to.deep.equal(expectedAccounts);
+  });
+
+  it("should send an rpc request to the provider", async () => {
+    // Arrange
+    const expectedBlockNumber = await regularProvider.send(
+      "eth_blockNumber",
+      [],
+    );
+    const expectedChainId = await regularProvider.send("eth_chainId", []);
+    const expectedAccounts = await regularProvider.send("eth_accounts", []);
+
+    const recipient = signers[1].address;
+    const transactionAmount = parseEther("1");
+    const hexTx = ethers.providers.JsonRpcProvider.hexlifyTransaction({
+      to: recipient,
+      value: transactionAmount,
+    });
+    const balanceBefore = await regularProvider.getBalance(recipient);
+
+    // Act
+    const blockNumber = await blsProvider.send("eth_blockNumber", []);
+    const chainId = await blsProvider.send("eth_chainId", []);
+    const accounts = await blsProvider.send("eth_accounts", []);
+    await blsProvider.send("eth_sendTransaction", [hexTx]);
+
+    // Assert
+    expect(blockNumber).to.equal(expectedBlockNumber);
+    expect(chainId).to.equal(expectedChainId);
+    expect(accounts).to.deep.equal(expectedAccounts);
+    expect(
+      (await regularProvider.getBalance(signers[1].address)).sub(balanceBefore),
+    ).to.equal(transactionAmount);
   });
 });
 
