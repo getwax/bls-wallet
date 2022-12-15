@@ -35,7 +35,7 @@ let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 let regularProvider: ethers.providers.JsonRpcProvider;
 let regularSigner: ethers.providers.JsonRpcSigner;
 
-describe.only("BlsSigner", () => {
+describe("BlsSigner", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
     signers = await hardhatEthers.getSigners();
@@ -107,7 +107,7 @@ describe.only("BlsSigner", () => {
     );
   });
 
-  it("should send ETH (empty call) successfully", async () => {
+  it.only("should send ETH (empty call) successfully", async () => {
     // Arrange
     const recipient = signers[1].address;
     const expectedBalance = parseEther("1");
