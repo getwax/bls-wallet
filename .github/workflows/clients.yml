@@ -51,7 +51,7 @@ jobs:
 
     # - name: upload artifacts
     - uses: actions/upload-artifact@v3
-    - if: always()
+      if: always()
       with:
         name: my-artifact
         path: |
