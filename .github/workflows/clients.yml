@@ -49,10 +49,11 @@ jobs:
     - working-directory: ./contracts
       run: yarn test-integration
 
-    # - name: upload artifacts
-    - if: always()
+    - name: upload artifacts
     - uses: actions/upload-artifact@v3
+    - if: always()
       with:
+        name: my-artifact
         path: |
           ./contracts/hardhatNodeLogs.txt
           ./aggregator/aggregatorLogs.txt
