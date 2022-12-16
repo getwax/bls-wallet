@@ -6,7 +6,7 @@ runs:
   steps:
     - working-directory: ./contracts
       shell: bash
-      run: yarn hardhat node >>hardhatNodeLogs.txt 2>&1 &
+      run: yarn hardhat node & >>hardhatNodeLogs.txt 2>&1
 
     - working-directory: ./contracts
       shell: bash
