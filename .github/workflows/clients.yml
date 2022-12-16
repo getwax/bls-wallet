@@ -50,8 +50,8 @@ jobs:
       run: yarn test-integration
 
     # - name: upload artifacts
-    - uses: actions/upload-artifact@v3
     - if: always()
+    - uses: actions/upload-artifact@v3
       with:
         path: |
           ./contracts/hardhatNodeLogs.txt
