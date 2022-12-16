@@ -39,17 +39,17 @@ jobs:
     - name: unit tests
     - run: yarn test
 
-    - name: run Hardhat node and deploy contracts
+    # - name: run Hardhat node and deploy contracts
     - uses: ./.github/actions/local-contract-deploy
 
-    - name: run aggregator
+    # - name: run aggregator
     - uses: ./.github/actions/local-aggregator-deploy
 
-    - name: integration tests
+    # - name: integration tests
     - working-directory: ./contracts
       run: yarn test-integration
 
-    - name: upload artifacts
+    # - name: upload artifacts
     - uses: actions/upload-artifact@v3
     - if: always()
       with:
