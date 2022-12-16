@@ -50,7 +50,7 @@ describe("BlsSigner", () => {
 
     // random private key
     privateKey =
-      "0x8f0e5883cf5dfcea371ddb4ef53f73ab1e2881ab291821547cf7034787c8572e";
+      "0xfef2e4f3849e4e6f1e0737620ab1e1656cec24692a4627fe52f93758e377869e";
 
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
