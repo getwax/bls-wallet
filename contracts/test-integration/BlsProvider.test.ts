@@ -502,6 +502,25 @@ describe("BlsProvider", () => {
       (await regularProvider.getBalance(recipient)).sub(balanceBefore),
     ).to.equal(transactionAmount);
   });
+
+  it("should send ETH (empty call) successfully", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const expectedBalance = parseEther("1");
+    const recipientBalanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const transaction = await blsSigner.sendTransaction({
+      to: recipient,
+      value: expectedBalance,
+    });
+    await transaction.wait();
+
+    // Assert
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
+    ).to.equal(expectedBalance);
+  });
 });
 
 describe("JsonRpcProvider", () => {

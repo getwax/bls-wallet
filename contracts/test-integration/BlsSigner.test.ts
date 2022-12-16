@@ -73,25 +73,6 @@ describe("BlsSigner", () => {
     });
   });
 
-  it("should send ETH (empty call) successfully", async () => {
-    // Arrange
-    const recipient = signers[1].address;
-    const expectedBalance = parseEther("1");
-    const recipientBalanceBefore = await blsProvider.getBalance(recipient);
-
-    // Act
-    const transaction = await blsSigner.sendTransaction({
-      to: recipient,
-      value: expectedBalance,
-    });
-    await transaction.wait();
-
-    // Assert
-    expect(
-      (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
-    ).to.equal(expectedBalance);
-  });
-
   it("should throw an error sending a transaction when 'transaction.to' has not been defined", async () => {
     // Arrange
     const transaction = {
