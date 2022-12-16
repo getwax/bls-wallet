@@ -124,6 +124,9 @@ export default class AggregatorController {
       const aggregator = new Aggregator(knownTx.aggregatorUrl);
 
       const bundleReceipt = await aggregator.lookupReceipt(hash);
+      if (bundleReceipt && 'submitError' in bundleReceipt) {
+        throw new Error(bundleReceipt.submitError);
+      }
 
       if (bundleReceipt) {
         this.InternalRpc().updateTransactionHashByBundleHash(
