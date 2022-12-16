@@ -36,7 +36,7 @@ jobs:
       with:
         deno-version: ${{ env.DENO_VERSION }}
     
-    - name: unit tests
+    # - name: unit tests
     - run: yarn test
 
     # - name: run Hardhat node and deploy contracts
