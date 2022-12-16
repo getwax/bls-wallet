@@ -63,7 +63,7 @@ describe("BlsSigner", () => {
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
-      "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
       regularProvider,
     );
 
@@ -71,6 +71,25 @@ describe("BlsSigner", () => {
       to: await blsSigner.getAddress(),
       value: parseEther("10"),
     });
+  });
+
+  it("should send ETH (empty call) successfully", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const expectedBalance = parseEther("1");
+    const recipientBalanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const transaction = await blsSigner.sendTransaction({
+      to: recipient,
+      value: expectedBalance,
+    });
+    await transaction.wait();
+
+    // Assert
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
+    ).to.equal(expectedBalance);
   });
 
   it("should throw an error sending a transaction when 'transaction.to' has not been defined", async () => {
@@ -96,7 +115,7 @@ describe("BlsSigner", () => {
     // Act
     const result = async () =>
       await blsSigner.sendTransaction({
-        to: signers[1].address,
+        to: signers[3].address,
         value: invalidValue,
       });
 
@@ -109,7 +128,7 @@ describe("BlsSigner", () => {
 
   it("should return a transaction response when sending a transaction", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const expectedNonce = await BlsWalletWrapper.Nonce(
       blsSigner.wallet.PublicKey(),
@@ -155,7 +174,7 @@ describe("BlsSigner", () => {
     // Act
     const result = async () =>
       await newBlsSigner.sendTransaction({
-        to: signers[1].address,
+        to: signers[3].address,
         value: parseEther("1"),
       });
 
@@ -173,7 +192,7 @@ describe("BlsSigner", () => {
     // Act
     const result = async () =>
       await newBlsSigner.sendTransaction({
-        to: signers[1].address,
+        to: signers[3].address,
         value: parseEther("1"),
       });
 
@@ -214,7 +233,7 @@ describe("BlsSigner", () => {
 
   it("should sign a transaction to create a bundleDto and serialize the result", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transaction = {
       value: "1000000000000000000",
       to: recipient,
@@ -260,7 +279,7 @@ describe("BlsSigner", () => {
 
   it("should check transaction", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       to: recipient,
@@ -281,12 +300,17 @@ describe("BlsSigner", () => {
 
   it("should populate transaction", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       to: recipient,
       value: transactionAmount,
     };
+    const nonce = await BlsWalletWrapper.Nonce(
+      blsSigner.wallet.PublicKey(),
+      verificationGateway,
+      blsSigner,
+    );
 
     // Act
     const result = await blsSigner.populateTransaction(transaction);
@@ -297,7 +321,7 @@ describe("BlsSigner", () => {
       value: transactionAmount,
       from: blsSigner.wallet.address,
       type: 2,
-      nonce: 1,
+      nonce,
       chainId: 31337,
     });
 
@@ -310,7 +334,7 @@ describe("BlsSigner", () => {
 
   it("should sign message of type string", async () => {
     // Arrange
-    const address = signers[1].address;
+    const address = signers[3].address;
     const blsWalletSignerSignature =
       blsSigner.wallet.blsWalletSigner.signMessage(
         address,
@@ -364,7 +388,7 @@ describe("BlsSigner", () => {
     const newBlsSigner = blsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       value: transactionAmount,
@@ -400,7 +424,7 @@ describe("BlsSigner", () => {
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       value: transactionAmount,
@@ -422,7 +446,7 @@ describe("BlsSigner", () => {
 
   it("should send ETH (empty call) via an unchecked transaction", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       value: transactionAmount,
@@ -446,7 +470,7 @@ describe("BlsSigner", () => {
     // Arrange
     const uncheckedBlsSigner = blsSigner.connectUnchecked();
 
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       value: transactionAmount,
@@ -584,7 +608,7 @@ describe("BlsSigner", () => {
     const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");
 
     const transaction = {
-      to: signers[1].address,
+      to: signers[3].address,
       value: parseEther("1"),
       // Explicitly omit 'from'
     };
@@ -596,7 +620,7 @@ describe("BlsSigner", () => {
     await expect(gasEstimate()).to.not.be.rejected;
     expect(spy).to.have.been.called.once;
     expect(spy).to.have.been.called.with({
-      to: signers[1].address,
+      to: signers[3].address,
       value: parseEther("1"),
       from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
     });
@@ -661,7 +685,7 @@ describe("JsonRpcSigner", () => {
 
   it("should send ETH (empty call) successfully", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const expectedBalance = parseEther("1");
     const recipientBalanceBefore = await regularProvider.getBalance(recipient);
 
@@ -680,7 +704,7 @@ describe("JsonRpcSigner", () => {
 
   it("should check transaction", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       to: recipient,
@@ -703,7 +727,7 @@ describe("JsonRpcSigner", () => {
 
   it("should populate transaction", async () => {
     // Arrange
-    const recipient = signers[1].address;
+    const recipient = signers[3].address;
     const transactionAmount = parseEther("1");
     const transaction = {
       to: recipient,
