@@ -52,8 +52,6 @@ describe("BlsSigner", () => {
     privateKey =
       "0xfef2e4f3849e4e6f1e0737620ab1e1656cec24692a4627fe52f93758e377869e";
 
-    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
@@ -61,6 +59,8 @@ describe("BlsSigner", () => {
       network,
     );
     blsSigner = blsProvider.getSigner(privateKey);
+
+    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
       "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
@@ -71,6 +71,25 @@ describe("BlsSigner", () => {
       to: await blsSigner.getAddress(),
       value: parseEther("1"),
     });
+  });
+
+  it("should send ETH (empty call) successfully", async () => {
+    // Arrange
+    const recipient = signers[1].address;
+    const expectedBalance = parseEther("1");
+    const recipientBalanceBefore = await blsProvider.getBalance(recipient);
+
+    // Act
+    const transaction = await blsSigner.sendTransaction({
+      to: recipient,
+      value: expectedBalance,
+    });
+    await transaction.wait();
+
+    // Assert
+    expect(
+      (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
+    ).to.equal(expectedBalance);
   });
 
   it("should throw an error sending a transaction when 'transaction.to' has not been defined", async () => {
@@ -105,25 +124,6 @@ describe("BlsSigner", () => {
       Error,
       '[{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix"},{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5"}]',
     );
-  });
-
-  it("should send ETH (empty call) successfully", async () => {
-    // Arrange
-    const recipient = signers[1].address;
-    const expectedBalance = parseEther("1");
-    const recipientBalanceBefore = await blsProvider.getBalance(recipient);
-
-    // Act
-    const transaction = await blsSigner.sendTransaction({
-      to: recipient,
-      value: expectedBalance,
-    });
-    await transaction.wait();
-
-    // Assert
-    expect(
-      (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
-    ).to.equal(expectedBalance);
   });
 
   it("should return a transaction response when sending a transaction", async () => {

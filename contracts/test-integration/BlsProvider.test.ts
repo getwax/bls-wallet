@@ -46,9 +46,6 @@ describe("BlsProvider", () => {
     privateKey =
       "0x8f0e5883cf5dfcea371ddb4ef53f73ab1e2881ab291821547cf7034787c8572e";
 
-    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    regularSigner = regularProvider.getSigner();
-
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
@@ -56,6 +53,8 @@ describe("BlsProvider", () => {
       network,
     );
     blsSigner = blsProvider.getSigner(privateKey);
+
+    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
       "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
