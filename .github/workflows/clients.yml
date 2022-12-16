@@ -36,23 +36,23 @@ jobs:
       with:
         deno-version: ${{ env.DENO_VERSION }}
     
-    # run unit tests
+    - name: unit tests
     - run: yarn test
 
-    # run Hardhat node and deploy contracts
+    - name: run Hardhat node and deploy contracts
     - uses: ./.github/actions/local-contract-deploy
 
-    # spin up aggregator instance
+    - name: run aggregator
     - uses: ./.github/actions/local-aggregator-deploy
 
-    # run integration tests
+    - name: integration tests
     - working-directory: ./contracts
       run: yarn test-integration
 
-    # upload artifacts
+    - name: upload artifacts
+    - if: always()
     - uses: actions/upload-artifact@v3
       with:
-        name: integration-test-logs
         path: |
           ./contracts/hardhatNodeLogs.txt
           ./aggregator/aggregatorLogs.txt
