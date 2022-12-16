@@ -49,7 +49,11 @@ jobs:
     - working-directory: ./contracts
       run: yarn test-integration
 
+    # upload artifacts
     - uses: actions/upload-artifact@v3
       with:
-        name: aggregator-logs
-        path: ./aggregator/aggLogs.txt
+        name: integration-test-logs
+        path: |
+          ./contracts/hardhatNodeLogs.txt
+          ./aggregator/aggregatorLogs.txt
+        retention-days: 5
