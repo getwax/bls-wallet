@@ -49,7 +49,7 @@ jobs:
     - working-directory: ./contracts
       run: yarn test-integration
 
-    - name: upload artifacts
+    # - name: upload artifacts
     - uses: actions/upload-artifact@v3
     - if: always()
       with:
