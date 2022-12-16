@@ -69,7 +69,7 @@ describe("BlsSigner", () => {
 
     await fundedWallet.sendTransaction({
       to: await blsSigner.getAddress(),
-      value: parseEther("1"),
+      value: parseEther("10"),
     });
   });
 

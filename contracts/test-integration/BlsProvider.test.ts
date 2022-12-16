@@ -63,7 +63,7 @@ describe("BlsProvider", () => {
 
     await fundedWallet.sendTransaction({
       to: await blsSigner.getAddress(),
-      value: parseEther("1"),
+      value: parseEther("10"),
     });
   });
 
@@ -245,7 +245,7 @@ describe("BlsProvider", () => {
       network,
     );
     const signedTransaction = blsSigner.signTransaction({
-      to: signers[0].address,
+      to: signers[1].address,
       value: parseEther("1"),
     });
 
@@ -499,7 +499,7 @@ describe("BlsProvider", () => {
     expect(chainId).to.equal(expectedChainId);
     expect(accounts).to.deep.equal(expectedAccounts);
     expect(
-      (await regularProvider.getBalance(signers[1].address)).sub(balanceBefore),
+      (await regularProvider.getBalance(recipient)).sub(balanceBefore),
     ).to.equal(transactionAmount);
   });
 });
