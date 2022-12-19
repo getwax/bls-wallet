@@ -20,12 +20,10 @@ function getRandomSigners(numSigners: number) {
 describe("Signer tests", async function () {
   let fundedSigners;
   let signers;
-  let provider;
 
   this.beforeAll(async function () {
     fundedSigners = await ethers.getSigners();
     signers = getRandomSigners(5);
-    provider = ethers.provider;
 
     const fundSigner = async (signer) => {
       const tx = await fundedSigners[0].sendTransaction({
