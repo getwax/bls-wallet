@@ -43,23 +43,6 @@ describe("Signer tests", async function () {
     );
   });
 
-  it("Test a send ETH transaction", async function () {
-    const walletBalanceBefore = await provider.getBalance(
-      await signers[1].getAddress(),
-    );
-    const ethToTransfer = parseEther("0.0001");
-
-    await signers[0].sendTransaction({
-      to: await signers[1].getAddress(),
-      value: ethToTransfer,
-    });
-
-    const walletBalanceAfter = await provider.getBalance(
-      await signers[1].getAddress(),
-    );
-    expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
-  });
-
   describe("ERC20", async function () {
     let mockERC20;
     let tokenSupply;
@@ -84,7 +67,7 @@ describe("Signer tests", async function () {
       );
       expect(initialBalance).to.equal(0);
 
-      // Send mockERC20 to the signer one
+      // Send mockERC20 to signer one
       await mockERC20
         .connect(signers[0])
         .transfer(await signers[1].getAddress(), tokenSupply.div(2));
@@ -104,10 +87,7 @@ describe("Signer tests", async function () {
 
       const txApprove = await mockERC20
         .connect(signers[0])
-        .approve(
-          await signers[1].getAddress(),
-          ethers.BigNumber.from(10).pow(18).mul(11),
-        );
+        .approve(await signers[1].getAddress(), erc20ToTransfer);
       txApprove.wait();
 
       const txTransferFrom = await mockERC20
@@ -115,7 +95,7 @@ describe("Signer tests", async function () {
         .transferFrom(
           await signers[0].getAddress(),
           await signers[1].getAddress(),
-          ethers.BigNumber.from(10).pow(18).mul(11),
+          erc20ToTransfer,
         );
       txTransferFrom.wait();
 
