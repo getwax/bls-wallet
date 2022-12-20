@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+import nodeFetch from "node-fetch";
 import { Bundle, bundleToDto } from "./signer";
 
 // TODO: Rename to BundleFailure?
@@ -68,7 +68,7 @@ export default class Aggregator {
 
     this.origin = new URL(url).origin;
     // Prefer runtime's imeplmentation of fetch over node-fetch
-    this.fetchImpl = "fetch" in globalThis ? fetch.bind(globalThis) : fetch;
+    this.fetchImpl = "fetch" in globalThis ? fetch.bind(globalThis) : nodeFetch;
   }
 
   /**
@@ -145,8 +145,12 @@ export default class Aggregator {
 
   private async jsonGet<T>(path: string): Promise<T | undefined> {
     const resp = await this.fetchImpl(path);
-    const json = await resp.json();
+    const respText = await resp.text();
+    if (!respText) {
+      return undefined;
+    }
 
+    const json = JSON.parse(respText);
     const isValidNonEmptyJson = json && Object.keys(json).length;
     if (isValidNonEmptyJson) {
       return json as T;
