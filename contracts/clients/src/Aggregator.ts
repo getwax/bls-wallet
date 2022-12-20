@@ -68,7 +68,7 @@ export default class Aggregator {
 
     this.origin = new URL(url).origin;
     // Prefer runtime's imeplmentation of fetch over node-fetch
-    this.fetchImpl = globalThis.fetch ?? fetch;
+    this.fetchImpl = "fetch" in globalThis ? fetch.bind(globalThis) : fetch;
   }
 
   /**
