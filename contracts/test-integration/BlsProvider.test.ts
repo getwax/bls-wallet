@@ -1,9 +1,7 @@
 /* eslint-disable camelcase */
-import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
 import { parseEther, formatEther, id } from "ethers/lib/utils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
   Experimental,
@@ -15,7 +13,6 @@ import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 import BlsSigner, { UncheckedBlsSigner } from "../clients/src/BlsSigner";
 
 let networkConfig: NetworkConfig;
-let signers: SignerWithAddress[];
 
 let aggregatorUrl: string;
 let verificationGateway: string;
@@ -32,7 +29,6 @@ let regularSigner: ethers.providers.JsonRpcSigner;
 describe("BlsProvider", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
-    signers = await hardhatEthers.getSigners();
 
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = networkConfig.addresses.verificationGateway;
@@ -42,9 +38,7 @@ describe("BlsProvider", () => {
       chainId: 0x7a69,
     };
 
-    // random private key
-    privateKey =
-      "0x8f0e5883cf5dfcea371ddb4ef53f73ab1e2881ab291821547cf7034787c8572e";
+    privateKey = ethers.Wallet.createRandom().privateKey;
 
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
@@ -95,9 +89,7 @@ describe("BlsProvider", () => {
     );
 
     // Act
-    // random private key
-    const newPrivateKey =
-      "0xe9a7000c19ed2a79122feeda76640e43afe6da9789f6126e54ec55e769d33711";
+    const newPrivateKey = ethers.Wallet.createRandom().privateKey;
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
 
     // Assert
@@ -128,7 +120,7 @@ describe("BlsProvider", () => {
   // TODO: bls-wallet #410 estimate gas for a transaction
   it("should estimate gas without throwing an error", async () => {
     // Arrange
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
     const transactionRequest = {
       to: recipient,
@@ -152,7 +144,7 @@ describe("BlsProvider", () => {
       network,
     );
 
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const value = parseEther("1");
     const transactionRequest = {
       to: recipient,
@@ -188,7 +180,7 @@ describe("BlsProvider", () => {
 
   it("should send ETH (empty call) successfully", async () => {
     // Arrange
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const expectedBalance = parseEther("1");
     const recipientBalanceBefore = await blsProvider.getBalance(recipient);
 
@@ -207,7 +199,7 @@ describe("BlsProvider", () => {
 
   it("should send ETH (empty call) given a valid bundle successfully", async () => {
     // Arrange
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const expectedBalance = parseEther("1");
     const balanceBefore = await blsProvider.getBalance(recipient);
 
@@ -234,7 +226,7 @@ describe("BlsProvider", () => {
   it("should get the account nonce when the signer constructs the transaction response", async () => {
     // Arrange
     const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const expectedBalance = parseEther("1");
 
     const unsignedTransaction = {
@@ -264,7 +256,7 @@ describe("BlsProvider", () => {
       network,
     );
     const signedTransaction = blsSigner.signTransaction({
-      to: signers[3].address,
+      to: ethers.Wallet.createRandom().address,
       value: parseEther("1"),
     });
 
@@ -285,7 +277,7 @@ describe("BlsProvider", () => {
 
     const unsignedTransaction = {
       value: invalidEthValue,
-      to: signers[3].address,
+      to: ethers.Wallet.createRandom().address,
       data: "0x",
     };
     const signedTransaction = await blsSigner.signTransaction(
@@ -325,7 +317,7 @@ describe("BlsProvider", () => {
 
   it("should wait for a transaction and resolve once transaction hash is included in the block", async () => {
     // Arrange
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const transactionResponse = await blsSigner.sendTransaction({
       to: recipient,
       value: parseEther("1"),
@@ -365,7 +357,7 @@ describe("BlsProvider", () => {
 
   it("should retrieve a transaction receipt given a valid hash", async () => {
     // Arrange
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const transactionResponse = await blsSigner.sendTransaction({
       to: recipient,
       value: parseEther("1"),
@@ -403,7 +395,7 @@ describe("BlsProvider", () => {
 
   it("gets a transaction given a valid transaction hash", async () => {
     // Arrange
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
     const transactionRequest = {
       to: recipient,
@@ -499,7 +491,7 @@ describe("BlsProvider", () => {
     const expectedChainId = await regularProvider.send("eth_chainId", []);
     const expectedAccounts = await regularProvider.send("eth_accounts", []);
 
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
     const hexTx = ethers.providers.JsonRpcProvider.hexlifyTransaction({
       to: recipient,
@@ -525,7 +517,6 @@ describe("BlsProvider", () => {
 
 describe("JsonRpcProvider", () => {
   beforeEach(async () => {
-    signers = await hardhatEthers.getSigners();
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     regularSigner = regularProvider.getSigner();
@@ -553,7 +544,7 @@ describe("JsonRpcProvider", () => {
 
   it("gets a transaction given a valid transaction hash", async () => {
     // Arrange
-    const recipient = signers[3].address;
+    const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
     const transactionRequest = {
       to: recipient,
