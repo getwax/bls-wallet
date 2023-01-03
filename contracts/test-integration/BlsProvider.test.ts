@@ -178,25 +178,6 @@ describe("BlsProvider", () => {
     );
   });
 
-  it("should send ETH (empty call) successfully", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const expectedBalance = parseEther("1");
-    const recipientBalanceBefore = await blsProvider.getBalance(recipient);
-
-    // Act
-    const transaction = await blsSigner.sendTransaction({
-      to: recipient,
-      value: expectedBalance,
-    });
-    await transaction.wait();
-
-    // Assert
-    expect(
-      (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
-    ).to.equal(expectedBalance);
-  });
-
   it("should send ETH (empty call) given a valid bundle successfully", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
