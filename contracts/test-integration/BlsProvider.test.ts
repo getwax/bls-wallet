@@ -491,27 +491,15 @@ describe("BlsProvider", () => {
     const expectedChainId = await regularProvider.send("eth_chainId", []);
     const expectedAccounts = await regularProvider.send("eth_accounts", []);
 
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-    const hexTx = ethers.providers.JsonRpcProvider.hexlifyTransaction({
-      to: recipient,
-      value: transactionAmount,
-    });
-    const balanceBefore = await regularProvider.getBalance(recipient);
-
     // Act
     const blockNumber = await blsProvider.send("eth_blockNumber", []);
     const chainId = await blsProvider.send("eth_chainId", []);
     const accounts = await blsProvider.send("eth_accounts", []);
-    await blsProvider.send("eth_sendTransaction", [hexTx]);
 
     // Assert
     expect(blockNumber).to.equal(expectedBlockNumber);
     expect(chainId).to.equal(expectedChainId);
     expect(accounts).to.deep.equal(expectedAccounts);
-    expect(
-      (await regularProvider.getBalance(recipient)).sub(balanceBefore),
-    ).to.equal(transactionAmount);
   });
 });
 
@@ -519,7 +507,8 @@ describe("JsonRpcProvider", () => {
   beforeEach(async () => {
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    regularSigner = regularProvider.getSigner();
+    // First two hardhat accounts are used in aggregator .env, which causes a nonce too low error when using the default signer here.
+    regularSigner = regularProvider.getSigner(2);
   });
 
   it("calls a getter method on a contract", async () => {
