@@ -294,8 +294,9 @@ describe("BlsSigner", () => {
     });
   });
 
-  // This seems to pull the nonce from the aggregator instance, so skipping for now as that seems like unexpected behaviour.
-  it.skip("should populate transaction", async () => {
+  // TODO: This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
+  // So will revisit this and ensure the method is using the correct nonce at a later stage.
+  it("should populate transaction", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
@@ -303,11 +304,6 @@ describe("BlsSigner", () => {
       to: recipient,
       value: transactionAmount,
     };
-    const nonce = await BlsWalletWrapper.Nonce(
-      blsSigner.wallet.PublicKey(),
-      verificationGateway,
-      blsSigner,
-    );
 
     // Act
     const result = await blsSigner.populateTransaction(transaction);
@@ -318,7 +314,6 @@ describe("BlsSigner", () => {
       value: transactionAmount,
       from: blsSigner.wallet.address,
       type: 2,
-      nonce,
       chainId: 31337,
     });
 
@@ -326,6 +321,7 @@ describe("BlsSigner", () => {
       "maxFeePerGas",
       "maxPriorityFeePerGas",
       "gasLimit",
+      "nonce",
     );
   });
 
