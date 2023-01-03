@@ -7,6 +7,7 @@ import {
   RLP,
   formatEther,
 } from "ethers/lib/utils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 import {
   Experimental,
@@ -18,7 +19,6 @@ import {
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 import { UncheckedBlsSigner } from "../clients/src/BlsSigner";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 let networkConfig: NetworkConfig;
 
