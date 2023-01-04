@@ -6,24 +6,30 @@ import {
   errorSelectors,
 } from "../src/OperationResults";
 
-const encodeErrorResult = (
+const encodeErrorResultFromEncodedMessage = (
   actionIndex: number,
   actionErrorSelector: string,
-  message?: string,
-  encodedMessage?: string,
+  encodedMessage: string,
 ): string => {
-  if (!message && !encodedMessage) {
-    throw new Error("message or encodedMessage required");
-  }
-
-  const errorMessage =
-    encodedMessage ?? utils.defaultAbiCoder.encode(["string"], [message]);
-  const actionErrorData = `${actionErrorSelector}${errorMessage.slice(2)}`;
+  const actionErrorData = `${actionErrorSelector}${encodedMessage.slice(2)}`; // remove 0x
   const encodedErrorMessage = utils.defaultAbiCoder.encode(
     ["uint256", "bytes"],
     [actionIndex, actionErrorData],
   );
-  return `${errorSelectors.ActionError}${encodedErrorMessage.slice(2)}`;
+  return `${errorSelectors.ActionError}${encodedErrorMessage.slice(2)}`; // remove 0x
+};
+
+const encodeErrorResult = (
+  actionIndex: number,
+  actionErrorSelector: string,
+  message: string,
+): string => {
+  const encodedMessage = utils.defaultAbiCoder.encode(["string"], [message]);
+  return encodeErrorResultFromEncodedMessage(
+    actionIndex,
+    actionErrorSelector,
+    encodedMessage,
+  );
 };
 
 describe("OperationResults", () => {
@@ -56,10 +62,9 @@ describe("OperationResults", () => {
         ["uint256"],
         [panicCode],
       );
-      const errorData = encodeErrorResult(
+      const errorData = encodeErrorResultFromEncodedMessage(
         actionIndex,
         errorSelectors.Panic,
-        undefined,
         panicActionErrorData,
       );
 
@@ -78,18 +83,15 @@ describe("OperationResults", () => {
         errorSelectors.ActionError,
         msg,
       );
-      // There is probably a better way to extract
-      // the exact hex value of the unexpected action error data.
-      const actionErrDataStart = 202;
-      const actionErrorData = errorData.slice(
-        actionErrDataStart,
-        actionErrDataStart + 200,
-      );
+      const encodedMessage = utils.defaultAbiCoder.encode(["string"], [msg]);
+      const actionErrorData = `${
+        errorSelectors.ActionError
+      }${encodedMessage.slice(2)}`; // remove 0x
 
       const { actionIndex: actionIdxBn, message } = decodeError(errorData);
       expect(actionIdxBn?.toNumber()).to.eql(actionIndex);
       expect(message).to.eql(
-        `Unexpected action error data: 0x${actionErrorData}`,
+        `Unexpected action error data: ${actionErrorData}`,
       );
     });
 
@@ -100,7 +102,7 @@ describe("OperationResults", () => {
       );
       const errorData = `${
         errorSelectors.ActionError
-      }${encodedErrorMessage.slice(2)}`;
+      }${encodedErrorMessage.slice(2)}`; // Remove 0x
 
       expect(decodeError(errorData)).to.deep.equal({
         actionIndex: undefined,
@@ -113,7 +115,7 @@ describe("OperationResults", () => {
     it("fails if no events are in transaction", () => {
       const txnReceipt = {
         transactionHash: "0x111111",
-      } as unknown as ContractReceipt;
+      } as ContractReceipt;
 
       expect(() => getOperationResults(txnReceipt)).to.throw(
         `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
@@ -125,7 +127,7 @@ describe("OperationResults", () => {
       const txnReceipt = {
         transactionHash: "0x123456",
         events: [event],
-      } as unknown as ContractReceipt;
+      } as ContractReceipt;
 
       expect(() => getOperationResults(txnReceipt)).to.throw(
         `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
@@ -136,7 +138,7 @@ describe("OperationResults", () => {
       const event = { event: "WalletOperationProcessed" };
       const txnReceipt = {
         events: [event],
-      } as unknown as ContractReceipt;
+      } as ContractReceipt;
 
       expect(() => getOperationResults(txnReceipt)).to.throw(
         "WalletOperationProcessed event missing args",
@@ -195,7 +197,7 @@ describe("OperationResults", () => {
 
       const txnReceipt = {
         events: [otherEvent, failedEvent, successfulEvent],
-      } as unknown as ContractReceipt;
+      } as ContractReceipt;
 
       const opResults = getOperationResults(txnReceipt);
       expect(opResults).to.have.lengthOf(2);

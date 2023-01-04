@@ -120,7 +120,7 @@ export const getOperationResults = (
   const walletOpProcessedEvents = txnReceipt.events?.filter(
     (e) => e.event === "WalletOperationProcessed",
   );
-  if (!walletOpProcessedEvents || !walletOpProcessedEvents.length) {
+  if (!walletOpProcessedEvents?.length) {
     throw new Error(
       `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
     );
