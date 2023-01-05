@@ -2,7 +2,7 @@ import { BigNumber, ContractReceipt, utils } from "ethers";
 import assert from "./helpers/assert";
 import { ActionData } from "./signer";
 
-const errorSelectors = {
+export const errorSelectors = {
   Error: calculateAndCheckSelector("Error(string)", "0x08c379a0"),
 
   Panic: calculateAndCheckSelector("Panic(uint256)", "0x4e487b71"),
@@ -107,19 +107,20 @@ const getError = (
   return decodeError(errorData);
 };
 
+/**
+ * Gets the results of operations (and actions) run through VerificationGateway.processBundle.
+ * Decodes unsuccessful operations into an error message and the index of the action that failed.
+ *
+ * @param transactionReceipt Transaction receipt from a VerificationGateway.processBundle transaction
+ * @returns An array of decoded operation results
+ */
 export const getOperationResults = (
   txnReceipt: ContractReceipt,
 ): OperationResult[] => {
-  if (!txnReceipt.events || !txnReceipt.events.length) {
-    throw new Error(
-      `no events found in transaction ${txnReceipt.transactionHash}`,
-    );
-  }
-
-  const walletOpProcessedEvents = txnReceipt.events.filter(
+  const walletOpProcessedEvents = txnReceipt.events?.filter(
     (e) => e.event === "WalletOperationProcessed",
   );
-  if (!walletOpProcessedEvents.length) {
+  if (!walletOpProcessedEvents?.length) {
     throw new Error(
       `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
     );

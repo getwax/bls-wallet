@@ -37,6 +37,8 @@ module.exports = {
     ],
     // TODO (merge-ok) Remove and fix lint error
     "node/no-unpublished-import": ["warn"],
+    // https://github.com/typescript-eslint/typescript-eslint/blob/main/docs/linting/TROUBLESHOOTING.md#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
+    "no-undef": "off",
   },
   overrides: [
     {
