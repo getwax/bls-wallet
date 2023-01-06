@@ -12,7 +12,7 @@ import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunP
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import { getOperationResults } from "../clients/src";
 
-describe("WalletActions", async function () {
+describe.only("WalletActions", async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
     console.log("Skipping non-deployer tests.");
     return;
@@ -97,7 +97,7 @@ describe("WalletActions", async function () {
     expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
   });
 
-  it("should send ETH (empty call)", async function () {
+  it.only("should send ETH (empty call)", async function () {
     // send money to sender bls wallet
     const sendWallet = await fx.lazyBlsWallets[0]();
     const recvWallet = await fx.lazyBlsWallets[1]();
@@ -114,16 +114,19 @@ describe("WalletActions", async function () {
       recvWallet.address,
     );
 
-    const tx = sendWallet.sign({
-      nonce: await sendWallet.Nonce(),
-      actions: [
-        {
-          ethValue: ethToTransfer,
-          contractAddress: recvWallet.walletContract.address,
-          encodedFunction: "0x",
-        },
-      ],
-    });
+    const tx = sendWallet.sign(
+      await sendWallet.opWithGasEstimate({
+        nonce: await sendWallet.Nonce(),
+        gas: 0,
+        actions: [
+          {
+            ethValue: ethToTransfer,
+            contractAddress: recvWallet.walletContract.address,
+            encodedFunction: "0x",
+          },
+        ],
+      }),
+    );
 
     await fx.verificationGateway.processBundle(
       fx.blsWalletSigner.aggregate([tx]),

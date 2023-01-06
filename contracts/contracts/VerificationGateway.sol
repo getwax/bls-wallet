@@ -296,12 +296,12 @@ contract VerificationGateway
             IWallet wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
 
             // check nonce then perform action
-            if (bundle.operations[i].nonce == wallet.nonce()) {
+            if (bundle.operations[i].nonce == wallet.nonce{gas:20000}()) {
                 // request wallet perform operation
                 (
                     bool success,
                     bytes[] memory resultSet
-                ) = wallet.performOperation(bundle.operations[i]);
+                ) = wallet.performOperation{gas:bundle.operations[i].gas}(bundle.operations[i]);
                 successes[i] = success;
                 results[i] = resultSet;
                 emit WalletOperationProcessed(
