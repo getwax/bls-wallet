@@ -3,7 +3,7 @@ import { parseEther, Deferrable } from "ethers/lib/utils";
 
 import { ActionDataDto, BundleDto } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
-import BlsSigner, { _constructorGuard } from "./BlsSigner";
+import BlsSigner, { UncheckedBlsSigner, _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
@@ -22,11 +22,12 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     this.verificationGatewayAddress = verificationGatewayAddress;
   }
 
+  // TODO: bls-wallet #410 estimate gas for a transaction
   override async estimateGas(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<BigNumber> {
     if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined.");
+      throw new TypeError("Transaction.to should be defined");
     }
 
     // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
@@ -50,7 +51,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
     // We do not want to pass the private key to this method.
     if (!this.signer) {
-      throw new Error("Call provider.getSigner first.");
+      throw new Error("Call provider.getSigner first");
     }
 
     const resolvedTransaction = await signedTransaction;
@@ -95,6 +96,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return signer;
   }
 
+  override getUncheckedSigner(
+    privateKey: string,
+    addressOrIndex?: string,
+  ): UncheckedBlsSigner {
+    return this.getSigner(privateKey, addressOrIndex).connectUnchecked();
+  }
+
   override async getTransactionReceipt(
     transactionHash: string | Promise<string>,
   ): Promise<ethers.providers.TransactionReceipt> {
@@ -132,7 +140,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
 
     if (!bundleReceipt) {
       throw new Error(
-        `Could not find bundle receipt for transaction hash: ${transactionHash}.`,
+        `Could not find bundle receipt for transaction hash: ${transactionHash}`,
       );
     }
 

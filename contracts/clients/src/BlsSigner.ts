@@ -19,7 +19,7 @@ export default class BlsSigner extends Signer {
   constructor(
     constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
-    privateKey: string,
+    privateKey: string | Promise<string>,
     readonly addressOrIndex?: string | number,
   ) {
     super();
@@ -29,7 +29,7 @@ export default class BlsSigner extends Signer {
 
     if (constructorGuard !== _constructorGuard) {
       throw new Error(
-        "do not call the BlsSigner constructor directly; use provider.getSigner.",
+        "do not call the BlsSigner constructor directly; use provider.getSigner",
       );
     }
 
@@ -45,13 +45,14 @@ export default class BlsSigner extends Signer {
       this._index = addressOrIndex;
     } else {
       throw new Error(`
-        invalid address or index. addressOrIndex: ${addressOrIndex}.`);
+        invalid address or index. addressOrIndex: ${addressOrIndex}`);
     }
   }
 
-  private async initializeWallet(privateKey: string) {
+  private async initializeWallet(privateKey: string | Promise<string>) {
+    const resolvedPrivateKey = await privateKey;
     this.wallet = await BlsWalletWrapper.connect(
-      privateKey,
+      resolvedPrivateKey,
       this.verificationGatewayAddress,
       this.provider,
     );
@@ -63,7 +64,7 @@ export default class BlsSigner extends Signer {
     await this.initPromise;
 
     if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined.");
+      throw new TypeError("Transaction.to should be defined");
     }
 
     // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
@@ -157,7 +158,7 @@ export default class BlsSigner extends Signer {
     await this.initPromise;
 
     if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined.");
+      throw new TypeError("Transaction.to should be defined");
     }
 
     const action: ActionData = {
@@ -169,7 +170,7 @@ export default class BlsSigner extends Signer {
     const nonce = await BlsWalletWrapper.Nonce(
       this.wallet.PublicKey(),
       this.verificationGatewayAddress,
-      this,
+      this.provider,
     );
 
     const bundle = this.wallet.sign({ nonce, actions: [action] });
@@ -189,7 +190,7 @@ export default class BlsSigner extends Signer {
   }
 
   override connect(provider: ethers.providers.Provider): BlsSigner {
-    throw new Error("connect() is not implemented.");
+    throw new Error("connect() is not implemented");
   }
 
   async _signTypedData(
@@ -197,20 +198,57 @@ export default class BlsSigner extends Signer {
     types: Record<string, Array<any>>,
     value: Record<string, any>,
   ): Promise<string> {
-    throw new Error("_signTypedData() is not implemented.");
+    throw new Error("_signTypedData() is not implemented");
   }
 
-  connectUnchecked(): ethers.providers.JsonRpcSigner {
-    throw new Error("connectUnchecked() is not implemented.");
+  connectUnchecked(): BlsSigner {
+    return new UncheckedBlsSigner(
+      _constructorGuard,
+      this.provider,
+      this.wallet?.privateKey ??
+        (async (): Promise<string> => {
+          await this.initPromise;
+          return this.wallet.privateKey;
+        })(),
+      this._address || this._index,
+    );
   }
 
   async sendUncheckedTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
-    throw new Error("sendUncheckedTransaction() is not implemented.");
+    const transactionResponse = await this.sendTransaction(transaction);
+    return transactionResponse.hash;
   }
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
-    throw new Error("_legacySignMessage() is not implemented.");
+    throw new Error("_legacySignMessage() is not implemented");
+  }
+}
+
+export class UncheckedBlsSigner extends BlsSigner {
+  override async sendTransaction(
+    transaction: Deferrable<ethers.providers.TransactionRequest>,
+  ): Promise<ethers.providers.TransactionResponse> {
+    await this.initPromise;
+
+    const transactionResponse = await super.sendTransaction(transaction);
+    return {
+      hash: transactionResponse.hash,
+      nonce: 1,
+      gasLimit: BigNumber.from(0),
+      gasPrice: BigNumber.from(0),
+      data: "",
+      value: BigNumber.from(0),
+      chainId: 0,
+      confirmations: 0,
+      from: "",
+      wait: (confirmations?: number) => {
+        return this.provider.waitForTransaction(
+          transactionResponse.hash,
+          confirmations,
+        );
+      },
+    };
   }
 }

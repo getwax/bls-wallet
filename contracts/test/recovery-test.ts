@@ -133,6 +133,47 @@ describe("Recovery", async function () {
     expect(await blsWallet.recoveryHash()).to.equal(newRecoveryHash);
   });
 
+  it("should recover blswallet via blswallet to new bls key", async function () {
+    // wallet1 to recover via wallet2 to key 3
+
+    // wallet 2 address is recovery address of wallet 1
+    recoveryHash = ethers.utils.solidityKeccak256(
+      ["address", "bytes32", "bytes32"],
+      [wallet2.address, hash1, salt],
+    );
+    let w1Nonce = 1;
+    await fx.call(
+      wallet1,
+      blsWallet,
+      "setRecoveryHash",
+      [recoveryHash],
+      w1Nonce++,
+    );
+
+    // key 3 signs wallet 1 address
+    const wallet3 = await fx.lazyBlsWallets[2]();
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      wallet3.privateKey,
+    );
+
+    // wallet 2 recovers wallet 1 to key 3
+    let w2Nonce = 1;
+    await fx.call(
+      wallet2,
+      vg,
+      "recoverWallet",
+      [addressSignature, hash1, salt, wallet3.PublicKey()],
+      w2Nonce++,
+    );
+
+    // don't trust, verify
+    const hash3 = wallet3.blsWalletSigner.getPublicKeyHash(wallet3.privateKey);
+    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash3);
+    expect(await vg.walletFromHash(hash3)).to.eql(wallet1.address);
+  });
+
   it("should recover before bls key update", async function () {
     let recoveredWalletNonce = 1;
     await fx.call(
