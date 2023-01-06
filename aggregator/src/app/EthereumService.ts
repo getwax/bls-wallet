@@ -368,11 +368,13 @@ export default class EthereumService {
     const previousBaseFee = block.baseFeePerGas;
     assert(previousBaseFee !== null && previousBaseFee !== nil);
 
+    const baseFeeIncrease = previousBaseFee.mul(
+      env.PREVIOUS_BASE_FEE_PERCENT_INCREASE,
+    ).div(100);
+
     return {
       maxFeePerGas: previousBaseFee
-        .add(
-          previousBaseFee.mul(env.PREVIOUS_BASE_FEE_PERCENT_INCREASE).div(100),
-        )
+        .add(baseFeeIncrease)
         .add(env.PRIORITY_FEE_PER_GAS),
       maxPriorityFeePerGas: env.PRIORITY_FEE_PER_GAS,
     };
