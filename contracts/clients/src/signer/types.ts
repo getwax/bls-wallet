@@ -8,6 +8,7 @@ export type ActionData = {
 
 export type Operation = {
   nonce: BigNumberish;
+  gas: BigNumberish;
   actions: ActionData[];
 };
 

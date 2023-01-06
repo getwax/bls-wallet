@@ -221,6 +221,20 @@ export default class BlsWalletWrapper {
     return await walletContract.nonce();
   }
 
+  /** Returns the same operation but with a gas estimate. */
+  async opWithGasEstimate(operation: Operation): Promise<Operation> {
+    const bundle = this.sign(operation);
+    operation.gas = (
+      await this.walletContract.provider.getBlock("latest")
+    ).gasLimit;
+    const gatewayAddress = await this.walletContract.trustedBLSGateway();
+    // const gatewaySigner = new VoidSigner(gatewayAddress);
+    operation.gas = await this.walletContract
+      .connect(gatewayAddress)
+      .estimateGas.performOperation(bundle.operations[0]);
+    return operation;
+  }
+
   /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
   sign(operation: Operation): Bundle {
     return this.blsWalletSigner.sign(

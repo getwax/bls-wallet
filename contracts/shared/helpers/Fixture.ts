@@ -125,6 +125,7 @@ export default class Fixture {
           await verificationGateway.processBundle(
             wallet.sign({
               nonce: BigNumber.from(0),
+              gas: 30000,
               actions: [],
             }),
           )
@@ -165,11 +166,13 @@ export default class Fixture {
     method: string,
     params: any[],
     nonce: BigNumberish,
+    gas: BigNumberish,
     ethValue: BigNumberish = 0,
   ): Bundle {
     return this.blsWalletSigner.aggregate([
       wallet.sign({
         nonce,
+        gas,
         actions: [
           {
             ethValue,
@@ -190,11 +193,12 @@ export default class Fixture {
     method: string,
     params: any[],
     nonce: BigNumberish,
+    gas: BigNumberish,
     ethValue: BigNumberish = 0,
   ) {
     await (
       await this.verificationGateway.processBundle(
-        this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+        this.bundleFrom(wallet, contract, method, params, nonce, gas, ethValue),
       )
     ).wait();
   }
@@ -205,10 +209,11 @@ export default class Fixture {
     method: string,
     params: any[],
     nonce: BigNumberish,
+    gas: BigNumberish,
     ethValue: BigNumberish = 0,
   ) {
     return await this.verificationGateway.callStatic.processBundle(
-      this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
+      this.bundleFrom(wallet, contract, method, params, nonce, gas, ethValue),
     );
   }
 
@@ -229,6 +234,7 @@ export default class Fixture {
       await this.verificationGateway.processBundle(
         wallet.sign({
           nonce: await wallet.Nonce(),
+          gas: 30000,
           actions: [],
         }),
       )
