@@ -14,6 +14,7 @@ import {
 } from "../../deps.ts";
 
 import assertExists from "../helpers/assertExists.ts";
+import ExplicitAny from "../helpers/ExplicitAny.ts";
 import { parseBundleDto } from "./parsers.ts";
 import nil from "../helpers/nil.ts";
 
@@ -24,20 +25,27 @@ import nil from "../helpers/nil.ts";
  */
 type RawRow = {
   id: number;
+  status: string;
   hash: string;
   bundle: string;
   eligibleAfter: string;
   nextEligibilityDelay: string;
   submitError: string | null;
+  receipt: string | null;
 };
+
+const BundleStatuses = ["pending", "confirmed", "failed"] as const;
+type BundleStatus = typeof BundleStatuses[number];
 
 type Row = {
   id: number;
+  status: BundleStatus;
   hash: string;
   bundle: Bundle;
   eligibleAfter: BigNumber;
   nextEligibilityDelay: BigNumber;
   submitError?: string;
+  receipt?: ethers.ContractReceipt;
 };
 
 type InsertRow = Omit<Row, "id">;
@@ -53,25 +61,38 @@ export type BundleRow = Row;
 
 const tableOptions: TableOptions = {
   id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
+  status: { type: DataType.VarChar },
   hash: { type: DataType.VarChar },
   bundle: { type: DataType.VarChar },
   submitError: { type: DataType.VarChar, nullable: true },
   eligibleAfter: { type: DataType.VarChar },
   nextEligibilityDelay: { type: DataType.VarChar },
+  receipt: { type: DataType.VarChar },
 };
 
 function fromRawRow(rawRow: RawRow): Row {
-  const parseResult = parseBundleDto(JSON.parse(rawRow.bundle));
-  if ("failures" in parseResult) {
-    throw new Error(parseResult.failures.join("\n"));
+  const parseBundleResult = parseBundleDto(JSON.parse(rawRow.bundle));
+  if ("failures" in parseBundleResult) {
+    throw new Error(parseBundleResult.failures.join("\n"));
   }
+
+  const status = rawRow.status;
+  if (!isValidStatus(status)) {
+    throw new Error(`Not a valid bundle status: ${status}`);
+  }
+
+  const receipt: ethers.ContractReceipt = rawRow.receipt
+    ? JSON.parse(rawRow.receipt)
+    : undefined;
 
   return {
     ...rawRow,
     submitError: rawRow.submitError ?? nil,
-    bundle: bundleFromDto(parseResult.success),
+    bundle: bundleFromDto(parseBundleResult.success),
     eligibleAfter: BigNumber.from(rawRow.eligibleAfter),
     nextEligibilityDelay: BigNumber.from(rawRow.nextEligibilityDelay),
+    receipt,
+    status,
   };
 }
 
@@ -82,6 +103,7 @@ function toInsertRawRow(row: InsertRow): InsertRawRow {
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
+    receipt: JSON.stringify(row.receipt),
   };
 }
 
@@ -92,6 +114,7 @@ function toRawRow(row: Row): RawRow {
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
+    receipt: JSON.stringify(row.receipt),
   };
 }
 
@@ -145,8 +168,9 @@ export default class BundleTable {
     const rows: RawRow[] = await this.queryClient.query(
       `
         SELECT * from ${this.safeName}
-        WHERE
-          "eligibleAfter" <= '${toUint256Hex(blockNumber)}'
+        WHERE 1=1
+          AND "eligibleAfter" <= '${toUint256Hex(blockNumber)}'
+          AND "status" = 'pending'
         ORDER BY "id" ASC
         LIMIT ${limit}
       `,
@@ -193,4 +217,9 @@ export default class BundleTable {
 
 function toUint256Hex(n: BigNumber) {
   return `0x${n.toHexString().slice(2).padStart(64, "0")}`;
+}
+
+function isValidStatus(status: unknown): status is BundleStatus {
+  return typeof status === 'string'
+    && BundleStatuses.includes(status as ExplicitAny);
 }
