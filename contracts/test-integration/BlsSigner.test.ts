@@ -678,8 +678,6 @@ describe("BlsSigner", () => {
     // Assert
     expect(connect).to.throw(Error, "cannot alter JSON-RPC Signer connection");
   });
-
-  // 2. signer.unlock - Request the node unlock the account (if locked) using password. - not sure how to so this?
 });
 
 describe("JsonRpcSigner", () => {
