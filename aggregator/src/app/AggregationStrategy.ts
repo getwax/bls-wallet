@@ -314,6 +314,11 @@ export default class AggregationStrategy {
     return filteredRows;
   }
 
+  /**
+   * Returns the row which pays the highest 'excess fee'.
+   *
+   * Excess fee is the amount the fee exceeds its requirement.
+   */
   async #pickBest(rows: BundleRow[]) {
     assert(rows.length > 0);
 
@@ -338,6 +343,13 @@ export default class AggregationStrategy {
     return rows[bestExcessFeeIndex];
   }
 
+  /**
+   * Augment the aggregate bundle with more eligible rows.
+   *
+   * This is part of an iterative process where the aggregate bundle is
+   * initially empty and this method is used to accumulate more user bundles
+   * until we can't add any more.
+   */
   async #augmentAggregateBundle(
     previousAggregateBundle: Bundle,
     eligibleRows: BundleRow[],

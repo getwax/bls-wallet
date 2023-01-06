@@ -368,11 +368,24 @@ export default class EthereumService {
     const previousBaseFee = block.baseFeePerGas;
     assert(previousBaseFee !== null && previousBaseFee !== nil);
 
+    // Increase the basefee we're willing to pay to improve the chance of our
+    // transaction getting included. As per EIP-1559, we only pay the actual
+    // basefee anyway, *but* we also pass this fee onto users which don't have
+    // this benefit (they'll pay regardless of where basefee lands).
+    //
+    // This means there's a tradeoff here - low values risk our transactions not
+    // being included, high values pass on unnecessary fees to users.
+    //
+    const baseFeeIncrease = previousBaseFee.mul(
+      env.PREVIOUS_BASE_FEE_PERCENT_INCREASE,
+    ).div(100);
+
     return {
       maxFeePerGas: previousBaseFee
-        .add(
-          previousBaseFee.mul(env.PREVIOUS_BASE_FEE_PERCENT_INCREASE).div(100),
-        )
+        .add(baseFeeIncrease)
+        // Remember that basefee is burned, not provided to miners. Miners
+        // *only* get the priority fee, so they have no reason to care about our
+        // transaction if the priority fee is zero.
         .add(env.PRIORITY_FEE_PER_GAS),
       maxPriorityFeePerGas: env.PRIORITY_FEE_PER_GAS,
     };
