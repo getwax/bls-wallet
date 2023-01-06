@@ -190,7 +190,7 @@ export default class BlsSigner extends Signer {
   }
 
   override connect(provider: ethers.providers.Provider): BlsSigner {
-    throw new Error("connect() is not implemented");
+    throw new Error("cannot alter JSON-RPC Signer connection");
   }
 
   async _signTypedData(

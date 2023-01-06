@@ -651,6 +651,35 @@ describe("BlsSigner", () => {
       "network does not support ENS",
     );
   });
+
+  it("should return the provider the signer was established from", async () => {
+    // Arrange & Act
+    const provider = blsSigner.provider;
+
+    // Assert
+    expect(provider._isProvider).to.be.true;
+    expect(provider).to.be.instanceOf(Experimental.BlsProvider);
+  });
+
+  it("should detect whether an object is a valid signer", async () => {
+    // Arrange & Act
+    const validSigner = Experimental.BlsSigner.isSigner(blsSigner);
+    const invalidSigner = Experimental.BlsSigner.isSigner({});
+
+    // Assert
+    expect(validSigner).to.be.true;
+    expect(invalidSigner).to.be.false;
+  });
+
+  it("should throw an error if attempt to change provider is made", async () => {
+    // Arrange & Act
+    const connect = () => blsSigner.connect(blsProvider);
+
+    // Assert
+    expect(connect).to.throw(Error, "cannot alter JSON-RPC Signer connection");
+  });
+
+  // 2. signer.unlock - Request the node unlock the account (if locked) using password. - not sure how to so this?
 });
 
 describe("JsonRpcSigner", () => {
