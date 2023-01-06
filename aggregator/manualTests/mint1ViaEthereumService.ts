@@ -4,7 +4,7 @@ import { delay, ethers, MockERC20__factory } from "../deps.ts";
 
 import EthereumService from "../src/app/EthereumService.ts";
 import * as env from "../test/env.ts";
-import TestBlsWallets from "./helpers/TestBlsWallets.ts";
+import TestBlsWallet from "./helpers/TestBlsWallet.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
 
 const { addresses } = await getNetworkConfig();
@@ -20,7 +20,7 @@ const ethereumService = await EthereumService.create(
 );
 
 const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
-const [wallet] = await TestBlsWallets(provider, 1);
+const wallet = await TestBlsWallet(provider);
 const startBalance = await testErc20.balanceOf(wallet.address);
 
 const bundle = wallet.sign({

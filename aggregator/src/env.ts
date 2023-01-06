@@ -1,9 +1,12 @@
 import {
+  optionalNumberEnv,
   requireBigNumberEnv,
   requireBoolEnv,
   requireEnv,
   requireIntEnv,
+  requireNumberEnv,
 } from "./helpers/envTools.ts";
+import nil from "./helpers/nil.ts";
 
 export const RPC_URL = requireEnv("RPC_URL");
 
@@ -48,10 +51,39 @@ export const MAX_UNCONFIRMED_AGGREGATIONS = requireIntEnv(
 
 export const LOG_QUERIES = requireBoolEnv("LOG_QUERIES");
 
+export const REQUIRE_FEES = requireBoolEnv("REQUIRE_FEES");
+
+export const BREAKEVEN_OPERATION_COUNT = requireNumberEnv(
+  "BREAKEVEN_OPERATION_COUNT",
+);
+
+export const ALLOW_LOSSES = requireBoolEnv("ALLOW_LOSSES");
+
 export const FEE_TYPE = requireEnv("FEE_TYPE");
-export const FEE_PER_GAS = requireBigNumberEnv("FEE_PER_GAS");
-export const FEE_PER_BYTE = requireBigNumberEnv("FEE_PER_BYTE");
 
 if (!/^(ether|token:0x[0-9a-fA-F]*)$/.test(FEE_TYPE)) {
   throw new Error(`FEE_TYPE has invalid format: "${FEE_TYPE}"`);
 }
+
+export const ETH_VALUE_IN_TOKENS = optionalNumberEnv("ETH_VALUE_IN_TOKENS");
+
+if (FEE_TYPE.startsWith("token:") && ETH_VALUE_IN_TOKENS === nil) {
+  throw new Error([
+    "Missing ETH_VALUE_IN_TOKENS, which is required because FEE_TYPE is a",
+    "token",
+  ].join(" "));
+}
+
+export const AUTO_CREATE_INTERNAL_BLS_WALLET = requireBoolEnv(
+  "AUTO_CREATE_INTERNAL_BLS_WALLET",
+);
+
+export const PRIORITY_FEE_PER_GAS = requireBigNumberEnv("PRIORITY_FEE_PER_GAS");
+
+/**
+ * Used to determine the expected basefee when submitting bundles. Note that
+ * this gets passed onto users.
+ */
+export const PREVIOUS_BASE_FEE_PERCENT_INCREASE = requireNumberEnv(
+  "PREVIOUS_BASE_FEE_PERCENT_INCREASE",
+);

@@ -24,7 +24,9 @@ import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
 
-export type AddBundleResponse = { hash: string } | { failures: TransactionFailure[] };
+export type AddBundleResponse = { hash: string } | {
+  failures: TransactionFailure[];
+};
 
 export default class BundleService {
   static defaultConfig = {
@@ -41,8 +43,8 @@ export default class BundleService {
 
   // TODO (merge-ok) use database table in the future to persist
   confirmedBundles = new Map<string, {
-    bundle: Bundle,
-    receipt: ethers.ContractReceipt,
+    bundle: Bundle;
+    receipt: ethers.ContractReceipt;
   }>();
 
   submissionTimer: SubmissionTimer;
@@ -153,9 +155,11 @@ export default class BundleService {
     }
 
     const walletAddresses = await Promise.all(bundle.senderPublicKeys.map(
-      (pubKey) => BlsWalletWrapper.AddressFromPublicKey(
-        pubKey, this.ethereumService.verificationGateway
-      )
+      (pubKey) =>
+        BlsWalletWrapper.AddressFromPublicKey(
+          pubKey,
+          this.ethereumService.verificationGateway,
+        ),
     ));
 
     const failures: TransactionFailure[] = [];
@@ -164,7 +168,7 @@ export default class BundleService {
       const signedCorrectly = this.blsWalletSigner.verify(bundle, walletAddr);
       if (!signedCorrectly) {
         failures.push({
-        type: "invalid-signature",
+          type: "invalid-signature",
           description: `invalid signature for wallet address ${walletAddr}`,
         });
       }
@@ -227,7 +231,7 @@ export default class BundleService {
   async runSubmission() {
     this.submissionsInProgress++;
 
-    const submissionResult = await this.runQueryGroup(async () => {
+    const bundleSubmitted = await this.runQueryGroup(async () => {
       const currentBlockNumber = await this.ethereumService.BlockNumber();
 
       let eligibleRows = await this.bundleTable.findEligible(
@@ -240,27 +244,66 @@ export default class BundleService {
         (row) => !this.unconfirmedRowIds.has(row.id),
       );
 
-      const { aggregateBundle, includedRows, failedRows } = await this
+      this.emit({
+        type: "running-strategy",
+        data: {
+          eligibleRows: eligibleRows.length,
+        },
+      });
+
+      const {
+        aggregateBundle,
+        includedRows,
+        bundleOverheadCost,
+        expectedFee,
+        expectedMaxCost,
+        failedRows,
+      } = await this
         .aggregationStrategy.run(eligibleRows);
 
+      this.emit({
+        type: "completed-strategy",
+        data: {
+          includedRows: includedRows.length,
+          bundleOverheadCost: ethers.utils.formatEther(bundleOverheadCost),
+          expectedFee: ethers.utils.formatEther(expectedFee),
+          expectedMaxCost: ethers.utils.formatEther(expectedMaxCost),
+        },
+      });
+
       for (const failedRow of failedRows) {
+        this.emit({
+          type: "failed-row",
+          data: {
+            publicKeyShorts: failedRow.bundle.senderPublicKeys.map(
+              toShortPublicKey,
+            ),
+            submitError: failedRow.submitError,
+          },
+        });
+
         await this.handleFailedRow(failedRow, currentBlockNumber);
       }
 
       if (!aggregateBundle || includedRows.length === 0) {
-        return;
+        return false;
       }
 
       await this.submitAggregateBundle(
         aggregateBundle,
         includedRows,
+        expectedFee,
+        expectedMaxCost,
       );
+
+      return true;
     });
 
     this.submissionsInProgress--;
-    this.addTask(() => this.tryAggregating());
 
-    return submissionResult;
+    if (bundleSubmitted) {
+      this.addTask(() => this.tryAggregating());
+    }
   }
 
   async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
@@ -280,6 +323,8 @@ export default class BundleService {
   async submitAggregateBundle(
     aggregateBundle: Bundle,
     includedRows: BundleRow[],
+    expectedFee: BigNumber,
+    expectedMaxCost: BigNumber,
   ) {
     const maxUnconfirmedActions = (
       this.config.maxUnconfirmedAggregations *
@@ -305,11 +350,15 @@ export default class BundleService {
 
     this.addTask(async () => {
       try {
+        const balanceBefore = await this.ethereumService.wallet.getBalance();
+
         const receipt = await this.ethereumService.submitBundle(
           aggregateBundle,
           Infinity,
           300,
         );
+
+        const balanceAfter = await this.ethereumService.wallet.getBalance();
 
         for (const row of includedRows) {
           this.confirmedBundles.set(row.hash, {
@@ -318,12 +367,25 @@ export default class BundleService {
           });
         }
 
+        const profit = balanceAfter.sub(balanceBefore);
+
+        /** What we paid to process the bundle */
+        const cost = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+        /** Fees collected from users */
+        const actualFee = profit.add(cost);
+
         this.emit({
           type: "submission-confirmed",
           data: {
             hash: receipt.transactionHash,
             bundleHashes: includedRows.map((row) => row.hash),
             blockNumber: receipt.blockNumber,
+            profit: ethers.utils.formatEther(profit),
+            cost: ethers.utils.formatEther(cost),
+            expectedMaxCost: ethers.utils.formatEther(expectedMaxCost),
+            actualFee: ethers.utils.formatEther(actualFee),
+            expectedFee: ethers.utils.formatEther(expectedFee),
           },
         });
 

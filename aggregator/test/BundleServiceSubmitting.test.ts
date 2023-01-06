@@ -1,9 +1,8 @@
-import { assertEquals, assertBundleSucceeds, BigNumber } from "./deps.ts";
-import Fixture, {
-  aggregationStrategyDefaultTestConfig,
-  bundleServiceDefaultTestConfig,
-} from "./helpers/Fixture.ts";
+import { assertBundleSucceeds, assertEquals, BigNumber } from "./deps.ts";
+import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
+import { AggregationStrategyConfig } from "../src/app/AggregationStrategy.ts";
+import nil from "../src/helpers/nil.ts";
 
 const bundleServiceConfig = {
   ...bundleServiceDefaultTestConfig,
@@ -11,8 +10,8 @@ const bundleServiceConfig = {
   maxAggregationDelayMillis: 5000,
 };
 
-const aggregationStrategyConfig = {
-  ...aggregationStrategyDefaultTestConfig,
+const aggregationStrategyConfig: AggregationStrategyConfig = {
+  fees: nil,
   maxAggregationSize: 5,
 };
 
@@ -63,19 +62,20 @@ Fixture.test("submits a full submission without delay", async (fx) => {
     aggregationStrategyConfig,
   );
 
-  const [wallet] = await fx.setupWallets(1);
-  const walletNonce = await wallet.Nonce();
+  const wallets = await fx.setupWallets(5);
+  const firstWallet = wallets[0];
+  const nonce = await firstWallet.Nonce();
 
-  const bundles = Range(5).map((i) =>
+  const bundles = wallets.map((wallet) =>
     wallet.sign({
-      nonce: walletNonce.add(i),
+      nonce,
       actions: [
         {
           ethValue: 0,
           contractAddress: fx.testErc20.address,
           encodedFunction: fx.testErc20.interface.encodeFunctionData(
             "mint",
-            [wallet.address, 1],
+            [firstWallet.address, 1],
           ),
         },
       ],
@@ -92,7 +92,7 @@ Fixture.test("submits a full submission without delay", async (fx) => {
   // Check mints have occurred, ensuring a submission has occurred even though
   // the clock has not advanced
   assertEquals(
-    await fx.testErc20.balanceOf(wallet.address),
+    await fx.testErc20.balanceOf(firstWallet.address),
     BigNumber.from(1005), // 1000 (initial) + 5 * 1 (mint txs)
   );
 });
@@ -108,19 +108,20 @@ Fixture.test(
       aggregationStrategyConfig,
     );
 
-    const [wallet] = await fx.setupWallets(1);
-    const walletNonce = await wallet.Nonce();
+    const wallets = await fx.setupWallets(7);
+    const firstWallet = wallets[0];
+    const nonce = await firstWallet.Nonce();
 
-    const bundles = Range(7).map((i) =>
+    const bundles = wallets.map((wallet) =>
       wallet.sign({
-        nonce: walletNonce.add(i),
+        nonce,
         actions: [
           {
             ethValue: 0,
             contractAddress: fx.testErc20.address,
             encodedFunction: fx.testErc20.interface.encodeFunctionData(
               "mint",
-              [wallet.address, 1],
+              [firstWallet.address, 1],
             ),
           },
         ],
@@ -145,7 +146,7 @@ Fixture.test(
     // Check mints have occurred, ensuring a submission has occurred even though the
     // clock has not advanced
     assertEquals(
-      await fx.testErc20.balanceOf(wallet.address),
+      await fx.testErc20.balanceOf(firstWallet.address),
       BigNumber.from(1005), // 1000 (initial) + 5 * 1 (mint txs)
     );
 
@@ -157,7 +158,7 @@ Fixture.test(
     await bundleService.waitForConfirmations();
 
     assertEquals(
-      await fx.testErc20.balanceOf(wallet.address),
+      await fx.testErc20.balanceOf(firstWallet.address),
       BigNumber.from(1007), // 1000 (initial) + 7 * 1 (mint txs)
     );
   },
