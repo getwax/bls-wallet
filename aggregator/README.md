@@ -142,6 +142,75 @@ Can be run locally or hosted.
 
 NB each test must use unique address(es). (+ init code)
 
+## Fees
+
+### User Guide
+
+User bundles must pay fees to compensate the aggregator (except in testing
+situations where the aggregator may be configured to accept bundles which don't
+pay fees (see `REQUIRE_FEES`)). The aggregator simply detects fees have been
+paid by observing the effect of a user bundle on its balance. This allows
+bundles to pay the aggregator using any mechanism of their choosing, and is why
+bundles do not have fields for paying fees explicitly.
+
+The simplest way to do this is to include an extra action to pay `tx.origin`.
+
+Use the `POST /estimateFee` API to determine the fee required for a bundle. The
+body of this request is the bundle. Response:
+
+```json
+{
+  "feeType": "(See FEE_TYPE enviroment variable)",
+  "feeDetected": "(The fee that has been detected for the provided bundle)",
+  "feeRequired": "(Required fee)",
+  "successes": [/* Array of bools indicating success of each action */]
+}
+```
+
+Note that if you want to pay the aggregator using an additional action, you
+should include this additional action with a payment of zero when estimating,
+otherwise the additional action will increase the fee that needs to be paid.
+
+Also, `feeRequired` is the absolute minimum necessary fee to process the bundle
+at the time of estimation, so paying extra is advisable to increase the chance
+that the fee is sufficient during submission.
+
+### Technical Detail
+
+The fees required by the aggregator are designed to prevent it from losing
+money. There are two main ways that losses can still happen:
+
+1. Bundles that don't simulate accurately
+2. Bundles that make losses are allowed in config (`ALLOW_LOSSES`)
+
+When calculating the required fee, the aggregator needs to account for two
+things:
+
+1. The marginal cost of including the user bundle
+2. A contribution to the overhead of submitting the aggregate bundle
+
+Remember that the whole point of aggregation is to save on fees using a single
+aggregate signature. This means that measuring the fee required to process the
+user bundle in isolation won't reflect that saving.
+
+Instead, we measure the overhead using hypothetical operations that contain zero
+actions. We make a bundle with one of these, and another with two of these, and
+extrapolate backwards to a bundle containing zero operations (see
+`measureBundleOverheadGas`).
+
+We can then subtract that overhead from the user's bundle to obtain its marginal
+cost.
+
+The user's share of the overhead is then added by multiplying it by
+`operationCount / BREAKEVEN_OPERATION_COUNT`. User bundles usually have an
+`operationCount` of 1, so if `BREAKEVEN_OPERATION_COUNT` is 4.5, then the bundle
+will be required to pay 22% of the overhead.
+
+From the aggregator's perspective, aggregate bundles with fewer operations than
+`BREAKEVEN_OPERATION_COUNT` should make a loss, and larger bundles should make a
+profit. If `ALLOW_LOSSES` is `false`, bundles which are predicted to make a loss
+will not be submitted.
+
 ## Development
 
 ### Environment
