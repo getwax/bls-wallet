@@ -343,6 +343,13 @@ export default class AggregationStrategy {
     return rows[bestExcessFeeIndex];
   }
 
+  /**
+   * Augment the aggregate bundle with more eligible rows.
+   *
+   * This is part of an iterative process where the aggregate bundle is
+   * initially empty and this method is used to accumulate more user bundles
+   * until we can't add any more.
+   */
   async #augmentAggregateBundle(
     previousAggregateBundle: Bundle,
     eligibleRows: BundleRow[],
