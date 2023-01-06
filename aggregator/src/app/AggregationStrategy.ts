@@ -314,6 +314,11 @@ export default class AggregationStrategy {
     return filteredRows;
   }
 
+  /**
+   * Returns the row which pays the highest 'excess fee'.
+   *
+   * Excess fee is the amount the fee exceeds its requirement.
+   */
   async #pickBest(rows: BundleRow[]) {
     assert(rows.length > 0);
 
