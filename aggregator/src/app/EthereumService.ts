@@ -22,6 +22,7 @@ import AppEvent from "./AppEvent.ts";
 import toPublicKeyShort from "./helpers/toPublicKeyShort.ts";
 import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import ExplicitAny from "../helpers/ExplicitAny.ts";
+import nil from "../helpers/nil.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -42,10 +43,9 @@ type CallHelper<T> = {
   resultDecoder: (result: BytesLike) => T;
 };
 
-type CallResult<T> = (
+type CallResult<T> =
   | { success: true; returnValue: T }
-  | { success: false; returnValue: undefined }
-);
+  | { success: false; returnValue: undefined };
 
 type MapCallHelperReturns<T> = T extends CallHelper<unknown>[]
   ? (T extends [CallHelper<infer First>, ...infer Rest]
@@ -71,6 +71,7 @@ export default class EthereumService {
   constructor(
     public emit: (evt: AppEvent) => void,
     public wallet: Wallet,
+    public blsWalletWrapper: BlsWalletWrapper,
     public blsWalletSigner: BlsWalletSigner,
     verificationGatewayAddress: string,
     utilitiesAddress: string,
@@ -100,6 +101,33 @@ export default class EthereumService {
     aggPrivateKey: string,
   ): Promise<EthereumService> {
     const wallet = EthereumService.Wallet(aggPrivateKey);
+
+    const blsWalletWrapper = await BlsWalletWrapper.connect(
+      aggPrivateKey,
+      verificationGatewayAddress,
+      wallet.provider,
+    );
+
+    const blsNonce = await blsWalletWrapper.Nonce();
+
+    if (blsNonce.eq(0)) {
+      if (!env.AUTO_CREATE_INTERNAL_BLS_WALLET) {
+        throw new Error([
+          "Required internal bls wallet does not exist. Either enable",
+          "AUTO_CREATE_INTERNAL_BLS_WALLET or run",
+          "./programs/createInternalBlsWallet.ts",
+        ].join(" "));
+      }
+
+      await (await VerificationGateway__factory.connect(
+        verificationGatewayAddress,
+        wallet,
+      ).processBundle(blsWalletWrapper.sign({
+        nonce: 0,
+        actions: [],
+      }))).wait();
+    }
+
     const nextNonce = BigNumber.from(await wallet.getTransactionCount());
     const chainId = await wallet.getChainId();
     const blsWalletSigner = await initBlsWalletSigner({ chainId });
@@ -107,6 +135,7 @@ export default class EthereumService {
     return new EthereumService(
       emit,
       wallet,
+      blsWalletWrapper,
       blsWalletSigner,
       verificationGatewayAddress,
       utilitiesAddress,
@@ -211,10 +240,10 @@ export default class EthereumService {
   async callStaticSequenceWithMeasure<Measure, CallReturn>(
     measureCall: CallHelper<Measure>,
     calls: CallHelper<CallReturn>[],
-  ): (Promise<{
+  ): Promise<{
     measureResults: CallResult<Measure>[];
     callResults: CallResult<CallReturn>[];
-  }>) {
+  }> {
     const fullCalls: CallHelper<unknown>[] = [measureCall];
 
     for (const call of calls) {
@@ -261,7 +290,10 @@ export default class EthereumService {
     const processBundleArgs: Parameters<VerificationGateway["processBundle"]> =
       [
         bundle,
-        { nonce: this.NextNonce() },
+        {
+          nonce: this.NextNonce(),
+          ...await this.GasConfig(),
+        },
       ];
 
     const attempt = async () => {
@@ -329,6 +361,34 @@ export default class EthereumService {
     }
 
     throw new Error("Expected return or throw from attempt loop");
+  }
+
+  async GasConfig() {
+    const block = await this.wallet.provider.getBlock("latest");
+    const previousBaseFee = block.baseFeePerGas;
+    assert(previousBaseFee !== null && previousBaseFee !== nil);
+
+    // Increase the basefee we're willing to pay to improve the chance of our
+    // transaction getting included. As per EIP-1559, we only pay the actual
+    // basefee anyway, *but* we also pass this fee onto users which don't have
+    // this benefit (they'll pay regardless of where basefee lands).
+    //
+    // This means there's a tradeoff here - low values risk our transactions not
+    // being included, high values pass on unnecessary fees to users.
+    //
+    const baseFeeIncrease = previousBaseFee.mul(
+      env.PREVIOUS_BASE_FEE_PERCENT_INCREASE,
+    ).div(100);
+
+    return {
+      maxFeePerGas: previousBaseFee
+        .add(baseFeeIncrease)
+        // Remember that basefee is burned, not provided to miners. Miners
+        // *only* get the priority fee, so they have no reason to care about our
+        // transaction if the priority fee is zero.
+        .add(env.PRIORITY_FEE_PER_GAS),
+      maxPriorityFeePerGas: env.PRIORITY_FEE_PER_GAS,
+    };
   }
 
   private static Wallet(privateKey: string) {

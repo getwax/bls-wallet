@@ -31,31 +31,35 @@ commands.
 
 #### Environment Variables
 
-| Name                         | Example Value                                                      | Description                                                                                                                                                          |
-| ---------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RPC_URL                      | https://localhost:8545                                             | The RPC endpoint for an EVM node that the BLS Wallet contracts are deployed on                                                                                       |
-| USE_TEST_NET                 | false                                                              | Whether to set all transaction's `gasPrice` to 0. Workaround for some networks                                                                                       |
-| ORIGIN                       | http://localhost:3000                                              | The origin for the aggregator client. Used only in manual tests                                                                                                      |
-| PORT                         | 3000                                                               | The port to bind the aggregator to                                                                                                                                   |
-| NETWORK_CONFIG_PATH          | ../contracts/networks/local.json                                   | Path to the network config file, which contains information on deployed BLS Wallet contracts                                                                         |
-| PRIVATE_KEY_AGG              | 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 | Private key for the EOA account used to submit bundles on chain                                                                                                      |
-| PRIVATE_KEY_ADMIN            | 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d | Private key for the admin EOA account. Used only in tests                                                                                                            |
-| TEST_BLS_WALLETS_SECRET      | test-bls-wallets-secret                                            | Secret used to seed BLS Wallet private keys during tests                                                                                                             |
-| PG_HOST                      | 127.0.0.1                                                          | Postgres database host                                                                                                                                               |
-| PG_PORT                      | 5432                                                               | Postgres database port                                                                                                                                               |
-| PG_USER                      | bls                                                                | Postgres database user                                                                                                                                               |
-| PG_PASSWORD                  | generate-a-strong-password                                         | Postgres database password                                                                                                                                           |
-| PG_DB_NAME                   | bls_aggregator                                                     | Postgres database name                                                                                                                                               |
-| BUNDLE_TABLE_NAME            | bundles                                                            | Postgres table name for bundles                                                                                                                                      |
-| BUNDLE_QUERY_LIMIT           | 100                                                                | Maximum number of bundles returned from Postgres                                                                                                                     |
-| MAX_AGGREGATION_SIZE         | 12                                                                 | Maximum number of actions from bundles which will be aggregated together for submission on chain                                                                     |
-| MAX_AGGREGATION_DELAY_MILLIS | 5000                                                               | Maximum amount of time in milliseconds aggregator will wait before submitting bundles on chain                                                                       |
-| MAX_UNCONFIRMED_AGGREGATIONS | 3                                                                  | Maximum unconfirmed bundle aggregations that will be submitted on chain. Multiplied with `MAX_AGGREGATION_SIZE` to determine maximum of unconfirmed on chain actions |
-| LOG_QUERIES                  | false                                                              | Whether to print Postgres queries in event log.`TEST_LOGGING` must be enabled                                                                                        |
-| TEST_LOGGING                 | false                                                              | Whether to print aggregator server events to stdout. Useful for debugging & logging.                                                                                 |
-| FEE_TYPE                     | ether OR token:0xabcd...1234                                       | The fee type the aggregator will accept. Either `ether` for ETH/chains native currency or `token:0xabcd...1234` (token contract address) for an ERC20 token          |
-| FEE_PER_GAS                  | 0                                                                  | Minimum amount per gas (gasPrice) the aggregator will accept in ETH/chain native currency/ERC20 tokens                                                               |
-| FEE_PER_BYTE                 | 0                                                                  | Minimum amount per calldata byte the aggregator will accept in ETH/chain native currency/ERC20 tokens (rollup L1 cost)                                               |
+| Name                               | Example Value                                                      | Description                                                                                                                                                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RPC_URL                            | https://localhost:8545                                             | The RPC endpoint for an EVM node that the BLS Wallet contracts are deployed on                                                                                                                                                     |
+| USE_TEST_NET                       | false                                                              | Whether to set all transaction's `gasPrice` to 0. Workaround for some networks                                                                                                                                                     |
+| ORIGIN                             | http://localhost:3000                                              | The origin for the aggregator client. Used only in manual tests                                                                                                                                                                    |
+| PORT                               | 3000                                                               | The port to bind the aggregator to                                                                                                                                                                                                 |
+| NETWORK_CONFIG_PATH                | ../contracts/networks/local.json                                   | Path to the network config file, which contains information on deployed BLS Wallet contracts                                                                                                                                       |
+| PRIVATE_KEY_AGG                    | 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 | Private key for the EOA account used to submit bundles on chain                                                                                                                                                                    |
+| PRIVATE_KEY_ADMIN                  | 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d | Private key for the admin EOA account. Used only in tests                                                                                                                                                                          |
+| TEST_BLS_WALLETS_SECRET            | test-bls-wallets-secret                                            | Secret used to seed BLS Wallet private keys during tests                                                                                                                                                                           |
+| PG_HOST                            | 127.0.0.1                                                          | Postgres database host                                                                                                                                                                                                             |
+| PG_PORT                            | 5432                                                               | Postgres database port                                                                                                                                                                                                             |
+| PG_USER                            | bls                                                                | Postgres database user                                                                                                                                                                                                             |
+| PG_PASSWORD                        | generate-a-strong-password                                         | Postgres database password                                                                                                                                                                                                         |
+| PG_DB_NAME                         | bls_aggregator                                                     | Postgres database name                                                                                                                                                                                                             |
+| BUNDLE_TABLE_NAME                  | bundles                                                            | Postgres table name for bundles                                                                                                                                                                                                    |
+| BUNDLE_QUERY_LIMIT                 | 100                                                                | Maximum number of bundles returned from Postgres                                                                                                                                                                                   |
+| MAX_AGGREGATION_SIZE               | 12                                                                 | Maximum number of actions from bundles which will be aggregated together for submission on chain                                                                                                                                   |
+| MAX_AGGREGATION_DELAY_MILLIS       | 5000                                                               | Maximum amount of time in milliseconds aggregator will wait before submitting bundles on chain                                                                                                                                     |
+| MAX_UNCONFIRMED_AGGREGATIONS       | 3                                                                  | Maximum unconfirmed bundle aggregations that will be submitted on chain. Multiplied with `MAX_AGGREGATION_SIZE` to determine maximum of unconfirmed on chain actions                                                               |
+| LOG_QUERIES                        | false                                                              | Whether to print Postgres queries in event log. When running tests, `TEST_LOGGING` must also be enabled.                                                                                                                           |
+| TEST_LOGGING                       | false                                                              | Whether to print aggregator server events to stdout during tests. Useful for debugging & logging.                                                                                                                                  |
+| REQUIRE_FEES                       | true                                                               | Whether to require that user bundles pay the aggregator a sufficient fee.                                                                                                                                                          |
+| BREAKEVEN_OPERATION_COUNT          | 4.5                                                                | The aggregator must pay an overhead to submit a bundle regardless of how many operations it contains. This parameter determines how much each operation must contribute to this overhead.                                          |
+| ALLOW_LOSSES                       | true                                                               | Even if each user bundle pays the required fee, the aggregate bundle may not be profitable if it is too small. Setting this to true makes the aggregator submit these bundles anyway.                                              |
+| FEE_TYPE                           | ether OR token:0xabcd...1234                                       | The fee type the aggregator will accept. Either `ether` for ETH/chains native currency or `token:0xabcd...1234` (token contract address) for an ERC20 token                                                                        |
+| AUTO_CREATE_INTERNAL_BLS_WALLET    | false                                                              | An internal BLS wallet is used to calculate bundle overheads. Setting this to true allows creating this wallet on startup, but might be undesirable in production (see `programs/createInternalBlsWallet.ts` for manual creation). |
+| PRIORITY_FEE_PER_GAS               | 0                                                                  | The priority fee used when submitting bundles (and passed on as a requirement for user bundles).                                                                                                                                   |
+| PREVIOUS_BASE_FEE_PERCENT_INCREASE | 2                                                                  | Used to determine the max basefee attached to aggregator transaction (and passed on as a requirement for user bundles)s.                                                                                                           |
 
 ### PostgreSQL
 
@@ -137,6 +141,75 @@ Can be run locally or hosted.
 - run tests
 
 NB each test must use unique address(es). (+ init code)
+
+## Fees
+
+### User Guide
+
+User bundles must pay fees to compensate the aggregator (except in testing
+situations where the aggregator may be configured to accept bundles which don't
+pay fees (see `REQUIRE_FEES`)). The aggregator simply detects fees have been
+paid by observing the effect of a user bundle on its balance. This allows
+bundles to pay the aggregator using any mechanism of their choosing, and is why
+bundles do not have fields for paying fees explicitly.
+
+The simplest way to do this is to include an extra action to pay `tx.origin`.
+
+Use the `POST /estimateFee` API to determine the fee required for a bundle. The
+body of this request is the bundle. Response:
+
+```json
+{
+  "feeType": "(See FEE_TYPE enviroment variable)",
+  "feeDetected": "(The fee that has been detected for the provided bundle)",
+  "feeRequired": "(Required fee)",
+  "successes": [/* Array of bools indicating success of each action */]
+}
+```
+
+Note that if you want to pay the aggregator using an additional action, you
+should include this additional action with a payment of zero when estimating,
+otherwise the additional action will increase the fee that needs to be paid.
+
+Also, `feeRequired` is the absolute minimum necessary fee to process the bundle
+at the time of estimation, so paying extra is advisable to increase the chance
+that the fee is sufficient during submission.
+
+### Technical Detail
+
+The fees required by the aggregator are designed to prevent it from losing
+money. There are two main ways that losses can still happen:
+
+1. Bundles that don't simulate accurately
+2. Bundles that make losses are allowed in config (`ALLOW_LOSSES`)
+
+When calculating the required fee, the aggregator needs to account for two
+things:
+
+1. The marginal cost of including the user bundle
+2. A contribution to the overhead of submitting the aggregate bundle
+
+Remember that the whole point of aggregation is to save on fees using a single
+aggregate signature. This means that measuring the fee required to process the
+user bundle in isolation won't reflect that saving.
+
+Instead, we measure the overhead using hypothetical operations that contain zero
+actions. We make a bundle with one of these, and another with two of these, and
+extrapolate backwards to a bundle containing zero operations (see
+`measureBundleOverheadGas`).
+
+We can then subtract that overhead from the user's bundle to obtain its marginal
+cost.
+
+The user's share of the overhead is then added by multiplying it by
+`operationCount / BREAKEVEN_OPERATION_COUNT`. User bundles usually have an
+`operationCount` of 1, so if `BREAKEVEN_OPERATION_COUNT` is 4.5, then the bundle
+will be required to pay 22% of the overhead.
+
+From the aggregator's perspective, aggregate bundles with fewer operations than
+`BREAKEVEN_OPERATION_COUNT` should make a loss, and larger bundles should make a
+profit. If `ALLOW_LOSSES` is `false`, bundles which are predicted to make a loss
+will not be submitted.
 
 ## Development
 

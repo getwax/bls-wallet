@@ -37,6 +37,9 @@ export type {
 } from "https://esm.sh/ethers@5.5.4";
 export const keccak256 = ethers.utils.keccak256;
 
+// Adding more accurate type information here (ethers uses Array<any>)
+export const shuffled: <T>(array: T[]) => T[] = ethers.utils.shuffled;
+
 export type {
   AggregatorUtilities,
   BlsWalletSigner,
@@ -46,21 +49,21 @@ export type {
   MockERC20,
   NetworkConfig,
   Operation,
+  OperationResultError,
   PublicKey,
   Signature,
   VerificationGateway,
-  OperationResultError,
 } from "https://esm.sh/bls-wallet-clients@0.8.2";
 
 export {
   Aggregator as AggregatorClient,
   AggregatorUtilities__factory,
   BlsWalletWrapper,
+  decodeError,
   ERC20__factory,
   getConfig,
   MockERC20__factory,
   VerificationGateway__factory,
-  decodeError,
 } from "https://esm.sh/bls-wallet-clients@0.8.2";
 
 // Workaround for esbuild's export-star bug
@@ -84,3 +87,5 @@ export {
 } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
 
 export type { TableOptions } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
+
+export { Semaphore } from "https://deno.land/x/semaphore@v1.1.2/mod.ts";

@@ -11,8 +11,9 @@ import {
 
 import * as env from "../test/env.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
-import TestBlsWallets from "./helpers/TestBlsWallets.ts";
+import TestBlsWallet from "./helpers/TestBlsWallet.ts";
 import getNetworkConfig from "../src/helpers/getNetworkConfig.ts";
+import Range from "../src/helpers/Range.ts";
 
 const logStartTime = Date.now();
 
@@ -41,9 +42,8 @@ const client = new AggregatorClient(env.ORIGIN);
 
 log("Connecting/creating test wallets...");
 
-const [recvWallet, ...sendWallets] = await TestBlsWallets(
-  provider,
-  sendWalletCount + 1,
+const [recvWallet, ...sendWallets] = await Promise.all(
+  Range(sendWalletCount + 1).map((i) => TestBlsWallet(provider, i)),
 );
 
 log("Checking/minting test tokens...");

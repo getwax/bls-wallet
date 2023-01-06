@@ -62,3 +62,19 @@ export function requireNumberEnv(envName: string): number {
 
   return value;
 }
+
+export function optionalNumberEnv(envName: string): number | nil {
+  const strValue = optionalEnv(envName);
+
+  if (strValue === nil) {
+    return nil;
+  }
+
+  const value = Number(strValue);
+
+  if (!Number.isFinite(value)) {
+    throw new Error(`Failed to parse ${envName} as number: ${strValue}`);
+  }
+
+  return value;
+}

@@ -2,159 +2,394 @@ import {
   BigNumber,
   BlsWalletSigner,
   Bundle,
+  decodeError,
   ERC20,
   ERC20__factory,
   ethers,
-  decodeError,
-  OperationResultError
+  OperationResultError,
+  Semaphore,
+  shuffled,
 } from "../../deps.ts";
 
 import nil from "../helpers/nil.ts";
 import Range from "../helpers/Range.ts";
 import assert from "../helpers/assert.ts";
-import bigSum from "./helpers/bigSum.ts";
 import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
 import { BundleRow } from "./BundleTable.ts";
 import countActions from "./helpers/countActions.ts";
-import ClientReportableError from "./helpers/ClientReportableError.ts";
+import AppEvent from "./AppEvent.ts";
+import bigSum from "./helpers/bigSum.ts";
+
+type FeeConfig =
+  | {
+    type: "ether";
+    allowLosses: boolean;
+    breakevenOperationCount: number;
+  }
+  | {
+    type: "token";
+    address: string;
+    ethValueInTokens: number;
+    allowLosses: boolean;
+    breakevenOperationCount: number;
+  }
+  | nil;
+
+const envFeeConfig = ((): FeeConfig => {
+  if (!env.REQUIRE_FEES) {
+    return nil;
+  }
+
+  if (env.FEE_TYPE === "ether") {
+    return {
+      type: "ether",
+      allowLosses: env.ALLOW_LOSSES,
+      breakevenOperationCount: env.BREAKEVEN_OPERATION_COUNT,
+    };
+  }
+
+  const feeTypeParts = env.FEE_TYPE.split(":");
+  assert(feeTypeParts.length === 2);
+  assert(feeTypeParts[0] === "token");
+
+  const address = feeTypeParts[1];
+  assert(/^0x[0-9a-fA-F]*$/.test(address));
+
+  assert(env.ETH_VALUE_IN_TOKENS !== nil);
+
+  return {
+    type: "token",
+    address,
+    ethValueInTokens: env.ETH_VALUE_IN_TOKENS,
+    allowLosses: env.ALLOW_LOSSES,
+    breakevenOperationCount: env.BREAKEVEN_OPERATION_COUNT,
+  };
+})();
+
+export type AggregationStrategyResult = {
+  aggregateBundle: Bundle | nil;
+  includedRows: BundleRow[];
+  bundleOverheadCost: BigNumber;
+  expectedFee: BigNumber;
+  expectedMaxCost: BigNumber;
+  failedRows: BundleRow[];
+};
+
+export type AggregationStrategyConfig =
+  typeof AggregationStrategy["defaultConfig"];
 
 export default class AggregationStrategy {
   static defaultConfig = {
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
-    fees: {
-      type: env.FEE_TYPE,
-      perGas: env.FEE_PER_GAS,
-      perByte: env.FEE_PER_BYTE,
-    },
+    fees: envFeeConfig,
   };
+
+  #tokenDecimals?: number;
+
+  // The concurrency of #checkBundle is limited by this semaphore because it can
+  // be called on many bundles in parallel
+  #checkBundleSemaphore = new Semaphore(8);
 
   constructor(
     public blsWalletSigner: BlsWalletSigner,
     public ethereumService: EthereumService,
     public config = AggregationStrategy.defaultConfig,
+    public emit: (event: AppEvent) => void = () => {},
   ) {}
 
-  async run(eligibleRows: BundleRow[]): (
-    Promise<{
-      aggregateBundle: Bundle | nil;
-      includedRows: BundleRow[];
-      failedRows: BundleRow[];
-    }>
-  ) {
+  async run(eligibleRows: BundleRow[]): Promise<AggregationStrategyResult> {
+    eligibleRows = await this.#filterRows(eligibleRows);
+
+    const bundleOverheadGas = await this.measureBundleOverheadGas();
+
     let aggregateBundle = this.blsWalletSigner.aggregate([]);
     const includedRows: BundleRow[] = [];
     const failedRows: BundleRow[] = [];
+    let expectedFee = BigNumber.from(0);
 
     while (eligibleRows.length > 0) {
       const {
         aggregateBundle: newAggregateBundle,
         includedRows: newIncludedRows,
+        expectedFees,
         failedRows: newFailedRows,
         remainingEligibleRows,
       } = await this.#augmentAggregateBundle(
         aggregateBundle,
         eligibleRows,
+        bundleOverheadGas,
       );
 
       aggregateBundle = newAggregateBundle;
       includedRows.push(...newIncludedRows);
+      expectedFee = expectedFee.add(bigSum(expectedFees));
       failedRows.push(...newFailedRows);
       eligibleRows = remainingEligibleRows;
     }
 
-    return {
-      aggregateBundle: aggregateBundle.operations.length > 0
-        ? aggregateBundle
-        : nil,
+    if (includedRows.length === 0) {
+      return {
+        aggregateBundle: nil,
+        includedRows: [],
+        bundleOverheadCost: bundleOverheadGas.mul(
+          (await this.ethereumService.GasConfig()).maxFeePerGas,
+        ),
+        expectedFee: BigNumber.from(0),
+        expectedMaxCost: BigNumber.from(0),
+        failedRows,
+      };
+    }
+
+    const aggregateBundleCheck = await this.#checkBundle(
+      aggregateBundle,
+      BigNumber.from(0),
+    );
+
+    let result: AggregationStrategyResult = {
+      aggregateBundle,
       includedRows,
+      bundleOverheadCost: bundleOverheadGas.mul(
+        (await this.ethereumService.GasConfig()).maxFeePerGas,
+      ),
+      expectedFee,
+      expectedMaxCost: aggregateBundleCheck.expectedMaxCost,
+      failedRows,
+    };
+
+    if (this.config.fees?.allowLosses === false) {
+      result = this.#preventLosses(
+        result,
+        aggregateBundleCheck.errorReason,
+        this.config.fees.breakevenOperationCount,
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * This is not guaranteed to prevent losses. We cannot 100% know what is going
+   * to happen until the bundle is actually submitted on chain.
+   */
+  #preventLosses(
+    result: AggregationStrategyResult,
+    errorReason: OperationResultError | nil,
+    breakevenOperationCount: number,
+  ): AggregationStrategyResult {
+    if (result.aggregateBundle === nil) {
+      return result;
+    }
+
+    const {
+      aggregateBundle,
+      expectedFee,
+      expectedMaxCost,
+      includedRows,
+      failedRows,
+    } = result;
+
+    if (expectedFee.gte(expectedMaxCost)) {
+      return result;
+    }
+
+    this.emit({
+      type: "aggregate-bundle-unprofitable",
+      data: {
+        reason: errorReason?.message,
+      },
+    });
+
+    if (aggregateBundle.operations.length < breakevenOperationCount) {
+      return {
+        aggregateBundle: nil,
+        includedRows: [],
+        bundleOverheadCost: result.bundleOverheadCost,
+        expectedFee: BigNumber.from(0),
+        expectedMaxCost: BigNumber.from(0),
+        failedRows,
+      };
+    }
+
+    this.emit({ type: "unprofitable-despite-breakeven-operations" });
+
+    // This is unexpected: We have enough operations to breakeven, but the
+    // bundle is unprofitable instead.
+    //
+    // This could happen due to small variations on a bundle that is
+    // borderline, but it could also happen due to an intentional attack.
+    // In the simplest case, an attacker submits two bundles that both pay
+    // when simulated in isolation, but the first sets state that prevents
+    // payment on the second bundle. We need to do something about this
+    // because it could otherwise put us into a state that might never
+    // resolve - next time we form a bundle, we'll run into the same issue
+    // because the bundles will be considered again in the same order.
+    //
+    // To fix this, we simply mark half the bundles as failed. We could
+    // isolate the issue by doing a lot of in-order reprocessing, but
+    // having this defense in place should prevent the attack in the first
+    // place, so false-positives here are a minor concern (keeping in mind
+    // these bundles will still get retried later).
+
+    let failureSample = shuffled(includedRows);
+    failureSample = failureSample.slice(0, failureSample.length / 2);
+
+    for (const row of failureSample) {
+      row.submitError = "Included in failure sample for unprofitable bundle";
+    }
+
+    failedRows.push(...failureSample);
+
+    return {
+      aggregateBundle: nil,
+      includedRows: [],
+      bundleOverheadCost: result.bundleOverheadCost,
+      expectedFee: BigNumber.from(0),
+      expectedMaxCost: BigNumber.from(0),
       failedRows,
     };
   }
 
-  async estimateFee(bundle: Bundle) {
-    const es = this.ethereumService;
-    const feeToken = this.#FeeToken();
+  async estimateFee(bundle: Bundle, bundleOverheadGas?: BigNumber) {
+    const [{ operationStatuses: successes, fee: feeDetected, errorReason }] =
+      await this
+        .#measureFees([
+          bundle,
+        ]);
 
-    const balanceCall = feeToken
-      ? es.Call(feeToken, "balanceOf", [es.wallet.address])
-      : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]);
-
-    const [
-      balanceResultBefore,
-      bundleResult,
-      balanceResultAfter,
-    ] = await es.callStaticSequence(
-      balanceCall,
-      es.Call(
-        es.verificationGateway,
-        "processBundle",
-        [bundle],
-      ),
-      balanceCall,
+    const feeInfo = await this.#measureFeeInfo(
+      bundle,
+      bundleOverheadGas,
     );
-
-    if (
-      balanceResultBefore.returnValue === undefined ||
-      balanceResultAfter.returnValue === undefined
-    ) {
-      throw new ClientReportableError("Failed to get balance");
-    }
-
-    const balanceBefore = balanceResultBefore.returnValue[0];
-    const balanceAfter = balanceResultAfter.returnValue[0];
-
-    const feeDetected = balanceAfter.sub(balanceBefore);
-
-    if (bundleResult.returnValue === undefined) {
-      throw new ClientReportableError("Failed to statically process bundle");
-    }
-
-    const feeRequired = await this.#measureRequiredFee(bundle);
-
-    const successes = bundleResult.returnValue.successes;
 
     return {
       feeDetected,
-      feeRequired,
+      feeRequired: feeInfo?.requiredFee ?? BigNumber.from(0),
       successes,
+      errorReason,
     };
   }
 
+  /**
+   * Removes rows that conflict with each other because they contain an
+   * operation for the same wallet and the same nonce.
+   */
+  async #filterRows(rows: BundleRow[]) {
+    const rowsByKeyAndNonce = new Map<string, BundleRow[]>();
+
+    for (const row of rows) {
+      for (let i = 0; i < row.bundle.operations.length; i++) {
+        const publicKey = row.bundle.senderPublicKeys[i];
+        const operation = row.bundle.operations[i];
+
+        const keyAndNonce = ethers.utils.solidityPack([
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+          "uint256",
+        ], [...publicKey, operation.nonce]);
+
+        const entry = rowsByKeyAndNonce.get(keyAndNonce) ?? [];
+        entry.push(row);
+        rowsByKeyAndNonce.set(keyAndNonce, entry);
+      }
+    }
+
+    let filteredRows = rows;
+
+    for (let rowGroup of rowsByKeyAndNonce.values()) {
+      rowGroup = rowGroup.filter((r) => filteredRows.includes(r));
+
+      if (rowGroup.length <= 1) {
+        continue;
+      }
+
+      const bestRow = await this.#pickBest(rowGroup);
+      const conflictingRows = rowGroup.filter((r) => r !== bestRow);
+
+      filteredRows = filteredRows.filter((r) => !conflictingRows.includes(r));
+    }
+
+    return filteredRows;
+  }
+
+  /**
+   * Returns the row which pays the highest 'excess fee'.
+   *
+   * Excess fee is the amount the fee exceeds its requirement.
+   */
+  async #pickBest(rows: BundleRow[]) {
+    assert(rows.length > 0);
+
+    const results = await Promise.all(
+      rows.map((r) => this.#checkBundle(r.bundle)),
+    );
+
+    const excessFees = results.map((res) =>
+      res.expectedFee.sub(res.requiredFee)
+    );
+
+    let bestExcessFee = excessFees[0];
+    let bestExcessFeeIndex = 0;
+
+    for (let i = 1; i < excessFees.length; i++) {
+      if (excessFees[i].gt(bestExcessFee)) {
+        bestExcessFee = excessFees[i];
+        bestExcessFeeIndex = i;
+      }
+    }
+
+    return rows[bestExcessFeeIndex];
+  }
+
+  /**
+   * Augment the aggregate bundle with more eligible rows.
+   *
+   * This is part of an iterative process where the aggregate bundle is
+   * initially empty and this method is used to accumulate more user bundles
+   * until we can't add any more.
+   */
   async #augmentAggregateBundle(
     previousAggregateBundle: Bundle,
     eligibleRows: BundleRow[],
-  ): (
-    Promise<{
-      aggregateBundle: Bundle;
-      includedRows: BundleRow[];
-      failedRows: BundleRow[];
-      remainingEligibleRows: BundleRow[];
-    }>
-  ) {
-    let aggregateBundle: Bundle | nil = nil;
-    let includedRows: BundleRow[] = [];
-    const failedRows: BundleRow[] = [];
+    bundleOverheadGas: BigNumber,
+  ): Promise<{
+    aggregateBundle: Bundle;
+    includedRows: BundleRow[];
+    expectedFees: BigNumber[];
+    failedRows: BundleRow[];
+    remainingEligibleRows: BundleRow[];
+  }> {
+    const candidateRows: BundleRow[] = [];
     // TODO (merge-ok): Count gas instead, have idea
     // or way to query max gas per txn (submission).
     let actionCount = countActions(previousAggregateBundle);
 
-    for (const row of eligibleRows) {
+    while (true) {
+      const row = eligibleRows[0];
+
+      if (!row) {
+        break;
+      }
+
       const rowActionCount = countActions(row.bundle);
 
       if (actionCount + rowActionCount > this.config.maxAggregationSize) {
         break;
       }
 
-      includedRows.push(row);
+      eligibleRows.shift();
+      candidateRows.push(row);
       actionCount += rowActionCount;
     }
 
-    if (includedRows.length === 0) {
+    if (candidateRows.length === 0) {
       return {
         aggregateBundle: previousAggregateBundle,
-        includedRows,
-        failedRows,
+        includedRows: [],
+        expectedFees: [],
+        failedRows: [],
 
         // If we're not able to include anything more, don't consider any rows
         // eligible anymore.
@@ -162,56 +397,48 @@ export default class AggregationStrategy {
       };
     }
 
-    const [previousFee, ...fees] = await this.#measureFees([
-      previousAggregateBundle,
-      ...includedRows.map((r) => r.bundle),
-    ]);
-
-    const firstFailureIndex = await this.#findFirstFailureIndex(
-      previousAggregateBundle,
-      previousFee,
-      includedRows.map((r) => r.bundle),
-      fees,
+    // Checking in parallel here. Concurrency is limited by a semaphore used in
+    // #checkBundlePaysRequiredFee.
+    const rowChecks = await Promise.all(
+      candidateRows.map((r) => this.#checkBundle(r.bundle, bundleOverheadGas)),
     );
 
-    let remainingEligibleRows: BundleRow[];
+    const includedRows: BundleRow[] = [];
+    const expectedFees: BigNumber[] = [];
+    const failedRows: BundleRow[] = [];
 
-    if (firstFailureIndex !== nil) {
-      const failedRow = includedRows[firstFailureIndex];
-      const errorReason = fees[firstFailureIndex].errorReason;
-      if (errorReason) {
-        failedRow.submitError = errorReason.message;
+    for (
+      const [i, { success, expectedFee, errorReason }] of rowChecks.entries()
+    ) {
+      const row = candidateRows[i];
+
+      if (success) {
+        includedRows.push(row);
+        expectedFees.push(expectedFee);
+      } else {
+        if (errorReason) {
+          row.submitError = errorReason.message;
+        }
+
+        failedRows.push(row);
       }
-      failedRows.push(failedRow);
-
-      includedRows = includedRows.slice(
-        0,
-        firstFailureIndex,
-      );
-
-      const eligibleRowIndex = eligibleRows.indexOf(failedRow);
-      assert(eligibleRowIndex !== -1);
-
-      remainingEligibleRows = eligibleRows.slice(includedRows.length + 1);
-    } else {
-      remainingEligibleRows = eligibleRows.slice(includedRows.length);
     }
 
-    aggregateBundle = this.blsWalletSigner.aggregate([
-      previousAggregateBundle,
-      ...includedRows.map((r) => r.bundle),
-    ]);
-
     return {
-      aggregateBundle,
+      aggregateBundle: this.blsWalletSigner.aggregate([
+        previousAggregateBundle,
+        ...includedRows.map((r) => r.bundle),
+      ]),
       includedRows,
+      expectedFees,
       failedRows,
-      remainingEligibleRows,
+      remainingEligibleRows: eligibleRows,
     };
   }
 
   async #measureFees(bundles: Bundle[]): Promise<{
     success: boolean;
+    operationStatuses: boolean[];
     fee: BigNumber;
     errorReason: OperationResultError | nil;
   }[]> {
@@ -243,7 +470,12 @@ export default class AggregationStrategy {
         const errorReason: OperationResultError = {
           message: "Unknown error reason",
         };
-        return { success: false, fee, errorReason };
+        return {
+          success: false,
+          operationStatuses: bundles[i].operations.map(() => false),
+          fee,
+          errorReason,
+        };
       }
 
       const [operationStatuses, results] = bundleResult.returnValue;
@@ -251,7 +483,9 @@ export default class AggregationStrategy {
       let errorReason: OperationResultError | nil;
       // We require that at least one operation succeeds, even though
       // processBundle doesn't revert in this case.
-      const success = operationStatuses.some((opSuccess: boolean) => opSuccess === true);
+      const success = operationStatuses.some((opSuccess: boolean) =>
+        opSuccess === true
+      );
 
       // If operation is not successful, attempt to decode an error message
       if (!success) {
@@ -269,202 +503,157 @@ export default class AggregationStrategy {
         errorReason = error[0];
       }
 
-      return { success, fee, errorReason };
+      return { success, operationStatuses, fee, errorReason };
     });
   }
 
   #FeeToken(): ERC20 | nil {
-    const feeType = this.config.fees.type;
-
-    if (feeType === "ether") {
+    if (this.config.fees?.type !== "token") {
       return nil;
     }
 
     return ERC20__factory.connect(
-      feeType.slice("token:".length),
+      this.config.fees.address,
       this.ethereumService.wallet.provider,
     );
   }
 
-  async #measureRequiredFee(bundle: Bundle) {
-    const gasEstimate = await this.ethereumService.verificationGateway
-      .estimateGas
-      .processBundle(bundle);
-
-    const callDataSize = ethers.utils.hexDataLength(
-      this.ethereumService.verificationGateway.interface
-        .encodeFunctionData("processBundle", [bundle]),
-    );
-
-    return (
-      gasEstimate.mul(this.config.fees.perGas).add(
-        this.config.fees.perByte.mul(callDataSize),
-      )
-    );
-  }
-
-  /**
-   * Get a lower bound for the fee that is required for processing the
-   * bundle.
-   *
-   * This exists because it's a very good lower bound and it's very fast.
-   * Therefore, when there's an insufficient fee bundle:
-   * - This lower bound is usually enough to find it
-   * - Finding it this way is much more efficient
-   */
-  #measureRequiredFeeLowerBound(bundle: Bundle) {
-    const callDataEmptyBundleSize = ethers.utils.hexDataLength(
-      this.ethereumService.verificationGateway.interface
-        .encodeFunctionData("processBundle", [
-          this.blsWalletSigner.aggregate([]),
-        ]),
-    );
-
-    const callDataSize = ethers.utils.hexDataLength(
-      this.ethereumService.verificationGateway.interface
-        .encodeFunctionData("processBundle", [bundle]),
-    );
-
-    // We subtract the size of an empty bundle because it represents the number
-    // of *additional* bytes added when aggregating. The bundle doesn't
-    // necessarily have to pay the initial overhead to be viable.
-    const callDataMarginalSize = callDataSize - callDataEmptyBundleSize;
-
-    return this.config.fees.perByte.mul(callDataMarginalSize);
-  }
-
-  async #findFirstFailureIndex(
-    previousAggregateBundle: Bundle,
-    previousFee: { success: boolean; fee: BigNumber },
-    bundles: Bundle[],
-    fees: { success: boolean; fee: BigNumber }[],
-  ): Promise<number | nil> {
-    if (bundles.length === 0) {
+  async #measureFeeInfo(bundle: Bundle, bundleOverheadGas?: BigNumber) {
+    if (this.config.fees === nil) {
       return nil;
     }
 
-    const len = bundles.length;
-    assert(fees.length === len);
+    bundleOverheadGas ??= await this.measureBundleOverheadGas();
 
-    const checkFirstN = async (n: number): Promise<{
+    const gasEstimate = await this.ethereumService.verificationGateway
+      .estimateGas.processBundle(bundle);
+
+    const marginalGasEstimate = gasEstimate.sub(bundleOverheadGas);
+
+    const bundleOverheadGasContribution = BigNumber.from(
+      Math.ceil(
+        bundleOverheadGas.toNumber() /
+          this.config.fees.breakevenOperationCount * bundle.operations.length,
+      ),
+    );
+
+    const requiredGas = marginalGasEstimate.add(bundleOverheadGasContribution);
+
+    const { maxFeePerGas } = await this.ethereumService.GasConfig();
+
+    const ethWeiFee = requiredGas.mul(maxFeePerGas);
+
+    const token = this.#FeeToken();
+
+    if (!token) {
+      return {
+        requiredFee: ethWeiFee,
+        expectedMaxCost: gasEstimate.mul(maxFeePerGas),
+      };
+    }
+
+    const decimals = await this.#TokenDecimals();
+    const decimalAdj = 10 ** (decimals - 18);
+
+    assert(this.config.fees?.type === "token");
+    const ethWeiOverTokenWei = decimalAdj * this.config.fees.ethValueInTokens;
+
+    // Note the use of .toString below. Without it, BigNumber recognizes that
+    // the float64 number cannot accurately represent integers in this range
+    // and throws an overflow. However, this number is ultimately an estimation
+    // with a margin of error, and the rounding caused by float64 is acceptable.
+    const tokenWeiFee = BigNumber.from(
+      Math.ceil(ethWeiFee.toNumber() * ethWeiOverTokenWei).toString(),
+    );
+
+    return {
+      requiredFee: tokenWeiFee,
+      expectedMaxCost: gasEstimate.mul(maxFeePerGas),
+    };
+  }
+
+  async #checkBundle(
+    bundle: Bundle,
+    bundleOverheadGas?: BigNumber,
+  ): Promise<
+    {
       success: boolean;
-      fee: BigNumber;
+      expectedFee: BigNumber;
       requiredFee: BigNumber;
-    }> => {
-      if (n === 0) {
+      expectedMaxCost: BigNumber;
+      errorReason?: OperationResultError;
+    }
+  > {
+    return await this.#checkBundleSemaphore.use(async () => {
+      const [
+        feeInfo,
+        [{ success, fee, errorReason }],
+      ] = await Promise.all([
+        this.#measureFeeInfo(
+          bundle,
+          bundleOverheadGas,
+        ),
+        this.#measureFees([bundle]),
+      ]);
+
+      if (success && feeInfo && fee.lt(feeInfo.requiredFee)) {
         return {
-          success: true,
-          fee: BigNumber.from(0),
-          requiredFee: BigNumber.from(0),
+          success: false,
+          expectedFee: fee,
+          requiredFee: feeInfo.requiredFee,
+          expectedMaxCost: feeInfo.expectedMaxCost,
+          errorReason: { message: "Insufficient fee" },
         };
       }
 
-      const fee = bigSum([
-        previousFee.fee,
-        ...fees.slice(0, n).map((r) => r.fee),
-      ]);
+      return {
+        success,
+        expectedFee: fee,
+        requiredFee: feeInfo?.requiredFee ?? BigNumber.from(0),
+        expectedMaxCost: feeInfo?.expectedMaxCost ?? BigNumber.from(0),
+        errorReason,
+      };
+    });
+  }
 
-      const requiredFee = await this.#measureRequiredFee(
-        this.blsWalletSigner.aggregate([
-          previousAggregateBundle,
-          ...bundles.slice(0, n),
-        ]),
-      );
+  async measureBundleOverheadGas() {
+    // The simple way to do this would be to estimate the gas of an empty
+    // bundle. However, an empty bundle is a bit of a special case, in
+    // particular the on-chain BLS library outright refuses to validate it. So
+    // instead we estimate one operation and two operations and extrapolate
+    // backwards to zero operations.
 
-      const success = fee.gte(requiredFee);
+    const es = this.ethereumService;
+    const wallet = es.blsWalletWrapper;
 
-      return { success, fee, requiredFee };
-    };
+    const nonce = await wallet.Nonce();
 
-    // This calculation is entirely local and cheap. It can find a failing
-    // bundle, but it might not be the *first* failing bundle.
-    const fastFailureIndex = (() => {
-      for (let i = 0; i < len; i++) {
-        // If the actual call failed then we consider it a failure, even if the
-        // fee is somehow met (e.g. if zero fee is required).
-        if (fees[i].success === false) {
-          return i;
-        }
+    // It's a requirement that this wallet has already been created. Otherwise,
+    // wallet creation would be included in the bundle overhead.
+    assert(nonce.gt(0));
 
-        // Because the required fee mostly comes from the calldata size, this
-        // should find the first insufficient fee most of the time.
-        const lowerBound = this.#measureRequiredFeeLowerBound(bundles[i]);
+    const bundle1 = wallet.sign({ nonce, actions: [] });
+    const bundle2 = wallet.sign({ nonce: nonce.add(1), actions: [] });
 
-        if (fees[i].fee.lt(lowerBound)) {
-          return i;
-        }
-      }
-    })();
+    const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
+      es.verificationGateway.estimateGas.processBundle(bundle1),
+      es.verificationGateway.estimateGas.processBundle(
+        this.blsWalletSigner.aggregate([bundle1, bundle2]),
+      ),
+    ]);
 
-    let left = 0;
-    let leftRequiredFee = BigNumber.from(0);
-    let right: number;
-    let rightRequiredFee: BigNumber;
+    const opMarginalGasEstimate = twoOpGasEstimate.sub(oneOpGasEstimate);
 
-    if (fastFailureIndex !== nil) {
-      // Having a fast failure index is not enough because it might not be the
-      // first. To establish that it really is the first, we need to ensure that
-      // all bundles up to that index are ok (indeed, this is the assumption
-      // that is relied upon outside - that the subset before the first failing
-      // index can proceed without further checking).
+    return oneOpGasEstimate.sub(opMarginalGasEstimate);
+  }
 
-      const { success, requiredFee } = await checkFirstN(fastFailureIndex);
-
-      if (success) {
-        return fastFailureIndex;
-      }
-
-      // In case of failure, we now know there as a failing index in a more
-      // narrow range, so we can at least restrict the bisect to this smaller
-      // range.
-      right = fastFailureIndex;
-      rightRequiredFee = requiredFee;
-    } else {
-      // If we don't have a failing index, we still need to establish that there
-      // is a failing index to be found. This is because it's a requirement of
-      // the upcoming bisect logic that there is a failing bundle in
-      // `bundles.slice(left, right)`.
-
-      const { success, requiredFee } = await checkFirstN(bundles.length);
-
-      if (success) {
-        return nil;
-      }
-
-      right = bundles.length;
-      rightRequiredFee = requiredFee;
+  async #TokenDecimals(): Promise<number> {
+    if (this.#tokenDecimals === nil) {
+      const token = this.#FeeToken();
+      assert(token !== nil);
+      this.#tokenDecimals = await token.decimals();
     }
 
-    // Do a bisect to narrow in on the (first) culprit.
-    while (right - left > 1) {
-      const mid = Math.floor((left + right) / 2);
-
-      const { success, requiredFee } = await checkFirstN(mid);
-
-      if (success) {
-        left = mid;
-        leftRequiredFee = requiredFee;
-      } else {
-        right = mid;
-        rightRequiredFee = requiredFee;
-      }
-    }
-
-    assert(right - left === 1, "bisect should identify a single result");
-
-    // The bisect procedure maintains that the culprit is a member of
-    // `bundles.slice(left, right)`. That's now equivalent to `[bundles[left]]`,
-    // so `left` is our culprit index.
-
-    const bundleFee = fees[left].fee;
-    const bundleRequiredFee = rightRequiredFee.sub(leftRequiredFee);
-
-    // Tracking the fees so that we can include this assertion isn't strictly
-    // necessary. But the cost is negligible and should help troubleshooting a
-    // lot if something goes wrong.
-    assert(bundleFee.lt(bundleRequiredFee));
-
-    return left;
+    return this.#tokenDecimals;
   }
 }
-

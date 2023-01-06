@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --unstable --allow-net --allow-read --unstable
+#!/usr/bin/env -S deno run --unstable --allow-net --allow-read --allow-env
 
 import { BigNumber } from "../deps.ts";
 import createQueryClient from "../src/app/createQueryClient.ts";

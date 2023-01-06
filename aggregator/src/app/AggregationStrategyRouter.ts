@@ -4,6 +4,8 @@ import BundleHandler from "./helpers/BundleHandler.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import ClientReportableError from "./helpers/ClientReportableError.ts";
+import nil from "../helpers/nil.ts";
+import never from "./helpers/never.ts";
 
 export default function AggregationStrategyRouter(
   aggregationStrategy: AggregationStrategy,
@@ -28,7 +30,19 @@ export default function AggregationStrategyRouter(
       }
 
       ctx.response.body = {
-        feeType: aggregationStrategy.config.fees.type,
+        feeType: (() => {
+          const feesConfig = aggregationStrategy.config.fees;
+
+          if (feesConfig === nil || feesConfig.type === "ether") {
+            return "ether";
+          }
+
+          if (feesConfig.type === "token") {
+            return `token:${feesConfig.address}`;
+          }
+
+          never(feesConfig);
+        })(),
         feeDetected: result.feeDetected.toString(),
         feeRequired: result.feeRequired.toString(),
         successes: result.successes,
