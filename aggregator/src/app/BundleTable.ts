@@ -83,7 +83,7 @@ function fromRawRow(rawRow: RawRow): Row {
 
   const receipt: ethers.ContractReceipt = rawRow.receipt
     ? JSON.parse(rawRow.receipt)
-    : undefined;
+    : nil;
 
   return {
     ...rawRow,
@@ -220,6 +220,6 @@ function toUint256Hex(n: BigNumber) {
 }
 
 function isValidStatus(status: unknown): status is BundleStatus {
-  return typeof status === 'string'
+  return typeof status === "string"
     && BundleStatuses.includes(status as ExplicitAny);
 }

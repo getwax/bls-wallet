@@ -178,7 +178,7 @@ export default class BundleService {
       const hash = makeHash();
 
       await this.bundleTable.add({
-        status: 'pending',
+        status: "pending",
         hash,
         bundle,
         eligibleAfter: await this.ethereumService.BlockNumber(),
