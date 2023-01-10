@@ -347,4 +347,5 @@ Fixture.test("updates status of failing bundle when its eligibility delay is lar
   }
   const failedBundleRow = await bundleService.bundleTable.findBundle(res.hash);
   assertEquals(failedBundleRow.status, "failed");
+  console.log("Last test in BundleServiceSubmitting.test.ts finished. wait for cleanup")
 });

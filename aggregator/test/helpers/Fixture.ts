@@ -67,7 +67,9 @@ export default class Fixture {
         } catch (error) {
           throw wrapInnermostError(error);
         } finally {
+          console.log("starting cleanup");
           await fx.cleanup();
+          console.log("finish test cleanup");
         }
       },
     });
