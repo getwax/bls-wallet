@@ -130,7 +130,7 @@ Fixture.test(
     );
 
     // Prevent submission from triggering on max aggregation size.
-    bundleService.config.maxAggregationSize = Infinity;
+    bundleService.config.breakevenOperationCount = Infinity;
 
     for (const b of bundles) {
       assertBundleSucceeds(await bundleService.add(b));
@@ -139,7 +139,7 @@ Fixture.test(
     // Restore max aggregation size for testing. (This way we hit the edge case
     // that the aggregator has access to more actions than it can fit into a
     // single submission, which happens but is race-dependent.)
-    bundleService.config.maxAggregationSize = 5;
+    bundleService.config.breakevenOperationCount = 4.5;
 
     await bundleService.submissionTimer.trigger();
     await bundleService.waitForConfirmations();

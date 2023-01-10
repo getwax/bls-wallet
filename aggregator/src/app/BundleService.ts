@@ -6,6 +6,7 @@ import {
   delay,
   ethers,
   QueryClient,
+  Semaphore,
 } from "../../deps.ts";
 
 import { IClock } from "../helpers/Clock.ts";
@@ -19,7 +20,6 @@ import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable, { BundleRow, makeHash } from "./BundleTable.ts";
-import countActions from "./helpers/countActions.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
@@ -32,6 +32,7 @@ export default class BundleService {
   static defaultConfig = {
     bundleQueryLimit: env.BUNDLE_QUERY_LIMIT,
     maxAggregationSize: env.MAX_AGGREGATION_SIZE,
+    breakevenOperationCount: env.BREAKEVEN_OPERATION_COUNT,
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
     maxEligibilityDelay: env.MAX_ELIGIBILITY_DELAY,
@@ -47,6 +48,7 @@ export default class BundleService {
     receipt: ethers.ContractReceipt;
   }>();
 
+  submissionSemaphore: Semaphore;
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
 
@@ -65,6 +67,8 @@ export default class BundleService {
     public aggregationStrategy: AggregationStrategy,
     public config = BundleService.defaultConfig,
   ) {
+    this.submissionSemaphore = new Semaphore(config.maxUnconfirmedAggregations);
+
     this.submissionTimer = new SubmissionTimer(
       clock,
       config.maxAggregationDelayMillis,
@@ -116,15 +120,14 @@ export default class BundleService {
       this.config.bundleQueryLimit,
     );
 
-    // TODO: Check operations against breakeven instead
-    const actionCount = eligibleRows
+    const opCount = eligibleRows
       .filter((r) => !this.unconfirmedRowIds.has(r.id))
-      .map((r) => countActions(r.bundle))
+      .map((r) => r.bundle.operations.length)
       .reduce(plus, 0);
 
-    if (actionCount >= this.config.maxAggregationSize) {
+    if (opCount >= this.config.breakevenOperationCount) {
       this.submissionTimer.trigger();
-    } else if (actionCount > 0) {
+    } else if (opCount > 0) {
       this.submissionTimer.notifyActive();
     } else {
       this.submissionTimer.clear();
@@ -327,22 +330,7 @@ export default class BundleService {
     expectedFee: BigNumber,
     expectedMaxCost: BigNumber,
   ) {
-    const maxUnconfirmedActions = (
-      this.config.maxUnconfirmedAggregations *
-      this.config.maxAggregationSize
-    );
-
-    const actionCount = countActions(aggregateBundle);
-
-    while (
-      this.unconfirmedActionCount + actionCount > maxUnconfirmedActions
-    ) {
-      // FIXME (merge-ok): Polling
-      this.emit({ type: "waiting-unconfirmed-space" });
-      await delay(1000);
-    }
-
-    this.unconfirmedActionCount += actionCount;
+    const releaseSemaphore = await this.submissionSemaphore.acquire();
     this.unconfirmedBundles.add(aggregateBundle);
 
     for (const row of includedRows) {
@@ -392,12 +380,13 @@ export default class BundleService {
 
         await this.bundleTable.remove(...includedRows);
       } finally {
-        this.unconfirmedActionCount -= actionCount;
         this.unconfirmedBundles.delete(aggregateBundle);
 
         for (const row of includedRows) {
           this.unconfirmedRowIds.delete(row.id);
         }
+
+        releaseSemaphore();
       }
     });
   }
