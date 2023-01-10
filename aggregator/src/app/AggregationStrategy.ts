@@ -17,7 +17,6 @@ import assert from "../helpers/assert.ts";
 import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
 import { BundleRow } from "./BundleTable.ts";
-import countActions from "./helpers/countActions.ts";
 import AppEvent from "./AppEvent.ts";
 import bigSum from "./helpers/bigSum.ts";
 
@@ -81,22 +80,27 @@ export type AggregationStrategyConfig =
 
 export default class AggregationStrategy {
   static defaultConfig = {
-    maxAggregationSize: env.MAX_AGGREGATION_SIZE,
+    maxGas: env.MAX_GAS,
     fees: envFeeConfig,
+    bundleCheckingConcurrency: env.BUNDLE_CHECKING_CONCURRENCY,
   };
 
   #tokenDecimals?: number;
 
   // The concurrency of #checkBundle is limited by this semaphore because it can
   // be called on many bundles in parallel
-  #checkBundleSemaphore = new Semaphore(8);
+  #checkBundleSemaphore: Semaphore;
 
   constructor(
     public blsWalletSigner: BlsWalletSigner,
     public ethereumService: EthereumService,
     public config = AggregationStrategy.defaultConfig,
     public emit: (event: AppEvent) => void = () => {},
-  ) {}
+  ) {
+    this.#checkBundleSemaphore = new Semaphore(
+      this.config.bundleCheckingConcurrency,
+    );
+  }
 
   async run(eligibleRows: BundleRow[]): Promise<AggregationStrategyResult> {
     eligibleRows = await this.#filterRows(eligibleRows);
@@ -104,28 +108,36 @@ export default class AggregationStrategy {
     const bundleOverheadGas = await this.measureBundleOverheadGas();
 
     let aggregateBundle = this.blsWalletSigner.aggregate([]);
+    let aggregateGas = bundleOverheadGas;
     const includedRows: BundleRow[] = [];
     const failedRows: BundleRow[] = [];
     let expectedFee = BigNumber.from(0);
 
-    while (eligibleRows.length > 0) {
+    while (true) {
       const {
         aggregateBundle: newAggregateBundle,
+        aggregateGas: newAggregateGas,
         includedRows: newIncludedRows,
         expectedFees,
         failedRows: newFailedRows,
         remainingEligibleRows,
       } = await this.#augmentAggregateBundle(
         aggregateBundle,
+        aggregateGas,
         eligibleRows,
         bundleOverheadGas,
       );
 
       aggregateBundle = newAggregateBundle;
+      aggregateGas = newAggregateGas;
       includedRows.push(...newIncludedRows);
       expectedFee = expectedFee.add(bigSum(expectedFees));
       failedRows.push(...newFailedRows);
       eligibleRows = remainingEligibleRows;
+
+      if (newIncludedRows.length === 0) {
+        break;
+      }
     }
 
     if (includedRows.length === 0) {
@@ -352,53 +364,26 @@ export default class AggregationStrategy {
    */
   async #augmentAggregateBundle(
     previousAggregateBundle: Bundle,
+    previousAggregateGas: BigNumber,
     eligibleRows: BundleRow[],
     bundleOverheadGas: BigNumber,
   ): Promise<{
     aggregateBundle: Bundle;
+    aggregateGas: BigNumber;
     includedRows: BundleRow[];
     expectedFees: BigNumber[];
     failedRows: BundleRow[];
     remainingEligibleRows: BundleRow[];
   }> {
-    const candidateRows: BundleRow[] = [];
-    // TODO (merge-ok): Count gas instead, have idea
-    // or way to query max gas per txn (submission).
-    let actionCount = countActions(previousAggregateBundle);
+    const candidateRows = eligibleRows.splice(
+      0,
+      this.config.bundleCheckingConcurrency,
+    );
 
-    while (true) {
-      const row = eligibleRows[0];
+    let aggregateGas = previousAggregateGas;
 
-      if (!row) {
-        break;
-      }
-
-      const rowActionCount = countActions(row.bundle);
-
-      if (actionCount + rowActionCount > this.config.maxAggregationSize) {
-        break;
-      }
-
-      eligibleRows.shift();
-      candidateRows.push(row);
-      actionCount += rowActionCount;
-    }
-
-    if (candidateRows.length === 0) {
-      return {
-        aggregateBundle: previousAggregateBundle,
-        includedRows: [],
-        expectedFees: [],
-        failedRows: [],
-
-        // If we're not able to include anything more, don't consider any rows
-        // eligible anymore.
-        remainingEligibleRows: [],
-      };
-    }
-
-    // Checking in parallel here. Concurrency is limited by a semaphore used in
-    // #checkBundlePaysRequiredFee.
+    // Checking in parallel here. We limit the number of candidate rows on each
+    // round to limit this, and it's also protected by a semaphore.
     const rowChecks = await Promise.all(
       candidateRows.map((r) => this.#checkBundle(r.bundle, bundleOverheadGas)),
     );
@@ -408,20 +393,36 @@ export default class AggregationStrategy {
     const failedRows: BundleRow[] = [];
 
     for (
-      const [i, { success, expectedFee, errorReason }] of rowChecks.entries()
+      const [
+        i,
+        { success, gasEstimate, expectedFee, errorReason },
+      ] of rowChecks.entries()
     ) {
       const row = candidateRows[i];
 
-      if (success) {
-        includedRows.push(row);
-        expectedFees.push(expectedFee);
-      } else {
+      if (!success) {
         if (errorReason) {
           row.submitError = errorReason.message;
         }
 
         failedRows.push(row);
+
+        continue;
       }
+
+      const newAggregateGas = (aggregateGas
+        .add(gasEstimate)
+        .sub(bundleOverheadGas));
+
+      if (newAggregateGas.gt(this.config.maxGas)) {
+        // Bundle would cause us to exceed maxGas, so don't include it, but also
+        // don't mark it as failed.
+        continue;
+      }
+
+      aggregateGas = newAggregateGas;
+      includedRows.push(row);
+      expectedFees.push(expectedFee);
     }
 
     return {
@@ -429,6 +430,7 @@ export default class AggregationStrategy {
         previousAggregateBundle,
         ...includedRows.map((r) => r.bundle),
       ]),
+      aggregateGas,
       includedRows,
       expectedFees,
       failedRows,
@@ -549,6 +551,8 @@ export default class AggregationStrategy {
       return {
         requiredFee: ethWeiFee,
         expectedMaxCost: gasEstimate.mul(maxFeePerGas),
+        gasEstimate,
+        bundleOverheadGas,
       };
     }
 
@@ -569,6 +573,8 @@ export default class AggregationStrategy {
     return {
       requiredFee: tokenWeiFee,
       expectedMaxCost: gasEstimate.mul(maxFeePerGas),
+      gasEstimate,
+      bundleOverheadGas,
     };
   }
 
@@ -578,6 +584,8 @@ export default class AggregationStrategy {
   ): Promise<
     {
       success: boolean;
+      gasEstimate: BigNumber;
+      bundleOverheadGas?: BigNumber;
       expectedFee: BigNumber;
       requiredFee: BigNumber;
       expectedMaxCost: BigNumber;
@@ -599,6 +607,8 @@ export default class AggregationStrategy {
       if (success && feeInfo && fee.lt(feeInfo.requiredFee)) {
         return {
           success: false,
+          gasEstimate: feeInfo.gasEstimate,
+          bundleOverheadGas: feeInfo.bundleOverheadGas,
           expectedFee: fee,
           requiredFee: feeInfo.requiredFee,
           expectedMaxCost: feeInfo.expectedMaxCost,
@@ -606,8 +616,13 @@ export default class AggregationStrategy {
         };
       }
 
+      const gasEstimate = feeInfo?.gasEstimate ??
+        await this.ethereumService.verificationGateway
+          .estimateGas.processBundle(bundle);
+
       return {
         success,
+        gasEstimate,
         expectedFee: fee,
         requiredFee: feeInfo?.requiredFee ?? BigNumber.from(0),
         expectedMaxCost: feeInfo?.expectedMaxCost ?? BigNumber.from(0),

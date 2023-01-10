@@ -11,8 +11,9 @@ const bundleServiceConfig = {
 };
 
 const aggregationStrategyConfig: AggregationStrategyConfig = {
+  maxGas: 900000,
   fees: nil,
-  maxAggregationSize: 5,
+  bundleCheckingConcurrency: 8,
 };
 
 Fixture.test("submits a single action in a timed submission", async (fx) => {

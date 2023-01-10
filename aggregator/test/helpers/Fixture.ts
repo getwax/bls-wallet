@@ -42,12 +42,13 @@ export const bundleServiceDefaultTestConfig:
   };
 
 export const aggregationStrategyDefaultTestConfig: AggregationStrategyConfig = {
-  maxAggregationSize: 12,
+  maxGas: 1500000,
   fees: {
     type: "ether",
     allowLosses: true,
     breakevenOperationCount: 4.5,
   },
+  bundleCheckingConcurrency: 8,
 };
 
 export default class Fixture {

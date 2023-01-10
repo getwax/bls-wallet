@@ -37,7 +37,7 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
     fx.blsWalletSigner,
     fx.ethereumService,
     {
-      maxAggregationSize: 12,
+      maxGas: 1500000,
       fees: {
         type: "token",
         address: fx.testErc20.address,
@@ -45,6 +45,7 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
         breakevenOperationCount: 4.5,
         ethValueInTokens: 1300,
       },
+      bundleCheckingConcurrency: 8,
     },
   );
 
@@ -119,7 +120,7 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
     fx.blsWalletSigner,
     fx.ethereumService,
     {
-      maxAggregationSize: 12,
+      maxGas: 1500000,
       fees: {
         type: "token",
         address: fx.testErc20.address,
@@ -127,6 +128,7 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
         breakevenOperationCount: 4.5,
         ethValueInTokens: 1300,
       },
+      bundleCheckingConcurrency: 8,
     },
   );
 

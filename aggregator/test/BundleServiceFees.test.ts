@@ -24,7 +24,7 @@ async function createBundleService(
     },
     {
       ...aggregationStrategyDefaultTestConfig,
-      maxAggregationSize: 24,
+      maxGas: 3000000,
       fees: feesOverride ?? {
         type: "token",
         address: fx.testErc20.address,

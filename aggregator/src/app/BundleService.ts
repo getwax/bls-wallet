@@ -116,6 +116,7 @@ export default class BundleService {
       this.config.bundleQueryLimit,
     );
 
+    // TODO: Check operations against breakeven instead
     const actionCount = eligibleRows
       .filter((r) => !this.unconfirmedRowIds.has(r.id))
       .map((r) => countActions(r.bundle))
