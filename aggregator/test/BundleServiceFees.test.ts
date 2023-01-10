@@ -10,7 +10,6 @@ import Fixture, {
   aggregationStrategyDefaultTestConfig,
   bundleServiceDefaultTestConfig,
 } from "./helpers/Fixture.ts";
-import ExplicitAny from "../src/helpers/ExplicitAny.ts";
 
 const oneToken = ethers.utils.parseUnits("1.0", 18);
 
@@ -116,7 +115,7 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
     approveAndSendTokensToOrigin(fx, await wallet.Nonce(), oneToken),
   );
 
-  const bundleResponse: ExplicitAny = await bundleService.add(bundle);
+  const bundleResponse = await bundleService.add(bundle);
   assertBundleSucceeds(bundleResponse);
 
   assertEquals(
@@ -130,6 +129,9 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
   await bundleService.waitForConfirmations();
 
+  if ("failures" in bundleResponse) {
+    throw new Error("Bundle failed to be created");
+  }
   const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
 
   assertEquals(bundleRow.status, "confirmed");
@@ -195,7 +197,7 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
     ],
   });
 
-  const bundleResponse: ExplicitAny = await bundleService.add(bundle);
+  const bundleResponse = await bundleService.add(bundle);
   assertBundleSucceeds(bundleResponse);
 
   assertEquals(
@@ -209,6 +211,9 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
   await bundleService.waitForConfirmations();
 
+  if ("failures" in bundleResponse) {
+    throw new Error("Bundle failed to be created");
+  }
   const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
 
   assertEquals(bundleRow.status, "confirmed");

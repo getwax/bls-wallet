@@ -3,7 +3,6 @@ import Fixture, { bundleServiceDefaultTestConfig } from "./helpers/Fixture.ts";
 import Range from "../src/helpers/Range.ts";
 import { AggregationStrategyConfig } from "../src/app/AggregationStrategy.ts";
 import nil from "../src/helpers/nil.ts";
-import ExplicitAny from "../src/helpers/ExplicitAny.ts";
 
 const bundleServiceConfig = {
   ...bundleServiceDefaultTestConfig,
@@ -38,7 +37,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     ],
   });
 
-  const bundleResponse: ExplicitAny = await bundleService.add(bundle);
+  const bundleResponse = await bundleService.add(bundle);
   assertBundleSucceeds(bundleResponse);
 
   assertEquals(
@@ -56,6 +55,10 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     BigNumber.from(1001),
   );
   assertEquals(await bundleService.bundleTable.count(), 1n);
+
+  if ("failures" in bundleResponse) {
+    throw new Error("Bundle failed to be created");
+  }
   const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
 
   assertEquals(bundleRow.status, "confirmed");
@@ -293,7 +296,7 @@ Fixture.test("retains failing bundle when its eligibility delay is smaller than 
   assertEquals(await bundleService.bundleTable.count(), 1n);
 });
 
-Fixture.test("removes failing bundle when its eligibility delay is larger than MAX_ELIGIBILITY_DELAY", async (fx) => {
+Fixture.test("updates status of failing bundle when its eligibility delay is larger than MAX_ELIGIBILITY_DELAY", async (fx) => {
   const bundleService = await fx.createBundleService(
     {
       ...bundleServiceConfig,
@@ -321,7 +324,7 @@ Fixture.test("removes failing bundle when its eligibility delay is larger than M
 
   // "failing" above refers to execution, which doesn't cause failure to simply
   // add it to the service
-  const res: ExplicitAny = await bundleService.add(bundle);
+  const res = await bundleService.add(bundle);
   await bundleService.runPendingTasks();
   assertBundleSucceeds(res);
 
@@ -339,6 +342,9 @@ Fixture.test("removes failing bundle when its eligibility delay is larger than M
 
   assertEquals(await bundleService.bundleTable.count(), 1n);
 
+  if ("failures" in res) {
+    throw new Error("Bundle failed to be created");
+  }
   const failedBundleRow = await bundleService.bundleTable.findBundle(res.hash);
   assertEquals(failedBundleRow.status, "failed");
 });
