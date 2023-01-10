@@ -93,6 +93,7 @@ contract BLSExpander {
     function blsCallMultiSameCallerContractFunction(
         uint256[4] calldata publicKey,
         uint256 nonce,
+        uint256 gas,
         uint256[2] calldata signature,
         address contractAddress,
         bytes4 methodId,
@@ -108,6 +109,7 @@ contract BLSExpander {
 
         bundle.operations = new IWallet.Operation[](1);
         bundle.operations[0].nonce = nonce;
+        bundle.operations[0].gas = gas;
         bundle.operations[0].actions = new IWallet.ActionData[](length);
         for (uint256 i=0; i<length; i++) {
             bundle.operations[0].actions[i].ethValue = 0;

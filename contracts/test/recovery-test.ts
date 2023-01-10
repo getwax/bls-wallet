@@ -89,10 +89,11 @@ describe("Recovery", async function () {
       "setBLSKeyForWallet",
       [addressSignature, wallet2.PublicKey()],
       1,
+      30_000_000,
     );
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 2);
+    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 2, 30_000_000);
 
     expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash2);
   });
@@ -106,7 +107,7 @@ describe("Recovery", async function () {
     expect(BigNumber.from(hashFromWallet)).to.not.equal(BigNumber.from(0));
     expect(hashFromWallet).to.equal(hash1);
 
-    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 1);
+    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 1, 30_000_000);
 
     walletForHash = await vg.walletFromHash(hash1);
     expect(walletForHash).to.equal(wallet1.address);
@@ -117,7 +118,14 @@ describe("Recovery", async function () {
 
   it("should set recovery hash", async function () {
     // set instantly from 0 value
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
+    await fx.call(
+      wallet1,
+      blsWallet,
+      "setRecoveryHash",
+      [recoveryHash],
+      1,
+      30_000_000,
+    );
     expect(await blsWallet.recoveryHash()).to.equal(recoveryHash);
 
     // new value set after delay from non-zero value
@@ -126,7 +134,14 @@ describe("Recovery", async function () {
       ["address", "bytes32", "bytes32"],
       [recoverySigner.address, hash1, salt],
     );
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [newRecoveryHash], 2);
+    await fx.call(
+      wallet1,
+      blsWallet,
+      "setRecoveryHash",
+      [newRecoveryHash],
+      2,
+      30_000_000,
+    );
     expect(await blsWallet.recoveryHash()).to.equal(recoveryHash);
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await (await blsWallet.setAnyPending()).wait();
@@ -148,6 +163,7 @@ describe("Recovery", async function () {
       "setRecoveryHash",
       [recoveryHash],
       w1Nonce++,
+      30_000_000,
     );
 
     // key 3 signs wallet 1 address
@@ -166,6 +182,7 @@ describe("Recovery", async function () {
       "recoverWallet",
       [addressSignature, hash1, salt, wallet3.PublicKey()],
       w2Nonce++,
+      30_000_000,
     );
 
     // don't trust, verify
@@ -182,6 +199,7 @@ describe("Recovery", async function () {
       "setRecoveryHash",
       [recoveryHash],
       recoveredWalletNonce++,
+      30_000_000,
     );
 
     const attackSignature = await signWalletAddress(
@@ -198,6 +216,7 @@ describe("Recovery", async function () {
       "setBLSKeyForWallet",
       [attackSignature, walletAttacker.PublicKey()],
       recoveredWalletNonce++,
+      30_000_000,
     );
     const pendingKey = await Promise.all(
       [0, 1, 2, 3].map(async (i) =>
@@ -217,6 +236,7 @@ describe("Recovery", async function () {
       "setPendingBLSKeyForWallet",
       [],
       recoveredWalletNonce++,
+      30_000_000,
     );
 
     const addressSignature = await signWalletAddress(
@@ -248,6 +268,7 @@ describe("Recovery", async function () {
       "setPendingBLSKeyForWallet",
       [],
       await walletAttacker.Nonce(),
+      30_000_000,
     );
     /**
      * TODO (merge-ok)
@@ -266,6 +287,7 @@ describe("Recovery", async function () {
       "setPendingBLSKeyForWallet",
       [],
       recoveredWalletNonce++, // await wallet2.Nonce(),
+      30_000_000,
     );
 
     expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
@@ -281,6 +303,7 @@ describe("Recovery", async function () {
       "setTrustedBLSGateway",
       [hash2, vg.address],
       recoveredWalletNonce, // await wallet2.Nonce(),
+      30_000_000,
     );
     expect(res.successes[0]).to.equal(true);
   });
@@ -303,6 +326,7 @@ describe("Recovery", async function () {
       "setRecoveryHash",
       [attackerRecoveryHash],
       1,
+      30_000_000,
     );
 
     // Attacker waits out safety delay
@@ -331,6 +355,7 @@ describe("Recovery", async function () {
     // Run empty operation on wallet 2 to align nonces after recovery.
     const emptyBundle = wallet2.sign({
       nonce: await wallet2.Nonce(),
+      gas: 30_000_000,
       actions: [],
     });
     const emptyBundleTxn = await fx.verificationGateway.processBundle(
@@ -340,7 +365,14 @@ describe("Recovery", async function () {
 
     // Set wallet 1's pubkey to wallet 2's through recovery
     // This will also unregister wallet 2 from VG
-    await fx.call(wallet1, blsWallet, "setRecoveryHash", [recoveryHash], 1);
+    await fx.call(
+      wallet1,
+      blsWallet,
+      "setRecoveryHash",
+      [recoveryHash],
+      1,
+      30_000_000,
+    );
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -368,6 +400,7 @@ describe("Recovery", async function () {
     // Signiuture verification should fail as addresses differ
     const invalidBundle = wallet2.sign({
       nonce: await wallet2.Nonce(),
+      gas: 30_000_000,
       actions: [],
     });
     await expect(

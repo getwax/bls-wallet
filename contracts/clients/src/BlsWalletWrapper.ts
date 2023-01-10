@@ -27,6 +27,7 @@ type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
  */
 export default class BlsWalletWrapper {
   public address: string;
+  public blockGasLimit: BigNumber = BigNumber.from(0);
   private constructor(
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
@@ -149,6 +150,9 @@ export default class BlsWalletWrapper {
       privateKey,
       await BlsWalletWrapper.BLSWallet(privateKey, verificationGateway),
     );
+    blsWalletWrapper.blockGasLimit = (
+      await provider.getBlock("latest")
+    ).gasLimit;
 
     return blsWalletWrapper;
   }
@@ -224,9 +228,7 @@ export default class BlsWalletWrapper {
   /** Returns the same operation but with a gas estimate. */
   async opWithGasEstimate(operation: Operation): Promise<Operation> {
     const bundle = this.sign(operation);
-    operation.gas = (
-      await this.walletContract.provider.getBlock("latest")
-    ).gasLimit;
+    operation.gas = this.blockGasLimit;
     const gatewayAddress = await this.walletContract.trustedBLSGateway();
     // const gatewaySigner = new VoidSigner(gatewayAddress);
     operation.gas = await this.walletContract
