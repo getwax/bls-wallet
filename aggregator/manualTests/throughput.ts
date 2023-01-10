@@ -27,7 +27,14 @@ function log(...args: unknown[]) {
   console.log(RelativeTimestamp(), ...args);
 }
 
-const leadTarget = env.MAX_AGGREGATION_SIZE * env.MAX_UNCONFIRMED_AGGREGATIONS;
+// Note: This value is a guess and may require some experimentation for optimal
+// throughput. The size of a full aggregation used to be hardcoded in config,
+// but now that we use gas to limit the bundle size we don't know this value
+// upfront anymore.
+const fullAggregationSize = 100;
+
+const leadTarget = fullAggregationSize * env.MAX_UNCONFIRMED_AGGREGATIONS;
+
 const pollingInterval = 400;
 const sendWalletCount = 50;
 

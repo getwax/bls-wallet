@@ -40,9 +40,6 @@ export const BUNDLE_QUERY_LIMIT = requireIntEnv("BUNDLE_QUERY_LIMIT");
  */
 export const MAX_ELIGIBILITY_DELAY = requireIntEnv("MAX_ELIGIBILITY_DELAY");
 
-// TODO: Remove
-export const MAX_AGGREGATION_SIZE = requireIntEnv("MAX_AGGREGATION_SIZE");
-
 /**
  * Approximate maximum gas of aggregate bundles.
  *

@@ -18,10 +18,7 @@ async function createBundleService(
   feesOverride?: typeof aggregationStrategyDefaultTestConfig["fees"],
 ) {
   return await fx.createBundleService(
-    {
-      ...bundleServiceDefaultTestConfig,
-      maxAggregationSize: 24,
-    },
+    bundleServiceDefaultTestConfig,
     {
       ...aggregationStrategyDefaultTestConfig,
       maxGas: 3000000,

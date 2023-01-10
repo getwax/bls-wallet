@@ -6,7 +6,6 @@ import nil from "../src/helpers/nil.ts";
 
 const bundleServiceConfig = {
   ...bundleServiceDefaultTestConfig,
-  maxAggregationSize: 5,
   maxAggregationDelayMillis: 5000,
 };
 

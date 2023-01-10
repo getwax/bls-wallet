@@ -31,7 +31,6 @@ export type AddBundleResponse = { hash: string } | {
 export default class BundleService {
   static defaultConfig = {
     bundleQueryLimit: env.BUNDLE_QUERY_LIMIT,
-    maxAggregationSize: env.MAX_AGGREGATION_SIZE,
     breakevenOperationCount: env.BREAKEVEN_OPERATION_COUNT,
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
