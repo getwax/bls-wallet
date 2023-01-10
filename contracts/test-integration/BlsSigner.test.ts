@@ -678,6 +678,21 @@ describe("BlsSigner", () => {
     // Assert
     expect(connect).to.throw(Error, "cannot alter JSON-RPC Signer connection");
   });
+
+  // The personal_unlockAccount method is not supported by the underlying hardhat node so this test asserts that the correct error is thrown.
+  it("should throw an error when trying to unlock an account", async () => {
+    // Arrange
+    const madeUpPassword = "password";
+
+    // Act
+    const unlock = async () => await blsSigner.unlock(madeUpPassword);
+
+    // Assert
+    await expect(unlock()).to.be.rejectedWith(
+      Error,
+      "Method personal_unlockAccount not found",
+    );
+  });
 });
 
 describe("JsonRpcSigner", () => {
