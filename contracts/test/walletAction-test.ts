@@ -12,7 +12,7 @@ import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunP
 import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import { getOperationResults } from "../clients/src";
 
-describe.only("WalletActions", async function () {
+describe("WalletActions", async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
     console.log("Skipping non-deployer tests.");
     return;
@@ -97,7 +97,7 @@ describe.only("WalletActions", async function () {
     expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
   });
 
-  it.only("should send ETH (empty call)", async function () {
+  it("should send ETH (empty call)", async function () {
     // send money to sender bls wallet
     const sendWallet = await fx.lazyBlsWallets[0]();
     const recvWallet = await fx.lazyBlsWallets[1]();
@@ -163,17 +163,20 @@ describe.only("WalletActions", async function () {
 
     await fx.verificationGateway.processBundle(
       fx.blsWalletSigner.aggregate([
-        sendWallet.sign({
-          nonce: BigNumber.from(1),
-          actions: [
-            {
-              ethValue: ethToTransfer,
-              contractAddress: mockAuction.address,
-              encodedFunction:
-                mockAuction.interface.encodeFunctionData("buyItNow"),
-            },
-          ],
-        }),
+        sendWallet.sign(
+          await sendWallet.opWithGasEstimate({
+            nonce: BigNumber.from(1),
+            gas: 0,
+            actions: [
+              {
+                ethValue: ethToTransfer,
+                contractAddress: mockAuction.address,
+                encodedFunction:
+                  mockAuction.interface.encodeFunctionData("buyItNow"),
+              },
+            ],
+          }),
+        ),
       ]),
     );
 
@@ -186,19 +189,23 @@ describe.only("WalletActions", async function () {
   it("should check signature", async function () {
     const wallet = await fx.lazyBlsWallets[0]();
 
-    const tx = wallet.sign({
-      nonce: await wallet.Nonce(),
-      actions: [
-        {
-          ethValue: BigNumber.from(0),
-          contractAddress: fx.verificationGateway.address,
-          encodedFunction: fx.verificationGateway.interface.encodeFunctionData(
-            "walletFromHash",
-            [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
-          ),
-        },
-      ],
-    });
+    const tx = wallet.sign(
+      await wallet.opWithGasEstimate({
+        nonce: await wallet.Nonce(),
+        gas: 0,
+        actions: [
+          {
+            ethValue: BigNumber.from(0),
+            contractAddress: fx.verificationGateway.address,
+            encodedFunction:
+              fx.verificationGateway.interface.encodeFunctionData(
+                "walletFromHash",
+                [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
+              ),
+          },
+        ],
+      }),
+    );
 
     await fx.verificationGateway.callStatic.verify(tx);
 
@@ -240,43 +247,49 @@ describe.only("WalletActions", async function () {
     await (
       await fx.verificationGateway.processBundle(
         fx.blsWalletSigner.aggregate([
-          sender1.sign({
-            nonce: await sender1.Nonce(),
-            actions: [
-              {
-                ethValue: 0,
-                contractAddress: th.testToken.address,
-                encodedFunction: th.testToken.interface.encodeFunctionData(
-                  "transfer",
-                  [
-                    recipient.address,
+          sender1.sign(
+            await sender1.opWithGasEstimate({
+              nonce: await sender1.Nonce(),
+              gas: 0,
+              actions: [
+                {
+                  ethValue: 0,
+                  contractAddress: th.testToken.address,
+                  encodedFunction: th.testToken.interface.encodeFunctionData(
+                    "transfer",
+                    [
+                      recipient.address,
 
-                    // Should fail because it's more than the sender has
-                    th.userStartAmount.add(1),
-                  ],
-                ),
-              },
-            ],
-          }),
-          sender2.sign({
-            nonce: await sender2.Nonce(),
-            actions: [
-              {
-                ethValue: 0,
-                contractAddress: th.testToken.address,
-                encodedFunction: th.testToken.interface.encodeFunctionData(
-                  "transfer",
-                  [
-                    recipient.address,
+                      // Should fail because it's more than the sender has
+                      th.userStartAmount.add(1),
+                    ],
+                  ),
+                },
+              ],
+            }),
+          ),
+          sender2.sign(
+            await sender2.opWithGasEstimate({
+              nonce: await sender2.Nonce(),
+              gas: 0,
+              actions: [
+                {
+                  ethValue: 0,
+                  contractAddress: th.testToken.address,
+                  encodedFunction: th.testToken.interface.encodeFunctionData(
+                    "transfer",
+                    [
+                      recipient.address,
 
-                    // Should succeed (should not be affected by other operation
-                    // in bundle)
-                    th.userStartAmount,
-                  ],
-                ),
-              },
-            ],
-          }),
+                      // Should succeed (should not be affected by other operation
+                      // in bundle)
+                      th.userStartAmount,
+                    ],
+                  ),
+                },
+              ],
+            }),
+          ),
         ]),
       )
     ).wait();
@@ -294,35 +307,38 @@ describe.only("WalletActions", async function () {
 
     const r: ContractReceipt = await (
       await fx.verificationGateway.processBundle(
-        sender.sign({
-          nonce: await sender.Nonce(),
-          actions: [
-            // Send tokens to recipient.
-            {
-              ethValue: 0,
-              contractAddress: th.testToken.address,
-              encodedFunction: th.testToken.interface.encodeFunctionData(
-                "transfer",
-                [recipient.address, th.userStartAmount],
-              ),
-            },
+        sender.sign(
+          await sender.opWithGasEstimate({
+            nonce: await sender.Nonce(),
+            gas: 0,
+            actions: [
+              // Send tokens to recipient.
+              {
+                ethValue: 0,
+                contractAddress: th.testToken.address,
+                encodedFunction: th.testToken.interface.encodeFunctionData(
+                  "transfer",
+                  [recipient.address, th.userStartAmount],
+                ),
+              },
 
-            // Try to send ourselves a lot of tokens from address zero, which
-            // obviously shouldn't work.
-            {
-              ethValue: 0,
-              contractAddress: th.testToken.address,
-              encodedFunction: th.testToken.interface.encodeFunctionData(
-                "transferFrom",
-                [
-                  ethers.constants.AddressZero,
-                  sender.address,
-                  ethers.constants.MaxUint256,
-                ],
-              ),
-            },
-          ],
-        }),
+              // Try to send ourselves a lot of tokens from address zero, which
+              // obviously shouldn't work.
+              {
+                ethValue: 0,
+                contractAddress: th.testToken.address,
+                encodedFunction: th.testToken.interface.encodeFunctionData(
+                  "transferFrom",
+                  [
+                    ethers.constants.AddressZero,
+                    sender.address,
+                    ethers.constants.MaxUint256,
+                  ],
+                ),
+              },
+            ],
+          }),
+        ),
       )
     ).wait();
 
@@ -354,22 +370,26 @@ describe.only("WalletActions", async function () {
 
     const nonce = await wallets[0].Nonce();
 
-    const tx = wallets[0].sign({
-      nonce,
-      actions: wallets.map((recvWallet) => ({
-        ethValue: BigNumber.from(0),
-        contractAddress: testToken.address,
-        encodedFunction: testToken.interface.encodeFunctionData("transfer", [
-          recvWallet.address,
-          th.userStartAmount.toString(),
-        ]),
-      })),
-    });
+    const tx = wallets[0].sign(
+      await wallets[0].opWithGasEstimate({
+        nonce,
+        gas: 0,
+        actions: wallets.map((recvWallet) => ({
+          ethValue: BigNumber.from(0),
+          contractAddress: testToken.address,
+          encodedFunction: testToken.interface.encodeFunctionData("transfer", [
+            recvWallet.address,
+            th.userStartAmount.toString(),
+          ]),
+        })),
+      }),
+    );
 
     await (
       await fx.blsExpander.blsCallMultiSameCallerContractFunction(
         tx.senderPublicKeys[0],
         nonce,
+        tx.operations[0].gas,
         tx.signature,
         testToken.address,
         testToken.interface.getSighash("transfer"),
