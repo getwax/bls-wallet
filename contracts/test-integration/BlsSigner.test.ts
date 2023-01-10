@@ -651,6 +651,48 @@ describe("BlsSigner", () => {
       "network does not support ENS",
     );
   });
+
+  it("should return the provider the signer was established from", async () => {
+    // Arrange & Act
+    const provider = blsSigner.provider;
+
+    // Assert
+    expect(provider._isProvider).to.be.true;
+    expect(provider).to.be.instanceOf(Experimental.BlsProvider);
+  });
+
+  it("should detect whether an object is a valid signer", async () => {
+    // Arrange & Act
+    const validSigner = Experimental.BlsSigner.isSigner(blsSigner);
+    const invalidSigner = Experimental.BlsSigner.isSigner({});
+
+    // Assert
+    expect(validSigner).to.be.true;
+    expect(invalidSigner).to.be.false;
+  });
+
+  it("should throw an error if attempt to change provider is made", async () => {
+    // Arrange & Act
+    const connect = () => blsSigner.connect(blsProvider);
+
+    // Assert
+    expect(connect).to.throw(Error, "cannot alter JSON-RPC Signer connection");
+  });
+
+  // The personal_unlockAccount method is not supported by the underlying hardhat node so this test asserts that the correct error is thrown.
+  it("should throw an error when trying to unlock an account", async () => {
+    // Arrange
+    const madeUpPassword = "password";
+
+    // Act
+    const unlock = async () => await blsSigner.unlock(madeUpPassword);
+
+    // Assert
+    await expect(unlock()).to.be.rejectedWith(
+      Error,
+      "Method personal_unlockAccount not found",
+    );
+  });
 });
 
 describe("JsonRpcSigner", () => {
