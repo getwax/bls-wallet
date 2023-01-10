@@ -29,6 +29,7 @@ export type ActionDataDto = {
 
 export type OperationDto = {
   nonce: string;
+  gas: string;
   actions: ActionDataDto[];
 };
 
