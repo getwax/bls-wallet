@@ -8,14 +8,14 @@ If you would like to target a remote network instead, follow the steps outlined 
 
 ### Required
 
--   [NodeJS](https://nodejs.org)
--   [Yarn](https://yarnpkg.com/getting-started/install) (`npm install -g yarn`)
--   [Deno](https://deno.land/#installation)
+- [NodeJS](https://nodejs.org)
+- [Yarn](https://yarnpkg.com/getting-started/install) (`npm install -g yarn`)
+- [Deno](https://deno.land/#installation)
 
 ### Optional (Recomended)
 
--   [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
--   [docker-compose](https://docs.docker.com/compose/install/)
+- [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- [docker-compose](https://docs.docker.com/compose/install/)
 
 ## Setup
 
