@@ -71,6 +71,7 @@ export default class EthereumService {
   constructor(
     public emit: (evt: AppEvent) => void,
     public wallet: Wallet,
+    public provider: ethers.providers.Provider,
     public blsWalletWrapper: BlsWalletWrapper,
     public blsWalletSigner: BlsWalletSigner,
     verificationGatewayAddress: string,
@@ -100,12 +101,13 @@ export default class EthereumService {
     utilitiesAddress: string,
     aggPrivateKey: string,
   ): Promise<EthereumService> {
-    const wallet = EthereumService.Wallet(aggPrivateKey);
+    const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
+    const wallet = EthereumService.Wallet(provider, aggPrivateKey);
 
     const blsWalletWrapper = await BlsWalletWrapper.connect(
       aggPrivateKey,
       verificationGatewayAddress,
-      wallet.provider,
+      provider,
     );
 
     const blsNonce = await blsWalletWrapper.Nonce();
@@ -135,6 +137,7 @@ export default class EthereumService {
     return new EthereumService(
       emit,
       wallet,
+      provider,
       blsWalletWrapper,
       blsWalletSigner,
       verificationGatewayAddress,
@@ -145,14 +148,8 @@ export default class EthereumService {
 
   async BlockNumber(): Promise<BigNumber> {
     return BigNumber.from(
-      await this.wallet.provider.getBlockNumber(),
+      await this.provider.getBlockNumber(),
     );
-  }
-
-  async waitForNextBlock() {
-    await new Promise((resolve) => {
-      this.wallet.provider.once("block", resolve);
-    });
   }
 
   // TODO (merge-ok): Consider: We may want to fail operations
@@ -364,7 +361,7 @@ export default class EthereumService {
   }
 
   async GasConfig() {
-    const block = await this.wallet.provider.getBlock("latest");
+    const block = await this.provider.getBlock("latest");
     const previousBaseFee = block.baseFeePerGas;
     assert(previousBaseFee !== null && previousBaseFee !== nil);
 
@@ -391,8 +388,10 @@ export default class EthereumService {
     };
   }
 
-  private static Wallet(privateKey: string) {
-    const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
+  private static Wallet(
+    provider: ethers.providers.Provider,
+    privateKey: string,
+  ) {
     const wallet = new Wallet(privateKey, provider);
 
     if (env.USE_TEST_NET) {
