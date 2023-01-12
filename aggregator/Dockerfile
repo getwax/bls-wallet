@@ -5,6 +5,8 @@ WORKDIR /app
 
 RUN deno cache --unstable ts/programs/aggregator.ts
 
+ENV NETWORK_CONFIG_PATH_OVERRIDE="/app/networkConfig.json"
+
 CMD [ \
   "deno", \
   "run", \
