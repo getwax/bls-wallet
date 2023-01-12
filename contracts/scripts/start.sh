@@ -10,6 +10,8 @@ function cleanup {
 
 trap cleanup EXIT
 
+docker pull ethereum/client-go:stable
+
 CONTAINER=geth$RANDOM
 
 docker run --name $CONTAINER --rm -p8545:8545 ethereum/client-go:stable \
