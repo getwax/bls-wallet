@@ -74,19 +74,16 @@ export default class BundleService {
       () => this.runSubmission(),
     );
 
-    (async () => {
-      await delay(100);
-
-      while (!this.stopping) {
-        this.tryAggregating();
-        // TODO (merge-ok): Stop if there aren't any bundles?
-        await this.ethereumService.waitForNextBlock();
-      }
-    })();
+    this.ethereumService.provider.on("block", this.handleBlock);
   }
+
+  handleBlock = () => {
+    this.addTask(() => this.tryAggregating());
+  };
 
   async stop() {
     this.stopping = true;
+    this.ethereumService.provider.off("block", this.handleBlock);
     await Promise.all(Array.from(this.pendingTaskPromises));
     this.stopped = true;
   }

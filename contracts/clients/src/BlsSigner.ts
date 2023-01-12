@@ -140,6 +140,10 @@ export default class BlsSigner extends Signer {
     };
   }
 
+  /**
+   * This method passes calls through to the underlying node and allows users to unlock EOA accounts through this provider.
+   * The personal namespace is used to manage keys for ECDSA signing. BLS keys are not supported natively by execution clients.
+   */
   async unlock(password: string): Promise<boolean> {
     const provider = this.provider;
 
@@ -190,7 +194,7 @@ export default class BlsSigner extends Signer {
   }
 
   override connect(provider: ethers.providers.Provider): BlsSigner {
-    throw new Error("connect() is not implemented");
+    throw new Error("cannot alter JSON-RPC Signer connection");
   }
 
   async _signTypedData(

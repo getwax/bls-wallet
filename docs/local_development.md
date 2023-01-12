@@ -2,7 +2,7 @@
 
 These steps will setup this repo on your machine for local development for the majority of the components in this repo.
 By default the extension will connect to contracts already deployed on Arbitrum Nitro testnet and a public Aggregator running on https://arbitrum-goerli.blswallet.org/
-If you would like to target a remote network instead, add the addtional steps in [Remote Development](./remote_development.md) as well.
+If you would like to target a remote network instead, follow the steps outlined in [Remote Development](./remote_development.md).
 
 ## Dependencies
 
@@ -19,67 +19,89 @@ If you would like to target a remote network instead, add the addtional steps in
 
 ## Setup
 
-Install the latest Node 16.  If using nvm to manage node versions, run this in the root directory:
+Install the latest Node 16. If using nvm to manage node versions, run this in the root directory:
+
 ```sh
 nvm install
 ```
 
 Run the repo setup script
+
 ```sh
 ./setup.ts
 ```
 
-Then choose to target either a local Hardhat node or the Arbitrum Testnet. If you choose to run on Arbitrum Goerli skip ahead until tests.
-
-### Chain (RPC Node)
+## Chain (RPC Node)
 
 Start a local Hardhat node for RPC use.
+
 ```sh
 cd ./contracts
 yarn hardhat node
 ```
 
-### Contracts
+## Deploy Contracts
+
+### Deployer account
+
+BLS Wallet contract deploys use `CREATE2` to maintain consistent addresses across networks. As such, a create2 deployer contract is used and listed in `./contracts/.env` under the environment variables `DEPLOYER_MNEMONIC` & `DEPLOYER_SET_INDEX`. The hierarchical deterministic (HD) wallet address will need to be funded in order to deploy the contracts.
+
+If you do not need consistent addresses, for example on a local or testnet network, you can replace the `DEPLOYER_MNEMONIC` with another seed phrase which already has a funded account. Run the following command to fund the deployer:
 
 Fund the `create2Deployer`.
+
 ```sh
+cd ./contracts # if not already there
 yarn hardhat fundDeployer --network gethDev
 ```
 
-Deploy all `bls-wallet` contracts.
+From the same terminal/shell instance, deploy all `bls-wallet` contracts.
+
 ```sh
 yarn hardhat run scripts/deploy_all.ts --network gethDev
 ```
 
 ## Aggregator
 
-make these changes in aggregator > .env
+The [aggregator](../aggregator/) is a service that accepts transaction bundles (including those that contain a single transaction) and submits aggregations of these bundles to L2.
 
-RPC_URL=http://localhost:8545
-NETWORK_CONFIG_PATH=../contracts/networks/local.json
-
-In a seperate terminal/shell instance
+Update these values in `./aggregator/.env`.
+See [aggregator](../aggregator/README.md) for a detailed breakdown of each env property.
 
 ```sh
+RPC_URL=http://localhost:8545
+...
+NETWORK_CONFIG_PATH=../contracts/networks/local.json
+...
+```
+
+```sh
+cd .. # root of repo
 docker-compose up -d postgres # Or see local postgres instructions in ./aggregator/README.md#PostgreSQL
+```
+
+```sh
 cd ./aggregator
 ./programs/aggregator.ts
 ```
 
-In a seperate terminal/shell instance
-```sh
-cd ./extension
-yarn run dev:chrome # or dev:firefox, dev:opera
-```
-
 ## Extension
+
+The [extension](../extension/) (otherwise referred to as Quill) is a prototype extension wallet used to showcase and test BLS Wallet features. **Note it is not a production wallet.**
 
 make these changes in extension > .env
 
-```
+```sh
 AGGREGATOR_URL=http://localhost:3000/
 DEFAULT_CHAIN_ID=31337
 NETWORK_CONFIG=./contracts/networks/local.json
+```
+
+In a seperate terminal/shell instance
+
+```sh
+cd ./extension
+yarn run dev:chrome # or dev:firefox, dev:opera
 ```
 
 ### Chrome
@@ -94,12 +116,18 @@ NETWORK_CONFIG=./contracts/networks/local.json
 2. Click `Load Temporary Add-on...`.
 3. Select `./extension/extension/firefox/manifest.json`.
 
+**After this, you now have all the main components setup to begin local development.**
+
+---
+
 ### Tests
+
 See each components `README.md` for how to run tests.
 
 ## Testing/using updates to ./clients
 
 ### extension
+
 ```sh
 cd ./contracts/clients
 yarn build
@@ -109,6 +137,7 @@ yarn link bls-wallet-clients
 ```
 
 If you would like live updates to from the clients package to trigger reloads of the extension, be sure to comment out this section of `./extension/weback.config.js`:
+
 ```javascript
 ...
 module.exports = {
@@ -128,12 +157,15 @@ You will need to push up an `@experimental` version to 'bls-wallet-clients' on n
 You will need write access to the npmjs project to do this. You can request access or request one of the BLS Wallet project developers push up your client changes in the `Discussions` section of this repo.
 
 In `./contracts/clients` with your changes:
-```
+
+```sh
 yarn publish-experimental
 ```
+
 Note the `x.y.z-abc1234` version that was output.
 
 Then in `./aggregtor/deps.ts`, change all `from` references for that package.
+
 ```typescript
 ...
 } from "https://esm.sh/bls-wallet-clients@x.y.z-abc1234";
