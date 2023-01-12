@@ -68,13 +68,9 @@ jobs:
         deno-version: ${{ env.DENO_VERSION }}
     - uses: ./.github/actions/setup-contracts-clients
 
-    # Setup contracts
+    # Setup node & contracts
     - working-directory: ./contracts
-      run: yarn hardhat node &
-    - working-directory: ./contracts
-      run: yarn hardhat fundDeployer --network gethDev
-    - working-directory: ./contracts
-      run: yarn hardhat run scripts/deploy_all.ts --network gethDev
+      run: yarn start
 
     - working-directory: ./
       run: docker-compose up -d postgres
