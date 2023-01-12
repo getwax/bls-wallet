@@ -40,6 +40,15 @@ cd ./contracts
 yarn start
 ```
 
+You can also use the local node from hardhat.
+- Pros: doesn't need docker, access to console.log in solidity
+- Cons: slow
+
+```sh
+cd ./contracts
+yarn start-hardhat
+```
+
 ## Aggregator
 
 The [aggregator](../aggregator/) is a service that accepts transaction bundles (including those that contain a single transaction) and submits aggregations of these bundles to L2.

@@ -14,7 +14,8 @@
     "test": "hardhat test",
     "test-integration": "hardhat test ./test-integration/*",
     "premerge": "rm -rf artifacts cache typechain-types && hardhat compile && lint && check-ts && yarn --cwd clients premerge && test",
-    "start": "./scripts/start.sh"
+    "start": "./scripts/start.sh",
+    "start-hardhat": "./scripts/start-hardhat.sh"
   },
   "author": "James Zaki",
   "license": "MIT",
