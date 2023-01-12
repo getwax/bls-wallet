@@ -70,7 +70,7 @@ jobs:
 
     # Setup node & contracts
     - working-directory: ./contracts
-      run: yarn start
+      run: yarn start &
 
     - working-directory: ./
       run: docker-compose up -d postgres
