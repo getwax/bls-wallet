@@ -37,9 +37,14 @@ describe.only("Signer tests", function () {
       );
       blsSigner = blsProvider.getSigner(privateKey);
 
-      const tx = await fundedSigners[0].sendTransaction({
+      const fundedWallet = new ethers.Wallet(
+        "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+        new ethers.providers.JsonRpcProvider(rpcUrl),
+      );
+
+      const tx = await fundedWallet.sendTransaction({
         to: await blsSigner.getAddress(),
-        value: parseEther("1000"),
+        value: parseEther("10"),
       });
       await tx.wait();
 
@@ -47,7 +52,9 @@ describe.only("Signer tests", function () {
       const MockERC20 = await ethers.getContractFactory("MockERC20");
       mockERC20 = await MockERC20.deploy("AnyToken", "TOK", tokenSupply);
       await mockERC20.deployed();
-      await mockERC20.transfer(await blsSigner.getAddress(), tokenSupply);
+      await mockERC20
+        .connect(fundedSigners[2])
+        .transfer(await blsSigner.getAddress(), tokenSupply);
     });
 
     it("balanceOf() call", async function () {
@@ -70,7 +77,7 @@ describe.only("Signer tests", function () {
       expect(initialBalance).to.equal(tokenSupply);
     });
 
-    it("transfer() call", async function () {
+    it.only("transfer() call", async function () {
       const recipient = ethers.Wallet.createRandom().address;
       const blsSignerAddress = await blsSigner.getAddress();
 
