@@ -131,7 +131,6 @@ const config: HardhatUserConfig = {
     gethDev: {
       url: `http://localhost:8545`,
       accounts,
-      gasPrice: 0,
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
