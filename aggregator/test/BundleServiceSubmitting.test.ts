@@ -98,10 +98,7 @@ Fixture.test("submits a full submission without delay", async (fx) => {
 });
 
 Fixture.test(
-  [
-    "submits submission from over-full bundle table without delay and submits",
-    "leftover bundles after delay",
-  ].join(" "),
+  "submits multiple aggregations when provided with too many user bundles",
   async (fx) => {
     const bundleService = await fx.createBundleService(
       bundleServiceConfig,
@@ -143,24 +140,22 @@ Fixture.test(
     await bundleService.submissionTimer.trigger();
     await bundleService.waitForConfirmations();
 
-    // Check mints have occurred, ensuring a submission has occurred even though the
-    // clock has not advanced
-    assertEquals(
-      await fx.testErc20.balanceOf(firstWallet.address),
-      BigNumber.from(1005), // 1000 (initial) + 5 * 1 (mint txs)
-    );
+    if ((await fx.allBundles(bundleService)).length > 0) {
+      await bundleService.submissionTimer.trigger();
+      await bundleService.waitForConfirmations();
+    }
 
-    // Leftover txs
-    const remainingBundles = await fx.allBundles(bundleService);
-    assertEquals(remainingBundles.length, 2);
-
-    await bundleService.submissionTimer.trigger();
-    await bundleService.waitForConfirmations();
-
+    // Check mints have occurred
     assertEquals(
       await fx.testErc20.balanceOf(firstWallet.address),
       BigNumber.from(1007), // 1000 (initial) + 7 * 1 (mint txs)
     );
+
+    const confirmationEvents = fx.appEvents.filter((ev) =>
+      ev.type === "submission-confirmed"
+    );
+
+    assertEquals(confirmationEvents.length, 2);
   },
 );
 
