@@ -25,7 +25,7 @@ docker run --name $CONTAINER --rm -p8545:8545 ethereum/client-go:stable \
 
 sleep 2
 
-docker exec -it $CONTAINER geth \
+docker exec $CONTAINER geth \
   --exec "$(cat "$SCRIPT_DIR/fundAccounts.js")" \
   attach 'http://localhost:8545'
 
