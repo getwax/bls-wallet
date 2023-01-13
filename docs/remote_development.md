@@ -1,8 +1,33 @@
 # Remote Development
 
-These steps will setup this repo on your machine for targeting a remote chain, such as an EVM compatible L2.
+These steps will setup this repo on your machine for targeting a remote chain, such as an EVM compatible L2. If you would like to target a local network instead, follow the steps outlined in [Local Development](./local_development.md).
 
-Follow the instructions for [Local Development](./local_development.md), replacing the sections titled `Chain` and `Contracts` with the steps below.
+## Dependencies
+
+### Required
+
+- [NodeJS](https://nodejs.org)
+- [Yarn](https://yarnpkg.com/getting-started/install) (`npm install -g yarn`)
+- [Deno](https://deno.land/#installation)
+
+### Optional (Recomended)
+
+- [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- [docker-compose](https://docs.docker.com/compose/install/)
+
+## Setup
+
+Install the latest Node 16. If using nvm to manage node versions, run this in the root directory:
+
+```sh
+nvm install
+```
+
+Run the repo setup script
+
+```sh
+./setup.ts
+```
 
 ## Deploy Contracts
 
@@ -24,9 +49,11 @@ If your network does not already have an instance of the [BNPairingPrecompileCos
 cd ./contracts
 yarn hardhat run scripts/0_deploy_precompile_cost_estimator.ts --network YOUR_NETWORK
 ```
+
 Copy the address that is output.
 
 Update `./contracts/contracts/lib/hubble-contracts/contracts/libs/BLS.sol`'s `COST_ESTIMATOR_ADDRESS` to the value of that address if it is different:
+
 ```solidity
 ...
 address private constant COST_ESTIMATOR_ADDRESS = YOUR_NETWORKS_PRECOMPILE_COST_ESTIMATOR_ADDRESS;
@@ -36,6 +63,7 @@ address private constant COST_ESTIMATOR_ADDRESS = YOUR_NETWORKS_PRECOMPILE_COST_
 ### Remaining Contracts
 
 Deploy all remaining `bls-wallet` contracts.
+
 ```sh
 cd ./contracts # if not already there
 yarn hardhat run scripts/deploy_all.ts --network YOUR_NETWORK
@@ -49,12 +77,13 @@ mv ./networks/local.json ./networks/your-network.json
 
 This file can be commited so others can use your deployed contracts.
 
-## Remote RPC
+## Aggregator
 
-### Aggregator
+The [aggregator](../aggregator/) is a service that accepts transaction bundles (including those that contain a single transaction) and submits aggregations of these bundles to L2.
 
 Update these values in `./aggregator/.env`.
-PK0 & PK1 are private keys for funded accounts on your network/chain.
+PK0 & PK1 are private keys for funded accounts on your network/chain. See [aggregator](../aggregator/README.md) for a detailed breakdown of each env property.
+
 ```
 RPC_URL=https://your.network.rpc
 ...
@@ -64,9 +93,15 @@ PRIVATE_KEY_ADMIN=PK1
 ...
 ```
 
-### Extension
+## Extension
+
+The [extension](../extension/) (otherwise referred to as Quill) is a prototype extension wallet used to showcase and test BLS Wallet features. **Note it is not a production wallet.**
 
 Check the [`config.json` file](../extension//config.json) to see if your network is already added. If not, you will need to add the relevant properties for your network/chain. These changes can be committed.
+
+**You now have all the main components setup to begin remote development.**
+
+---
 
 ## Example: Arbitrum Testnet (Arbitrum Goerli Testnet)
 
@@ -75,6 +110,7 @@ You will need two ETH addresses with Abitrum Goerli ETH and their private keys (
 You can get Goerli ETH at https://goerlifaucet.com/ or https://app.mycrypto.com/faucet, and transfer it into the Arbitrum testnet via https://bridge.arbitrum.io/. Make sure when doing so that your network is set to Goerli in your web3 wallet extension, such as MetaMask.
 
 Update these values in `./aggregator/.env`.
+
 ```
 RPC_URL=https://goerli-rollup.arbitrum.io/rpc
 ...
@@ -85,6 +121,7 @@ PRIVATE_KEY_ADMIN=PK1
 ```
 
 And then ensure the `defaultNetwork` value in `./extension/config.json` is set to `arbitrum-goerli`.
+
 ```json
 ...
 "defaultNetwork": "arbitrum-goerli",
