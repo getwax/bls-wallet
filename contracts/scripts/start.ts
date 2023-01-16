@@ -4,6 +4,50 @@ import { spawn } from "child_process";
 import { readFile } from "fs/promises";
 
 async function main() {
+  const chainType = process.argv.includes("--hardhat") ? "hardhat" : "geth";
+
+  const chainChild = await (chainType === "geth"
+    ? startGethChainChild()
+    : startHardhatChainChild());
+
+  await shell("yarn", ["hardhat", "fundDeployer", "--network", "gethDev"]);
+
+  await shell("yarn", [
+    "hardhat",
+    "run",
+    "scripts/deploy_all.ts",
+    "--network",
+    "gethDev",
+  ]);
+
+  chainChild.off("exit", handleChainEarlyExit);
+
+  const chainExitCode = await new Promise<number>((resolve) =>
+    chainChild.on("exit", resolve),
+  );
+
+  if (chainExitCode !== 0) {
+    process.exit(chainExitCode);
+  }
+}
+
+async function shell(command: string, args: string[]) {
+  const child = spawn(command, args, { stdio: "inherit" });
+
+  await new Promise<void>((resolve, reject) => {
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(
+          new Error(`${command} ${args.join(" ")} exited with status ${code}`),
+        );
+      }
+    });
+  });
+}
+
+async function startGethChainChild() {
   await shell("docker", ["pull", "ethereum/client-go:stable"]);
 
   const containerName = `geth${Math.random().toString().slice(2, 7)}`;
@@ -26,7 +70,7 @@ async function main() {
     { stdio: "inherit" },
   );
 
-  gethChild.on("exit", handleGethEarlyExit);
+  gethChild.on("exit", handleChainEarlyExit);
 
   onAnyExit(() => {
     if (gethChild.exitCode !== null) {
@@ -51,49 +95,22 @@ async function main() {
     "http://localhost:8545",
   ]);
 
-  await shell("yarn", ["hardhat", "fundDeployer", "--network", "gethDev"]);
-
-  await shell("yarn", [
-    "hardhat",
-    "run",
-    "scripts/deploy_all.ts",
-    "--network",
-    "gethDev",
-  ]);
-
-  gethChild.off("exit", handleGethEarlyExit);
-
-  const gethExitCode = await new Promise<number>((resolve) =>
-    gethChild.on("exit", resolve),
-  );
-
-  if (gethExitCode !== 0) {
-    process.exit(gethExitCode);
-  }
+  return gethChild;
 }
 
-async function shell(command: string, args: string[]) {
-  const child = spawn(command, args, { stdio: "inherit" });
+async function startHardhatChainChild() {
+  const hardhatChild = spawn("yarn", ["hardhat", "node"], { stdio: "inherit" });
+  await delay(2000);
 
-  await new Promise<void>((resolve, reject) => {
-    child.on("exit", (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(
-          new Error(`${command} ${args.join(" ")} exited with status ${code}`),
-        );
-      }
-    });
-  });
+  return hardhatChild;
 }
 
 async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function handleGethEarlyExit(code: number) {
-  console.error(`Unexpected early geth exit (${code})`);
+function handleChainEarlyExit(code: number) {
+  console.error(`Unexpected early chain exit (${code})`);
   process.exit(1);
 }
 
