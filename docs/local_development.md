@@ -46,7 +46,7 @@ You can also use the local node from hardhat.
 
 ```sh
 cd ./contracts
-yarn start-hardhat
+yarn start --hardhat
 ```
 
 ## Aggregator
