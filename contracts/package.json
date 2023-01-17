@@ -22,6 +22,9 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3"
   },
+  "peerDependencies": {
+    "ethers": "^5.0.0"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.1",
     "@nomiclabs/hardhat-etherscan": "^3.1.2",
