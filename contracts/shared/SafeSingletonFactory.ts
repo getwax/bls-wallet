@@ -1,6 +1,28 @@
 import assert from "assert";
 import { ethers } from "ethers";
 
+type ApplyArrayDefault<X, Default> = X extends [] ? Default : X;
+
+type NonOptionalElementsOfImpl<A extends unknown[]> = A extends [
+  infer First,
+  ...infer Tail,
+]
+  ? [First, ...NonOptionalElementsOfImpl<Tail>]
+  : [];
+
+/**
+ * Filters out the optional elements of an array type because an optional
+ * element isn't considered to match First in [infer First, ...].
+ */
+type NonOptionalElementsOf<A extends unknown[]> = ApplyArrayDefault<
+  NonOptionalElementsOfImpl<A>,
+  A
+>;
+
+type DeployParams<CF extends ethers.ContractFactory> = NonOptionalElementsOf<
+  Parameters<CF["deploy"]>
+>;
+
 export default class SafeSingletonFactory {
   static deployment = {
     gasPrice: 100000000000,
@@ -17,7 +39,10 @@ export default class SafeSingletonFactory {
     address: "0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7",
   };
 
-  constructor(public signer: ethers.Signer) {}
+  constructor(
+    public signer: ethers.Signer,
+    public provider: ethers.providers.Provider,
+  ) {}
 
   static async init(signer: ethers.Signer): Promise<SafeSingletonFactory> {
     assert(signer.provider !== undefined, "Expected signer with provider");
@@ -27,7 +52,7 @@ export default class SafeSingletonFactory {
     const existingCode = await signer.provider.getCode(deployment.address);
 
     if (existingCode !== "0x") {
-      return new SafeSingletonFactory(signer);
+      return new SafeSingletonFactory(signer, signer.provider);
     }
 
     // Fund the eoa account for the presigned transaction
@@ -43,6 +68,74 @@ export default class SafeSingletonFactory {
     const deployedCode = await signer.provider.getCode(deployment.address);
     assert(deployedCode !== "0x", "Failed to deploy safe singleton factory");
 
-    return new SafeSingletonFactory(signer);
+    return new SafeSingletonFactory(signer, signer.provider);
+  }
+
+  calculateAddress<CF extends ethers.ContractFactory>(
+    contractFactory: CF,
+    deployParams: DeployParams<CF>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ) {
+    const initCode =
+      contractFactory.bytecode +
+      contractFactory.interface.encodeDeploy(deployParams).slice(2);
+
+    return ethers.utils.getCreate2Address(
+      SafeSingletonFactory.deployment.address,
+      salt,
+      ethers.utils.keccak256(initCode),
+    );
+  }
+
+  async deploy<CF extends ethers.ContractFactory>(
+    contractFactory: CF,
+    deployParams: DeployParams<CF>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ): Promise<ReturnType<CF["attach"]>> {
+    const initCode =
+      contractFactory.bytecode +
+      contractFactory.interface.encodeDeploy(deployParams).slice(2);
+
+    const address = this.calculateAddress(contractFactory, deployParams, salt);
+
+    const existingCode = await this.provider.getCode(address);
+
+    if (existingCode !== "0x") {
+      return contractFactory.attach(address) as ReturnType<CF["attach"]>;
+    }
+
+    const deployTx = {
+      to: SafeSingletonFactory.deployment.address,
+      data: ethers.utils.solidityPack(["uint256", "bytes"], [salt, initCode]),
+    };
+
+    try {
+      await (await this.signer.sendTransaction(deployTx)).wait();
+    } catch (error) {
+      if ((error as any).code !== "INSUFFICIENT_FUNDS") {
+        throw error;
+      }
+
+      const gasEstimate = await this.provider.estimateGas(deployTx);
+      const gasPrice = await this.provider.getGasPrice();
+
+      const balance = await this.provider.getBalance(this.signer.getAddress());
+
+      throw new Error(
+        [
+          "Insufficient funds:",
+          ethers.utils.formatEther(balance),
+          "ETH, need (approx):",
+          ethers.utils.formatEther(gasEstimate.mul(gasPrice)),
+          "ETH",
+        ].join(" "),
+      );
+    }
+
+    const deployedCode = await this.provider.getCode(address);
+
+    assert(deployedCode !== "0x", "Failed to deploy to expected address");
+
+    return contractFactory.attach(address) as ReturnType<CF["attach"]>;
   }
 }
