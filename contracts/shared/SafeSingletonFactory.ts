@@ -1,27 +1,25 @@
 import assert from "assert";
 import { ethers } from "ethers";
 
-type ApplyArrayDefault<X, Default> = X extends [] ? Default : X;
-
-type NonOptionalElementsOfImpl<A extends unknown[]> = A extends [
-  infer First,
-  ...infer Tail,
-]
-  ? [First, ...NonOptionalElementsOfImpl<Tail>]
-  : [];
-
 /**
  * Filters out the optional elements of an array type because an optional
  * element isn't considered to match First in [infer First, ...].
  */
-type NonOptionalElementsOf<A extends unknown[]> = ApplyArrayDefault<
-  NonOptionalElementsOfImpl<A>,
-  A
->;
+type NonOptionalElementsOf<A extends unknown[]> = A extends [
+  infer First,
+  ...infer Tail,
+]
+  ? [First, ...NonOptionalElementsOf<Tail>]
+  : A extends [opt?: unknown]
+  ? []
+  : never;
 
-type DeployParams<CF extends ethers.ContractFactory> = NonOptionalElementsOf<
-  Parameters<CF["deploy"]>
->;
+type ContractFactoryConstructor = {
+  new (): ethers.ContractFactory;
+};
+
+type DeployParams<CFC extends ContractFactoryConstructor> =
+  NonOptionalElementsOf<Parameters<InstanceType<CFC>["deploy"]>>;
 
 export default class SafeSingletonFactory {
   static deployment = {
@@ -65,17 +63,25 @@ export default class SafeSingletonFactory {
       })
     ).wait();
 
+    await (
+      await signer.provider.sendTransaction(
+        SafeSingletonFactory.deployment.transaction,
+      )
+    ).wait();
+
     const deployedCode = await signer.provider.getCode(deployment.address);
     assert(deployedCode !== "0x", "Failed to deploy safe singleton factory");
 
     return new SafeSingletonFactory(signer, signer.provider);
   }
 
-  calculateAddress<CF extends ethers.ContractFactory>(
-    contractFactory: CF,
-    deployParams: DeployParams<CF>,
+  calculateAddress<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ) {
+    const contractFactory = new ContractFactoryConstructor();
+
     const initCode =
       contractFactory.bytecode +
       contractFactory.interface.encodeDeploy(deployParams).slice(2);
@@ -87,21 +93,29 @@ export default class SafeSingletonFactory {
     );
   }
 
-  async deploy<CF extends ethers.ContractFactory>(
-    contractFactory: CF,
-    deployParams: DeployParams<CF>,
+  async deploy<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
-  ): Promise<ReturnType<CF["attach"]>> {
+  ): Promise<ReturnType<InstanceType<CFC>["attach"]>> {
+    const contractFactory = new ContractFactoryConstructor();
+
     const initCode =
       contractFactory.bytecode +
       contractFactory.interface.encodeDeploy(deployParams).slice(2);
 
-    const address = this.calculateAddress(contractFactory, deployParams, salt);
+    const address = this.calculateAddress(
+      ContractFactoryConstructor,
+      deployParams,
+      salt,
+    );
 
     const existingCode = await this.provider.getCode(address);
 
     if (existingCode !== "0x") {
-      return contractFactory.attach(address) as ReturnType<CF["attach"]>;
+      return contractFactory.attach(address).connect(this.signer) as ReturnType<
+        InstanceType<CFC>["attach"]
+      >;
     }
 
     const deployTx = {
@@ -136,6 +150,8 @@ export default class SafeSingletonFactory {
 
     assert(deployedCode !== "0x", "Failed to deploy to expected address");
 
-    return contractFactory.attach(address) as ReturnType<CF["attach"]>;
+    return contractFactory.attach(address).connect(this.signer) as ReturnType<
+      InstanceType<CFC>["attach"]
+    >;
   }
 }

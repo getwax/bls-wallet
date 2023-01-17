@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./interfaces/IWallet.sol";
+import "./ProxyAdminGenerator.sol";
 
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
@@ -68,11 +69,11 @@ contract VerificationGateway
     constructor(
         IBLS bls,
         address blsWalletImpl,
-        address proxyAdmin
+        ProxyAdminGenerator proxyAdminGenerator
     ) {
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
-        walletProxyAdmin = ProxyAdmin(proxyAdmin);
+        walletProxyAdmin = proxyAdminGenerator.generate();
     }
 
     /** Throw if bundle not valid or signature verification fails */
