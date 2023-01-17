@@ -1,15 +1,12 @@
 import { expect } from "chai";
 
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
-import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-// import splitHex256 from "../shared/helpers/splitHex256";
-import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import { getOperationResults } from "../clients/src";
 
 describe("WalletActions", async function () {
@@ -18,30 +15,9 @@ describe("WalletActions", async function () {
     return;
   }
 
-  this.beforeAll(async function () {
-    // deploy the deployer contract for the transient hardhat network
-    if (network.name === "hardhat") {
-      // fund deployer wallet address
-      const fundedSigner = (await ethers.getSigners())[0];
-      await (
-        await fundedSigner.sendTransaction({
-          to: defaultDeployerAddress(),
-          value: parseEther("1"),
-        })
-      ).wait();
-
-      // deploy the precompile contract (via deployer)
-      console.log("PCE:", await deployAndRunPrecompileCostEstimator());
-    }
-  });
-
   let fx: Fixture;
   beforeEach(async function () {
-    if (network.name === "rinkarby") {
-      fx = await Fixture.create(Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
-    } else {
-      fx = await Fixture.create();
-    }
+    fx ??= await Fixture.create();
   });
 
   it("should register new wallet", async function () {
@@ -99,8 +75,8 @@ describe("WalletActions", async function () {
 
   it("should send ETH (empty call)", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
-    const recvWallet = await fx.lazyBlsWallets[1]();
+    const sendWallet = await fx.createBLSWallet();
+    const recvWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.0001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
@@ -142,7 +118,7 @@ describe("WalletActions", async function () {
 
   it("should send ETH with function call", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
+    const sendWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
@@ -158,10 +134,10 @@ describe("WalletActions", async function () {
     );
     expect(await fx.provider.getBalance(mockAuction.address)).to.equal(0);
 
-    await fx.verificationGateway.processBundle(
-      fx.blsWalletSigner.aggregate([
+    await (
+      await fx.verificationGateway.processBundle(
         sendWallet.sign({
-          nonce: BigNumber.from(1),
+          nonce: 0,
           actions: [
             {
               ethValue: ethToTransfer,
@@ -171,8 +147,8 @@ describe("WalletActions", async function () {
             },
           ],
         }),
-      ]),
-    );
+      )
+    ).wait();
 
     expect(await fx.provider.getBalance(sendWallet.address)).to.equal(0);
     expect(await fx.provider.getBalance(mockAuction.address)).to.equal(

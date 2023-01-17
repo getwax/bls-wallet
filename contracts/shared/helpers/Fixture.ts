@@ -1,13 +1,6 @@
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
-import {
-  Signer,
-  Contract,
-  ContractFactory,
-  BigNumber,
-  BigNumberish,
-  providers,
-} from "ethers";
+import { Signer, Contract, BigNumber, BigNumberish, providers } from "ethers";
 
 import {
   BlsWalletWrapper,
@@ -18,12 +11,8 @@ import {
 
 import Range from "./Range";
 import assert from "./assert";
-import Create2Fixture from "./Create2Fixture";
-import {
-  VerificationGateway,
-  BLSOpen,
-  ProxyAdmin,
-} from "../../typechain-types";
+import { VerificationGateway, BLSOpen } from "../../typechain-types";
+import deploy from "../deploy";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -44,7 +33,6 @@ export default class Fixture {
     public blsExpander: Contract,
     public utilities: Contract,
 
-    public BLSWallet: ContractFactory,
     public blsWalletSigner: BlsWalletSigner,
   ) {}
 
@@ -61,47 +49,12 @@ export default class Fixture {
       signers.map((acc) => acc.getAddress()),
     )) as string[];
 
-    const create2Fixture = Create2Fixture.create();
-
-    // deploy wallet implementation contract
-    const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
-    try {
-      await (
-        await blsWalletImpl.initialize(ethers.constants.AddressZero)
-      ).wait();
-    } catch (e) {}
-
-    const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
-    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
-    const proxyAdmin = (await ProxyAdmin.deploy()) as ProxyAdmin;
-    await proxyAdmin.deployed();
-    // deploy Verification Gateway
-    const verificationGateway = (await create2Fixture.create2Contract(
-      "VerificationGateway",
-      ethers.utils.defaultAbiCoder.encode(
-        ["address", "address", "address"],
-        [bls.address, blsWalletImpl.address, proxyAdmin.address],
-      ),
-    )) as VerificationGateway;
-    await (
-      await proxyAdmin.transferOwnership(verificationGateway.address)
-    ).wait();
-
-    // deploy BLSExpander Gateway
-    const blsExpander = await create2Fixture.create2Contract(
-      "BLSExpander",
-      ethers.utils.defaultAbiCoder.encode(
-        ["address"],
-        [verificationGateway.address],
-      ),
-    );
-
-    // deploy utilities
-    const utilities = await create2Fixture.create2Contract(
-      "AggregatorUtilities",
-    );
-
-    const BLSWallet = await ethers.getContractFactory("BLSWallet");
+    const {
+      verificationGateway,
+      blsLibrary: bls,
+      blsExpander,
+      aggregatorUtilities: utilities,
+    } = await deploy(signers[0]);
 
     const lazyBlsWallets = Range(blsWalletCount).map((i) => {
       let secretNumber: number;
@@ -144,7 +97,6 @@ export default class Fixture {
       bls,
       blsExpander,
       utilities,
-      BLSWallet,
       await initBlsWalletSigner({ chainId }),
     );
   }
@@ -156,6 +108,14 @@ export default class Fixture {
   async createBLSWallets(): Promise<BlsWalletWrapper[]> {
     return await Promise.all(
       this.lazyBlsWallets.map((lazyWallet) => lazyWallet()),
+    );
+  }
+
+  async createBLSWallet(): Promise<BlsWalletWrapper> {
+    return BlsWalletWrapper.connect(
+      `0x${Math.floor(Math.random() * 0xffffffff).toString(16)}`,
+      this.verificationGateway.address,
+      this.provider,
     );
   }
 
