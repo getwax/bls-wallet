@@ -154,6 +154,10 @@ const config: HardhatUserConfig = {
       accounts,
       gasPrice: 700000000,
     },
+    optimism_goerli: {
+      url: process.env.OPTIMISM_GOERLI_URL,
+      accounts,
+    },
     // optimistic_local: {
     //   url: process.env.OPTIMISM_LOCAL_URL,
     //   accounts,

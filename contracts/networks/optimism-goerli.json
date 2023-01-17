@@ -1,0 +1,19 @@
+{
+    "parameters": {},
+    "addresses": {
+        "create2Deployer": "0x036d996D6855B83cd80142f2933d8C2617dA5617",
+        "precompileCostEstimator": "0x22E4a5251C1F02de8369Dd6f192033F6CB7531A4",
+        "blsLibrary": "0xF8a11BA6eceC43e23c9896b857128a4269290e39",
+        "verificationGateway": "0x643468269B044bA84D3F2190F601E3579d3236BB",
+        "blsExpander": "0x7E24FBC8A777418f519fdaB565168f19b1C8e2Fa",
+        "utilities": "0x76cE3c1F2E6d87c355560fCbd28ccAcAe03f95F6",
+        "testToken": "0xD2a233b4F7b49641eef0Aa0E4927A299737b39CB"
+    },
+    "auxiliary": {
+        "chainid": 420,
+        "domain": "0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc",
+        "genesisBlock": 4101595,
+        "deployedBy": "0xe5deB006644a6FF28AC361Fe896D351a40AeA198",
+        "version": "1d35f4e80a5f5316158e7f01e61a721fe62f0103"
+    }
+}
