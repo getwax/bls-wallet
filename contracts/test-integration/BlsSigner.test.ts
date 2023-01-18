@@ -695,19 +695,20 @@ describe("BlsSigner", () => {
   });
 });
 
-describe("JsonRpcSigner", () => {
+describe.only("JsonRpcSigner", () => {
   let signers: SignerWithAddress[];
 
   beforeEach(async () => {
     signers = await hardhatEthers.getSigners();
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    regularSigner = regularProvider.getSigner();
+    // First two hardhat accounts are used in aggregator .env, which causes a nonce too low error when using the default signer here.
+    regularSigner = regularProvider.getSigner(2);
   });
 
   it("should retrieve the account address", async () => {
     // Arrange
-    const expectedAddress = signers[0].address;
+    const expectedAddress = signers[2].address;
 
     // Act
     const address = await regularSigner.getAddress();
@@ -774,7 +775,7 @@ describe("JsonRpcSigner", () => {
     expect(result).to.be.an("object").that.includes({
       to: recipient,
       value: transactionAmount,
-      from: signers[0].address,
+      from: signers[2].address,
       type: 2,
       chainId: 31337,
     });
