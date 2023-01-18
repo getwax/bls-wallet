@@ -5,7 +5,7 @@ WORKDIR /app
 
 RUN deno cache --unstable ts/programs/aggregator.ts
 
-ENV NETWORK_CONFIG_PATH_OVERRIDE="/app/networkConfig.json"
+ENV IS_DOCKER="true"
 
 CMD [ \
   "deno", \

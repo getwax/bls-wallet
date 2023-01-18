@@ -1,4 +1,3 @@
-import assert from "./helpers/assert.ts";
 import {
   optionalNumberEnv,
   requireBigNumberEnv,
@@ -13,25 +12,13 @@ export const RPC_URL = requireEnv("RPC_URL");
 export const RPC_POLLING_INTERVAL = requireIntEnv("RPC_POLLING_INTERVAL");
 
 export const ORIGIN = requireEnv("ORIGIN");
-
-export const PORT = (() => {
-  const portOverride = Deno.env.get("PORT_OVERRIDE");
-
-  if (portOverride !== nil) {
-    const port = Number(portOverride);
-    assert(Number.isFinite(port));
-    return port;
-  }
-
-  return requireIntEnv("PORT");
-})();
+export const PORT = requireIntEnv("PORT");
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
 
-export const NETWORK_CONFIG_PATH = (
-  Deno.env.get("NETWORK_CONFIG_PATH_OVERRIDE") ??
-    requireEnv("NETWORK_CONFIG_PATH")
-);
+export const NETWORK_CONFIG_PATH = Deno.env.get("IS_DOCKER") === "true"
+  ? "/app/networkConfig.json"
+  : requireEnv("NETWORK_CONFIG_PATH");
 
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
 export const PRIVATE_KEY_ADMIN = requireEnv("PRIVATE_KEY_ADMIN");
