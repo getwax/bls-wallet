@@ -1,18 +1,27 @@
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
-import { Signer, Contract, BigNumber, BigNumberish, providers } from "ethers";
+import {
+  Signer,
+  Contract,
+  BigNumber,
+  BigNumberish,
+  providers,
+  Overrides,
+} from "ethers";
 
 import {
   BlsWalletWrapper,
   BlsWalletSigner,
   initBlsWalletSigner,
   Bundle,
+  getOperationResults,
 } from "../../clients/src";
 
 import Range from "./Range";
 import assert from "./assert";
 import { VerificationGateway, BLSOpen } from "../../typechain-types";
 import deploy from "../deploy";
+import { fail } from "assert";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -119,6 +128,49 @@ export default class Fixture {
     );
   }
 
+  /**
+   * Wraps verificationGateway.processBundle, also making sure that all the
+   * operations are successful.
+   */
+  async processBundle(bundle: Bundle, overrides: Overrides = {}) {
+    const receipt = await (
+      await this.verificationGateway.processBundle(bundle, overrides)
+    ).wait();
+
+    for (const [i, result] of getOperationResults(receipt).entries()) {
+      if (result.error) {
+        fail(
+          [
+            "Operation",
+            i,
+            "failed at action",
+            `${result.error.actionIndex}:`,
+            result.error.message,
+          ].join(" "),
+        );
+      }
+    }
+
+    return receipt;
+  }
+
+  /**
+   * There seems to be a bug where the automatic gas limit is somtimes not
+   * enough in our testing environment. This method works around that by adding
+   * 50% to the gas estimate.
+   */
+  async processBundleWithExtraGas(bundle: Bundle, overrides: Overrides = {}) {
+    const gasEstimate =
+      await this.verificationGateway.estimateGas.processBundle(
+        bundle,
+        overrides,
+      );
+
+    const gasLimit = gasEstimate.add(gasEstimate.div(2));
+
+    return await this.processBundle(bundle, { ...overrides, gasLimit });
+  }
+
   bundleFrom(
     wallet: BlsWalletWrapper,
     contract: Contract,
@@ -156,33 +208,6 @@ export default class Fixture {
       await this.verificationGateway.processBundle(
         this.bundleFrom(wallet, contract, method, params, nonce, ethValue),
       )
-    ).wait();
-  }
-
-  async call2(
-    wallet: BlsWalletWrapper,
-    contract: Contract,
-    method: string,
-    params: any[],
-    nonce: BigNumberish,
-    ethValue: BigNumberish = 0,
-  ) {
-    const bundle = this.bundleFrom(
-      wallet,
-      contract,
-      method,
-      params,
-      nonce,
-      ethValue,
-    );
-
-    const gasEstimate =
-      await this.verificationGateway.estimateGas.processBundle(bundle);
-
-    const gasLimit = gasEstimate.add(gasEstimate.div(2));
-
-    await (
-      await this.verificationGateway.processBundle(bundle, { gasLimit })
     ).wait();
   }
 

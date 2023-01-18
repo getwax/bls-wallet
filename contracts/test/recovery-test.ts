@@ -55,33 +55,6 @@ describe("Recovery", async function () {
     );
   });
 
-  async function setPendingBLSKeyForWallet(wallet: BlsWalletWrapper) {
-    const setPendingBundle = wallet.sign({
-      nonce: await wallet.Nonce(),
-      actions: [
-        {
-          ethValue: 0,
-          contractAddress: vg.address,
-          encodedFunction: vg.interface.encodeFunctionData(
-            "setPendingBLSKeyForWallet",
-          ),
-        },
-      ],
-    });
-
-    const gasEstimate = await fx.verificationGateway.estimateGas.processBundle(
-      setPendingBundle,
-    );
-
-    // There seems to be a bug where the automatic gas limit is not enough here,
-    // so make it plenty instead.
-    const gasLimit = gasEstimate.add(gasEstimate.div(2));
-
-    await (
-      await fx.verificationGateway.processBundle(setPendingBundle, { gasLimit })
-    ).wait();
-  }
-
   it("should update bls key", async function () {
     await (
       await vg.processBundle(
@@ -109,7 +82,20 @@ describe("Recovery", async function () {
     );
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await setPendingBLSKeyForWallet(wallet1);
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
 
     expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash2);
   });
@@ -133,7 +119,20 @@ describe("Recovery", async function () {
     expect(hashFromWallet).to.equal(hash1);
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await setPendingBLSKeyForWallet(wallet1);
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
 
     walletForHash = await vg.walletFromHash(hash1);
     expect(walletForHash).to.equal(wallet1.address);
@@ -186,12 +185,22 @@ describe("Recovery", async function () {
     );
 
     // wallet 2 recovers wallet 1 to key 3
-    await fx.call2(
-      wallet2,
-      vg,
-      "recoverWallet",
-      [addressSignature, hash1, salt, wallet3.PublicKey()],
-      await wallet2.Nonce(),
+    await fx.processBundleWithExtraGas(
+      wallet2.sign({
+        nonce: await wallet2.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData("recoverWallet", [
+              addressSignature,
+              hash1,
+              salt,
+              wallet3.PublicKey(),
+            ]),
+          },
+        ],
+      }),
     );
 
     // don't trust, verify
@@ -237,7 +246,20 @@ describe("Recovery", async function () {
     // Here this seems to be wallet2, not wallet (wallet being recovered)
     // recoveredWalletNonce++
 
-    await setPendingBLSKeyForWallet(wallet1);
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -262,7 +284,20 @@ describe("Recovery", async function () {
     recoveredWalletNonce++;
 
     // check attacker's key not set after waiting full safety delay
-    await setPendingBLSKeyForWallet(walletAttacker);
+    await fx.processBundleWithExtraGas(
+      walletAttacker.sign({
+        nonce: await walletAttacker.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
     /**
      * TODO (merge-ok)
      *
@@ -274,7 +309,20 @@ describe("Recovery", async function () {
      * For now cast to 'any'.
      */
     await wallet2.syncWallet(vg as any);
-    await setPendingBLSKeyForWallet(wallet2);
+    await fx.processBundleWithExtraGas(
+      wallet2.sign({
+        nonce: await wallet2.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
 
     expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
     expect(await vg.walletFromHash(hashAttacker)).to.not.equal(

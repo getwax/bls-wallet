@@ -209,30 +209,18 @@ describe("Upgrade", async function () {
 
     expect(await vg2.walletFromHash(hash)).not.to.equal(walletAddress);
 
-    const upgradeBundle = walletOldVg.sign({
-      nonce: BigNumber.from(2),
-      actions: [
-        setExternalWalletAction,
-        changeProxyAction,
-        setTrustedBLSGatewayAction,
-      ],
-    });
-
-    const gasEstimate = await fx.verificationGateway.estimateGas.processBundle(
-      upgradeBundle,
-    );
-
-    // There seems to be a bug where the automatic gas limit is not enough here,
-    // so make it plenty instead.
-    const gasLimit = gasEstimate.add(gasEstimate.div(2));
-
     // Now actually perform the upgrade so we can perform some more detailed
     // checks.
-    await (
-      await fx.verificationGateway.processBundle(upgradeBundle, {
-        gasLimit,
-      })
-    ).wait();
+    await fx.processBundleWithExtraGas(
+      walletOldVg.sign({
+        nonce: BigNumber.from(2),
+        actions: [
+          setExternalWalletAction,
+          changeProxyAction,
+          setTrustedBLSGatewayAction,
+        ],
+      }),
+    );
 
     // Create required objects for data/contracts for checks
     const proxyAdmin = await ethers.getContractAt(
@@ -346,30 +334,20 @@ describe("Upgrade", async function () {
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
 
-    const setPendingBundle = wallet1.sign({
-      nonce: 2,
-      actions: [
-        {
-          ethValue: 0,
-          contractAddress: vg1.address,
-          encodedFunction: vg1.interface.encodeFunctionData(
-            "setPendingBLSKeyForWallet",
-          ),
-        },
-      ],
-    });
-
-    const gasEstimate = await fx.verificationGateway.estimateGas.processBundle(
-      setPendingBundle,
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: 2,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg1.address,
+            encodedFunction: vg1.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
     );
-
-    // There seems to be a bug where the automatic gas limit is not enough here,
-    // so make it plenty instead.
-    const gasLimit = gasEstimate.add(gasEstimate.div(2));
-
-    await fx.verificationGateway.processBundle(setPendingBundle, {
-      gasLimit,
-    });
 
     expect(await vg1.walletFromHash(hash1)).to.equal(
       ethers.constants.AddressZero,
