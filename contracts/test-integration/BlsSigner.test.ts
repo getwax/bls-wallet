@@ -695,7 +695,7 @@ describe("BlsSigner", () => {
   });
 });
 
-describe.only("JsonRpcSigner", () => {
+describe("JsonRpcSigner", () => {
   let signers: SignerWithAddress[];
 
   beforeEach(async () => {

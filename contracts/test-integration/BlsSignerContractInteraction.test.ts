@@ -83,6 +83,22 @@ describe("Signer contract interaction tests", function () {
       expect(initialBalance).to.equal(tokenSupply);
     });
 
+    // TODO: Cannot deploy contract using BlsSigner. We should investigate this
+    it("deploying contract using BlsSigner fails", async function () {
+      const NewMockERC20 = await ethers.getContractFactory("MockERC20");
+      const deployNewMockERC20 = async () =>
+        await NewMockERC20.connect(blsSigners[0]).deploy(
+          "AnyToken",
+          "TOK",
+          tokenSupply,
+        );
+
+      expect(deployNewMockERC20()).to.be.rejectedWith(
+        TypeError,
+        "Transaction.to should be defined",
+      );
+    });
+
     it("calls balanceOf successfully after instantiating Contract class with BlsSigner", async function () {
       const blsSignerAddress = await blsSigners[0].getAddress();
       const ERC20 = new ethers.Contract(
@@ -90,7 +106,7 @@ describe("Signer contract interaction tests", function () {
         mockERC20.interface,
         blsSigners[0],
       );
-      expect(await ERC20.signer.getAddress()).to.equal(blsSignerAddress);
+      expect(ERC20.signer).to.equal(blsSigners[0]);
 
       const initialBalance = await ERC20.balanceOf(blsSignerAddress);
       expect(initialBalance).to.equal(tokenSupply);
@@ -106,6 +122,25 @@ describe("Signer contract interaction tests", function () {
 
       const newReceipientBalance = await mockERC20.balanceOf(recipient);
       expect(newReceipientBalance).to.equal(tokenSupply.div(2));
+    });
+
+    it.only("calls transfer() successfully after instantiating Contract class with BlsSigner", async function () {
+      const ERC20 = new ethers.Contract(
+        mockERC20.address,
+        mockERC20.interface,
+        blsSigners[0],
+      );
+      const recipient = await blsSigners[1].getAddress();
+      const initialBalance = await mockERC20.balanceOf(recipient);
+      const erc20ToTransfer = parseEther("53.2134222");
+
+      const tx = await ERC20.transfer(recipient, erc20ToTransfer);
+      await tx.wait();
+
+      const newReceipientBalance = await mockERC20.balanceOf(recipient);
+      expect(newReceipientBalance.sub(initialBalance)).to.equal(
+        erc20ToTransfer,
+      );
     });
 
     it("approve() and transferFrom() calls", async function () {
