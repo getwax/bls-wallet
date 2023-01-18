@@ -18,13 +18,10 @@ async function createBundleService(
   feesOverride?: typeof aggregationStrategyDefaultTestConfig["fees"],
 ) {
   return await fx.createBundleService(
-    {
-      ...bundleServiceDefaultTestConfig,
-      maxAggregationSize: 24,
-    },
+    bundleServiceDefaultTestConfig,
     {
       ...aggregationStrategyDefaultTestConfig,
-      maxAggregationSize: 24,
+      maxGas: 3000000,
       fees: feesOverride ?? {
         type: "token",
         address: fx.testErc20.address,
@@ -224,11 +221,13 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
 });
 
 Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) => {
+  const breakevenOperationCount = 4.5;
+
   const bundleService = await createBundleService(fx, {
     type: "token",
     address: fx.testErc20.address,
     allowLosses: true,
-    breakevenOperationCount: 4.5,
+    breakevenOperationCount,
     ethValueInTokens: 1,
   });
 
@@ -249,6 +248,10 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
     assertBundleSucceeds(await bundleService.add(bundle));
   }
 
+  // For the purposes of this test, we don't want the bundleService prematurely
+  // running a submission on fewer bundles than we're trying to process
+  bundleService.config.breakevenOperationCount = Infinity;
+
   // 6 good bundles
   await addBundle(wallets[0], oneToken);
   await addBundle(wallets[1], oneToken);
@@ -264,6 +267,9 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
   await addBundle(wallets[7], oneToken);
   await addBundle(wallets[8], oneToken);
   await addBundle(wallets[9], oneToken);
+
+  // Restore this value now that all the bundles are added together
+  bundleService.config.breakevenOperationCount = breakevenOperationCount;
 
   assertEquals(await bundleService.bundleTable.count(), 10n);
 

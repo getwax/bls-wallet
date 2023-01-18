@@ -35,19 +35,20 @@ let existingClient: QueryClient | nil = nil;
 export const bundleServiceDefaultTestConfig:
   typeof BundleService.defaultConfig = {
     bundleQueryLimit: 100,
-    maxAggregationSize: 12,
+    breakevenOperationCount: 4.5,
     maxAggregationDelayMillis: 5000,
     maxUnconfirmedAggregations: 3,
     maxEligibilityDelay: 300,
   };
 
 export const aggregationStrategyDefaultTestConfig: AggregationStrategyConfig = {
-  maxAggregationSize: 12,
+  maxGas: 1500000,
   fees: {
     type: "ether",
     allowLosses: true,
     breakevenOperationCount: 4.5,
   },
+  bundleCheckingConcurrency: 8,
 };
 
 export default class Fixture {

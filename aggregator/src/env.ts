@@ -38,12 +38,20 @@ export const BUNDLE_TABLE_NAME = requireEnv("BUNDLE_TABLE_NAME");
  * (Using batching if needed.)
  */
 export const BUNDLE_QUERY_LIMIT = requireIntEnv("BUNDLE_QUERY_LIMIT");
+
 /**
  * Maximum retry delay in blocks before a failed bundle is discarded.
  */
 export const MAX_ELIGIBILITY_DELAY = requireIntEnv("MAX_ELIGIBILITY_DELAY");
 
-export const MAX_AGGREGATION_SIZE = requireIntEnv("MAX_AGGREGATION_SIZE");
+/**
+ * Approximate maximum gas of aggregate bundles.
+ *
+ * It's approximate because we use the sum of the marginal gas estimates and add
+ * the bundle overhead, which is not exactly the same as the gas used when
+ * putting the bundle together.
+ */
+export const MAX_GAS = requireIntEnv("MAX_GAS");
 
 export const MAX_AGGREGATION_DELAY_MILLIS = requireIntEnv(
   "MAX_AGGREGATION_DELAY_MILLIS",
@@ -90,4 +98,8 @@ export const PRIORITY_FEE_PER_GAS = requireBigNumberEnv("PRIORITY_FEE_PER_GAS");
  */
 export const PREVIOUS_BASE_FEE_PERCENT_INCREASE = requireNumberEnv(
   "PREVIOUS_BASE_FEE_PERCENT_INCREASE",
+);
+
+export const BUNDLE_CHECKING_CONCURRENCY = requireIntEnv(
+  "BUNDLE_CHECKING_CONCURRENCY",
 );

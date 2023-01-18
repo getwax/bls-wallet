@@ -6,13 +6,13 @@ import nil from "../src/helpers/nil.ts";
 
 const bundleServiceConfig = {
   ...bundleServiceDefaultTestConfig,
-  maxAggregationSize: 5,
   maxAggregationDelayMillis: 5000,
 };
 
 const aggregationStrategyConfig: AggregationStrategyConfig = {
+  maxGas: 900000,
   fees: nil,
-  maxAggregationSize: 5,
+  bundleCheckingConcurrency: 8,
 };
 
 Fixture.test("submits a single action in a timed submission", async (fx) => {
@@ -134,7 +134,7 @@ Fixture.test(
     );
 
     // Prevent submission from triggering on max aggregation size.
-    bundleService.config.maxAggregationSize = Infinity;
+    bundleService.config.breakevenOperationCount = Infinity;
 
     for (const b of bundles) {
       assertBundleSucceeds(await bundleService.add(b));
@@ -143,7 +143,7 @@ Fixture.test(
     // Restore max aggregation size for testing. (This way we hit the edge case
     // that the aggregator has access to more actions than it can fit into a
     // single submission, which happens but is race-dependent.)
-    bundleService.config.maxAggregationSize = 5;
+    bundleService.config.breakevenOperationCount = 4.5;
 
     await bundleService.submissionTimer.trigger();
     await bundleService.waitForConfirmations();
