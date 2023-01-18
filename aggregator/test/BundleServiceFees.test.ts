@@ -115,7 +115,8 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
     approveAndSendTokensToOrigin(fx, await wallet.Nonce(), oneToken),
   );
 
-  assertBundleSucceeds(await bundleService.add(bundle));
+  const bundleResponse = await bundleService.add(bundle);
+  assertBundleSucceeds(bundleResponse);
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
@@ -128,8 +129,12 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
   await bundleService.waitForConfirmations();
 
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  if ("failures" in bundleResponse) {
+    throw new Error("Bundle failed to be created");
+  }
+  const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
 
+  assertEquals(bundleRow.status, "confirmed");
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(0),
@@ -192,7 +197,8 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
     ],
   });
 
-  assertBundleSucceeds(await bundleService.add(bundle));
+  const bundleResponse = await bundleService.add(bundle);
+  assertBundleSucceeds(bundleResponse);
 
   assertEquals(
     await fx.adminWallet.provider.getBalance(wallet.address),
@@ -205,8 +211,12 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
   await bundleService.waitForConfirmations();
 
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  if ("failures" in bundleResponse) {
+    throw new Error("Bundle failed to be created");
+  }
+  const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
 
+  assertEquals(bundleRow.status, "confirmed");
   assertEquals(
     await fx.adminWallet.provider.getBalance(wallet.address),
     BigNumber.from(0),
@@ -261,7 +271,12 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
   await bundleService.waitForConfirmations();
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  const remainingBundles = await fx.allBundles(bundleService);
+  const remainingPendingBundles = remainingBundles
+    .filter(bundle => bundle.status === "pending");
+
+  assertEquals(remainingBundles.length, 10)
+  assertEquals(remainingPendingBundles.length, 1);
 
   await Promise.all(wallets.map((wallet, i) =>
     (async () => {

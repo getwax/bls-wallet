@@ -102,6 +102,7 @@ export default class EthereumService {
     aggPrivateKey: string,
   ): Promise<EthereumService> {
     const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
+    provider.pollingInterval = env.RPC_POLLING_INTERVAL;
     const wallet = EthereumService.Wallet(provider, aggPrivateKey);
 
     const blsWalletWrapper = await BlsWalletWrapper.connect(

@@ -10,6 +10,7 @@ import {
 import nil from "./helpers/nil.ts";
 
 export const RPC_URL = requireEnv("RPC_URL");
+export const RPC_POLLING_INTERVAL = requireIntEnv("RPC_POLLING_INTERVAL");
 
 export const ORIGIN = requireEnv("ORIGIN");
 
