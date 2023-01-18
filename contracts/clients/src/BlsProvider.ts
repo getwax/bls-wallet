@@ -138,7 +138,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       2000,
     );
 
-    if (!bundleReceipt) {
+    if (!bundleReceipt?.length) {
       throw new Error(
         `Could not find bundle receipt for transaction hash: ${transactionHash}`,
       );

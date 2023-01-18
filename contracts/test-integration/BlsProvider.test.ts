@@ -175,7 +175,7 @@ describe("BlsProvider", () => {
   it("should throw an error when the transaction receipt cannot be found", async () => {
     // Arrange
     const invalidTransactionHash = id("invalid hash");
-    const retries = 1; // Setting this to 1 as we do not to wait in order for the logic to be correctly tested
+    const retries = 1; // Setting this to 1 as we do not want to wait in order for the logic to be correctly tested
 
     // Act
     const result = async () =>
