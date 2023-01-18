@@ -23,7 +23,7 @@ docker run --name $CONTAINER --rm -p8545:8545 ethereum/client-go:stable \
   --dev.period=0 \
   &
 
-sleep 2
+sleep 5
 
 docker exec $CONTAINER geth \
   --exec "$(cat "$SCRIPT_DIR/fundAccounts.js")" \
