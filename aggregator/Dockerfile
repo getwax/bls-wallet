@@ -5,6 +5,8 @@ WORKDIR /app
 
 RUN deno cache --unstable ts/programs/aggregator.ts
 
+ENV IS_DOCKER="true"
+
 CMD [ \
   "deno", \
   "run", \

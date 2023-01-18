@@ -16,7 +16,10 @@ export const PORT = requireIntEnv("PORT");
 
 export const USE_TEST_NET = requireBoolEnv("USE_TEST_NET");
 
-export const NETWORK_CONFIG_PATH = requireEnv("NETWORK_CONFIG_PATH");
+export const NETWORK_CONFIG_PATH = Deno.env.get("IS_DOCKER") === "true"
+  ? "/app/networkConfig.json"
+  : requireEnv("NETWORK_CONFIG_PATH");
+
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
 export const PRIVATE_KEY_ADMIN = requireEnv("PRIVATE_KEY_ADMIN");
 
