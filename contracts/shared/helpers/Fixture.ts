@@ -18,7 +18,6 @@ import {
 } from "../../clients/src";
 
 import Range from "./Range";
-import assert from "./assert";
 import { VerificationGateway, BLSOpen } from "../../typechain-types";
 import deploy from "../deploy";
 import { fail } from "assert";
@@ -37,8 +36,6 @@ export default class Fixture {
     public signers: Signer[],
     public addresses: string[],
 
-    public lazyBlsWallets: (() => Promise<BlsWalletWrapper>)[],
-
     public verificationGateway: VerificationGateway,
 
     public blsLibrary: BLSOpen,
@@ -49,10 +46,7 @@ export default class Fixture {
   ) {}
 
   /// @dev Contracts deployed by first ethers signer
-  static async create(
-    blsWalletCount: number = Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH,
-    secretNumbers?: number[],
-  ) {
+  static async create() {
     const chainId = (await ethers.provider.getNetwork()).chainId;
 
     const allSigners = await ethers.getSigners();
@@ -68,43 +62,11 @@ export default class Fixture {
       aggregatorUtilities: utilities,
     } = await deploy(signers[0]);
 
-    const lazyBlsWallets = Range(blsWalletCount).map((i) => {
-      let secretNumber: number;
-
-      if (secretNumbers !== undefined) {
-        secretNumber = secretNumbers[i];
-        assert(!isNaN(secretNumber), "secret ");
-      } else {
-        secretNumber = Math.abs((Math.random() * 0xffffffff) << 0);
-      }
-
-      return async () => {
-        const wallet = await BlsWalletWrapper.connect(
-          `0x${secretNumber.toString(16)}`,
-          verificationGateway.address,
-          verificationGateway.provider,
-        );
-
-        // Perform an empty transaction to trigger wallet creation
-        await (
-          await verificationGateway.processBundle(
-            wallet.sign({
-              nonce: BigNumber.from(0),
-              actions: [],
-            }),
-          )
-        ).wait();
-
-        return wallet;
-      };
-    });
-
     return new Fixture(
       chainId,
       ethers.provider,
       signers,
       addresses,
-      lazyBlsWallets,
       verificationGateway,
       bls,
       blsExpander,
@@ -127,10 +89,8 @@ export default class Fixture {
    * Creates new BLS contract wallets from private keys
    * @returns array of wallets
    */
-  async createBLSWallets(): Promise<BlsWalletWrapper[]> {
-    return await Promise.all(
-      this.lazyBlsWallets.map((lazyWallet) => lazyWallet()),
-    );
+  async createBLSWallets(count: number): Promise<BlsWalletWrapper[]> {
+    return await Promise.all(Range(count).map(() => this.createBLSWallet()));
   }
 
   async createBLSWallet(): Promise<BlsWalletWrapper> {
@@ -246,17 +206,11 @@ export default class Fixture {
       BigNumber.from(latestTimestamp).add(seconds).toHexString(),
     ]);
 
-    const wallet = await this.lazyBlsWallets[1]();
-
-    // Process an empty operation so that the next timestamp above actually gets
+    // Send an empty transaction so that the next timestamp above actually gets
     // into a block. This enables static calls to see the updated time.
-    await (
-      await this.verificationGateway.processBundle(
-        wallet.sign({
-          nonce: await wallet.Nonce(),
-          actions: [],
-        }),
-      )
-    ).wait();
+    await this.signers[0].sendTransaction({
+      value: 0,
+      to: this.signers[0].getAddress(),
+    });
   }
 }

@@ -28,9 +28,9 @@ async function logGasForTransfers() {
       txHash: -1,
     };
 
-    fx = await Fixture.create(1);
+    fx = await Fixture.create();
 
-    th = new TokenHelper(fx);
+    th = new TokenHelper(fx, 1);
     const blsWallets = await th.walletTokenSetup();
 
     const nonce: number = (await blsWallets[0].Nonce()).toNumber();

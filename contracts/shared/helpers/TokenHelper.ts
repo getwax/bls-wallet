@@ -10,10 +10,10 @@ export default class TokenHelper {
   readonly userStartAmount: BigNumber;
 
   testToken: IERC20 | undefined;
-  constructor(public fx: Fixture) {
+  constructor(public fx: Fixture, public walletCount: number) {
     this.userStartAmount = TokenHelper.initialSupply.div(
       // +1 to keep some tokens for the aggregator
-      fx.lazyBlsWallets.length + 1,
+      walletCount + 1,
     );
     this.testToken = undefined;
   }
@@ -56,7 +56,7 @@ export default class TokenHelper {
   }
 
   async walletTokenSetup(): Promise<BlsWalletWrapper[]> {
-    const wallets = await this.fx.createBLSWallets();
+    const wallets = await this.fx.createBLSWallets(this.walletCount);
 
     this.testToken = (await TokenHelper.deployTestToken()) as IERC20;
     await this.distributeTokens(this.fx.signers[0], this.testToken, wallets);

@@ -13,7 +13,7 @@
 
 //   beforeEach(async function () {
 //     fx = await Fixture.getSingleton();
-//     th = new TokenHelper(fx);
+//     th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
 //     blsWalletAddresses = (await th.walletTokenSetup()).map(
 //       (wallet) => wallet.address,
 //     );
