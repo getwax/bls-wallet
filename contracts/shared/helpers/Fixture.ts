@@ -159,6 +159,33 @@ export default class Fixture {
     ).wait();
   }
 
+  async call2(
+    wallet: BlsWalletWrapper,
+    contract: Contract,
+    method: string,
+    params: any[],
+    nonce: BigNumberish,
+    ethValue: BigNumberish = 0,
+  ) {
+    const bundle = this.bundleFrom(
+      wallet,
+      contract,
+      method,
+      params,
+      nonce,
+      ethValue,
+    );
+
+    const gasEstimate =
+      await this.verificationGateway.estimateGas.processBundle(bundle);
+
+    const gasLimit = gasEstimate.add(gasEstimate.div(2));
+
+    await (
+      await this.verificationGateway.processBundle(bundle, { gasLimit })
+    ).wait();
+  }
+
   async callStatic(
     wallet: BlsWalletWrapper,
     contract: Contract,
