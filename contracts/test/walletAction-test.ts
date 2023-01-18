@@ -17,7 +17,7 @@ describe("WalletActions", async function () {
 
   let fx: Fixture;
   beforeEach(async function () {
-    fx ??= await Fixture.create();
+    fx = await Fixture.getSingleton();
   });
 
   it("should register new wallet", async function () {

@@ -12,7 +12,7 @@
 //   let blsWalletAddresses: string[];
 
 //   beforeEach(async function () {
-//     fx = await Fixture.create(7);
+//     fx = await Fixture.getSingleton();
 //     th = new TokenHelper(fx);
 //     blsWalletAddresses = (await th.walletTokenSetup()).map(
 //       (wallet) => wallet.address,

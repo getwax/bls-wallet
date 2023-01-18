@@ -34,7 +34,7 @@ describe("Recovery", async function () {
   let salt;
   let recoveryHash;
   beforeEach(async function () {
-    fx ??= await Fixture.create();
+    fx = await Fixture.getSingleton();
     vg = fx.verificationGateway;
 
     wallet1 = await fx.createBLSWallet();

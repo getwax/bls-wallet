@@ -38,7 +38,7 @@ describe("Upgrade", async function () {
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
   beforeEach(async () => {
-    fx ??= await Fixture.create();
+    fx = await Fixture.getSingleton();
   });
 
   it("should upgrade wallet contract", async () => {
@@ -90,7 +90,7 @@ describe("Upgrade", async function () {
     const vg2 = deployment2.verificationGateway;
 
     // Recreate hubble bls signer
-    const walletOldVg = await fx.lazyBlsWallets[0]();
+    const walletOldVg = await fx.createBLSWallet();
     const walletAddress = walletOldVg.address;
     const blsSecret = walletOldVg.privateKey;
 
@@ -159,7 +159,7 @@ describe("Upgrade", async function () {
       const { successes } =
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
-            nonce: BigNumber.from(2),
+            nonce: BigNumber.from(1),
             actions: [
               // skip: setExternalWalletAction,
               changeProxyAction,
@@ -177,7 +177,7 @@ describe("Upgrade", async function () {
       const { successes } =
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
-            nonce: BigNumber.from(2),
+            nonce: BigNumber.from(1),
             actions: [
               setExternalWalletAction,
               // skip: changeProxyAction,
@@ -195,7 +195,7 @@ describe("Upgrade", async function () {
       const { successes } =
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
-            nonce: BigNumber.from(2),
+            nonce: BigNumber.from(1),
             actions: [
               setExternalWalletAction,
               changeProxyAction,
@@ -213,7 +213,7 @@ describe("Upgrade", async function () {
     // checks.
     await fx.processBundleWithExtraGas(
       walletOldVg.sign({
-        nonce: BigNumber.from(2),
+        nonce: BigNumber.from(1),
         actions: [
           setExternalWalletAction,
           changeProxyAction,
@@ -251,7 +251,7 @@ describe("Upgrade", async function () {
     const bundleResult = await vg2.callStatic.processBundle(
       fx.blsWalletSigner.aggregate([
         walletOldVg.sign({
-          nonce: BigNumber.from(3),
+          nonce: BigNumber.from(2),
           actions: [
             {
               ethValue: 0,

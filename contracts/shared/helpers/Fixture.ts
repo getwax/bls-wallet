@@ -27,6 +27,9 @@ export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
   static readonly DEFAULT_BLS_ACCOUNTS_LENGTH = 5;
 
+  // eslint-disable-next-line no-use-before-define
+  static singleton?: Fixture;
+
   private constructor(
     public chainId: number,
     public provider: providers.Provider,
@@ -108,6 +111,16 @@ export default class Fixture {
       utilities,
       await initBlsWalletSigner({ chainId }),
     );
+  }
+
+  /**
+   * The fixture is tied to the chain which is a singleton. It does some things
+   * on creation that can only be done once, so it's useful to get this as a
+   * singleton.
+   */
+  static async getSingleton() {
+    Fixture.singleton ??= await Fixture.create();
+    return Fixture.singleton;
   }
 
   /**
