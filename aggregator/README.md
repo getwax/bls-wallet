@@ -341,18 +341,17 @@ Make sure your Deno version is
 and restart docker `sudo systemctl restart docker`
 
 6. Load the docker image: `sudo docker load <docker-image.tar.gz`
-7. Run the aggregator:
+7. Copy `./programs/start-docker.sh` onto the server
+8. Run the aggregator:
 
 ```sh
-sudo docker run \
-  --name aggregator \
-  -d \
-  --net=host \
-  --restart=unless-stopped \
-  aggregator:latest
+VERSION=abc1234 ./start-docker.sh
+# Replace abc1234 with the first 7 characters of the git sha used when building
+# A .env file is also required. You can also specify an alternative path using
+# ENV_PATH=/custom/path/to/.env
 ```
 
-8. Create `/etc/nginx/sites-available/aggregator`
+9. Create `/etc/nginx/sites-available/aggregator`
 
 ```nginx
 server {
@@ -375,7 +374,7 @@ This allows you to add some static content at `/home/aggregator/static-content`.
 Adding static content is optional; requests that don't match static content will
 be passed to the aggregator.
 
-9. Create a symlink in sites-enabled
+10. Create a symlink in sites-enabled
 
 ```sh
 ln -s /etc/nginx/sites-available/aggregator /etc/nginx/sites-enabled/aggregator
@@ -383,5 +382,5 @@ ln -s /etc/nginx/sites-available/aggregator /etc/nginx/sites-enabled/aggregator
 
 Reload nginx for config to take effect: `sudo nginx -s reload`
 
-10. Set up https for your domain by following the instructions at
+11. Set up https for your domain by following the instructions at
     https://certbot.eff.org/lets-encrypt/ubuntufocal-nginx.
