@@ -21,7 +21,7 @@ async function createBundleService(
     bundleServiceDefaultTestConfig,
     {
       ...aggregationStrategyDefaultTestConfig,
-      maxGas: 3000000,
+      maxGasPerBundle: 3000000,
       fees: feesOverride ?? {
         type: "token",
         address: fx.testErc20.address,
@@ -129,7 +129,9 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
   if ("failures" in bundleResponse) {
     throw new Error("Bundle failed to be created");
   }
-  const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
+  const bundleRow = await bundleService.bundleTable.findBundle(
+    bundleResponse.hash,
+  );
 
   assertEquals(bundleRow.status, "confirmed");
   assertEquals(
@@ -211,7 +213,9 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
   if ("failures" in bundleResponse) {
     throw new Error("Bundle failed to be created");
   }
-  const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
+  const bundleRow = await bundleService.bundleTable.findBundle(
+    bundleResponse.hash,
+  );
 
   assertEquals(bundleRow.status, "confirmed");
   assertEquals(
@@ -279,9 +283,9 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
 
   const remainingBundles = await fx.allBundles(bundleService);
   const remainingPendingBundles = remainingBundles
-    .filter(bundle => bundle.status === "pending");
+    .filter((bundle) => bundle.status === "pending");
 
-  assertEquals(remainingBundles.length, 10)
+  assertEquals(remainingBundles.length, 10);
   assertEquals(remainingPendingBundles.length, 1);
 
   await Promise.all(wallets.map((wallet, i) =>

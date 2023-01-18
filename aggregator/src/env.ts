@@ -51,7 +51,7 @@ export const MAX_ELIGIBILITY_DELAY = requireIntEnv("MAX_ELIGIBILITY_DELAY");
  * the bundle overhead, which is not exactly the same as the gas used when
  * putting the bundle together.
  */
-export const MAX_GAS = requireIntEnv("MAX_GAS");
+export const MAX_GAS_PER_BUNDLE = requireIntEnv("MAX_GAS_PER_BUNDLE");
 
 export const MAX_AGGREGATION_DELAY_MILLIS = requireIntEnv(
   "MAX_AGGREGATION_DELAY_MILLIS",

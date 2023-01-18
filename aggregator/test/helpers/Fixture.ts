@@ -42,7 +42,7 @@ export const bundleServiceDefaultTestConfig:
   };
 
 export const aggregationStrategyDefaultTestConfig: AggregationStrategyConfig = {
-  maxGas: 1500000,
+  maxGasPerBundle: 1500000,
   fees: {
     type: "ether",
     allowLosses: true,
