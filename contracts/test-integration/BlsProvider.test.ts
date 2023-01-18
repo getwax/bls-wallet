@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import chai, { expect } from "chai";
 import { BigNumber, ethers } from "ethers";
-import { formatEther, id, parseEther } from "ethers/lib/utils";
+import { formatEther, parseEther } from "ethers/lib/utils";
 
 import {
   BlsWalletWrapper,
@@ -174,7 +174,8 @@ describe("BlsProvider", () => {
 
   it("should throw an error when the transaction receipt cannot be found", async () => {
     // Arrange
-    const invalidTransactionHash = id("invalid hash");
+    const randomBytes = ethers.utils.randomBytes(20);
+    const invalidTransactionHash = ethers.utils.keccak256(randomBytes);
     const retries = 1; // Setting this to 1 as we do not want to wait in order for the logic to be correctly tested
 
     // Act
