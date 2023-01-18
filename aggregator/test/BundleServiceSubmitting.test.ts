@@ -37,7 +37,8 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     ],
   });
 
-  assertBundleSucceeds(await bundleService.add(bundle));
+  const bundleResponse = await bundleService.add(bundle);
+  assertBundleSucceeds(bundleResponse);
 
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
@@ -53,7 +54,14 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1001),
   );
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 1n);
+
+  if ("failures" in bundleResponse) {
+    throw new Error("Bundle failed to be created");
+  }
+  const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
+
+  assertEquals(bundleRow.status, "confirmed");
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
@@ -202,7 +210,8 @@ Fixture.test(
     assertEquals(await wallet.Nonce(), BigNumber.from(2));
     // 2 mints should be left as both failed submission pre-check
     let remainingBundles = await fx.allBundles(bundleService);
-    assertEquals(remainingBundles.length, 2);
+    let remainingPendingBundles = remainingBundles.filter(bundle => bundle.status === "pending");
+    assertEquals(remainingPendingBundles.length, 2);
 
     // Re-run submissions
     await bundleService.submissionTimer.trigger();
@@ -217,7 +226,8 @@ Fixture.test(
     assertEquals(await wallet.Nonce(), BigNumber.from(3));
     // 1 mints (nonce 3) should be left as it failed submission pre-check
     remainingBundles = await fx.allBundles(bundleService);
-    assertEquals(remainingBundles.length, 1);
+    remainingPendingBundles = remainingBundles.filter(bundle => bundle.status === "pending");
+    assertEquals(remainingPendingBundles.length, 1);
 
     // Simulate 1 block being mined
     await fx.mine(1);
@@ -234,7 +244,8 @@ Fixture.test(
     );
     assertEquals(await wallet.Nonce(), BigNumber.from(4));
     remainingBundles = await fx.allBundles(bundleService);
-    assertEquals(remainingBundles.length, 0);
+    remainingPendingBundles = remainingBundles.filter(bundle => bundle.status === "pending");
+    assertEquals(remainingPendingBundles.length, 0);
   },
 );
 
@@ -278,7 +289,7 @@ Fixture.test("retains failing bundle when its eligibility delay is smaller than 
   assertEquals(await bundleService.bundleTable.count(), 1n);
 });
 
-Fixture.test("removes failing bundle when its eligibility delay is larger than MAX_ELIGIBILITY_DELAY", async (fx) => {
+Fixture.test("updates status of failing bundle when its eligibility delay is larger than MAX_ELIGIBILITY_DELAY", async (fx) => {
   const bundleService = await fx.createBundleService(
     {
       ...bundleServiceConfig,
@@ -322,5 +333,11 @@ Fixture.test("removes failing bundle when its eligibility delay is larger than M
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
 
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 1n);
+
+  if ("failures" in res) {
+    throw new Error("Bundle failed to be created");
+  }
+  const failedBundleRow = await bundleService.bundleTable.findBundle(res.hash);
+  assertEquals(failedBundleRow.status, "failed");
 });
