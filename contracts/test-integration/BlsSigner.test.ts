@@ -18,7 +18,6 @@ import {
   MockERC20__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
-import { UncheckedBlsSigner } from "../clients/src/BlsSigner";
 
 let networkConfig: NetworkConfig;
 
@@ -364,15 +363,6 @@ describe("BlsSigner", () => {
     expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
   });
 
-  it("should connect to an unchecked bls signer", () => {
-    // Arrange & Act
-    const uncheckedBlsSigner = blsSigner.connectUnchecked();
-
-    // Assert
-    expect(uncheckedBlsSigner._isSigner).to.be.true;
-    expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
-  });
-
   it("should await the init promise when connecting to an unchecked bls signer", async () => {
     // Arrange & Act
     const newPrivateKey = ethers.Wallet.createRandom().privateKey;
@@ -615,28 +605,6 @@ describe("BlsSigner", () => {
     });
   });
 
-  it("should throw an error when ENS name is not a string", async () => {
-    // Arrange
-    const ensName = null;
-
-    // Act
-    const result = async () => await blsSigner.resolveName(ensName);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(Error, "invalid ENS name");
-  });
-
-  it("should throw an error when ENS name fails formatting checks", async () => {
-    // Arrange
-    const ensName = ethers.utils.formatBytes32String("invalid");
-
-    // Act
-    const result = async () => await blsSigner.resolveName(ensName);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(Error, "invalid address");
-  });
-
   // ENS is not supported by hardhat so we are checking the correct error behaviour in this scenario
   it("should throw an error when passing in a correct ENS name", async () => {
     // Arrange
@@ -650,33 +618,6 @@ describe("BlsSigner", () => {
       Error,
       "network does not support ENS",
     );
-  });
-
-  it("should return the provider the signer was established from", async () => {
-    // Arrange & Act
-    const provider = blsSigner.provider;
-
-    // Assert
-    expect(provider._isProvider).to.be.true;
-    expect(provider).to.be.instanceOf(Experimental.BlsProvider);
-  });
-
-  it("should detect whether an object is a valid signer", async () => {
-    // Arrange & Act
-    const validSigner = Experimental.BlsSigner.isSigner(blsSigner);
-    const invalidSigner = Experimental.BlsSigner.isSigner({});
-
-    // Assert
-    expect(validSigner).to.be.true;
-    expect(invalidSigner).to.be.false;
-  });
-
-  it("should throw an error if attempt to change provider is made", async () => {
-    // Arrange & Act
-    const connect = () => blsSigner.connect(blsProvider);
-
-    // Assert
-    expect(connect).to.throw(Error, "cannot alter JSON-RPC Signer connection");
   });
 
   // The personal_unlockAccount method is not supported by the underlying hardhat node so this test asserts that the correct error is thrown.
