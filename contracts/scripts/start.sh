@@ -29,7 +29,6 @@ docker exec $CONTAINER geth \
   --exec "$(cat "$SCRIPT_DIR/fundAccounts.js")" \
   attach 'http://localhost:8545'
 
-yarn hardhat fundDeployer --network gethDev
 yarn hardhat run scripts/deploy_all.ts --network gethDev
 
 fg

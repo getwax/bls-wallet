@@ -14,7 +14,6 @@ yarn hardhat node &
 
 sleep 5
 
-yarn hardhat fundDeployer --network gethDev
 yarn hardhat run scripts/deploy_all.ts --network gethDev
 
 fg
