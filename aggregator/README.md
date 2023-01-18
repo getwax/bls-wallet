@@ -61,7 +61,7 @@ commands.
 | AUTO_CREATE_INTERNAL_BLS_WALLET    | false                                                              | An internal BLS wallet is used to calculate bundle overheads. Setting this to true allows creating this wallet on startup, but might be undesirable in production (see `programs/createInternalBlsWallet.ts` for manual creation). |
 | PRIORITY_FEE_PER_GAS               | 0                                                                  | The priority fee used when submitting bundles (and passed on as a requirement for user bundles).                                                                                                                                   |
 | PREVIOUS_BASE_FEE_PERCENT_INCREASE | 2                                                                  | Used to determine the max basefee attached to aggregator transaction (and passed on as a requirement for user bundles)s.                                                                                                           |
-| BUNDLE_CHECKING_CONCURRENCY        | 8                                                                  | Limits the concurrency of client requests when checking bundles (getting gas usage, detecting fees, etc).                                                                                                                          |
+| BUNDLE_CHECKING_CONCURRENCY        | 8                                                                  | The maximum number of bundles that are checked concurrently (getting gas usage, detecting fees, etc).                                                                                                                              |
 
 ### PostgreSQL
 
