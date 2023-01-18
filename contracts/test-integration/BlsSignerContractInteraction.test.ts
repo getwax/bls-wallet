@@ -216,7 +216,7 @@ describe("Signer contract interaction tests", function () {
       await mockERC721.deployed();
     });
 
-    // TODO: Investigate why safeMint() fails with a BLS wallet address
+    // TODO: Investigate why safeMint() fails with a BLS wallet address. Note - it passes in isolation
     it("safeMint() call fails with BLS wallet address", async function () {
       const recipient = await blsSigners[1].getAddress();
       const tokenId = 100;
@@ -224,12 +224,14 @@ describe("Signer contract interaction tests", function () {
       const mint = await mockERC721
         .connect(blsSigners[0])
         .safeMint(recipient, tokenId);
+      await mint.wait();
 
-      const receipt = async () => await mint.wait();
+      const ownerOf = async () =>
+        await mockERC721.connect(blsSigners[1]).ownerOf(tokenId);
 
-      await expect(receipt()).to.be.rejectedWith(
+      await expect(ownerOf()).to.be.rejectedWith(
         Error,
-        "Submit Error: Unexpected action error data: 0x",
+        "ERC721: invalid token ID",
       );
     });
 
