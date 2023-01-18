@@ -33,32 +33,20 @@ Run the repo setup script
 
 ## Chain (RPC Node)
 
-Start a local Hardhat node for RPC use.
+Set up a local node and deploy the contracts on it.
 
 ```sh
 cd ./contracts
-yarn hardhat node
+yarn start
 ```
 
-## Deploy Contracts
-
-### Deployer account
-
-BLS Wallet contract deploys use `CREATE2` to maintain consistent addresses across networks. As such, a create2 deployer contract is used and listed in `./contracts/.env` under the environment variables `DEPLOYER_MNEMONIC` & `DEPLOYER_SET_INDEX`. The hierarchical deterministic (HD) wallet address will need to be funded in order to deploy the contracts.
-
-If you do not need consistent addresses, for example on a local or testnet network, you can replace the `DEPLOYER_MNEMONIC` with another seed phrase which already has a funded account. Run the following command to fund the deployer:
-
-Fund the `create2Deployer`.
+You can also use the local node from hardhat.
+- Pros: doesn't need docker, access to console.log in solidity
+- Cons: slow
 
 ```sh
-cd ./contracts # if not already there
-yarn hardhat fundDeployer --network gethDev
-```
-
-From the same terminal/shell instance, deploy all `bls-wallet` contracts.
-
-```sh
-yarn hardhat run scripts/deploy_all.ts --network gethDev
+cd ./contracts
+yarn start-hardhat
 ```
 
 ## Aggregator
