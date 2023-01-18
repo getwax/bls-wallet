@@ -41,12 +41,6 @@ export default class BundleService {
   unconfirmedActionCount = 0;
   unconfirmedRowIds = new Set<number>();
 
-  // TODO (merge-ok) use database table in the future to persist
-  confirmedBundles = new Map<string, {
-    bundle: Bundle;
-    receipt: ethers.ContractReceipt;
-  }>();
-
   submissionSemaphore: Semaphore;
   submissionTimer: SubmissionTimer;
   submissionsInProgress = 0;
@@ -184,6 +178,7 @@ export default class BundleService {
       const hash = makeHash();
 
       await this.bundleTable.add({
+        status: "pending",
         hash,
         bundle,
         eligibleAfter: await this.ethereumService.BlockNumber(),
@@ -208,16 +203,12 @@ export default class BundleService {
     return this.bundleTable.findBundle(hash);
   }
 
-  // TODO (merge-ok) Remove lint ignore when this hits db
-  // deno-lint-ignore require-await
-  async lookupReceipt(hash: string) {
-    const confirmation = this.confirmedBundles.get(hash);
-
-    if (!confirmation) {
+  receiptFromBundle(bundle: BundleRow) {
+    if (!bundle.receipt) {
       return nil;
     }
 
-    const receipt = confirmation.receipt;
+    const { receipt, hash } = bundle;
 
     return {
       transactionIndex: receipt.transactionIndex,
@@ -314,7 +305,10 @@ export default class BundleService {
         nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
       });
     } else {
-      await this.bundleTable.remove(row);
+      await this.bundleTable.update({
+        ...row,
+        status: "failed",
+      });
     }
 
     this.unconfirmedRowIds.delete(row.id);
@@ -346,9 +340,10 @@ export default class BundleService {
         const balanceAfter = await this.ethereumService.wallet.getBalance();
 
         for (const row of includedRows) {
-          this.confirmedBundles.set(row.hash, {
-            bundle: row.bundle,
+          await this.bundleTable.update({
+            ...row,
             receipt,
+            status: "confirmed",
           });
         }
 
@@ -373,8 +368,6 @@ export default class BundleService {
             expectedFee: ethers.utils.formatEther(expectedFee),
           },
         });
-
-        await this.bundleTable.remove(...includedRows);
       } finally {
         this.unconfirmedBundles.delete(aggregateBundle);
 

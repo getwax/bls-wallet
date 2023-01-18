@@ -193,10 +193,12 @@ export default class Fixture {
   }
 
   async mine(numBlocks: number): Promise<void> {
-    const provider = this.ethereumService.wallet
-      .provider as ethers.providers.JsonRpcProvider;
     for (let i = 0; i < numBlocks; i++) {
-      await provider.send("evm_mine", []);
+      // Sending 0 eth instead of using evm_mine since geth doesn't support it.
+      await (await this.adminWallet.sendTransaction({
+        to: this.adminWallet.address,
+        value: 0,
+      })).wait();
     }
   }
 

@@ -13,7 +13,7 @@ function test(name: string, fn: (bundleTable: BundleTable) => Promise<void>) {
     fn: async () => {
       const tableName = `bundles_test_${counter++}_${Date.now()}`;
 
-      const queryClient = createQueryClient(() => {});
+      const queryClient = createQueryClient(() => { });
       const table = await BundleTable.create(queryClient, tableName);
 
       try {
@@ -34,6 +34,7 @@ const sampleRows: BundleRow[] = [
   {
     id: 0,
     hash: "0x0",
+    status: "pending",
     bundle: {
       senderPublicKeys: [["0x01", "0x02", "0x03", "0x04"]],
       operations: [
@@ -53,6 +54,7 @@ const sampleRows: BundleRow[] = [
     eligibleAfter: BigNumber.from(0),
     nextEligibilityDelay: BigNumber.from(1),
     submitError: nil,
+    receipt: nil,
   },
 ];
 
