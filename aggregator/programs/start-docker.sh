@@ -17,8 +17,8 @@ fi
 
 echo "Using env" $ENV_PATH
 
-PORT=$(cat $ENV_PATH | grep '^PORT=' | head -n1 | sed 's/^PORT=//')
-NETWORK_CONFIG_PATH=$(cat $ENV_PATH | grep '^NETWORK_CONFIG_PATH=' | head -n1 | sed 's/^NETWORK_CONFIG_PATH=//')
+PORT=$(cat $ENV_PATH | grep '^PORT=' | tail -n1 | sed 's/^PORT=//')
+NETWORK_CONFIG_PATH=$(cat $ENV_PATH | grep '^NETWORK_CONFIG_PATH=' | tail -n1 | sed 's/^NETWORK_CONFIG_PATH=//')
 
 # Normalize NETWORK_CONFIG_PATH to an absolute path
 if [[ $(echo $NETWORK_CONFIG_PATH | head -c1) != "/" ]]; then
