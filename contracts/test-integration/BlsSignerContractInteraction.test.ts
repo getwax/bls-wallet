@@ -83,7 +83,7 @@ describe("Signer contract interaction tests", function () {
       expect(initialBalance).to.equal(tokenSupply);
     });
 
-    // TODO: bls-wallet #466 BlsSigner cannot deploy contract
+    // TODO: Add Contract deployment support #182
     it("deploying contract using BlsSigner fails", async function () {
       const NewMockERC20 = await ethers.getContractFactory("MockERC20");
       const deployNewMockERC20 = async () =>
@@ -180,7 +180,7 @@ describe("Signer contract interaction tests", function () {
       expect(newContractFactory.signer).to.equal(blsSigners[1]);
     });
 
-    // TODO: bls-wallet #466 BlsSigner cannot deploy contract
+    // TODO: Add Contract deployment support #182
     it("deploying via new contract factory fails", async function () {
       // Taken from artifacts directory
       const mockERC20Bytecode =
