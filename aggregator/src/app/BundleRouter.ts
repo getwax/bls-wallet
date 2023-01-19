@@ -26,7 +26,7 @@ export default function BundleRouter(bundleService: BundleService) {
     async (ctx) => {
       const bundleRow = await bundleService.lookupBundle(ctx.params.hash!);
 
-      if (bundleRow?.bundle === nil) {
+      if (bundleRow?.receipt === nil) {
         ctx.response.status = 404;
 
         ctx.response.body = {
