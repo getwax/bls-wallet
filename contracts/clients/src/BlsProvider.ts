@@ -107,7 +107,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     transactionHash: string | Promise<string>,
   ): Promise<ethers.providers.TransactionReceipt> {
     const resolvedTransactionHash = await transactionHash;
-    return this._getTransactionReceipt(resolvedTransactionHash, 1, 10);
+    return this._getTransactionReceipt(resolvedTransactionHash, 1, 20);
   }
 
   override async waitForTransaction(
@@ -118,7 +118,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return this._getTransactionReceipt(
       transactionHash,
       confirmations ?? 1,
-      retries ?? 10,
+      retries ?? 20,
     );
   }
 

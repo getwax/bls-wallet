@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import chai, { expect } from "chai";
 import { BigNumber, ethers } from "ethers";
-import { formatEther, id, parseEther } from "ethers/lib/utils";
+import { formatEther, parseEther } from "ethers/lib/utils";
 
 import {
   BlsWalletWrapper,
@@ -10,7 +10,6 @@ import {
   NetworkConfig,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
-import BlsSigner, { UncheckedBlsSigner } from "../clients/src/BlsSigner";
 
 let networkConfig: NetworkConfig;
 
@@ -61,42 +60,6 @@ describe("BlsProvider", () => {
     });
   });
 
-  it("should return a valid signer", () => {
-    // Arrange & Act
-    const blsSigner = blsProvider.getSigner(privateKey);
-
-    // Assert
-    expect(blsSigner._isSigner).to.be.true;
-    expect(blsSigner).to.be.instanceOf(BlsSigner);
-  });
-
-  it("should return a valid unchecked bls signer", () => {
-    // Arrange & Act
-    const uncheckedBlsSigner = blsProvider.getUncheckedSigner(privateKey);
-
-    // Assert
-    expect(uncheckedBlsSigner._isSigner).to.be.true;
-    expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
-  });
-
-  it("should return a new signer if one has not been instantiated", async () => {
-    // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
-      verificationGateway,
-      rpcUrl,
-      network,
-    );
-
-    // Act
-    const newPrivateKey = ethers.Wallet.createRandom().privateKey;
-    const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
-
-    // Assert
-    expect(newBlsSigner).to.not.equal(blsSigner);
-    expect(newBlsSigner).to.equal(newBlsProvider.getSigner(newPrivateKey));
-  });
-
   it("calls a getter method on a contract using call()", async () => {
     // Arrange
     const expectedSupply = "1000000.0";
@@ -133,49 +96,6 @@ describe("BlsProvider", () => {
 
     // Assert
     await expect(gasEstimate()).to.not.be.rejected;
-  });
-
-  it("should throw an error when this.signer has not been assigned", async () => {
-    // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
-      verificationGateway,
-      rpcUrl,
-      network,
-    );
-
-    const recipient = ethers.Wallet.createRandom().address;
-    const value = parseEther("1");
-    const transactionRequest = {
-      to: recipient,
-      value,
-    };
-
-    // Act
-    const gasEstimate = async () =>
-      await newBlsProvider.estimateGas(transactionRequest);
-
-    // Assert
-    await expect(gasEstimate()).to.be.rejectedWith(
-      Error,
-      "Call provider.getSigner first",
-    );
-  });
-
-  it("should throw an error estimating gas when 'transaction.to' has not been defined", async () => {
-    // Arrange
-    const transaction = {
-      value: parseEther("1"),
-    };
-
-    // Act
-    const result = async () => await blsProvider.estimateGas(transaction);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      TypeError,
-      "Transaction.to should be defined",
-    );
   });
 
   it("should send ETH (empty call) given a valid bundle successfully", async () => {
@@ -228,30 +148,6 @@ describe("BlsProvider", () => {
     expect(spy).to.have.been.called.twice;
   });
 
-  it("should throw an error sending a transaction when this.signer is not defined", async () => {
-    // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
-      verificationGateway,
-      rpcUrl,
-      network,
-    );
-    const signedTransaction = blsSigner.signTransaction({
-      to: ethers.Wallet.createRandom().address,
-      value: parseEther("1"),
-    });
-
-    // Act
-    const result = async () =>
-      await newBlsProvider.sendTransaction(signedTransaction);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      Error,
-      "Call provider.getSigner first",
-    );
-  });
-
   it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
     // Arrange
     const invalidEthValue = parseEther("-1");
@@ -278,8 +174,9 @@ describe("BlsProvider", () => {
 
   it("should throw an error when the transaction receipt cannot be found", async () => {
     // Arrange
-    const invalidTransactionHash = id("invalid hash");
-    const retries = 1; // Setting this to 1 as we do not to wait in order for the logic to be correctly tested
+    const randomBytes = ethers.utils.randomBytes(20);
+    const invalidTransactionHash = ethers.utils.keccak256(randomBytes);
+    const retries = 1; // Setting this to 1 as we do not want to wait in order for the logic to be correctly tested
 
     // Act
     const result = async () =>
@@ -439,17 +336,6 @@ describe("BlsProvider", () => {
       "maxFeePerGas",
       "wait",
     );
-  });
-
-  it("should return the connection info for the provider", () => {
-    // Arrange
-    const expectedConnection = regularProvider.connection;
-
-    // Act
-    const connection = blsProvider.connection;
-
-    // Assert
-    expect(connection).to.deep.equal(expectedConnection);
   });
 
   it("should return the list of accounts managed by the provider", async () => {

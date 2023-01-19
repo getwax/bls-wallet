@@ -91,6 +91,14 @@ Proposed solution to make use of [BLS](https://github.com/thehubbleproject/hubbl
 For each network, the deployer contract can be deployed with the following script (only needed once)
 `DEPLOY_DEPLOYER=true yarn hardhat run scripts/deploy-deployer.ts --network <network-name>`
 
+## Integration tests
+
+To run integration tests:
+1. cd into `./contracts` and run `yarn start-hardhat`
+2. run `docker-compose up -d postgres` from the root directory
+3. cd into `./aggregator` and run `./programs/aggregator.ts`
+4. from `./contracts`, run `yarn test-integration`.
+
 ## Optimism's L2 (paused)
 - clone https://github.com/ethereum-optimism/optimism
 - follow instructions (using latest version of docker)
