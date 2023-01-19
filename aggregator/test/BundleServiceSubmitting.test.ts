@@ -63,7 +63,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     bundleResponse.hash,
   );
 
-  assertEquals(bundleRow.status, "confirmed");
+  assertEquals(bundleRow?.status, "confirmed");
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
@@ -347,5 +347,5 @@ Fixture.test("updates status of failing bundle when its eligibility delay is lar
     throw new Error("Bundle failed to be created");
   }
   const failedBundleRow = await bundleService.bundleTable.findBundle(res.hash);
-  assertEquals(failedBundleRow.status, "failed");
+  assertEquals(failedBundleRow?.status, "failed");
 });

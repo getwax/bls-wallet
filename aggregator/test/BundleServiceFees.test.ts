@@ -133,7 +133,7 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
     bundleResponse.hash,
   );
 
-  assertEquals(bundleRow.status, "confirmed");
+  assertEquals(bundleRow?.status, "confirmed");
   assertEquals(
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(0),
@@ -217,7 +217,7 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
     bundleResponse.hash,
   );
 
-  assertEquals(bundleRow.status, "confirmed");
+  assertEquals(bundleRow?.status, "confirmed");
   assertEquals(
     await fx.adminWallet.provider.getBalance(wallet.address),
     BigNumber.from(0),
