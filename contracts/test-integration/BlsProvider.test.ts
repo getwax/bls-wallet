@@ -1,11 +1,11 @@
 /* eslint-disable camelcase */
 import chai, { expect } from "chai";
-import { ethers, BigNumber } from "ethers";
-import { parseEther, formatEther, id } from "ethers/lib/utils";
+import { BigNumber, ethers } from "ethers";
+import { formatEther, id, parseEther } from "ethers/lib/utils";
 
 import {
-  Experimental,
   BlsWalletWrapper,
+  Experimental,
   MockERC20__factory,
   NetworkConfig,
 } from "../clients/src";
