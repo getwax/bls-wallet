@@ -10,7 +10,7 @@ const bundleServiceConfig = {
 };
 
 const aggregationStrategyConfig: AggregationStrategyConfig = {
-  maxGas: 900000,
+  maxGasPerBundle: 900000,
   fees: nil,
   bundleCheckingConcurrency: 8,
 };
@@ -59,7 +59,9 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
   if ("failures" in bundleResponse) {
     throw new Error("Bundle failed to be created");
   }
-  const bundleRow = await bundleService.bundleTable.findBundle(bundleResponse.hash);
+  const bundleRow = await bundleService.bundleTable.findBundle(
+    bundleResponse.hash,
+  );
 
   assertEquals(bundleRow.status, "confirmed");
 });
@@ -210,7 +212,9 @@ Fixture.test(
     assertEquals(await wallet.Nonce(), BigNumber.from(2));
     // 2 mints should be left as both failed submission pre-check
     let remainingBundles = await fx.allBundles(bundleService);
-    let remainingPendingBundles = remainingBundles.filter(bundle => bundle.status === "pending");
+    let remainingPendingBundles = remainingBundles.filter((bundle) =>
+      bundle.status === "pending"
+    );
     assertEquals(remainingPendingBundles.length, 2);
 
     // Re-run submissions
@@ -226,7 +230,9 @@ Fixture.test(
     assertEquals(await wallet.Nonce(), BigNumber.from(3));
     // 1 mints (nonce 3) should be left as it failed submission pre-check
     remainingBundles = await fx.allBundles(bundleService);
-    remainingPendingBundles = remainingBundles.filter(bundle => bundle.status === "pending");
+    remainingPendingBundles = remainingBundles.filter((bundle) =>
+      bundle.status === "pending"
+    );
     assertEquals(remainingPendingBundles.length, 1);
 
     // Simulate 1 block being mined
@@ -244,7 +250,9 @@ Fixture.test(
     );
     assertEquals(await wallet.Nonce(), BigNumber.from(4));
     remainingBundles = await fx.allBundles(bundleService);
-    remainingPendingBundles = remainingBundles.filter(bundle => bundle.status === "pending");
+    remainingPendingBundles = remainingBundles.filter((bundle) =>
+      bundle.status === "pending"
+    );
     assertEquals(remainingPendingBundles.length, 0);
   },
 );
