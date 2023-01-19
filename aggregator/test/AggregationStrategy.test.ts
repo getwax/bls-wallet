@@ -37,7 +37,7 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
     fx.blsWalletSigner,
     fx.ethereumService,
     {
-      maxGas: 1500000,
+      maxGasPerBundle: 1500000,
       fees: {
         type: "token",
         address: fx.testErc20.address,
@@ -121,7 +121,7 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
     fx.blsWalletSigner,
     fx.ethereumService,
     {
-      maxGas: 1500000,
+      maxGasPerBundle: 1500000,
       fees: {
         type: "token",
         address: fx.testErc20.address,

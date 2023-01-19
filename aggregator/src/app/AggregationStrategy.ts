@@ -80,7 +80,7 @@ export type AggregationStrategyConfig =
 
 export default class AggregationStrategy {
   static defaultConfig = {
-    maxGas: env.MAX_GAS,
+    maxGasPerBundle: env.MAX_GAS_PER_BUNDLE,
     fees: envFeeConfig,
     bundleCheckingConcurrency: env.BUNDLE_CHECKING_CONCURRENCY,
   };
@@ -414,9 +414,9 @@ export default class AggregationStrategy {
         .add(gasEstimate)
         .sub(bundleOverheadGas));
 
-      if (newAggregateGas.gt(this.config.maxGas)) {
-        // Bundle would cause us to exceed maxGas, so don't include it, but also
-        // don't mark it as failed.
+      if (newAggregateGas.gt(this.config.maxGasPerBundle)) {
+        // Bundle would cause us to exceed maxGasPerBundle, so don't include it,
+        // but also don't mark it as failed.
         continue;
       }
 
