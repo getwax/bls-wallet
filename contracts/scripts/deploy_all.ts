@@ -6,7 +6,6 @@ import { exec as execCb } from "child_process";
 import { writeFile } from "fs/promises";
 import { ethers } from "hardhat";
 import { NetworkConfig } from "../clients/src";
-import SafeSingletonFactory from "../shared/SafeSingletonFactory";
 import deploy from "../shared/deploy";
 
 dotenv.config();
@@ -46,7 +45,7 @@ async function main() {
   const netCfg: NetworkConfig = {
     parameters: {},
     addresses: {
-      safeSingletonFactory: SafeSingletonFactory.deployment.address,
+      safeSingletonFactory: deployment.singletonFactory.address,
       precompileCostEstimator: deployment.precompileCostEstimator.address,
       blsLibrary: deployment.blsLibrary.address,
       verificationGateway: deployment.verificationGateway.address,
