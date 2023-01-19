@@ -9,11 +9,8 @@ import { MockERC20__factory } from "../typechain-types";
 describe("SafeSingletonFactory", async () => {
   it("should deploy SafeSingletonFactory to expected address", async () => {
     const [signer] = await ethers.getSigners();
-    await SafeSingletonFactory.init(signer);
-
-    const factoryCode = ethers.provider.getCode(
-      SafeSingletonFactory.deployment.address,
-    );
+    const singletonFactory = await SafeSingletonFactory.init(signer);
+    const factoryCode = ethers.provider.getCode(singletonFactory.address);
 
     expect(factoryCode).not.to.equal("0x");
   });
