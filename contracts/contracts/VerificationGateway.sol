@@ -73,7 +73,7 @@ contract VerificationGateway
     ) {
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
-        walletProxyAdmin = proxyAdminGenerator.generate();
+        walletProxyAdmin = proxyAdminGenerator.generate(0);
     }
 
     /** Throw if bundle not valid or signature verification fails */

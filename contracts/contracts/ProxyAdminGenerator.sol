@@ -11,8 +11,13 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
  * can be provided to your contract's constructor.
  */
 contract ProxyAdminGenerator {
-  function generate() external returns (ProxyAdmin) {
-    ProxyAdmin pa = new ProxyAdmin();
+  function generate(bytes32 salt) external returns (ProxyAdmin) {
+    // This salting technique ensures two things:
+    // 1. Your ProxyAdmin has a predetermined address
+    // 2. No one else can generate or prevent access to your ProxyAdmin
+    bytes32 fullSalt = keccak256(abi.encode(msg.sender, salt));
+
+    ProxyAdmin pa = new ProxyAdmin{salt: fullSalt}();
     pa.transferOwnership(msg.sender);
 
     return pa;
