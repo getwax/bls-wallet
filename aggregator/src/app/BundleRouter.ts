@@ -24,17 +24,19 @@ export default function BundleRouter(bundleService: BundleService) {
   router.get(
     "bundleReceipt/:hash",
     async (ctx) => {
-      const bundle = await bundleService.lookupBundle(ctx.params.hash!);
+      const bundleRow = await bundleService.lookupBundle(ctx.params.hash!);
 
-      if (bundle.receipt === nil) {
+      if (bundleRow?.receipt === nil) {
         ctx.response.status = 404;
+
         ctx.response.body = {
-          submitError: bundle?.submitError,
+          submitError: bundleRow?.submitError,
         };
+
         return;
       }
 
-      ctx.response.body = bundleService.receiptFromBundle(bundle);
+      ctx.response.body = bundleService.receiptFromBundle(bundleRow);
     },
   );
 

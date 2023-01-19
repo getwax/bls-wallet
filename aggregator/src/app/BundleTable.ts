@@ -178,7 +178,7 @@ export default class BundleTable {
     return rows.map(fromRawRow);
   }
 
-  async findBundle(hash: string) {
+  async findBundle(hash: string): Promise<Row | nil> {
     const rows: RawRow[] = await this.queryClient.query(
       `
         SELECT * from ${this.safeName}
@@ -220,6 +220,6 @@ function toUint256Hex(n: BigNumber) {
 }
 
 function isValidStatus(status: unknown): status is BundleStatus {
-  return typeof status === "string"
-    && BundleStatuses.includes(status as ExplicitAny);
+  return typeof status === "string" &&
+    BundleStatuses.includes(status as ExplicitAny);
 }

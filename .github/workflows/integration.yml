@@ -1,0 +1,58 @@
+name: integration
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'aggregator/**'
+      # Check for breaking changes from contracts
+      - 'contracts/**'
+      - '.github/workflows/integration.yml'
+  pull_request:
+    paths:
+      - 'aggregator/**'
+      # Check for breaking changes from contracts
+      - 'contracts/**'
+      - '.github/workflows/integration.yml'
+    branches-ignore:
+      # Changes targeting this branch should be tested+fixed when being merged
+      # into main
+      - contract-updates
+
+defaults:
+  run:
+    working-directory: ./contracts/clients
+
+env:
+  DENO_VERSION: 1.x
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/setup-contracts-clients
+    - working-directory: ./contracts/clients
+      run: yarn build
+
+  test-integration:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: ./.github/actions/setup-contracts-clients
+    - uses: denoland/setup-deno@v1
+      with:
+        deno-version: ${{ env.DENO_VERSION }}
+
+    # - name: run Hardhat node and deploy contracts
+    - uses: ./.github/actions/local-contract-deploy
+
+    # - name: run aggregator
+    - uses: ./.github/actions/local-aggregator-deploy
+
+    # - name: integration tests
+    - working-directory: ./contracts
+      run: yarn test-integration
