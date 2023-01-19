@@ -56,3 +56,11 @@ jobs:
     # - name: integration tests
     - working-directory: ./contracts
       run: yarn test-integration
+
+    # - name: upload artifacts
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: aggregator-logs
+        path: ./aggregator/aggregatorLogs.txt
+        retention-days: 5

@@ -14,4 +14,4 @@ runs:
 
     - working-directory: ./aggregator
       shell: bash
-      run: deno run --allow-read --allow-env --allow-net ./programs/aggregator.ts &
+      run: deno run --allow-read --allow-env --allow-net ./programs/aggregator.ts 2>&1 | tee -a aggregatorLogs.txt &
