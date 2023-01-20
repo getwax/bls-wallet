@@ -391,10 +391,7 @@ describe("Upgrade", async function () {
       wallet2.address,
       wallet2.address,
     ]);
-    expectOperationFailure(
-      txnReceipt,
-      "VG: first param to proxy admin is not calling wallet",
-    );
+    expectOperationFailure(txnReceipt, "VG: first param is not wallet");
   });
 
   it("should NOT allow walletAdminCall to ProxyAdmin.transferOwnership", async function () {
