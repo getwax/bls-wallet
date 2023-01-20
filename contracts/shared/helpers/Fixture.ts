@@ -160,6 +160,14 @@ export default class Fixture {
     );
   }
 
+  async createBLSWallet(): Promise<BlsWalletWrapper> {
+    return BlsWalletWrapper.connect(
+      `0x${Math.floor(Math.random() * 0xffffffff).toString(16)}`,
+      this.verificationGateway.address,
+      this.provider,
+    );
+  }
+
   bundleFrom(
     wallet: BlsWalletWrapper,
     contract: Contract,

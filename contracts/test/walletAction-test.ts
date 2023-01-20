@@ -99,8 +99,8 @@ describe("WalletActions", async function () {
 
   it("should send ETH (empty call)", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
-    const recvWallet = await fx.lazyBlsWallets[1]();
+    const sendWallet = await fx.createBLSWallet();
+    const recvWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.0001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,

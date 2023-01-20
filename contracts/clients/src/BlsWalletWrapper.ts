@@ -32,6 +32,7 @@ export default class BlsWalletWrapper {
     public blsWalletSigner: BlsWalletSigner,
     public privateKey: string,
     public walletContract: BLSWallet,
+    public defaultGatewayAddress: string,
   ) {
     this.address = walletContract.address;
   }
@@ -149,6 +150,7 @@ export default class BlsWalletWrapper {
       blsWalletSigner,
       privateKey,
       await BlsWalletWrapper.BLSWallet(privateKey, verificationGateway),
+      verificationGateway.address,
     );
     blsWalletWrapper.blockGasLimit = (
       await provider.getBlock("latest")
@@ -235,19 +237,33 @@ export default class BlsWalletWrapper {
   }
 
   /** Add gas limit to operation using estimateGas and sign it. */
-  async signWithGasLimit(operation: Omit<Operation, "gas">) {
-    const gas = await this.estimateGas(operation);
+  async signWithGasLimit(operation: Omit<Operation, "gas">, overhead = 0) {
+    let gas = await this.measureOperationGas(operation);
+    gas = gas.add(gas.div(10000).mul(Math.ceil(overhead * 10000)));
+
     return this.sign({ ...operation, gas });
   }
 
-  /** Estimate the gas needed for an operation. */
-  async estimateGas(operation: Omit<Operation, "gas">) {
-    const bundle = this.sign({ ...operation, gas: this.blockGasLimit });
-    const gatewayAddress = await this.walletContract.trustedBLSGateway();
+  /** Measure the gas needed for an operation. */
+  async measureOperationGas(operation: Omit<Operation, "gas">) {
+    const exists =
+      (await this.walletContract.provider.getCode(this.address)) !== "0x";
 
-    const gas = await this.walletContract
-      .connect(gatewayAddress)
-      .estimateGas.performOperation(bundle.operations[0]);
+    const gatewayAddress = exists
+      ? await this.walletContract.trustedBLSGateway()
+      : this.defaultGatewayAddress;
+
+    const gateway = VerificationGateway__factory.connect(
+      gatewayAddress,
+      this.walletContract.provider,
+    );
+
+    const gas = await gateway
+      .connect(ethers.constants.AddressZero)
+      .callStatic.measureOperationGas(this.PublicKey(), {
+        ...operation,
+        gas: this.blockGasLimit,
+      });
 
     return gas;
   }

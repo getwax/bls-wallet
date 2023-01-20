@@ -151,7 +151,7 @@ contract VerificationGateway
     function setPendingBLSKeyForWallet() public {
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
-        require(existingHash != bytes32(0), "VG: hash does not exist for caller");
+        require(existingHash != bytes32(0), "VG: hash not found");
         if (
             (pendingBLSPublicKeyTimeFromHash[existingHash] != 0) &&
             (block.timestamp > pendingBLSPublicKeyTimeFromHash[existingHash])
@@ -196,7 +196,7 @@ contract VerificationGateway
             for (uint256 i=0; i<32; i++) {
                 require(
                     (encodedFunction[selectorOffset+i] == encodedAddress[i]),
-                    "VG: first param to proxy admin is not calling wallet"
+                    "VG: first param is not wallet"
                 );
             }
         }
@@ -255,7 +255,7 @@ contract VerificationGateway
         assembly { size := extcodesize(blsGateway) }
         require(
             (blsGateway != address(0)) && (size > 0),
-            "BLSWallet: gateway address param not valid"
+            "VG: invalid gateway"
         );
 
         IWallet wallet = walletFromHash[hash];
@@ -341,6 +341,30 @@ contract VerificationGateway
     }
 
     /**
+     * Utility for measuring the gas used by an operation, suitable for use in
+     * the operation's required gas parameter.
+     *
+     * This has two important differences over standard estimateGas methods:
+     *   1. It does not include gas for calldata, which has already been paid
+     *   2. It works for wallets which don't yet exist
+     */
+    function measureOperationGas(
+        uint256[BLS_KEY_LEN] memory publicKey,
+        IWallet.Operation calldata op
+    ) external returns (uint) {
+        // Don't allow this to actually be executed on chain. Static calls only.
+        require(msg.sender == address(0));
+
+        IWallet wallet = getOrCreateWallet(publicKey);
+
+        uint gasBefore = gasleft();
+        wallet.performOperation(op);
+        uint gasUsed = gasBefore - gasleft();
+
+        return gasUsed;
+    }
+
+    /**
     @dev safely sets/overwrites the wallet for the given public key, ensuring it is properly signed
     @param wallletAddressSignature signature of message containing only the wallet address
     @param publicKey that signed the wallet address
@@ -358,7 +382,7 @@ contract VerificationGateway
         );
         require(
             blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
-            "VG: Signature not verified for wallet address."
+            "VG: Sig not verified"
         );
         bytes32 publicKeyHash = keccak256(abi.encodePacked(
             publicKey

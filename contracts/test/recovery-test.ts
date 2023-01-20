@@ -348,7 +348,7 @@ describe("Recovery", async function () {
       fx.verificationGateway
         .connect(recoverySigner)
         .recoverWallet(addressSignature, hashAttacker, salt, wallet1Key),
-    ).to.be.rejectedWith("VG: Signature not verified for wallet address");
+    ).to.be.rejectedWith("VG: Sig not verified");
   });
 
   it("should NOT allow a bundle to be executed on a wallet with the same BLS pubkey but different address (replay attack)", async function () {

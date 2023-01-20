@@ -41,9 +41,12 @@ export async function proxyAdminBundle(
     contractAddress: fx.verificationGateway.address,
     encodedFunction: encodedWalletAdminCall,
   };
-  const bundle: Bundle = await wallet.signWithGasLimit({
-    nonce: await wallet.Nonce(),
-    actions: [action],
-  });
+  const bundle: Bundle = await wallet.signWithGasLimit(
+    {
+      nonce: await wallet.Nonce(),
+      actions: [action],
+    },
+    0.6, // Add 60% (nested call issue)
+  );
   return bundle;
 }
