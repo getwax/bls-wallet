@@ -71,22 +71,19 @@ export default class TokenHelper {
     amount: BigNumber,
   ) {
     await this.fx.verificationGateway.processBundle(
-      sender.sign(
-        await sender.opWithGasEstimate({
-          nonce,
-          gas: 0,
-          actions: [
-            {
-              ethValue: BigNumber.from(0),
-              contractAddress: this.testToken.address,
-              encodedFunction: this.testToken.interface.encodeFunctionData(
-                "transfer",
-                [recipient, amount.toHexString()],
-              ),
-            },
-          ],
-        }),
-      ),
+      await sender.signWithGasLimit({
+        nonce,
+        actions: [
+          {
+            ethValue: BigNumber.from(0),
+            contractAddress: this.testToken.address,
+            encodedFunction: this.testToken.interface.encodeFunctionData(
+              "transfer",
+              [recipient, amount.toHexString()],
+            ),
+          },
+        ],
+      }),
     );
   }
 }
