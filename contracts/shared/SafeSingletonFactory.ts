@@ -44,6 +44,7 @@ export default class SafeSingletonFactory {
       //   vote    dose    follow vessel
       // When this issue is resolved we can update this deployment to resolve
       // it: https://github.com/safe-global/safe-singleton-factory/issues/97.
+      // Remember to also remove the getCostEstimator() workaround in BLS.sol.
       gasPrice: 100000000000,
       gasLimit: 100000,
       signerAddress: "0xf8D0D5059A7b8841D2Eb9D3E80c3D54ea84BF52A",
