@@ -62,8 +62,10 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
   const bundleRow = await bundleService.bundleTable.findBundle(
     bundleResponse.hash,
   );
-
   assertEquals(bundleRow?.status, "confirmed");
+
+  const bundleReceipt = bundleService.receiptFromBundle(bundleRow!);
+  assertEquals(bundleReceipt?.bundleHash, bundleResponse.hash);
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
