@@ -36,7 +36,7 @@ echo "Creating $CONTAINER_NAME using $IMAGE_NAME"
 docker run \
   --name "$CONTAINER_NAME" \
   -d \
-  --net=host
+  --net=host \
   --restart=unless-stopped \
   --mount type=bind,source="$ENV_PATH",target=/app/.env \
   --mount type=bind,source="$NETWORK_CONFIG_PATH",target=/app/networkConfig.json \
