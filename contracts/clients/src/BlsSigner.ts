@@ -122,7 +122,6 @@ export default class BlsSigner extends Signer {
       );
     }
 
-    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     return {
       hash,
       to: action.contractAddress,

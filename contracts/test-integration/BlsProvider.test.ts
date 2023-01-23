@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import chai, { expect } from "chai";
-import { BigNumber, ethers } from "ethers";
+import { ethers } from "ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
 import {
@@ -201,36 +201,58 @@ describe("BlsProvider", () => {
       value: parseEther("1"),
     });
 
+    const expectedToAddress = "0x689A095B4507Bfa302eef8551F90fB322B3451c6"; // Verification Gateway address
+    const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
+
     // Act
     const transactionReceipt = await blsProvider.waitForTransaction(
       transactionResponse.hash,
       1,
-      10,
+      20,
     );
 
     // Assert
-    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
+    const expectedBlockNumber = await blsProvider.getBlockNumber();
     expect(transactionReceipt).to.be.an("object").that.deep.includes({
-      to: "0x",
-      from: "0x",
-      contractAddress: "0x",
-      logsBloom: "",
-      logs: [],
+      to: expectedToAddress,
+      from: expectedFromAddress,
+      contractAddress: null,
+      transactionIndex: 0,
+      root: undefined,
+      blockNumber: expectedBlockNumber,
       confirmations: transactionResponse.confirmations,
-      byzantium: false,
+      byzantium: true,
       type: 2,
+      status: 1,
     });
 
-    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(BigNumber.from("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(BigNumber.from("0"));
-
-    expect(transactionReceipt).to.include.keys(
+    expect(transactionReceipt).to.have.all.keys(
+      "to",
+      "from",
+      "contractAddress",
       "transactionIndex",
+      "root",
+      "gasUsed",
+      "logsBloom",
       "blockHash",
       "transactionHash",
+      "logs",
       "blockNumber",
+      "confirmations",
+      "cumulativeGasUsed",
+      "effectiveGasPrice",
+      "byzantium",
+      "type",
+      "status",
     );
+
+    expect(transactionReceipt.gasUsed).to.be.an("object");
+    expect(transactionReceipt.logsBloom).to.be.a("string");
+    expect(transactionReceipt.blockHash).to.be.a("string");
+    expect(transactionReceipt.transactionHash).to.be.a("string");
+    expect(transactionReceipt.logs).to.be.an("Array");
+    expect(transactionReceipt.cumulativeGasUsed).to.be.an("object");
+    expect(transactionReceipt.effectiveGasPrice).to.be.an("object");
   });
 
   it("should retrieve a transaction receipt given a valid hash", async () => {
@@ -241,34 +263,56 @@ describe("BlsProvider", () => {
       value: parseEther("1"),
     });
 
+    const expectedToAddress = "0x689A095B4507Bfa302eef8551F90fB322B3451c6"; // Verification Gateway address
+    const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
+
     // Act
     const transactionReceipt = await blsProvider.getTransactionReceipt(
       transactionResponse.hash,
     );
 
     // Assert
-    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
+    const expectedBlockNumber = await blsProvider.getBlockNumber();
     expect(transactionReceipt).to.be.an("object").that.deep.includes({
-      to: "0x",
-      from: "0x",
-      contractAddress: "0x",
-      logsBloom: "",
-      logs: [],
+      to: expectedToAddress,
+      from: expectedFromAddress,
+      contractAddress: null,
+      transactionIndex: 0,
+      root: undefined,
+      blockNumber: expectedBlockNumber,
       confirmations: transactionResponse.confirmations,
-      byzantium: false,
+      byzantium: true,
       type: 2,
+      status: 1,
     });
 
-    expect(transactionReceipt.gasUsed).to.equal(BigNumber.from("0"));
-    expect(transactionReceipt.cumulativeGasUsed).to.equal(BigNumber.from("0"));
-    expect(transactionReceipt.effectiveGasPrice).to.equal(BigNumber.from("0"));
-
-    expect(transactionReceipt).to.include.keys(
+    expect(transactionReceipt).to.have.all.keys(
+      "to",
+      "from",
+      "contractAddress",
       "transactionIndex",
+      "root",
+      "gasUsed",
+      "logsBloom",
       "blockHash",
       "transactionHash",
+      "logs",
       "blockNumber",
+      "confirmations",
+      "cumulativeGasUsed",
+      "effectiveGasPrice",
+      "byzantium",
+      "type",
+      "status",
     );
+
+    expect(transactionReceipt.gasUsed).to.be.an("object");
+    expect(transactionReceipt.logsBloom).to.be.a("string");
+    expect(transactionReceipt.blockHash).to.be.a("string");
+    expect(transactionReceipt.transactionHash).to.be.a("string");
+    expect(transactionReceipt.logs).to.be.an("Array");
+    expect(transactionReceipt.cumulativeGasUsed).to.be.an("object");
+    expect(transactionReceipt.effectiveGasPrice).to.be.an("object");
   });
 
   it("gets a transaction given a valid transaction hash", async () => {
