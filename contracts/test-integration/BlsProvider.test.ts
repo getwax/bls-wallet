@@ -335,7 +335,7 @@ describe("BlsProvider", () => {
     );
 
     // Assert
-    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
+    // TODO: bls-wallet #481 Add Bls Provider getTransaction method
     expect(transactionResponse).to.be.an("object").that.deep.includes({
       hash: transactionReceipt.transactionHash,
       to: verificationGateway,
