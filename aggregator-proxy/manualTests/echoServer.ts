@@ -1,7 +1,7 @@
 import { runAggregatorProxy } from "../src";
 
 runAggregatorProxy(
-  'https://arbitrum-testnet.blswallet.org',
+  'https://arbitrum-goerli.blswallet.org',
   async b => {
     console.log('proxying bundle', JSON.stringify(b, null, 2));
     return b;

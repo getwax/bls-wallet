@@ -103,7 +103,7 @@ Check the [`config.json` file](../extension//config.json) to see if your network
 
 ---
 
-## Example: Arbitrum Testnet (Arbitrum Goerli Testnet)
+## Example: Arbitrum Goerli Testnet
 
 You will need two ETH addresses with Abitrum Goerli ETH and their private keys (PRIVATE_KEY_AGG & PRIVATE_KEY_ADMIN) for running the aggregator. It is **NOT** recommended that you use any primary wallets with ETH Mainnet assets.
 

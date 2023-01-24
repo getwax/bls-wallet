@@ -23,7 +23,8 @@ you might have:
 
 ```
 .env.local
-.env.optimistic-kovan
+.env.arbitrum-goerli
+.env.optimism-goerli
 ```
 
 If you don't have a `.env`, you will need to append `--env <name>` to all

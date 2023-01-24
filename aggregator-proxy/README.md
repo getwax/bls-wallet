@@ -23,7 +23,7 @@ import {
 } from 'bls-wallet-aggregator-proxy';
 
 runAggregatorProxy(
-  'https://arbitrum-testnet.blswallet.org',
+  'https://arbitrum-goerli.blswallet.org',
   async bundle => {
     console.log('proxying bundle', JSON.stringify(bundle, null, 2));
 

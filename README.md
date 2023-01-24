@@ -41,7 +41,7 @@ Prototype browser extension used to manage BLS Wallets and sign transactions.
 See [./contracts/networks](./contracts/networks/) for a list of all contract deployment (network) manifests. Have an L2/rollup testnet you'd like BLS Wallet deployed on? [Open an issue](https://github.com/web3well/bls-wallet/issues/new) or [Deploy it yourself](./docs/remote_development.md)
 
 - [Arbitrum Goerli](./contracts/networks/arbitrum-goerli.json)
-- [Arbitrum Rinkby](./contracts/networks/arbitrum-testnet.json) (deprecated, outdated)
+- [Optimism Goerli](./contracts/networks/optimism-goerli.json)
 
 ## Ways to Contribute
 
