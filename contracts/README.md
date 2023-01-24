@@ -107,7 +107,7 @@ To run integration tests:
     - L2 - http://localhost:8545 (chainId 420)
 
 ## Deploy scripts
-Specify network - `yarn hardhat run scripts/<#_script.ts> --network arbitrum-testnet`
+Specify network - `yarn hardhat run scripts/<#_script.ts> --network arbitrum-goerli`
 
 # License
 MIT

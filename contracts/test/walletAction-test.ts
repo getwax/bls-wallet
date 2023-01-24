@@ -37,11 +37,7 @@ describe("WalletActions", async function () {
 
   let fx: Fixture;
   beforeEach(async function () {
-    if (network.name === "rinkarby") {
-      fx = await Fixture.create(Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
-    } else {
-      fx = await Fixture.create();
-    }
+    fx = await Fixture.create();
   });
 
   it("should register new wallet", async function () {
