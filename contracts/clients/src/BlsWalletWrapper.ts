@@ -255,7 +255,7 @@ export default class BlsWalletWrapper {
 
   async setRecoveryHash(
     salt: string,
-    verificationGateway: VerificationGateway,
+    recoverWalletAddress: string,
   ): Promise<Bundle> {
     let saltBytes32String;
     try {
@@ -267,7 +267,7 @@ export default class BlsWalletWrapper {
     const walletHash = this.blsWalletSigner.getPublicKeyHash(this.privateKey);
     const recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
-      [this.address, walletHash, saltBytes32String],
+      [recoverWalletAddress, walletHash, saltBytes32String],
     );
 
     return this.sign({
