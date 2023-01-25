@@ -253,7 +253,10 @@ export default class BlsWalletWrapper {
     return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
   }
 
-  async createRecoveryHash(salt: string): Promise<string> {
+  async setRecoveryHash(
+    salt: string,
+    verificationGateway: VerificationGateway,
+  ): Promise<Bundle> {
     let saltBytes32String;
     try {
       saltBytes32String = ethers.utils.formatBytes32String(salt);
@@ -262,10 +265,24 @@ export default class BlsWalletWrapper {
     }
 
     const walletHash = this.blsWalletSigner.getPublicKeyHash(this.privateKey);
-    return ethers.utils.solidityKeccak256(
+    const recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
       [this.address, walletHash, saltBytes32String],
     );
+
+    return this.sign({
+      nonce: await this.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: this.walletContract.address,
+          encodedFunction: this.walletContract.interface.encodeFunctionData(
+            "setRecoveryHash",
+            [recoveryHash],
+          ),
+        },
+      ],
+    });
   }
 
   async recoverWallet(
