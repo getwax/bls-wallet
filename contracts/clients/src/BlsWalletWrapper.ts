@@ -268,13 +268,13 @@ export default class BlsWalletWrapper {
     );
   }
 
-  async recoverWalletParams(
+  async recoverWallet(
     recoveryAddress: string,
     newPrivateKey: string,
     recoverySalt: string,
     verificationGateway: VerificationGateway,
     provider: ethers.providers.Provider,
-  ): Promise<any> {
+  ): Promise<Bundle> {
     const updatedWallet = await BlsWalletWrapper.connect(
       newPrivateKey,
       verificationGateway.address,
@@ -289,12 +289,24 @@ export default class BlsWalletWrapper {
     const saltBytes32String =
       BlsWalletWrapper.saltToBytes32String(recoverySalt);
 
-    return [
-      addressSignature,
-      recoveryWalletHash,
-      saltBytes32String,
-      updatedWallet.PublicKey(),
-    ];
+    return this.sign({
+      nonce: await this.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: verificationGateway.address,
+          encodedFunction: verificationGateway.interface.encodeFunctionData(
+            "recoverWallet",
+            [
+              addressSignature,
+              recoveryWalletHash,
+              saltBytes32String,
+              updatedWallet.PublicKey(),
+            ],
+          ),
+        },
+      ],
+    });
   }
 
   static async #BlsWalletSigner(
