@@ -253,6 +253,50 @@ export default class BlsWalletWrapper {
     return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
   }
 
+  async createRecoveryHash(salt: string): Promise<string> {
+    let saltBytes32String;
+    try {
+      saltBytes32String = ethers.utils.formatBytes32String(salt);
+    } catch (e) {
+      throw new Error("Error convirting salt string to bytes 32 string.");
+    }
+
+    const walletHash = this.blsWalletSigner.getPublicKeyHash(this.privateKey);
+    return ethers.utils.solidityKeccak256(
+      ["address", "bytes32", "bytes32"],
+      [this.address, walletHash, saltBytes32String],
+    );
+  }
+
+  async recoverWalletParams(
+    recoveryAddress: string,
+    newPrivateKey: string,
+    recoverySalt: string,
+    verificationGateway: VerificationGateway,
+    provider: ethers.providers.Provider,
+  ): Promise<any> {
+    const updatedWallet = await BlsWalletWrapper.connect(
+      newPrivateKey,
+      verificationGateway.address,
+      provider,
+    );
+    const addressMessage = solidityPack(["address"], [recoveryAddress]);
+    const addressSignature = updatedWallet.signMessage(addressMessage);
+
+    const recoveryWalletHash = await verificationGateway.hashFromWallet(
+      recoveryAddress,
+    );
+    const saltBytes32String =
+      BlsWalletWrapper.saltToBytes32String(recoverySalt);
+
+    return [
+      addressSignature,
+      recoveryWalletHash,
+      saltBytes32String,
+      updatedWallet.PublicKey(),
+    ];
+  }
+
   static async #BlsWalletSigner(
     signerOrProvider: SignerOrProvider,
   ): Promise<BlsWalletSigner> {
@@ -314,6 +358,14 @@ export default class BlsWalletWrapper {
       throw new Error(
         `wallet at ${walletAddress} has been recovered from public key hash ${pubKeyHash} to ${existingPubKeyHash}`,
       );
+    }
+  }
+
+  private static saltToBytes32String(salt: string): string {
+    try {
+      return ethers.utils.formatBytes32String(salt);
+    } catch (e) {
+      throw new Error("Error convirting salt string to bytes 32 string.");
     }
   }
 }
