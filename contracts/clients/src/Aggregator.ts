@@ -49,9 +49,7 @@ export type BlsBundleReceipt = {
 /**
  * The bundle receipt returned from a BLS Wallet Aggregator instance. It is a combination of an ethers {@link ContractReceipt} and a {@link BlsBundleReceipt} type.
  */
-export type BundleReceipt = ContractReceipt & {
-  blsBundleReceipt: BlsBundleReceipt;
-};
+export type BundleReceipt = ContractReceipt & BlsBundleReceipt;
 
 /**
  * Client used to interact with a BLS Wallet Aggregator instance
