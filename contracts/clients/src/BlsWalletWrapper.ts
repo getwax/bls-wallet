@@ -253,7 +253,7 @@ export default class BlsWalletWrapper {
     return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
   }
 
-  async setRecoveryHash(
+  async getBundleSetRecovery(
     salt: string,
     recoverWalletAddress: string,
   ): Promise<Bundle> {
@@ -279,7 +279,7 @@ export default class BlsWalletWrapper {
     });
   }
 
-  async recoverWallet(
+  async getBundleRecoverWallet(
     recoveryAddress: string,
     newPrivateKey: string,
     recoverySalt: string,
