@@ -1,4 +1,5 @@
 import nodeFetch from "node-fetch";
+import { ContractReceipt } from "ethers";
 import { Bundle, bundleToDto } from "./signer";
 
 // TODO: Rename to BundleFailure?
@@ -38,13 +39,17 @@ export type BundleReceiptError = {
   submitError: string | undefined;
 };
 
-export type BundleReceipt = {
-  transactionIndex: number;
-  transactionHash: string;
+/**
+ * The BLS Wallet specific values in a {@link BundleReceipt}.
+ */
+export type BlsBundleReceipt = {
   bundleHash: string;
-  blockHash: string;
-  blockNumber: number;
 };
+
+/**
+ * The bundle receipt returned from a BLS Wallet Aggregator instance. It is a combination of an ethers {@link ContractReceipt} and a {@link BlsBundleReceipt} type.
+ */
+export type BundleReceipt = ContractReceipt & BlsBundleReceipt;
 
 /**
  * Client used to interact with a BLS Wallet Aggregator instance

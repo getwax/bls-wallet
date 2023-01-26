@@ -97,7 +97,7 @@ PRIVATE_KEY_ADMIN=PK1
 
 The [extension](../extension/) (otherwise referred to as Quill) is a prototype extension wallet used to showcase and test BLS Wallet features. **Note it is not a production wallet.**
 
-Check the [`config.json` file](../extension//config.json) to see if your network is already added. If not, you will need to add the relevant properties for your network/chain. These changes can be committed.
+Check the [`config.json` file](../extension/config.json) to see if your network is already added. If not, you will need to add the relevant properties for your network/chain. These changes can be committed.
 
 **You now have all the main components setup to begin remote development.**
 
