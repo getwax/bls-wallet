@@ -211,11 +211,24 @@ export default class BundleService {
     const { receipt, hash } = bundle;
 
     return {
-      transactionIndex: receipt.transactionIndex,
-      transactionHash: receipt.transactionHash,
       bundleHash: hash,
+      to: receipt.to,
+      from: receipt.from,
+      contractAddress: receipt.contractAddress,
+      transactionIndex: receipt.transactionIndex,
+      root: receipt.root,
+      gasUsed: receipt.gasUsed,
+      logsBloom: receipt.logsBloom,
       blockHash: receipt.blockHash,
+      transactionHash: receipt.transactionHash ,
+      logs: receipt.logs,
       blockNumber: receipt.blockNumber,
+      confirmations: receipt.confirmations,
+      cumulativeGasUsed: receipt.cumulativeGasUsed,
+      effectiveGasPrice: receipt.effectiveGasPrice,
+      byzantium: receipt.byzantium,
+      type: receipt.type,
+      status: receipt.status,
     };
   }
 

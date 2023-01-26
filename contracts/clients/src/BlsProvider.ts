@@ -144,23 +144,24 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       );
     }
 
-    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     return {
-      to: "0x",
-      from: "0x",
-      contractAddress: "0x",
-      transactionIndex: parseInt(bundleReceipt.transactionIndex),
-      gasUsed: parseEther("0"),
-      logsBloom: "",
+      to: bundleReceipt.to,
+      from: bundleReceipt.from,
+      contractAddress: bundleReceipt.contractAddress,
+      transactionIndex: bundleReceipt.transactionIndex,
+      root: bundleReceipt.root,
+      gasUsed: bundleReceipt.gasUsed,
+      logsBloom: bundleReceipt.logsBloom,
       blockHash: bundleReceipt.blockHash,
       transactionHash: bundleReceipt.transactionHash,
-      logs: [],
-      blockNumber: parseInt(bundleReceipt.blockNumber),
-      confirmations,
-      cumulativeGasUsed: parseEther("0"),
-      effectiveGasPrice: parseEther("0"),
-      byzantium: false,
-      type: 2,
+      logs: bundleReceipt.logs,
+      blockNumber: bundleReceipt.blockNumber,
+      confirmations: bundleReceipt.confirmations ?? confirmations,
+      cumulativeGasUsed: bundleReceipt.effectiveGasPrice,
+      effectiveGasPrice: bundleReceipt.effectiveGasPrice,
+      byzantium: bundleReceipt.byzantium,
+      type: bundleReceipt.type,
+      status: bundleReceipt.status,
     };
   }
 }
