@@ -17,7 +17,7 @@
     "watch": "tsc -w",
     "test": "nyc --reporter=text --reporter=html mocha --require ts-node/register --require source-map-support/register --require ./test/init.ts --recursive **/*.test.ts",
     "premerge": "yarn test",
-    "publish-experimental": "node scripts/showVersion.js >.version && npm version $(node scripts/showBaseVersion.js)-f1af810 --allow-same-version && npm publish --tag experimental && npm version $(cat .version) && rm .version",
+    "publish-experimental": "node scripts/showVersion.js >.version && npm version $(node scripts/showBaseVersion.js)-$(git rev-parse HEAD | head -c7) --allow-same-version && npm publish --tag experimental && npm version $(cat .version) && rm .version",
     "publish-experimental-dry-run": "node scripts/showVersion.js >.version && npm version $(node scripts/showBaseVersion.js)-$(git rev-parse HEAD | head -c7) --allow-same-version && npm publish --tag experimental --dry-run && npm version $(cat .version) && rm .version"
   },
   "dependencies": {
