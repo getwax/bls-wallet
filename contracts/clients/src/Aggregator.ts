@@ -42,15 +42,15 @@ export type BundleReceiptError = {
 /**
  * The BLS Wallet specific values in a {@link BundleReceipt}.
  */
-export type BlsWallet = {
+export type BlsBundleReceipt = {
   bundleHash: string;
 };
 
 /**
- * The bundle receipt returned from a BLS Wallet Aggregator instance. It is a combination of an ethers {@link ContractReceipt} and a {@link BlsWallet} type.
+ * The bundle receipt returned from a BLS Wallet Aggregator instance. It is a combination of an ethers {@link ContractReceipt} and a {@link BlsBundleReceipt} type.
  */
 export type BundleReceipt = ContractReceipt & {
-  blsWallet: BlsWallet;
+  blsBundleReceipt: BlsBundleReceipt;
 };
 
 /**
