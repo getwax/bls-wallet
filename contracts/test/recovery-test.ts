@@ -148,7 +148,7 @@ describe("Recovery", async function () {
       [trustedWalletAddress, walletHash, saltBytes32String],
     );
 
-    const bundle = await wallet3.getBundleSetRecovery(
+    const bundle = await wallet3.getBundleSetRecoveryHash(
       "test salt",
       trustedWalletAddress,
     );
@@ -161,7 +161,7 @@ describe("Recovery", async function () {
   it("should recover blswallet via blswallet to new bls key using bls client module", async function () {
     // Set recovery hash
     const wallet4 = await fx.lazyBlsWallets[3]();
-    const bundle = await wallet4.getBundleSetRecovery(
+    const bundle = await wallet4.getBundleSetRecoveryHash(
       "test salt",
       wallet3.address,
     );

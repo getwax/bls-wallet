@@ -9,7 +9,7 @@ import AsyncReturnType from "./helpers/AsyncReturnType";
 import sign from "./sign";
 import signMessage from "./signMessage";
 import verify from "./verify";
-import getRandomPrivateKey from "./getRandomPrivateKey";
+import getRandomBlsPrivateKey from "./getRandomBlsPrivateKey";
 
 export * from "./types";
 export * from "./conversions";
@@ -39,6 +39,6 @@ export async function initBlsWalletSigner({
     sign: sign(signerFactory, domain, chainId),
     signMessage: signMessage(signerFactory, domain),
     verify: verify(domain, chainId),
-    getRandomPrivateKey,
+    getRandomBlsPrivateKey,
   };
 }

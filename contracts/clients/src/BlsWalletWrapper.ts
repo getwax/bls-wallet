@@ -254,10 +254,10 @@ export default class BlsWalletWrapper {
   }
 
   getRandomBlsPrivateKey(): string {
-    return this.blsWalletSigner.getRandomPrivateKey();
+    return this.blsWalletSigner.getRandomBlsPrivateKey();
   }
 
-  async getBundleSetRecovery(
+  async getBundleSetRecoveryHash(
     salt: string,
     recoverWalletAddress: string,
   ): Promise<Bundle> {
