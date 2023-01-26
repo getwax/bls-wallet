@@ -1,13 +1,6 @@
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
-import {
-  Signer,
-  Contract,
-  ContractFactory,
-  BigNumber,
-  BigNumberish,
-  providers,
-} from "ethers";
+import { Signer, Contract, BigNumber, BigNumberish, providers } from "ethers";
 
 import {
   BlsWalletWrapper,
@@ -20,9 +13,13 @@ import Range from "./Range";
 import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
 import {
-  VerificationGateway,
+  AggregatorUtilities,
+  BLSExpander,
   BLSOpen,
+  // eslint-disable-next-line camelcase
+  BLSWallet__factory,
   ProxyAdmin,
+  VerificationGateway,
 } from "../../typechain-types";
 
 export default class Fixture {
@@ -41,10 +38,11 @@ export default class Fixture {
     public verificationGateway: VerificationGateway,
 
     public blsLibrary: BLSOpen,
-    public blsExpander: Contract,
-    public utilities: Contract,
+    public blsExpander: BLSExpander,
+    public utilities: AggregatorUtilities,
 
-    public BLSWallet: ContractFactory,
+    // eslint-disable-next-line camelcase
+    public BLSWallet: BLSWallet__factory,
     public blsWalletSigner: BlsWalletSigner,
   ) {}
 
@@ -65,11 +63,12 @@ export default class Fixture {
 
     // deploy wallet implementation contract
     const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
-    try {
-      await (
-        await blsWalletImpl.initialize(ethers.constants.AddressZero)
-      ).wait();
-    } catch (e) {}
+    const initializedEvents = await blsWalletImpl.queryFilter(
+      blsWalletImpl.filters.Initialized(),
+    );
+    if (!initializedEvents.length) {
+      await blsWalletImpl.initialize(ethers.constants.AddressZero);
+    }
 
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
     const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
@@ -154,9 +153,10 @@ export default class Fixture {
    * @returns array of wallets
    */
   async createBLSWallets(): Promise<BlsWalletWrapper[]> {
-    return await Promise.all(
-      this.lazyBlsWallets.map((lazyWallet) => lazyWallet()),
-    );
+    return this.lazyBlsWallets.reduce(async (prev, lazyWallet) => {
+      const wallets = await prev;
+      return [...wallets, await lazyWallet()];
+    }, Promise.resolve([]));
   }
 
   bundleFrom(

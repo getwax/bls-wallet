@@ -1,12 +1,7 @@
-import { appendFile } from "fs/promises";
+// This file is being kept for historical reference
+// and will be modified/removed in future work.
 /*
- Web3 needs to be used over Ethers since web3 tx receipts
- for Arbitrum correctly store the feeStats object.
- Ethers' tx receipts aren't updated to store that yet.
- */
-import Web3 from "web3";
-import { AbiItem } from "web3-utils";
-import { ARB_GAS_INFO_ABI } from "./ArbGasInfoAbi";
+import { appendFile } from "fs/promises";
 import dotenv from "dotenv";
 
 import * as child from "child_process";
@@ -14,28 +9,25 @@ dotenv.config();
 // current git commit
 const REVISION = child.execSync("git rev-parse HEAD").toString().trim();
 
-const web3Mainnet = new Web3(process.env.ARBITRUM_URL);
-const web3Rinkeby = new Web3(process.env.ARBITRUM_TESTNET_URL);
-
 const ARBITRUM_GAS_COST_FILE = "./ArbitrumGasCosts.md";
 const NUM_DECIMALS = 7;
-/*
- This contract was predeployed to Arbitrum and can be used
- to retreive current gas prices.
- For more info on pre-deploys: https://developer.offchainlabs.com/docs/useful_addresses
- */
-const MAINNET_ARB_GAS_INFO_ADDRESS =
-  "0x000000000000000000000000000000000000006C";
 
 export async function processGasResultsToFile(
+  provider,
   blsTxHash,
   normalTxHash,
   numTxsAggregated,
 ) {
   console.log("Retrieving gas results");
 
-  const blsEntry = await newTableEntry(blsTxHash, numTxsAggregated, true);
+  const blsEntry = await newTableEntry(
+    provider,
+    blsTxHash,
+    numTxsAggregated,
+    true,
+  );
   const normalEntry = await newTableEntry(
+    provider,
     normalTxHash,
     numTxsAggregated,
     false,
@@ -47,17 +39,17 @@ export async function processGasResultsToFile(
   await appendFile(ARBITRUM_GAS_COST_FILE, input);
 }
 
-async function newTableEntry(txHash, numTxs, isBlsTx) {
+async function newTableEntry(provider, txHash, numTxs, isBlsTx) {
   // Need "as any" to get the feeStats field unique to the Arbitrum network
-  const txReceipt = (await web3Rinkeby.eth.getTransactionReceipt(
-    txHash,
-  )) as any;
+  const txReceipt = await provider.getTransactionReceipt(txHash);
   const units = txReceipt.feeStats.unitsUsed;
   let txType;
+  let totalCost = txReceipt.gasUsed;
   if (isBlsTx) {
     txType = "BLS";
   } else {
     txType = "Normal";
+    totalCost = txReceipt.gasUsed * numTxs;
     units.l1Calldata = units.l1Calldata * numTxs;
     units.l1Transaction = units.l1Transaction * numTxs;
     units.l2Computation = units.l2Computation * numTxs;
@@ -76,17 +68,11 @@ async function newTableEntry(txHash, numTxs, isBlsTx) {
     costs.l2Tx + costs.l1Calldata + costs.storage + costs.computation;
 
   return (
-    `| ${REVISION} | ${txType} | ${numTxs} | ${parseInt(units.l1Calldata)}` +
-    ` | ${parseInt(units.l1Transaction)} | ${parseInt(units.l2Computation)}` +
-    ` | ${parseInt(units.l2Storage)} | ${costs.l1Calldata.toFixed(
-      NUM_DECIMALS,
-    )}` +
-    ` | ${costs.l2Tx.toFixed(NUM_DECIMALS)} | ${costs.storage.toFixed(
-      NUM_DECIMALS,
-    )}` +
-    ` | ${costs.computation.toFixed(NUM_DECIMALS)} | ${costs.total.toFixed(
-      NUM_DECIMALS,
-    )}` +
+    `| ${REVISION} | ${txType} | ${numTxs} | ${-1}` +
+    ` | ${-2} | ${-3}` +
+    ` | ${-4} | ${-4}` +
+    ` | ${-5} | ${-6}` +
+    ` | ${-7} | ${totalCost}` +
     ` | ${txHash} |`
   );
 }
@@ -106,3 +92,4 @@ async function getMainnetGasDescription() {
 
   return mainnetGasInfo;
 }
+*/
