@@ -1,11 +1,6 @@
-import {
-  BlsWalletWrapper,
-  // eslint-disable-next-line camelcase
-  VerificationGateway__factory,
-  Aggregator,
-} from 'bls-wallet-clients';
-import { ethers, BigNumberish } from 'ethers';
-import { solidityPack, keccak256 } from 'ethers/lib/utils';
+import { BlsWalletWrapper, Aggregator } from 'bls-wallet-clients';
+import { ethers } from 'ethers';
+import { keccak256 } from 'ethers/lib/utils';
 import QuillStorageCells from '../QuillStorageCells';
 import assert from '../helpers/assert';
 import { PartialRpcImpl, RpcClient } from '../types/Rpc';
@@ -14,7 +9,6 @@ import { MultiNetworkConfig } from '../MultiNetworkConfig';
 import { IReadableCell } from '../cells/ICell';
 import mixtureCopy from '../cells/mixtureCopy';
 import getNetworkConfig from './getNetworkConfig';
-import randFr from '../helpers/randFr';
 import generateRandomHex from '../helpers/generateRandomHex';
 
 export default class KeyringController {
@@ -117,8 +111,9 @@ export default class KeyringController {
     },
 
     createTempAccount: async (_request) => {
-      const pKey = `0x${(await randFr()).serializeToHexStr()}`;
       const { wallets } = await this.keyring.read();
+      const currentWallet = await this.BlsWalletWrapper(wallets[0].privateKey);
+      const pKey = currentWallet.getRandomBlsPrivateKey();
 
       assert(
         wallets.every((w) => w.privateKey !== pKey),
