@@ -257,13 +257,7 @@ export default class BlsWalletWrapper {
     salt: string,
     recoverWalletAddress: string,
   ): Promise<Bundle> {
-    let saltBytes32String;
-    try {
-      saltBytes32String = ethers.utils.formatBytes32String(salt);
-    } catch (e) {
-      throw new Error("Error convirting salt string to bytes 32 string.");
-    }
-
+    const saltBytes32String = BlsWalletWrapper.saltToBytes32String(salt);
     const walletHash = this.blsWalletSigner.getPublicKeyHash(this.privateKey);
     const recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
@@ -290,12 +284,11 @@ export default class BlsWalletWrapper {
     newPrivateKey: string,
     recoverySalt: string,
     verificationGateway: VerificationGateway,
-    provider: ethers.providers.Provider,
   ): Promise<Bundle> {
     const updatedWallet = await BlsWalletWrapper.connect(
       newPrivateKey,
       verificationGateway.address,
-      provider,
+      verificationGateway.provider,
     );
     const addressMessage = solidityPack(["address"], [recoveryAddress]);
     const addressSignature = updatedWallet.signMessage(addressMessage);
