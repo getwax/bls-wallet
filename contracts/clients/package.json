@@ -1,6 +1,6 @@
 {
   "name": "bls-wallet-clients",
-  "version": "0.8.2",
+  "version": "0.8.2-f1af837",
   "description": "Client libraries for interacting with BLS Wallet components",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

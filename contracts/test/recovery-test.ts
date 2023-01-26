@@ -169,8 +169,7 @@ describe("Recovery", async function () {
     await bundleTxn.wait();
 
     // Recover wallet
-    const newPrivateKey =
-      "0xd9f8720571b429aa69a58735538b7a25868ec72e9991f2886abe46525cfaa9ee";
+    const newPrivateKey = wallet3.getRandomBlsPrivateKey();
     const recoveryBundle = await wallet3.getBundleRecoverWallet(
       wallet4.address,
       newPrivateKey,

@@ -279,86 +279,22 @@ export default class KeyringController {
     );
   }
 
-  async signWalletAddress(
-    senderAddress: string,
-    signerPrivateKey: string,
-  ): Promise<[BigNumberish, BigNumberish]> {
-    const netCfg = getNetworkConfig(
-      await this.network.read(),
-      this.multiNetworkConfig,
-    );
-
-    const addressMessage = solidityPack(['address'], [senderAddress]);
-    const wallet = await BlsWalletWrapper.connect(
-      signerPrivateKey,
-      netCfg.addresses.verificationGateway,
-      await this.ethersProvider.read(),
-    );
-    return wallet.signMessage(addressMessage);
-  }
-
   async recoverWallet(
     recoveryWalletAddress: string,
     recoverySaltHash: string,
     signerWalletPrivateKey: string,
   ): Promise<string> {
-    const network = await this.network.read();
-    const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
-
-    // Create new private key for the wallet we are recovering to.
-    const newPrivateKey = `0x${(await randFr()).serializeToHexStr()}`;
-
-    const addressSignature = await this.signWalletAddress(
-      recoveryWalletAddress,
-      newPrivateKey,
-    );
-
-    // Get instance of the new wallet, so we can get the public key
-    // to pass to the recoverWallet method.
-    const newWalletWrapper = await this.BlsWalletWrapper(newPrivateKey);
-
-    // eslint-disable-next-line camelcase
-    const verificationGatewayContract = VerificationGateway__factory.connect(
-      netCfg.addresses.verificationGateway,
-      await this.ethersProvider.read(),
-    );
-
-    const recoveryWalletHash = await verificationGatewayContract.hashFromWallet(
-      recoveryWalletAddress,
-    );
-
     const signerWallet = await this.BlsWalletWrapper(signerWalletPrivateKey);
 
-    const nonce = await BlsWalletWrapper.Nonce(
-      signerWallet.PublicKey(),
-      netCfg.addresses.verificationGateway,
-      await this.ethersProvider.read(),
+    // Create new private key for the wallet we are recovering.
+    const newPrivateKey = signerWallet.getRandomBlsPrivateKey();
+
+    const bundle = await signerWallet.getBundleRecoverWallet(
+      recoverySaltHash,
+      recoveryWalletAddress,
     );
 
-    // Thought about using this.InternalRpc().eth_sendTransaction() here.
-    // However since we are generating a wallet on the fly and not using
-    // an existing wallet in the keyring I am calling creating a bundle
-    // manually and submitting it to the aggregator.
-    const bundle = signerWallet.sign({
-      nonce,
-      actions: [
-        {
-          ethValue: 0,
-          contractAddress: verificationGatewayContract.address,
-          encodedFunction:
-            verificationGatewayContract.interface.encodeFunctionData(
-              'recoverWallet',
-              [
-                addressSignature,
-                recoveryWalletHash,
-                recoverySaltHash,
-                newWalletWrapper.PublicKey(),
-              ],
-            ),
-        },
-      ],
-    });
-
+    const network = await this.network.read();
     const { aggregatorUrl } = network;
     const agg = new Aggregator(aggregatorUrl);
     const result = await agg.add(bundle);

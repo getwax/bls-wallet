@@ -253,6 +253,10 @@ export default class BlsWalletWrapper {
     return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
   }
 
+  getRandomBlsPrivateKey(): string {
+    return this.blsWalletSigner.getRandomPrivateKey();
+  }
+
   async getBundleSetRecovery(
     salt: string,
     recoverWalletAddress: string,
