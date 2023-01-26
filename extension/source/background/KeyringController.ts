@@ -1,4 +1,9 @@
-import { BlsWalletWrapper, Aggregator } from 'bls-wallet-clients';
+import {
+  BlsWalletWrapper,
+  Aggregator,
+  // eslint-disable-next-line camelcase
+  VerificationGateway__factory,
+} from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import { keccak256 } from 'ethers/lib/utils';
 import QuillStorageCells from '../QuillStorageCells';
@@ -276,7 +281,7 @@ export default class KeyringController {
 
   async recoverWallet(
     recoveryWalletAddress: string,
-    recoverySaltHash: string,
+    recoverySalt: string,
     signerWalletPrivateKey: string,
   ): Promise<string> {
     const signerWallet = await this.BlsWalletWrapper(signerWalletPrivateKey);
@@ -284,12 +289,22 @@ export default class KeyringController {
     // Create new private key for the wallet we are recovering.
     const newPrivateKey = signerWallet.getRandomBlsPrivateKey();
 
-    const bundle = await signerWallet.getBundleRecoverWallet(
-      recoverySaltHash,
-      recoveryWalletAddress,
+    const network = await this.network.read();
+    const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
+
+    // eslint-disable-next-line camelcase
+    const verificationGatewayContract = VerificationGateway__factory.connect(
+      netCfg.addresses.verificationGateway,
+      await this.ethersProvider.read(),
     );
 
-    const network = await this.network.read();
+    const bundle = await signerWallet.getBundleRecoverWallet(
+      recoveryWalletAddress,
+      newPrivateKey,
+      recoverySalt,
+      verificationGatewayContract,
+    );
+
     const { aggregatorUrl } = network;
     const agg = new Aggregator(aggregatorUrl);
     const result = await agg.add(bundle);
