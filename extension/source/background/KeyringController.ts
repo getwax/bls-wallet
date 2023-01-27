@@ -117,8 +117,7 @@ export default class KeyringController {
 
     createTempAccount: async (_request) => {
       const { wallets } = await this.keyring.read();
-      const currentWallet = await this.BlsWalletWrapper(wallets[0].privateKey);
-      const pKey = currentWallet.getRandomBlsPrivateKey();
+      const pKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 
       assert(
         wallets.every((w) => w.privateKey !== pKey),
@@ -287,7 +286,7 @@ export default class KeyringController {
     const signerWallet = await this.BlsWalletWrapper(signerWalletPrivateKey);
 
     // Create new private key for the wallet we are recovering.
-    const newPrivateKey = signerWallet.getRandomBlsPrivateKey();
+    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 
     const network = await this.network.read();
     const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
@@ -298,7 +297,7 @@ export default class KeyringController {
       await this.ethersProvider.read(),
     );
 
-    const bundle = await signerWallet.getBundleRecoverWallet(
+    const bundle = await signerWallet.getRecoverWalletBundle(
       recoveryWalletAddress,
       newPrivateKey,
       recoverySalt,

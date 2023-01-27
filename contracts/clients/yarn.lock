@@ -1873,6 +1873,11 @@ mcl-wasm@^1.0.0:
   resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-1.0.1.tgz#b1f76785be72d33b7ccb2ae6c3f4760949a8ebb7"
   integrity sha512-LdQZnVCgrHkVyBNdBuEkhEj0WRzCxRMFRr/H9FmhqwNj1xz721nLbYEbJ19gL1Q621cyHtU51lIgqJXVlKvuzA==
 
+mcl-wasm@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-1.0.6.tgz#834420a38aa7c7eab789d08b2834f75fb375f6eb"
+  integrity sha512-/KYSug255SQoOcrQBxkHeAub9qOcJD3B/n5livcsGKsbv4TOiefNmUAwpMP0Vea5AVBUApolr+iF0GqZixns1w==
+
 minimalistic-assert@^1.0.0, minimalistic-assert@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/minimalistic-assert/-/minimalistic-assert-1.0.1.tgz"

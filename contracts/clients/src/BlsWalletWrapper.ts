@@ -1,7 +1,14 @@
 /* eslint-disable camelcase */
 
 import { ethers, BigNumber } from "ethers";
-import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
+import {
+  keccak256,
+  solidityKeccak256,
+  solidityPack,
+  hexlify,
+  randomBytes,
+} from "ethers/lib/utils";
+import * as mcl from "mcl-wasm";
 
 import {
   BlsWalletSigner,
@@ -118,6 +125,15 @@ export default class BlsWalletWrapper {
     }
 
     return this.ExpectedAddress(verificationGateway, pubKeyHash);
+  }
+
+  static async getRandomBlsPrivateKey(): Promise<string> {
+    await mcl.init(mcl.BN_SNARK1);
+    mcl.setMapToMode(mcl.BN254);
+    const r = hexlify(randomBytes(12));
+    const fr = new mcl.Fr();
+    fr.setHashOf(r);
+    return `0x${fr.serializeToHexStr()}`;
   }
 
   /**
@@ -253,19 +269,15 @@ export default class BlsWalletWrapper {
     return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
   }
 
-  getRandomBlsPrivateKey(): string {
-    return this.blsWalletSigner.getRandomBlsPrivateKey();
-  }
-
-  async getBundleSetRecoveryHash(
+  async getSetRecoveryHashBundle(
     salt: string,
     recoverWalletAddress: string,
   ): Promise<Bundle> {
-    const saltBytes32String = BlsWalletWrapper.saltToBytes32String(salt);
+    const saltHash = ethers.utils.formatBytes32String(salt);
     const walletHash = this.blsWalletSigner.getPublicKeyHash(this.privateKey);
     const recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
-      [recoverWalletAddress, walletHash, saltBytes32String],
+      [recoverWalletAddress, walletHash, saltHash],
     );
 
     return this.sign({
@@ -283,7 +295,7 @@ export default class BlsWalletWrapper {
     });
   }
 
-  async getBundleRecoverWallet(
+  async getRecoverWalletBundle(
     recoveryAddress: string,
     newPrivateKey: string,
     recoverySalt: string,
@@ -300,8 +312,7 @@ export default class BlsWalletWrapper {
     const recoveryWalletHash = await verificationGateway.hashFromWallet(
       recoveryAddress,
     );
-    const saltBytes32String =
-      BlsWalletWrapper.saltToBytes32String(recoverySalt);
+    const saltHash = ethers.utils.formatBytes32String(recoverySalt);
 
     return this.sign({
       nonce: await this.Nonce(),
@@ -314,7 +325,7 @@ export default class BlsWalletWrapper {
             [
               addressSignature,
               recoveryWalletHash,
-              saltBytes32String,
+              saltHash,
               updatedWallet.PublicKey(),
             ],
           ),
@@ -384,14 +395,6 @@ export default class BlsWalletWrapper {
       throw new Error(
         `wallet at ${walletAddress} has been recovered from public key hash ${pubKeyHash} to ${existingPubKeyHash}`,
       );
-    }
-  }
-
-  private static saltToBytes32String(salt: string): string {
-    try {
-      return ethers.utils.formatBytes32String(salt);
-    } catch (e) {
-      throw new Error("Error convirting salt string to bytes 32 string.");
     }
   }
 }
