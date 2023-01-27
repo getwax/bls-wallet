@@ -225,16 +225,21 @@ export default class BlsWalletWrapper {
     return await walletContract.nonce();
   }
 
-  /** Returns the same operation but with a gas estimate. */
-  async opWithGasEstimate(operation: Operation): Promise<Operation> {
+  /** Sign an operation with an estimate of the gas required. */
+  async signWithGasEstimate(
+    operationOmittingGas: Omit<Operation, "gas">,
+  ): Promise<Bundle> {
+    const operation: Operation = {
+      ...operationOmittingGas,
+      gas: this.blockGasLimit,
+    };
     const bundle = this.sign(operation);
-    operation.gas = this.blockGasLimit;
     const gatewayAddress = await this.walletContract.trustedBLSGateway();
-    // const gatewaySigner = new VoidSigner(gatewayAddress);
+    // Estimate the gas required for the operation when called by the gateway
     operation.gas = await this.walletContract
       .connect(gatewayAddress)
       .estimateGas.performOperation(bundle.operations[0]);
-    return operation;
+    return this.sign(operation);
   }
 
   /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
