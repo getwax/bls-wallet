@@ -9,8 +9,6 @@ import {
 const createBlsTransfers = async (
   ctx: GasMeasurementContext,
 ): Promise<ContractTransaction[]> => {
-  const signer = ctx.fx.signers[0];
-
   const bundles: Bundle[] = [];
   const walletNonces = await Promise.all(
     ctx.blsWallets.map(async (w) => {
@@ -36,11 +34,14 @@ const createBlsTransfers = async (
   const aggBundle = ctx.fx.blsWalletSigner.aggregate(bundles);
 
   const txn = await ctx.fx.verificationGateway
-    .connect(signer)
+    .connect(ctx.eoaSigner)
     .processBundle(aggBundle);
   return [txn];
 };
 
+/**
+ * Runs ERC20 transfers as a single bundle
+ */
 export const blsTransferConfig: GasMeasurementTransactionConfig = {
   type: "transfer",
   mode: "bls",

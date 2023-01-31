@@ -1,4 +1,4 @@
-import { ContractTransaction } from "ethers";
+import { ContractTransaction, Signer } from "ethers";
 import Web3 from "web3";
 import { BlsWalletWrapper } from "../../clients/src";
 import Fixture from "../../shared/helpers/Fixture";
@@ -42,6 +42,7 @@ export type GasMeasurementError = Readonly<{
 
 export type GasMeasurementContext = Readonly<{
   fx: Fixture;
+  eoaSigner: Signer;
   rng: Rng;
   blsWallets: BlsWalletWrapper[];
   numTransactions: number;
@@ -67,5 +68,7 @@ export type GasMeasurementConfig = Readonly<{
 
 export type GasMeasurementResult = Readonly<{
   config: GasMeasurementConfig;
+  eoaSignerAddress: string;
+  blsWalletAddresses: string[];
   measurements: Array<GasMeasurement | GasMeasurementError>;
 }>;

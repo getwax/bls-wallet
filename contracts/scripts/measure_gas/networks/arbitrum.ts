@@ -2,6 +2,14 @@ import { BigNumberish, BigNumber } from "ethers";
 import Web3 from "web3";
 import { ArbitrumGasMeasurement } from "../types";
 
+/**
+ * Gets arbitrum specific gas measurements.
+ * See https://developer.arbitrum.io/sdk/interfaces/dataEntities_rpc.ArbTransactionReceipt#gasusedforl1
+ *
+ * @param web3Provider web3.js provider. This must be used over ethers.js to get custom arbitrum receipt values
+ * @param txnHash transaction hash
+ * @returns arbitrum specific gas measurements
+ */
 export const getArbitrumMeasurements = async (
   web3Provider: Web3,
   txnHash: string,

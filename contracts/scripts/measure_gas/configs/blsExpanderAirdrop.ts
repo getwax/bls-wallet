@@ -9,7 +9,6 @@ import {
 const createBlsExpanderAirdrop = async (
   ctx: GasMeasurementContext,
 ): Promise<ContractTransaction[]> => {
-  const signer = ctx.fx.signers[0];
   const sendingWallet = ctx.rng.item(ctx.blsWallets);
 
   const actions = [];
@@ -35,7 +34,7 @@ const createBlsExpanderAirdrop = async (
   );
 
   const txn = await ctx.fx.blsExpander
-    .connect(signer)
+    .connect(ctx.eoaSigner)
     .blsCallMultiSameCallerContractFunction(
       sendingWallet.PublicKey(),
       operation.nonce,
@@ -47,6 +46,9 @@ const createBlsExpanderAirdrop = async (
   return [txn];
 };
 
+/**
+ * Runs an ERC20 airdrop using expander contract
+ */
 export const blsExpanderAirdropConfig: GasMeasurementTransactionConfig = {
   type: "transfer",
   mode: "blsExpanderAirdrop",

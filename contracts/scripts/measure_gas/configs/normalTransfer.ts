@@ -8,8 +8,6 @@ import {
 const createNormalTransfer = async (
   ctx: GasMeasurementContext,
 ): Promise<ContractTransaction[]> => {
-  const signer = ctx.fx.signers[0];
-
   const txns: ContractTransaction[] = [];
 
   for (let i = 0; i < ctx.numTransactions; i++) {
@@ -19,13 +17,18 @@ const createNormalTransfer = async (
     const toAddress = ctx.rng.item(ctx.blsWallets, [blsWallet]).address;
     const amount = getTransferAmount(ctx);
 
-    const tx = await ctx.erc20Token.connect(signer).transfer(toAddress, amount);
+    const tx = await ctx.erc20Token
+      .connect(ctx.eoaSigner)
+      .transfer(toAddress, amount);
     txns.push(tx);
   }
 
   return txns;
 };
 
+/**
+ * Runs ERC20 transfers in a normal eth transaction
+ */
 export const normalTransferConfig: GasMeasurementTransactionConfig = {
   type: "transfer",
   mode: "normal",

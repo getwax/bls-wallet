@@ -6,11 +6,9 @@ import {
   GasMeasurementTransactionConfig,
 } from "../types";
 
-export const createBlsExpanderAddressTransfers = async (
+const createBlsExpanderAddressTransfers = async (
   ctx: GasMeasurementContext,
 ): Promise<ContractTransaction[]> => {
-  const signer = ctx.fx.signers[0];
-
   const bundles: Bundle[] = [];
   const walletAddresses: string[] = [];
   const walletNonces = await Promise.all(
@@ -43,7 +41,7 @@ export const createBlsExpanderAddressTransfers = async (
   console.log("registering public keys...");
   const { senderPublicKeys, ...bundleOmitPubKeys } = aggBundle;
   const registerTxn = await ctx.fx.blsExpander
-    .connect(signer)
+    .connect(ctx.eoaSigner)
     .registerPublicKeys(walletAddresses, senderPublicKeys);
   await registerTxn.wait();
   console.log("public keys registered");
@@ -55,11 +53,14 @@ export const createBlsExpanderAddressTransfers = async (
   };
 
   const txn = await ctx.fx.blsExpander
-    .connect(signer)
+    .connect(ctx.eoaSigner)
     .addressProcessBundle(hashedBundle);
   return [txn];
 };
 
+/**
+ * Runs ERC20 transfers as a single bundle through the expander contract to reduce calldata size
+ */
 export const blsExpanderAddressTransferConfig: GasMeasurementTransactionConfig =
   {
     type: "transfer",
