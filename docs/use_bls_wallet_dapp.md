@@ -27,8 +27,9 @@ After installing the extension, Quill will auto-open and guide you through the s
 Next, connect your dApp to Quill just like you would any other extension wallet.
 
 `ethers.js`
+
 ```typescript
-import { providers } from 'ethers';
+import { providers } from "ethers";
 
 const provider = new providers.Web3Provider(window.ethereum);
 
@@ -91,7 +92,9 @@ const transactionHash = await window.ethereum.request({
   params: [approveTransaction, swapTransaction],
 });
 
-const transactionReceipt = await provider.getTransactionReceipt(transactionHash);
+const transactionReceipt = await provider.getTransactionReceipt(
+  transactionHash
+);
 // Do anything else you need to with the transaction receipt.
 ```
 
@@ -111,7 +114,7 @@ See the [System Overview](./system_overview.md) for more details on what's happe
 
 ## Example dApps Which Use BLS Wallet
 
-- https://github.com/kautukkundan/BLSWallet-ERC20-demo 
+- https://github.com/kautukkundan/BLSWallet-ERC20-demo
 - https://github.com/voltrevo/bls-wallet-billboard
 - https://github.com/JohnGuilding/single-pool-dex
 
