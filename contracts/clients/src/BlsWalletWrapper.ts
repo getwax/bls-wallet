@@ -239,7 +239,7 @@ export default class BlsWalletWrapper {
   }
 
   /** Estimate the gas needed for an operation. */
-  async estimateGas(operation: Omit<Operation, "gas">) {
+  async estimateGas(operation: Omit<Operation, "gas">): Promise<BigNumber> {
     const exists =
       (await this.walletContract.provider.getCode(this.address)) !== "0x";
 
