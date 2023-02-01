@@ -160,6 +160,7 @@ describe("Upgrade", async function () {
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
             nonce: BigNumber.from(1),
+            gas: BigNumber.from(30_000_000),
             actions: [
               // skip: setExternalWalletAction,
               changeProxyAction,
@@ -178,6 +179,7 @@ describe("Upgrade", async function () {
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
             nonce: BigNumber.from(1),
+            gas: BigNumber.from(30_000_000),
             actions: [
               setExternalWalletAction,
               // skip: changeProxyAction,
@@ -196,6 +198,7 @@ describe("Upgrade", async function () {
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
             nonce: BigNumber.from(1),
+            gas: BigNumber.from(30_000_000),
             actions: [
               setExternalWalletAction,
               changeProxyAction,
@@ -214,6 +217,7 @@ describe("Upgrade", async function () {
     await fx.processBundleWithExtraGas(
       walletOldVg.sign({
         nonce: BigNumber.from(1),
+        gas: BigNumber.from(30_000_000),
         actions: [
           setExternalWalletAction,
           changeProxyAction,
@@ -252,6 +256,7 @@ describe("Upgrade", async function () {
       fx.blsWalletSigner.aggregate([
         walletOldVg.sign({
           nonce: BigNumber.from(2),
+          gas: BigNumber.from(30_000_000),
           actions: [
             {
               ethValue: 0,
@@ -284,6 +289,7 @@ describe("Upgrade", async function () {
       await fx.verificationGateway.processBundle(
         wallet1.sign({
           nonce: 0,
+          gas: 30_000_000,
           actions: [],
         }),
       )
@@ -312,6 +318,7 @@ describe("Upgrade", async function () {
       const { successes } = await vg1.callStatic.processBundle(
         wallet1.sign({
           nonce: BigNumber.from(1),
+          gas: BigNumber.from(30_000_000),
           actions: [setExternalWalletAction],
         }),
       );
@@ -323,6 +330,7 @@ describe("Upgrade", async function () {
       await fx.verificationGateway.processBundle(
         wallet1.sign({
           nonce: BigNumber.from(1),
+          gas: BigNumber.from(30_000_000),
           actions: [setExternalWalletAction],
         }),
       )
@@ -337,6 +345,7 @@ describe("Upgrade", async function () {
     await fx.processBundleWithExtraGas(
       wallet1.sign({
         nonce: 2,
+        gas: BigNumber.from(30_000_000),
         actions: [
           {
             ethValue: 0,
@@ -364,10 +373,7 @@ describe("Upgrade", async function () {
       wallet2.address,
       wallet2.address,
     ]);
-    expectOperationFailure(
-      txnReceipt,
-      "VG: first param to proxy admin is not calling wallet",
-    );
+    expectOperationFailure(txnReceipt, "VG: first param is not wallet");
   });
 
   it("should NOT allow walletAdminCall to ProxyAdmin.transferOwnership", async function () {

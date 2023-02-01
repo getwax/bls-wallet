@@ -7,7 +7,7 @@
       "displayName": "Mainnet",
       "logo": "",
       "rpcTarget": "https://mainnet.infura.io/v3/d0f317090d6645b6b494ddc6f1cce5ad",
-      "chainCurrencyName": "Ethereum",
+      "chainCurrencyName": "Ether",
       "chainCurrency": "ETH",
       "aggregatorUrl": "https://mainnet.blswallet.org",
       "networkKey": "mainnet",
@@ -19,21 +19,10 @@
       "displayName": "Local Network",
       "logo": "",
       "rpcTarget": "http://127.0.0.1:8545",
-      "chainCurrencyName": "Ethereum",
+      "chainCurrencyName": "Ether",
       "chainCurrency": "ETH",
       "aggregatorUrl": "http://localhost:3000",
       "networkKey": "local"
-    },
-    "arbitrum-testnet": {
-      "blockExplorerUrl": "https://rinkeby-explorer.arbitrum.io",
-      "chainId": "0x66eeb",
-      "displayName": "Arbitrum Test Network",
-      "logo": "",
-      "rpcTarget": "https://rinkeby.arbitrum.io/rpc",
-      "chainCurrencyName": "Arbitrum Ether",
-      "chainCurrency": "ARETH",
-      "aggregatorUrl": "https://arbitrum-testnet.blswallet.org",
-      "networkKey": "arbitrum-testnet"
     },
     "arbitrum-goerli": {
       "blockExplorerUrl": "https://goerli-rollup-explorer.arbitrum.io",
@@ -41,7 +30,7 @@
       "displayName": "Arbitrum Goerli",
       "logo": "",
       "rpcTarget": "https://goerli-rollup.arbitrum.io/rpc",
-      "chainCurrencyName": "Ethereum",
+      "chainCurrencyName": "Ether",
       "chainCurrency": "ETH",
       "aggregatorUrl": "https://arbitrum-goerli.blswallet.org",
       "networkKey": "arbitrum-goerli"
@@ -58,17 +47,16 @@
       "networkKey": "arbitrum",
       "hidden": true
     },
-    "optimism-kovan": {
-      "blockExplorerUrl": "https://kovan-optimistic.etherscan.io",
-      "chainId": "0x45",
-      "displayName": "Optimism Test Network",
+    "optimism-goerli": {
+      "blockExplorerUrl": "https://blockscout.com/optimism/goerli/",
+      "chainId": "0x1a4",
+      "displayName": "Optimism Goerli",
       "logo": "",
-      "rpcTarget": "https://kovan.optimism.io",
-      "chainCurrencyName": "Optimistic Kovan Ether",
-      "chainCurrency": "KOR",
-      "aggregatorUrl": "https://optimism-kovan.blswallet.org",
-      "networkKey": "optimism-kovan",
-      "hidden": true
+      "rpcTarget": "https://goerli.optimism.io",
+      "chainCurrencyName": "Ether",
+      "chainCurrency": "ETH",
+      "aggregatorUrl": "https://optimism-goerli.blswallet.org",
+      "networkKey": "optimism-goerli"
     },
     "optimism": {
       "blockExplorerUrl": "https://optimistic.etherscan.io",

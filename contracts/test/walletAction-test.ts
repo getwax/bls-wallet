@@ -90,7 +90,7 @@ describe("WalletActions", async function () {
       recvWallet.address,
     );
 
-    const tx = sendWallet.sign({
+    const tx = await sendWallet.signWithGasEstimate({
       nonce: await sendWallet.Nonce(),
       actions: [
         {
@@ -136,7 +136,7 @@ describe("WalletActions", async function () {
 
     await (
       await fx.verificationGateway.processBundle(
-        sendWallet.sign({
+        await sendWallet.signWithGasEstimate({
           nonce: 0,
           actions: [
             {
@@ -159,7 +159,7 @@ describe("WalletActions", async function () {
   it("should check signature", async function () {
     const wallet = await fx.createBLSWallet();
 
-    const tx = wallet.sign({
+    const tx = await wallet.signWithGasEstimate({
       nonce: await wallet.Nonce(),
       actions: [
         {
@@ -213,7 +213,7 @@ describe("WalletActions", async function () {
     await (
       await fx.verificationGateway.processBundle(
         fx.blsWalletSigner.aggregate([
-          sender1.sign({
+          await sender1.signWithGasEstimate({
             nonce: await sender1.Nonce(),
             actions: [
               {
@@ -231,7 +231,7 @@ describe("WalletActions", async function () {
               },
             ],
           }),
-          sender2.sign({
+          await sender2.signWithGasEstimate({
             nonce: await sender2.Nonce(),
             actions: [
               {
@@ -267,7 +267,7 @@ describe("WalletActions", async function () {
 
     const r: ContractReceipt = await (
       await fx.verificationGateway.processBundle(
-        sender.sign({
+        await sender.signWithGasEstimate({
           nonce: await sender.Nonce(),
           actions: [
             // Send tokens to recipient.
@@ -329,7 +329,7 @@ describe("WalletActions", async function () {
 
     const nonce = await wallets[0].Nonce();
 
-    const tx = wallets[0].sign({
+    const tx = await wallets[0].signWithGasEstimate({
       nonce,
       actions: wallets.map((recvWallet) => ({
         ethValue: BigNumber.from(0),
@@ -345,6 +345,7 @@ describe("WalletActions", async function () {
       await fx.blsExpander.blsCallMultiSameCallerContractFunction(
         tx.senderPublicKeys[0],
         nonce,
+        tx.operations[0].gas,
         tx.signature,
         testToken.address,
         testToken.interface.getSighash("transfer"),

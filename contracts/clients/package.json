@@ -1,6 +1,6 @@
 {
   "name": "bls-wallet-clients",
-  "version": "0.8.2",
+  "version": "0.8.2-d39c16b",
   "description": "Client libraries for interacting with BLS Wallet components",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@thehubbleproject/bls": "^0.5.1",
-    "ethers": "5.5.4",
+    "ethers": "^5.7.2",
     "node-fetch": "2.6.7"
   },
   "devDependencies": {

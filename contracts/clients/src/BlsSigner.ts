@@ -80,7 +80,10 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    const bundle = await this.wallet.signWithGasEstimate({
+      nonce,
+      actions: [action],
+    });
     const result = await this.provider.aggregator.add(bundle);
 
     if ("failures" in result) {
@@ -122,7 +125,6 @@ export default class BlsSigner extends Signer {
       );
     }
 
-    // TODO: bls-wallet #412 Update values returned in bundle receipt to more closely match ethers transaction response
     return {
       hash,
       to: action.contractAddress,
@@ -177,7 +179,10 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    const bundle = await this.wallet.signWithGasEstimate({
+      nonce,
+      actions: [action],
+    });
     return JSON.stringify(bundleToDto(bundle));
   }
 

@@ -116,16 +116,6 @@ const config: HardhatUserConfig = {
       url: `http://localhost:8545`,
       accounts,
     },
-    ropsten: {
-      url: process.env.ROPSTEN_URL || "",
-      accounts,
-    },
-    arbitrum_testnet: {
-      // chainId: 421611
-      url: process.env.ARBITRUM_TESTNET_URL,
-      accounts,
-      gasPrice: 1408857682, // 287938372,
-    },
     arbitrum_goerli: {
       // chainId: 421613
       url: process.env.ARBITRUM_GOERLI_URL,
@@ -137,18 +127,10 @@ const config: HardhatUserConfig = {
       accounts,
       gasPrice: 700000000,
     },
-    // optimistic_local: {
-    //   url: process.env.OPTIMISM_LOCAL_URL,
-    //   accounts,
-    //   gasPrice: 0,//15000000,
-    //   ovm: true
-    // },
-    // optimistic_testnet: {
-    //   url: process.env.OPTIMISM_TESTNET_URL,
-    //   accounts,
-    //   gasPrice: 15000000,
-    //   ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
-    // }
+    optimism_goerli: {
+      url: process.env.OPTIMISM_GOERLI_URL,
+      accounts,
+    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

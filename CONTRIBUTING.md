@@ -1,6 +1,6 @@
 # Contribute to BLS Wallet
 
-Thank for taking the time to contribute to BLS Wallet! 
+Thank for taking the time to contribute to BLS Wallet!
 
 In this guide you will get an overview of the contribution workflow from opening an issue, creating a PR, reviewing, and merging the PR.
 
@@ -18,7 +18,7 @@ First search for an [existing issue](https://github.com/web3well/bls-wallet/issu
 
 ### Solve an issue
 
-Search for a [existing issue](https://github.com/github/docs/issues) that is unassigned and interests you. If this is your first time contrbuting, you may want to choose a [good first issue](https://github.com/web3well/bls-wallet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
+Search for a [existing issue](https://github.com/github/docs/issues) that is unassigned and interests you. If this is your first time contributing, you may want to choose a [good first issue](https://github.com/web3well/bls-wallet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
 ## Make Changes
 
@@ -47,9 +47,10 @@ A list or paragraph of more specific details
 Create a pull request (PR) from your fork's branch to `main`, filling in the descriptions template including [linking to the issue you are resolving](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue). Feel free to open a draft PR while you are actively working.
 
 Once ready, a BLS Wallet team member will review the PR.
- - When run, all Github Actions workflows should succeed.
- - All TODO/FIXME comments in code should be resolved, unless marked `merge-ok` with a description/issue link describing how they can be resolved in future work.
- - The author of a comment may mark it as [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations) when they are satisified with a requested change or answer to a question. You are not required to resolve all comments as some may provide good historical information.
+
+- When run, all Github Actions workflows should succeed.
+- All TODO/FIXME comments in code should be resolved, unless marked `merge-ok` with a description/issue link describing how they can be resolved in future work.
+- The author of a comment may mark it as [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations) when they are satisified with a requested change or answer to a question. You are not required to resolve all comments as some may provide good historical information.
 
 ## Your PR is merged!
 
