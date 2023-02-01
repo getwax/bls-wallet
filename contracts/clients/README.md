@@ -66,7 +66,7 @@ while (!receipt) {
 ## BlsWalletWrapper
 
 Wraps a BLS wallet, storing the private key and providing `.sign(...)` to
-produce a `Bundle`, that can be used with `aggregator.add(...)`.
+produce a `Bundle`, that can be used with `aggregator.add(...)`. Make sure the bls wallet you're trying to use has enough ETH to send transactions. You can either fund a wallet before it's created, or after the wallet is lazily created from its first transaction (bundle).
 
 ```ts
 import { BlsWalletWrapper } from 'bls-wallet-clients';
@@ -135,6 +135,109 @@ const actions: ActionData[] = tranactions.map((tx) => ({
 const bundle = wallet.sign({
   nonce,
   actions,
+});
+```
+
+## Estimating and paying fees
+
+User bundles must pay fees to compensate the aggregator. Fees can be paid by adding an additional action the the users bundle that pays tx.origin. For more info on how fees work, see [aggregator fees](../../aggregator/README.md#fees).
+
+Practically, this means you have to first estimate the fee using `aggregator.estimateFee`, and then add an additional action to a user bundle that pays the aggregator with the amount returned from `estimateFee`. When estimating a payment, you should include this additional action with a payment of zero, otherwise the additional action will increase the fee that needs to be paid. Additionally, the `feeRequired` value returned from `estimateFee` is the absolute minimum fee required at the time of estimation, therefore, you should pay slightly extra to ensure the bundle has a good chance of being submitted successfully.
+
+### Paying aggregator fees with native currency (ETH)
+
+```ts
+import { BlsWalletWrapper, Aggregator } from "bls-wallet-clients";
+
+const wallet = await BlsWalletWrapper.connect(
+  privateKey,
+  verificationGatewayAddress,
+  provider,
+);
+const aggregator = new Aggregator("aggregator-url");
+const estimateFee = await aggregator.estimateFee(bundle); // Remember to include no payment with this bundle
+
+const bundle = wallet.sign({
+    nonce: await wallet.Nonce(),
+    actions: [
+        bundle, // ... do your transaction/actions here (approve, transfer, etc.)
+
+        // then, if the aggregator is using native chain currency, such as ETH
+        {
+            ethValue: estimateFee.feeRequired, // fee amount
+            contractAddress: aggregatorAddress,
+            encodedFunction: "0x"
+        }
+        // or you can use the AggregatorUtilities.sol contract
+        // this makes the bundle submittable from any ETH paid aggregator
+        {
+            ethValue: estimateFee.feeRequired, // fee amount
+            contractAddress: aggregatorUtilitiesContract.address,
+            encodedFunction: aggregatorUtilitiesContract.interface.encodeFunctionData(
+                'sendEthToTxOrigin', [],
+            ),
+        }
+    ],
+});
+```
+
+### Paying aggregator fees with custom currency (ERC20)
+
+```ts
+import { BlsWalletWrapper, Aggregator } from "bls-wallet-clients";
+
+const wallet = await BlsWalletWrapper.connect(
+  privateKey,
+  verificationGatewayAddress,
+  provider,
+);
+const aggregator = new Aggregator("aggregator-url");
+const estimateFee = await aggregator.estimateFee(bundle); // Remember to include no payment with this bundle
+
+const bundle = wallet.sign({
+    nonce: await wallet.Nonce(),
+    actions: [
+        bundle, // ... do your transaction/actions here (approve, transfer, etc.)
+
+        // then, if the aggregator is using an ERC20 token
+        {
+            ethValue: 0,
+            contractAddress: tokenContract.address,
+            encodedFunction: tokenContract.interface.encodeFunctionData(
+                'transfer',
+                [
+                    aggregatorAddress,
+                    estimateFee.feeRequired, // fee amount
+                ],
+            ),
+        }
+
+        // or you can use the AggregatorUtilities.sol contract
+        // this makes the bundle submittable from any paid aggregator with that token
+        // note the additional approve action
+        {
+            ethValue: 0,
+            contractAddress: tokenContract.address,
+            encodedFunction: tokenContract.interface.encodeFunctionData(
+              "approve",
+              [
+                  aggregatorUtilitiesContract.address,
+                  estimateFee.feeRequired, // fee amount
+              ],
+            ),
+        },
+        {
+            ethValue: 0,
+            contractAddress: aggregatorUtilitiesContract.address,
+            encodedFunction: aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendTokenToTxOrigin",
+              [
+                  tokenContract.address,
+                  estimateFee.feeRequired, // fee amount
+              ],
+            ),
+        },
+    ],
 });
 ```
 
@@ -252,3 +355,8 @@ yarn link
 cd other/project/dir
 yarn "link bls-wallet-clients"
 ```
+
+## Troubleshooting tips
+
+- Make sure your bls-wallet-clients package is up-to-date and check out our [releases page](https://github.com/web3well/bls-wallet/releases) for info on breaking changes.
+- Check network values such as the verification gateway address or the aggregator url are up-to-date. The most up-to-date values are located in the relevant [network config](./../contracts/networks) file. If you're deploying to a custom network, you'll have to check these against your own records as these won't be in the network directory.

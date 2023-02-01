@@ -102,6 +102,20 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 
 ---
 
+## Troubleshooting tips
+
+### Checklist for getting to a clean slate when dealing with issues
+
+- pull latest from `main` and run the setup script from the root directory `./setup.ts`.
+- Restart the node and redeploy contracts
+- Restart the aggregator and add the "-r" flag to the command e.g `./programs/aggregator.ts -r`.
+- Reset the Quill extension in your browser if you're developing with Quill. You can do this by removing the extension and then re-adding via "Load unpacked" again. Or run `debug.reset();` twice in the background page console.
+
+### Additional troubleshooting tips
+
+- In general, the bundle or submission issues we've encountered have been us misconfiguring the data in the bundle or not configuring the aggregator properly.
+- Be careful using HH accounts 0 and 1 in your code when running a local aggregator. This is because the aggregator uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get round this by not using accounts 0 and 1 elsewhere or changing the default accounts that the aggregator uses locally.
+
 ### Tests
 
 See each components `README.md` for how to run tests.
