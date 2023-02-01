@@ -114,7 +114,7 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 ### Additional troubleshooting tips
 
 - In general, the bundle or submission issues we've encountered have been us misconfiguring the data in the bundle or not configuring the aggregator properly.
-- Be careful using HH accounts 0 and 1 in your code when running a local aggregator. This is because the aggregator uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get round this by not using accounts 0 and 1 elsewhere or changing the default accounts that the aggregator uses locally.
+- Be careful using HH accounts 0 and 1 in your code when running a local aggregator. This is because the local aggregator config uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get round this by not using accounts 0 and 1 elsewhere, or changing the default accounts that the aggregator uses locally.
 
 ### Tests
 

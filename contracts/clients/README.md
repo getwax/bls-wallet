@@ -39,7 +39,7 @@ if ("failures" in resp) {
 
 You will have to poll for the bundle receipt once you have added a bundle to an aggregator. The transaction hash is located on the bundle receipt. The property you need is `bundleReceipt.transactionHash`. This represents the transaction hash for the bundle submitted to the Verification Gatewaty, and can be used in a block explorer.
 
-Note this transaction will include all operations included in the bundle, and does not represent individual operations. To retrieve information about individual operations, use the get `getOperationResults` helper method which is explained under the [VerificationGateway](#verificationgateway) section below.
+Note this transaction is reprentative of the entire bundle submitted by the aggregator, and does not represent individual operations. To retrieve information about individual operations, use the get `getOperationResults` helper method which is explained under the [VerificationGateway](#verificationgateway) section below.
 
 ```ts
 import { Aggregator } from "bls-wallet-clients";
@@ -129,7 +129,7 @@ const tranactions = [
 const actions: ActionData[] = tranactions.map((tx) => ({
   ethValue: tx.value ?? "0",
   contractAddress: tx.to,
-  encodedFunction: tx.data ?? "0x",
+  encodedFunction: tx.data ?? "0x", // in this example, there is no data property on the tx object, so "0x" will be used
 }));
 
 const bundle = wallet.sign({
@@ -146,6 +146,8 @@ Practically, this means you have to first estimate the fee using `aggregator.est
 
 ### Paying aggregator fees with native currency (ETH)
 
+The aggregator must be set up to accept ERC20 tokens in order for this to work.
+
 ```ts
 import { BlsWalletWrapper, Aggregator } from "bls-wallet-clients";
 
@@ -154,7 +156,7 @@ const wallet = await BlsWalletWrapper.connect(
   verificationGatewayAddress,
   provider,
 );
-const aggregator = new Aggregator("aggregator-url");
+const aggregator = new Aggregator("https://arbitrum-goerli.blswallet.org");
 const estimateFee = await aggregator.estimateFee(bundle); // Remember to include no payment with this bundle
 
 const bundle = wallet.sign({
@@ -191,7 +193,7 @@ const wallet = await BlsWalletWrapper.connect(
   verificationGatewayAddress,
   provider,
 );
-const aggregator = new Aggregator("aggregator-url");
+const aggregator = new Aggregator("https://arbitrum-goerli.blswallet.org");
 const estimateFee = await aggregator.estimateFee(bundle); // Remember to include no payment with this bundle
 
 const bundle = wallet.sign({
@@ -303,8 +305,10 @@ import { initBlsWalletSigner } from "bls-wallet-clients";
 
   const privateKey = "0x...256 bits of private hex data here";
 
-  const someToken = new ethers.Contract();
-  // See https://docs.ethers.io/v5/getting-started/
+  const someToken = new ethers.Contract(
+    ...
+    // See https://docs.ethers.io/v5/getting-started/
+  );
 
   const bundle = signer.sign(
     {
