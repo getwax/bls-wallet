@@ -71,7 +71,7 @@ export default class TokenHelper {
     amount: BigNumber,
   ) {
     await this.fx.verificationGateway.processBundle(
-      sender.sign({
+      await sender.signWithGasEstimate({
         nonce,
         actions: [
           {

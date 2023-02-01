@@ -95,8 +95,8 @@ describe("WalletActions", async function () {
 
   it("should send ETH (empty call)", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
-    const recvWallet = await fx.lazyBlsWallets[1]();
+    const sendWallet = await fx.createBLSWallet();
+    const recvWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.0001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
@@ -110,7 +110,7 @@ describe("WalletActions", async function () {
       recvWallet.address,
     );
 
-    const tx = sendWallet.sign({
+    const tx = await sendWallet.signWithGasEstimate({
       nonce: await sendWallet.Nonce(),
       actions: [
         {
@@ -156,7 +156,7 @@ describe("WalletActions", async function () {
 
     await fx.verificationGateway.processBundle(
       fx.blsWalletSigner.aggregate([
-        sendWallet.sign({
+        await sendWallet.signWithGasEstimate({
           nonce: BigNumber.from(1),
           actions: [
             {
@@ -179,7 +179,7 @@ describe("WalletActions", async function () {
   it("should check signature", async function () {
     const wallet = await fx.lazyBlsWallets[0]();
 
-    const tx = wallet.sign({
+    const tx = await wallet.signWithGasEstimate({
       nonce: await wallet.Nonce(),
       actions: [
         {
@@ -233,7 +233,7 @@ describe("WalletActions", async function () {
     await (
       await fx.verificationGateway.processBundle(
         fx.blsWalletSigner.aggregate([
-          sender1.sign({
+          await sender1.signWithGasEstimate({
             nonce: await sender1.Nonce(),
             actions: [
               {
@@ -251,7 +251,7 @@ describe("WalletActions", async function () {
               },
             ],
           }),
-          sender2.sign({
+          await sender2.signWithGasEstimate({
             nonce: await sender2.Nonce(),
             actions: [
               {
@@ -287,7 +287,7 @@ describe("WalletActions", async function () {
 
     const r: ContractReceipt = await (
       await fx.verificationGateway.processBundle(
-        sender.sign({
+        await sender.signWithGasEstimate({
           nonce: await sender.Nonce(),
           actions: [
             // Send tokens to recipient.
@@ -347,7 +347,7 @@ describe("WalletActions", async function () {
 
     const nonce = await wallets[0].Nonce();
 
-    const tx = wallets[0].sign({
+    const tx = await wallets[0].signWithGasEstimate({
       nonce,
       actions: wallets.map((recvWallet) => ({
         ethValue: BigNumber.from(0),
@@ -363,6 +363,7 @@ describe("WalletActions", async function () {
       await fx.blsExpander.blsCallMultiSameCallerContractFunction(
         tx.senderPublicKeys[0],
         nonce,
+        tx.operations[0].gas,
         tx.signature,
         testToken.address,
         testToken.interface.getSighash("transfer"),
