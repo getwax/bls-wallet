@@ -22,6 +22,25 @@ const netCfg: NetworkConfig = await getConfig(
 
 Exposes typed functions for interacting with the Aggregator's HTTP API.
 
+### Add a bundle to an aggregator
+
+```ts
+import { Aggregator } from 'bls-wallet-clients';
+
+const aggregator = new Aggregator('https://arbitrum-goerli.blswallet.org');
+const resp = await aggregator.add(bundle); // See BlsWalletWrapper section below
+// Aggregator did not accept bundle
+if ("failures" in resp) {
+  throw new Error(resp.failures.join(", "));
+}
+```
+
+### Get the bundle receipt that contains the transaction hash you can lookup on a block explorer
+
+You will have to poll for the bundle receipt once you have added a bundle to an aggregator. The transaction hash is located on the bundle receipt. The property you need is `bundleReceipt.transactionHash`. This represents the transaction hash for the bundle submitted to the Verification Gatewaty, and can be used in a block explorer.
+
+Note this transaction will include all operations included in the bundle, and does not represent individual operations. To retrieve information about individual operations, use the get `getOperationResults` helper method which is explained under the [VerificationGateway](#verificationgateway) section below.
+
 ```ts
 import { Aggregator } from 'bls-wallet-clients';
 
@@ -75,6 +94,48 @@ const bundle = wallet.sign({
 });
 
 await aggregator.add(bundle);
+```
+
+### Sending a regular ETH transaction
+
+```ts
+// Follow the same steps as the first BlsWalletWrapper example, but construct the bundle actions like so:
+const amountToTransfer = ethers.utils.parseUnits('1'); 
+const reciever = "0x1234..." 
+
+const bundle = wallet.sign({
+  nonce,
+  actions: [
+    {
+      ethValue: amountToTransfer, // amount of ETH you want to transfer
+      contractAddress: reciever, // receiver address. Can be a contract address or an EOA
+      encodedFunction: "0x", // leave this as "0x" when just sending ETH
+    },
+  ],
+});
+```
+
+### Constructing actions to be agnostic to both ETH transfers and contract interactions
+
+```ts
+// Follow the same steps as the first BlsWalletWrapper example, but construct the bundle actions like so:
+const tranactions = [
+  {
+    value: ethers.utils.parseUnits('1'), // amount of ETH you want to transfer
+    to: "0x1234...", // to address. Can be a contract address or an EOA
+  }
+];
+
+const actions: ActionData[] = tranactions.map((tx) => ({
+    ethValue: tx.value ?? '0',
+    contractAddress: tx.to,
+    encodedFunction: tx.data ?? '0x',
+  }));
+
+const bundle = wallet.sign({
+  nonce,
+  actions,
+});
 ```
 
 ## VerificationGateway
