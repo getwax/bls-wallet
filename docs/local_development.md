@@ -41,6 +41,7 @@ yarn start
 ```
 
 You can also use the local node from hardhat.
+
 - Pros: doesn't need docker, access to console.log in solidity
 - Cons: slow
 
@@ -76,14 +77,6 @@ cd ./aggregator
 ## Extension
 
 The [extension](../extension/) (otherwise referred to as Quill) is a prototype extension wallet used to showcase and test BLS Wallet features. **Note it is not a production wallet.**
-
-make these changes in extension > .env
-
-```sh
-AGGREGATOR_URL=http://localhost:3000/
-DEFAULT_CHAIN_ID=31337
-NETWORK_CONFIG=./contracts/networks/local.json
-```
 
 In a seperate terminal/shell instance
 
