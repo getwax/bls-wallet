@@ -77,8 +77,6 @@ Interaction with web3 applications can be slow, costly, and risky.
 
 ## Development
 
-Copy `.env.example` to `.env`, updating values as needed.
-
 To run the dev server:
 
 ```sh
