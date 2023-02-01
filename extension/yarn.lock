@@ -2907,14 +2907,13 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.2.1.tgz#5057e4206eadb4a97f7c0b6e197a505042fc3814"
   integrity sha512-QXUSXI3QVc/gJME0dBpXrag1kbzOqCjCX8/b54ntNyW6sjtoqxqRk3LTmXzaJoh71zMsDCjM+47jS7XiwN/+fQ==
 
-bls-wallet-clients@0.8.2-821654:
-  version "0.8.2-821654"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.8.2-821654.tgz#6b33014e254fae2b3e08739217d1b65abc3ca4e4"
-  integrity sha512-jOH7nvf2CaAo/JBU7QPEz6qGHX3Jb/byleZJYv+AikEBXsDtFI5nL8G5InNqDLysAqFJV9sqgs3my9uiLAEekw==
+bls-wallet-clients@0.8.2-77f1638:
+  version "0.8.2-77f1638"
+  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.8.2-77f1638.tgz#61212aac502aed821bc6036cb95a2cdaa9c0b67e"
+  integrity sha512-2gTVHUvs4+/fBwgtcZCO+DsKTnJAiebYrpCUdygIqZaFeHdEyp6xU2F8ZT+XOcNoMeN1B9TT5EupV1RTvISFkQ==
   dependencies:
     "@thehubbleproject/bls" "^0.5.1"
     ethers "^5.7.2"
-    mcl-wasm "^1.0.6"
     node-fetch "2.6.7"
 
 bn.js@^4.0.0, bn.js@^4.1.0, bn.js@^4.11.9:
@@ -5157,16 +5156,6 @@ mcl-wasm@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-1.0.2.tgz#2a891f2ca83c158ec453d9522957dcc6e56e28ed"
   integrity sha512-rYTsi5HRjfTUbSvaERM0t7FJm9smRFRKSqAGnlUttfDvaJxqlOaEP8rnFMWkR4mVvFQLhclnpyR8lJmE478GGg==
-
-mcl-wasm@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-1.0.3.tgz#b056c655270c3a5e0473489ceb9e55b3de924998"
-  integrity sha512-L8hexPDw02JEXscEm4pB2rvfAYRc4HIsssxcj+I1AGC4/LYFy9GyrmCgFC+CzxKtxuRQcuBi1RLw74MAzZ5V2Q==
-
-mcl-wasm@^1.0.6:
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/mcl-wasm/-/mcl-wasm-1.0.6.tgz#834420a38aa7c7eab789d08b2834f75fb375f6eb"
-  integrity sha512-/KYSug255SQoOcrQBxkHeAub9qOcJD3B/n5livcsGKsbv4TOiefNmUAwpMP0Vea5AVBUApolr+iF0GqZixns1w==
 
 md5.js@^1.3.4:
   version "1.3.5"

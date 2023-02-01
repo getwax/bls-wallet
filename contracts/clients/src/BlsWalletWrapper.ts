@@ -1,15 +1,7 @@
 /* eslint-disable camelcase */
 
 import { ethers, BigNumber } from "ethers";
-import {
-  keccak256,
-  solidityKeccak256,
-  solidityPack,
-  hexlify,
-  randomBytes,
-} from "ethers/lib/utils";
-import * as mcl from "mcl-wasm";
-
+import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
 import {
   BlsWalletSigner,
   initBlsWalletSigner,
@@ -26,6 +18,8 @@ import {
   VerificationGateway,
   VerificationGateway__factory,
 } from "../typechain-types";
+
+import getRandomBlsPrivateKey from "./signer/getRandomBlsPrivateKey";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -128,12 +122,7 @@ export default class BlsWalletWrapper {
   }
 
   static async getRandomBlsPrivateKey(): Promise<string> {
-    await mcl.init(mcl.BN_SNARK1);
-    mcl.setMapToMode(mcl.BN254);
-    const r = hexlify(randomBytes(12));
-    const fr = new mcl.Fr();
-    fr.setHashOf(r);
-    return `0x${fr.serializeToHexStr()}`;
+    return getRandomBlsPrivateKey();
   }
 
   /**
