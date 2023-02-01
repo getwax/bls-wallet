@@ -2,7 +2,6 @@
 
 import { ethers, BigNumber } from "ethers";
 import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
-
 import {
   BlsWalletSigner,
   initBlsWalletSigner,
@@ -19,6 +18,8 @@ import {
   VerificationGateway,
   VerificationGateway__factory,
 } from "../typechain-types";
+
+import getRandomBlsPrivateKey from "./signer/getRandomBlsPrivateKey";
 
 type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
 
@@ -118,6 +119,10 @@ export default class BlsWalletWrapper {
     }
 
     return this.ExpectedAddress(verificationGateway, pubKeyHash);
+  }
+
+  static async getRandomBlsPrivateKey(): Promise<string> {
+    return getRandomBlsPrivateKey();
   }
 
   /**
@@ -251,6 +256,71 @@ export default class BlsWalletWrapper {
    */
   PublicKeyStr(): string {
     return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
+  }
+
+  async getSetRecoveryHashBundle(
+    salt: string,
+    recoverWalletAddress: string,
+  ): Promise<Bundle> {
+    const saltHash = ethers.utils.formatBytes32String(salt);
+    const walletHash = this.blsWalletSigner.getPublicKeyHash(this.privateKey);
+    const recoveryHash = ethers.utils.solidityKeccak256(
+      ["address", "bytes32", "bytes32"],
+      [recoverWalletAddress, walletHash, saltHash],
+    );
+
+    return this.sign({
+      nonce: await this.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: this.walletContract.address,
+          encodedFunction: this.walletContract.interface.encodeFunctionData(
+            "setRecoveryHash",
+            [recoveryHash],
+          ),
+        },
+      ],
+    });
+  }
+
+  async getRecoverWalletBundle(
+    recoveryAddress: string,
+    newPrivateKey: string,
+    recoverySalt: string,
+    verificationGateway: VerificationGateway,
+  ): Promise<Bundle> {
+    const updatedWallet = await BlsWalletWrapper.connect(
+      newPrivateKey,
+      verificationGateway.address,
+      verificationGateway.provider,
+    );
+    const addressMessage = solidityPack(["address"], [recoveryAddress]);
+    const addressSignature = updatedWallet.signMessage(addressMessage);
+
+    const recoveryWalletHash = await verificationGateway.hashFromWallet(
+      recoveryAddress,
+    );
+    const saltHash = ethers.utils.formatBytes32String(recoverySalt);
+
+    return this.sign({
+      nonce: await this.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: verificationGateway.address,
+          encodedFunction: verificationGateway.interface.encodeFunctionData(
+            "recoverWallet",
+            [
+              addressSignature,
+              recoveryWalletHash,
+              saltHash,
+              updatedWallet.PublicKey(),
+            ],
+          ),
+        },
+      ],
+    });
   }
 
   static async #BlsWalletSigner(

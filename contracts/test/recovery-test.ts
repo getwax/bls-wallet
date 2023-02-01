@@ -46,8 +46,10 @@ describe("Recovery", async function () {
   let vg: VerificationGateway;
   let wallet1: BlsWalletWrapper;
   let wallet2: BlsWalletWrapper;
+  let wallet3: BlsWalletWrapper;
   let walletAttacker: BlsWalletWrapper;
   let blsWallet: BLSWallet;
+  let blsWallet3: BLSWallet;
   let recoverySigner;
   let hash1, hash2, hashAttacker;
   let salt;
@@ -58,8 +60,10 @@ describe("Recovery", async function () {
 
     wallet1 = await fx.lazyBlsWallets[0]();
     wallet2 = await fx.lazyBlsWallets[1]();
+    wallet3 = await fx.lazyBlsWallets[2]();
     walletAttacker = await fx.lazyBlsWallets[2]();
     blsWallet = await ethers.getContractAt("BLSWallet", wallet1.address);
+    blsWallet3 = await ethers.getContractAt("BLSWallet", wallet3.address);
     recoverySigner = (await ethers.getSigners())[1];
 
     hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
@@ -131,6 +135,55 @@ describe("Recovery", async function () {
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await (await blsWallet.setAnyPending()).wait();
     expect(await blsWallet.recoveryHash()).to.equal(newRecoveryHash);
+  });
+
+  it("should set recovery hash using client bls wallet wrapper function", async function () {
+    // set instantly from 0 value
+    const trustedWalletAddress = "0x7321d1D33E94f294c144aA332f75411372741d33";
+    const walletHash = await vg.hashFromWallet(wallet3.address);
+    const salt = "test salt";
+    const saltHash = ethers.utils.formatBytes32String(salt);
+    const recoveryHash = ethers.utils.solidityKeccak256(
+      ["address", "bytes32", "bytes32"],
+      [trustedWalletAddress, walletHash, saltHash],
+    );
+
+    const bundle = await wallet3.getSetRecoveryHashBundle(
+      "test salt",
+      trustedWalletAddress,
+    );
+    const bundleTxn = await fx.verificationGateway.processBundle(bundle);
+    await bundleTxn.wait();
+
+    expect(await blsWallet3.recoveryHash()).to.equal(recoveryHash);
+  });
+
+  it("should recover blswallet via blswallet to new bls key using bls client module", async function () {
+    // Set recovery hash
+    const wallet4 = await fx.lazyBlsWallets[3]();
+    const bundle = await wallet4.getSetRecoveryHashBundle(
+      "test salt",
+      wallet3.address,
+    );
+    const bundleTxn = await fx.verificationGateway.processBundle(bundle);
+    await bundleTxn.wait();
+
+    // Recover wallet
+    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const recoveryBundle = await wallet3.getRecoverWalletBundle(
+      wallet4.address,
+      newPrivateKey,
+      "test salt",
+      fx.verificationGateway,
+    );
+    const recoveryBundleTxn = await fx.verificationGateway.processBundle(
+      recoveryBundle,
+    );
+    await recoveryBundleTxn.wait();
+
+    const newHash = wallet4.blsWalletSigner.getPublicKeyHash(newPrivateKey);
+    expect(await vg.hashFromWallet(wallet4.address)).to.eql(newHash);
+    expect(await vg.walletFromHash(newHash)).to.eql(wallet4.address);
   });
 
   it("should recover blswallet via blswallet to new bls key", async function () {
