@@ -54,8 +54,7 @@ yarn start-hardhat
 
 The [aggregator](../aggregator/) is a service that accepts transaction bundles (including those that contain a single transaction) and submits aggregations of these bundles to L2.
 
-Update these values in `./aggregator/.env`.
-See [aggregator](../aggregator/README.md) for a detailed breakdown of each env property.
+Update the following values in `./aggregator/.env`
 
 ```sh
 RPC_URL=http://localhost:8545
@@ -63,6 +62,8 @@ RPC_URL=http://localhost:8545
 NETWORK_CONFIG_PATH=../contracts/networks/local.json
 ...
 ```
+
+See the aggregator [environment variables table](../aggregator/README.md#environment-variables) for a detailed breakdown of each env property
 
 ```sh
 cd .. # root of repo
