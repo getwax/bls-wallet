@@ -38,10 +38,10 @@ runAggregatorProxy(
 );
 ```
 
-## Instant wallet without dapp-sponsored transaction
+## Instant wallet example without dapp-sponsored transaction
 ![Instant wallet without dapp-sponsored transactions](./../docs/images/system-overview/instant-wallet-without-dapp-sponsored-txs.jpg)
 
-## Instant wallet with dapp-sponsored transaction
+## Instant wallet example with dapp-sponsored transaction
 ![Instant wallet with dapp-sponsored transaction](./../docs/images/system-overview/instant-wallet-with-dapp-sponsored-txs.jpg)
 
 ## Example dApp using a proxy aggregator
