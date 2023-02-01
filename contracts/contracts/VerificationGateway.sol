@@ -91,7 +91,7 @@ contract VerificationGateway
             bytes32 keyHash = keccak256(abi.encodePacked(bundle.senderPublicKeys[i]));
             address walletAddress = address(walletFromHash[keyHash]);
             if (walletAddress == address(0)) {
-                walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
+                walletAddress = address(uint160(uint256(keccak256(abi.encodePacked(
                     bytes1(0xff),
                     address(this),
                     keyHash,
@@ -351,15 +351,15 @@ contract VerificationGateway
     function measureOperationGas(
         uint256[BLS_KEY_LEN] memory publicKey,
         IWallet.Operation calldata op
-    ) external returns (uint) {
+    ) external returns (uint256) {
         // Don't allow this to actually be executed on chain. Static calls only.
         require(msg.sender == address(0), "VG: read only");
 
         IWallet wallet = getOrCreateWallet(publicKey);
 
-        uint gasBefore = gasleft();
+        uint256 gasBefore = gasleft();
         wallet.performOperation(op);
-        uint gasUsed = gasBefore - gasleft();
+        uint256 gasUsed = gasBefore - gasleft();
 
         return gasUsed;
     }
