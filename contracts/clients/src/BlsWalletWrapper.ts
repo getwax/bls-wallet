@@ -230,6 +230,11 @@ export default class BlsWalletWrapper {
   /** Sign an operation with an estimate of the gas required. */
   async signWithGasEstimate(
     operation: Omit<Operation, "gas">,
+
+    /**
+     * Optional: Multiply estimate by `(1+overhead)` to account for uncertainty.
+     * Reduces the chance of running out of gas.
+     */
     overhead = 0,
   ): Promise<Bundle> {
     let gas = await this.estimateGas(operation);
