@@ -1,6 +1,8 @@
 # BLS Contract Wallet
 Lower-cost layer 2 transactions via a smart contract wallet.
 
+**Note:** _while these contracts have been formally audited, they are not deemed ready for production use._
+
 ## Background
 Smart contract wallets give users additional safety mechanisms independent of any wallet UI they may use, but are expensive to deploy (and use on) on Ethereum's layer 1.
 
