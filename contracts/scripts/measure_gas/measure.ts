@@ -1,6 +1,5 @@
 import { ContractTransaction, ContractReceipt } from "ethers";
 import { writeFile } from "fs/promises";
-import { sleep } from "../sleep";
 import { validateConfig } from "./config";
 import { sumArbitrumMeasurements } from "./networks/arbitrum";
 import { init } from "./setup";
@@ -73,12 +72,6 @@ export const measureGas = async (cfg: GasMeasurementConfig): Promise<void> => {
 
   for (const txnCfg of cfg.transactionConfigs) {
     for (const numTxns of cfg.transactionBatches) {
-      console.log(
-        `next measurement in ${cfg.delayBetweenMeasurementsSeconds} seconds`,
-      );
-      const sleepMilliseconds = cfg.delayBetweenMeasurementsSeconds * 1000;
-      await sleep(sleepMilliseconds);
-
       console.log(
         `running ${txnCfg.type}, mode ${txnCfg.mode}. # of transactions: ${numTxns}`,
       );

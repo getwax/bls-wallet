@@ -1,5 +1,11 @@
 import { TransactionFactory, TxData } from "@ethereumjs/tx";
-import { BigNumber, ContractTransaction /*, utils */ } from "ethers";
+import { BigNumber, ContractTransaction, Signer /*, utils */ } from "ethers";
+import {
+  BlsWalletSigner,
+  Bundle,
+  getOperationResults,
+} from "../../clients/src";
+import { VerificationGateway } from "../../typechain-types";
 
 export const getTransactionSizeBytes = (rawTxnData: string): number => {
   /**
@@ -76,4 +82,33 @@ export const getManyRawTransactions = (
   txns: ContractTransaction[],
 ): string[] => {
   return txns.map((t) => getRawTransaction(t));
+};
+
+export const processBundles = async (
+  verificationGateway: VerificationGateway,
+  eoaSigner: Signer,
+  blsSigner: BlsWalletSigner,
+  bundles: Bundle[],
+): Promise<void> => {
+  const aggBundle = blsSigner.aggregate(bundles);
+
+  const txn = await verificationGateway
+    .connect(eoaSigner)
+    .processBundle(aggBundle);
+  const txnReceipt = await txn.wait();
+  const results = getOperationResults(txnReceipt);
+
+  const errors = results
+    .filter((r) => r.error)
+    .map(
+      ({ error: err }, i) =>
+        `operation ${i}, action ${err.actionIndex}: ${err.message}`,
+    );
+  if (errors.length) {
+    throw new Error(
+      `VerificationGateway.processBundle returned errors: [${errors.join(
+        ", ",
+      )}]`,
+    );
+  }
 };

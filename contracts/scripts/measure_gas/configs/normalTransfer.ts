@@ -17,7 +17,7 @@ const createNormalTransfer = async (
     const toAddress = ctx.rng.item(ctx.blsWallets, [blsWallet]).address;
     const amount = getTransferAmount(ctx);
 
-    const tx = await ctx.erc20Token
+    const tx = await ctx.contracts.testToken
       .connect(ctx.eoaSigner)
       .transfer(toAddress, amount);
     txns.push(tx);

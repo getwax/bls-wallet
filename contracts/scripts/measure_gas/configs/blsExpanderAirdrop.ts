@@ -33,13 +33,13 @@ const createBlsExpanderAirdrop = async (
     (a) => `0x${a.encodedFunction.slice(10)}`,
   );
 
-  const txn = await ctx.fx.blsExpander
+  const txn = await ctx.contracts.blsExpander
     .connect(ctx.eoaSigner)
     .blsCallMultiSameCallerContractFunction(
       sendingWallet.PublicKey(),
       operation.nonce,
       bundle.signature,
-      ctx.erc20Token.address,
+      ctx.contracts.testToken.address,
       methodId,
       encodedParamSets,
     );

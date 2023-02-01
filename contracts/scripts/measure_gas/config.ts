@@ -11,9 +11,6 @@ export const validateConfig = (cfg: GasMeasurementConfig) => {
   if (!cfg.numBlsWallets) {
     throw new ConfigError(`numBlsWallets < 1`);
   }
-  if (!cfg.tokenSupply) {
-    throw new ConfigError(`tokenSupply < 1`);
-  }
   if (!cfg.transactionBatches.length) {
     throw new ConfigError(`transactionBatches len < 1`);
   }

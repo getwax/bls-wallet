@@ -1,8 +1,6 @@
-import { ContractTransaction, Signer } from "ethers";
+import { ContractTransaction, providers, Signer } from "ethers";
 import Web3 from "web3";
-import { BlsWalletWrapper } from "../../clients/src";
-import Fixture from "../../shared/helpers/Fixture";
-import { IERC20 } from "../../typechain-types";
+import { BlsWalletContracts, BlsWalletWrapper } from "../../clients/src";
 import { Rng } from "./rng";
 
 export type TransactionType = "transfer" | "approveAndSwap";
@@ -41,13 +39,13 @@ export type GasMeasurementError = Readonly<{
 }>;
 
 export type GasMeasurementContext = Readonly<{
-  fx: Fixture;
+  contracts: BlsWalletContracts;
+  provider: providers.Provider;
   eoaSigner: Signer;
   rng: Rng;
   blsWallets: BlsWalletWrapper[];
   numTransactions: number;
   web3Provider: Web3;
-  erc20Token: IERC20;
 }>;
 export type InitialContext = Omit<GasMeasurementContext, "numTransactions">;
 
@@ -60,10 +58,10 @@ export type GasMeasurementTransactionConfig = Readonly<{
 export type GasMeasurementConfig = Readonly<{
   seed: string;
   numBlsWallets: number;
-  tokenSupply: number;
+  numTokensPerWallet: number;
+  networkConfigName: string;
   transactionBatches: number[];
   transactionConfigs: GasMeasurementTransactionConfig[];
-  delayBetweenMeasurementsSeconds: number;
 }>;
 
 export type GasMeasurementResult = Readonly<{

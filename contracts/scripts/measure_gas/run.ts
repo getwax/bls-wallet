@@ -21,7 +21,8 @@ const run = async (): Promise<void> => {
   const config: GasMeasurementConfig = {
     seed: "bls_wallet_measure_gas",
     numBlsWallets: 16,
-    tokenSupply: 1000000,
+    numTokensPerWallet: 100_000,
+    networkConfigName: "local",
     // Max tested limited on goerli arbitrum is 151 bls transfers.
     // transactionBatches: [50, 100, 150],
     transactionBatches: [10],
@@ -31,7 +32,6 @@ const run = async (): Promise<void> => {
       blsExpanderAirdropConfig,
       blsExpanderAddressTransferConfig,
     ],
-    delayBetweenMeasurementsSeconds: 5,
   };
 
   await measureGas(config);

@@ -1,10 +1,11 @@
+import { providers, Wallet } from "ethers";
 import { network } from "hardhat";
 import { HttpNetworkConfig } from "hardhat/types";
 import Web3 from "web3";
-import { BlsWalletWrapper, getOperationResults } from "../../clients/src";
-import Fixture from "../../shared/helpers/Fixture";
+import { BlsWalletWrapper, connectToContracts } from "../../clients/src";
+import getNetworkConfig from "../../shared/helpers/getNetworkConfig";
 import { Rng } from "./rng";
-import { deployToken, distributeToken } from "./token";
+import { mintTokens } from "./token";
 import { GasMeasurementConfig, InitialContext } from "./types";
 
 const generatePrivateKey = (rng: Rng): string => {
@@ -12,105 +13,58 @@ const generatePrivateKey = (rng: Rng): string => {
   return `0x${secretNum.toString(16)}`;
 };
 
-const initWallets = async (
-  fx: Fixture,
-  wallets: BlsWalletWrapper[],
-): Promise<void> => {
-  console.log("initializing BLS Wallets...");
-
-  const walletsWithoutNonces = await Promise.all(
-    wallets.map(async (w) => {
-      const nonce = await w.Nonce();
-      if (nonce.gt(0)) {
-        return undefined;
-      }
-      return w;
-    }),
-  );
-  const uninitializedWallets = walletsWithoutNonces.filter((w) => w);
-  if (!uninitializedWallets.length) {
-    console.log("all BLS Wallets already initialized");
-    return;
-  }
-
-  const initBundles = await uninitializedWallets.map((w) =>
-    w.sign({
-      nonce: 0,
-      actions: [],
-    }),
-  );
-  const aggBundle = wallets[0].blsWalletSigner.aggregate(initBundles);
-
-  const txn = await fx.verificationGateway.processBundle(aggBundle);
-  const txnReceipt = await txn.wait();
-  const results = getOperationResults(txnReceipt);
-
-  const errors = results
-    .filter((r) => r.error)
-    .map(({ error: err }) => `${err.actionIndex}: ${err.message}`);
-  if (errors.length) {
-    const uninitializedWalletAddresses = uninitializedWallets.map(
-      (w) => w.address,
-    );
-    throw new Error(
-      `failed to initilaize wallets [${uninitializedWalletAddresses.join(
-        ", ",
-      )}]: [${errors.join(", ")}]`,
-    );
-  }
-
-  console.log(`${initBundles.length} BLS Wallets initialized`);
-};
-
 export const init = async (
   cfg: GasMeasurementConfig,
 ): Promise<InitialContext> => {
   const rng = new Rng(cfg.seed);
-  const fx = await Fixture.create(0);
-  const [eoaSigner] = fx.signers;
-
   const walletPrivateKeys = Array.from(new Array(cfg.numBlsWallets), () =>
     generatePrivateKey(rng),
   );
+
+  const { url } = network.config as HttpNetworkConfig;
+  if (!url) {
+    throw new Error("ethers.js network config does not have url");
+  }
+  const provider = new providers.JsonRpcProvider({
+    url,
+    throttleLimit: 20,
+    throttleSlotInterval: 1000,
+  });
+  const eoaSigner = Wallet.fromMnemonic(process.env.MAIN_MNEMONIC).connect(
+    provider,
+  );
+
+  const netCfg = await getNetworkConfig(cfg.networkConfigName);
+  const contracts = await connectToContracts(provider, netCfg);
 
   const blsWallets = await Promise.all(
     walletPrivateKeys.map(async (privKey) =>
       BlsWalletWrapper.connect(
         privKey,
-        fx.verificationGateway.address,
-        fx.provider,
+        contracts.verificationGateway.address,
+        provider,
       ),
     ),
   );
-  const walletAddresses = blsWallets.map((w) => w.address);
 
   /**
-   * Create all wallets before first measurement
-   * so extra cost does not skew results.
+   * This will also create any new wallets before
+   * first measurement, so extra cost does not skew results.
    */
-  await initWallets(fx, blsWallets);
-
-  const erc20Token = await deployToken(eoaSigner, cfg.tokenSupply);
-  console.log(`token deployed to ${erc20Token.address}`);
-  await distributeToken(eoaSigner, erc20Token, walletAddresses);
-  console.log("token distributed to BLS Wallets");
+  await mintTokens(contracts, eoaSigner, blsWallets, cfg.numTokensPerWallet);
 
   /**
    * Web3 needs to be used over ethers.js since its transaction
    * receipts do not have the 'gasUsedForL1' property stripped out.
    */
-  const { url: rpcUrl } = network.config as HttpNetworkConfig;
-  if (!rpcUrl) {
-    throw new Error("ethers.js network config does not have url");
-  }
-  const web3Provider = new Web3(rpcUrl);
+  const web3Provider = new Web3(url);
 
   return {
-    fx,
+    contracts,
+    provider,
     eoaSigner,
     rng,
     blsWallets,
     web3Provider,
-    erc20Token,
   };
 };

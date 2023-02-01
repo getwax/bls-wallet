@@ -31,9 +31,9 @@ const createBlsTransfers = async (
     bundles.push(bundle);
   }
 
-  const aggBundle = ctx.fx.blsWalletSigner.aggregate(bundles);
+  const aggBundle = ctx.blsWallets[0].blsWalletSigner.aggregate(bundles);
 
-  const txn = await ctx.fx.verificationGateway
+  const txn = await ctx.contracts.verificationGateway
     .connect(ctx.eoaSigner)
     .processBundle(aggBundle);
   return [txn];
