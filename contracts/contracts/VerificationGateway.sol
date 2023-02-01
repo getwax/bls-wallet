@@ -353,7 +353,7 @@ contract VerificationGateway
         IWallet.Operation calldata op
     ) external returns (uint) {
         // Don't allow this to actually be executed on chain. Static calls only.
-        require(msg.sender == address(0));
+        require(msg.sender == address(0), "VG: read only");
 
         IWallet wallet = getOrCreateWallet(publicKey);
 
