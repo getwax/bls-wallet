@@ -230,6 +230,11 @@ export default class BlsWalletWrapper {
   /** Sign an operation with an estimate of the gas required. */
   async signWithGasEstimate(
     operation: Omit<Operation, "gas">,
+
+    /**
+     * Optional: Multiply estimate by `(1+overhead)` to account for uncertainty.
+     * Reduces the chance of running out of gas.
+     */
     overhead = 0,
   ): Promise<Bundle> {
     let gas = await this.estimateGas(operation);
@@ -239,7 +244,7 @@ export default class BlsWalletWrapper {
   }
 
   /** Estimate the gas needed for an operation. */
-  async estimateGas(operation: Omit<Operation, "gas">) {
+  async estimateGas(operation: Omit<Operation, "gas">): Promise<BigNumber> {
     const exists =
       (await this.walletContract.provider.getCode(this.address)) !== "0x";
 
