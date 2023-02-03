@@ -2,7 +2,7 @@
 
 Lower-cost layer 2 transactions via a smart contract wallet.
 
-**Note:** _while these contracts have been formally audited, they are not deemed ready for production use._
+**Note:** _These contracts are in the process of being formally audited and are currently NOT recommended for production use._
 
 ## Background
 
