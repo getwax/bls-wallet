@@ -5,7 +5,24 @@ import { dirname, parseArgs } from "../deps.ts";
 import * as shell from "./helpers/shell.ts";
 import repoDir from "../src/helpers/repoDir.ts";
 
-const args = parseArgs(Deno.args);
+const parseArgsResult = parseArgs(Deno.args);
+
+const args = {
+  /** Whether to push the image to dockerhub. */
+  push: parseArgsResult["push"],
+
+  /** Override the image name. Default: aggregator. */
+  imageName: parseArgsResult["image-name"],
+
+  /** Only build the image, ie - don't also serialize the image to disk. */
+  imageOnly: parseArgsResult["image-only"],
+
+  /** Prefix all docker commands with sudo. */
+  sudoDocker: parseArgsResult["sudo-docker"],
+
+  /** Tag the image with latest as well as the default git-${sha}. */
+  alsoTagLatest: parseArgsResult["also-tag-latest"],
+};
 
 Deno.chdir(repoDir);
 const buildDir = `${repoDir}/build`;
@@ -15,7 +32,7 @@ await copyTypescriptFiles();
 await buildDockerImage();
 await tarballTypescriptFiles();
 
-if (args["push"]) {
+if (args.push) {
   await pushDockerImage();
 }
 
@@ -90,10 +107,10 @@ async function tarballTypescriptFiles() {
 
 async function buildDockerImage() {
   const tag = await Tag();
-  const imageName = args["image-name"] ?? "aggregator";
+  const imageName = args.imageName ?? "aggregator";
   const imageNameAndTag = `${imageName}:${tag}`;
 
-  const sudoDockerArg = args["sudo-docker"] === true ? ["sudo"] : [];
+  const sudoDockerArg = args.sudoDocker ? ["sudo"] : [];
 
   await shell.run(
     ...sudoDockerArg,
@@ -104,7 +121,7 @@ async function buildDockerImage() {
     imageNameAndTag,
   );
 
-  if (args["also-tag-latest"]) {
+  if (args.alsoTagLatest) {
     await shell.run(
       ...sudoDockerArg,
       "docker",
@@ -116,7 +133,7 @@ async function buildDockerImage() {
 
   console.log("\nDocker image created:", imageNameAndTag);
 
-  if (args["image-only"]) {
+  if (args.imageName) {
     return;
   }
 
@@ -151,12 +168,12 @@ async function buildDockerImage() {
 
 async function pushDockerImage() {
   const tag = await Tag();
-  const imageName = args["image-name"] ?? "aggregator";
+  const imageName = args.imageName ?? "aggregator";
   const imageNameAndTag = `${imageName}:${tag}`;
 
   await shell.run("docker", "push", imageNameAndTag);
 
-  if (args["also-tag-latest"]) {
+  if (args.alsoTagLatest) {
     await shell.run("docker", "push", `${imageName}:latest`);
   }
 }
