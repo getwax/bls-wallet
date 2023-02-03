@@ -15,6 +15,10 @@ await copyTypescriptFiles();
 await buildDockerImage();
 await tarballTypescriptFiles();
 
+if (args["push"]) {
+  await pushDockerImage();
+}
+
 console.log("\nAggregator build complete");
 
 async function allFiles() {
@@ -133,4 +137,12 @@ async function buildDockerImage() {
   await shell.run("gzip", tarFilePath);
 
   console.log(`Docker image saved: ${tarFilePath}.gz`);
+}
+
+async function pushDockerImage() {
+  const buildName = await BuildName();
+  const imageName = args["image-name"] ?? "aggregator";
+  const imageNameAndTag = `${imageName}:${buildName}`;
+
+  await shell.run("docker", "push", imageNameAndTag);
 }
