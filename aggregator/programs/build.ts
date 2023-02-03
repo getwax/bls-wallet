@@ -15,7 +15,7 @@ await copyTypescriptFiles();
 await buildDockerImage();
 await tarballTypescriptFiles();
 
-console.log("Aggregator build complete");
+console.log("\nAggregator build complete");
 
 async function allFiles() {
   return [
@@ -86,6 +86,7 @@ async function tarballTypescriptFiles() {
 
 async function buildDockerImage() {
   const buildName = await BuildName();
+  const imageName = `aggregator:${buildName}`;
 
   const sudoDockerArg = args["sudo-docker"] === true ? ["sudo"] : [];
 
@@ -95,21 +96,24 @@ async function buildDockerImage() {
     "build",
     repoDir,
     "-t",
-    `aggregator:${buildName}`,
+    imageName,
   );
+
+  console.log("\nDocker image created:", imageName);
 
   if (args["image-only"]) {
     return;
   }
 
   const dockerImageName = `aggregator-${buildName}-docker-image`;
+  const tarFilePath = `${repoDir}/build/${dockerImageName}.tar`;
 
   await shell.run(
     ...sudoDockerArg,
     "docker",
     "save",
     "--output",
-    `${repoDir}/build/${dockerImageName}.tar`,
+    tarFilePath,
     `aggregator:${buildName}`,
   );
 
@@ -121,12 +125,11 @@ async function buildDockerImage() {
       "sudo",
       "chown",
       username,
-      `${repoDir}/build/${dockerImageName}.tar`,
+      tarFilePath,
     );
   }
 
-  await shell.run(
-    "gzip",
-    `${repoDir}/build/${dockerImageName}.tar`,
-  );
+  await shell.run("gzip", tarFilePath);
+
+  console.log(`Docker image saved: ${tarFilePath}.gz`);
 }
