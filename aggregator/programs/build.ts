@@ -33,7 +33,7 @@ async function allFiles() {
   ];
 }
 
-async function BuildName() {
+async function Tag() {
   const commitShort = (await shell.Line("git", "rev-parse", "HEAD")).slice(
     0,
     7,
@@ -89,9 +89,9 @@ async function tarballTypescriptFiles() {
 }
 
 async function buildDockerImage() {
-  const buildName = await BuildName();
+  const tag = await Tag();
   const imageName = args["image-name"] ?? "aggregator";
-  const imageNameAndTag = `${imageName}:${buildName}`;
+  const imageNameAndTag = `${imageName}:${tag}`;
 
   const sudoDockerArg = args["sudo-docker"] === true ? ["sudo"] : [];
 
@@ -109,7 +109,7 @@ async function buildDockerImage() {
       ...sudoDockerArg,
       "docker",
       "tag",
-      `${imageName}:${buildName}`,
+      `${imageName}:${tag}`,
       `${imageName}:latest`,
     );
   }
@@ -120,7 +120,7 @@ async function buildDockerImage() {
     return;
   }
 
-  const dockerImageFileName = `${imageName}-${buildName}-docker-image`;
+  const dockerImageFileName = `${imageName}-${tag}-docker-image`;
   const tarFilePath = `${repoDir}/build/${dockerImageFileName}.tar`;
 
   await shell.run(
@@ -150,9 +150,9 @@ async function buildDockerImage() {
 }
 
 async function pushDockerImage() {
-  const buildName = await BuildName();
+  const tag = await Tag();
   const imageName = args["image-name"] ?? "aggregator";
-  const imageNameAndTag = `${imageName}:${buildName}`;
+  const imageNameAndTag = `${imageName}:${tag}`;
 
   await shell.run("docker", "push", imageNameAndTag);
 
