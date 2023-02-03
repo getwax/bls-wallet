@@ -104,6 +104,16 @@ async function buildDockerImage() {
     imageNameAndTag,
   );
 
+  if (args["also-tag-latest"]) {
+    await shell.run(
+      ...sudoDockerArg,
+      "docker",
+      "tag",
+      `${imageName}:${buildName}`,
+      `${imageName}:latest`,
+    );
+  }
+
   console.log("\nDocker image created:", imageNameAndTag);
 
   if (args["image-only"]) {
@@ -145,4 +155,8 @@ async function pushDockerImage() {
   const imageNameAndTag = `${imageName}:${buildName}`;
 
   await shell.run("docker", "push", imageNameAndTag);
+
+  if (args["also-tag-latest"]) {
+    await shell.run("docker", "push", `${imageName}:latest`);
+  }
 }
