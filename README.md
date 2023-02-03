@@ -2,7 +2,7 @@
 
 ## What is BLS Wallet?
 
-A set of components to easily utilize Ethereum Layer 2 smart contract wallets that use [BLS signatures](https://en.wikipedia.org/wiki/BLS_digital_signature) to aggregate transactions, in order to reduce gas costs. Our smart contract wallet supports recovery, atomic multi-action transactions, sponsored transactions and user-controlled upgradeability.
+A set of components to bring lower gas costs to EVM rollups via aggregated [BLS signatures](https://en.wikipedia.org/wiki/BLS_digital_signature). Our smart contract wallet supports recovery, atomic multi-action operations, sponsored transactions and user-controlled upgradability.
 
 You can watch a full end-to-end demo of the project [here](https://www.youtube.com/watch?v=MOQ3sCLP56g).
 
