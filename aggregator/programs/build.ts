@@ -98,6 +98,10 @@ async function buildDockerImage() {
     `aggregator:${buildName}`,
   );
 
+  if (args["image-only"]) {
+    return;
+  }
+
   const dockerImageName = `aggregator-${buildName}-docker-image`;
 
   await shell.run(
