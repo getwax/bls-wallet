@@ -1,4 +1,4 @@
-FROM denoland/deno:1.23.4
+FROM denoland/deno:1.30.1
 
 ADD build /app
 WORKDIR /app
