@@ -4,6 +4,8 @@ These steps will setup this repo on your machine for local development for the m
 By default the extension will connect to contracts already deployed on Arbitrum Nitro testnet and a public Aggregator running on https://arbitrum-goerli.blswallet.org/
 If you would like to target a remote network instead, follow the steps outlined in [Remote Development](./remote_development.md).
 
+If you're running a Windows machine, we recommend using [WSL2](https://learn.microsoft.com/en-us/windows/wsl/).
+
 ## Dependencies
 
 ### Required

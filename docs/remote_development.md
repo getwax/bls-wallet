@@ -2,6 +2,8 @@
 
 These steps will setup this repo on your machine for targeting a remote chain, such as an EVM compatible L2. If you would like to target a local network instead, follow the steps outlined in [Local Development](./local_development.md).
 
+If you're running a Windows machine, we recommend using [WSL2](https://learn.microsoft.com/en-us/windows/wsl/).
+
 ## Dependencies
 
 ### Required
