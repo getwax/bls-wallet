@@ -6,4 +6,3 @@
 - Setup the BLS Wallet components for:
   - [Local develeopment](./local_development.md)
   - [Remote development](./remote_development.md)
-
