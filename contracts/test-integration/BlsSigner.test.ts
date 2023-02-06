@@ -126,7 +126,7 @@ describe("BlsSigner", () => {
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
     const expectedNonce = await BlsWalletWrapper.Nonce(
-      blsSigner.wallet.PublicKey(),
+      blsSigner.blsSignerWrapper.wallet.PublicKey(),
       blsSigner.verificationGatewayAddress,
       blsProvider,
     );
@@ -142,7 +142,7 @@ describe("BlsSigner", () => {
     expect(transactionResponse).to.be.an("object").that.includes({
       hash: transactionResponse.hash,
       to: recipient,
-      from: blsSigner.wallet.address,
+      from: blsSigner.blsSignerWrapper.wallet.address,
       data: "0x",
       chainId: 31337,
       type: 2,
@@ -289,11 +289,11 @@ describe("BlsSigner", () => {
     expect(resolvedResult).to.be.an("object").that.includes({
       to: recipient,
       value: transactionAmount,
-      from: blsSigner.wallet.address,
+      from: blsSigner.blsSignerWrapper.wallet.address,
     });
   });
 
-  // TODO: This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
+  // TODO: This tests a non-overridden method and seems to pull the nonce from the aggregator instance.
   // So will revisit this and ensure the method is using the correct nonce at a later stage.
   it("should populate transaction", async () => {
     // Arrange
@@ -311,7 +311,7 @@ describe("BlsSigner", () => {
     expect(result).to.be.an("object").that.includes({
       to: recipient,
       value: transactionAmount,
-      from: blsSigner.wallet.address,
+      from: blsSigner.blsSignerWrapper.wallet.address,
       type: 2,
       chainId: 31337,
     });
@@ -328,9 +328,9 @@ describe("BlsSigner", () => {
     // Arrange
     const address = ethers.Wallet.createRandom().address;
     const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(
+      blsSigner.blsSignerWrapper.wallet.blsWalletSigner.signMessage(
         address,
-        blsSigner.wallet.privateKey,
+        blsSigner.blsSignerWrapper.wallet.privateKey,
       );
 
     const expectedSignature = RLP.encode(blsWalletSignerSignature);
@@ -348,9 +348,9 @@ describe("BlsSigner", () => {
     const bytes: number[] = [68, 219, 115, 219, 26, 248, 170, 165]; // random bytes
     const hexString = ethers.utils.hexlify(bytes);
     const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(
+      blsSigner.blsSignerWrapper.wallet.blsWalletSigner.signMessage(
         hexString,
-        blsSigner.wallet.privateKey,
+        blsSigner.blsSignerWrapper.wallet.privateKey,
       );
 
     const expectedSignature = RLP.encode(blsWalletSignerSignature);
@@ -485,7 +485,7 @@ describe("BlsSigner", () => {
   it("should get the balance of an account", async () => {
     // Arrange
     const expectedBalance = await regularProvider.getBalance(
-      blsSigner.wallet.address,
+      blsSigner.blsSignerWrapper.wallet.address,
     );
 
     // Act
@@ -531,7 +531,7 @@ describe("BlsSigner", () => {
   it("should get the number of transactions the account has sent", async () => {
     // Arrange
     const expectedTransactionCount = await regularProvider.getTransactionCount(
-      blsSigner.wallet.address,
+      blsSigner.blsSignerWrapper.wallet.address,
     );
 
     // Act
@@ -577,7 +577,7 @@ describe("BlsSigner", () => {
     expect(spy).to.have.been.called.with({
       to: testERC20.address,
       data: testERC20.interface.encodeFunctionData("totalSupply"),
-      from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
+      from: blsSigner.blsSignerWrapper.wallet.address, // Assert that 'from' has been added to the provider call
     });
   });
 
@@ -601,7 +601,7 @@ describe("BlsSigner", () => {
     expect(spy).to.have.been.called.with({
       to: recipient,
       value: parseEther("1"),
-      from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
+      from: blsSigner.blsSignerWrapper.wallet.address, // Assert that 'from' has been added to the provider call
     });
   });
 

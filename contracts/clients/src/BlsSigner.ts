@@ -5,12 +5,25 @@ import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
 import { ActionData, bundleToDto } from "./signer";
 
+/**
+ * Dedicated class to manage the private key and BlsWalletWrapper instance.
+ */
+export class BlsSignerWrapper {
+  wallet: BlsWalletWrapper;
+  privateKey: string;
+
+  constructor(wallet: BlsWalletWrapper, privateKey: string) {
+    this.wallet = wallet;
+    this.privateKey = privateKey;
+  }
+}
+
 export const _constructorGuard = {};
 
 export default class BlsSigner extends Signer {
   override readonly provider: BlsProvider;
   readonly verificationGatewayAddress!: string;
-  wallet!: BlsWalletWrapper;
+  blsSignerWrapper: BlsSignerWrapper | undefined;
   _index: number;
   _address: string;
 
@@ -51,10 +64,15 @@ export default class BlsSigner extends Signer {
 
   private async initializeWallet(privateKey: string | Promise<string>) {
     const resolvedPrivateKey = await privateKey;
-    this.wallet = await BlsWalletWrapper.connect(
+
+    const blsWalletWrapper = await BlsWalletWrapper.connect(
       resolvedPrivateKey,
       this.verificationGatewayAddress,
       this.provider,
+    );
+    this.blsSignerWrapper = new BlsSignerWrapper(
+      blsWalletWrapper,
+      resolvedPrivateKey,
     );
   }
 
@@ -75,12 +93,15 @@ export default class BlsSigner extends Signer {
     };
 
     const nonce = await BlsWalletWrapper.Nonce(
-      this.wallet.PublicKey(),
+      this.blsSignerWrapper!.wallet.PublicKey(),
       this.verificationGatewayAddress,
       this.provider,
     );
 
-    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    const bundle = this.blsSignerWrapper!.wallet.sign({
+      nonce,
+      actions: [action],
+    });
     const result = await this.provider.aggregator.add(bundle);
 
     if ("failures" in result) {
@@ -90,7 +111,7 @@ export default class BlsSigner extends Signer {
     return this.constructTransactionResponse(
       action,
       result.hash,
-      this.wallet.address,
+      this.blsSignerWrapper!.wallet.address,
       nonce,
     );
   }
@@ -101,7 +122,7 @@ export default class BlsSigner extends Signer {
       return this._address;
     }
 
-    this._address = this.wallet.address;
+    this._address = this.blsSignerWrapper!.wallet.address;
     return this._address;
   }
 
@@ -116,7 +137,7 @@ export default class BlsSigner extends Signer {
     const chainId = await this.getChainId();
     if (!nonce) {
       nonce = await BlsWalletWrapper.Nonce(
-        this.wallet.PublicKey(),
+        this.blsSignerWrapper!.wallet.PublicKey(),
         this.verificationGatewayAddress,
         this.provider,
       );
@@ -171,12 +192,15 @@ export default class BlsSigner extends Signer {
     };
 
     const nonce = await BlsWalletWrapper.Nonce(
-      this.wallet.PublicKey(),
+      this.blsSignerWrapper!.wallet.PublicKey(),
       this.verificationGatewayAddress,
       this.provider,
     );
 
-    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    const bundle = this.blsSignerWrapper!.wallet.sign({
+      nonce,
+      actions: [action],
+    });
     return JSON.stringify(bundleToDto(bundle));
   }
 
@@ -188,7 +212,7 @@ export default class BlsSigner extends Signer {
       message = hexlify(message);
     }
 
-    const signedMessage = this.wallet.signMessage(message);
+    const signedMessage = this.blsSignerWrapper!.wallet.signMessage(message);
     return RLP.encode(signedMessage);
   }
 
@@ -208,10 +232,10 @@ export default class BlsSigner extends Signer {
     return new UncheckedBlsSigner(
       _constructorGuard,
       this.provider,
-      this.wallet?.privateKey ??
+      this.blsSignerWrapper?.wallet.privateKey ??
         (async (): Promise<string> => {
           await this.initPromise;
-          return this.wallet.privateKey;
+          return this.blsSignerWrapper!.wallet.privateKey;
         })(),
       this._address || this._index,
     );

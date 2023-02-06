@@ -9,7 +9,7 @@ import poll from "./helpers/poll";
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
   readonly verificationGatewayAddress: string;
-  signer!: BlsSigner;
+  signer: BlsSigner | undefined;
 
   constructor(
     aggregatorUrl: string,
@@ -74,7 +74,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return this.signer.constructTransactionResponse(
       actionData,
       result.hash,
-      this.signer.wallet.address,
+      this.signer.blsSignerWrapper!.wallet.address,
     );
   }
 
