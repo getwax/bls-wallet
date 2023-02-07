@@ -12,6 +12,13 @@ interface IWallet {
         IWallet.ActionData[] actions;
     }
 
+    /** Aggregated signature with corresponding senders + operations */
+    struct Bundle {
+        uint256[2] signature;
+        uint256[4][] senderPublicKeys;
+        Operation[] operations;
+    }
+
     struct ActionData {
         uint256 ethValue;
         address contractAddress;

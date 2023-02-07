@@ -3,49 +3,82 @@ pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
 import "./VLQ.sol";
+import "./interfaces/IWallet.sol";
+import "./interfaces/IExpander.sol";
+
+// Aka gateway, but we only care about processBundle here
+interface IBundleProcessor {
+    function processBundle(
+        IWallet.Bundle memory bundle
+    ) external returns (
+        bool[] memory successes,
+        bytes[][] memory results
+    );
+}
 
 contract BLSExpanderDelegator {
-    mapping(uint256 => address) public expanders;
+    uint8 constant BLS_KEY_LEN = 4;
+
+    mapping(uint256 => IExpander) public expanders;
     uint256 public expanderCount = 0;
 
-    function run(bytes calldata input) external view {
-        uint256 len = input.length;
-        uint256 pos = 0;
+    IBundleProcessor gateway;
 
-        while (pos < len) {
-            (uint256 expanderIndex, uint256 bytesRead) = VLQ.decode(input[pos:]);
-            pos += bytesRead;
-
-            // TODO
-        }
-
-        // Loop until all bytes consumed:
-        //   Read VLQ
-        //   Delegate to specialized expander
-        //   Accumulate operations
-        // Call VerificationGateway
+    constructor(IBundleProcessor gatewayParam) {
+        gateway = gatewayParam;
     }
 
-    function registerExpander(address expander) external {
-        expanders[expanderCount] = expander;
-        expanderCount++;
-    }
-
-    function readVLQ(bytes calldata data) internal pure returns (
-        uint256 result,
-        uint256 bytesRead
+    function run(bytes calldata input) external returns (
+        bool[] memory successes,
+        bytes[][] memory results
     ) {
-        uint256 multiplier = 1;
+        IWallet.Bundle memory bundle;
 
-        while (true) {
-            uint8 currentByte = uint8(data[bytesRead++]);
-            result += multiplier * (currentByte & 127);
+        (uint256 bundleLen, uint256 bundleLenBytesRead) = VLQ.decode(input);
+        bundle.senderPublicKeys = new uint256[BLS_KEY_LEN][](bundleLen);
+        bundle.operations = new IWallet.Operation[](bundleLen);
 
-            if (currentByte & 128 == 0) {
-                break;
+        uint256 opsByteLen = input.length - 64;
+        bundle.signature = abi.decode(input[opsByteLen:], (uint256[2]));
+
+        uint256 inputPos = bundleLenBytesRead;
+        uint256 opsDecoded = 0;
+
+        while (inputPos < opsByteLen) {
+            (uint256 expanderIndex, uint256 vlqBytesRead) = VLQ.decode(
+                input[inputPos:]
+            );
+
+            inputPos += vlqBytesRead;
+
+            IExpander expander = expanders[expanderIndex];
+
+            (
+                uint256[BLS_KEY_LEN][] memory senderPublicKeys,
+                IWallet.Operation[] memory operations,
+                uint256 expanderBytesRead
+            ) = expander.expand(input[inputPos:]);
+
+            inputPos += expanderBytesRead;
+
+            require(
+                senderPublicKeys.length == operations.length,
+                "keys vs ops length mismatch"
+            );
+
+            for (uint256 i = 0; i < operations.length; i++) {
+                bundle.senderPublicKeys[opsDecoded + i] = senderPublicKeys[i];
+                bundle.operations[opsDecoded + i] = operations[i];
             }
 
-            multiplier <<= 7;
+            opsDecoded += operations.length;
         }
+
+        return gateway.processBundle(bundle);
+    }
+
+    function registerExpander(IExpander expander) external {
+        expanders[expanderCount] = expander;
+        expanderCount++;
     }
 }
