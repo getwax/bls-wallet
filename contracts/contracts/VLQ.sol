@@ -24,7 +24,7 @@ pragma abicoder v2;
  * https://en.wikipedia.org/wiki/Variable-length_quantity
  */
 library VLQ {
-    function decode(bytes calldata data) internal pure returns (
+    function decode(bytes calldata data) public pure returns (
         uint256 result,
         uint256 bytesRead
     ) {

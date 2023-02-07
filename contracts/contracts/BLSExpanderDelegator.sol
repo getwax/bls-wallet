@@ -4,8 +4,6 @@ pragma abicoder v2;
 
 import "./VLQ.sol";
 
-import "hardhat/console.sol";
-
 contract BLSExpanderDelegator {
     mapping(uint256 => address) public expanders;
     uint256 public expanderCount = 0;
@@ -18,7 +16,7 @@ contract BLSExpanderDelegator {
             (uint256 expanderIndex, uint256 bytesRead) = VLQ.decode(input[pos:]);
             pos += bytesRead;
 
-            console.log("expanderIndex", expanderIndex);
+            // TODO
         }
 
         // Loop until all bytes consumed:
