@@ -2,6 +2,8 @@
 pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
+import "./VLQ.sol";
+
 import "hardhat/console.sol";
 
 contract BLSExpanderDelegator {
@@ -13,7 +15,7 @@ contract BLSExpanderDelegator {
         uint256 pos = 0;
 
         while (pos < len) {
-            (uint256 expanderIndex, uint256 bytesRead) = readVLQ(input[pos:]);
+            (uint256 expanderIndex, uint256 bytesRead) = VLQ.decode(input[pos:]);
             pos += bytesRead;
 
             console.log("expanderIndex", expanderIndex);
