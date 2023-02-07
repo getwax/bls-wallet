@@ -1,8 +1,8 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: Unlicense
 pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
-import "./VLQ.sol";
+import "./lib/VLQ.sol";
 import "./interfaces/IWallet.sol";
 import "./interfaces/IExpander.sol";
 
