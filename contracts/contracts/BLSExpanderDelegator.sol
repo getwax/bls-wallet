@@ -19,10 +19,8 @@ interface IBundleProcessor {
 contract BLSExpanderDelegator {
     uint8 constant BLS_KEY_LEN = 4;
 
-    mapping(uint256 => IExpander) public expanders;
-    uint256 public expanderCount = 0;
-
     IBundleProcessor gateway;
+    mapping(uint256 => IExpander) public expanders;
 
     constructor(IBundleProcessor gatewayParam) {
         gateway = gatewayParam;
@@ -89,8 +87,15 @@ contract BLSExpanderDelegator {
         return gateway.processBundle(bundle);
     }
 
-    function registerExpander(IExpander expander) external {
-        expanders[expanderCount] = expander;
-        expanderCount++;
+    function registerExpander(
+        uint256 expanderIndex,
+        IExpander expander
+    ) external {
+        require(
+            expanders[expanderIndex] == IExpander(address(0)),
+            "Index not available"
+        );
+
+        expanders[expanderIndex] = expander;
     }
 }
