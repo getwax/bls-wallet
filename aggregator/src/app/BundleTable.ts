@@ -11,11 +11,15 @@ import assertExists from "../helpers/assertExists.ts";
 import ExplicitAny from "../helpers/ExplicitAny.ts";
 import { parseBundleDto } from "./parsers.ts";
 import nil from "../helpers/nil.ts";
+import assert from "../helpers/assert.ts";
 
 /**
  * Representation used when talking to the database. It's 'raw' in the sense
  * that it only uses primitive types, because the database cannot know about
  * custom classes like BigNumber.
+ *
+ * Note that this isn't as raw as it used to be - sqlite returns each row as an
+ * array. This is still the raw representation of each field though.
  */
 type RawRow = {
   id: number;
@@ -53,8 +57,24 @@ export function makeHash() {
 
 export type BundleRow = Row;
 
-function fromRawRow(rawRow: RawRow): Row {
-  const parseBundleResult = parseBundleDto(JSON.parse(rawRow.bundle));
+function fromRawRow(rawRow: RawRow | sqlite.Row): Row {
+  if (Array.isArray(rawRow)) {
+    rawRow = {
+      id: rawRow[0],
+      status: rawRow[1],
+      hash: rawRow[2],
+      bundle: rawRow[3],
+      eligibleAfter: rawRow[4],
+      nextEligibilityDelay: rawRow[5],
+      submitError: rawRow[6],
+      receipt: rawRow[7],
+    };
+  }
+
+  const parseBundleResult = parseBundleDto(
+    JSON.parse(rawRow.bundle),
+  );
+
   if ("failures" in parseBundleResult) {
     throw new Error(parseBundleResult.failures.join("\n"));
   }
@@ -64,18 +84,21 @@ function fromRawRow(rawRow: RawRow): Row {
     throw new Error(`Not a valid bundle status: ${status}`);
   }
 
-  const receipt: ethers.ContractReceipt = rawRow.receipt
-    ? JSON.parse(rawRow.receipt)
+  const rawReceipt = rawRow.receipt;
+
+  const receipt: ethers.ContractReceipt = rawReceipt
+    ? JSON.parse(rawReceipt)
     : nil;
 
   return {
-    ...rawRow,
-    submitError: rawRow.submitError ?? nil,
+    id: rawRow.id,
+    status,
+    hash: rawRow.hash,
     bundle: bundleFromDto(parseBundleResult.success),
     eligibleAfter: BigNumber.from(rawRow.eligibleAfter),
     nextEligibilityDelay: BigNumber.from(rawRow.nextEligibilityDelay),
+    submitError: rawRow.submitError ?? nil,
     receipt,
-    status,
   };
 }
 
@@ -92,11 +115,13 @@ function toInsertRawRow(row: InsertRow): InsertRawRow {
 
 function toRawRow(row: Row): RawRow {
   return {
-    ...row,
-    submitError: row.submitError ?? null,
-    bundle: JSON.stringify(bundleToDto(row.bundle)),
+    id: row.id,
+    status: row.status,
+    hash: row.hash,
+    bundle: JSON.stringify(row.bundle),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
+    submitError: row.submitError ?? null,
     receipt: JSON.stringify(row.receipt),
   };
 }
@@ -195,7 +220,7 @@ export default class BundleTable {
     }
   }
 
-  findEligible(blockNumber: BigNumber, limit: number) {
+  findEligible(blockNumber: BigNumber, limit: number): Row[] {
     const rows = this.db.query(
       `
         SELECT * from bundles
@@ -210,30 +235,29 @@ export default class BundleTable {
       },
     );
 
-    // TODO: Manual test / typing
-    return rows.map(fromRawRow as any);
+    return rows.map(fromRawRow);
   }
 
   findBundle(hash: string): Row | nil {
-    const rows: RawRow[] = this.db.query(
+    const rows = this.db.query(
       "SELECT * from bundles WHERE hash = :hash",
       { ":hash": hash },
-    ) as any; // TODO: Manual test / typing
+    );
 
     return rows.map(fromRawRow)[0];
   }
 
   count(): number {
-    const result = this.db.query("SELECT COUNT(*) FROM bundles");
+    const result = this.db.query("SELECT COUNT(*) FROM bundles")[0][0];
+    assert(typeof result === "number");
 
-    // TODO: Manual test / typing
-    return result[0][0] as number;
+    return result;
   }
 
   all(): Row[] {
-    const rawRows: RawRow[] = this.db.query(
+    const rawRows = this.db.query(
       "SELECT * FROM bundles",
-    ) as any; // TODO: Manual test / typing
+    );
 
     return rawRows.map(fromRawRow);
   }
