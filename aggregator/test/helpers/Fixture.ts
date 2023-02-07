@@ -7,12 +7,11 @@ import {
   MockERC20,
   MockERC20__factory,
   NetworkConfig,
-  QueryClient,
+  sqlite,
 } from "../../deps.ts";
 
 import testRng from "./testRng.ts";
 import EthereumService from "../../src/app/EthereumService.ts";
-import createQueryClient from "../../src/app/createQueryClient.ts";
 import Range from "../../src/helpers/Range.ts";
 import Mutex from "../../src/helpers/Mutex.ts";
 import TestClock from "./TestClock.ts";
@@ -29,8 +28,6 @@ import AggregationStrategy, {
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
-
-let existingClient: QueryClient | nil = nil;
 
 export const bundleServiceDefaultTestConfig:
   typeof BundleService.defaultConfig = {
@@ -149,33 +146,36 @@ export default class Fixture {
     return this.rng.seed("blsPrivateKey", ...extraSeeds).address();
   }
 
-  async createBundleService(
+  createBundleService(
     config = bundleServiceDefaultTestConfig,
     aggregationStrategyConfig = aggregationStrategyDefaultTestConfig,
   ) {
-    const suffix = this.rng.seed("table-name-suffix").address().slice(2, 12);
-    existingClient = createQueryClient(this.emit, existingClient);
-    const queryClient = existingClient;
-
     const tablesMutex = new Mutex();
 
-    const tableName = `bundles_test_${suffix}`;
-    const table = await BundleTable.createFresh(queryClient, tableName);
+    const table = new BundleTable(
+      new sqlite.DB(),
+      (sql, params) => {
+        if (env.LOG_QUERIES) {
+          this.emit({
+            type: "db-query",
+            data: { sql, params },
+          });
+        }
+      },
+    );
 
-    const aggregationStrategy = (
+    const aggregationStrategy =
       aggregationStrategyConfig === aggregationStrategyDefaultTestConfig
         ? this.aggregationStrategy
         : new AggregationStrategy(
           this.blsWalletSigner,
           this.ethereumService,
           aggregationStrategyConfig,
-        )
-    );
+        );
 
     const bundleService = new BundleService(
       this.emit,
       this.clock,
-      queryClient,
       tablesMutex,
       table,
       this.blsWalletSigner,
@@ -204,7 +204,7 @@ export default class Fixture {
 
   allBundles(
     bundleService: BundleService,
-  ): Promise<BundleRow[]> {
+  ): BundleRow[] {
     return bundleService.bundleTable.all();
   }
 

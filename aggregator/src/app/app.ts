@@ -1,4 +1,4 @@
-import { Application, oakCors } from "../../deps.ts";
+import { Application, oakCors, sqlite } from "../../deps.ts";
 
 import * as env from "../env.ts";
 import EthereumService from "./EthereumService.ts";
@@ -8,7 +8,6 @@ import AdminRouter from "./AdminRouter.ts";
 import AdminService from "./AdminService.ts";
 import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
-import createQueryClient from "./createQueryClient.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
 import getNetworkConfig from "../helpers/getNetworkConfig.ts";
@@ -22,11 +21,18 @@ export default async function app(emit: (evt: AppEvent) => void) {
 
   const clock = Clock.create();
 
-  const queryClient = createQueryClient(emit);
   const bundleTableMutex = new Mutex();
-  const bundleTable = await BundleTable.create(
-    queryClient,
-    env.BUNDLE_TABLE_NAME,
+
+  const bundleTable = new BundleTable(
+    new sqlite.DB("aggregator.sqlite"),
+    (sql, params) => {
+      if (env.LOG_QUERIES) {
+        emit({
+          type: "db-query",
+          data: { sql, params },
+        });
+      }
+    },
   );
 
   const ethereumService = await EthereumService.create(
@@ -46,7 +52,6 @@ export default async function app(emit: (evt: AppEvent) => void) {
   const bundleService = new BundleService(
     emit,
     clock,
-    queryClient,
     bundleTableMutex,
     bundleTable,
     ethereumService.blsWalletSigner,

@@ -127,8 +127,11 @@ function toRawRow(row: Row): RawRow {
 }
 
 export default class BundleTable {
-  constructor(public db: sqlite.DB) {
-    this.db.query(`
+  constructor(
+    public db: sqlite.DB,
+    public onQuery = (_sql: string, _params?: sqlite.QueryParameterSet) => {},
+  ) {
+    this.dbQuery(`
       CREATE TABLE IF NOT EXISTS bundles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         status TEXT NOT NULL,
@@ -142,11 +145,16 @@ export default class BundleTable {
     `);
   }
 
+  dbQuery(sql: string, params?: sqlite.QueryParameterSet) {
+    this.onQuery(sql, params);
+    return this.db.query(sql, params);
+  }
+
   add(...rows: InsertRow[]) {
     for (const row of rows) {
       const rawRow = toInsertRawRow(row);
 
-      this.db.query(
+      this.dbQuery(
         `
           INSERT INTO bundles (
             id,
@@ -184,7 +192,7 @@ export default class BundleTable {
   update(row: Row) {
     const rawRow = toRawRow(row);
 
-    this.db.query(
+    this.dbQuery(
       `
         UPDATE bundles
         SET
@@ -213,7 +221,7 @@ export default class BundleTable {
 
   remove(...rows: Row[]) {
     for (const row of rows) {
-      this.db.query(
+      this.dbQuery(
         "DELETE FROM bundles WHERE id = :id",
         { ":id": assertExists(row.id) },
       );
@@ -221,7 +229,7 @@ export default class BundleTable {
   }
 
   findEligible(blockNumber: BigNumber, limit: number): Row[] {
-    const rows = this.db.query(
+    const rows = this.dbQuery(
       `
         SELECT * from bundles
         WHERE
@@ -239,7 +247,7 @@ export default class BundleTable {
   }
 
   findBundle(hash: string): Row | nil {
-    const rows = this.db.query(
+    const rows = this.dbQuery(
       "SELECT * from bundles WHERE hash = :hash",
       { ":hash": hash },
     );
@@ -248,14 +256,14 @@ export default class BundleTable {
   }
 
   count(): number {
-    const result = this.db.query("SELECT COUNT(*) FROM bundles")[0][0];
+    const result = this.dbQuery("SELECT COUNT(*) FROM bundles")[0][0];
     assert(typeof result === "number");
 
     return result;
   }
 
   all(): Row[] {
-    const rawRows = this.db.query(
+    const rawRows = this.dbQuery(
       "SELECT * FROM bundles",
     );
 
@@ -263,11 +271,11 @@ export default class BundleTable {
   }
 
   drop() {
-    this.db.query("DROP TABLE bundles");
+    this.dbQuery("DROP TABLE bundles");
   }
 
   clear() {
-    this.db.query("DELETE from bundles");
+    this.dbQuery("DELETE from bundles");
   }
 }
 

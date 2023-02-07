@@ -13,11 +13,11 @@ import Fixture, {
 
 const oneToken = ethers.utils.parseUnits("1.0", 18);
 
-async function createBundleService(
+function createBundleService(
   fx: Fixture,
   feesOverride?: typeof aggregationStrategyDefaultTestConfig["fees"],
 ) {
-  return await fx.createBundleService(
+  return fx.createBundleService(
     bundleServiceDefaultTestConfig,
     {
       ...aggregationStrategyDefaultTestConfig,
@@ -64,7 +64,7 @@ function approveAndSendTokensToOrigin(
 }
 
 Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
-  const bundleService = await createBundleService(fx);
+  const bundleService = createBundleService(fx);
 
   const [wallet] = await fx.setupWallets(1);
 
@@ -88,7 +88,7 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1000),
   );
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -98,11 +98,11 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1000),
   );
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 });
 
 Fixture.test("submits bundle with sufficient token fee", async (fx) => {
-  const bundleService = await createBundleService(fx);
+  const bundleService = createBundleService(fx);
 
   const [wallet] = await fx.setupWallets(1, {
     tokenBalance: oneToken,
@@ -120,7 +120,7 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
     oneToken,
   );
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -143,7 +143,7 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
 Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
   const es = fx.ethereumService;
 
-  const bundleService = await createBundleService(fx, {
+  const bundleService = createBundleService(fx, {
     type: "ether",
     allowLosses: true,
     breakevenOperationCount: 4.5,
@@ -204,7 +204,7 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
     fee,
   );
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -227,7 +227,7 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
 Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) => {
   const breakevenOperationCount = 4.5;
 
-  const bundleService = await createBundleService(fx, {
+  const bundleService = createBundleService(fx, {
     type: "token",
     address: fx.testErc20.address,
     allowLosses: true,
@@ -275,13 +275,13 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
   // Restore this value now that all the bundles are added together
   bundleService.config.breakevenOperationCount = breakevenOperationCount;
 
-  assertEquals(await bundleService.bundleTable.count(), 10n);
+  assertEquals(await bundleService.bundleTable.count(), 10);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
   await bundleService.waitForConfirmations();
 
-  const remainingBundles = await fx.allBundles(bundleService);
+  const remainingBundles = fx.allBundles(bundleService);
   const remainingPendingBundles = remainingBundles
     .filter((bundle) => bundle.status === "pending");
 

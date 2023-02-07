@@ -7,11 +7,11 @@ export default class AdminService {
     private bundleTable: BundleTable,
   ) {}
 
-  async resetBundles() {
-    await this.bundleTable.clear();
+  resetBundles() {
+    this.bundleTable.clear();
   }
 
-  async bundleCount(): Promise<bigint> {
-    return await this.bundleTable.count();
+  bundleCount(): number {
+    return this.bundleTable.count();
   }
 }
