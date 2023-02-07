@@ -15,6 +15,6 @@ describe("expander", function () {
   });
 
   it("decodes VLQs", async () => {
-    await expander.run("0x8302"); // 259 = 3 + 2 * 128
+    await expander.run("0x8203"); // 259 = 2 * 128^1 + 3 * 128^0
   });
 });

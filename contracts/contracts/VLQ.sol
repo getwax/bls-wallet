@@ -28,19 +28,20 @@ library VLQ {
         uint256 result,
         uint256 bytesRead
     ) {
-        // TODO: Switch to big-endian
-
-        uint256 multiplier = 1;
-
         while (true) {
             uint8 currentByte = uint8(data[bytesRead++]);
-            result += multiplier * (currentByte & 127);
 
-            if (currentByte & 128 == 0) {
+            // Add the lowest 7 bits to the result
+            result += currentByte & 0x7f;
+
+            // If the highest bit is zero, stop
+            if (currentByte & 0x80 == 0) {
                 break;
             }
 
-            multiplier <<= 7;
+            // We're continuing. Shift the result 7 bits to the left (higher) to
+            // make room.
+            result <<= 7;
         }
     }
 }
