@@ -3,14 +3,8 @@ import {
   Bundle,
   bundleFromDto,
   bundleToDto,
-  Constraint,
-  CreateTableMode,
-  DataType,
   ethers,
-  QueryClient,
-  QueryTable,
-  TableOptions,
-  unsketchify,
+  sqlite,
 } from "../../deps.ts";
 
 import assertExists from "../helpers/assertExists.ts";
@@ -58,17 +52,6 @@ export function makeHash() {
 }
 
 export type BundleRow = Row;
-
-const tableOptions: TableOptions = {
-  id: { type: DataType.Serial, constraint: Constraint.PrimaryKey },
-  status: { type: DataType.VarChar },
-  hash: { type: DataType.VarChar },
-  bundle: { type: DataType.VarChar },
-  submitError: { type: DataType.VarChar, nullable: true },
-  eligibleAfter: { type: DataType.VarChar },
-  nextEligibilityDelay: { type: DataType.VarChar },
-  receipt: { type: DataType.VarChar },
-};
 
 function fromRawRow(rawRow: RawRow): Row {
   const parseBundleResult = parseBundleDto(JSON.parse(rawRow.bundle));
@@ -119,99 +102,148 @@ function toRawRow(row: Row): RawRow {
 }
 
 export default class BundleTable {
-  queryTable: QueryTable<RawRow>;
-  safeName: string;
-
-  private constructor(public queryClient: QueryClient, tableName: string) {
-    this.queryTable = this.queryClient.table<RawRow>(tableName);
-    this.safeName = unsketchify(this.queryTable.name);
+  constructor(public db: sqlite.DB) {
+    this.db.query(`
+      CREATE TABLE IF NOT EXISTS bundles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        status TEXT NOT NULL,
+        hash TEXT NOT NULL,
+        bundle TEXT NOT NULL,
+        eligibleAfter TEXT NOT NULL,
+        nextEligibilityDelay TEXT NOT NULL,
+        submitError TEXT,
+        receipt TEXT
+      )
+    `);
   }
 
-  static async create(
-    queryClient: QueryClient,
-    tableName: string,
-  ): Promise<BundleTable> {
-    const table = new BundleTable(queryClient, tableName);
-    await table.queryTable.create(tableOptions, CreateTableMode.IfNotExists);
+  add(...rows: InsertRow[]) {
+    for (const row of rows) {
+      const rawRow = toInsertRawRow(row);
 
-    return table;
+      this.db.query(
+        `
+          INSERT INTO bundles (
+            id,
+            status,
+            hash,
+            bundle,
+            eligibleAfter,
+            nextEligibilityDelay,
+            submitError,
+            receipt
+          ) VALUES (
+            :id,
+            :status,
+            :hash,
+            :bundle,
+            :eligibleAfter,
+            :nextEligibilityDelay,
+            :submitError,
+            :receipt
+          )
+        `,
+        {
+          ":status": rawRow.status,
+          ":hash": rawRow.hash,
+          ":bundle": rawRow.bundle,
+          ":eligibleAfter": rawRow.eligibleAfter,
+          ":nextEligibilityDelay": rawRow.nextEligibilityDelay,
+          ":submitError": rawRow.submitError,
+          ":receipt": rawRow.receipt,
+        },
+      );
+    }
   }
 
-  static async createFresh(
-    queryClient: QueryClient,
-    tableName: string,
-  ) {
-    const table = new BundleTable(queryClient, tableName);
-    await table.queryTable.drop(true);
-    await table.queryTable.create(tableOptions, CreateTableMode.IfNotExists);
+  update(row: Row) {
+    const rawRow = toRawRow(row);
 
-    return table;
-  }
-
-  async add(...rows: InsertRow[]) {
-    await this.queryTable.insert(...rows.map(toInsertRawRow));
-  }
-
-  async update(row: Row) {
-    await this.queryTable.where({ id: row.id }).update(toRawRow(row));
-  }
-
-  async remove(...rows: Row[]) {
-    await Promise.all(rows.map((row) =>
-      this.queryTable
-        .where({ id: assertExists(row.id) })
-        .delete()
-    ));
-  }
-
-  async findEligible(blockNumber: BigNumber, limit: number) {
-    const rows: RawRow[] = await this.queryClient.query(
+    this.db.query(
       `
-        SELECT * from ${this.safeName}
-        WHERE 1=1
-          AND "eligibleAfter" <= '${toUint256Hex(blockNumber)}'
-          AND "status" = 'pending'
-        ORDER BY "id" ASC
-        LIMIT ${limit}
-      `,
-    );
-    return rows.map(fromRawRow);
-  }
-
-  async findBundle(hash: string): Promise<Row | nil> {
-    const rows: RawRow[] = await this.queryClient.query(
-      `
-        SELECT * from ${this.safeName}
+        UPDATE bundles
+        SET
+          status = :status,
+          hash = :hash,
+          bundle = :bundle,
+          eligibleAfter = :eligibleAfter,
+          nextEligibilityDelay = :nextEligibilityDelay,
+          submitError = :submitError,
+          receipt = :receipt
         WHERE
-            "hash" = '${hash}'
+          id = :id
       `,
+      {
+        ":id": rawRow.id,
+        ":status": rawRow.status,
+        ":hash": rawRow.hash,
+        ":bundle": rawRow.bundle,
+        ":eligibleAfter": rawRow.eligibleAfter,
+        ":nextEligibilityDelay": rawRow.nextEligibilityDelay,
+        ":submitError": rawRow.submitError,
+        ":receipt": rawRow.receipt,
+      },
     );
+  }
+
+  remove(...rows: Row[]) {
+    for (const row of rows) {
+      this.db.query(
+        "DELETE FROM bundles WHERE id = :id",
+        { ":id": assertExists(row.id) },
+      );
+    }
+  }
+
+  findEligible(blockNumber: BigNumber, limit: number) {
+    const rows = this.db.query(
+      `
+        SELECT * from bundles
+        WHERE
+          eligibleAfter <= '${toUint256Hex(blockNumber)}' AND
+          status = 'pending'
+        ORDER BY id ASC
+        LIMIT :limit
+      `,
+      {
+        ":limit": limit,
+      },
+    );
+
+    // TODO: Manual test / typing
+    return rows.map(fromRawRow as any);
+  }
+
+  findBundle(hash: string): Row | nil {
+    const rows: RawRow[] = this.db.query(
+      "SELECT * from bundles WHERE hash = :hash",
+      { ":hash": hash },
+    ) as any; // TODO: Manual test / typing
+
     return rows.map(fromRawRow)[0];
   }
 
-  async count(): Promise<bigint> {
-    const result = await this.queryClient.query(
-      `SELECT COUNT(*) FROM ${this.queryTable.name}`,
-    );
-    return result[0].count as bigint;
+  count(): number {
+    const result = this.db.query("SELECT COUNT(*) FROM bundles");
+
+    // TODO: Manual test / typing
+    return result[0][0] as number;
   }
 
-  async all(): Promise<Row[]> {
-    const rawRows: RawRow[] = await this.queryClient.query(
-      `SELECT * FROM ${this.queryTable.name}`,
-    );
+  all(): Row[] {
+    const rawRows: RawRow[] = this.db.query(
+      "SELECT * FROM bundles",
+    ) as any; // TODO: Manual test / typing
 
     return rawRows.map(fromRawRow);
   }
 
-  async drop() {
-    await this.queryTable.drop(true);
+  drop() {
+    this.db.query("DROP TABLE bundles");
   }
 
-  async clear() {
-    return await this.queryClient.query(`
-      DELETE from ${this.safeName}
-    `);
+  clear() {
+    this.db.query("DELETE from bundles");
   }
 }
 

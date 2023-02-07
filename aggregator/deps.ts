@@ -72,6 +72,9 @@ const { bundleFromDto, bundleToDto, initBlsWalletSigner } = blsWalletClients;
 export { bundleFromDto, bundleToDto, initBlsWalletSigner };
 
 // Database dependencies
+
+export * as sqlite from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
+
 export {
   Constraint,
   CreateTableMode,
