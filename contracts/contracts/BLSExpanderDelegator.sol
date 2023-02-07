@@ -34,17 +34,27 @@ contract BLSExpanderDelegator {
     ) {
         IWallet.Bundle memory bundle;
 
-        (uint256 bundleLen, uint256 bundleLenBytesRead) = VLQ.decode(input);
-        bundle.senderPublicKeys = new uint256[BLS_KEY_LEN][](bundleLen);
-        bundle.operations = new IWallet.Operation[](bundleLen);
+        // Get the number of operations upfront so that we can allocate the
+        // memory. This information is technically redundant but extracting it
+        // by decoding everything before we have a place to put it would add a
+        // lot of complexity. For <=127 operations it's only one extra byte.
+        // Otherwise 2 bytes.
+        (uint256 opsLen, uint256 opsLenBytesRead) = VLQ.decode(input);
+        bundle.senderPublicKeys = new uint256[BLS_KEY_LEN][](opsLen);
+        bundle.operations = new IWallet.Operation[](opsLen);
 
+        // The signature is just the last 64 bytes.
         uint256 opsByteLen = input.length - 64;
         bundle.signature = abi.decode(input[opsByteLen:], (uint256[2]));
 
-        uint256 inputPos = bundleLenBytesRead;
+        // Solidity/EVM doesn't provide an abstraction for a stateful reader of
+        // bytes. To implement this, we keep track of where we're up to in the
+        // input and increment it as we read things.
+        uint256 inputPos = opsLenBytesRead;
         uint256 opsDecoded = 0;
 
         while (inputPos < opsByteLen) {
+            // First figure out which expander to use.
             (uint256 expanderIndex, uint256 vlqBytesRead) = VLQ.decode(
                 input[inputPos:]
             );
@@ -53,6 +63,7 @@ contract BLSExpanderDelegator {
 
             IExpander expander = expanders[expanderIndex];
 
+            // Then use it to expand operations (usually just 1).
             (
                 uint256[BLS_KEY_LEN][] memory senderPublicKeys,
                 IWallet.Operation[] memory operations,
@@ -74,6 +85,7 @@ contract BLSExpanderDelegator {
             opsDecoded += operations.length;
         }
 
+        // Finished expanding. Now just return the call.
         return gateway.processBundle(bundle);
     }
 
