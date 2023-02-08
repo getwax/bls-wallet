@@ -482,6 +482,183 @@ describe("BlsProvider", () => {
     expect(isProvider).to.equal(true);
     expect(isProviderWithInvalidProvider).to.equal(false);
   });
+
+  it("should return the number of transactions an address has ever sent", async function () {
+    // Arrange
+    const address = await blsSigner.getAddress();
+    const expectedTransactionCount = await regularProvider.getTransactionCount(
+      address,
+    );
+    const expectedTransactionCountAtEaliestBlockTag =
+      await blsProvider.getTransactionCount(address, "earliest");
+
+    // Act
+    const transactionCount = await blsProvider.getTransactionCount(address);
+    const transactionCountAtEaliestBlockTag =
+      await blsProvider.getTransactionCount(address, "earliest");
+
+    // Assert
+    expect(transactionCount).to.equal(expectedTransactionCount);
+    expect(transactionCountAtEaliestBlockTag).to.equal(
+      expectedTransactionCountAtEaliestBlockTag,
+    );
+  });
+
+  it("should return the block from the network", async function () {
+    // Arrange
+    const expectedBlock = await regularProvider.getBlock(1);
+
+    // Act
+    const block = await blsProvider.getBlock(1);
+
+    // Assert
+    expect(block).to.be.an("object").that.deep.includes({
+      hash: expectedBlock.hash,
+      parentHash: expectedBlock.parentHash,
+      number: expectedBlock.number,
+      timestamp: expectedBlock.timestamp,
+      difficulty: expectedBlock.difficulty,
+      miner: expectedBlock.miner,
+      extraData: expectedBlock.extraData,
+      transactions: expectedBlock.transactions,
+    });
+    expect(block.gasLimit).to.deep.equal(expectedBlock.gasLimit);
+    expect(block.gasUsed).to.deep.equal(expectedBlock.gasUsed);
+    expect(block.baseFeePerGas).to.deep.equal(expectedBlock.baseFeePerGas);
+    expect(block._difficulty).to.deep.equal(expectedBlock._difficulty);
+  });
+
+  it("should return the block from the network with an array of TransactionResponse objects", async function () {
+    // Arrange
+    const expectedBlock = await regularProvider.getBlockWithTransactions(1);
+
+    // Act
+    const block = await blsProvider.getBlockWithTransactions(1);
+
+    // Assert
+    // Assert block
+    expect(block).to.be.an("object").that.deep.includes({
+      hash: expectedBlock.hash,
+      parentHash: expectedBlock.parentHash,
+      number: expectedBlock.number,
+      timestamp: expectedBlock.timestamp,
+      difficulty: expectedBlock.difficulty,
+      miner: expectedBlock.miner,
+      extraData: expectedBlock.extraData,
+    });
+    expect(block.gasLimit).to.deep.equal(expectedBlock.gasLimit);
+    expect(block.gasUsed).to.deep.equal(expectedBlock.gasUsed);
+    expect(block.baseFeePerGas).to.deep.equal(expectedBlock.baseFeePerGas);
+    expect(block._difficulty).to.deep.equal(expectedBlock._difficulty);
+
+    // Assert transaction in block
+    expect(block.transactions[0]).to.be.an("object").that.deep.includes({
+      hash: expectedBlock.transactions[0].hash,
+      type: expectedBlock.transactions[0].type,
+      accessList: expectedBlock.transactions[0].accessList,
+      blockHash: expectedBlock.transactions[0].blockHash,
+      blockNumber: expectedBlock.transactions[0].blockNumber,
+      transactionIndex: 0,
+      from: expectedBlock.transactions[0].from,
+      to: expectedBlock.transactions[0].to,
+      nonce: expectedBlock.transactions[0].nonce,
+      data: expectedBlock.transactions[0].data,
+      r: expectedBlock.transactions[0].r,
+      s: expectedBlock.transactions[0].s,
+      v: expectedBlock.transactions[0].v,
+      creates: null,
+      chainId: expectedBlock.transactions[0].chainId,
+    });
+
+    expect(block.transactions[0].gasPrice).to.deep.equal(
+      expectedBlock.transactions[0].gasPrice,
+    );
+    expect(block.transactions[0].maxPriorityFeePerGas).to.deep.equal(
+      expectedBlock.transactions[0].maxPriorityFeePerGas,
+    );
+    expect(block.transactions[0].maxFeePerGas).to.deep.equal(
+      expectedBlock.transactions[0].maxFeePerGas,
+    );
+    expect(block.transactions[0].gasLimit).to.deep.equal(
+      expectedBlock.transactions[0].gasLimit,
+    );
+    expect(block.transactions[0].value).to.deep.equal(
+      expectedBlock.transactions[0].value,
+    );
+
+    // Not sure why confirmations from the expected block is 1 above confirmations from blsProvider result.
+    // Last assertion doube checks this against another method and the confirmation number is correct according to this.
+    expect(block.transactions[0].confirmations).to.deep.equal(
+      expectedBlock.transactions[0].confirmations + 1,
+    );
+    // confirm that confirmations match via provider.getTransaction()
+    expect(block.transactions[0].confirmations).to.deep.equal(
+      (await blsProvider.getTransaction(block.transactions[0].hash))
+        .confirmations,
+    );
+  });
+
+  it("should return the network the provider is connected to", async () => {
+    // Arrange
+    const expectedNetwork = { name: "localhost", chainId: 31337 };
+
+    // Act
+    const network = await blsProvider.getNetwork();
+
+    // Assert
+    expect(network).to.deep.equal(expectedNetwork);
+  });
+
+  it("should return the block number at the most recent block", async () => {
+    // Arrange
+    const expectedBlockNumber = await regularProvider.getBlockNumber();
+
+    // Act
+    const blockNumber = await blsProvider.getBlockNumber();
+
+    // Assert
+    expect(blockNumber).to.deep.equal(expectedBlockNumber);
+  });
+
+  it("should return an estimate of gas price to use in a transaction", async () => {
+    // Arrange
+    const expectedGasPrice = await regularProvider.getGasPrice();
+
+    // Act
+    const gasPrice = await blsProvider.getGasPrice();
+
+    // Assert
+    expect(gasPrice).to.deep.equal(expectedGasPrice);
+  });
+
+  it("should return the current recommended FeeData to use in a transaction", async () => {
+    // Arrange
+    const expectedFeeData = await regularProvider.getFeeData();
+
+    // Act
+    const feeData = await blsProvider.getFeeData();
+
+    // Assert
+    expect(feeData.lastBaseFeePerGas).to.deep.equal(
+      expectedFeeData.lastBaseFeePerGas,
+    );
+    expect(feeData.maxFeePerGas).to.deep.equal(expectedFeeData.maxFeePerGas);
+    expect(feeData.maxPriorityFeePerGas).to.deep.equal(
+      expectedFeeData.maxPriorityFeePerGas,
+    );
+    expect(feeData.gasPrice).to.deep.equal(expectedFeeData.gasPrice);
+  });
+
+  it("should a return a promise which will stall until the network has heen established", async () => {
+    // Arrange
+    const expectedReady = { name: "localhost", chainId: 31337 };
+
+    // Act
+    const ready = await blsProvider.ready;
+
+    // Assert
+    expect(ready).to.deep.equal(expectedReady);
+  });
 });
 
 describe("JsonRpcProvider", () => {

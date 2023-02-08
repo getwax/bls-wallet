@@ -214,5 +214,57 @@ describe("Provider tests", function () {
       expect(transferEvent.args.from).to.equal(await blsSigner.getAddress());
       expect(transferEvent.args.to).to.equal(recipient);
     });
+
+    it("should get code located at address and block number", async function () {
+      // Arrange
+      const provider = new ethers.providers.JsonRpcProvider();
+      const expectedCode = await provider.getCode(mockERC20.address);
+
+      // Act
+      const code = await blsProvider.getCode(mockERC20.address);
+
+      // Assert
+      expect(code).to.equal(expectedCode);
+    });
+
+    it("should return '0x' if no code located at address", async function () {
+      // Arrange
+      const fakeAddress = ethers.Wallet.createRandom().address;
+      const expectedCode = "0x";
+
+      // Act
+      const invalidAddress = await blsProvider.getCode(fakeAddress);
+      const realAddressBeforeDeployment = await blsProvider.getCode(
+        mockERC20.address,
+        "earliest",
+      );
+
+      // Assert
+      expect(invalidAddress).to.equal(expectedCode);
+      expect(realAddressBeforeDeployment).to.equal(expectedCode);
+    });
+
+    it("should return the Bytes32 value of the storage slot position at erc20 address", async function () {
+      // Arrange
+      const provider = new ethers.providers.JsonRpcProvider();
+      const expectedStorage1 = await provider.getStorageAt(
+        mockERC20.address,
+        1,
+      );
+      const expectedStorage2 = await provider.getStorageAt(
+        mockERC20.address,
+        2,
+      );
+
+      // Act
+      const storage1 = await blsProvider.getStorageAt(mockERC20.address, 1);
+      console.log(storage1);
+
+      const storage2 = await blsProvider.getStorageAt(mockERC20.address, 2);
+
+      // Assert
+      expect(storage1).to.equal(expectedStorage1); // 0x0000000000000000000000000000000000000000000000000000000000000000
+      expect(storage2).to.equal(expectedStorage2); // 0x00000000000000000000000000000000000000000000d3c21bcecceda1000000
+    });
   });
 });
