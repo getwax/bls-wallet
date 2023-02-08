@@ -5,18 +5,17 @@ pragma abicoder v2;
 /** Interface for a contract wallet that can perform Operations
  */
 interface IWallet {
+    /** Aggregated signature with corresponding senders + operations */
+    struct Bundle {
+        uint256[2] signature;
+        uint256[4][] senderPublicKeys;
+        IWallet.Operation[] operations;
+    }
 
     struct Operation {
         uint256 nonce;
         uint256 gas;
         IWallet.ActionData[] actions;
-    }
-
-    /** Aggregated signature with corresponding senders + operations */
-    struct Bundle {
-        uint256[2] signature;
-        uint256[4][] senderPublicKeys;
-        Operation[] operations;
     }
 
     struct ActionData {

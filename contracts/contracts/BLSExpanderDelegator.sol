@@ -26,61 +26,53 @@ contract BLSExpanderDelegator {
         gateway = gatewayParam;
     }
 
-    function run(bytes calldata input) external returns (
+    function run(bytes calldata stream) external returns (
         bool[] memory successes,
         bytes[][] memory results
     ) {
         IWallet.Bundle memory bundle;
+
+        // The signature is just the last 64 bytes.
+        uint256 opsByteLen = stream.length - 64;
+        bundle.signature = abi.decode(stream[opsByteLen:], (uint256[2]));
+        stream = stream[:opsByteLen]; // Only keep what we still need
+
+        uint256 vlqValue;
 
         // Get the number of operations upfront so that we can allocate the
         // memory. This information is technically redundant but extracting it
         // by decoding everything before we have a place to put it would add a
         // lot of complexity. For <=127 operations it's only one extra byte.
         // Otherwise 2 bytes.
-        (uint256 opsLen, uint256 opsLenBytesRead) = VLQ.decode(input);
-        bundle.senderPublicKeys = new uint256[BLS_KEY_LEN][](opsLen);
-        bundle.operations = new IWallet.Operation[](opsLen);
+        (vlqValue, stream) = VLQ.decode(stream);
 
-        // The signature is just the last 64 bytes.
-        uint256 opsByteLen = input.length - 64;
-        bundle.signature = abi.decode(input[opsByteLen:], (uint256[2]));
+        bundle.senderPublicKeys = new uint256[BLS_KEY_LEN][](vlqValue);
+        bundle.operations = new IWallet.Operation[](vlqValue);
 
-        // Solidity/EVM doesn't provide an abstraction for a stateful reader of
-        // bytes. To implement this, we keep track of where we're up to in the
-        // input and increment it as we read things.
-        uint256 inputPos = opsLenBytesRead;
         uint256 opsDecoded = 0;
 
-        while (inputPos < opsByteLen) {
+        while (stream.length > 0) {
             // First figure out which expander to use.
-            (uint256 expanderIndex, uint256 vlqBytesRead) = VLQ.decode(
-                input[inputPos:]
-            );
+            (vlqValue, stream) = VLQ.decode(stream);
+            IExpander expander = expanders[vlqValue];
+            require(expander != IExpander(address(0)), "expander not found");
 
-            inputPos += vlqBytesRead;
-
-            IExpander expander = expanders[expanderIndex];
-
-            // Then use it to expand operations (usually just 1).
+            // Then use it to expand the operation.
             (
-                uint256[BLS_KEY_LEN][] memory senderPublicKeys,
-                IWallet.Operation[] memory operations,
+                uint256[BLS_KEY_LEN] memory senderPublicKey,
+                IWallet.Operation memory operation,
                 uint256 expanderBytesRead
-            ) = expander.expand(input[inputPos:]);
+            ) = expander.expand(stream);
 
-            inputPos += expanderBytesRead;
+            // It would be more consistent to have .expand above return the new
+            // stream, but there appears to be a bug in solidity that prevents
+            // this.
+            stream = stream[expanderBytesRead:];
 
-            require(
-                senderPublicKeys.length == operations.length,
-                "keys vs ops length mismatch"
-            );
+            bundle.senderPublicKeys[opsDecoded] = senderPublicKey;
+            bundle.operations[opsDecoded] = operation;
 
-            for (uint256 i = 0; i < operations.length; i++) {
-                bundle.senderPublicKeys[opsDecoded + i] = senderPublicKeys[i];
-                bundle.operations[opsDecoded + i] = operations[i];
-            }
-
-            opsDecoded += operations.length;
+            opsDecoded++;
         }
 
         // Finished expanding. Now just return the call.

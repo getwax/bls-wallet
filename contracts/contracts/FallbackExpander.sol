@@ -43,48 +43,44 @@ import "./interfaces/IWallet.sol";
  * zero-byte discount, the saving is still over 30%.)
  */
 contract FallbackExpander is IExpander {
-    function expand(bytes calldata input) external pure returns (
-        uint256[4][] memory senderPublicKeys,
-        IWallet.Operation[] memory operations,
+    function expand(bytes calldata stream) external pure returns (
+        uint256[4] memory senderPublicKey,
+        IWallet.Operation memory operation,
         uint256 bytesRead
     ) {
-        senderPublicKeys = new uint256[4][](1);
-        operations = new IWallet.Operation[](1);
+        uint256 originalStreamLen = stream.length;
+        uint256 vlqValue;
 
-        senderPublicKeys[0] = abi.decode(input[0:128], (uint256[4]));
+        senderPublicKey = abi.decode(stream[:128], (uint256[4]));
+        stream = stream[128:];
 
-        bytesRead = 128;
+        (vlqValue, stream) = VLQ.decode(stream);
+        operation.nonce = vlqValue;
 
-        (uint256 nonce, uint256 nonceBytesRead) = VLQ.decode(input[bytesRead:]);
-        bytesRead += nonceBytesRead;
-        operations[0].nonce = nonce;
+        (vlqValue, stream) = VLQ.decode(stream);
+        operation.gas = vlqValue;
 
-        (uint256 gas, uint256 gasBytesRead) = VLQ.decode(input[bytesRead:]);
-        bytesRead += gasBytesRead;
-        operations[0].gas = gas;
+        (vlqValue, stream) = VLQ.decode(stream);
+        operation.actions = new IWallet.ActionData[](vlqValue);
 
-        (uint256 actionLen, uint256 actionLenBytesRead) = VLQ.decode(input[bytesRead:]);
-        bytesRead += actionLenBytesRead;
-        operations[0].actions = new IWallet.ActionData[](actionLen);
+        for (uint256 i = 0; i < operation.actions.length; i++) {
+            uint256 ethValue;
+            (ethValue, stream) = VLQ.decode(stream);
 
-        for (uint256 i = 0; i < actionLen; i++) {
-            (uint256 ethValue, uint256 ethValueBytesRead) = VLQ.decode(input[bytesRead:]);
-            bytesRead += ethValueBytesRead;
+            address contractAddress = address(bytes20(stream[:20]));
+            stream = stream[20:];
 
-            address contractAddress = abi.decode(input[bytesRead:bytesRead+20], (address));
-            bytesRead += 20;
+            (vlqValue, stream) = VLQ.decode(stream);
+            bytes memory encodedFunction = stream[:vlqValue];
+            stream = stream[vlqValue:];
 
-            (uint256 fnLen, uint256 fnLenBytesRead) = VLQ.decode(input[bytesRead:]);
-            bytesRead += fnLenBytesRead;
-
-            bytes memory encodedFunction = input[bytesRead:bytesRead+fnLen];
-            bytesRead += fnLen;
-
-            operations[0].actions[i] = IWallet.ActionData({
+            operation.actions[i] = IWallet.ActionData({
                 ethValue: ethValue,
                 contractAddress: contractAddress,
                 encodedFunction: encodedFunction
             });
         }
+        
+        bytesRead = originalStreamLen - stream.length;
     }
 }

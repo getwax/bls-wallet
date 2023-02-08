@@ -5,9 +5,9 @@ pragma abicoder v2;
 import "./IWallet.sol";
 
 interface IExpander {
-    function expand(bytes calldata input) external returns (
-        uint256[4][] memory senderPublicKeys,
-        IWallet.Operation[] memory operations,
+    function expand(bytes calldata stream) external returns (
+        uint256[4] memory senderPublicKey,
+        IWallet.Operation memory operation,
         uint256 bytesRead
     );
 }

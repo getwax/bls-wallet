@@ -24,24 +24,26 @@ pragma abicoder v2;
  * https://en.wikipedia.org/wiki/Variable-length_quantity
  */
 library VLQ {
-    function decode(bytes calldata data) public pure returns (
-        uint256 result,
-        uint256 bytesRead
-    ) {
-        while (true) {
-            uint8 currentByte = uint8(data[bytesRead++]);
+    function decode(bytes calldata stream) internal pure returns (uint256, bytes calldata) {
+        uint256 value = 0;
+        uint256 bytesRead = 0;
 
-            // Add the lowest 7 bits to the result
-            result += currentByte & 0x7f;
+        while (true) {
+            uint8 currentByte = uint8(stream[bytesRead++]);
+
+            // Add the lowest 7 bits to the value
+            value += currentByte & 0x7f;
 
             // If the highest bit is zero, stop
             if (currentByte & 0x80 == 0) {
                 break;
             }
 
-            // We're continuing. Shift the result 7 bits to the left (higher) to
+            // We're continuing. Shift the value 7 bits to the left (higher) to
             // make room.
-            result <<= 7;
+            value <<= 7;
         }
+
+        return (value, stream[bytesRead:]);
     }
 }

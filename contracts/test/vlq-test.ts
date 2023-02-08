@@ -60,27 +60,3 @@ describe("vlq", function () {
     }
   });
 });
-
-// TODO: Make use of this elsewhere
-// eslint-disable-next-line no-unused-vars
-function encode(x: number) {
-  const segments: number[] = [];
-
-  while (x !== 0) {
-    const segment = x % 128;
-    segments.unshift(segment);
-    x -= segment;
-    x /= 128;
-  }
-
-  let result = "0x";
-
-  for (let i = 0; i < segments.length; i++) {
-    const keepGoing = i !== segments.length - 1;
-
-    const byte = (keepGoing ? 128 : 0) + segments[i];
-    result += byte.toString(16).padStart(2, "0");
-  }
-
-  return result;
-}
