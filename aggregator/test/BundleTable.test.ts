@@ -3,20 +3,6 @@ import { assertEquals, BigNumber, sqlite } from "./deps.ts";
 import BundleTable, { BundleRow } from "../src/app/BundleTable.ts";
 import nil from "../src/helpers/nil.ts";
 
-function test(
-  name: string,
-  fn: (bundleTable: BundleTable) => void | Promise<void>,
-) {
-  Deno.test({
-    name,
-    sanitizeResources: false,
-    fn: async () => {
-      const table = new BundleTable(new sqlite.DB());
-      await fn(table);
-    },
-  });
-}
-
 const sampleRows: BundleRow[] = [
   {
     id: 1,
@@ -45,16 +31,19 @@ const sampleRows: BundleRow[] = [
   },
 ];
 
-test("Starts with zero transactions", (table) => {
+Deno.test("Starts with zero transactions", () => {
+  const table = new BundleTable(new sqlite.DB());
   assertEquals(table.count(), 0);
 });
 
-test("Has one transaction after adding transaction", (table) => {
+Deno.test("Has one transaction after adding transaction", () => {
+  const table = new BundleTable(new sqlite.DB());
   table.add(sampleRows[0]);
   assertEquals(table.count(), 1);
 });
 
-test("Can retrieve transaction", (table) => {
+Deno.test("Can retrieve transaction", () => {
+  const table = new BundleTable(new sqlite.DB());
   table.add(sampleRows[0]);
   assertEquals(table.all(), [{ ...sampleRows[0] }]);
 });
