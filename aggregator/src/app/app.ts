@@ -24,7 +24,7 @@ export default async function app(emit: (evt: AppEvent) => void) {
   const bundleTableMutex = new Mutex();
 
   const bundleTable = new BundleTable(
-    new sqlite.DB("aggregator.sqlite"),
+    new sqlite.DB(env.DB_PATH),
     (sql, params) => {
       if (env.LOG_QUERIES) {
         emit({
