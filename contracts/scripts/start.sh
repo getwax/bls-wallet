@@ -23,7 +23,7 @@ docker run --name $CONTAINER --rm -p8545:8545 ethereum/client-go:stable \
   --dev.period=0 \
   &
 
-sleep 5
+"$SCRIPT_DIR/wait-for-rpc.sh"
 
 docker exec $CONTAINER geth \
   --exec "$(cat "$SCRIPT_DIR/fundAccounts.js")" \
