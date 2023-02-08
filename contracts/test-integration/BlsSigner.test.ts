@@ -31,7 +31,6 @@ let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
 let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
-let regularSigner: ethers.providers.JsonRpcSigner;
 
 describe("BlsSigner", () => {
   beforeEach(async () => {
@@ -42,7 +41,7 @@ describe("BlsSigner", () => {
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
-      chainId: 0x7a69,
+      chainId: 0x539, // 1337
     };
 
     privateKey = Wallet.createRandom().privateKey;
@@ -58,7 +57,7 @@ describe("BlsSigner", () => {
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2 private key
       regularProvider,
     );
 
@@ -144,7 +143,7 @@ describe("BlsSigner", () => {
       to: recipient,
       from: blsSigner.wallet.address,
       data: "0x",
-      chainId: 31337,
+      chainId: 1337,
       type: 2,
       confirmations: 1,
     });
@@ -313,7 +312,7 @@ describe("BlsSigner", () => {
       value: transactionAmount,
       from: blsSigner.wallet.address,
       type: 2,
-      chainId: 31337,
+      chainId: 1337,
     });
 
     expect(result).to.include.keys(
@@ -620,8 +619,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  // The personal_unlockAccount method is not supported by the underlying hardhat node so this test asserts that the correct error is thrown.
-  it("should throw an error when trying to unlock an account", async () => {
+  it("should throw an error when trying to unlock an account with http access", async () => {
     // Arrange
     const madeUpPassword = "password";
 
@@ -631,20 +629,24 @@ describe("BlsSigner", () => {
     // Assert
     await expect(unlock()).to.be.rejectedWith(
       Error,
-      "Method personal_unlockAccount not found",
+      "account unlock with HTTP access is forbidden",
     );
   });
 });
 
 describe("JsonRpcSigner", () => {
   let signers: SignerWithAddress[];
+  let wallet: ethers.Wallet;
 
   beforeEach(async () => {
     signers = await hardhatEthers.getSigners();
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    // First two hardhat accounts are used in aggregator .env, which causes a nonce too low error when using the default signer here.
-    regularSigner = regularProvider.getSigner(2);
+    // First two hardhat account private keys are used in aggregator .env. We choose to use HH account #2 private key here to avoid nonce too low errors.
+    wallet = new ethers.Wallet(
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH account #2 private key
+      regularProvider,
+    );
   });
 
   it("should retrieve the account address", async () => {
@@ -652,7 +654,7 @@ describe("JsonRpcSigner", () => {
     const expectedAddress = signers[2].address;
 
     // Act
-    const address = await regularSigner.getAddress();
+    const address = await wallet.getAddress();
 
     // Assert
     expect(address).to.equal(expectedAddress);
@@ -665,7 +667,7 @@ describe("JsonRpcSigner", () => {
     const recipientBalanceBefore = await regularProvider.getBalance(recipient);
 
     // Act
-    const transaction = await regularSigner.sendTransaction({
+    const transaction = await wallet.sendTransaction({
       to: recipient,
       value: expectedBalance,
     });
@@ -687,7 +689,7 @@ describe("JsonRpcSigner", () => {
     };
 
     // Act
-    const result = regularSigner.checkTransaction(transaction);
+    const result = wallet.checkTransaction(transaction);
 
     // Assert
     const resolvedResult = await resolveProperties(result);
@@ -696,7 +698,7 @@ describe("JsonRpcSigner", () => {
       .that.includes({
         to: recipient,
         value: transactionAmount,
-        from: await regularSigner.getAddress(),
+        from: await wallet.getAddress(),
       });
   });
 
@@ -710,7 +712,7 @@ describe("JsonRpcSigner", () => {
     };
 
     // Act
-    const result = await regularSigner.populateTransaction(transaction);
+    const result = await wallet.populateTransaction(transaction);
 
     // Assert
     expect(result).to.be.an("object").that.includes({
@@ -718,7 +720,7 @@ describe("JsonRpcSigner", () => {
       value: transactionAmount,
       from: signers[2].address,
       type: 2,
-      chainId: 31337,
+      chainId: 1337,
     });
 
     expect(result).to.include.keys(

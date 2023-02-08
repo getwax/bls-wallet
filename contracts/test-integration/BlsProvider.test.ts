@@ -23,7 +23,6 @@ let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
 let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
-let regularSigner: ethers.providers.JsonRpcSigner;
 
 describe("BlsProvider", () => {
   beforeEach(async () => {
@@ -34,7 +33,7 @@ describe("BlsProvider", () => {
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
-      chainId: 0x7a69,
+      chainId: 0x539, // 1337
     };
 
     privateKey = ethers.Wallet.createRandom().privateKey;
@@ -50,7 +49,7 @@ describe("BlsProvider", () => {
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2 private key
       regularProvider,
     );
 
@@ -415,11 +414,16 @@ describe("BlsProvider", () => {
 });
 
 describe("JsonRpcProvider", () => {
+  let wallet: ethers.Wallet;
+
   beforeEach(async () => {
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    // First two hardhat accounts are used in aggregator .env, which causes a nonce too low error when using the default signer here.
-    regularSigner = regularProvider.getSigner(2);
+    // First two hardhat account private keys are used in aggregator .env. We choose to use HH account #2 private key here to avoid nonce too low errors.
+    wallet = new ethers.Wallet(
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH acount #2 private key
+      regularProvider,
+    );
   });
 
   it("calls a getter method on a contract", async () => {
@@ -451,7 +455,7 @@ describe("JsonRpcProvider", () => {
       value: transactionAmount,
     };
 
-    const expectedTransactionResponse = await regularSigner.sendTransaction(
+    const expectedTransactionResponse = await wallet.sendTransaction(
       transactionRequest,
     );
 
@@ -465,12 +469,9 @@ describe("JsonRpcProvider", () => {
       hash: expectedTransactionResponse.hash,
       type: expectedTransactionResponse.type,
       accessList: expectedTransactionResponse.accessList,
-      blockHash: expectedTransactionResponse.blockHash,
-      blockNumber: expectedTransactionResponse.blockNumber,
       transactionIndex: 0,
-      confirmations: expectedTransactionResponse.confirmations,
+      confirmations: 1,
       from: expectedTransactionResponse.from,
-      gasPrice: expectedTransactionResponse.gasPrice,
       maxPriorityFeePerGas: expectedTransactionResponse.maxPriorityFeePerGas,
       maxFeePerGas: expectedTransactionResponse.maxFeePerGas,
       gasLimit: expectedTransactionResponse.gasLimit,
@@ -485,6 +486,11 @@ describe("JsonRpcProvider", () => {
       chainId: expectedTransactionResponse.chainId,
     });
 
-    expect(transactionResponse).to.include.keys("wait");
+    expect(transactionResponse).to.include.keys(
+      "wait",
+      "blockHash",
+      "blockNumber",
+      "gasPrice",
+    );
   });
 });
