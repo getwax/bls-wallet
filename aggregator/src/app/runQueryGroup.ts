@@ -1,10 +1,9 @@
-import { sqlite } from "../../deps.ts";
 import Mutex from "../helpers/Mutex.ts";
 import AppEvent from "./AppEvent.ts";
 
 export default async function runQueryGroup<T>(
   emit: (evt: AppEvent) => void,
-  db: sqlite.DB,
+  query: (sql: string) => void,
   mutex: Mutex,
   body: () => Promise<T>,
 ) {
@@ -12,7 +11,7 @@ export default async function runQueryGroup<T>(
   let completed = false;
 
   try {
-    db.query("BEGIN");
+    query("BEGIN");
     const result = await body();
     completed = true;
     return result;
@@ -25,6 +24,6 @@ export default async function runQueryGroup<T>(
     throw error;
   } finally {
     lock.release();
-    db.query(completed ? "COMMIT" : "ROLLBACK");
+    query(completed ? "COMMIT" : "ROLLBACK");
   }
 }

@@ -125,7 +125,7 @@ export default class BundleService {
   runQueryGroup<T>(body: () => Promise<T>): Promise<T> {
     return runQueryGroup(
       this.emit,
-      this.bundleTable.db,
+      (sql) => this.bundleTable.dbQuery(sql),
       this.bundleTableMutex,
       body,
     );
