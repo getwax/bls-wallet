@@ -1,9 +1,9 @@
-import { assertEquals, assertBundleSucceeds, Operation } from "./deps.ts";
+import { assertBundleSucceeds, assertEquals, Operation } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 
 Fixture.test("adds valid bundle", async (fx) => {
-  const bundleService = await fx.createBundleService();
+  const bundleService = fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -20,15 +20,15 @@ Fixture.test("adds valid bundle", async (fx) => {
     ],
   });
 
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 0);
 
   assertBundleSucceeds(await bundleService.add(tx));
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 });
 
 Fixture.test("rejects bundle with invalid signature", async (fx) => {
-  const bundleService = await fx.createBundleService();
+  const bundleService = fx.createBundleService();
   const [wallet, otherWallet] = await fx.setupWallets(2);
 
   const operation: Operation = {
@@ -53,7 +53,7 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
   // sig test)
   tx.signature = otherTx.signature;
 
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 0);
 
   const res = await bundleService.add(tx);
   if ("hash" in res) {
@@ -62,11 +62,11 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
   assertEquals(res.failures.map((f) => f.type), ["invalid-signature"]);
 
   // Bundle table remains empty
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 0);
 });
 
 Fixture.test("rejects bundle with nonce from the past", async (fx) => {
-  const bundleService = await fx.createBundleService();
+  const bundleService = fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -83,7 +83,7 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
     ],
   });
 
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 0);
 
   const res = await bundleService.add(tx);
   if ("hash" in res) {
@@ -92,13 +92,13 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
   assertEquals(res.failures.map((f) => f.type), ["duplicate-nonce"]);
 
   // Bundle table remains empty
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 0);
 });
 
 Fixture.test(
   "rejects bundle with invalid signature and nonce from the past",
   async (fx) => {
-    const bundleService = await fx.createBundleService();
+    const bundleService = fx.createBundleService();
     const [wallet, otherWallet] = await fx.setupWallets(2);
 
     const operation: Operation = {
@@ -125,7 +125,7 @@ Fixture.test(
     // https://github.com/thehubbleproject/hubble-bls/pull/20
     tx.signature = otherTx.signature;
 
-    assertEquals(await bundleService.bundleTable.count(), 0n);
+    assertEquals(await bundleService.bundleTable.count(), 0);
 
     const res = await bundleService.add(tx);
     if ("hash" in res) {
@@ -138,12 +138,12 @@ Fixture.test(
     );
 
     // Bundle table remains empty
-    assertEquals(await bundleService.bundleTable.count(), 0n);
+    assertEquals(await bundleService.bundleTable.count(), 0);
   },
 );
 
 Fixture.test("adds bundle with future nonce", async (fx) => {
-  const bundleService = await fx.createBundleService();
+  const bundleService = fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
   const tx = wallet.sign({
@@ -160,11 +160,11 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
     ],
   });
 
-  assertEquals(await bundleService.bundleTable.count(), 0n);
+  assertEquals(await bundleService.bundleTable.count(), 0);
 
   assertBundleSucceeds(await bundleService.add(tx));
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 });
 
 // TODO (merge-ok): Add a mechanism for limiting the number of stored
@@ -172,7 +172,7 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
 // Fixture.test(
 //   "when future txs reach maxFutureTxs, the oldest ones are dropped",
 //   async (fx) => {
-//     const bundleService = await fx.createBundleService({
+//     const bundleService = fx.createBundleService({
 //       ...BundleService.defaultConfig,
 //       maxFutureTxs: 3,
 //     });

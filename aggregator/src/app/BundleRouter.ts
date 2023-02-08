@@ -23,8 +23,8 @@ export default function BundleRouter(bundleService: BundleService) {
 
   router.get(
     "bundleReceipt/:hash",
-    async (ctx) => {
-      const bundleRow = await bundleService.lookupBundle(ctx.params.hash!);
+    (ctx) => {
+      const bundleRow = bundleService.lookupBundle(ctx.params.hash!);
 
       if (bundleRow?.receipt === nil) {
         ctx.response.status = 404;

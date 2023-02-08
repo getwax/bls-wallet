@@ -117,9 +117,8 @@ For each network, the deployer contract can be deployed with the following scrip
 To run integration tests:
 
 1. cd into `./contracts` and run `yarn start-hardhat`
-2. run `docker-compose up -d postgres` from the root directory
-3. cd into `./aggregator` and run `./programs/aggregator.ts`
-4. from `./contracts`, run `yarn test-integration`.
+2. cd into `./aggregator` and run `./programs/aggregator.ts`
+3. from `./contracts`, run `yarn test-integration`.
 
 ## Optimism's L2 (paused)
 

@@ -43,17 +43,12 @@ commands.
 | PRIVATE_KEY_AGG                    | 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 | Private key for the EOA account used to submit bundles on chain. Transactions are paid by the account linked to PRIVATE_KEY_AGG. By default, bundles must pay for themselves by sending funds to tx.origin or the aggregator’s onchain address                                                      |
 | PRIVATE_KEY_ADMIN                  | 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d | Private key for the admin EOA account. Used only in tests                                                                                                                                                                                                                                           |
 | TEST_BLS_WALLETS_SECRET            | test-bls-wallets-secret                                            | Secret used to seed BLS Wallet private keys during tests                                                                                                                                                                                                                                            |
-| PG_HOST                            | 127.0.0.1                                                          | Postgres database host                                                                                                                                                                                                                                                                              |
-| PG_PORT                            | 5432                                                               | Postgres database port                                                                                                                                                                                                                                                                              |
-| PG_USER                            | bls                                                                | Postgres database user                                                                                                                                                                                                                                                                              |
-| PG_PASSWORD                        | generate-a-strong-password                                         | Postgres database password                                                                                                                                                                                                                                                                          |
-| PG_DB_NAME                         | bls_aggregator                                                     | Postgres database name                                                                                                                                                                                                                                                                              |
-| BUNDLE_TABLE_NAME                  | bundles                                                            | Postgres table name for bundles                                                                                                                                                                                                                                                                     |
-| BUNDLE_QUERY_LIMIT                 | 100                                                                | Maximum number of bundles returned from Postgres                                                                                                                                                                                                                                                    |
+| DB_PATH                            | aggregator.db                                                      | File path of the sqlite db                                                                                                                                                                                                                                               |
+| BUNDLE_QUERY_LIMIT                 | 100                                                                | Maximum number of bundles returned from sqlite                                                                                                                                                                                                                                                    |
 | MAX_GAS_PER_BUNDLE                 | 2000000                                                            | Limits the amount of user operations which can be bundled together by using this value as the approximate limit on the amount of gas in an aggregate bundle                                                                                                                                         |
 | MAX_AGGREGATION_DELAY_MILLIS       | 5000                                                               | Maximum amount of time in milliseconds aggregator will wait before submitting bundles on chain. A higher number will allow more time for bundles to fill, but may result in longer periods before submission. A lower number allows more frequent L2 submissions, but may result in smaller bundles |
 | MAX_UNCONFIRMED_AGGREGATIONS       | 3                                                                  | Maximum unconfirmed bundle aggregations that will be submitted on chain                                                                                                                                                                                                                             |
-| LOG_QUERIES                        | false                                                              | Whether to print Postgres queries in event log. When running tests, `TEST_LOGGING` must also be enabled                                                                                                                                                                                             |
+| LOG_QUERIES                        | false                                                              | Whether to print sqlite queries in event log. When running tests, `TEST_LOGGING` must also be enabled                                                                                                                                                                                             |
 | TEST_LOGGING                       | false                                                              | Whether to print aggregator server events to stdout during tests. Useful for debugging & logging                                                                                                                                                                                                    |
 | REQUIRE_FEES                       | true                                                               | Whether to require that user bundles pay the aggregator a sufficient fee                                                                                                                                                                                                                            |
 | BREAKEVEN_OPERATION_COUNT          | 4.5                                                                | The aggregator must pay an overhead to submit a bundle regardless of how many operations it contains. This parameter determines how much each operation must contribute to this overhead                                                                                                            |
@@ -63,69 +58,6 @@ commands.
 | PRIORITY_FEE_PER_GAS               | 0                                                                  | The priority fee used when submitting bundles (and passed on as a requirement for user bundles)                                                                                                                                                                                                     |
 | PREVIOUS_BASE_FEE_PERCENT_INCREASE | 2                                                                  | Used to determine the max basefee attached to aggregator transaction (and passed on as a requirement for user bundles)s                                                                                                                                                                             |
 | BUNDLE_CHECKING_CONCURRENCY        | 8                                                                  | The maximum number of bundles that are checked concurrently (getting gas usage, detecting fees, etc)                                                                                                                                                                                                |
-
-### PostgreSQL
-
-#### With docker-compose
-
-```sh
-cd .. # root of repo
-docker-compose up -d postgres
-```
-
-#### Local Install
-
-Install, e.g.:
-
-```sh
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-```
-
-Create a user called `bls`:
-
-```
-$ sudo -u postgres createuser --interactive
-Enter name of role to add: bls
-Shall the new role be a superuser? (y/n) n
-Shall the new role be allowed to create databases? (y/n) n
-Shall the new role be allowed to create more new roles? (y/n) n
-```
-
-Set the user's password:
-
-```
-$ sudo -u postgres psql
-psql (12.6 (Ubuntu 12.6-0ubuntu0.20.04.1))
-Type "help" for help.
-
-postgres=# ALTER USER bls WITH PASSWORD 'generate-a-strong-password';
-```
-
-Create a table called `bls_aggregator`:
-
-```sh
-sudo -u postgres createdb bls_aggregator
-```
-
-On Ubuntu (and probably elsewhere), postgres is configured to offer SSL
-connections but with an invalid certificate. However, the deno driver for
-postgres doesn't support this.
-
-There are two options here:
-
-1. Set up SSL with a valid certificate
-   ([guide](https://www.postgresql.org/docs/current/ssl-tcp.html)).
-2. Turn off SSL in postgres (only for development or if you can ensure the
-   connection isn't vulnerable to attack).
-   1. View the config location with
-      `sudo -u postgres psql -c 'SHOW config_file'`.
-   2. Turn off ssl in that config.
-      ```diff
-      -ssl = on
-      +ssl = off
-      ```
-   3. Restart postgres `sudo systemctl restart postgresql`.
 
 ## Running
 
@@ -309,10 +241,9 @@ Make sure your Deno version is
 - **`BundleService`**: Keeps track of all stored transactions, as well as
   accepting (or rejecting) them and submitting aggregated bundles to
   `EthereumService`.
-- **`BundleTable`**: Abstraction layer over postgres bundle tables, exposing
-  typed functions instead of queries. Handles conversions to and from the field
-  types supported by postgres so that other code can has a uniform js-friendly
-  interface
+- **`BundleTable`**: Abstraction layer over sqlite bundle tables, exposing typed
+  functions instead of queries. Handles conversions to and from the field types
+  supported by sqlite so that other code can has a uniform js-friendly interface
   ([`TransactionData`](https://github.com/jzaki/bls-wallet-signer/blob/673e2ae/src/types.ts#L12)).
 - **`Client`**: Provides an abstraction over the external HTTP interface so that
   programs talking to the aggregator can do so via regular js functions with
