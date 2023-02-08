@@ -24,7 +24,9 @@ pragma abicoder v2;
  * https://en.wikipedia.org/wiki/Variable-length_quantity
  */
 library VLQ {
-    function decode(bytes calldata stream) internal pure returns (uint256, bytes calldata) {
+    function decode(
+        bytes calldata stream
+    ) internal pure returns (uint256, bytes calldata) {
         uint256 value = 0;
         uint256 bytesRead = 0;
 
@@ -45,5 +47,22 @@ library VLQ {
         }
 
         return (value, stream[bytesRead:]);
+    }
+
+    /**
+     * Same as decode, but public.
+     * 
+     * This is here because when a library function that is not internal
+     * requires linking when used in other contracts. This avoids including a
+     * copy of that function in the contract but it's complexity that we don't
+     * want right now.
+     * 
+     * What we do want though, is a public version so that we can call it
+     * statically for testing.
+     */
+    function decodePublic(
+        bytes calldata stream
+    ) public pure returns (uint256, bytes calldata) {
+        return decode(stream);
     }
 }

@@ -13,21 +13,27 @@ describe("vlq", function () {
   });
 
   it("0x00 -> 0", async () => {
-    const { result, bytesRead } = await vlq.decode("0x00");
-    expect(result).to.eq(0);
-    expect(bytesRead).to.eq(1);
+    const [value, stream] = await vlq.decodePublic("0x00");
+    expect(value).to.eq(0);
+    expect(stream).to.eq("0x");
   });
 
   it("0x8203 -> 259", async () => {
-    const { result, bytesRead } = await vlq.decode("0x8203");
-    expect(result).to.eq(259); // = 2 * 128^1 + 3 * 128^0
-    expect(bytesRead).to.eq(2);
+    const [value, stream] = await vlq.decodePublic("0x8203");
+    expect(value).to.eq(259); // = 2 * 128^1 + 3 * 128^0
+    expect(stream).to.eq("0x");
   });
 
   it("0x828003 -> 32,771", async () => {
-    const { result, bytesRead } = await vlq.decode("0x828003");
-    expect(result).to.eq(32_771); // = 2 * 128^2 + 0 * 128^1 + 3 * 128^0
-    expect(bytesRead).to.eq(3);
+    const [value, stream] = await vlq.decodePublic("0x828003");
+    expect(value).to.eq(32_771); // = 2 * 128^2 + 0 * 128^1 + 3 * 128^0
+    expect(stream).to.eq("0x");
+  });
+
+  it("When decoding completes without consuming all the input, the returned stream contains the unused bytes", async () => {
+    const [value, stream] = await vlq.decodePublic("0x828003aabbccdd");
+    expect(value).to.eq(32_771); // = 2 * 128^2 + 0 * 128^1 + 3 * 128^0
+    expect(stream).to.eq("0xaabbccdd");
   });
 
   it("decodes a variety of values correctly", async () => {
@@ -54,9 +60,9 @@ describe("vlq", function () {
     ];
 
     for (const [input, output] of inputsOutputs) {
-      const { result, bytesRead } = await vlq.decode(input);
-      expect(result).to.eq(output);
-      expect(bytesRead).to.eq((input.length - 2) / 2);
+      const [value, stream] = await vlq.decodePublic(input);
+      expect(value).to.eq(output);
+      expect(stream).to.eq("0x");
     }
   });
 });
