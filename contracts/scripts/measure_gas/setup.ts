@@ -13,6 +13,14 @@ const generatePrivateKey = (rng: Rng): string => {
   return `0x${secretNum.toString(16)}`;
 };
 
+const inferNetCfgName = (): string => {
+  if (network.name === "gethDev") {
+    return "local";
+  }
+
+  return network.name.replace("-", "_");
+};
+
 export const init = async (
   cfg: GasMeasurementConfig,
 ): Promise<InitialContext> => {
@@ -34,7 +42,9 @@ export const init = async (
     provider,
   );
 
-  const netCfg = await getNetworkConfig(cfg.networkConfigName);
+  const netCfg = await getNetworkConfig(
+    cfg.networkConfigName ?? inferNetCfgName(),
+  );
   const contracts = await connectToContracts(provider, netCfg);
 
   const blsWallets = await Promise.all(

@@ -22,7 +22,6 @@ const run = async (): Promise<void> => {
     seed: "bls_wallet_measure_gas",
     numBlsWallets: 16,
     numTokensPerWallet: 100_000,
-    networkConfigName: "local",
     // Max tested limited on goerli arbitrum is 151 bls transfers.
     // transactionBatches: [50, 100, 150],
     transactionBatches: [10],

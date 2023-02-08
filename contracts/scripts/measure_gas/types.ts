@@ -59,7 +59,7 @@ export type GasMeasurementConfig = Readonly<{
   seed: string;
   numBlsWallets: number;
   numTokensPerWallet: number;
-  networkConfigName: string;
+  networkConfigName?: string;
   transactionBatches: number[];
   transactionConfigs: GasMeasurementTransactionConfig[];
 }>;

@@ -41,6 +41,11 @@ export const sumArbitrumMeasurements = async (
     web3Provider,
     txnHashes,
   );
+  const hasArbMeasurements = !!arbMeasurements.filter((m) => !!m).length;
+  if (!hasArbMeasurements) {
+    return undefined;
+  }
+
   return arbMeasurements.reduce(
     (m, cur) => ({
       ...m,
