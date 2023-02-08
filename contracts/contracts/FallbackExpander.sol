@@ -22,6 +22,7 @@ import "./interfaces/IWallet.sol";
  * 24f1fc8a1f7256dc2914e524966309df2226fd329373aaaae1881bf5cd0c62f4 // BLS key
  *
  * 00 // nonce: 0
+ * 868d20 // gas: 100,000
  * 02 // two actions
  *
  * // Action 1
@@ -37,9 +38,9 @@ import "./interfaces/IWallet.sol";
  *
  * The proposal doc for the new expander lists the same example ("Example of an
  * Expanded User Operation" https://hackmd.io/0q7H3Ad0Su-I4RWWK8wQPA) using the
- * solidity ABI, which uses 608 bytes. Here we've encoded the same thing in 191
- * bytes, which is (about) 70% smaller. (If you account for the zero-byte
- * discount, the saving is still over 30%.)
+ * solidity ABI, which uses 608 bytes. Here we've encoded the same thing (plus
+ * gas) in 194 bytes, which is (about) 70% smaller. (If you account for the
+ * zero-byte discount, the saving is still over 30%.)
  */
 contract FallbackExpander is IExpander {
     function expand(bytes calldata input) external pure returns (
@@ -57,6 +58,10 @@ contract FallbackExpander is IExpander {
         (uint256 nonce, uint256 nonceBytesRead) = VLQ.decode(input[bytesRead:]);
         bytesRead += nonceBytesRead;
         operations[0].nonce = nonce;
+
+        (uint256 gas, uint256 gasBytesRead) = VLQ.decode(input[bytesRead:]);
+        bytesRead += gasBytesRead;
+        operations[0].gas = gas;
 
         (uint256 actionLen, uint256 actionLenBytesRead) = VLQ.decode(input[bytesRead:]);
         bytesRead += actionLenBytesRead;
