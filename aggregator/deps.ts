@@ -71,20 +71,5 @@ import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.8.2-77f1638";
 const { bundleFromDto, bundleToDto, initBlsWalletSigner } = blsWalletClients;
 export { bundleFromDto, bundleToDto, initBlsWalletSigner };
 
-// Database dependencies
-
 export * as sqlite from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
-
-export {
-  Constraint,
-  CreateTableMode,
-  DataType,
-  OrderByType,
-  QueryClient,
-  QueryTable,
-  unsketchify,
-} from "https://deno.land/x/postquery@v0.1.1/mod.ts";
-
-export type { TableOptions } from "https://deno.land/x/postquery@v0.1.1/mod.ts";
-
 export { Semaphore } from "https://deno.land/x/semaphore@v1.1.2/mod.ts";
