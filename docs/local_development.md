@@ -14,7 +14,7 @@ If you're running a Windows machine, we recommend using [WSL2](https://learn.mic
 - [Yarn](https://yarnpkg.com/getting-started/install) (`npm install -g yarn`)
 - [Deno](https://deno.land/#installation)
 
-### Optional (Recomended)
+### Optional (Recommended)
 
 - [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - [docker-compose](https://docs.docker.com/compose/install/)
@@ -71,7 +71,7 @@ cp .env.local.example .env
 
 The [extension](../extension/) (otherwise referred to as Quill) is a prototype extension wallet used to showcase and test BLS Wallet features. **Note it is not a production wallet.**
 
-In a seperate terminal/shell instance
+In a separate terminal/shell instance
 
 ```sh
 cd ./extension
@@ -106,11 +106,11 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 ### Additional troubleshooting tips
 
 - In general, the bundle or submission issues we've encountered have been us misconfiguring the data in the bundle or not configuring the aggregator properly.
-- Be careful using HH accounts 0 and 1 in your code when running a local aggregator. This is because the local aggregator config uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get round this by not using accounts 0 and 1 elsewhere, or changing the default accounts that the aggregator uses locally.
+- Be careful using HH accounts 0 and 1 in your code when running a local aggregator. This is because the local aggregator config uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get around this by not using accounts 0 and 1 elsewhere, or changing the default accounts that the aggregator uses locally.
 
 ### Tests
 
-See each components `README.md` for how to run tests.
+See each component's `README.md` for how to run tests.
 
 ## Testing/using updates to ./clients
 
