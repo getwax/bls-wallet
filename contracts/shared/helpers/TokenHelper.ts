@@ -1,9 +1,10 @@
 import { ethers } from "hardhat";
-import { utils, BigNumber, Signer, Contract } from "ethers";
+import { utils, BigNumber, Signer } from "ethers";
 import { BlsWalletWrapper } from "../../clients/src";
 
 import Fixture from "./Fixture";
-import { IERC20 } from "../../typechain-types";
+/* eslint-disable camelcase */
+import { IERC20, MockERC20__factory } from "../../typechain-types";
 
 export default class TokenHelper {
   static readonly initialSupply = utils.parseUnits("1000000");
@@ -21,9 +22,9 @@ export default class TokenHelper {
   /// @dev Contract deployed by first ethers signer, has initial supply
   static async deployTestToken(
     balanceAddress: string | undefined = undefined,
-  ): Promise<Contract> {
-    const MockERC20 = await ethers.getContractFactory("MockERC20");
-    const mockERC20 = await MockERC20.deploy(
+  ): Promise<IERC20> {
+    const [signer] = await ethers.getSigners();
+    const mockERC20 = await new MockERC20__factory(signer).deploy(
       "AnyToken",
       "TOK",
       TokenHelper.initialSupply,
@@ -39,7 +40,7 @@ export default class TokenHelper {
 
   async distributeTokens(
     fromSigner: Signer,
-    token: Contract,
+    token: IERC20,
     wallets: BlsWalletWrapper[],
   ) {
     const length = wallets.length;
@@ -58,7 +59,7 @@ export default class TokenHelper {
   async walletTokenSetup(): Promise<BlsWalletWrapper[]> {
     const wallets = await this.fx.createBLSWallets();
 
-    this.testToken = (await TokenHelper.deployTestToken()) as IERC20;
+    this.testToken = await TokenHelper.deployTestToken();
     await this.distributeTokens(this.fx.signers[0], this.testToken, wallets);
 
     return wallets;

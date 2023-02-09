@@ -23,6 +23,13 @@ task("accounts", "Prints the list of accounts", async (_taskArgs, hre) => {
   }
 });
 
+task("generateMnemonic", "Generates and displays a random mnemonic").setAction(
+  async (_params, hre) => {
+    const wallet = hre.ethers.Wallet.createRandom();
+    console.log(wallet.mnemonic.phrase);
+  },
+);
+
 // Don't run this unless you really need to...
 task("privateKeys", "Prints the private keys for accounts")
   .addParam("force", "Whether the command should be run", false, types.boolean)
@@ -131,6 +138,9 @@ const config: HardhatUserConfig = {
     gethDev: {
       url: `http://localhost:8545`,
       accounts,
+      // issue: https://github.com/NomicFoundation/hardhat/issues/3136
+      // workaround: https://github.com/NomicFoundation/hardhat/issues/2672#issuecomment-1167409582
+      timeout: 100_000,
     },
     arbitrum_goerli: {
       // chainId: 421613
