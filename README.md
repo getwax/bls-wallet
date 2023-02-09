@@ -14,7 +14,7 @@ You can watch a full end-to-end demo of the project [here](https://www.youtube.c
 
 ### Setup your development environment
 
-- [Local develeopment](./docs/local_development.md)
+- [Local development](./docs/local_development.md)
 - [Remote development](./docs/remote_development.md)
 
 ## Components
