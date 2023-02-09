@@ -1,0 +1,29 @@
+name: aggregator-dockerhub
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'aggregator/**'
+      - '.github/workflows/aggregator-dockerhub.yml'
+
+defaults:
+  run:
+    working-directory: ./aggregator
+
+env:
+  DENO_VERSION: 1.x
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: denoland/setup-deno@v1
+      with:
+        deno-version: ${{ env.DENO_VERSION }}
+    - run: git show HEAD
+    - run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username blswalletghactions --password-stdin
+    - run: ./programs/build.ts --image-name blswallet/aggregator --image-only --also-tag-latest --push
