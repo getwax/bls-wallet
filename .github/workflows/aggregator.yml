@@ -75,4 +75,4 @@ jobs:
       run: ./scripts/wait-for-rpc.sh
 
     - run: cp .env.local.example .env
-    - run: deno test --allow-net --allow-env --allow-read --unstable
+    - run: deno test --allow-net --allow-env --allow-read

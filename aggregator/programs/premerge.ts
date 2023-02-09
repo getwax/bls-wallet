@@ -42,7 +42,6 @@ function Checks(): Check[] {
         "--allow-net",
         "--allow-env",
         "--allow-read",
-        "--unstable",
         "--",
         "--env",
         envName,
