@@ -1,6 +1,6 @@
 # Gas Measurments Script
 
-This script runs a variety of gas measurements on both normal EVM transactions as well as their BLS Wallet equivilents to aid in analyzing the costs and benefits of each. It specifically targets optimisitic rollups but should be runnable on any EVM network/chain.
+This script runs a variety of gas measurements on both normal EVM transactions as well as their BLS Wallet equivalents to aid in analyzing the costs and benefits of each. It specifically targets optimisitic rollups but should be runnable on any EVM network/chain.
 
 ## setup
 
