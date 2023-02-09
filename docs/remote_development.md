@@ -12,7 +12,7 @@ If you're running a Windows machine, we recommend using [WSL2](https://learn.mic
 - [Yarn](https://yarnpkg.com/getting-started/install) (`npm install -g yarn`)
 - [Deno](https://deno.land/#installation)
 
-### Optional (Recomended)
+### Optional (Recommended)
 
 - [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - [docker-compose](https://docs.docker.com/compose/install/)
@@ -77,7 +77,7 @@ A network config file will be generated at `./contracts/networks/local.json`. Yo
 mv ./networks/local.json ./networks/your-network.json
 ```
 
-This file can be commited so others can use your deployed contracts.
+This file can be committed so others can use your deployed contracts.
 
 ## Aggregator
 

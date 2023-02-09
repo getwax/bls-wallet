@@ -1,6 +1,6 @@
 # Contribute to BLS Wallet
 
-Thank for taking the time to contribute to BLS Wallet!
+Thanks for taking the time to contribute to BLS Wallet!
 
 In this guide you will get an overview of the contribution workflow from opening an issue, creating a PR, reviewing, and merging the PR.
 
@@ -18,7 +18,7 @@ First search for an [existing issue](https://github.com/web3well/bls-wallet/issu
 
 ### Solve an issue
 
-Search for a [existing issue](https://github.com/github/docs/issues) that is unassigned and interests you. If this is your first time contributing, you may want to choose a [good first issue](https://github.com/web3well/bls-wallet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
+Search for an [existing issue](https://github.com/github/docs/issues) that is unassigned and interests you. If this is your first time contributing, you may want to choose a [good first issue](https://github.com/web3well/bls-wallet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22).
 
 ## Make Changes
 
@@ -34,7 +34,7 @@ Search for a [existing issue](https://github.com/github/docs/issues) that is una
 
 ## Commit your update
 
-Commit your changes over one or more commits. It is recommend your format your commit messages as follows:
+Commit your changes over one or more commits. It is recommended to format your commit messages as follows:
 
 ```
 A short summary of what you did
@@ -50,11 +50,11 @@ Once ready, a BLS Wallet team member will review the PR.
 
 - When run, all Github Actions workflows should succeed.
 - All TODO/FIXME comments in code should be resolved, unless marked `merge-ok` with a description/issue link describing how they can be resolved in future work.
-- The author of a comment may mark it as [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations) when they are satisified with a requested change or answer to a question. You are not required to resolve all comments as some may provide good historical information.
+- The author of a comment may mark it as [resolved](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/commenting-on-a-pull-request#resolving-conversations) when they are satisfied with a requested change or answer to a question. You are not required to resolve all comments as some may provide good historical information.
 
 ## Your PR is merged!
 
-Thanks for your hard work! Accept our heartfelt graditiude and revel in your masterful coding and/or documentational skills.
+Thanks for your hard work! Accept our heartfelt gratitude and revel in your masterful coding and/or documentational skills.
 
 ### Thanks
 
