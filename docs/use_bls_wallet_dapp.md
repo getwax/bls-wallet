@@ -4,9 +4,9 @@ This guide will show you how to use BLS Wallet in your L2 dApp (Layer 2 decentra
 
 ## Download, Install, & Setup Quill
 
-[Quill](../extension/) is a protoype browser extension wallet which intergrates [bls-wallet-clients](../contracts/clients/) to communicate with the BLS Wallet smart contracts & transaction aggregator. It supports most of the functionality in [EIP-1193](https://eips.ethereum.org/EIPS/eip-1193).
+[Quill](../extension/) is a prototype browser extension wallet which integrates [bls-wallet-clients](../contracts/clients/) to communicate with the BLS Wallet smart contracts & transaction aggregator. It supports most of the functionality in [EIP-1193](https://eips.ethereum.org/EIPS/eip-1193).
 
-Currently, we have the contracts deployed to the networks/chains listed [here](https://github.com/web3well/bls-wallet/tree/main/contracts/networks). If your desired network isn't there, you can use the [Remote Development](./remote_development.md) contract deployment intrsuctions or request a network deploy by [opening an issue](https://github.com/web3well/bls-wallet/issues/new) or [starting a discussion](https://github.com/web3well/bls-wallet/discussions/new).
+Currently, we have the contracts deployed to the networks/chains listed [here](https://github.com/web3well/bls-wallet/tree/main/contracts/networks). If your desired network isn't there, you can use the [Remote Development](./remote_development.md) contract deployment instructions or request a network deploy by [opening an issue](https://github.com/web3well/bls-wallet/issues/new) or [starting a discussion](https://github.com/web3well/bls-wallet/discussions/new).
 
 Below are the instructions for 2 ways you can add Quill to your browser.
 
