@@ -3,3 +3,4 @@
 !.env*.test
 cov_profile*
 /build
+/aggregator.db
