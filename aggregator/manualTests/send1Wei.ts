@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --unstable --allow-net --allow-env --allow-read
+#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read
 
 import { ethers } from "../deps.ts";
 import * as env from "../src/env.ts";

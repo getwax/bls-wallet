@@ -16,10 +16,9 @@ deno test \
   --allow-env \
   --allow-read \
   --coverage=cov_profile \
-  --unstable \
   test/*.test.ts
 
-deno coverage cov_profile --unstable --lcov >cov_profile/profile.lcov
+deno coverage cov_profile --lcov >cov_profile/profile.lcov
 
 genhtml -o cov_profile/html cov_profile/profile.lcov
 

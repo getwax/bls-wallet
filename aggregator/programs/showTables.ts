@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --unstable --allow-net --allow-read --allow-env
+#!/usr/bin/env -S deno run --allow-net --allow-read --allow-env
 
 import { BigNumber, sqlite } from "../deps.ts";
 import * as env from "../src/env.ts";

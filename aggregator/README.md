@@ -43,12 +43,12 @@ commands.
 | PRIVATE_KEY_AGG                    | 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 | Private key for the EOA account used to submit bundles on chain. Transactions are paid by the account linked to PRIVATE_KEY_AGG. By default, bundles must pay for themselves by sending funds to tx.origin or the aggregator’s onchain address                                                      |
 | PRIVATE_KEY_ADMIN                  | 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d | Private key for the admin EOA account. Used only in tests                                                                                                                                                                                                                                           |
 | TEST_BLS_WALLETS_SECRET            | test-bls-wallets-secret                                            | Secret used to seed BLS Wallet private keys during tests                                                                                                                                                                                                                                            |
-| DB_PATH                            | aggregator.db                                                      | File path of the sqlite db                                                                                                                                                                                                                                               |
-| BUNDLE_QUERY_LIMIT                 | 100                                                                | Maximum number of bundles returned from sqlite                                                                                                                                                                                                                                                    |
+| DB_PATH                            | aggregator.db                                                      | File path of the sqlite db                                                                                                                                                                                                                                                                          |
+| BUNDLE_QUERY_LIMIT                 | 100                                                                | Maximum number of bundles returned from sqlite                                                                                                                                                                                                                                                      |
 | MAX_GAS_PER_BUNDLE                 | 2000000                                                            | Limits the amount of user operations which can be bundled together by using this value as the approximate limit on the amount of gas in an aggregate bundle                                                                                                                                         |
 | MAX_AGGREGATION_DELAY_MILLIS       | 5000                                                               | Maximum amount of time in milliseconds aggregator will wait before submitting bundles on chain. A higher number will allow more time for bundles to fill, but may result in longer periods before submission. A lower number allows more frequent L2 submissions, but may result in smaller bundles |
 | MAX_UNCONFIRMED_AGGREGATIONS       | 3                                                                  | Maximum unconfirmed bundle aggregations that will be submitted on chain                                                                                                                                                                                                                             |
-| LOG_QUERIES                        | false                                                              | Whether to print sqlite queries in event log. When running tests, `TEST_LOGGING` must also be enabled                                                                                                                                                                                             |
+| LOG_QUERIES                        | false                                                              | Whether to print sqlite queries in event log. When running tests, `TEST_LOGGING` must also be enabled                                                                                                                                                                                               |
 | TEST_LOGGING                       | false                                                              | Whether to print aggregator server events to stdout during tests. Useful for debugging & logging                                                                                                                                                                                                    |
 | REQUIRE_FEES                       | true                                                               | Whether to require that user bundles pay the aggregator a sufficient fee                                                                                                                                                                                                                            |
 | BREAKEVEN_OPERATION_COUNT          | 4.5                                                                | The aggregator must pay an overhead to submit a bundle regardless of how many operations it contains. This parameter determines how much each operation must contribute to this overhead                                                                                                            |
@@ -109,14 +109,16 @@ should include this additional action with a payment of zero when estimating,
 otherwise the additional action will increase the fee that needs to be paid. You
 can also use the [aggregator-proxy](../aggregator-proxy/) package as a proxy in
 place of an aggregator. This is useful to run more advanced logic such as
-inspecting bundles and potentially paying for them, before the proxy aggregator then sends
-the bundles to an underlying aggregator.
+inspecting bundles and potentially paying for them, before the proxy aggregator
+then sends the bundles to an underlying aggregator.
 
 Also, `feeRequired` is the absolute minimum necessary fee to process the bundle
 at the time of estimation, so paying extra is advisable to increase the chance
 that the fee is sufficient during submission.
 
-In the case of a malicious aggregator, or if the chosen aggregator service goes down, an end user can always execute actions themselves, by submitting a bundle on chain via `VerificationGatewaty.processBundle`.
+In the case of a malicious aggregator, or if the chosen aggregator service goes
+down, an end user can always execute actions themselves, by submitting a bundle
+on chain via `VerificationGatewaty.processBundle`.
 
 ### Technical Detail
 
@@ -177,7 +179,7 @@ Tests are defined in `test`. Running them directly is a bit verbose because of
 the deno flags you need:
 
 ```sh
-deno test --allow-net --allow-env --allow-read --unstable
+deno test --allow-net --allow-env --allow-read
 ```
 
 Instead, `./programs/premerge.ts` may be more useful for you. It'll make sure
@@ -209,7 +211,7 @@ TS2300 [ERROR]: Duplicate identifier 'TypedArray'.
 You need to reload modules (`-r`):
 
 ```sh
-deno run -r --allow-net --allow-env --allow-read --unstable ./programs/aggregator.ts
+deno run -r --allow-net --allow-env --allow-read ./programs/aggregator.ts
 ```
 
 #### Transaction reverted: function call to a non-contract account
