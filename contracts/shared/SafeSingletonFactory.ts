@@ -182,7 +182,7 @@ export default class SafeSingletonFactory {
     try {
       await (await this.signer.sendTransaction(deployTx)).wait();
     } catch (error) {
-      if ((error as any).code !== "INSUFFICIENT_FUNDS") {
+      if ((error as { code: string }).code !== "INSUFFICIENT_FUNDS") {
         throw error;
       }
 
