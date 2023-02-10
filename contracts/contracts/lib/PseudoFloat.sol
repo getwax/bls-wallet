@@ -25,8 +25,9 @@ import "./VLQ.sol";
  *
  *     01111 (=15)
  *
- *     (The maximum exponent is 30. Adjust the left side of the previous
- *     equation if needed.)
+ *     Note: The maximum value we can encode here is 31 (11111). This means the
+ *     maximum exponent is 30. Adjust the left side of the previous equation if
+ *     needed.
  *
  * Encode the left side in binary:
  *
