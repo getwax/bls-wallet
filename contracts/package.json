@@ -20,7 +20,10 @@
   "author": "James Zaki",
   "license": "MIT",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.7.3"
+    "@openzeppelin/contracts": "^4.7.3",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.12.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.1",
@@ -38,7 +41,6 @@
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
     "chai-spies": "^1.0.0",
-    "dotenv": "^16.0.3",
     "eslint": "^8.26.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^17.0.0",
@@ -48,8 +50,6 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
     "ethereum-waffle": "^3.4.4",
-    "ethers": "^5.7.2",
-    "hardhat": "^2.12.1",
     "hardhat-gas-reporter": "^1.0.9",
     "mcl-wasm": "^1.0.3",
     "prettier": "^2.7.1",

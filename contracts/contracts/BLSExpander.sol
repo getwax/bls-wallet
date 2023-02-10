@@ -20,7 +20,7 @@ contract BLSExpander {
     function blsCallMultiCheckRewardIncrease(
         IERC20 tokenRewardAddress,
         uint256 tokenRewardAmount,
-        VerificationGateway.Bundle calldata bundle
+        IWallet.Bundle calldata bundle
         // uint256[4][] calldata publicKeys,
         // uint256[2] memory signature,
         // VerificationGateway.TxSet[] calldata txs
@@ -101,7 +101,7 @@ contract BLSExpander {
     ) external {
         uint256 length = encodedParamSets.length;
 
-        VerificationGateway.Bundle memory bundle;
+        IWallet.Bundle memory bundle;
         bundle.signature = signature;
 
         bundle.senderPublicKeys = new uint256[4][](1);

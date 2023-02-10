@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 import {
@@ -23,11 +25,17 @@ import {
   VerificationGateway,
   BLSOpen,
   ProxyAdmin,
+  BLSExpanderDelegator__factory,
+  BLSExpanderDelegator,
 } from "../../typechain-types";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
   static readonly DEFAULT_BLS_ACCOUNTS_LENGTH = 5;
+
+  static readonly expanderIndexes = {
+    fallback: 0,
+  };
 
   private constructor(
     public chainId: number,
@@ -42,6 +50,7 @@ export default class Fixture {
 
     public blsLibrary: BLSOpen,
     public blsExpander: Contract,
+    public blsExpanderDelegator: BLSExpanderDelegator,
     public utilities: Contract,
 
     public BLSWallet: ContractFactory,
@@ -96,6 +105,27 @@ export default class Fixture {
       ),
     );
 
+    const blsExpanderDelegatorUntyped = await create2Fixture.create2Contract(
+      "BLSExpanderDelegator",
+      ethers.utils.defaultAbiCoder.encode(
+        ["address"],
+        [verificationGateway.address],
+      ),
+    );
+
+    const blsExpanderDelegator = BLSExpanderDelegator__factory.connect(
+      blsExpanderDelegatorUntyped.address,
+      blsExpanderDelegatorUntyped.signer,
+    );
+
+    const fallbackExpander = await create2Fixture.create2Contract(
+      "FallbackExpander",
+    );
+
+    await (
+      await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
+    ).wait();
+
     // deploy utilities
     const utilities = await create2Fixture.create2Contract(
       "AggregatorUtilities",
@@ -144,6 +174,7 @@ export default class Fixture {
       verificationGateway,
       bls,
       blsExpander,
+      blsExpanderDelegator,
       utilities,
       BLSWallet,
       await initBlsWalletSigner({ chainId }),

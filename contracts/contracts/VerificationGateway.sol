@@ -33,13 +33,6 @@ contract VerificationGateway
     mapping(bytes32 => uint256[2]) public pendingMessageSenderSignatureFromHash;
     mapping(bytes32 => uint256) public pendingBLSPublicKeyTimeFromHash;
 
-    /** Aggregated signature with corresponding senders + operations */
-    struct Bundle {
-        uint256[2] signature;
-        uint256[BLS_KEY_LEN][] senderPublicKeys;
-        IWallet.Operation[] operations;
-    }
-
     event WalletCreated(
         address indexed wallet,
         uint256[BLS_KEY_LEN] publicKey
@@ -77,7 +70,7 @@ contract VerificationGateway
 
     /** Throw if bundle not valid or signature verification fails */
     function verify(
-        Bundle memory bundle
+        IWallet.Bundle memory bundle
     ) public view {
         uint256 opLength = bundle.operations.length;
         require(
@@ -281,7 +274,7 @@ contract VerificationGateway
     Can be called with a single operation with no actions.
     */
     function processBundle(
-        Bundle memory bundle
+        IWallet.Bundle memory bundle
     ) external returns (
         bool[] memory successes,
         bytes[][] memory results
