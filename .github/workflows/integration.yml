@@ -48,7 +48,7 @@ jobs:
         deno-version: ${{ env.DENO_VERSION }}
 
     # - name: run geth node and deploy contracts
-    - uses: ./.github/actions/local-contract-deploy
+    - uses: ./.github/actions/local-contract-deploy-geth
 
     - working-directory: ./contracts
       run: ./scripts/wait-for-contract-deploy.sh

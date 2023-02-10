@@ -40,9 +40,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: ./.github/actions/setup-contracts-clients
-    - uses: ./.github/actions/local-contract-deploy
-
-    - working-directory: ./contracts
-      run: ./scripts/wait-for-contract-deploy.sh
+    - uses: ./.github/actions/local-contract-deploy-hardhat
 
     - run: yarn hardhat run ./scripts/measure_gas/run.ts --network gethDev
