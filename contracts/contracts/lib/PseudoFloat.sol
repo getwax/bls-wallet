@@ -23,7 +23,7 @@ import "./VLQ.sol";
  *
  * We add 1 to the exponent and encode it in 5 bits:
  *
- *     11111 (=15)
+ *     01111 (=15)
  *
  *     (The maximum exponent is 30. Adjust the left side of the previous
  *     equation if needed.)
@@ -35,7 +35,7 @@ import "./VLQ.sol";
  * Our first byte is the 5-bit exponent followed by the three lowest bits of the
  * mantissa:
  * 
- *     11111011
+ *     01111011
  *     ^^^^^-------- 15 => exponent is 14
  *          ^^^----- lowest 3 bits of the mantissa
  *
@@ -46,8 +46,12 @@ import "./VLQ.sol";
  *      ^^^^^^^----- bits to use, put them together with 011 above to get
  *                   0001111011, which is 123.
  *
+ * Putting it together is two bytes:
+ *
+ *     0x7b0f
+ *
  * Example 2:
- * 
+ *
  *     0.883887085 ETH uses 5 bytes: 0x55b4d7c27d
  *     883887085 * 10^9
  *     For exponent 9 we encode 10 as 5 bits: 01010
@@ -77,10 +81,10 @@ library PseudoFloat {
         uint8 exponent = ((firstByte & 0xf8) >> 3) - 1;
 
         uint256 value;
-        (value, stream) = VLQ.decode(stream);
+        (value, stream) = VLQ.decode(stream[1:]);
 
         value <<= 3;
-        value += firstByte & 0x03;
+        value += firstByte & 0x07;
 
         // TODO (merge-ok): Exponentiation by squaring might be better here.
         // Counterpoints:
