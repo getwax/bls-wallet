@@ -1,0 +1,9 @@
+name: Local Contract Deploy
+description: Runs a Hardhat node & deploys contracts
+
+runs:
+  using: composite
+  steps:
+    - working-directory: ./contracts
+      shell: bash
+      run: yarn start &

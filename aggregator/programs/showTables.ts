@@ -10,5 +10,5 @@ console.log(table.count());
 console.log(table.all().map((bun) => bun.id));
 console.log(
   "findEligible",
-  table.findEligible(BigNumber.from(0), 1000).map((bun) => bun.id),
+  table.findEligible(BigNumber.from(0), 1000).map((bun) => bun.id)
 );
