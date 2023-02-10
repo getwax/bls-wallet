@@ -26,12 +26,12 @@ export function compressAsFallback(
   );
 
   result.push(encodeVLQ(operation.nonce));
-  result.push(encodeVLQ(operation.gas));
+  result.push(encodePseudoFloat(operation.gas));
 
   result.push(encodeVLQ(operation.actions.length));
 
   for (const action of operation.actions) {
-    result.push(encodeVLQ(action.ethValue));
+    result.push(encodePseudoFloat(action.ethValue));
     result.push(action.contractAddress);
 
     const fnHex = ethers.utils.hexlify(action.encodedFunction);
