@@ -115,6 +115,12 @@ describe("Signer contract interaction tests", function () {
     it("transfer() call", async function () {
       const recipient = await blsSigners[1].getAddress();
 
+      const fee = mockERC20
+        .connect(blsSigners[0])
+        .estimateGas.transfer(recipient, tokenSupply.div(2));
+
+      await expect(fee).to.not.be.rejected;
+
       const tx = await mockERC20
         .connect(blsSigners[0])
         .transfer(recipient, tokenSupply.div(2));
@@ -134,6 +140,9 @@ describe("Signer contract interaction tests", function () {
       const initialBalance = await mockERC20.balanceOf(recipient);
       const erc20ToTransfer = parseEther("53.2134222");
 
+      const fee = ERC20.estimateGas.transfer(recipient, erc20ToTransfer);
+      await expect(fee).to.not.be.rejected;
+
       const tx = await ERC20.transfer(recipient, erc20ToTransfer);
       await tx.wait();
 
@@ -150,10 +159,20 @@ describe("Signer contract interaction tests", function () {
       const initialBalance = await mockERC20.balanceOf(spender);
       const erc20ToTransfer = parseEther("11.0");
 
+      const approveFee = mockERC20
+        .connect(blsSigners[0])
+        .estimateGas.approve(spender, erc20ToTransfer);
+      await expect(approveFee).to.not.be.rejected;
+
       const txApprove = await mockERC20
         .connect(blsSigners[0])
         .approve(spender, erc20ToTransfer);
       await txApprove.wait();
+
+      const transferFee = mockERC20
+        .connect(blsSigners[1])
+        .estimateGas.transferFrom(owner, spender, erc20ToTransfer);
+      await expect(transferFee).to.not.be.rejected;
 
       const txTransferFrom = await mockERC20
         .connect(blsSigners[1])
@@ -239,6 +258,11 @@ describe("Signer contract interaction tests", function () {
       const recipient = ethers.Wallet.createRandom().address;
       const tokenId = 2;
 
+      const fee = mockERC721
+        .connect(blsSigners[0])
+        .estimateGas.safeMint(recipient, tokenId);
+      await expect(fee).to.not.be.rejected;
+
       const mint = await mockERC721
         .connect(blsSigners[0])
         .safeMint(recipient, tokenId);
@@ -252,6 +276,11 @@ describe("Signer contract interaction tests", function () {
     it("mint() call", async function () {
       const recipient = await blsSigners[1].getAddress();
       const tokenId = 3;
+
+      const fee = mockERC721
+        .connect(blsSigners[0])
+        .estimateGas.mint(recipient, tokenId);
+      await expect(fee).to.not.be.rejected;
 
       const mint = await mockERC721
         .connect(blsSigners[0])
@@ -290,6 +319,11 @@ describe("Signer contract interaction tests", function () {
       // Check signer[3] owns the token
       expect(await mockERC721.ownerOf(tokenId)).to.equal(owner);
 
+      const fee = mockERC721
+        .connect(blsSigners[3])
+        .estimateGas.transferFrom(owner, recipient, tokenId);
+      await expect(fee).to.not.be.rejected;
+
       // Transfer the token from signer 3 to signer 2
       const transfer = await mockERC721
         .connect(blsSigners[3])
@@ -310,6 +344,11 @@ describe("Signer contract interaction tests", function () {
         .connect(blsSigners[0])
         .safeMint(owner, tokenId);
       await mint.wait();
+
+      const fee = mockERC721
+        .connect(blsSigners[4])
+        .estimateGas.approve(spender, tokenId);
+      await expect(fee).to.not.be.rejected;
 
       // Approve the token for signer[1] address
       const approve = await mockERC721
