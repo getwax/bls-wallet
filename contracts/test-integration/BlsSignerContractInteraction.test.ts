@@ -140,7 +140,7 @@ describe("Signer contract interaction tests", function () {
       const initialBalance = await mockERC20.balanceOf(recipient);
       const erc20ToTransfer = parseEther("53.2134222");
 
-      const fee = ERC20.estimateGas.transfer(recipient, tokenSupply.div(2));
+      const fee = ERC20.estimateGas.transfer(recipient, erc20ToTransfer);
       await expect(fee).to.not.be.rejected;
 
       const tx = await ERC20.transfer(recipient, erc20ToTransfer);
