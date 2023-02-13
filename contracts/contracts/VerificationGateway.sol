@@ -19,8 +19,11 @@ is the calling wallet's address.
  */
 contract VerificationGateway
 {
-    /** Domain chosen arbitrarily */
-    bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
+    /**
+     * Chosen arbitrarily
+     * =keccak256(abi.encodePacked(uint32(0xfeedbee5)))
+     */
+    bytes32 BLS_DOMAIN = 0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc;
     uint8 constant BLS_KEY_LEN = 4;
 
     IBLS public immutable blsLib;
