@@ -8,7 +8,7 @@ import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
 async function getRandomSigners(
   numSigners: number,
-): Promise<(typeof Experimental.BlsSigner[])> {
+): Promise<(typeof Experimental.BlsSigner)[]> {
   const networkConfig = await getNetworkConfig("local");
 
   const aggregatorUrl = "http://localhost:3000";
