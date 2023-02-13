@@ -19,8 +19,11 @@ is the calling wallet's address.
  */
 contract VerificationGateway
 {
-    /** Domain chosen arbitrarily */
-    bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
+    /**
+     * Chosen arbitrarily
+     * =keccak256(abi.encodePacked(uint32(0xfeedbee5)))
+     */
+    bytes32 BLS_DOMAIN = 0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc;
     uint8 constant BLS_KEY_LEN = 4;
 
     IBLS public immutable blsLib;
@@ -76,7 +79,7 @@ contract VerificationGateway
         uint256 opLength = bundle.operations.length;
         require(
             opLength == bundle.senderPublicKeys.length,
-            "VG: Sender/op length mismatch"
+            "VG: length mismatch"
         );
         uint256[2][] memory messages = new uint256[2][](opLength);
 
@@ -127,7 +130,7 @@ contract VerificationGateway
         uint256[2] memory messageSenderSignature,
         uint256[BLS_KEY_LEN] memory publicKey
     ) public {
-        require(blsLib.isZeroBLSKey(publicKey) == false, "VG: publicKey must be non-zero");
+        require(blsLib.isZeroBLSKey(publicKey) == false, "VG: key is zero");
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
         if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
