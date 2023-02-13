@@ -17,7 +17,7 @@ describe("Provider tests", function () {
     const rpcUrl = "http://localhost:8545";
     const network = {
       name: "localhost",
-      chainId: 0x7a69,
+      chainId: 0x539, // 1337
     };
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
@@ -34,7 +34,7 @@ describe("Provider tests", function () {
 
     this.beforeAll(async function () {
       fundedWallet = new ethers.Wallet(
-        "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #4
+        "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2 private key
         new ethers.providers.JsonRpcProvider("http://localhost:8545"),
       );
       recipient = ethers.Wallet.createRandom().address;

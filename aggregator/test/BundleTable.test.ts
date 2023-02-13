@@ -1,38 +1,11 @@
-import { assertEquals, BigNumber } from "./deps.ts";
+import { assertEquals, BigNumber, sqlite } from "./deps.ts";
 
 import BundleTable, { BundleRow } from "../src/app/BundleTable.ts";
-import createQueryClient from "../src/app/createQueryClient.ts";
 import nil from "../src/helpers/nil.ts";
-
-let counter = 0;
-
-function test(name: string, fn: (bundleTable: BundleTable) => Promise<void>) {
-  Deno.test({
-    name,
-    sanitizeResources: false,
-    fn: async () => {
-      const tableName = `bundles_test_${counter++}_${Date.now()}`;
-
-      const queryClient = createQueryClient(() => { });
-      const table = await BundleTable.create(queryClient, tableName);
-
-      try {
-        await fn(table);
-      } finally {
-        try {
-          await table.drop();
-          await queryClient.disconnect();
-        } catch (error) {
-          console.error("cleanup error:", error);
-        }
-      }
-    },
-  });
-}
 
 const sampleRows: BundleRow[] = [
   {
-    id: 0,
+    id: 1,
     hash: "0x0",
     status: "pending",
     bundle: {
@@ -58,18 +31,19 @@ const sampleRows: BundleRow[] = [
   },
 ];
 
-test("Starts with zero transactions", async (table) => {
-  assertEquals(await table.count(), 0n);
+Deno.test("Starts with zero transactions", () => {
+  const table = new BundleTable(new sqlite.DB());
+  assertEquals(table.count(), 0);
 });
 
-test("Has one transaction after adding transaction", async (table) => {
-  await table.add(sampleRows[0]);
-
-  assertEquals(await table.count(), 1n);
+Deno.test("Has one transaction after adding transaction", () => {
+  const table = new BundleTable(new sqlite.DB());
+  table.add(sampleRows[0]);
+  assertEquals(table.count(), 1);
 });
 
-test("Can retrieve transaction", async (table) => {
-  await table.add(sampleRows[0]);
-
-  assertEquals(await table.all(), [{ ...sampleRows[0] }]);
+Deno.test("Can retrieve transaction", () => {
+  const table = new BundleTable(new sqlite.DB());
+  table.add(sampleRows[0]);
+  assertEquals(table.all(), [{ ...sampleRows[0] }]);
 });

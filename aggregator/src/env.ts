@@ -23,15 +23,7 @@ export const NETWORK_CONFIG_PATH = Deno.env.get("IS_DOCKER") === "true"
 export const PRIVATE_KEY_AGG = requireEnv("PRIVATE_KEY_AGG");
 export const PRIVATE_KEY_ADMIN = requireEnv("PRIVATE_KEY_ADMIN");
 
-export const PG = {
-  HOST: requireEnv("PG_HOST"),
-  PORT: requireEnv("PG_PORT"),
-  USER: requireEnv("PG_USER"),
-  PASSWORD: requireEnv("PG_PASSWORD"),
-  DB_NAME: requireEnv("PG_DB_NAME"),
-};
-
-export const BUNDLE_TABLE_NAME = requireEnv("BUNDLE_TABLE_NAME");
+export const DB_PATH = requireEnv("DB_PATH");
 
 /**
  * Query limit used when processing potentially large numbers of bundles.

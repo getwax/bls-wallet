@@ -16,7 +16,7 @@ async function getRandomSigners(
   const rpcUrl = "http://localhost:8545";
   const network = {
     name: "localhost",
-    chainId: 0x7a69,
+    chainId: 0x539, // 1337
   };
 
   const signers = [];
@@ -40,7 +40,7 @@ describe("Signer contract interaction tests", function () {
 
   this.beforeAll(async function () {
     fundedWallet = new ethers.Wallet(
-      "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a", // HH Account #4
+      "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a", // HH Account #4 private key
       new ethers.providers.JsonRpcProvider("http://localhost:8545"),
     );
     blsSigners = await getRandomSigners(5);

@@ -20,28 +20,30 @@ import {
   // AggregatorProxyCallback,
   // ^ Alternatively, for manual control, import AggregatorProxyCallback to
   // just generate the req,res callback for use with http.createServer
-} from 'bls-wallet-aggregator-proxy';
+} from "bls-wallet-aggregator-proxy";
 
 runAggregatorProxy(
-  'https://arbitrum-goerli.blswallet.org',
-  async bundle => {
-    console.log('proxying bundle', JSON.stringify(bundle, null, 2));
+  "https://arbitrum-goerli.blswallet.org",
+  async (bundle) => {
+    console.log("proxying bundle", JSON.stringify(bundle, null, 2));
 
     // Return a different/augmented bundle to send to the upstream aggregator
     return bundle;
   },
   8080,
-  '0.0.0.0',
+  "0.0.0.0",
   () => {
-    console.log('Proxying aggregator on port 8080');
-  },
+    console.log("Proxying aggregator on port 8080");
+  }
 );
 ```
 
-## Instant wallet without dapp-sponsored transaction
+## Instant wallet example without dapp-sponsored transaction
+
 ![Instant wallet without dapp-sponsored transactions](./../docs/images/system-overview/instant-wallet-without-dapp-sponsored-txs.jpg)
 
-## Instant wallet with dapp-sponsored transaction
+## Instant wallet example with dapp-sponsored transaction
+
 ![Instant wallet with dapp-sponsored transaction](./../docs/images/system-overview/instant-wallet-with-dapp-sponsored-txs.jpg)
 
 ## Example dApp using a proxy aggregator

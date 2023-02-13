@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
+#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write
 
 import { delay, ethers, MockERC20__factory } from "../deps.ts";
 
@@ -47,7 +47,7 @@ console.log("Sending via ethereumService");
 })();
 
 while (true) {
-  const balance = (await testErc20.balanceOf(wallet.address));
+  const balance = await testErc20.balanceOf(wallet.address);
 
   console.log({
     startBalance: startBalance.toString(),

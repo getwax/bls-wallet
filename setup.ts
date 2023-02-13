@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write
+#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write
 
 import { exists } from "https://deno.land/std@0.103.0/fs/mod.ts";
 import * as shell from "./aggregator/programs/helpers/shell.ts";

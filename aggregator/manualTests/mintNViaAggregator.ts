@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
+#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write
 
 import { ActionData } from "https://esm.sh/v99/bls-wallet-clients@0.8.0-efa2e06/dist/src/index.d.ts";
 import {
@@ -123,7 +123,7 @@ await Promise.all(bundles.map(async (bundle) => {
 }));
 
 while (true) {
-  const balance = (await testErc20.balanceOf(firstWallet.address));
+  const balance = await testErc20.balanceOf(firstWallet.address);
 
   console.log({
     startBalance: startBalance.toString(),

@@ -4,14 +4,10 @@ description: Runs an aggregator instance
 runs:
   using: composite
   steps:
-    - working-directory: ./
-      shell: bash
-      run: docker-compose up -d postgres
-
     - working-directory: ./aggregator
       shell: bash
       run: cp .env.test .env
 
     - working-directory: ./aggregator
       shell: bash
-      run: deno run --allow-read --allow-env --allow-net ./programs/aggregator.ts 2>&1 | tee -a aggregatorLogs.txt &
+      run: deno run --allow-read --allow-write --allow-env --allow-net ./programs/aggregator.ts 2>&1 | tee -a aggregatorLogs.txt &

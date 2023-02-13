@@ -12,7 +12,7 @@ trap cleanup EXIT
 
 yarn hardhat node &
 
-sleep 5
+"$SCRIPT_DIR/wait-for-rpc.sh"
 
 yarn hardhat fundDeployer --network gethDev
 yarn hardhat run scripts/deploy_all.ts --network gethDev

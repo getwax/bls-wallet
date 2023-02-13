@@ -4,6 +4,8 @@ These steps will setup this repo on your machine for local development for the m
 By default the extension will connect to contracts already deployed on Arbitrum Nitro testnet and a public Aggregator running on https://arbitrum-goerli.blswallet.org/
 If you would like to target a remote network instead, follow the steps outlined in [Remote Development](./remote_development.md).
 
+If you're running a Windows machine, we recommend using [WSL2](https://learn.microsoft.com/en-us/windows/wsl/).
+
 ## Dependencies
 
 ### Required
@@ -12,7 +14,7 @@ If you would like to target a remote network instead, follow the steps outlined 
 - [Yarn](https://yarnpkg.com/getting-started/install) (`npm install -g yarn`)
 - [Deno](https://deno.land/#installation)
 
-### Optional (Recomended)
+### Optional (Recommended)
 
 - [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - [docker-compose](https://docs.docker.com/compose/install/)
@@ -41,6 +43,7 @@ yarn start
 ```
 
 You can also use the local node from hardhat.
+
 - Pros: doesn't need docker, access to console.log in solidity
 - Cons: slow
 
@@ -53,23 +56,14 @@ yarn start-hardhat
 
 The [aggregator](../aggregator/) is a service that accepts transaction bundles (including those that contain a single transaction) and submits aggregations of these bundles to L2.
 
-Update these values in `./aggregator/.env`.
-See [aggregator](../aggregator/README.md) for a detailed breakdown of each env property.
-
-```sh
-RPC_URL=http://localhost:8545
-...
-NETWORK_CONFIG_PATH=../contracts/networks/local.json
-...
-```
-
-```sh
-cd .. # root of repo
-docker-compose up -d postgres # Or see local postgres instructions in ./aggregator/README.md#PostgreSQL
-```
-
 ```sh
 cd ./aggregator
+cp .env.local.example .env
+```
+
+([More aggregator configuration docs.](../aggregator/README.md#configuration))
+
+```sh
 ./programs/aggregator.ts
 ```
 
@@ -77,15 +71,7 @@ cd ./aggregator
 
 The [extension](../extension/) (otherwise referred to as Quill) is a prototype extension wallet used to showcase and test BLS Wallet features. **Note it is not a production wallet.**
 
-make these changes in extension > .env
-
-```sh
-AGGREGATOR_URL=http://localhost:3000/
-DEFAULT_CHAIN_ID=31337
-NETWORK_CONFIG=./contracts/networks/local.json
-```
-
-In a seperate terminal/shell instance
+In a separate terminal/shell instance
 
 ```sh
 cd ./extension
@@ -108,9 +94,23 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 
 ---
 
+## Troubleshooting tips
+
+### Checklist for getting to a clean slate when dealing with issues
+
+- pull latest from `main` and run the setup script from the root directory `./setup.ts`.
+- Restart the node and redeploy contracts
+- Restart the aggregator and add the "-r" flag to the command e.g `./programs/aggregator.ts -r`.
+- Reset the Quill extension in your browser if you're developing with Quill. You can do this by removing the extension and then re-adding via "Load unpacked" again. Or run `debug.reset();` twice in the background page console.
+
+### Additional troubleshooting tips
+
+- In general, the bundle or submission issues we've encountered have been us misconfiguring the data in the bundle or not configuring the aggregator properly.
+- Be careful using HH accounts 0 and 1 in your code when running a local aggregator. This is because the local aggregator config uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get around this by not using accounts 0 and 1 elsewhere, or changing the default accounts that the aggregator uses locally.
+
 ### Tests
 
-See each components `README.md` for how to run tests.
+See each component's `README.md` for how to run tests.
 
 ## Testing/using updates to ./clients
 
