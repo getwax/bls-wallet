@@ -153,10 +153,12 @@ describe("WalletActions", async function () {
     const mockAuction = await MockAuction.deploy();
     await mockAuction.deployed();
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(
-      ethToTransfer,
-    );
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(0);
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(ethToTransfer);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(0);
 
     await fx.verificationGateway.processBundle(
       fx.blsWalletSigner.aggregate([
@@ -174,10 +176,12 @@ describe("WalletActions", async function () {
       ]),
     );
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(0);
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(
-      ethToTransfer,
-    );
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(0);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(ethToTransfer);
   });
 
   it("should send ETH with function call via fallback expander", async function () {
@@ -193,10 +197,12 @@ describe("WalletActions", async function () {
     const mockAuction = await MockAuction.deploy();
     await mockAuction.deployed();
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(
-      ethToTransfer,
-    );
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(0);
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(ethToTransfer);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(0);
 
     const bundle = await sendWallet.signWithGasEstimate({
       nonce: BigNumber.from(1),
@@ -224,10 +230,12 @@ describe("WalletActions", async function () {
       )
     ).wait();
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(0);
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(
-      ethToTransfer,
-    );
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(0);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(ethToTransfer);
   });
 
   it("should check signature", async function () {
