@@ -34,29 +34,18 @@ export default class SafeSingletonFactory {
 
   static deployments: Record<number, Deployment | undefined> = {
     1337: {
-      // This is a DIY version of Safe's Singleton Factory because chainId 1337
-      // is not yet supported. It produces the factory at a different address
-      // and therefore all contracts it produces will also have a different
-      // address.
-      // Mnemonic used:
-      //   ivory   sheriff choice lake
-      //   special awesome gather portion
-      //   vote    dose    follow vessel
-      // When this issue is resolved we can update this deployment to resolve
-      // it: https://github.com/safe-global/safe-singleton-factory/issues/97.
-      // Remember to also remove the getCostEstimator() workaround in BLS.sol.
       gasPrice: 100000000000,
       gasLimit: 100000,
-      signerAddress: "0xf8D0D5059A7b8841D2Eb9D3E80c3D54ea84BF52A",
+      signerAddress: "0xE1CB04A0fA36DdD16a06ea828007E35e1a3cBC37",
       transaction: [
         "0x",
         "f8a78085174876e800830186a08080b853604580600e600039806000f350fe7ffffff",
         "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081",
         "602082378035828234f58015156039578182fd5b8082525050506014600cf3820a96a",
-        "0075740c7c4133e652909dc2aea959997818621ce668d023a088d4675a9148d55a056",
-        "37abb8e3431f791ee3eb37277c84c797d98571d0207648e8cc3e18a9c10b79",
+        "0460c6ea9b8f791e5d9e67fbf2c70aba92bf88591c39ac3747ea1bedc2ef1750ca04b",
+        "08a4b5cea15a56276513da7a0c0b34f16e89811d5dd911efba5f8625a921cc",
       ].join(""),
-      address: "0x13914f599b1dDED5215BcCC0BF4e36bb61e5CeAC",
+      address: SafeSingletonFactory.sharedAddress,
     },
     31337: {
       gasPrice: 100000000000,

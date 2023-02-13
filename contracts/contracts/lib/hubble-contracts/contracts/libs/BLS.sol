@@ -40,32 +40,6 @@ library BLS {
 
     // estimator address
     address private constant COST_ESTIMATOR_ADDRESS = 0x6eb8F8d661eFe36daB11147830A1e690249bB830;
-    address private constant COST_ESTIMATOR_ADDRESS_1337 = 0xae0d9c2B7514577D3Ff21e71DC6a9D165cFA6D06;
-
-    /**
-     * This is a temporary workaround while we wait for Safe's singleton factory
-     * deployment signature for chain id 1337:
-     * https://github.com/safe-global/safe-singleton-factory/issues/97
-     * 
-     * In the meantime, this allows us to do fast testing using geth dev mode,
-     * just without getting the same address in this test environment.
-     * 
-     * This adds:
-     * - 1824 L1 gas ($0.05) to the deployment of BLSOpen (114 bytes)
-     * - 71 L2 gas ($0.000012) to signature verification
-     */
-    function getCostEstimator() internal pure returns (address) {
-        uint256 id;
-        assembly {
-            id := chainid()
-        }
-
-        if (id == 1337) {
-            return COST_ESTIMATOR_ADDRESS_1337;
-        }
-
-        return COST_ESTIMATOR_ADDRESS;
-    }
 
     function verifySingle(
         uint256[2] memory signature,
@@ -89,7 +63,7 @@ library BLS {
             ];
         uint256[1] memory out;
         uint256 precompileGasCost =
-            BNPairingPrecompileCostEstimator(getCostEstimator()).getGasCost(
+            BNPairingPrecompileCostEstimator(COST_ESTIMATOR_ADDRESS).getGasCost(
                 2
             );
         bool callSuccess;
@@ -140,7 +114,7 @@ library BLS {
         uint256[1] memory out;
 
         // prettier-ignore
-        uint256 precompileGasCost = BNPairingPrecompileCostEstimator(getCostEstimator()).getGasCost(size + 1);
+        uint256 precompileGasCost = BNPairingPrecompileCostEstimator(COST_ESTIMATOR_ADDRESS).getGasCost(size + 1);
         // solium-disable-next-line security/no-inline-assembly
         assembly {
             callSuccess := staticcall(
