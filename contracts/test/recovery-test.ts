@@ -183,6 +183,16 @@ describe("Recovery", async function () {
   });
 
   it("should set recovery hash using client bls wallet wrapper function", async function () {
+    await (
+      await vg.processBundle(
+        wallet3.sign({
+          nonce: 0,
+          gas: 30_000_000,
+          actions: [],
+        }),
+      )
+    ).wait();
+
     // set instantly from 0 value
     const trustedWalletAddress = "0x7321d1D33E94f294c144aA332f75411372741d33";
     const walletHash = await vg.hashFromWallet(wallet3.address);
@@ -204,6 +214,16 @@ describe("Recovery", async function () {
   });
 
   it("should recover blswallet via blswallet to new bls key using bls client module", async function () {
+    await (
+      await vg.processBundle(
+        wallet3.sign({
+          nonce: 0,
+          gas: 30_000_000,
+          actions: [],
+        }),
+      )
+    ).wait();
+
     // Set recovery hash
     const wallet4 = await fx.createBLSWallet();
     const bundle = await wallet4.getSetRecoveryHashBundle(
@@ -221,10 +241,7 @@ describe("Recovery", async function () {
       "test salt",
       fx.verificationGateway,
     );
-    const recoveryBundleTxn = await fx.verificationGateway.processBundle(
-      recoveryBundle,
-    );
-    await recoveryBundleTxn.wait();
+    await fx.processBundleWithExtraGas(recoveryBundle);
 
     const newHash = wallet4.blsWalletSigner.getPublicKeyHash(newPrivateKey);
     expect(await vg.hashFromWallet(wallet4.address)).to.eql(newHash);
