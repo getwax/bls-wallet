@@ -12,7 +12,6 @@ import {
 } from "../../clients/src";
 
 import Range from "./Range";
-import assert from "./assert";
 import Create2Fixture from "./Create2Fixture";
 import {
   AggregatorUtilities,
