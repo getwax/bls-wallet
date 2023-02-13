@@ -98,9 +98,15 @@ export default async function deploy(
     salt,
   );
 
-  await (
-    await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
-  ).wait();
+  const existingExpander0 = await blsExpanderDelegator.expanders(0);
+
+  if (existingExpander0 === ethers.constants.AddressZero) {
+    await (
+      await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
+    ).wait();
+  } else if (existingExpander0 !== fallbackExpander.address) {
+    throw new Error("Existing expander at index 0 is not fallbackExpander");
+  }
 
   const aggregatorUtilities = await singletonFactory.deploy(
     AggregatorUtilities__factory,
