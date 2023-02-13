@@ -57,17 +57,17 @@ describe("Upgrade", async function () {
 
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
-  beforeEach(async function () {
+  beforeEach(async () => {
     fx = await Fixture.create();
   });
 
-  it("should upgrade wallet contract", async function () {
+  it("should upgrade wallet contract", async () => {
     const MockWalletUpgraded = await ethers.getContractFactory(
       "MockWalletUpgraded",
     );
     const mockWalletUpgraded = await MockWalletUpgraded.deploy();
 
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
     // prepare call
     const txnReceipt1 = await proxyAdminCall(fx, wallet, "upgrade", [
@@ -97,7 +97,7 @@ describe("Upgrade", async function () {
     await expect(newBLSWallet.newData()).to.eventually.equal(wallet.address);
   });
 
-  it("should register with new verification gateway", async function () {
+  it("should register with new verification gateway", async () => {
     // Deploy new verification gateway
     const create2Fixture = Create2Fixture.create();
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
@@ -117,7 +117,7 @@ describe("Upgrade", async function () {
     await (await proxyAdmin2.transferOwnership(vg2.address)).wait();
 
     // Recreate hubble bls signer
-    const walletOldVg = await fx.lazyBlsWallets[0]();
+    const walletOldVg = await fx.createBLSWallet();
     const walletAddress = walletOldVg.address;
     const blsSecret = walletOldVg.privateKey;
 
@@ -186,7 +186,7 @@ describe("Upgrade", async function () {
       const { successes } =
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
-            nonce: BigNumber.from(2),
+            nonce: BigNumber.from(1),
             gas: BigNumber.from(30_000_000),
             actions: [
               // skip: setExternalWalletAction,
@@ -205,7 +205,7 @@ describe("Upgrade", async function () {
       const { successes } =
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
-            nonce: BigNumber.from(2),
+            nonce: BigNumber.from(1),
             gas: BigNumber.from(30_000_000),
             actions: [
               setExternalWalletAction,
@@ -224,7 +224,7 @@ describe("Upgrade", async function () {
       const { successes } =
         await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
-            nonce: BigNumber.from(2),
+            nonce: BigNumber.from(1),
             gas: BigNumber.from(30_000_000),
             actions: [
               setExternalWalletAction,
@@ -245,17 +245,15 @@ describe("Upgrade", async function () {
     // checks.
     await (
       await fx.verificationGateway.processBundle(
-        fx.blsWalletSigner.aggregate([
-          walletOldVg.sign({
-            nonce: BigNumber.from(2),
-            gas: BigNumber.from(30_000_000),
-            actions: [
-              setExternalWalletAction,
-              changeProxyAction,
-              setTrustedBLSGatewayAction,
-            ],
-          }),
-        ]),
+        walletOldVg.sign({
+          nonce: BigNumber.from(1),
+          gas: BigNumber.from(30_000_000),
+          actions: [
+            setExternalWalletAction,
+            changeProxyAction,
+            setTrustedBLSGatewayAction,
+          ],
+        }),
       )
     ).wait();
 
@@ -290,7 +288,7 @@ describe("Upgrade", async function () {
     const bundleResult = await vg2.callStatic.processBundle(
       fx.blsWalletSigner.aggregate([
         walletOldVg.sign({
-          nonce: BigNumber.from(3),
+          nonce: BigNumber.from(2),
           gas: BigNumber.from(30_000_000),
           actions: [
             {
@@ -312,23 +310,23 @@ describe("Upgrade", async function () {
     expect(walletFromHashAddress).to.equal(walletAddress);
   });
 
-  it("should change mapping of an address to hash", async function () {
+  it("should change mapping of an address to hash", async () => {
     const vg1 = fx.verificationGateway;
 
-    const lazyWallet1 = await fx.lazyBlsWallets[0]();
-    const lazyWallet2 = await fx.lazyBlsWallets[1]();
+    const wallet1 = await fx.createBLSWallet();
+    const wallet2 = await fx.createBLSWallet();
 
-    const wallet1 = await BlsWalletWrapper.connect(
-      lazyWallet1.privateKey,
-      vg1.address,
-      vg1.provider,
-    );
-
-    const wallet2 = await BlsWalletWrapper.connect(
-      lazyWallet2.privateKey,
-      vg1.address,
-      vg1.provider,
-    );
+    // Process an empty operation for wallet1 so that the gateway knows about
+    // its hash mapping
+    await (
+      await fx.verificationGateway.processBundle(
+        wallet1.sign({
+          nonce: 0,
+          gas: 30_000_000,
+          actions: [],
+        }),
+      )
+    ).wait();
 
     const hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
 
@@ -367,13 +365,11 @@ describe("Upgrade", async function () {
 
     await (
       await fx.verificationGateway.processBundle(
-        fx.blsWalletSigner.aggregate([
-          wallet1.sign({
-            nonce: BigNumber.from(1),
-            gas: BigNumber.from(30_000_000),
-            actions: [setExternalWalletAction],
-          }),
-        ]),
+        wallet1.sign({
+          nonce: BigNumber.from(1),
+          gas: BigNumber.from(30_000_000),
+          actions: [setExternalWalletAction],
+        }),
       )
     ).wait();
 
@@ -396,8 +392,8 @@ describe("Upgrade", async function () {
   });
 
   it("should NOT allow walletAdminCall where first param is not calling wallet", async function () {
-    const wallet1 = await fx.lazyBlsWallets[0]();
-    const wallet2 = await fx.lazyBlsWallets[1]();
+    const wallet1 = await fx.createBLSWallet();
+    const wallet2 = await fx.createBLSWallet();
 
     const txnReceipt = await proxyAdminCall(fx, wallet1, "upgrade", [
       wallet2.address,
@@ -407,7 +403,7 @@ describe("Upgrade", async function () {
   });
 
   it("should NOT allow walletAdminCall to ProxyAdmin.transferOwnership", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
     const txnReceipt = await proxyAdminCall(fx, wallet, "transferOwnership", [
       wallet.address,
@@ -416,7 +412,7 @@ describe("Upgrade", async function () {
   });
 
   it("should NOT allow walletAdminCall to ProxyAdmin.renounceOwnership", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
     const txnReceipt = await proxyAdminCall(
       fx,
@@ -428,7 +424,7 @@ describe("Upgrade", async function () {
   });
 
   it("call function with no params", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
     const txnReceipt = await proxyAdminCall(fx, wallet, "owner", []);
     expectOperationsToSucceed(txnReceipt);
