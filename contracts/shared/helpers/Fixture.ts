@@ -19,7 +19,7 @@ import {
   BLSExpander,
   BLSOpen,
   BLSWallet__factory,
-  ProxyAdmin,
+  ProxyAdminGenerator,
   BLSExpanderDelegator__factory,
   BLSExpanderDelegator,
   VerificationGateway,
@@ -79,20 +79,17 @@ export default class Fixture {
     }
 
     const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
-    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
-    const proxyAdmin = (await ProxyAdmin.deploy()) as ProxyAdmin;
-    await proxyAdmin.deployed();
+    const proxyAdminGenerator = (await create2Fixture.create2Contract(
+      "ProxyAdminGenerator",
+    )) as ProxyAdminGenerator;
     // deploy Verification Gateway
     const verificationGateway = (await create2Fixture.create2Contract(
       "VerificationGateway",
       ethers.utils.defaultAbiCoder.encode(
         ["address", "address", "address"],
-        [bls.address, blsWalletImpl.address, proxyAdmin.address],
+        [bls.address, blsWalletImpl.address, proxyAdminGenerator.address],
       ),
     )) as VerificationGateway;
-    await (
-      await proxyAdmin.transferOwnership(verificationGateway.address)
-    ).wait();
 
     // deploy BLSExpander Gateway
     const blsExpander = (await create2Fixture.create2Contract(
@@ -120,9 +117,13 @@ export default class Fixture {
       "FallbackExpander",
     );
 
-    await (
-      await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
-    ).wait();
+    if (
+      (await blsExpanderDelegator.expanders(0)) === ethers.constants.AddressZero
+    ) {
+      await (
+        await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
+      ).wait();
+    }
 
     // deploy utilities
     const utilities = (await create2Fixture.create2Contract(
