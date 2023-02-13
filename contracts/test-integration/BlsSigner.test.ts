@@ -256,9 +256,10 @@ describe("BlsSigner", () => {
       nonce,
       actions: [action],
     };
+    const gas = await wallet.estimateGas(operation);
 
     const expectedBundle = wallet.blsWalletSigner.sign(
-      operation,
+      { ...operation, gas },
       privateKey,
       walletAddress,
     );

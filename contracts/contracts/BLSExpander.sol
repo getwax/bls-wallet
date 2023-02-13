@@ -187,7 +187,7 @@ contract BLSExpander {
         }
 
         // Use them to re-create bundle
-        VerificationGateway.Bundle memory bundle;
+        IWallet.Bundle memory bundle;
         bundle.signature = addressBundle.signature;
         bundle.senderPublicKeys = senderPublicKeys;
         bundle.operations = addressBundle.operations;

@@ -52,11 +52,12 @@ export const mintTokens = async (
 
   // Mint tokens for BLS wallets
   const mintBundles = await Promise.all(
-    wallets.map(async (w) =>
-      w.sign({
-        nonce: await w.Nonce(),
-        actions: [createMintAction(testToken, w.address, amountPerWallet)],
-      }),
+    wallets.map(
+      async (w) =>
+        await w.signWithGasEstimate({
+          nonce: await w.Nonce(),
+          actions: [createMintAction(testToken, w.address, amountPerWallet)],
+        }),
     ),
   );
   await processBundles(

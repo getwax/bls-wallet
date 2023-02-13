@@ -22,7 +22,7 @@ const createBlsExpanderAirdrop = async (
     nonce: await sendingWallet.Nonce(),
     actions,
   };
-  const bundle = sendingWallet.sign(operation);
+  const bundle = await sendingWallet.signWithGasEstimate(operation);
 
   const encodedFunction = solidityPack(
     ["bytes"],
@@ -38,6 +38,7 @@ const createBlsExpanderAirdrop = async (
     .blsCallMultiSameCallerContractFunction(
       sendingWallet.PublicKey(),
       operation.nonce,
+      bundle.operations[0].gas,
       bundle.signature,
       ctx.contracts.testToken.address,
       methodId,

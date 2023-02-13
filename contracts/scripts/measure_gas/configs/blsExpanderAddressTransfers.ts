@@ -25,7 +25,7 @@ const createBlsExpanderAddressTransfers = async (
     const toAddress = ctx.rng.item(ctx.blsWallets, [blsWallet]).address;
 
     const nonce = walletNonces[walletIdx]++;
-    const bundle = blsWallet.sign({
+    const bundle = await blsWallet.signWithGasEstimate({
       nonce,
       actions: [createTransferAction(ctx, toAddress)],
     });

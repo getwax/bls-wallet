@@ -315,7 +315,7 @@ export default class BlsWalletWrapper {
       [recoverWalletAddress, walletHash, saltHash],
     );
 
-    return this.sign({
+    return await this.signWithGasEstimate({
       nonce: await this.Nonce(),
       actions: [
         {
@@ -349,7 +349,7 @@ export default class BlsWalletWrapper {
     );
     const saltHash = ethers.utils.formatBytes32String(recoverySalt);
 
-    return this.sign({
+    return await this.signWithGasEstimate({
       nonce: await this.Nonce(),
       actions: [
         {
