@@ -2,6 +2,8 @@
 
 These steps will setup this repo on your machine for targeting a remote chain, such as an EVM compatible L2. If you would like to target a local network instead, follow the steps outlined in [Local Development](./local_development.md).
 
+If you're running a Windows machine, we recommend using [WSL2](https://learn.microsoft.com/en-us/windows/wsl/).
+
 ## Dependencies
 
 ### Required
@@ -10,7 +12,7 @@ These steps will setup this repo on your machine for targeting a remote chain, s
 - [Yarn](https://yarnpkg.com/getting-started/install) (`npm install -g yarn`)
 - [Deno](https://deno.land/#installation)
 
-### Optional (Recomended)
+### Optional (Recommended)
 
 - [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - [docker-compose](https://docs.docker.com/compose/install/)
@@ -75,14 +77,13 @@ A network config file will be generated at `./contracts/networks/local.json`. Yo
 mv ./networks/local.json ./networks/your-network.json
 ```
 
-This file can be commited so others can use your deployed contracts.
+This file can be committed so others can use your deployed contracts.
 
 ## Aggregator
 
 The [aggregator](../aggregator/) is a service that accepts transaction bundles (including those that contain a single transaction) and submits aggregations of these bundles to L2.
 
-Update these values in `./aggregator/.env`.
-PK0 & PK1 are private keys for funded accounts on your network/chain. See [aggregator](../aggregator/README.md) for a detailed breakdown of each env property.
+Update the following values in `./aggregator/.env`
 
 ```
 RPC_URL=https://your.network.rpc
@@ -92,6 +93,8 @@ PRIVATE_KEY_AGG=PK0
 PRIVATE_KEY_ADMIN=PK1
 ...
 ```
+
+`PRIVATE_KEY_AGG` & `PRIVATE_KEY_ADMIN` are private keys for funded accounts on your network/chain. See the aggregator [environment variables table](../aggregator/README.md#environment-variables) for a detailed breakdown of each env property.
 
 ## Extension
 

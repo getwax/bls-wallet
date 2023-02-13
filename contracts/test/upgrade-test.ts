@@ -74,7 +74,7 @@ describe("Upgrade", async function () {
 
     const newBLSWallet = MockWalletUpgraded.attach(wallet.address);
     await (await newBLSWallet.setNewData(wallet.address)).wait();
-    expect(await newBLSWallet.newData()).to.equal(wallet.address);
+    await expect(newBLSWallet.newData()).to.eventually.equal(wallet.address);
   });
 
   it("should register with new verification gateway", async () => {
@@ -210,7 +210,9 @@ describe("Upgrade", async function () {
       expect(successes).to.deep.equal([true]);
     }
 
-    expect(await vg2.walletFromHash(hash)).not.to.equal(walletAddress);
+    await expect(vg2.walletFromHash(hash)).to.eventually.not.equal(
+      walletAddress,
+    );
 
     // Now actually perform the upgrade so we can perform some more detailed
     // checks.
@@ -233,15 +235,15 @@ describe("Upgrade", async function () {
     );
 
     // Direct checks corresponding to each action
-    expect(await vg2.walletFromHash(hash)).to.equal(walletAddress);
-    expect(await vg2.hashFromWallet(walletAddress)).to.equal(hash);
-    expect(await proxyAdmin.getProxyAdmin(walletAddress)).to.equal(
+    await expect(vg2.walletFromHash(hash)).to.eventually.equal(walletAddress);
+    await expect(vg2.hashFromWallet(walletAddress)).to.eventually.equal(hash);
+    await expect(proxyAdmin.getProxyAdmin(walletAddress)).to.eventually.equal(
       proxyAdmin.address,
     );
 
     const blsWallet = await ethers.getContractAt("BLSWallet", walletAddress);
     // New verification gateway pending
-    expect(await blsWallet.trustedBLSGateway()).to.equal(
+    await expect(blsWallet.trustedBLSGateway()).to.eventually.equal(
       fx.verificationGateway.address,
     );
     // Advance time one week
@@ -249,7 +251,9 @@ describe("Upgrade", async function () {
     // set pending
     await (await blsWallet.setAnyPending()).wait();
     // Check new verification gateway was set
-    expect(await blsWallet.trustedBLSGateway()).to.equal(vg2.address);
+    await expect(blsWallet.trustedBLSGateway()).to.eventually.equal(
+      vg2.address,
+    );
 
     // Check new gateway has wallet via static call through new gateway
     const bundleResult = await vg2.callStatic.processBundle(
@@ -297,8 +301,12 @@ describe("Upgrade", async function () {
 
     const hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
 
-    expect(await vg1.walletFromHash(hash1)).to.equal(wallet1.address);
-    expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash1);
+    await expect(vg1.walletFromHash(hash1)).to.eventually.equal(
+      wallet1.address,
+    );
+    await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
+      hash1,
+    );
 
     // wallet 2 bls key signs message containing address of wallet 1
     const addressMessage = solidityPack(["address"], [wallet1.address]);
@@ -358,11 +366,15 @@ describe("Upgrade", async function () {
       }),
     );
 
-    expect(await vg1.walletFromHash(hash1)).to.equal(
+    await expect(vg1.walletFromHash(hash1)).to.eventually.equal(
       ethers.constants.AddressZero,
     );
-    expect(await vg1.walletFromHash(hash2)).to.equal(wallet1.address);
-    expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash2);
+    await expect(vg1.walletFromHash(hash2)).to.eventually.equal(
+      wallet1.address,
+    );
+    await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
+      hash2,
+    );
   });
 
   it("should NOT allow walletAdminCall where first param is not calling wallet", async function () {

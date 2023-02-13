@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 import {
@@ -18,7 +20,13 @@ import {
 } from "../../clients/src";
 
 import Range from "./Range";
-import { VerificationGateway, BLSOpen } from "../../typechain-types";
+import {
+  VerificationGateway,
+  BLSOpen,
+  BLSExpander,
+  BLSExpanderDelegator,
+  AggregatorUtilities,
+} from "../../typechain-types";
 import deploy from "../deploy";
 import { fail } from "assert";
 
@@ -28,6 +36,10 @@ export default class Fixture {
 
   // eslint-disable-next-line no-use-before-define
   static singleton?: Fixture;
+
+  static readonly expanderIndexes = {
+    fallback: 0,
+  };
 
   private constructor(
     public chainId: number,
@@ -39,8 +51,9 @@ export default class Fixture {
     public verificationGateway: VerificationGateway,
 
     public blsLibrary: BLSOpen,
-    public blsExpander: Contract,
-    public utilities: Contract,
+    public blsExpander: BLSExpander,
+    public blsExpanderDelegator: BLSExpanderDelegator,
+    public utilities: AggregatorUtilities,
 
     public blsWalletSigner: BlsWalletSigner,
   ) {}
@@ -59,6 +72,7 @@ export default class Fixture {
       verificationGateway,
       blsLibrary: bls,
       blsExpander,
+      blsExpanderDelegator,
       aggregatorUtilities: utilities,
     } = await deploy(signers[0]);
 
@@ -70,6 +84,7 @@ export default class Fixture {
       verificationGateway,
       bls,
       blsExpander,
+      blsExpanderDelegator,
       utilities,
       await initBlsWalletSigner({ chainId }),
     );
@@ -90,7 +105,10 @@ export default class Fixture {
    * @returns array of wallets
    */
   async createBLSWallets(count: number): Promise<BlsWalletWrapper[]> {
-    return await Promise.all(Range(count).map(() => this.createBLSWallet()));
+    return Range(count).reduce(async (prev) => {
+      const wallets = await prev;
+      return [...wallets, await this.createBLSWallet()];
+    }, Promise.resolve([]));
   }
 
   async createBLSWallet(): Promise<BlsWalletWrapper> {

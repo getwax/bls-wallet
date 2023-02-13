@@ -2,21 +2,6 @@ version: '3'
 
 services:
 
-  postgres:
-    container_name: postgres
-    image: 'postgres:latest'
-
-    ports:
-      - 5432:5432
-
-    environment:
-      POSTGRES_USER: bls
-      POSTGRES_PASSWORD: generate-a-strong-password
-      POSTGRES_DB: bls_aggregator
-    
-    volumes:
-      - ./.data/postgres/:/var/lib/postgresql/data/
-
   # Not currently used, but could be helpful in the future
   geth:
     container_name: geth

@@ -5,7 +5,6 @@ import {
   Bundle,
   delay,
   ethers,
-  QueryClient,
   Semaphore,
 } from "../../deps.ts";
 
@@ -52,7 +51,6 @@ export default class BundleService {
   constructor(
     public emit: (evt: AppEvent) => void,
     public clock: IClock,
-    public queryClient: QueryClient,
     public bundleTableMutex: Mutex,
     public bundleTable: BundleTable,
     public blsWalletSigner: BlsWalletSigner,
@@ -105,7 +103,7 @@ export default class BundleService {
       return;
     }
 
-    const eligibleRows = await this.bundleTable.findEligible(
+    const eligibleRows = this.bundleTable.findEligible(
       await this.ethereumService.BlockNumber(),
       this.config.bundleQueryLimit,
     );
@@ -127,8 +125,8 @@ export default class BundleService {
   runQueryGroup<T>(body: () => Promise<T>): Promise<T> {
     return runQueryGroup(
       this.emit,
+      (sql) => this.bundleTable.dbQuery(sql),
       this.bundleTableMutex,
-      this.queryClient,
       body,
     );
   }
@@ -177,7 +175,7 @@ export default class BundleService {
     return await this.runQueryGroup(async () => {
       const hash = makeHash();
 
-      await this.bundleTable.add({
+      this.bundleTable.add({
         status: "pending",
         hash,
         bundle,
@@ -220,7 +218,7 @@ export default class BundleService {
       gasUsed: receipt.gasUsed,
       logsBloom: receipt.logsBloom,
       blockHash: receipt.blockHash,
-      transactionHash: receipt.transactionHash ,
+      transactionHash: receipt.transactionHash,
       logs: receipt.logs,
       blockNumber: receipt.blockNumber,
       confirmations: receipt.confirmations,
@@ -238,7 +236,7 @@ export default class BundleService {
     const bundleSubmitted = await this.runQueryGroup(async () => {
       const currentBlockNumber = await this.ethereumService.BlockNumber();
 
-      let eligibleRows = await this.bundleTable.findEligible(
+      let eligibleRows = this.bundleTable.findEligible(
         currentBlockNumber,
         this.config.bundleQueryLimit,
       );
@@ -286,7 +284,7 @@ export default class BundleService {
           },
         });
 
-        await this.handleFailedRow(failedRow, currentBlockNumber);
+        this.handleFailedRow(failedRow, currentBlockNumber);
       }
 
       if (!aggregateBundle || includedRows.length === 0) {
@@ -310,15 +308,15 @@ export default class BundleService {
     }
   }
 
-  async handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
+  handleFailedRow(row: BundleRow, currentBlockNumber: BigNumber) {
     if (row.nextEligibilityDelay.lte(this.config.maxEligibilityDelay)) {
-      await this.bundleTable.update({
+      this.bundleTable.update({
         ...row,
         eligibleAfter: currentBlockNumber.add(row.nextEligibilityDelay),
         nextEligibilityDelay: row.nextEligibilityDelay.mul(2),
       });
     } else {
-      await this.bundleTable.update({
+      this.bundleTable.update({
         ...row,
         status: "failed",
       });
@@ -353,7 +351,7 @@ export default class BundleService {
         const balanceAfter = await this.ethereumService.wallet.getBalance();
 
         for (const row of includedRows) {
-          await this.bundleTable.update({
+          this.bundleTable.update({
             ...row,
             receipt,
             status: "confirmed",

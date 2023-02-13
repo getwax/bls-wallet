@@ -1,4 +1,10 @@
 /* eslint-disable no-process-exit */
+/**
+ * yarn hardhat run ./scripts/deploy_all.ts --network network_from_hardhat_config
+ *
+ * Make sure create2Deployer is funded before running
+ * yarn hardhat fundDeployer --network network_from_hardhat_config --amount 1.0 # optional
+ */
 
 import * as dotenv from "dotenv";
 import util from "util";

@@ -11,7 +11,16 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 with shared params.
 */
 contract BLSExpander {
+
+    struct AddressBundle {
+        uint256[2] signature;
+        address[] senderAddresses;
+        IWallet.Operation[] operations;
+    }
+
     VerificationGateway verificationGateway;
+    mapping(address => uint256[4]) public addressToPublicKey;
+
     constructor(address gateway) {
         verificationGateway = VerificationGateway(gateway);
     }
@@ -20,7 +29,7 @@ contract BLSExpander {
     function blsCallMultiCheckRewardIncrease(
         IERC20 tokenRewardAddress,
         uint256 tokenRewardAmount,
-        VerificationGateway.Bundle calldata bundle
+        IWallet.Bundle calldata bundle
         // uint256[4][] calldata publicKeys,
         // uint256[2] memory signature,
         // VerificationGateway.TxSet[] calldata txs
@@ -101,7 +110,7 @@ contract BLSExpander {
     ) external {
         uint256 length = encodedParamSets.length;
 
-        VerificationGateway.Bundle memory bundle;
+        IWallet.Bundle memory bundle;
         bundle.signature = signature;
 
         bundle.senderPublicKeys = new uint256[4][](1);
@@ -147,4 +156,42 @@ contract BLSExpander {
     //     );
     // }
 
+    function registerPublicKey(
+        address walletAddress,
+        uint256[4] calldata publicKey
+    ) public {
+        addressToPublicKey[address(walletAddress)] = publicKey;
+    }
+
+    function registerPublicKeys(
+        address[] calldata walletAddresses,
+        uint256[4][] calldata publicKeys
+    ) external {
+        for (uint256 i=0; i<publicKeys.length; i++) {
+            registerPublicKey(walletAddresses[i], publicKeys[i]);
+        }
+    }
+
+    function addressProcessBundle(
+        AddressBundle memory addressBundle
+    ) external returns (
+        bool[] memory successes,
+        bytes[][] memory results
+    ) {
+        // Expand addresses to public keys
+        uint256 numPubKeys = addressBundle.senderAddresses.length;
+        uint256[4][] memory senderPublicKeys =
+            new uint256[4][](numPubKeys);
+        for (uint256 i=0; i<numPubKeys; i++) {
+            senderPublicKeys[i] = addressToPublicKey[addressBundle.senderAddresses[i]];
+        }
+
+        // Use them to re-create bundle
+        IWallet.Bundle memory bundle;
+        bundle.signature = addressBundle.signature;
+        bundle.senderPublicKeys = senderPublicKeys;
+        bundle.operations = addressBundle.operations;
+
+        return verificationGateway.processBundle(bundle);
+    }
 }

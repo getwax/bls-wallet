@@ -5,12 +5,15 @@ import {
   AggregatorUtilities,
   AggregatorUtilities__factory,
   BLSExpander,
+  BLSExpanderDelegator,
+  BLSExpanderDelegator__factory,
   BLSExpander__factory,
   BLSOpen,
   BLSOpen__factory,
   BLSWallet__factory,
   BNPairingPrecompileCostEstimator,
   BNPairingPrecompileCostEstimator__factory,
+  FallbackExpander__factory,
   ProxyAdminGenerator__factory,
   VerificationGateway,
   VerificationGateway__factory,
@@ -24,6 +27,7 @@ export type Deployment = {
   blsLibrary: BLSOpen;
   verificationGateway: VerificationGateway;
   blsExpander: BLSExpander;
+  blsExpanderDelegator: BLSExpanderDelegator;
   aggregatorUtilities: AggregatorUtilities;
 };
 
@@ -82,6 +86,22 @@ export default async function deploy(
     salt,
   );
 
+  const blsExpanderDelegator = await singletonFactory.deploy(
+    BLSExpanderDelegator__factory,
+    [verificationGateway.address],
+    salt,
+  );
+
+  const fallbackExpander = await singletonFactory.deploy(
+    FallbackExpander__factory,
+    [],
+    salt,
+  );
+
+  await (
+    await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
+  ).wait();
+
   const aggregatorUtilities = await singletonFactory.deploy(
     AggregatorUtilities__factory,
     [],
@@ -94,6 +114,7 @@ export default async function deploy(
     blsLibrary,
     verificationGateway,
     blsExpander,
+    blsExpanderDelegator,
     aggregatorUtilities,
   };
 }

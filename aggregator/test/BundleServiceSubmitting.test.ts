@@ -16,7 +16,7 @@ const aggregationStrategyConfig: AggregationStrategyConfig = {
 };
 
 Fixture.test("submits a single action in a timed submission", async (fx) => {
-  const bundleService = await fx.createBundleService(
+  const bundleService = fx.createBundleService(
     bundleServiceConfig,
     aggregationStrategyConfig,
   );
@@ -44,7 +44,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1000),
   );
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -54,7 +54,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
     await fx.testErc20.balanceOf(wallet.address),
     BigNumber.from(1001),
   );
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   if ("failures" in bundleResponse) {
     throw new Error("Bundle failed to be created");
@@ -69,7 +69,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
 });
 
 Fixture.test("submits a full submission without delay", async (fx) => {
-  const bundleService = await fx.createBundleService(
+  const bundleService = fx.createBundleService(
     bundleServiceConfig,
     aggregationStrategyConfig,
   );
@@ -112,7 +112,7 @@ Fixture.test("submits a full submission without delay", async (fx) => {
 Fixture.test(
   "submits multiple aggregations when provided with too many user bundles",
   async (fx) => {
-    const bundleService = await fx.createBundleService(
+    const bundleService = fx.createBundleService(
       bundleServiceConfig,
       aggregationStrategyConfig,
     );
@@ -152,7 +152,7 @@ Fixture.test(
     await bundleService.submissionTimer.trigger();
     await bundleService.waitForConfirmations();
 
-    if ((await fx.allBundles(bundleService)).length > 0) {
+    if ((fx.allBundles(bundleService)).length > 0) {
       await bundleService.submissionTimer.trigger();
       await bundleService.waitForConfirmations();
     }
@@ -174,7 +174,7 @@ Fixture.test(
 Fixture.test(
   "submits 3 bundles in reverse (incorrect) nonce order",
   async (fx) => {
-    const bundleService = await fx.createBundleService(
+    const bundleService = fx.createBundleService(
       bundleServiceConfig,
       aggregationStrategyConfig,
     );
@@ -213,7 +213,7 @@ Fixture.test(
     );
     assertEquals(await wallet.Nonce(), BigNumber.from(2));
     // 2 mints should be left as both failed submission pre-check
-    let remainingBundles = await fx.allBundles(bundleService);
+    let remainingBundles = fx.allBundles(bundleService);
     let remainingPendingBundles = remainingBundles.filter((bundle) =>
       bundle.status === "pending"
     );
@@ -231,7 +231,7 @@ Fixture.test(
     );
     assertEquals(await wallet.Nonce(), BigNumber.from(3));
     // 1 mints (nonce 3) should be left as it failed submission pre-check
-    remainingBundles = await fx.allBundles(bundleService);
+    remainingBundles = fx.allBundles(bundleService);
     remainingPendingBundles = remainingBundles.filter((bundle) =>
       bundle.status === "pending"
     );
@@ -251,7 +251,7 @@ Fixture.test(
       BigNumber.from(1003), // 1000 (initial) + 3 * 1 (mint txs)
     );
     assertEquals(await wallet.Nonce(), BigNumber.from(4));
-    remainingBundles = await fx.allBundles(bundleService);
+    remainingBundles = fx.allBundles(bundleService);
     remainingPendingBundles = remainingBundles.filter((bundle) =>
       bundle.status === "pending"
     );
@@ -260,7 +260,7 @@ Fixture.test(
 );
 
 Fixture.test("retains failing bundle when its eligibility delay is smaller than MAX_ELIGIBILITY_DELAY", async (fx) => {
-  const bundleService = await fx.createBundleService(
+  const bundleService = fx.createBundleService(
     {
       ...bundleServiceConfig,
       maxEligibilityDelay: 300,
@@ -291,16 +291,16 @@ Fixture.test("retains failing bundle when its eligibility delay is smaller than 
   await bundleService.runPendingTasks();
   assertBundleSucceeds(res);
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 });
 
 Fixture.test("updates status of failing bundle when its eligibility delay is larger than MAX_ELIGIBILITY_DELAY", async (fx) => {
-  const bundleService = await fx.createBundleService(
+  const bundleService = fx.createBundleService(
     {
       ...bundleServiceConfig,
       maxEligibilityDelay: 300,
@@ -331,7 +331,7 @@ Fixture.test("updates status of failing bundle when its eligibility delay is lar
   await bundleService.runPendingTasks();
   assertBundleSucceeds(res);
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   const [bundleRow] = await bundleService.bundleTable.all();
 
@@ -343,7 +343,7 @@ Fixture.test("updates status of failing bundle when its eligibility delay is lar
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
 
-  assertEquals(await bundleService.bundleTable.count(), 1n);
+  assertEquals(await bundleService.bundleTable.count(), 1);
 
   if ("failures" in res) {
     throw new Error("Bundle failed to be created");

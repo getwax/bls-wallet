@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --unstable --allow-run --allow-read --allow-write --allow-env
+#!/usr/bin/env -S deno run --allow-run --allow-read --allow-write --allow-env
 
 import { lintTodosFixmes } from "./helpers/lint.ts"; // merge-ok
 import { checkTs } from "./helpers/typescript.ts";
@@ -28,7 +28,7 @@ function Checks(): Check[] {
     ["lint", async () => {
       await shell.run("deno", "lint", ".");
     }],
-    ["todos and fixmes",  lintTodosFixmes], // merge-ok
+    ["todos and fixmes", lintTodosFixmes], // merge-ok
     ["typescript", checkTs],
     ["test", async () => {
       await shell.run(
@@ -42,7 +42,6 @@ function Checks(): Check[] {
         "--allow-net",
         "--allow-env",
         "--allow-read",
-        "--unstable",
         "--",
         "--env",
         envName,

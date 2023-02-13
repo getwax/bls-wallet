@@ -34,13 +34,6 @@ contract VerificationGateway
     mapping(bytes32 => uint256[2]) public pendingMessageSenderSignatureFromHash;
     mapping(bytes32 => uint256) public pendingBLSPublicKeyTimeFromHash;
 
-    /** Aggregated signature with corresponding senders + operations */
-    struct Bundle {
-        uint256[2] signature;
-        uint256[BLS_KEY_LEN][] senderPublicKeys;
-        IWallet.Operation[] operations;
-    }
-
     event WalletCreated(
         address indexed wallet,
         uint256[BLS_KEY_LEN] publicKey
@@ -78,7 +71,7 @@ contract VerificationGateway
 
     /** Throw if bundle not valid or signature verification fails */
     function verify(
-        Bundle memory bundle
+        IWallet.Bundle memory bundle
     ) public view {
         uint256 opLength = bundle.operations.length;
         require(
@@ -92,7 +85,7 @@ contract VerificationGateway
             bytes32 keyHash = keccak256(abi.encodePacked(bundle.senderPublicKeys[i]));
             address walletAddress = address(walletFromHash[keyHash]);
             if (walletAddress == address(0)) {
-                walletAddress = address(uint160(uint(keccak256(abi.encodePacked(
+                walletAddress = address(uint160(uint256(keccak256(abi.encodePacked(
                     bytes1(0xff),
                     address(this),
                     keyHash,
@@ -282,7 +275,7 @@ contract VerificationGateway
     Can be called with a single operation with no actions.
     */
     function processBundle(
-        Bundle memory bundle
+        IWallet.Bundle memory bundle
     ) external returns (
         bool[] memory successes,
         bytes[][] memory results
@@ -352,15 +345,15 @@ contract VerificationGateway
     function measureOperationGas(
         uint256[BLS_KEY_LEN] memory publicKey,
         IWallet.Operation calldata op
-    ) external returns (uint) {
+    ) external returns (uint256) {
         // Don't allow this to actually be executed on chain. Static calls only.
-        require(msg.sender == address(0));
+        require(msg.sender == address(0), "VG: read only");
 
         IWallet wallet = getOrCreateWallet(publicKey);
 
-        uint gasBefore = gasleft();
+        uint256 gasBefore = gasleft();
         wallet.performOperation(op);
-        uint gasUsed = gasBefore - gasleft();
+        uint256 gasUsed = gasBefore - gasleft();
 
         return gasUsed;
     }

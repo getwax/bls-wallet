@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --unstable
+#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read
 
 import {
   BlsWalletWrapper,

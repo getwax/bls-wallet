@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { Download, CaretLeft } from 'phosphor-react';
 import { FunctionComponent, useState } from 'react';
 import Button from '../../../../components/Button';
@@ -15,11 +14,7 @@ const StepThreeRecover: FunctionComponent<{
   const [instantWalletAddress, setInstantWalletAddress] = useState<string>('');
 
   const handleRecover = async () => {
-    await rpc.addRecoveryWallet(
-      instantWalletAddress,
-      ethers.utils.formatBytes32String(salt),
-      walletPrivateKey,
-    );
+    await rpc.addRecoveryWallet(instantWalletAddress, salt, walletPrivateKey);
     onComplete();
   };
 

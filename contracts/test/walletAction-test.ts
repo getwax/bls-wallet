@@ -7,6 +7,10 @@ import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
+import {
+  bundleCompressedOperations,
+  compressAsFallback,
+} from "../shared/helpers/bundleCompression";
 import { getOperationResults } from "../clients/src";
 
 describe("WalletActions", async function () {
@@ -73,7 +77,7 @@ describe("WalletActions", async function () {
     expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
   });
 
-  it("should send ETH (empty call)", async function () {
+  it("should send ETH", async function () {
     // send money to sender bls wallet
     const sendWallet = await fx.createBLSWallet();
     const recvWallet = await fx.createBLSWallet();
@@ -129,10 +133,12 @@ describe("WalletActions", async function () {
     const mockAuction = await MockAuction.deploy();
     await mockAuction.deployed();
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(
-      ethToTransfer,
-    );
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(0);
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(ethToTransfer);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(0);
 
     await (
       await fx.verificationGateway.processBundle(
@@ -150,10 +156,66 @@ describe("WalletActions", async function () {
       )
     ).wait();
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(0);
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(
-      ethToTransfer,
-    );
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(0);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(ethToTransfer);
+  });
+
+  it("should send ETH with function call via fallback expander", async function () {
+    // send money to sender bls wallet
+    const sendWallet = await fx.createBLSWallet();
+    const ethToTransfer = parseEther("0.001");
+    await fx.signers[0].sendTransaction({
+      to: sendWallet.address,
+      value: ethToTransfer,
+    });
+
+    const MockAuction = await ethers.getContractFactory("MockAuction");
+    const mockAuction = await MockAuction.deploy();
+    await mockAuction.deployed();
+
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(ethToTransfer);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(0);
+
+    const bundle = await sendWallet.signWithGasEstimate({
+      nonce: 0,
+      actions: [
+        {
+          ethValue: ethToTransfer,
+          contractAddress: mockAuction.address,
+          encodedFunction: mockAuction.interface.encodeFunctionData("buyItNow"),
+        },
+      ],
+    });
+
+    await (
+      await fx.blsExpanderDelegator.run(
+        bundleCompressedOperations(
+          [
+            compressAsFallback(
+              Fixture.expanderIndexes.fallback,
+              bundle.senderPublicKeys[0],
+              bundle.operations[0],
+            ),
+          ],
+          bundle.signature,
+        ),
+      )
+    ).wait();
+
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(0);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(ethToTransfer);
   });
 
   it("should check signature", async function () {

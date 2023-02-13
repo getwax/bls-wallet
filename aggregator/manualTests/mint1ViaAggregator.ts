@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write --unstable
+#!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write
 
 import { ActionData } from "https://esm.sh/v99/bls-wallet-clients@0.8.0-efa2e06/dist/src/index.d.ts";
 import {
@@ -106,7 +106,7 @@ if ("failures" in res) {
 console.log("Success response from aggregator", res.hash);
 
 while (true) {
-  const balance = (await testErc20.balanceOf(wallet.address));
+  const balance = await testErc20.balanceOf(wallet.address);
 
   console.log({
     startBalance: startBalance.toString(),

@@ -16,7 +16,7 @@ async function getRandomSigners(
   const rpcUrl = "http://localhost:8545";
   const network = {
     name: "localhost",
-    chainId: 0x7a69,
+    chainId: 0x539, // 1337
   };
 
   const signers = [];
@@ -40,7 +40,7 @@ describe("Signer contract interaction tests", function () {
 
   this.beforeAll(async function () {
     fundedWallet = new ethers.Wallet(
-      "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a", // HH Account #4
+      "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a", // HH Account #4 private key
       new ethers.providers.JsonRpcProvider("http://localhost:8545"),
     );
     blsSigners = await getRandomSigners(5);
@@ -244,9 +244,9 @@ describe("Signer contract interaction tests", function () {
         .safeMint(recipient, tokenId);
       await mint.wait();
 
-      expect(await mockERC721.connect(blsSigners[1]).ownerOf(tokenId)).to.equal(
-        recipient,
-      );
+      await expect(
+        mockERC721.connect(blsSigners[1]).ownerOf(tokenId),
+      ).to.eventually.equal(recipient);
     });
 
     it("mint() call", async function () {
@@ -258,9 +258,9 @@ describe("Signer contract interaction tests", function () {
         .mint(recipient, tokenId);
       await mint.wait();
 
-      expect(await mockERC721.connect(blsSigners[1]).ownerOf(tokenId)).to.equal(
-        recipient,
-      );
+      await expect(
+        mockERC721.connect(blsSigners[1]).ownerOf(tokenId),
+      ).to.eventually.equal(recipient);
     });
 
     it("balanceOf() call", async function () {
@@ -288,7 +288,7 @@ describe("Signer contract interaction tests", function () {
       await mint.wait();
 
       // Check signer[3] owns the token
-      expect(await mockERC721.ownerOf(tokenId)).to.equal(owner);
+      await expect(mockERC721.ownerOf(tokenId)).to.eventually.equal(owner);
 
       // Transfer the token from signer 3 to signer 2
       const transfer = await mockERC721
@@ -297,7 +297,7 @@ describe("Signer contract interaction tests", function () {
       await transfer.wait();
 
       // Check signer[2] now owns the token
-      expect(await mockERC721.ownerOf(tokenId)).to.equal(recipient);
+      await expect(mockERC721.ownerOf(tokenId)).to.eventually.equal(recipient);
     });
 
     it("approve() call", async function () {
@@ -318,7 +318,9 @@ describe("Signer contract interaction tests", function () {
       await approve.wait();
 
       // Check signer[1]'s address is now an approved address for the token
-      expect(await mockERC721.getApproved(tokenId)).to.equal(spender);
+      await expect(mockERC721.getApproved(tokenId)).to.eventually.equal(
+        spender,
+      );
     });
   });
 });

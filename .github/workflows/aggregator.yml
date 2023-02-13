@@ -71,12 +71,8 @@ jobs:
     # Setup node & contracts
     - working-directory: ./contracts
       run: yarn start &
+    - working-directory: ./contracts
+      run: ./scripts/wait-for-rpc.sh
 
-    - working-directory: ./
-      run: docker-compose up -d postgres
     - run: cp .env.local.example .env
-    - run: deno test --allow-net --allow-env --allow-read --unstable
-
-    # Cleanup
-    - working-directory: ./
-      run: docker-compose down
+    - run: deno test --allow-net --allow-env --allow-read

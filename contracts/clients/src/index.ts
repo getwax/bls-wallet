@@ -32,6 +32,7 @@ import {
   decodeError,
   OperationResultError,
 } from "./OperationResults";
+import { BlsWalletContracts, connectToContracts } from "./BlsWalletContracts";
 
 export * from "./signer";
 
@@ -74,5 +75,7 @@ export {
   // eslint-disable-next-line camelcase
   MockERC20__factory,
   MockERC20,
+  BlsWalletContracts,
+  connectToContracts,
   Experimental,
 };

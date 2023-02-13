@@ -17,3 +17,6 @@ cache-ovm
 
 #editor files
 .vscode
+
+#yarn
+yarn-error.log

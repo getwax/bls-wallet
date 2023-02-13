@@ -16,7 +16,7 @@ export async function checkTs(): Promise<void> {
       tsFiles.map((f) => `import "${repoDir}/${f}";`).join("\n"),
     );
 
-    await shell.run("deno", "check", "--unstable", testFilePath);
+    await shell.run("deno", "check", testFilePath);
   } finally {
     if (testFilePath !== nil) {
       await Deno.remove(testFilePath);

@@ -27,8 +27,10 @@ describe("Recovery", async function () {
   let vg: VerificationGateway;
   let wallet1: BlsWalletWrapper;
   let wallet2: BlsWalletWrapper;
+  let wallet3: BlsWalletWrapper;
   let walletAttacker: BlsWalletWrapper;
   let blsWallet: BLSWallet;
+  let blsWallet3: BLSWallet;
   let recoverySigner;
   let hash1, hash2, hashAttacker;
   let salt;
@@ -39,8 +41,10 @@ describe("Recovery", async function () {
 
     wallet1 = await fx.createBLSWallet();
     wallet2 = await fx.createBLSWallet();
-    walletAttacker = await fx.createBLSWallet();
+    wallet3 = await fx.createBLSWallet();
+    walletAttacker = wallet3;
     blsWallet = await ethers.getContractAt("BLSWallet", wallet1.address);
+    blsWallet3 = await ethers.getContractAt("BLSWallet", wallet3.address);
     recoverySigner = (await ethers.getSigners())[1];
 
     hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
@@ -66,7 +70,7 @@ describe("Recovery", async function () {
       )
     ).wait();
 
-    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash1);
+    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash1);
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -100,7 +104,7 @@ describe("Recovery", async function () {
       }),
     );
 
-    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash2);
+    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash2);
   });
 
   it("should NOT override public key hash after creation", async function () {
@@ -156,7 +160,7 @@ describe("Recovery", async function () {
       0,
       30_000_000,
     );
-    expect(await blsWallet.recoveryHash()).to.equal(recoveryHash);
+    await expect(blsWallet.recoveryHash()).to.eventually.equal(recoveryHash);
 
     // new value set after delay from non-zero value
     salt = "0x" + "AB".repeat(32);
@@ -172,10 +176,59 @@ describe("Recovery", async function () {
       1,
       30_000_000,
     );
-    expect(await blsWallet.recoveryHash()).to.equal(recoveryHash);
+    await expect(blsWallet.recoveryHash()).to.eventually.equal(recoveryHash);
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await (await blsWallet.setAnyPending()).wait();
-    expect(await blsWallet.recoveryHash()).to.equal(newRecoveryHash);
+    await expect(blsWallet.recoveryHash()).to.eventually.equal(newRecoveryHash);
+  });
+
+  it("should set recovery hash using client bls wallet wrapper function", async function () {
+    // set instantly from 0 value
+    const trustedWalletAddress = "0x7321d1D33E94f294c144aA332f75411372741d33";
+    const walletHash = await vg.hashFromWallet(wallet3.address);
+    const salt = "test salt";
+    const saltHash = ethers.utils.formatBytes32String(salt);
+    const recoveryHash = ethers.utils.solidityKeccak256(
+      ["address", "bytes32", "bytes32"],
+      [trustedWalletAddress, walletHash, saltHash],
+    );
+
+    const bundle = await wallet3.getSetRecoveryHashBundle(
+      "test salt",
+      trustedWalletAddress,
+    );
+    const bundleTxn = await fx.verificationGateway.processBundle(bundle);
+    await bundleTxn.wait();
+
+    expect(await blsWallet3.recoveryHash()).to.equal(recoveryHash);
+  });
+
+  it("should recover blswallet via blswallet to new bls key using bls client module", async function () {
+    // Set recovery hash
+    const wallet4 = await fx.createBLSWallet();
+    const bundle = await wallet4.getSetRecoveryHashBundle(
+      "test salt",
+      wallet3.address,
+    );
+    const bundleTxn = await fx.verificationGateway.processBundle(bundle);
+    await bundleTxn.wait();
+
+    // Recover wallet
+    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const recoveryBundle = await wallet3.getRecoverWalletBundle(
+      wallet4.address,
+      newPrivateKey,
+      "test salt",
+      fx.verificationGateway,
+    );
+    const recoveryBundleTxn = await fx.verificationGateway.processBundle(
+      recoveryBundle,
+    );
+    await recoveryBundleTxn.wait();
+
+    const newHash = wallet4.blsWalletSigner.getPublicKeyHash(newPrivateKey);
+    expect(await vg.hashFromWallet(wallet4.address)).to.eql(newHash);
+    expect(await vg.walletFromHash(newHash)).to.eql(wallet4.address);
   });
 
   it("should recover blswallet via blswallet to new bls key", async function () {
@@ -226,8 +279,8 @@ describe("Recovery", async function () {
 
     // don't trust, verify
     const hash3 = wallet3.blsWalletSigner.getPublicKeyHash(wallet3.privateKey);
-    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash3);
-    expect(await vg.walletFromHash(hash3)).to.eql(wallet1.address);
+    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash3);
+    await expect(vg.walletFromHash(hash3)).to.eventually.eql(wallet1.address);
   });
 
   it("should recover before bls key update", async function () {
@@ -299,8 +352,8 @@ describe("Recovery", async function () {
     ).wait();
 
     // key reset via recovery
-    expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash2);
-    expect(await vg.walletFromHash(hash2)).to.eql(wallet1.address);
+    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash2);
+    await expect(vg.walletFromHash(hash2)).to.eventually.eql(wallet1.address);
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2 + 1); // wait remainder the time
     // NB: advancing the time makes an empty tx with lazywallet[1]
@@ -350,11 +403,15 @@ describe("Recovery", async function () {
       }),
     );
 
-    expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
-    expect(await vg.walletFromHash(hashAttacker)).to.not.equal(
+    await expect(vg.walletFromHash(hash1)).to.eventually.not.equal(
       blsWallet.address,
     );
-    expect(await vg.walletFromHash(hash2)).to.equal(blsWallet.address);
+    await expect(vg.walletFromHash(hashAttacker)).to.eventually.not.equal(
+      blsWallet.address,
+    );
+    await expect(vg.walletFromHash(hash2)).to.eventually.equal(
+      blsWallet.address,
+    );
 
     // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
     const res = await fx.callStatic(
@@ -392,7 +449,7 @@ describe("Recovery", async function () {
     // Attacker waits out safety delay
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await (await attackerWalletContract.setAnyPending()).wait();
-    expect(await attackerWalletContract.recoveryHash()).to.equal(
+    await expect(attackerWalletContract.recoveryHash()).to.eventually.equal(
       attackerRecoveryHash,
     );
 
