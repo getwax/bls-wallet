@@ -6,6 +6,63 @@ Accepts transaction bundles (including bundles that contain a single
 transaction) and submits aggregations of these bundles to the configured
 Verification Gateway.
 
+## Docker Usage
+
+Docker images of the aggregator are
+[available on DockerHub](https://hub.docker.com/r/blswallet/aggregator).
+
+If you're targeting a network that
+[already has a deployment of the BLSWallet contracts](../contracts/networks),
+you can use these images standalone (without this repository) as follows:
+
+```sh
+mkdir aggregator
+cd aggregator
+
+curl https://raw.githubusercontent.com/web3well/bls-wallet/main/aggregator/.env.example >.env
+
+# Replace CHOSEN_NETWORK below
+curl https://raw.githubusercontent.com/web3well/bls-wallet/main/contracts/networks/CHOSEN_NETWORK.json >networkConfig.json
+```
+
+In `.env`:
+
+- Change `RPC_URL`
+  - (If using `localhost`, you probably want `host.docker.internal`)
+- Change `PRIVATE_KEY_AGG`
+- Ignore `NETWORK_CONFIG_PATH` (it's not used inside docker)
+- See [Configuration](#configuration) for more detail and other options
+
+If you're running in production, you might want to set
+`AUTO_CREATE_INTERNAL_BLS_WALLET` to `false`. The internal BLS wallet is needed
+for user fee estimation. Creating it is a one-time setup that will use
+`PRIVATE_KEY_AGG` to pay for gas. You can create it explicitly like this:
+
+```sh
+docker run \
+  --rm \
+  -it \
+  --mount type=bind,source="$PWD/.env",target=/app/.env \
+  --mount type=bind,source="$PWD/networkConfig.json",target=/app/networkConfig.json \
+  blswallet/aggregator \
+  ./ts/programs/createInternalBlsWallet.ts
+```
+
+Finally, start the aggregator:
+
+```sh
+docker run \
+  --name choose-container-name \ # Optional
+  -d \ # Optional
+  -p3000:3000 \ # If you chose a different PORT in .env, change it here too
+  --restart=unless-stopped \ # Optional
+  --mount type=bind,source="$PWD/.env",target=/app/.env \
+  --mount type=bind,source="$PWD/networkConfig.json",target=/app/networkConfig.json \
+  blswallet/aggregator # Tags of the form :git-$VERSION are also available
+```
+
+(You may need to remove the comments before pasting into your terminal.)
+
 ## Installation
 
 Install [Deno](deno.land)
@@ -68,6 +125,20 @@ Can be run locally or hosted.
 # Or if you have a named environment (see configuration section):
 # ./programs/aggregator.ts --env <name>
 ```
+
+**Note**: It's also possible to run the aggregator directly from github:
+
+```sh
+deno run \
+  --allow-net \
+  --allow-env \
+  --allow-read=. \
+  --allow-write=. \
+  https://raw.githubusercontent.com/web3well/bls-wallet/main/aggregator/programs/aggregator.ts
+```
+
+(This can be done without a clone of the repository, but you'll still need to
+set up `.env` and your network config.)
 
 ## Testing
 
