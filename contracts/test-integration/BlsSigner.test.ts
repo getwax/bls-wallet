@@ -585,7 +585,6 @@ describe("BlsSigner", () => {
     });
   });
 
-  // TODO: bls-wallet #410 estimate gas for a transaction
   it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
     // Arrange
     const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");

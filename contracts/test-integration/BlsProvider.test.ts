@@ -82,7 +82,6 @@ describe("BlsProvider", () => {
     expect(formatEther(result)).to.equal(expectedSupply);
   });
 
-  // TODO: bls-wallet #410 estimate gas for a transaction
   it("should estimate gas without throwing an error", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
@@ -145,7 +144,7 @@ describe("BlsProvider", () => {
     await blsProvider.sendTransaction(signedTransaction);
 
     // Assert
-    // Once when calling "signer.signTransaction", once when calling "blsProvider.estimateGas", and once when calling "blsProvider.sendTransaction".
+    // Once when calling "signer.signTransaction", once when calling "blsProvider.estimateGas", and once when calling "blsSigner.constructTransactionResponse".
     // This unit test is concerned with the latter being called.
     expect(spy).to.have.been.called.exactly(3);
   });

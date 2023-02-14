@@ -200,7 +200,28 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    const feeEstimate = await this.provider.estimateGas(transaction);
+
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      this.aggregatorUtilitiesAddress,
+      this.provider,
+    );
+
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [
+        action,
+        {
+          ethValue: feeEstimate,
+          contractAddress: this.aggregatorUtilitiesAddress,
+          encodedFunction:
+            aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendEthToTxOrigin",
+            ),
+        },
+      ],
+    });
+
     return JSON.stringify(bundleToDto(bundle));
   }
 

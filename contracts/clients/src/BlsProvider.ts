@@ -7,7 +7,6 @@ import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner, { UncheckedBlsSigner, _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
 import BlsWalletWrapper from "./BlsWalletWrapper";
-import { AggregatorUtilities__factory } from "../typechain-types";
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
@@ -28,7 +27,6 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     this.aggregatorUtilitiesAddress = aggregatorUtilitiesAddress;
   }
 
-  // TODO: bls-wallet #410 estimate gas for a transaction
   override async estimateGas(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<BigNumber> {
@@ -62,7 +60,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
 
     const feeEstimate = await this.aggregator.estimateFee(estimateFeeBundle);
 
-    const safetyDivisor = 3;
+    // Due to small fluctuations is gas estimation, we add a little safety premium
+    // to the fee to increase the chance that it actually gets accepted during
+    // aggregation.
+    const safetyDivisor = 5;
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
     const safetyPremium = feeRequired.div(safetyDivisor);
     return feeRequired.add(safetyPremium);
@@ -81,49 +82,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     const resolvedTransaction = await signedTransaction;
     const userBundle: Bundle = JSON.parse(resolvedTransaction);
 
-    // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
-    // We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
-    const transaction: ethers.providers.TransactionRequest = {
-      to: userBundle.operations[0].actions[0].contractAddress,
-      value: 0,
-      data: userBundle.operations[0].actions[0].encodedFunction,
-    };
-
-    const feeEstimate = await this.estimateGas(transaction);
-
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this,
-    );
-
-    const nonce = await BlsWalletWrapper.Nonce(
-      this.signer.wallet.PublicKey(),
-      this.verificationGatewayAddress,
-      this,
-    );
-
-    const updatedNonce = nonce.add(1);
-
-    const paymentBundle = this.signer.wallet.sign({
-      nonce: updatedNonce,
-      actions: [
-        {
-          ethValue: feeEstimate,
-          contractAddress: this.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
-    });
-
-    const aggregatedBundle = this.signer.wallet.blsWalletSigner.aggregate([
-      userBundle,
-      paymentBundle,
-    ]);
-
-    const result = await this.aggregator.add(aggregatedBundle);
+    const result = await this.aggregator.add(userBundle);
 
     if ("failures" in result) {
       throw new Error(JSON.stringify(result.failures));
@@ -141,7 +100,6 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       actionData,
       result.hash,
       this.signer.wallet.address,
-      updatedNonce,
     );
   }
 
