@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
@@ -16,6 +17,7 @@ import {
   NetworkConfig,
   // eslint-disable-next-line camelcase
   MockERC20__factory,
+  AggregatorUtilities__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
@@ -256,9 +258,27 @@ describe("BlsSigner", () => {
       verificationGateway,
       blsSigner,
     );
+
+    const feeEstimate = await blsProvider.estimateGas(transaction);
+
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      blsProvider.aggregatorUtilitiesAddress,
+      blsProvider,
+    );
+
     const operation = {
       nonce,
-      actions: [action],
+      actions: [
+        action,
+        {
+          ethValue: feeEstimate,
+          contractAddress: blsProvider.aggregatorUtilitiesAddress,
+          encodedFunction:
+            aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendEthToTxOrigin",
+            ),
+        },
+      ],
     };
 
     const expectedBundle = wallet.blsWalletSigner.sign(
