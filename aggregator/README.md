@@ -331,16 +331,9 @@ Make sure your Deno version is
 ## Hosting Guide
 
 1. Configure your server to allow TCP on ports 80 and 443
-2. Follow the [Installation](#Installation) instructions
-3. Install docker and nginx:
+2. Install docker and nginx:
    `sudo apt update && sudo apt install docker.io nginx`
-
-4. Run `./programs/build.ts`
-
-- If you're using a named environment, add `--env <name>`
-- If `docker` requires `sudo`, add `--sudo-docker`
-
-5. Configure log rotation in docker by setting `/etc/docker/daemon.json` to
+3. Configure log rotation in docker by setting `/etc/docker/daemon.json` to
 
 ```json
 {
@@ -354,18 +347,9 @@ Make sure your Deno version is
 
 and restart docker `sudo systemctl restart docker`
 
-6. Load the docker image: `sudo docker load <docker-image.tar.gz`
-7. Copy `./programs/start-docker.sh` onto the server
-8. Run the aggregator:
-
-```sh
-VERSION=abc1234 ./start-docker.sh
-# Replace abc1234 with the first 7 characters of the git sha used when building
-# A .env file is also required. You can also specify an alternative path using
-# ENV_PATH=/custom/path/to/.env
-```
-
-9. Create `/etc/nginx/sites-available/aggregator`
+4. Follow the [Docker Usage](#docker-usage) instructions (just use port 3000,
+   external requests are handled by nginx)
+5. Create `/etc/nginx/sites-available/aggregator`
 
 ```nginx
 server {
@@ -388,7 +372,7 @@ This allows you to add some static content at `/home/aggregator/static-content`.
 Adding static content is optional; requests that don't match static content will
 be passed to the aggregator.
 
-10. Create a symlink in sites-enabled
+6. Create a symlink in sites-enabled
 
 ```sh
 ln -s /etc/nginx/sites-available/aggregator /etc/nginx/sites-enabled/aggregator
@@ -396,5 +380,5 @@ ln -s /etc/nginx/sites-available/aggregator /etc/nginx/sites-enabled/aggregator
 
 Reload nginx for config to take effect: `sudo nginx -s reload`
 
-11. Set up https for your domain by following the instructions at
-    https://certbot.eff.org/lets-encrypt/ubuntufocal-nginx.
+7. Set up https for your domain by following the instructions at
+   https://certbot.eff.org/lets-encrypt/ubuntufocal-nginx.
