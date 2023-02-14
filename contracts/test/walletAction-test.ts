@@ -45,7 +45,7 @@ describe("WalletActions", async function () {
   });
 
   it("should register new wallet", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
     expect(fx.verificationGateway.address).to.equal(
       fx.verificationGateway.address,
     );
@@ -82,7 +82,7 @@ describe("WalletActions", async function () {
   });
 
   it("should receive ETH", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
     const walletBalanceBefore = await fx.provider.getBalance(wallet.address);
 
@@ -142,7 +142,7 @@ describe("WalletActions", async function () {
 
   it("should send ETH with function call", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
+    const sendWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
@@ -160,10 +160,10 @@ describe("WalletActions", async function () {
       fx.provider.getBalance(mockAuction.address),
     ).to.eventually.equal(0);
 
-    await fx.verificationGateway.processBundle(
-      fx.blsWalletSigner.aggregate([
+    await (
+      await fx.verificationGateway.processBundle(
         await sendWallet.signWithGasEstimate({
-          nonce: BigNumber.from(1),
+          nonce: 0,
           actions: [
             {
               ethValue: ethToTransfer,
@@ -173,8 +173,8 @@ describe("WalletActions", async function () {
             },
           ],
         }),
-      ]),
-    );
+      )
+    ).wait();
 
     await expect(
       fx.provider.getBalance(sendWallet.address),
@@ -186,7 +186,7 @@ describe("WalletActions", async function () {
 
   it("should send ETH with function call via fallback expander", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
+    const sendWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
@@ -205,7 +205,7 @@ describe("WalletActions", async function () {
     ).to.eventually.equal(0);
 
     const bundle = await sendWallet.signWithGasEstimate({
-      nonce: BigNumber.from(1),
+      nonce: 0,
       actions: [
         {
           ethValue: ethToTransfer,
@@ -239,7 +239,7 @@ describe("WalletActions", async function () {
   });
 
   it("should check signature", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
     const tx = await wallet.signWithGasEstimate({
       nonce: await wallet.Nonce(),
@@ -262,7 +262,7 @@ describe("WalletActions", async function () {
   });
 
   it("should process individual calls", async function () {
-    const th = new TokenHelper(fx);
+    const th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     const wallets = await th.walletTokenSetup();
 
     // check each wallet has start amount
@@ -289,7 +289,7 @@ describe("WalletActions", async function () {
   });
 
   it("should allow other operations when one fails", async () => {
-    const th = new TokenHelper(fx);
+    const th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     const [sender1, sender2, recipient] = await th.walletTokenSetup();
 
     await (
@@ -344,7 +344,7 @@ describe("WalletActions", async function () {
   });
 
   it("should prevent other actions within an operation when one fails", async () => {
-    const th = new TokenHelper(fx);
+    const th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     const [sender, recipient] = await th.walletTokenSetup();
 
     const r: ContractReceipt = await (
@@ -394,9 +394,11 @@ describe("WalletActions", async function () {
   });
 
   it("should airdrop (multicall)", async function () {
-    const th = new TokenHelper(fx);
+    const walletCount = Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH;
 
-    const wallets = await fx.createBLSWallets();
+    const th = new TokenHelper(fx, walletCount);
+
+    const wallets = await fx.createBLSWallets(walletCount);
     const testToken = await TokenHelper.deployTestToken();
 
     // send all to first address
@@ -450,16 +452,16 @@ describe("WalletActions", async function () {
   //   // Use blsCallMultiCheckRewardIncrease function to check reward amount
 
   //   // prepare bls signers, wallets, eth and token balances
-  //   const rewarder = await fx.lazyBlsWallets[0]();
-  //   const wallet1 = await fx.lazyBlsWallets[1]();
-  //   const wallet2 = await fx.lazyBlsWallets[2]();
+  //   const rewarder = await fx.createBLSWallet();
+  //   const wallet1 = await fx.createBLSWallet();
+  //   const wallet2 = await fx.createBLSWallet();
 
   //   let ethToTransfer = utils.parseEther("0.0001");
   //   await fx.signers[0].sendTransaction({
   //     to: wallet1.address,
   //     value: ethToTransfer
   //   });
-  //   th = new TokenHelper(fx);
+  //   th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
   //   let testToken = await TokenHelper.deployTestToken();
   //   await(await testToken.connect(fx.signers[0]).transfer(
   //     rewarder.address,
