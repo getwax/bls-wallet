@@ -600,7 +600,7 @@ describe("BlsProvider", () => {
 
   it("should return the network the provider is connected to", async () => {
     // Arrange
-    const expectedNetwork = { name: "localhost", chainId: 31337 };
+    const expectedNetwork = { name: "localhost", chainId: 1337 };
 
     // Act
     const network = await blsProvider.getNetwork();
@@ -651,7 +651,7 @@ describe("BlsProvider", () => {
 
   it("should a return a promise which will stall until the network has heen established", async () => {
     // Arrange
-    const expectedReady = { name: "localhost", chainId: 31337 };
+    const expectedReady = { name: "localhost", chainId: 1337 };
 
     // Act
     const ready = await blsProvider.ready;
