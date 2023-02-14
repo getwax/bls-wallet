@@ -252,12 +252,18 @@ describe("Recovery", async function () {
       [attackSignature, walletAttacker.PublicKey()],
       recoveredWalletNonce++,
     );
+
     const pendingKey = await Promise.all(
       [0, 1, 2, 3].map(async (i) =>
         (await vg.pendingBLSPublicKeyFromHash(hash1, i)).toHexString(),
       ),
     );
-    expect(pendingKey).to.deep.equal(walletAttacker.PublicKey());
+
+    const attackerPublicKeyHexStrings = walletAttacker
+      .PublicKey()
+      .map((keyElement) => BigNumber.from(keyElement).toHexString());
+
+    expect(pendingKey).to.deep.equal(attackerPublicKeyHexStrings);
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
     // NB: advancing the time makes an empty tx with lazywallet[1]
