@@ -15,6 +15,7 @@ let networkConfig: NetworkConfig;
 
 let aggregatorUrl: string;
 let verificationGateway: string;
+let aggregatorUtilities: string;
 let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
@@ -30,6 +31,7 @@ describe("BlsProvider", () => {
 
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = networkConfig.addresses.verificationGateway;
+    aggregatorUtilities = networkConfig.addresses.utilities;
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -41,6 +43,7 @@ describe("BlsProvider", () => {
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -142,9 +145,9 @@ describe("BlsProvider", () => {
     await blsProvider.sendTransaction(signedTransaction);
 
     // Assert
-    // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse".
+    // Once when calling "signer.signTransaction", once when calling "blsProvider.estimateGas", and once when calling "blsProvider.sendTransaction".
     // This unit test is concerned with the latter being called.
-    expect(spy).to.have.been.called.twice;
+    expect(spy).to.have.been.called.exactly(3);
   });
 
   it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {

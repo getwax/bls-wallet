@@ -13,6 +13,7 @@ async function getRandomSigners(
 
   const aggregatorUrl = "http://localhost:3000";
   const verificationGateway = networkConfig.addresses.verificationGateway;
+  const aggregatorUtilities = networkConfig.addresses.utilities;
   const rpcUrl = "http://localhost:8545";
   const network = {
     name: "localhost",
@@ -25,6 +26,7 @@ async function getRandomSigners(
     const blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );

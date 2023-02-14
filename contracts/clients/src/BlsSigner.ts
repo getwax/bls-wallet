@@ -1,5 +1,7 @@
+/* eslint-disable camelcase */
 import { ethers, BigNumber, Signer, Bytes } from "ethers";
 import { Deferrable, hexlify, isBytes, RLP } from "ethers/lib/utils";
+import { AggregatorUtilities__factory } from "../typechain-types";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
@@ -10,6 +12,7 @@ export const _constructorGuard = {};
 export default class BlsSigner extends Signer {
   override readonly provider: BlsProvider;
   readonly verificationGatewayAddress!: string;
+  readonly aggregatorUtilitiesAddress!: string;
   wallet!: BlsWalletWrapper;
   _index: number;
   _address: string;
@@ -25,6 +28,7 @@ export default class BlsSigner extends Signer {
     super();
     this.provider = provider;
     this.verificationGatewayAddress = this.provider.verificationGatewayAddress;
+    this.aggregatorUtilitiesAddress = this.provider.aggregatorUtilitiesAddress;
     this.initPromise = this.initializeWallet(privateKey);
 
     if (constructorGuard !== _constructorGuard) {
@@ -67,6 +71,12 @@ export default class BlsSigner extends Signer {
       throw new TypeError("Transaction.to should be defined");
     }
 
+    const nonce = await BlsWalletWrapper.Nonce(
+      this.wallet.PublicKey(),
+      this.verificationGatewayAddress,
+      this.provider,
+    );
+
     // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
     const action: ActionData = {
       ethValue: transaction.value?.toString() ?? "0",
@@ -74,13 +84,27 @@ export default class BlsSigner extends Signer {
       encodedFunction: transaction.data?.toString() ?? "0x",
     };
 
-    const nonce = await BlsWalletWrapper.Nonce(
-      this.wallet.PublicKey(),
-      this.verificationGatewayAddress,
+    const feeEstimate = await this.provider.estimateGas(transaction);
+
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      this.aggregatorUtilitiesAddress,
       this.provider,
     );
 
-    const bundle = this.wallet.sign({ nonce, actions: [action] });
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [
+        action,
+        {
+          ethValue: feeEstimate,
+          contractAddress: this.aggregatorUtilitiesAddress,
+          encodedFunction:
+            aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendEthToTxOrigin",
+            ),
+        },
+      ],
+    });
     const result = await this.provider.aggregator.add(bundle);
 
     if ("failures" in result) {

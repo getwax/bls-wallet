@@ -23,6 +23,7 @@ let networkConfig: NetworkConfig;
 
 let aggregatorUrl: string;
 let verificationGateway: string;
+let aggregatorUtilities: string;
 let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
@@ -38,6 +39,7 @@ describe("BlsSigner", () => {
 
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = networkConfig.addresses.verificationGateway;
+    aggregatorUtilities = networkConfig.addresses.utilities;
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -49,6 +51,7 @@ describe("BlsSigner", () => {
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -160,6 +163,7 @@ describe("BlsSigner", () => {
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -395,6 +399,7 @@ describe("BlsSigner", () => {
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
