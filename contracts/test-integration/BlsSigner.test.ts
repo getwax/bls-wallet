@@ -107,7 +107,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
+  it("should throw an error when sending an invalid transaction", async () => {
     // Arrange
     const invalidValue = parseEther("-1");
 
@@ -121,7 +121,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      '[{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix"},{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5"}]',
+      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
     );
   });
 
@@ -293,6 +293,26 @@ describe("BlsSigner", () => {
     // Assert
     const bundleDto = JSON.parse(signedTransaction);
     expect(bundleDto.signature).to.deep.equal(expectedBundle.signature);
+  });
+
+  it("should throw an error when signing an invalid transaction", async () => {
+    // Arrange
+    const invalidEthValue = parseEther("-1");
+
+    const unsignedTransaction = {
+      value: invalidEthValue,
+      to: ethers.Wallet.createRandom().address,
+    };
+
+    // Act
+    const result = async () =>
+      await blsSigner.signTransaction(unsignedTransaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+    );
   });
 
   it("should check transaction", async () => {

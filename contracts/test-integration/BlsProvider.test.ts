@@ -149,27 +149,42 @@ describe("BlsProvider", () => {
     expect(spy).to.have.been.called.exactly(3);
   });
 
-  it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
+  it("should throw an error when sending a modified signed transaction", async () => {
     // Arrange
-    const invalidEthValue = parseEther("-1");
+    const address = await blsSigner.getAddress();
 
-    const unsignedTransaction = {
-      value: invalidEthValue,
+    const signedTransaction = await blsSigner.signTransaction({
+      value: parseEther("1"),
       to: ethers.Wallet.createRandom().address,
       data: "0x",
-    };
-    const signedTransaction = await blsSigner.signTransaction(
-      unsignedTransaction,
-    );
+    });
+
+    const userBundle = JSON.parse(signedTransaction);
+    userBundle.operations[0].actions[0].ethValue = parseEther("2");
+    const invalidBundle = JSON.stringify(userBundle);
 
     // Act
-    const result = async () =>
-      await blsProvider.sendTransaction(signedTransaction);
+    const result = async () => await blsProvider.sendTransaction(invalidBundle);
 
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      '[{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix"},{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5"}]',
+      `[{"type":"invalid-signature","description":"invalid signature for wallet address ${address}"}]`,
+    );
+  });
+
+  it("should throw an error when sending an invalid signed transaction", async () => {
+    // Arrange
+    const invalidTransaction = "Invalid signed transaction";
+
+    // Act
+    const result = async () =>
+      await blsProvider.sendTransaction(invalidTransaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "Unexpected token I in JSON at position 0",
     );
   });
 
