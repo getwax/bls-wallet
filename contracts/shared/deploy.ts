@@ -38,8 +38,6 @@ export default async function deploy(
     salt,
   );
 
-  console.log("addr", precompileCostEstimator.address);
-
   await (await precompileCostEstimator.run()).wait();
 
   const verificationGateway = await singletonFactory.deploy(
