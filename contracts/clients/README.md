@@ -146,6 +146,72 @@ Practically, this means you have to first estimate the fee using `aggregator.est
 
 ### Paying aggregator fees with native currency (ETH)
 
+```ts
+import { BlsWalletWrapper, Aggregator } from "bls-wallet-clients";
+
+const wallet = await BlsWalletWrapper.connect(
+  privateKey,
+  verificationGatewayAddress,
+  provider,
+);
+const aggregator = new Aggregator("https://arbitrum-goerli.blswallet.org");
+
+// Create a fee estimate bundle
+const estimateFeeBundle = wallet.sign({
+  nonce,
+  actions: [
+    ...actions, // ... add your user actions here (approve, transfer, etc.)
+    {
+      ethValue: 1,
+      // Provide 1 wei with this action so that the fee transfer to
+      // tx.origin can be included in the gas estimate.
+      contractAddress: aggregatorUtilitiesContract.address,
+      encodedFunction:
+        aggregatorUtilitiesContract.interface.encodeFunctionData(
+          "sendEthToTxOrigin",
+        ),
+    },
+  ],
+});
+
+const feeEstimate = await aggregator.estimateFee(estimateFeeBundle);
+
+// Add a safety premium to the fee to account for fluctuations in gas estimation
+const safetyDivisor = 5;
+const feeRequired = BigNumber.from(feeEstimate.feeRequired);
+const safetyPremium = feeRequired.div(safetyDivisor);
+const safeFee = feeRequired.add(safetyPremium);
+
+const bundle = wallet.sign({
+  nonce: await wallet.Nonce(),
+  actions: [
+    ...actions, // ... add your user actions here (approve, transfer, etc.)
+    {
+      ethValue: safeFee, // fee amount
+      contractAddress: aggregatorUtilitiesContract.address,
+      encodedFunction:
+        aggregatorUtilitiesContract.interface.encodeFunctionData(
+          "sendEthToTxOrigin",
+        ),
+    },
+
+    // You can also just add an action that transfers the fee amount to the aggregator address, instead of
+    // the action that calls sendEthToTxOrigin. Ensure you modify the estimateFeeBundle to use this action instead.
+    {
+      ethValue: safeFee, // fee amount
+      contractAddress: aggregatorAddress,
+      encodedFunction: "0x",
+    },
+  ],
+});
+```
+
+```ts
+
+```
+
+### Paying aggregator fees with custom currency (ERC20)
+
 The aggregator must be set up to accept ERC20 tokens in order for this to work.
 
 ```ts
@@ -157,89 +223,75 @@ const wallet = await BlsWalletWrapper.connect(
   provider,
 );
 const aggregator = new Aggregator("https://arbitrum-goerli.blswallet.org");
-const estimateFee = await aggregator.estimateFee(bundle); // Remember to include no payment with this bundle
 
-const bundle = wallet.sign({
-    nonce: await wallet.Nonce(),
-    actions: [
-        ...actions, // ... do your transaction/actions here (approve, transfer, etc.)
-
-        // then, if the aggregator is using native chain currency, such as ETH
-        {
-            ethValue: estimateFee.feeRequired, // fee amount
-            contractAddress: aggregatorAddress,
-            encodedFunction: "0x"
-        }
-        // or you can use the AggregatorUtilities.sol contract
-        // this makes the bundle submittable from any ETH paid aggregator
-        {
-            ethValue: estimateFee.feeRequired, // fee amount
-            contractAddress: aggregatorUtilitiesContract.address,
-            encodedFunction: aggregatorUtilitiesContract.interface.encodeFunctionData(
-                'sendEthToTxOrigin', [],
-            ),
-        }
-    ],
+// Create a fee estimate bundle
+const estimateFeeBundle = wallet.sign({
+  nonce,
+  actions: [
+    ...actions, // ... add your user actions here (approve, transfer, etc.)
+    {
+      ethValue: 0,
+      contractAddress: tokenContract.address,
+      encodedFunction: tokenContract.interface.encodeFunctionData("approve", [
+        aggregatorUtilitiesContract.address,
+        1,
+      ]),
+    },
+    {
+      ethValue: 0,
+      contractAddress: aggregatorUtilitiesContract.address,
+      encodedFunction: aggregatorUtilitiesContract.interface.encodeFunctionData(
+        "sendTokenToTxOrigin",
+        [tokenContract.address, 1],
+      ),
+    },
+  ],
 });
-```
 
-### Paying aggregator fees with custom currency (ERC20)
+const feeEstimate = await aggregator.estimateFee(estimateFeeBundle);
 
-```ts
-import { BlsWalletWrapper, Aggregator } from "bls-wallet-clients";
-
-const wallet = await BlsWalletWrapper.connect(
-  privateKey,
-  verificationGatewayAddress,
-  provider,
-);
-const aggregator = new Aggregator("https://arbitrum-goerli.blswallet.org");
-const estimateFee = await aggregator.estimateFee(bundle); // Remember to include no payment with this bundle
+// Add a safety premium to the fee to account for fluctuations in gas estimation
+const safetyDivisor = 5;
+const feeRequired = BigNumber.from(feeEstimate.feeRequired);
+const safetyPremium = feeRequired.div(safetyDivisor);
+const safeFee = feeRequired.add(safetyPremium);
 
 const bundle = wallet.sign({
-    nonce: await wallet.Nonce(),
-    actions: [
-        ...actions, // ... do your transaction/actions here (approve, transfer, etc.)
+  nonce: await wallet.Nonce(),
+  actions: [
+    ...actions, // ... add your user actions here (approve, transfer, etc.)
+    // Note the additional approve action when transfering ERC20 tokens
+    {
+      ethValue: 0,
+      contractAddress: tokenContract.address,
+      encodedFunction: tokenContract.interface.encodeFunctionData("approve", [
+        aggregatorUtilitiesContract.address,
+        estimateFee.feeRequired, // fee amount
+      ]),
+    },
+    {
+      ethValue: 0,
+      contractAddress: aggregatorUtilitiesContract.address,
+      encodedFunction: aggregatorUtilitiesContract.interface.encodeFunctionData(
+        "sendTokenToTxOrigin",
+        [
+          tokenContract.address,
+          estimateFee.feeRequired, // fee amount
+        ],
+      ),
+    },
 
-        // then, if the aggregator is using an ERC20 token
-        {
-            ethValue: 0,
-            contractAddress: tokenContract.address,
-            encodedFunction: tokenContract.interface.encodeFunctionData(
-                'transfer',
-                [
-                    aggregatorAddress,
-                    estimateFee.feeRequired, // fee amount
-                ],
-            ),
-        }
-
-        // or you can use the AggregatorUtilities.sol contract
-        // this makes the bundle submittable from any paid aggregator with that token
-        // note the additional approve action
-        {
-            ethValue: 0,
-            contractAddress: tokenContract.address,
-            encodedFunction: tokenContract.interface.encodeFunctionData(
-              "approve",
-              [
-                  aggregatorUtilitiesContract.address,
-                  estimateFee.feeRequired, // fee amount
-              ],
-            ),
-        },
-        {
-            ethValue: 0,
-            contractAddress: aggregatorUtilitiesContract.address,
-            encodedFunction: aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendTokenToTxOrigin",
-              [
-                  tokenContract.address,
-                  estimateFee.feeRequired, // fee amount
-              ],
-            ),
-        },
-    ],
+    // You can also just add an action that transfers the fee amount to the aggregator address, instead of
+    // the action that calls sendEthToTxOrigin. Ensure you modify the estimateFeeBundle to use this action instead.
+    {
+      ethValue: 0,
+      contractAddress: tokenContract.address,
+      encodedFunction: tokenContract.interface.encodeFunctionData("transfer", [
+        aggregatorAddress,
+        estimateFee.feeRequired, // fee amount
+      ]),
+    },
+  ],
 });
 ```
 

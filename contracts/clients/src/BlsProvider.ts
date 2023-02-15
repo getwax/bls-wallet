@@ -7,6 +7,7 @@ import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner, { UncheckedBlsSigner, _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
 import BlsWalletWrapper from "./BlsWalletWrapper";
+import { AggregatorUtilities__factory } from "../typechain-types";
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
@@ -41,8 +42,8 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       throw new Error("Call provider.getSigner first");
     }
 
-    const actionWithoutEthValue: ActionData = {
-      ethValue: 0,
+    const action: ActionData = {
+      ethValue: transaction.value?.toString() ?? "0",
       contractAddress: transaction.to.toString(),
       encodedFunction: transaction.data?.toString() ?? "0x",
     };
@@ -53,12 +54,29 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       this,
     );
 
-    const estimateFeeBundle = this.signer.wallet.sign({
-      nonce,
-      actions: [actionWithoutEthValue],
-    });
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      this.aggregatorUtilitiesAddress,
+      this,
+    );
 
-    const feeEstimate = await this.aggregator.estimateFee(estimateFeeBundle);
+    const feeEstimate = await this.aggregator.estimateFee(
+      this.signer.wallet.sign({
+        nonce,
+        actions: [
+          action,
+          {
+            ethValue: 1,
+            // Provide 1 wei with this action so that the fee transfer to
+            // tx.origin can be included in the gas estimate.
+            contractAddress: this.aggregatorUtilitiesAddress,
+            encodedFunction:
+              aggregatorUtilitiesContract.interface.encodeFunctionData(
+                "sendEthToTxOrigin",
+              ),
+          },
+        ],
+      }),
+    );
 
     // Due to small fluctuations is gas estimation, we add a little safety premium
     // to the fee to increase the chance that it actually gets accepted during
