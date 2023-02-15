@@ -10,7 +10,6 @@ import {
   BLSExpander__factory,
   BLSOpen,
   BLSOpen__factory,
-  BLSWallet__factory,
   BNPairingPrecompileCostEstimator,
   BNPairingPrecompileCostEstimator__factory,
   FallbackExpander__factory,
@@ -43,27 +42,6 @@ export default async function deploy(
   );
 
   await (await precompileCostEstimator.run()).wait();
-
-  const blsWalletImplAddress = await singletonFactory.calculateAddress(
-    BLSWallet__factory,
-    [],
-    salt,
-  );
-
-  const previousBlsWalletImplCode = await signer.provider.getCode(
-    blsWalletImplAddress,
-  );
-
-  const blsWalletImpl = await singletonFactory.deploy(
-    BLSWallet__factory,
-    [],
-    salt,
-  );
-
-  // Only initialize if blsWalletImpl didn't exist previously
-  if (previousBlsWalletImplCode === "0x") {
-    await (await blsWalletImpl.initialize(ethers.constants.AddressZero)).wait();
-  }
 
   const blsLibrary = await singletonFactory.deploy(BLSOpen__factory, [], salt);
 

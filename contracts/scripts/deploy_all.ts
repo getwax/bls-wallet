@@ -53,7 +53,6 @@ async function main() {
     addresses: {
       safeSingletonFactory: deployment.singletonFactory.address,
       precompileCostEstimator: deployment.precompileCostEstimator.address,
-      blsLibrary: deployment.blsLibrary.address,
       verificationGateway: deployment.verificationGateway.address,
       blsExpander: deployment.blsExpander.address,
       utilities: deployment.aggregatorUtilities.address,
