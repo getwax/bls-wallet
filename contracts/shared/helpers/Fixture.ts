@@ -22,7 +22,6 @@ import {
 import Range from "./Range";
 import {
   VerificationGateway,
-  BLSOpen,
   BLSExpander,
   BLSExpanderDelegator,
   AggregatorUtilities,
@@ -50,7 +49,6 @@ export default class Fixture {
 
     public verificationGateway: VerificationGateway,
 
-    public blsLibrary: BLSOpen,
     public blsExpander: BLSExpander,
     public blsExpanderDelegator: BLSExpanderDelegator,
     public utilities: AggregatorUtilities,
@@ -70,7 +68,6 @@ export default class Fixture {
 
     const {
       verificationGateway,
-      blsLibrary: bls,
       blsExpander,
       blsExpanderDelegator,
       aggregatorUtilities: utilities,
@@ -82,7 +79,6 @@ export default class Fixture {
       signers,
       addresses,
       verificationGateway,
-      bls,
       blsExpander,
       blsExpanderDelegator,
       utilities,

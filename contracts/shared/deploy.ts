@@ -8,8 +8,6 @@ import {
   BLSExpanderDelegator,
   BLSExpanderDelegator__factory,
   BLSExpander__factory,
-  BLSOpen,
-  BLSOpen__factory,
   BNPairingPrecompileCostEstimator,
   BNPairingPrecompileCostEstimator__factory,
   FallbackExpander__factory,
@@ -22,7 +20,6 @@ import SafeSingletonFactory from "./SafeSingletonFactory";
 export type Deployment = {
   singletonFactory: SafeSingletonFactory;
   precompileCostEstimator: BNPairingPrecompileCostEstimator;
-  blsLibrary: BLSOpen;
   verificationGateway: VerificationGateway;
   blsExpander: BLSExpander;
   blsExpanderDelegator: BLSExpanderDelegator;
@@ -43,11 +40,9 @@ export default async function deploy(
 
   await (await precompileCostEstimator.run()).wait();
 
-  const blsLibrary = await singletonFactory.deploy(BLSOpen__factory, [], salt);
-
   const verificationGateway = await singletonFactory.deploy(
     VerificationGateway__factory,
-    [blsLibrary.address],
+    [],
     salt,
   );
 
@@ -88,7 +83,6 @@ export default async function deploy(
   return {
     singletonFactory,
     precompileCostEstimator,
-    blsLibrary,
     verificationGateway,
     blsExpander,
     blsExpanderDelegator,

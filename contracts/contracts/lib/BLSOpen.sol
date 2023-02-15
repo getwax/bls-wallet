@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.12;
+pragma solidity >=0.8.4 <0.9.0;
 
 import { BLS } from "./hubble-contracts/contracts/libs/BLS.sol";
 
@@ -8,7 +8,7 @@ library BLSOpen {
         uint256[2] memory signature,
         uint256[4] memory pubkey,
         uint256[2] memory message
-    ) external view returns (bool) {
+    ) internal view returns (bool) {
         uint256[4][] memory pubkeys = new uint256[4][](1);
         uint256[2][] memory messages = new uint256[2][](1);
         pubkeys[0] = pubkey;
@@ -34,7 +34,7 @@ library BLSOpen {
         uint256[2] memory signature,
         uint256[4][] memory pubkeys,
         uint256[2][] memory messages
-    ) external view returns (bool) {
+    ) internal view returns (bool) {
         (bool verified, bool callSuccess) =  BLS.verifyMultiple(
             signature,
             pubkeys,
@@ -46,14 +46,14 @@ library BLSOpen {
     function hashToPoint(
         bytes32 domain,
         bytes memory message
-    ) external view returns (uint256[2] memory) {
+    ) internal view returns (uint256[2] memory) {
         return BLS.hashToPoint(
             domain,
             message
         );
     }
 
-    function isZeroBLSKey(uint256[4] memory blsKey) public pure returns (bool) {
+    function isZeroBLSKey(uint256[4] memory blsKey) internal pure returns (bool) {
         bool isZero = true;
         for (uint256 i=0; isZero && i<4; i++) {
             isZero = (blsKey[i] == 0);

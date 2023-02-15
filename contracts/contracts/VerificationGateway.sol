@@ -2,10 +2,10 @@
 pragma solidity >=0.8.4 <0.9.0;
 pragma abicoder v2;
 
-import "./lib/IBLS.sol"; // to use a deployed BLS library
-
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+
+import "./lib/BLSOpen.sol";
 
 import "./interfaces/IWallet.sol";
 import "./BLSWallet.sol";
@@ -26,7 +26,6 @@ contract VerificationGateway
     bytes32 BLS_DOMAIN = 0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc;
     uint8 constant BLS_KEY_LEN = 4;
 
-    IBLS public immutable blsLib;
     ProxyAdmin public immutable walletProxyAdmin = new ProxyAdmin();
     BLSWallet public immutable blsWalletLogic = new BLSWallet();
     mapping(bytes32 => IWallet) public walletFromHash;
@@ -59,11 +58,7 @@ contract VerificationGateway
         IWallet wallet
     );
 
-    /**
-    @param bls verified bls library contract address
-     */
-    constructor(IBLS bls) {
-        blsLib = bls;
+    constructor() {
         blsWalletLogic.initialize(address(0));
     }
 
@@ -103,7 +98,7 @@ contract VerificationGateway
             );
         }
 
-        bool verified = blsLib.verifyMultiple(
+        bool verified = BLSOpen.verifyMultiple(
             bundle.signature,
             bundle.senderPublicKeys,
             messages
@@ -125,7 +120,7 @@ contract VerificationGateway
         uint256[2] memory messageSenderSignature,
         uint256[BLS_KEY_LEN] memory publicKey
     ) public {
-        require(blsLib.isZeroBLSKey(publicKey) == false, "VG: key is zero");
+        require(BLSOpen.isZeroBLSKey(publicKey) == false, "VG: key is zero");
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
         if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
@@ -368,12 +363,12 @@ contract VerificationGateway
         IWallet wallet
     ) private {
         // verify the given wallet was signed for by the bls key
-        uint256[2] memory addressMsg = blsLib.hashToPoint(
+        uint256[2] memory addressMsg = BLSOpen.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(wallet)
         );
         require(
-            blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
+            BLSOpen.verifySingle(wallletAddressSignature, publicKey, addressMsg),
             "VG: Sig not verified"
         );
         bytes32 publicKeyHash = keccak256(abi.encodePacked(
@@ -426,7 +421,7 @@ contract VerificationGateway
                 keccak256(a.encodedFunction)
             );
         }
-        return blsLib.hashToPoint(
+        return BLSOpen.hashToPoint(
             BLS_DOMAIN,
             abi.encodePacked(
                 block.chainid,
