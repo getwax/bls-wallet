@@ -258,8 +258,6 @@ describe("Provider tests", function () {
 
       // Act
       const storage1 = await blsProvider.getStorageAt(mockERC20.address, 1);
-      console.log(storage1);
-
       const storage2 = await blsProvider.getStorageAt(mockERC20.address, 2);
 
       // Assert

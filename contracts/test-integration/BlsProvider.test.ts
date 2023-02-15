@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import chai, { expect } from "chai";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
 import {
@@ -483,25 +483,52 @@ describe("BlsProvider", () => {
     expect(isProviderWithInvalidProvider).to.equal(false);
   });
 
-  it("should return the number of transactions an address has ever sent", async function () {
+  it("should return the number of transactions an address has sent", async function () {
     // Arrange
+    const transaction = {
+      value: BigNumber.from(1),
+      to: ethers.Wallet.createRandom().address,
+    };
     const address = await blsSigner.getAddress();
-    const expectedTransactionCount = await regularProvider.getTransactionCount(
-      address,
-    );
-    const expectedTransactionCountAtEaliestBlockTag =
-      await blsProvider.getTransactionCount(address, "earliest");
+
+    const expectedFirstTransactionCount = 0;
+    const expectedSecondTransactionCount = 1;
 
     // Act
-    const transactionCount = await blsProvider.getTransactionCount(address);
-    const transactionCountAtEaliestBlockTag =
-      await blsProvider.getTransactionCount(address, "earliest");
+    const firstTransactionCount = await blsProvider.getTransactionCount(
+      address,
+    );
+
+    const sendTransaction = await blsSigner.sendTransaction(transaction);
+    await sendTransaction.wait();
+
+    const secondTransactionCount = await blsProvider.getTransactionCount(
+      address,
+    );
+
+    // Assert
+    expect(firstTransactionCount).to.equal(expectedFirstTransactionCount);
+    expect(secondTransactionCount).to.equal(expectedSecondTransactionCount);
+  });
+
+  it("should return the number of transactions an address has sent at a specified block tag", async function () {
+    // Arrange
+    const expectedTransactionCount = 0;
+
+    const sendTransaction = await blsSigner.sendTransaction({
+      value: BigNumber.from(1),
+      to: ethers.Wallet.createRandom().address,
+    });
+    await sendTransaction.wait();
+
+    // Act
+    const transactionCount = await blsProvider.getTransactionCount(
+      await blsSigner.getAddress(),
+      "earliest",
+    );
 
     // Assert
     expect(transactionCount).to.equal(expectedTransactionCount);
-    expect(transactionCountAtEaliestBlockTag).to.equal(
-      expectedTransactionCountAtEaliestBlockTag,
-    );
   });
 
   it("should return the block from the network", async function () {
