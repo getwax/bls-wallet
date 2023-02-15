@@ -14,7 +14,6 @@ import {
   BNPairingPrecompileCostEstimator,
   BNPairingPrecompileCostEstimator__factory,
   FallbackExpander__factory,
-  ProxyAdminGenerator__factory,
   VerificationGateway,
   VerificationGateway__factory,
 } from "../typechain-types";
@@ -68,15 +67,9 @@ export default async function deploy(
 
   const blsLibrary = await singletonFactory.deploy(BLSOpen__factory, [], salt);
 
-  const proxyAdminGenerator = await singletonFactory.deploy(
-    ProxyAdminGenerator__factory,
-    [],
-    salt,
-  );
-
   const verificationGateway = await singletonFactory.deploy(
     VerificationGateway__factory,
-    [blsLibrary.address, blsWalletImpl.address, proxyAdminGenerator.address],
+    [blsLibrary.address],
     salt,
   );
 
