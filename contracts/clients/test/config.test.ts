@@ -14,7 +14,6 @@ const getSingleConfig = (networkKey: string): NetworkConfig => ({
     safeSingletonFactory: getValue(networkKey, "safeSingletonFactory"),
     precompileCostEstimator: getValue(networkKey, "precompileCostEstimator"),
     verificationGateway: getValue(networkKey, "verificationGateway"),
-    blsLibrary: getValue(networkKey, "blsLibrary"),
     blsExpander: getValue(networkKey, "blsExpander"),
     utilities: getValue(networkKey, "utilities"),
     testToken: getValue(networkKey, "testToken"),
@@ -67,13 +66,6 @@ describe("MultiNetworkConfig", () => {
 
     it(`fails if ${network2}.auxiliary is removed`, async () => {
       delete validConfig[network1].auxiliary;
-
-      await expect(getMultiConfig("", async () => JSON.stringify(validConfig)))
-        .to.eventually.be.rejected;
-    });
-
-    it(`fails if ${network1}.addresses.blsLibrary is set to a number`, async () => {
-      validConfig[network1].addresses.blsLibrary = 1337;
 
       await expect(getMultiConfig("", async () => JSON.stringify(validConfig)))
         .to.eventually.be.rejected;
