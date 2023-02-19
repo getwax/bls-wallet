@@ -2,7 +2,6 @@ import { Router } from "../../deps.ts";
 import failRequest from "./helpers/failRequest.ts";
 import BundleHandler from "./helpers/BundleHandler.ts";
 import nil from "../helpers/nil.ts";
-
 import BundleService from "./BundleService.ts";
 
 export default function BundleRouter(bundleService: BundleService) {
@@ -39,6 +38,11 @@ export default function BundleRouter(bundleService: BundleService) {
       ctx.response.body = bundleService.receiptFromBundle(bundleRow);
     },
   );
+
+  router.get("bundle/health", (ctx) => {
+    ctx.response.status = 200;
+    ctx.response.body = { status: "OK" };
+  });
 
   return router;
 }

@@ -15,7 +15,8 @@ import AppEvent from "./AppEvent.ts";
 import BundleTable from "./BundleTable.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import AggregationStrategyRouter from "./AggregationStrategyRouter.ts";
-import HealthService, {DBServiceHealthCheck, RPCServiceHealthCheck} from "./HealthService.js";
+import HealthService, {DBServiceHealthCheck, RPCServiceHealthCheck} from "./HealthService.ts";
+import HealthRouter from "./HealthRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
   const { addresses } = await getNetworkConfig();
@@ -65,11 +66,14 @@ export default async function app(emit: (evt: AppEvent) => void) {
     bundleTable,
   );
 
+  const dbServiceHealthCheck = new DBServiceHealthCheck(emit, bundleTable);
+  const rpcServiceHealthCheck = new RPCServiceHealthCheck(emit);
+
   const healthService = new HealthService(
     emit,
     [
-      new DBServiceHealthCheck(bundleTable),
-      new RPCServiceHealthCheck(),
+      dbServiceHealthCheck,
+      rpcServiceHealthCheck,
     ]
   )
 
@@ -77,6 +81,7 @@ export default async function app(emit: (evt: AppEvent) => void) {
     BundleRouter(bundleService),
     AdminRouter(adminService),
     AggregationStrategyRouter(aggregationStrategy),
+    HealthRouter(healthService),
   ];
 
   const app = new Application();

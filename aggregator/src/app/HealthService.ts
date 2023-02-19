@@ -1,11 +1,8 @@
-import axios, { AxiosError, AxiosResponse } from 'axios' // 改dep.ts "../../deps.ts";
+import { axiod } from "../../deps.ts";
 import BundleTable from "./BundleTable.ts";
 import AppEvent from "./AppEvent.ts";
 import assert from "../helpers/assert.ts";
-
-// https://www.elliotdenolf.com/blog/standardized-health-checks-in-typescript
-// https://ithelp.ithome.com.tw/articles/10216626
-// https://stackoverflow.com/questions/42532534/why-do-we-await-next-when-using-koa-routers
+import * as env from "../env.ts";
 
 abstract class HealthIndicator {
   constructor(
@@ -18,33 +15,99 @@ abstract class HealthIndicator {
   abstract checkHealth(): Promise<void>;
 }
 
-enum ResourceHealth {
+export enum ResourceHealth {
   Healthy = 'HEALTHY',
   Unhealthy = 'UNHEALTHY'
+}
+
+export class AggregatorServiceHealthCheck extends HealthIndicator {
+  // Starts out in the Unhealthy state by default until it can be verified as Healthy
+  name: string = 'Aggregator';
+  status: ResourceHealth = ResourceHealth.Unhealthy;
+  details: string | undefined;
+  
+  async checkHealth(): Promise<void> {
+    try {
+      const response = await axiod.get(new URL(env.ORIGIN, "/Bundle/health").toString());
+      if (response.status === 200) {
+        this.status = ResourceHealth.Healthy;
+        this.emit({
+          type: "service-healthy",
+          data: {
+            name: this.name,
+            status: ResourceHealth.Healthy,
+          },
+        });
+      } else {
+        this.status = ResourceHealth.Unhealthy;
+        this.details = `Aggregator returned status code ${response.status}`;
+        this.emit({
+          type: "service-unhealthy",
+          data: {
+            name: this.name,
+            status: ResourceHealth.Unhealthy,
+            detail: `Aggregator returned status code ${response.status}`,
+          },
+        });
+      }
+    } catch (e) {
+      this.status = ResourceHealth.Unhealthy;
+      this.details = e.message;
+      this.emit({
+        type: "service-unhealthy",
+        data: {
+          name: this.name,
+          status: ResourceHealth.Unhealthy,
+          detail: e.message,
+        },
+      });
+      //console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
+    }
+  }
 }
 
 export class RPCServiceHealthCheck extends HealthIndicator  {
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
   name: string = 'RPC';
-  status: ResourceHealth = ResourceHealth.Unhealthy; // TODO ?? keep?
+  status: ResourceHealth = ResourceHealth.Unhealthy;
   details: string | undefined;
 
   async checkHealth(): Promise<void> {
-    let result: AxiosResponse<any>;
     try {
-      const pingURL = `http://localhost:8080/ping`; // change url
-      result = await axios(pingURL); 
-
-      if (result.status === 200) {
-        this.status = ResourceHealth.Healthy; 
+      const response = await axiod.get(env.RPC_URL);
+      if (response.status === 200) {
+        this.status = ResourceHealth.Healthy;
+        this.emit({
+          type: "service-healthy",
+          data: {
+            name: this.name,
+            status: ResourceHealth.Healthy,
+          },
+        });
       } else {
         this.status = ResourceHealth.Unhealthy;
-        this.details = `Received status: ${result.status}`;
+        this.details = `RPC returned status code ${response.status}`;
+        this.emit({
+          type: "service-unhealthy",
+          data: {
+            name: this.name,
+            status: ResourceHealth.Unhealthy,
+            detail: `RPC returned status code ${response.status}`,
+          },
+        });
       }
     } catch (e) {
       this.status = ResourceHealth.Unhealthy;
       this.details = e.message;
-      // console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
+      this.emit({
+        type: "service-unhealthy",
+        data: {
+          name: this.name,
+          status: ResourceHealth.Unhealthy,
+          detail: e.message,
+        },
+      });
+      //console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
     }
   }
 }
@@ -52,7 +115,7 @@ export class RPCServiceHealthCheck extends HealthIndicator  {
 export class DBServiceHealthCheck extends HealthIndicator  {
   constructor(
     public emit: (evt: AppEvent) => void,
-    public bundleTable: BundleTable,
+    private bundleTable: BundleTable,
   ){
     super(emit);
   }
@@ -67,6 +130,7 @@ export class DBServiceHealthCheck extends HealthIndicator  {
       const [[now]] = [...this.bundleTable.dbQuery("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")];
       const dbTime = new Date(`${now}Z`).getTime();
       assert(typeof dbTime === "number");
+      this.status = ResourceHealth.Healthy;
       this.emit({
         type: "service-healthy",
         data: {
@@ -76,6 +140,7 @@ export class DBServiceHealthCheck extends HealthIndicator  {
       });
     } catch (e) {
       this.status = ResourceHealth.Unhealthy;
+      this.details = e.message;
       this.emit({
         type: "service-unhealthy",
         data: {
@@ -89,7 +154,6 @@ export class DBServiceHealthCheck extends HealthIndicator  {
   }
 }
 
-// check each service 
 export default class HealthService {
   public overallHealth: ResourceHealth = ResourceHealth.Healthy;
   
@@ -111,15 +175,21 @@ export default class HealthService {
     this.overallHealth = anyUnhealthy
       ? ResourceHealth.Unhealthy
       : ResourceHealth.Healthy;
-
+          
     return {
       status: this.overallHealth,
-      results: this.checks
+      results: this.checks.map(check => ({
+        name: check.name,
+        status: check.status,
+      }))
     };
   }
 }
 
 type HealthCheckResult = {
   status: ResourceHealth,
-  results: HealthIndicator[]
+  results: {
+    name: string,
+    status: ResourceHealth
+  }[]
 };

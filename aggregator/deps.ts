@@ -7,6 +7,8 @@ export { oakCors } from "https://deno.land/x/cors@v1.2.0/mod.ts";
 import { config as dotEnvConfig } from "https://deno.land/x/dotenv@v2.0.0/mod.ts";
 export { dotEnvConfig };
 
+export { axiod } from "https://deno.land/x/axiod/mod.ts";
+
 // Oak framework dependencies
 export {
   Application,

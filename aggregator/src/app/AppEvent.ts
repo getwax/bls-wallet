@@ -100,7 +100,7 @@ type AppEvent =
       name: string;
       status: string;
       detail: string;
-    }
+    };
   }
   ;
 
