@@ -36,7 +36,7 @@ describe("BlsProvider", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = ethers.Wallet.createRandom().privateKey;
+    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
@@ -410,6 +410,60 @@ describe("BlsProvider", () => {
     expect(blockNumber).to.equal(expectedBlockNumber);
     expect(chainId).to.equal(expectedChainId);
     expect(accounts).to.deep.equal(expectedAccounts);
+  });
+
+  it("should get the polling interval", async () => {
+    // Arrange
+    const expectedpollingInterval = 4000; // default
+    const updatedInterval = 1000;
+
+    // Act
+    const pollingInterval = blsProvider.pollingInterval;
+    blsProvider.pollingInterval = updatedInterval;
+    const updatedPollingInterval = blsProvider.pollingInterval;
+
+    // Assert
+    expect(pollingInterval).to.equal(expectedpollingInterval);
+    expect(updatedPollingInterval).to.equal(updatedInterval);
+  });
+
+  it("should get the event listener count and remove all listeners", async () => {
+    blsProvider.on("block", () => {});
+    blsProvider.on("error", () => {});
+    expect(blsProvider.listenerCount("block")).to.equal(1);
+    expect(blsProvider.listenerCount("error")).to.equal(1);
+    expect(blsProvider.listenerCount()).to.equal(2);
+
+    blsProvider.removeAllListeners();
+    expect(blsProvider.listenerCount("block")).to.equal(0);
+    expect(blsProvider.listenerCount("error")).to.equal(0);
+    expect(blsProvider.listenerCount()).to.equal(0);
+  });
+
+  it("should return true and an array of listeners if polling", async () => {
+    // Arrange
+    const expectedListener = () => {};
+
+    // Act
+    blsProvider.on("block", expectedListener);
+    const listeners = blsProvider.listeners("block");
+    const isPolling = blsProvider.polling;
+    blsProvider.removeAllListeners();
+
+    // Assert
+    expect(listeners).to.deep.equal([expectedListener]);
+    expect(isPolling).to.be.true;
+  });
+
+  it("should be a provider", async () => {
+    // Arrange & Act
+    const isProvider = Experimental.BlsProvider.isProvider(blsProvider);
+    const isProviderWithInvalidProvider =
+      Experimental.BlsProvider.isProvider(blsSigner);
+
+    // Assert
+    expect(isProvider).to.equal(true);
+    expect(isProviderWithInvalidProvider).to.equal(false);
   });
 });
 
