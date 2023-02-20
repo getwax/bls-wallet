@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { parseEther } from "ethers/lib/utils";
 import { BigNumber, utils, Wallet } from "ethers";
 
 import { Experimental, BlsWalletWrapper } from "../clients/src";
@@ -42,7 +41,7 @@ describe("Signer contract interaction tests", function () {
 
   this.beforeAll(async () => {
     fundedWallet = new ethers.Wallet(
-      "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a", // HH Account #4 private key
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat Account #2 private key
       new ethers.providers.JsonRpcProvider("http://localhost:8545"),
     );
     blsSigners = await getRandomSigners(5);
@@ -50,7 +49,7 @@ describe("Signer contract interaction tests", function () {
     const fundSigner = async (signer) => {
       const tx = await fundedWallet.sendTransaction({
         to: await signer.getAddress(),
-        value: parseEther("100"),
+        value: utils.parseEther("100"),
       });
       await tx.wait();
     };
@@ -140,7 +139,7 @@ describe("Signer contract interaction tests", function () {
       );
       const recipient = await blsSigners[1].getAddress();
       const initialBalance = await mockERC20.balanceOf(recipient);
-      const erc20ToTransfer = parseEther("53.2134222");
+      const erc20ToTransfer = utils.parseEther("53.2134222");
 
       const fee = ERC20.estimateGas.transfer(recipient, erc20ToTransfer);
       await expect(fee).to.not.be.rejected;
@@ -159,7 +158,7 @@ describe("Signer contract interaction tests", function () {
       const spender = await blsSigners[1].getAddress();
 
       const initialBalance = await mockERC20.balanceOf(spender);
-      const erc20ToTransfer = parseEther("11.0");
+      const erc20ToTransfer = utils.parseEther("11.0");
 
       const approveFee = mockERC20
         .connect(blsSigners[0])

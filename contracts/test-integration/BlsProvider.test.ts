@@ -52,7 +52,7 @@ describe("BlsProvider", () => {
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2 private key
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat Account #2 private key
       regularProvider,
     );
 
@@ -490,9 +490,9 @@ describe("JsonRpcProvider", () => {
   beforeEach(async () => {
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    // First two hardhat account private keys are used in aggregator .env. We choose to use HH account #2 private key here to avoid nonce too low errors.
+    // First two Hardhat account private keys are used in aggregator .env. We choose to use Hardhat account #2 private key here to avoid nonce too low errors.
     wallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH acount #2 private key
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat acount #2 private key
       regularProvider,
     );
   });

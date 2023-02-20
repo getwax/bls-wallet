@@ -13,7 +13,6 @@ describe("Provider tests", function () {
   this.beforeAll(async () => {
     const networkConfig = await getNetworkConfig("local");
     const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
-
     const aggregatorUrl = "http://localhost:3000";
     const verificationGateway = networkConfig.addresses.verificationGateway;
     const aggregatorUtilities = networkConfig.addresses.utilities;
@@ -39,9 +38,16 @@ describe("Provider tests", function () {
 
     this.beforeAll(async () => {
       fundedWallet = new ethers.Wallet(
-        "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2 private key
+        "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat Account #2 private key
         new ethers.providers.JsonRpcProvider("http://localhost:8545"),
       );
+
+      const tx = await fundedWallet.sendTransaction({
+        to: await blsSigner.getAddress(),
+        value: utils.parseEther("100"),
+      });
+      await tx.wait();
+
       recipient = ethers.Wallet.createRandom().address;
       tokenSupply = utils.parseUnits("1000000");
       const MockERC20 = await ethers.getContractFactory("MockERC20");
