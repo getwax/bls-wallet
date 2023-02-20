@@ -36,7 +36,7 @@ describe("BlsProvider", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = ethers.Wallet.createRandom().privateKey;
+    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,

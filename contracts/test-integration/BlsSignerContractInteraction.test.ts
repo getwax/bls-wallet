@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { parseEther } from "ethers/lib/utils";
 import { BigNumber, utils, Wallet } from "ethers";
 
-import { Experimental } from "../clients/src";
+import { Experimental, BlsWalletWrapper } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
 async function getRandomSigners(
@@ -21,7 +21,7 @@ async function getRandomSigners(
 
   const signers = [];
   for (let i = 0; i < numSigners; i++) {
-    const privateKey = ethers.Wallet.createRandom().privateKey;
+    const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
     const blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,

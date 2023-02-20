@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { ethers, Wallet } from "ethers";
+import { ethers } from "ethers";
 
-import { Experimental } from "../src";
+import { Experimental, BlsWalletWrapper } from "../src";
 import { UncheckedBlsSigner } from "../src/BlsSigner";
 
 let aggregatorUrl: string;
@@ -23,7 +23,7 @@ describe("BlsSigner", () => {
       chainId: 0x7a69,
     };
 
-    privateKey = Wallet.createRandom().privateKey;
+    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,

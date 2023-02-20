@@ -1,6 +1,6 @@
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
-import { ethers, BigNumber, Wallet } from "ethers";
+import { ethers, BigNumber } from "ethers";
 import {
   parseEther,
   resolveProperties,
@@ -44,7 +44,7 @@ describe("BlsSigner", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = Wallet.createRandom().privateKey;
+    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
@@ -364,7 +364,7 @@ describe("BlsSigner", () => {
 
   it("should await the init promise when connecting to an unchecked bls signer", async () => {
     // Arrange & Act
-    const newPrivateKey = ethers.Wallet.createRandom().privateKey;
+    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
     const newBlsSigner = blsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
@@ -398,7 +398,7 @@ describe("BlsSigner", () => {
       rpcUrl,
       network,
     );
-    const newPrivateKey = ethers.Wallet.createRandom().privateKey;
+    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
