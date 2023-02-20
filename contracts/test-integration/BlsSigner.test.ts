@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
@@ -16,6 +17,7 @@ import {
   NetworkConfig,
   // eslint-disable-next-line camelcase
   MockERC20__factory,
+  AggregatorUtilities__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
@@ -23,6 +25,7 @@ let networkConfig: NetworkConfig;
 
 let aggregatorUrl: string;
 let verificationGateway: string;
+let aggregatorUtilities: string;
 let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
@@ -38,6 +41,7 @@ describe("BlsSigner", () => {
 
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = networkConfig.addresses.verificationGateway;
+    aggregatorUtilities = networkConfig.addresses.utilities;
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -49,6 +53,7 @@ describe("BlsSigner", () => {
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -57,7 +62,7 @@ describe("BlsSigner", () => {
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2 private key
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat Account #2 private key
       regularProvider,
     );
 
@@ -102,7 +107,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
+  it("should throw an error when sending an invalid transaction", async () => {
     // Arrange
     const invalidValue = parseEther("-1");
 
@@ -116,7 +121,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      '[{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix"},{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5"}]',
+      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
     );
   });
 
@@ -160,6 +165,7 @@ describe("BlsSigner", () => {
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -252,9 +258,27 @@ describe("BlsSigner", () => {
       verificationGateway,
       blsSigner,
     );
+
+    const feeEstimate = await blsProvider.estimateGas(transaction);
+
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      blsProvider.aggregatorUtilitiesAddress,
+      blsProvider,
+    );
+
     const operation = {
       nonce,
-      actions: [action],
+      actions: [
+        action,
+        {
+          ethValue: feeEstimate,
+          contractAddress: blsProvider.aggregatorUtilitiesAddress,
+          encodedFunction:
+            aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendEthToTxOrigin",
+            ),
+        },
+      ],
     };
 
     const expectedBundle = wallet.blsWalletSigner.sign(
@@ -269,6 +293,26 @@ describe("BlsSigner", () => {
     // Assert
     const bundleDto = JSON.parse(signedTransaction);
     expect(bundleDto.signature).to.deep.equal(expectedBundle.signature);
+  });
+
+  it("should throw an error when signing an invalid transaction", async () => {
+    // Arrange
+    const invalidEthValue = parseEther("-1");
+
+    const unsignedTransaction = {
+      value: invalidEthValue,
+      to: ethers.Wallet.createRandom().address,
+    };
+
+    // Act
+    const result = async () =>
+      await blsSigner.signTransaction(unsignedTransaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+    );
   });
 
   it("should check transaction", async () => {
@@ -395,6 +439,7 @@ describe("BlsSigner", () => {
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -580,7 +625,6 @@ describe("BlsSigner", () => {
     });
   });
 
-  // TODO: bls-wallet #410 estimate gas for a transaction
   it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
     // Arrange
     const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");
@@ -642,9 +686,9 @@ describe("JsonRpcSigner", () => {
     signers = await hardhatEthers.getSigners();
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    // First two hardhat account private keys are used in aggregator .env. We choose to use HH account #2 private key here to avoid nonce too low errors.
+    // First two Hardhat account private keys are used in aggregator .env. We choose to use Hardhat account #2 private key here to avoid nonce too low errors.
     wallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH account #2 private key
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat account #2 private key
       regularProvider,
     );
   });

@@ -7,6 +7,7 @@ import BlsSigner, { UncheckedBlsSigner } from "../src/BlsSigner";
 
 let aggregatorUrl: string;
 let verificationGateway: string;
+let aggregatorUtilities: string;
 let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
@@ -20,6 +21,7 @@ describe("BlsProvider", () => {
   beforeEach(async () => {
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = "mockVerificationGatewayAddress";
+    aggregatorUtilities = "mockAggregatorUtilitiesAddress";
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -31,6 +33,7 @@ describe("BlsProvider", () => {
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -62,6 +65,7 @@ describe("BlsProvider", () => {
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -81,6 +85,7 @@ describe("BlsProvider", () => {
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -124,6 +129,7 @@ describe("BlsProvider", () => {
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );

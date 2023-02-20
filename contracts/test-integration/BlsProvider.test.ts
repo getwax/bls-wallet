@@ -15,6 +15,7 @@ let networkConfig: NetworkConfig;
 
 let aggregatorUrl: string;
 let verificationGateway: string;
+let aggregatorUtilities: string;
 let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
@@ -30,6 +31,7 @@ describe("BlsProvider", () => {
 
     aggregatorUrl = "http://localhost:3000";
     verificationGateway = networkConfig.addresses.verificationGateway;
+    aggregatorUtilities = networkConfig.addresses.utilities;
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -41,6 +43,7 @@ describe("BlsProvider", () => {
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
+      aggregatorUtilities,
       rpcUrl,
       network,
     );
@@ -49,7 +52,7 @@ describe("BlsProvider", () => {
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
     const fundedWallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH Account #2 private key
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat Account #2 private key
       regularProvider,
     );
 
@@ -79,7 +82,6 @@ describe("BlsProvider", () => {
     expect(formatEther(result)).to.equal(expectedSupply);
   });
 
-  // TODO: bls-wallet #410 estimate gas for a transaction
   it("should estimate gas without throwing an error", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
@@ -142,32 +144,47 @@ describe("BlsProvider", () => {
     await blsProvider.sendTransaction(signedTransaction);
 
     // Assert
-    // Once when calling "signer.signTransaction", and once when calling "signer.constructTransactionResponse".
+    // Once when calling "signer.signTransaction", once when calling "blsProvider.estimateGas", and once when calling "blsSigner.constructTransactionResponse".
     // This unit test is concerned with the latter being called.
-    expect(spy).to.have.been.called.twice;
+    expect(spy).to.have.been.called.exactly(3);
   });
 
-  it("should return failures as a json string and throw an error when sending an invalid transaction", async () => {
+  it("should throw an error when sending a modified signed transaction", async () => {
     // Arrange
-    const invalidEthValue = parseEther("-1");
+    const address = await blsSigner.getAddress();
 
-    const unsignedTransaction = {
-      value: invalidEthValue,
+    const signedTransaction = await blsSigner.signTransaction({
+      value: parseEther("1"),
       to: ethers.Wallet.createRandom().address,
       data: "0x",
-    };
-    const signedTransaction = await blsSigner.signTransaction(
-      unsignedTransaction,
-    );
+    });
+
+    const userBundle = JSON.parse(signedTransaction);
+    userBundle.operations[0].actions[0].ethValue = parseEther("2");
+    const invalidBundle = JSON.stringify(userBundle);
 
     // Act
-    const result = async () =>
-      await blsProvider.sendTransaction(signedTransaction);
+    const result = async () => await blsProvider.sendTransaction(invalidBundle);
 
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      '[{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: missing 0x prefix"},{"type":"invalid-format","description":"field operations: element 0: field actions: element 0: field ethValue: hex string: incorrect byte length: 8.5"}]',
+      `[{"type":"invalid-signature","description":"invalid signature for wallet address ${address}"}]`,
+    );
+  });
+
+  it("should throw an error when sending an invalid signed transaction", async () => {
+    // Arrange
+    const invalidTransaction = "Invalid signed transaction";
+
+    // Act
+    const result = async () =>
+      await blsProvider.sendTransaction(invalidTransaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "Unexpected token I in JSON at position 0",
     );
   });
 
@@ -473,9 +490,9 @@ describe("JsonRpcProvider", () => {
   beforeEach(async () => {
     rpcUrl = "http://localhost:8545";
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    // First two hardhat account private keys are used in aggregator .env. We choose to use HH account #2 private key here to avoid nonce too low errors.
+    // First two Hardhat account private keys are used in aggregator .env. We choose to use Hardhat account #2 private key here to avoid nonce too low errors.
     wallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // HH acount #2 private key
+      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat acount #2 private key
       regularProvider,
     );
   });
