@@ -194,20 +194,23 @@ const bundle = wallet.sign({
           "sendEthToTxOrigin",
         ),
     },
-
-    // You can also just add an action that transfers the fee amount to the aggregator address, instead of
-    // the action that calls sendEthToTxOrigin. Ensure you modify the estimateFeeBundle to use this action instead.
-    {
-      ethValue: safeFee, // fee amount
-      contractAddress: aggregatorAddress,
-      encodedFunction: "0x",
-    },
   ],
 });
 ```
 
-```ts
+Since the aggregator detects that fees have been paid by observing the effect of a bundle on its own balance, you can also tranfer the required fee directly to the aggregator. Following the same example as above, you can add an action that transfers the fee amount to the aggregator address, instead of the action that calls sendEthToTxOrigin. Ensure you modify the estimateFeeBundle to use this action instead.
 
+```ts
+const bundle = wallet.sign({
+  nonce: await wallet.Nonce(),
+  actions: [
+    ...actions, // ... add your user actions here (approve, transfer, etc.)
+    {
+      ethValue: safeFee, // fee amount
+      contractAddress: aggregatorAddress,
+    },
+  ],
+});
 ```
 
 ### Paying aggregator fees with custom currency (ERC20)
@@ -260,13 +263,14 @@ const bundle = wallet.sign({
   nonce: await wallet.Nonce(),
   actions: [
     ...actions, // ... add your user actions here (approve, transfer, etc.)
+
     // Note the additional approve action when transfering ERC20 tokens
     {
       ethValue: 0,
       contractAddress: tokenContract.address,
       encodedFunction: tokenContract.interface.encodeFunctionData("approve", [
         aggregatorUtilitiesContract.address,
-        estimateFee.feeRequired, // fee amount
+        safeFee, // fee amount
       ]),
     },
     {
@@ -276,19 +280,27 @@ const bundle = wallet.sign({
         "sendTokenToTxOrigin",
         [
           tokenContract.address,
-          estimateFee.feeRequired, // fee amount
+          safeFee, // fee amount
         ],
       ),
     },
+  ],
+});
+```
 
-    // You can also just add an action that transfers the fee amount to the aggregator address, instead of
-    // the action that calls sendEthToTxOrigin. Ensure you modify the estimateFeeBundle to use this action instead.
+Since the aggregator detects that fees have been paid by observing the effect of a bundle on its own balance, you can also tranfer the required fee directly to the aggregator. Following the same example as above, you can add an action that transfers the fee amount to the aggregator address, instead of the action that calls sendEthToTxOrigin. Ensure you modify the estimateFeeBundle to use this action instead.
+
+```ts
+const bundle = wallet.sign({
+  nonce: await wallet.Nonce(),
+  actions: [
+    ...actions, // ... add your user actions here (approve, transfer, etc.)
     {
       ethValue: 0,
       contractAddress: tokenContract.address,
       encodedFunction: tokenContract.interface.encodeFunctionData("transfer", [
         aggregatorAddress,
-        estimateFee.feeRequired, // fee amount
+        safeFee, // fee amount
       ]),
     },
   ],
