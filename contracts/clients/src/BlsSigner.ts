@@ -1,6 +1,13 @@
 /* eslint-disable camelcase */
-import { ethers, BigNumber, Signer, Bytes } from "ethers";
-import { Deferrable, hexlify, isBytes, RLP } from "ethers/lib/utils";
+import { ethers, BigNumber, Signer, Bytes, BigNumberish } from "ethers";
+import {
+  AccessListish,
+  BytesLike,
+  Deferrable,
+  hexlify,
+  isBytes,
+  RLP,
+} from "ethers/lib/utils";
 import { AggregatorUtilities__factory } from "../typechain-types";
 
 import BlsProvider from "./BlsProvider";
@@ -8,6 +15,62 @@ import BlsWalletWrapper from "./BlsWalletWrapper";
 import { ActionData, bundleToDto } from "./signer";
 
 export const _constructorGuard = {};
+
+/**
+ * @param to - 20 Bytes The address the transaction is directed to. Undefined for creation transactions
+ * @param value - the value sent with this transaction
+ * @param gas - transaction gas limit
+ * @param maxPriorityFeePerGas - miner tip aka priority fee
+ * @param maxFeePerGas - the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
+ * @param data - the hash of the invoked method signature and encoded parameters
+ * @param nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
+ * @param chainId - chain ID that this transaction is valid on
+ * @param accessList - EIP-2930 access list
+ */
+export type Transaction = {
+  to?: string;
+  value?: BigNumberish;
+  gas?: BigNumberish;
+  maxPriorityFeePerGas?: BigNumberish;
+  maxFeePerGas?: BigNumberish;
+  data?: BytesLike;
+  nonce?: BigNumberish;
+  chainId?: number;
+  accessList?: Array<AccessListish>;
+};
+
+/**
+ * @param gas - transaction gas limit
+ * @param maxPriorityFeePerGas - miner tip aka priority fee
+ * @param maxFeePerGas - the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
+ * @param nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
+ * @param chainId - chain ID that this transaction is valid on
+ * @param accessList - EIP-2930 access list
+ */
+export type BatchOptions = {
+  gas?: BigNumberish;
+  maxPriorityFeePerGas: BigNumberish;
+  maxFeePerGas: BigNumberish;
+  nonce: BigNumberish;
+  chainId: number;
+  accessList?: Array<AccessListish>;
+};
+
+/**
+ * @param transactions - an array of transaction objects
+ * @param batchOptions - optional batch options taken into account by SC wallets
+ */
+export type TransactionBatch = {
+  transactions: Array<Transaction>;
+  batchOptions?: BatchOptions;
+};
+
+export interface TransactionBatchResponse {
+  transactions: Array<ethers.providers.TransactionResponse>;
+  awaitBatch: (
+    confirmations?: number,
+  ) => Promise<ethers.providers.TransactionReceipt>;
+}
 
 export default class BlsSigner extends Signer {
   override readonly provider: BlsProvider;
@@ -76,7 +139,6 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
     const action: ActionData = {
       ethValue: transaction.value?.toString() ?? "0",
       contractAddress: transaction.to.toString(),
@@ -118,6 +180,93 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  async sendTransactionBatch(
+    transactionBatch: TransactionBatch,
+  ): Promise<TransactionBatchResponse> {
+    await this.initPromise;
+
+    const actions: Array<ActionData> = transactionBatch.transactions.map(
+      (transaction) => {
+        if (!transaction.to) {
+          throw new TypeError(
+            "Transaction.to should be defined for all transactions",
+          );
+        }
+
+        return {
+          ethValue: transaction.value?.toString() ?? "0",
+          contractAddress: transaction.to!.toString(),
+          encodedFunction: transaction.data?.toString() ?? "0x",
+        };
+      },
+    );
+
+    const nonce = await BlsWalletWrapper.Nonce(
+      this.wallet.PublicKey(),
+      this.verificationGatewayAddress,
+      this.provider,
+    );
+
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      this.aggregatorUtilitiesAddress,
+      this.provider,
+    );
+
+    const feeEstimate = await this.provider.aggregator.estimateFee(
+      this.wallet.sign({
+        nonce,
+        actions: [
+          ...actions,
+          {
+            ethValue: 1,
+            // Provide 1 wei with this action so that the fee transfer to
+            // tx.origin can be included in the gas estimate.
+            contractAddress: this.aggregatorUtilitiesAddress,
+            encodedFunction:
+              aggregatorUtilitiesContract.interface.encodeFunctionData(
+                "sendEthToTxOrigin",
+              ),
+          },
+        ],
+      }),
+    );
+
+    // Due to small fluctuations is gas estimation, we add a little safety premium
+    // to the fee to increase the chance that it actually gets accepted during
+    // aggregation.
+    const safetyDivisor = 5;
+    const feeRequired = BigNumber.from(feeEstimate.feeRequired);
+    const safetyPremium = feeRequired.div(safetyDivisor);
+    const safeFee = feeRequired.add(safetyPremium);
+
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [
+        ...actions,
+        {
+          ethValue: safeFee,
+          contractAddress: this.aggregatorUtilitiesAddress,
+          encodedFunction:
+            aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendEthToTxOrigin",
+            ),
+        },
+      ],
+    });
+    const result = await this.provider.aggregator.add(bundle);
+
+    if ("failures" in result) {
+      throw new Error(JSON.stringify(result.failures));
+    }
+
+    return this.constructTransactionBatchResponse(
+      actions,
+      result.hash,
+      this.wallet.address,
+      nonce,
+    );
+  }
+
   async getAddress(): Promise<string> {
     await this.initPromise;
     if (this._address) {
@@ -149,7 +298,7 @@ export default class BlsSigner extends Signer {
       hash,
       to: action.contractAddress,
       from,
-      nonce: BigNumber.from(nonce).toNumber(),
+      nonce: nonce.toNumber(),
       gasLimit: BigNumber.from("0x0"),
       data: action.encodedFunction.toString(),
       value: BigNumber.from(action.ethValue),
@@ -157,6 +306,49 @@ export default class BlsSigner extends Signer {
       type: 2,
       confirmations: 1,
       wait: (confirmations?: number) => {
+        return this.provider.waitForTransaction(hash, confirmations);
+      },
+    };
+  }
+
+  async constructTransactionBatchResponse(
+    actions: Array<ActionData>,
+    hash: string,
+    from: string,
+    nonce?: BigNumber,
+  ): Promise<TransactionBatchResponse> {
+    await this.initPromise;
+    const chainId = await this.getChainId();
+    if (!nonce) {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
+    const transactions: Array<ethers.providers.TransactionResponse> =
+      actions.map((action) => {
+        return {
+          hash,
+          to: action.contractAddress,
+          from,
+          nonce: nonce!.toNumber(),
+          gasLimit: BigNumber.from("0x0"),
+          data: action.encodedFunction.toString(),
+          value: BigNumber.from(action.ethValue),
+          chainId,
+          type: 2,
+          confirmations: 1,
+          wait: (confirmations?: number) => {
+            return this.provider.waitForTransaction(hash, confirmations);
+          },
+        };
+      });
+
+    return {
+      transactions,
+      awaitBatch: (confirmations?: number) => {
         return this.provider.waitForTransaction(hash, confirmations);
       },
     };

@@ -160,6 +160,171 @@ describe("BlsSigner", () => {
     );
   });
 
+  it("should send a batch of ETH transfers (empty calls) successfully", async () => {
+    // Arrange
+    const expectedAmount = parseEther("1");
+    const recipients = [];
+    const transactionBatch = [];
+
+    for (let i = 0; i < 3; i++) {
+      recipients.push(ethers.Wallet.createRandom().address);
+      transactionBatch.push({
+        to: recipients[i],
+        value: expectedAmount,
+      });
+    }
+
+    // Act
+    const transaction = await blsSigner.sendTransactionBatch({
+      transactions: transactionBatch,
+    });
+    await transaction.awaitBatch();
+
+    // Assert
+    expect(await blsProvider.getBalance(recipients[0])).to.equal(
+      expectedAmount,
+    );
+    expect(await blsProvider.getBalance(recipients[1])).to.equal(
+      expectedAmount,
+    );
+    expect(await blsProvider.getBalance(recipients[2])).to.equal(
+      expectedAmount,
+    );
+  });
+
+  it("should throw an error sending a transaction when 'transaction.to' has not been defined", async () => {
+    // Arrange
+    const transactionBatch = new Array(3).fill({
+      ...{ value: parseEther("1") },
+    });
+
+    // Act
+    const result = async () =>
+      await blsSigner.sendTransactionBatch({
+        transactions: transactionBatch,
+      });
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      TypeError,
+      "Transaction.to should be defined",
+    );
+  });
+
+  it("should throw an error when sending an invalid transaction batch", async () => {
+    // Arrange
+    const invalidTransactionBatch = new Array(3).fill({
+      ...{
+        to: ethers.Wallet.createRandom().address,
+        value: parseEther("-1"),
+      },
+    });
+
+    // Act
+    const result = async () =>
+      await blsSigner.sendTransactionBatch({
+        transactions: invalidTransactionBatch,
+      });
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+    );
+  });
+
+  it("should return a transaction batch response when sending a transaction batch", async () => {
+    // Arrange
+    const expectedAmount = parseEther("1");
+    const recipients = [];
+    const transactionBatch = [];
+    const expectedNonce = await BlsWalletWrapper.Nonce(
+      blsSigner.wallet.PublicKey(),
+      blsSigner.verificationGatewayAddress,
+      blsProvider,
+    );
+
+    for (let i = 0; i < 3; i++) {
+      recipients.push(ethers.Wallet.createRandom().address);
+      transactionBatch.push({
+        to: recipients[i],
+        value: expectedAmount,
+      });
+    }
+
+    // Act
+    const transactionBatchResponse = await blsSigner.sendTransactionBatch({
+      transactions: transactionBatch,
+    });
+
+    // Assert
+    // tx 1
+    expect(transactionBatchResponse.transactions[0])
+      .to.be.an("object")
+      .that.includes({
+        hash: transactionBatchResponse.transactions[0].hash,
+        to: recipients[0],
+        from: blsSigner.wallet.address,
+        data: "0x",
+        chainId: 1337,
+        type: 2,
+        confirmations: 1,
+      });
+    expect(transactionBatchResponse.transactions[0].nonce).to.equal(
+      expectedNonce,
+    );
+    expect(transactionBatchResponse.transactions[0].gasLimit).to.equal(
+      BigNumber.from("0x0"),
+    );
+    expect(transactionBatchResponse.transactions[0].value).to.equal(
+      BigNumber.from(expectedAmount),
+    );
+
+    // tx 2
+    expect(transactionBatchResponse.transactions[1])
+      .to.be.an("object")
+      .that.includes({
+        hash: transactionBatchResponse.transactions[1].hash,
+        to: recipients[1],
+        from: blsSigner.wallet.address,
+        data: "0x",
+        chainId: 1337,
+        type: 2,
+        confirmations: 1,
+      });
+    expect(transactionBatchResponse.transactions[1].nonce).to.equal(
+      expectedNonce,
+    );
+    expect(transactionBatchResponse.transactions[1].gasLimit).to.equal(
+      BigNumber.from("0x0"),
+    );
+    expect(transactionBatchResponse.transactions[1].value).to.equal(
+      BigNumber.from(expectedAmount),
+    );
+
+    // tx 3
+    expect(transactionBatchResponse.transactions[2])
+      .to.be.an("object")
+      .that.includes({
+        hash: transactionBatchResponse.transactions[2].hash,
+        to: recipients[2],
+        from: blsSigner.wallet.address,
+        data: "0x",
+        chainId: 1337,
+        type: 2,
+        confirmations: 1,
+      });
+    expect(transactionBatchResponse.transactions[2].nonce).to.equal(
+      expectedNonce,
+    );
+    expect(transactionBatchResponse.transactions[2].gasLimit).to.equal(
+      BigNumber.from("0x0"),
+    );
+    expect(transactionBatchResponse.transactions[2].value).to.equal(
+      BigNumber.from(expectedAmount),
+    );
+  });
+
   it("should throw an error when invalid private key is supplied", async () => {
     // Arrange
     const newBlsProvider = new Experimental.BlsProvider(
