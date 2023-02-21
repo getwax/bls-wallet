@@ -574,26 +574,30 @@ describe("BlsSigner", () => {
 
   it("should get the number of transactions the account has sent", async () => {
     // Arrange
-    const expectedTransactionCount = await regularProvider.getTransactionCount(
-      blsSigner.wallet.address,
-    );
+    const expectedTransactionCount = await blsSigner.wallet.Nonce();
 
     // Act
-    const result = await blsSigner.getTransactionCount();
+    const transactionCount = await blsSigner.getTransactionCount();
 
     // Assert
-    expect(result).to.equal(expectedTransactionCount);
+    expect(transactionCount).to.equal(expectedTransactionCount);
   });
 
   it("should get the number of transactions the account has sent at the specified block tag", async () => {
     // Arrange
     const expectedTransactionCount = 0;
 
+    const sendTransaction = await blsSigner.sendTransaction({
+      value: BigNumber.from(1),
+      to: ethers.Wallet.createRandom().address,
+    });
+    await sendTransaction.wait();
+
     // Act
-    const result = await blsSigner.getTransactionCount("earliest");
+    const transactionCount = await blsSigner.getTransactionCount("earliest");
 
     // Assert
-    expect(result).to.equal(expectedTransactionCount);
+    expect(transactionCount).to.equal(expectedTransactionCount);
   });
 
   it("should return the result of call using the transactionRequest, with the signer account address being used as the from field", async () => {

@@ -7,7 +7,10 @@ import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner, { UncheckedBlsSigner, _constructorGuard } from "./BlsSigner";
 import poll from "./helpers/poll";
 import BlsWalletWrapper from "./BlsWalletWrapper";
-import { AggregatorUtilities__factory } from "../typechain-types";
+import {
+  AggregatorUtilities__factory,
+  BLSWallet__factory,
+} from "../typechain-types";
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
@@ -163,6 +166,27 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       confirmations ?? 1,
       retries ?? 20,
     );
+  }
+
+  override async getTransactionCount(
+    address: string | Promise<string>,
+    blockTag?:
+      | ethers.providers.BlockTag
+      | Promise<ethers.providers.BlockTag>
+      | undefined,
+  ): Promise<number> {
+    const walletContract = BLSWallet__factory.connect(await address, this);
+
+    const code = await walletContract.provider.getCode(address, blockTag);
+
+    if (code === "0x") {
+      // The wallet doesn't exist yet. Wallets are lazily created, so the nonce
+      // is effectively zero, since that will be accepted as valid for a first
+      // operation that also creates the wallet.
+      return 0;
+    }
+
+    return Number(await walletContract.nonce());
   }
 
   async _getTransactionReceipt(
