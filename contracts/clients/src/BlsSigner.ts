@@ -416,6 +416,83 @@ export default class BlsSigner extends Signer {
     return JSON.stringify(bundleToDto(bundle));
   }
 
+  async signTransactionBatch(
+    transactionBatch: TransactionBatch,
+  ): Promise<string> {
+    await this.initPromise;
+
+    const actions: Array<ActionData> = transactionBatch.transactions.map(
+      (transaction) => {
+        if (!transaction.to) {
+          throw new TypeError(
+            "Transaction.to should be defined for all transactions",
+          );
+        }
+
+        return {
+          ethValue: transaction.value?.toString() ?? "0",
+          contractAddress: transaction.to!.toString(),
+          encodedFunction: transaction.data?.toString() ?? "0x",
+        };
+      },
+    );
+
+    const nonce = await BlsWalletWrapper.Nonce(
+      this.wallet.PublicKey(),
+      this.verificationGatewayAddress,
+      this.provider,
+    );
+
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      this.aggregatorUtilitiesAddress,
+      this.provider,
+    );
+
+    const feeEstimate = await this.provider.aggregator.estimateFee(
+      this.wallet.sign({
+        nonce,
+        actions: [
+          ...actions,
+          {
+            ethValue: 1,
+            // Provide 1 wei with this action so that the fee transfer to
+            // tx.origin can be included in the gas estimate.
+            contractAddress: this.aggregatorUtilitiesAddress,
+            encodedFunction:
+              aggregatorUtilitiesContract.interface.encodeFunctionData(
+                "sendEthToTxOrigin",
+              ),
+          },
+        ],
+      }),
+    );
+
+    // Due to small fluctuations is gas estimation, we add a little safety premium
+    // to the fee to increase the chance that it actually gets accepted during
+    // aggregation.
+    const safetyDivisor = 5;
+    const feeRequired = BigNumber.from(feeEstimate.feeRequired);
+    const safetyPremium = feeRequired.div(safetyDivisor);
+    const safeFee = feeRequired.add(safetyPremium);
+
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [
+        ...actions,
+        {
+          ethValue: safeFee,
+          contractAddress: this.aggregatorUtilitiesAddress,
+          encodedFunction:
+            aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendEthToTxOrigin",
+            ),
+        },
+      ],
+    });
+
+    return JSON.stringify(bundleToDto(bundle));
+  }
+
   /** Sign a message */
   // TODO: Come back to this once we support EIP-1271
   override async signMessage(message: Bytes | string): Promise<string> {

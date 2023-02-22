@@ -18,6 +18,7 @@ import {
   // eslint-disable-next-line camelcase
   MockERC20__factory,
   AggregatorUtilities__factory,
+  Operation,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
@@ -404,13 +405,14 @@ describe("BlsSigner", () => {
       to: recipient,
       data: "0x",
     };
-    const action: ActionData = {
+
+    // get expected signature
+    const expectedAction: ActionData = {
       ethValue: parseEther("1"),
       contractAddress: recipient,
       encodedFunction: "0x",
     };
 
-    // get expected signature
     const wallet = await BlsWalletWrapper.connect(
       privateKey,
       verificationGateway,
@@ -418,25 +420,25 @@ describe("BlsSigner", () => {
     );
     const walletAddress = wallet.address;
 
-    const nonce = await BlsWalletWrapper.Nonce(
+    const expectedNonce = await BlsWalletWrapper.Nonce(
       wallet.PublicKey(),
       verificationGateway,
       blsSigner,
     );
 
-    const feeEstimate = await blsProvider.estimateGas(transaction);
+    const expectedFeeEstimate = await blsProvider.estimateGas(transaction);
 
     const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
       blsProvider.aggregatorUtilitiesAddress,
       blsProvider,
     );
 
-    const operation = {
-      nonce,
+    const expectedOperation = {
+      nonce: expectedNonce,
       actions: [
-        action,
+        expectedAction,
         {
-          ethValue: feeEstimate,
+          ethValue: expectedFeeEstimate,
           contractAddress: blsProvider.aggregatorUtilitiesAddress,
           encodedFunction:
             aggregatorUtilitiesContract.interface.encodeFunctionData(
@@ -447,7 +449,7 @@ describe("BlsSigner", () => {
     };
 
     const expectedBundle = wallet.blsWalletSigner.sign(
-      operation,
+      expectedOperation,
       walletAddress,
     );
 
@@ -471,6 +473,120 @@ describe("BlsSigner", () => {
     // Act
     const result = async () =>
       await blsSigner.signTransaction(unsignedTransaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+    );
+  });
+
+  it("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
+    // Arrange
+    const expectedAmount = parseEther("1");
+
+    const recipients = [];
+    const transactions = [];
+    const expectedActions = [];
+    for (let i = 0; i < 3; i++) {
+      recipients.push(ethers.Wallet.createRandom().address);
+      transactions.push({
+        to: recipients[i],
+        value: expectedAmount,
+        data: "0x",
+      });
+      expectedActions.push({
+        contractAddress: recipients[i],
+        ethValue: expectedAmount,
+        encodedFunction: "0x",
+      });
+    }
+
+    // get expected signature
+    const wallet = await BlsWalletWrapper.connect(
+      privateKey,
+      verificationGateway,
+      blsProvider,
+    );
+    const walletAddress = wallet.address;
+
+    const expectedNonce = await BlsWalletWrapper.Nonce(
+      wallet.PublicKey(),
+      verificationGateway,
+      blsSigner,
+    );
+
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      aggregatorUtilities,
+      blsProvider,
+    );
+
+    const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
+      blsSigner.wallet.sign({
+        nonce: expectedNonce,
+        actions: [
+          ...expectedActions,
+          {
+            ethValue: 1,
+            contractAddress: aggregatorUtilities,
+            encodedFunction:
+              aggregatorUtilitiesContract.interface.encodeFunctionData(
+                "sendEthToTxOrigin",
+              ),
+          },
+        ],
+      }),
+    );
+
+    const safetyDivisor = 5;
+    const feeRequired = BigNumber.from(expectedFeeEstimate.feeRequired);
+    const safetyPremium = feeRequired.div(safetyDivisor);
+    const safeFee = feeRequired.add(safetyPremium);
+
+    const expectedOperation: Operation = {
+      nonce: expectedNonce,
+      actions: [
+        ...expectedActions,
+        {
+          ethValue: safeFee,
+          contractAddress: blsProvider.aggregatorUtilitiesAddress,
+          encodedFunction:
+            aggregatorUtilitiesContract.interface.encodeFunctionData(
+              "sendEthToTxOrigin",
+            ),
+        },
+      ],
+    };
+
+    const expectedBundle = wallet.blsWalletSigner.sign(
+      expectedOperation,
+      walletAddress,
+    );
+
+    // Act
+    const signedTransaction = await blsSigner.signTransactionBatch({
+      transactions,
+    });
+
+    // Assert
+    const bundleDto = JSON.parse(signedTransaction);
+    expect(bundleDto.signature).to.deep.equal(expectedBundle.signature);
+  });
+
+  it("should throw an error when signing an invalid transaction batch", async () => {
+    // Arrange
+    const invalidEthValue = parseEther("-1");
+
+    const unsignedTransaction = {
+      value: invalidEthValue,
+      to: ethers.Wallet.createRandom().address,
+    };
+
+    // Act
+    const result = async () =>
+      await blsSigner.signTransactionBatch({
+        transactions: [unsignedTransaction],
+      });
 
     // Assert
     await expect(result()).to.be.rejectedWith(
@@ -785,6 +901,7 @@ describe("BlsSigner", () => {
       data: testERC20.interface.encodeFunctionData("totalSupply"),
       from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
     });
+    chai.spy.restore(spy);
   });
 
   it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
@@ -808,6 +925,7 @@ describe("BlsSigner", () => {
       value: parseEther("1"),
       from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
     });
+    chai.spy.restore(spy);
   });
 
   // ENS is not supported by hardhat so we are checking the correct error behaviour in this scenario

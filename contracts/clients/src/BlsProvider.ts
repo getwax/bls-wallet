@@ -4,7 +4,11 @@ import { Deferrable } from "ethers/lib/utils";
 
 import { ActionData, Bundle } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
-import BlsSigner, { UncheckedBlsSigner, _constructorGuard } from "./BlsSigner";
+import BlsSigner, {
+  TransactionBatchResponse,
+  UncheckedBlsSigner,
+  _constructorGuard,
+} from "./BlsSigner";
 import poll from "./helpers/poll";
 import BlsWalletWrapper from "./BlsWalletWrapper";
 import {
@@ -101,23 +105,56 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     }
 
     const resolvedTransaction = await signedTransaction;
-    const userBundle: Bundle = JSON.parse(resolvedTransaction);
+    const bundle: Bundle = JSON.parse(resolvedTransaction);
 
-    const result = await this.aggregator.add(userBundle);
+    if (bundle.operations.length > 1) {
+      throw new Error(
+        "Can only operate on single operations. Call provider.sendTransactionBatch instead",
+      );
+    }
+
+    const result = await this.aggregator.add(bundle);
 
     if ("failures" in result) {
       throw new Error(JSON.stringify(result.failures));
     }
 
-    // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
-    // We're assuming the first operation and action constitute the correct values. We will need to refactor this when we add multi-action transactions
     const actionData: ActionData = {
-      ethValue: userBundle.operations[0].actions[0].ethValue,
-      contractAddress: userBundle.operations[0].actions[0].contractAddress,
-      encodedFunction: userBundle.operations[0].actions[0].encodedFunction,
+      ethValue: bundle.operations[0].actions[0].ethValue,
+      contractAddress: bundle.operations[0].actions[0].contractAddress,
+      encodedFunction: bundle.operations[0].actions[0].encodedFunction,
     };
 
     return this.signer.constructTransactionResponse(
+      actionData,
+      result.hash,
+      this.signer.wallet.address,
+    );
+  }
+
+  async sendTransactionBatch(
+    signedTransactionBatch: string,
+  ): Promise<TransactionBatchResponse> {
+    // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
+    // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
+    // We do not want to pass the private key to this method.
+    if (!this.signer) {
+      throw new Error("Call provider.getSigner first");
+    }
+
+    const bundle: Bundle = JSON.parse(signedTransactionBatch);
+
+    const result = await this.aggregator.add(bundle);
+
+    if ("failures" in result) {
+      throw new Error(JSON.stringify(result.failures));
+    }
+
+    const actionData: Array<ActionData> = bundle.operations
+      .map((operation) => operation.actions)
+      .flat();
+
+    return this.signer.constructTransactionBatchResponse(
       actionData,
       result.hash,
       this.signer.wallet.address,
