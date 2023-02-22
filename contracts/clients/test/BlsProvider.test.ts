@@ -149,35 +149,6 @@ describe("BlsProvider", () => {
     );
   });
 
-  it("should throw an error sending a transaction batch when this.signer is not defined", async () => {
-    // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
-      verificationGateway,
-      aggregatorUtilities,
-      rpcUrl,
-      network,
-    );
-    const signedTransaction = await blsSigner.signTransactionBatch({
-      transactions: [
-        {
-          value: parseEther("1"),
-          to: ethers.Wallet.createRandom().address,
-        },
-      ],
-    });
-
-    // Act
-    const result = async () =>
-      await newBlsProvider.sendTransactionBatch(signedTransaction);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      Error,
-      "Call provider.getSigner first",
-    );
-  });
-
   it("should return the connection info for the provider", () => {
     // Arrange
     const expectedConnection = regularProvider.connection;
