@@ -60,7 +60,8 @@ describe("WalletActions", async function () {
 
     const calculatedAddress = ethers.utils.getCreate2Address(
       fx.verificationGateway.address,
-      fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
+      wallet.blsWalletSigner.getPublicKeyHash(),
+      // fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
       ethers.utils.solidityKeccak256(
         ["bytes", "bytes"],
         [
@@ -187,7 +188,7 @@ describe("WalletActions", async function () {
           contractAddress: fx.verificationGateway.address,
           encodedFunction: fx.verificationGateway.interface.encodeFunctionData(
             "walletFromHash",
-            [fx.blsWalletSigner.getPublicKeyHash(wallet.privateKey)],
+            [fx.blsWalletSigner.getPublicKeyHash()],
           ),
         },
       ],

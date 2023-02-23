@@ -66,11 +66,9 @@ describe("Recovery", async function () {
     blsWallet3 = await ethers.getContractAt("BLSWallet", wallet3.address);
     recoverySigner = (await ethers.getSigners())[1];
 
-    hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
-    hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
-    hashAttacker = wallet2.blsWalletSigner.getPublicKeyHash(
-      walletAttacker.privateKey,
-    );
+    hash1 = wallet1.blsWalletSigner.getPublicKeyHash();
+    hash2 = wallet2.blsWalletSigner.getPublicKeyHash();
+    hashAttacker = walletAttacker.blsWalletSigner.getPublicKeyHash();
     salt = "0x1234567812345678123456781234567812345678123456781234567812345678";
     recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
@@ -84,7 +82,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet2.privateKey,
+      wallet2.blsWalletSigner.privateKey,
     );
 
     await fx.call(
@@ -181,7 +179,9 @@ describe("Recovery", async function () {
     );
     await recoveryBundleTxn.wait();
 
-    const newHash = wallet4.blsWalletSigner.getPublicKeyHash(newPrivateKey);
+    await wallet4.setBlsWalletSigner(fx.provider, newPrivateKey);
+
+    const newHash = wallet4.blsWalletSigner.getPublicKeyHash();
     expect(await vg.hashFromWallet(wallet4.address)).to.eql(newHash);
     expect(await vg.walletFromHash(newHash)).to.eql(wallet4.address);
   });
@@ -208,7 +208,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet3.privateKey,
+      wallet3.blsWalletSigner.privateKey,
     );
 
     // wallet 2 recovers wallet 1 to key 3
@@ -222,7 +222,7 @@ describe("Recovery", async function () {
     );
 
     // don't trust, verify
-    const hash3 = wallet3.blsWalletSigner.getPublicKeyHash(wallet3.privateKey);
+    const hash3 = wallet3.blsWalletSigner.getPublicKeyHash();
     expect(await vg.hashFromWallet(wallet1.address)).to.eql(hash3);
     expect(await vg.walletFromHash(hash3)).to.eql(wallet1.address);
   });
@@ -240,7 +240,8 @@ describe("Recovery", async function () {
     const attackSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      walletAttacker.privateKey,
+      walletAttacker.blsWalletSigner.privateKey,
+      // walletAttacker.privateKey,
     );
 
     // Attacker assumed to have compromised wallet1 bls key, and wishes to reset
@@ -281,7 +282,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet2.privateKey,
+      wallet2.blsWalletSigner.privateKey,
     );
     const safeKey = wallet2.PublicKey();
 
@@ -318,7 +319,8 @@ describe("Recovery", async function () {
      *
      * For now cast to 'any'.
      */
-    await wallet2.syncWallet(vg as any);
+    await wallet2.syncWallet(vg as any, wallet2.blsWalletSigner.privateKey);
+    // await wallet2.syncWallet(vg as any);
     await fx.call(
       wallet2,
       vg,
@@ -327,10 +329,13 @@ describe("Recovery", async function () {
       recoveredWalletNonce++, // await wallet2.Nonce(),
     );
 
+    console.log("here1");
     expect(await vg.walletFromHash(hash1)).to.not.equal(blsWallet.address);
+    console.log("here2");
     expect(await vg.walletFromHash(hashAttacker)).to.not.equal(
       blsWallet.address,
     );
+    console.log("here3");
     expect(await vg.walletFromHash(hash2)).to.equal(blsWallet.address);
 
     // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
@@ -374,7 +379,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       walletAttacker.address,
-      walletAttacker.privateKey,
+      walletAttacker.blsWalletSigner.privateKey,
     );
     const wallet1Key = await wallet1.PublicKey();
 
@@ -404,7 +409,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet2.privateKey,
+      wallet2.blsWalletSigner.privateKey,
     );
 
     const recoveryTxn = await fx.verificationGateway

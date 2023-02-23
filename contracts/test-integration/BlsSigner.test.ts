@@ -283,7 +283,6 @@ describe("BlsSigner", () => {
 
     const expectedBundle = wallet.blsWalletSigner.sign(
       operation,
-      privateKey,
       walletAddress,
     );
 
@@ -371,10 +370,7 @@ describe("BlsSigner", () => {
     // Arrange
     const address = ethers.Wallet.createRandom().address;
     const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(
-        address,
-        blsSigner.wallet.privateKey,
-      );
+      blsSigner.wallet.blsWalletSigner.signMessage(address);
 
     const expectedSignature = RLP.encode(blsWalletSignerSignature);
 
@@ -391,10 +387,7 @@ describe("BlsSigner", () => {
     const bytes: number[] = [68, 219, 115, 219, 26, 248, 170, 165]; // random bytes
     const hexString = ethers.utils.hexlify(bytes);
     const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(
-        hexString,
-        blsSigner.wallet.privateKey,
-      );
+      blsSigner.wallet.blsWalletSigner.signMessage(hexString);
 
     const expectedSignature = RLP.encode(blsWalletSignerSignature);
 

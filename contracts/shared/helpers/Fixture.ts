@@ -133,6 +133,8 @@ export default class Fixture {
       };
     });
 
+    const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+
     return new Fixture(
       chainId,
       ethers.provider,
@@ -144,7 +146,7 @@ export default class Fixture {
       blsExpander,
       utilities,
       BLSWallet,
-      await initBlsWalletSigner({ chainId }),
+      await initBlsWalletSigner({ chainId, privateKey }),
     );
   }
 

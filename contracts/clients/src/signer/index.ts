@@ -18,9 +18,11 @@ export type BlsWalletSigner = AsyncReturnType<typeof initBlsWalletSigner>;
 export async function initBlsWalletSigner({
   domain = defaultDomain,
   chainId,
+  privateKey,
 }: {
   domain?: Uint8Array;
   chainId: number;
+  privateKey: string;
 }) {
   // Note: Getting signers via this factory ensures that mcl-wasm's underlying
   // init() has been called when signing. However, other operations such as
@@ -32,11 +34,12 @@ export async function initBlsWalletSigner({
 
   return {
     aggregate,
-    getPublicKey: getPublicKey(signerFactory, domain),
-    getPublicKeyHash: getPublicKeyHash(signerFactory, domain),
-    getPublicKeyStr: getPublicKeyStr(signerFactory, domain),
-    sign: sign(signerFactory, domain, chainId),
-    signMessage: signMessage(signerFactory, domain),
+    getPublicKey: getPublicKey(signerFactory, domain, privateKey),
+    getPublicKeyHash: getPublicKeyHash(signerFactory, domain, privateKey),
+    getPublicKeyStr: getPublicKeyStr(signerFactory, domain, privateKey),
+    sign: sign(signerFactory, domain, chainId, privateKey),
+    signMessage: signMessage(signerFactory, domain, privateKey),
     verify: verify(domain, chainId),
+    privateKey,
   };
 }

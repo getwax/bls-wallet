@@ -119,7 +119,7 @@ describe("Upgrade", async function () {
     // Recreate hubble bls signer
     const walletOldVg = await fx.lazyBlsWallets[0]();
     const walletAddress = walletOldVg.address;
-    const blsSecret = walletOldVg.privateKey;
+    const blsSecret = walletOldVg.blsWalletSigner.privateKey;
 
     const wallet = await BlsWalletWrapper.connect(
       blsSecret,
@@ -150,9 +150,7 @@ describe("Upgrade", async function () {
     // Advance time one week
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
 
-    const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
-      walletOldVg.privateKey,
-    );
+    const hash = walletOldVg.blsWalletSigner.getPublicKeyHash();
 
     const setExternalWalletAction: ActionData = {
       ethValue: BigNumber.from(0),
@@ -310,18 +308,18 @@ describe("Upgrade", async function () {
     const lazyWallet2 = await fx.lazyBlsWallets[1]();
 
     const wallet1 = await BlsWalletWrapper.connect(
-      lazyWallet1.privateKey,
+      lazyWallet1.blsWalletSigner.privateKey,
       vg1.address,
       vg1.provider,
     );
 
     const wallet2 = await BlsWalletWrapper.connect(
-      lazyWallet2.privateKey,
+      lazyWallet2.blsWalletSigner.privateKey,
       vg1.address,
       vg1.provider,
     );
 
-    const hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
+    const hash1 = wallet1.blsWalletSigner.getPublicKeyHash();
 
     expect(await vg1.walletFromHash(hash1)).to.equal(wallet1.address);
     expect(await vg1.hashFromWallet(wallet1.address)).to.equal(hash1);
@@ -364,7 +362,7 @@ describe("Upgrade", async function () {
 
     // wallet 1's hash is pointed to null address
     // wallet 2's hash is now pointed to wallet 1's address
-    const hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
+    const hash2 = wallet2.blsWalletSigner.getPublicKeyHash();
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await fx.call(wallet1, vg1, "setPendingBLSKeyForWallet", [], 2);

@@ -22,7 +22,7 @@ export default class BlsSigner extends Signer {
   constructor(
     constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
-    privateKey: string | Promise<string>,
+    privateKey: string | Promise<string>, // remove?
     readonly addressOrIndex?: string | number,
   ) {
     super();
@@ -253,10 +253,10 @@ export default class BlsSigner extends Signer {
     return new UncheckedBlsSigner(
       _constructorGuard,
       this.provider,
-      this.wallet?.privateKey ??
+      this.wallet?.blsWalletSigner.privateKey ??
         (async (): Promise<string> => {
           await this.initPromise;
-          return this.wallet.privateKey;
+          return this.wallet.blsWalletSigner.privateKey;
         })(),
       this._address || this._index,
     );
