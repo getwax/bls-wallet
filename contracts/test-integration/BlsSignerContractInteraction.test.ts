@@ -419,9 +419,7 @@ describe("Signer contract interaction tests", function () {
       const spender = mockTokenSpender.address;
       const tokenId = 7;
 
-      const mint = await mockERC721
-        .connect(blsSigners[0])
-        .safeMint(owner, tokenId);
+      const mint = await mockERC721.connect(blsSigners[0]).mint(owner, tokenId);
       await mint.wait();
 
       const transactionBatch = {
