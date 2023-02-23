@@ -8,10 +8,10 @@ import {
   isBytes,
   RLP,
 } from "ethers/lib/utils";
-import { AggregatorUtilities__factory } from "../typechain-types";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
+import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
 import { ActionData, bundleToDto } from "./signer";
 
 export const _constructorGuard = {};
@@ -146,25 +146,14 @@ export default class BlsSigner extends Signer {
     };
 
     const feeEstimate = await this.provider.estimateGas(transaction);
-
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this.provider,
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      [action],
+      feeEstimate,
     );
 
     const bundle = this.wallet.sign({
       nonce,
-      actions: [
-        action,
-        {
-          ethValue: feeEstimate,
-          contractAddress: this.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
     });
     const result = await this.provider.aggregator.add(bundle);
 
@@ -207,51 +196,28 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this.provider,
-    );
+    const actionsWithFeePaymentAction =
+      this.provider._addFeePaymentActionForFeeEstimation(actions);
 
     const feeEstimate = await this.provider.aggregator.estimateFee(
       this.wallet.sign({
         nonce,
-        actions: [
-          ...actions,
-          {
-            ethValue: 1,
-            // Provide 1 wei with this action so that the fee transfer to
-            // tx.origin can be included in the gas estimate.
-            contractAddress: this.aggregatorUtilitiesAddress,
-            encodedFunction:
-              aggregatorUtilitiesContract.interface.encodeFunctionData(
-                "sendEthToTxOrigin",
-              ),
-          },
-        ],
+        actions: [...actionsWithFeePaymentAction],
       }),
     );
 
-    // Due to small fluctuations is gas estimation, we add a little safety premium
-    // to the fee to increase the chance that it actually gets accepted during
-    // aggregation.
-    const safetyDivisor = 5;
-    const feeRequired = BigNumber.from(feeEstimate.feeRequired);
-    const safetyPremium = feeRequired.div(safetyDivisor);
-    const safeFee = feeRequired.add(safetyPremium);
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(feeEstimate.feeRequired),
+    );
+
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      actions,
+      safeFee,
+    );
 
     const bundle = this.wallet.sign({
       nonce,
-      actions: [
-        ...actions,
-        {
-          ethValue: safeFee,
-          contractAddress: this.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
     });
     const result = await this.provider.aggregator.add(bundle);
 
@@ -393,24 +359,14 @@ export default class BlsSigner extends Signer {
 
     const feeEstimate = await this.provider.estimateGas(transaction);
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this.provider,
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      [action],
+      feeEstimate,
     );
 
     const bundle = this.wallet.sign({
       nonce,
-      actions: [
-        action,
-        {
-          ethValue: feeEstimate,
-          contractAddress: this.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
     });
 
     return JSON.stringify(bundleToDto(bundle));
@@ -443,51 +399,28 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this.provider,
-    );
+    const actionsWithFeePaymentAction =
+      this.provider._addFeePaymentActionForFeeEstimation(actions);
 
     const feeEstimate = await this.provider.aggregator.estimateFee(
       this.wallet.sign({
         nonce,
-        actions: [
-          ...actions,
-          {
-            ethValue: 1,
-            // Provide 1 wei with this action so that the fee transfer to
-            // tx.origin can be included in the gas estimate.
-            contractAddress: this.aggregatorUtilitiesAddress,
-            encodedFunction:
-              aggregatorUtilitiesContract.interface.encodeFunctionData(
-                "sendEthToTxOrigin",
-              ),
-          },
-        ],
+        actions: [...actionsWithFeePaymentAction],
       }),
     );
 
-    // Due to small fluctuations is gas estimation, we add a little safety premium
-    // to the fee to increase the chance that it actually gets accepted during
-    // aggregation.
-    const safetyDivisor = 5;
-    const feeRequired = BigNumber.from(feeEstimate.feeRequired);
-    const safetyPremium = feeRequired.div(safetyDivisor);
-    const safeFee = feeRequired.add(safetyPremium);
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(feeEstimate.feeRequired),
+    );
+
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      actions,
+      safeFee,
+    );
 
     const bundle = this.wallet.sign({
       nonce,
-      actions: [
-        ...actions,
-        {
-          ethValue: safeFee,
-          contractAddress: this.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
     });
 
     return JSON.stringify(bundleToDto(bundle));

@@ -4,7 +4,6 @@ import { BigNumber, ethers } from "ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
 import {
-  AggregatorUtilities__factory,
   BlsWalletWrapper,
   bundleToDto,
   Experimental,
@@ -134,47 +133,34 @@ describe("BlsProvider", () => {
     const firstRecipient = ethers.Wallet.createRandom().address;
     const secondRecipient = ethers.Wallet.createRandom().address;
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      aggregatorUtilities,
-      blsProvider,
-    );
-
-    const firstOperation = {
-      nonce: await blsSigner.wallet.Nonce(),
-      actions: [
+    const firstActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
         {
           ethValue: expectedAmount,
           contractAddress: firstRecipient,
           encodedFunction: "0x",
         },
-        {
-          ethValue: verySafeFee,
-          contractAddress: blsProvider.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
       ],
-    };
-
-    const secondOperation = {
-      nonce: (await blsSigner.wallet.Nonce()).add(1),
-      actions: [
+      verySafeFee,
+    );
+    const secondActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
         {
           ethValue: expectedAmount,
           contractAddress: secondRecipient,
           encodedFunction: "0x",
         },
-        {
-          ethValue: verySafeFee,
-          contractAddress: blsProvider.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
       ],
+      verySafeFee,
+    );
+
+    const firstOperation = {
+      nonce: await blsSigner.wallet.Nonce(),
+      actions: [...firstActionWithSafeFee],
+    };
+    const secondOperation = {
+      nonce: (await blsSigner.wallet.Nonce()).add(1),
+      actions: [...secondActionWithSafeFee],
     };
 
     const firstBundle = blsSigner.wallet.sign(firstOperation);
@@ -311,47 +297,34 @@ describe("BlsProvider", () => {
     const firstRecipient = ethers.Wallet.createRandom().address;
     const secondRecipient = ethers.Wallet.createRandom().address;
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      aggregatorUtilities,
-      blsProvider,
-    );
-
-    const firstOperation = {
-      nonce: await blsSigner.wallet.Nonce(),
-      actions: [
+    const firstActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
         {
           ethValue: expectedAmount,
           contractAddress: firstRecipient,
           encodedFunction: "0x",
         },
-        {
-          ethValue: verySafeFee,
-          contractAddress: blsProvider.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
       ],
-    };
-
-    const secondOperation = {
-      nonce: (await blsSigner.wallet.Nonce()).add(1),
-      actions: [
+      verySafeFee,
+    );
+    const secondActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
         {
           ethValue: expectedAmount,
           contractAddress: secondRecipient,
           encodedFunction: "0x",
         },
-        {
-          ethValue: verySafeFee,
-          contractAddress: blsProvider.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
       ],
+      verySafeFee,
+    );
+
+    const firstOperation = {
+      nonce: await blsSigner.wallet.Nonce(),
+      actions: [...firstActionWithSafeFee],
+    };
+    const secondOperation = {
+      nonce: (await blsSigner.wallet.Nonce()).add(1),
+      actions: [...secondActionWithSafeFee],
     };
 
     const firstBundle = blsSigner.wallet.sign(firstOperation);

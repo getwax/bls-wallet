@@ -15,12 +15,11 @@ import {
   ActionData,
   BlsWalletWrapper,
   NetworkConfig,
-  // eslint-disable-next-line camelcase
   MockERC20__factory,
-  AggregatorUtilities__factory,
   Operation,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
+import addSafetyPremiumToFee from "../clients/src/helpers/addSafetyDivisorToFee";
 
 let networkConfig: NetworkConfig;
 
@@ -457,24 +456,14 @@ describe("BlsSigner", () => {
 
     const expectedFeeEstimate = await blsProvider.estimateGas(transaction);
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      blsProvider.aggregatorUtilitiesAddress,
-      blsProvider,
+    const actionsWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [expectedAction],
+      expectedFeeEstimate,
     );
 
     const expectedOperation = {
       nonce: expectedNonce,
-      actions: [
-        expectedAction,
-        {
-          ethValue: expectedFeeEstimate,
-          contractAddress: blsProvider.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
     };
 
     const expectedBundle = wallet.blsWalletSigner.sign(
@@ -546,46 +535,28 @@ describe("BlsSigner", () => {
       blsSigner,
     );
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      aggregatorUtilities,
-      blsProvider,
-    );
+    const actionsWithFeePaymentAction =
+      blsProvider._addFeePaymentActionForFeeEstimation(expectedActions);
 
     const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
       blsSigner.wallet.sign({
         nonce: expectedNonce,
-        actions: [
-          ...expectedActions,
-          {
-            ethValue: 1,
-            contractAddress: aggregatorUtilities,
-            encodedFunction:
-              aggregatorUtilitiesContract.interface.encodeFunctionData(
-                "sendEthToTxOrigin",
-              ),
-          },
-        ],
+        actions: [...actionsWithFeePaymentAction],
       }),
     );
 
-    const safetyDivisor = 5;
-    const feeRequired = BigNumber.from(expectedFeeEstimate.feeRequired);
-    const safetyPremium = feeRequired.div(safetyDivisor);
-    const safeFee = feeRequired.add(safetyPremium);
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(expectedFeeEstimate.feeRequired),
+    );
+
+    const actionsWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      expectedActions,
+      safeFee,
+    );
 
     const expectedOperation: Operation = {
       nonce: expectedNonce,
-      actions: [
-        ...expectedActions,
-        {
-          ethValue: safeFee,
-          contractAddress: blsProvider.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
     };
 
     const expectedBundle = wallet.blsWalletSigner.sign(

@@ -15,6 +15,7 @@ import {
   AggregatorUtilities__factory,
   BLSWallet__factory,
 } from "../typechain-types";
+import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
@@ -61,37 +62,18 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       this,
     );
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this,
-    );
+    const actionsWithFeePaymentAction =
+      this._addFeePaymentActionForFeeEstimation([action]);
 
     const feeEstimate = await this.aggregator.estimateFee(
       this.signer.wallet.sign({
         nonce,
-        actions: [
-          action,
-          {
-            ethValue: 1,
-            // Provide 1 wei with this action so that the fee transfer to
-            // tx.origin can be included in the gas estimate.
-            contractAddress: this.aggregatorUtilitiesAddress,
-            encodedFunction:
-              aggregatorUtilitiesContract.interface.encodeFunctionData(
-                "sendEthToTxOrigin",
-              ),
-          },
-        ],
+        actions: [...actionsWithFeePaymentAction],
       }),
     );
 
-    // Due to small fluctuations is gas estimation, we add a little safety premium
-    // to the fee to increase the chance that it actually gets accepted during
-    // aggregation.
-    const safetyDivisor = 5;
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
-    const safetyPremium = feeRequired.div(safetyDivisor);
-    return feeRequired.add(safetyPremium);
+    return addSafetyPremiumToFee(feeRequired);
   }
 
   override async sendTransaction(
@@ -267,5 +249,50 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       type: bundleReceipt.type,
       status: bundleReceipt.status,
     };
+  }
+
+  _addFeePaymentActionForFeeEstimation(
+    actions: Array<ActionData>,
+  ): Array<ActionData> {
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      this.aggregatorUtilitiesAddress,
+      this,
+    );
+
+    return [
+      ...actions,
+      {
+        // Provide 1 wei with this action so that the fee transfer to
+        // tx.origin can be included in the gas estimate.
+        ethValue: 1,
+        contractAddress: this.aggregatorUtilitiesAddress,
+        encodedFunction:
+          aggregatorUtilitiesContract.interface.encodeFunctionData(
+            "sendEthToTxOrigin",
+          ),
+      },
+    ];
+  }
+
+  _addFeePaymentActionWithSafeFee(
+    actions: Array<ActionData>,
+    fee: BigNumber,
+  ): Array<ActionData> {
+    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
+      this.aggregatorUtilitiesAddress,
+      this,
+    );
+
+    return [
+      ...actions,
+      {
+        ethValue: fee,
+        contractAddress: this.aggregatorUtilitiesAddress,
+        encodedFunction:
+          aggregatorUtilitiesContract.interface.encodeFunctionData(
+            "sendEthToTxOrigin",
+          ),
+      },
+    ];
   }
 }
