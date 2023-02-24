@@ -499,8 +499,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  // TODO: passing in isolation but failing when run with whole file
-  it.skip("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
+  it("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
     // Arrange
     const expectedAmount = parseEther("1");
 
