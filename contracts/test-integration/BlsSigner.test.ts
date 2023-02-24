@@ -192,22 +192,30 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should throw an error sending a transaction when 'transaction.to' has not been defined", async () => {
+  it("should throw an error sending & signing a transaction batch when 'transaction.to' has not been defined", async () => {
     // Arrange
     const transactionBatch = new Array(3).fill({
       ...{ value: parseEther("1") },
     });
 
     // Act
-    const result = async () =>
+    const sendResult = async () =>
       await blsSigner.sendTransactionBatch({
+        transactions: transactionBatch,
+      });
+    const signResult = async () =>
+      await blsSigner.signTransactionBatch({
         transactions: transactionBatch,
       });
 
     // Assert
-    await expect(result()).to.be.rejectedWith(
+    await expect(sendResult()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined",
+      "Transaction.to should be defined for all transactions",
+    );
+    await expect(signResult()).to.be.rejectedWith(
+      TypeError,
+      "Transaction.to should be defined for all transactions",
     );
   });
 

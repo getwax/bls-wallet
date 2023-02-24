@@ -62,13 +62,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       this,
     );
 
-    const actionsWithFeePaymentAction =
+    const actionWithFeePaymentAction =
       this._addFeePaymentActionForFeeEstimation([action]);
 
     const feeEstimate = await this.aggregator.estimateFee(
       this.signer.wallet.sign({
         nonce,
-        actions: [...actionsWithFeePaymentAction],
+        actions: [...actionWithFeePaymentAction],
       }),
     );
 
