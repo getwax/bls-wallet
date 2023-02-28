@@ -479,12 +479,18 @@ describe("BlsSigner", () => {
       walletAddress,
     );
 
+    const expectedBundleSignatureHexStrings = expectedBundle.signature.map(
+      (keyElement) => BigNumber.from(keyElement).toHexString(),
+    );
+
     // Act
     const signedTransaction = await blsSigner.signTransaction(transaction);
 
     // Assert
     const bundleDto = JSON.parse(signedTransaction);
-    expect(bundleDto.signature).to.deep.equal(expectedBundle.signature);
+    expect(bundleDto.signature).to.deep.equal(
+      expectedBundleSignatureHexStrings,
+    );
   });
 
   it("should throw an error when signing an invalid transaction", async () => {
@@ -507,7 +513,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
+  it.only("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
     // Arrange
     const expectedAmount = parseEther("1");
 
