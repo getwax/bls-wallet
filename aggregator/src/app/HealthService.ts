@@ -11,8 +11,7 @@ abstract class HealthIndicator {
   abstract name: string;
   status: ResourceHealth = ResourceHealth.Unhealthy;
   details: string | undefined;
-
-  abstract checkHealth(): Promise<void>;
+  abstract checkHealth(): Promise<void> | void;
 }
 
 export enum ResourceHealth {
@@ -22,7 +21,7 @@ export enum ResourceHealth {
 
 export class AggregatorServiceHealthCheck extends HealthIndicator {
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
-  name: string = 'Aggregator';
+  name = 'Aggregator';
   status: ResourceHealth = ResourceHealth.Unhealthy;
   details: string | undefined;
   
@@ -68,7 +67,7 @@ export class AggregatorServiceHealthCheck extends HealthIndicator {
 
 export class RPCServiceHealthCheck extends HealthIndicator  {
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
-  name: string = 'RPC';
+  name = 'RPC';
   status: ResourceHealth = ResourceHealth.Unhealthy;
   details: string | undefined;
 
@@ -121,36 +120,37 @@ export class DBServiceHealthCheck extends HealthIndicator  {
   }
 
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
-  name: string = 'DB';
+  name = 'DB';
   status: ResourceHealth = ResourceHealth.Unhealthy;
   details: string | undefined;
 
-  async checkHealth(): Promise<void> {
-    try {      
-      const [[now]] = [...this.bundleTable.dbQuery("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")];
-      const dbTime = new Date(`${now}Z`).getTime();
-      assert(typeof dbTime === "number");
-      this.status = ResourceHealth.Healthy;
-      this.emit({
-        type: "service-healthy",
-        data: {
-          name: this.name,
-          status: ResourceHealth.Healthy,
-        },
-      });
-    } catch (e) {
-      this.status = ResourceHealth.Unhealthy;
-      this.details = e.message;
-      this.emit({
-        type: "service-unhealthy",
-        data: {
-          name: this.name,
-          status: ResourceHealth.Unhealthy,
-          detail: e.message,
-        },
-      });
-      //console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
-    }
+  checkHealth(): void {
+    // wrap synchronous code in a promise so we can use async/await
+      try {      
+        const [[now]] = [...this.bundleTable.dbQuery("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")];
+        const dbTime = new Date(`${now}Z`).getTime();
+        assert(typeof dbTime === "number");
+        this.status = ResourceHealth.Healthy;
+        this.emit({
+          type: "service-healthy",
+          data: {
+            name: this.name,
+            status: ResourceHealth.Healthy,
+          },
+        });
+      } catch (e) {
+        this.status = ResourceHealth.Unhealthy;
+        this.details = e.message;
+        this.emit({
+          type: "service-unhealthy",
+          data: {
+            name: this.name,
+            status: ResourceHealth.Unhealthy,
+            detail: e.message,
+          },
+        });
+        //console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
+      }
   }
 }
 
