@@ -211,11 +211,11 @@ describe("BlsSigner", () => {
     // Assert
     await expect(sendResult()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined for all transactions",
+      "Transaction.to is missing on transaction 0",
     );
     await expect(signResult()).to.be.rejectedWith(
       TypeError,
-      "Transaction.to should be defined for all transactions",
+      "Transaction.to is missing on transaction 0",
     );
   });
 

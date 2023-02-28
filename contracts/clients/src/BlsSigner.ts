@@ -2,7 +2,6 @@
 import { ethers, BigNumber, Signer, Bytes, BigNumberish } from "ethers";
 import {
   AccessListish,
-  BytesLike,
   Deferrable,
   hexlify,
   isBytes,
@@ -15,29 +14,6 @@ import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
 import { ActionData, bundleToDto } from "./signer";
 
 export const _constructorGuard = {};
-
-/**
- * @param to - 20 Bytes The address the transaction is directed to. Undefined for creation transactions
- * @param value - the value sent with this transaction
- * @param gas - transaction gas limit
- * @param maxPriorityFeePerGas - miner tip aka priority fee
- * @param maxFeePerGas - the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
- * @param data - the hash of the invoked method signature and encoded parameters
- * @param nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
- * @param chainId - chain ID that this transaction is valid on
- * @param accessList - EIP-2930 access list
- */
-export type Transaction = {
-  to?: string;
-  value?: BigNumberish;
-  gas?: BigNumberish;
-  maxPriorityFeePerGas?: BigNumberish;
-  maxFeePerGas?: BigNumberish;
-  data?: BytesLike;
-  nonce?: BigNumberish;
-  chainId?: number;
-  accessList?: Array<AccessListish>;
-};
 
 /**
  * @param gas - transaction gas limit
@@ -61,7 +37,7 @@ export type BatchOptions = {
  * @param batchOptions - optional batch options taken into account by SC wallets
  */
 export type TransactionBatch = {
-  transactions: Array<Transaction>;
+  transactions: Array<ethers.providers.TransactionRequest>;
   batchOptions?: BatchOptions;
 };
 
@@ -175,11 +151,9 @@ export default class BlsSigner extends Signer {
     await this.initPromise;
 
     const actions: Array<ActionData> = transactionBatch.transactions.map(
-      (transaction) => {
+      (transaction, i) => {
         if (!transaction.to) {
-          throw new TypeError(
-            "Transaction.to should be defined for all transactions",
-          );
+          throw new TypeError(`Transaction.to is missing on transaction ${i}`);
         }
 
         return {
@@ -378,11 +352,9 @@ export default class BlsSigner extends Signer {
     await this.initPromise;
 
     const actions: Array<ActionData> = transactionBatch.transactions.map(
-      (transaction) => {
+      (transaction, i) => {
         if (!transaction.to) {
-          throw new TypeError(
-            "Transaction.to should be defined for all transactions",
-          );
+          throw new TypeError(`Transaction.to is missing on transaction ${i}`);
         }
 
         return {
