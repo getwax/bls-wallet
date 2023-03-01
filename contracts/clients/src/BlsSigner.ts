@@ -16,12 +16,12 @@ import { ActionData, bundleToDto } from "./signer";
 export const _constructorGuard = {};
 
 /**
- * @param gas - transaction gas limit
- * @param maxPriorityFeePerGas - miner tip aka priority fee
- * @param maxFeePerGas - the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
- * @param nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
- * @param chainId - chain ID that this transaction is valid on
- * @param accessList - EIP-2930 access list
+ * @property gas - (THIS PROPERTY IS NOT USED BY BLS WALLET) transaction gas limit
+ * @property maxPriorityFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) miner tip aka priority fee
+ * @property maxFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
+ * @property nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
+ * @property chainId - chain ID that this transaction is valid on
+ * @property accessList - (THIS PROPERTY IS NOT USED BY BLS WALLET) EIP-2930 access list
  */
 export type BatchOptions = {
   gas?: BigNumberish;
@@ -29,12 +29,12 @@ export type BatchOptions = {
   maxFeePerGas: BigNumberish;
   nonce: BigNumberish;
   chainId: number;
-  accessList?: Array<AccessListish>;
+  accessList?: AccessListish;
 };
 
 /**
- * @param transactions - an array of transaction objects
- * @param batchOptions - optional batch options taken into account by SC wallets
+ * @property transactions - an array of transaction objects
+ * @property batchOptions - optional batch options taken into account by smart contract wallets
  */
 export type TransactionBatch = {
   transactions: Array<ethers.providers.TransactionRequest>;
@@ -43,7 +43,7 @@ export type TransactionBatch = {
 
 export interface TransactionBatchResponse {
   transactions: Array<ethers.providers.TransactionResponse>;
-  awaitBatch: (
+  awaitBatchReceipt: (
     confirmations?: number,
   ) => Promise<ethers.providers.TransactionReceipt>;
 }
@@ -150,6 +150,21 @@ export default class BlsSigner extends Signer {
   ): Promise<TransactionBatchResponse> {
     await this.initPromise;
 
+    let nonce: BigNumber;
+    if (transactionBatch.batchOptions) {
+      const validatedBatchOptions = await this._validateBatchOptions(
+        transactionBatch.batchOptions,
+      );
+
+      nonce = validatedBatchOptions.nonce as BigNumber;
+    } else {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
     const actions: Array<ActionData> = transactionBatch.transactions.map(
       (transaction, i) => {
         if (!transaction.to) {
@@ -162,12 +177,6 @@ export default class BlsSigner extends Signer {
           encodedFunction: transaction.data?.toString() ?? "0x",
         };
       },
-    );
-
-    const nonce = await BlsWalletWrapper.Nonce(
-      this.wallet.PublicKey(),
-      this.verificationGatewayAddress,
-      this.provider,
     );
 
     const actionsWithFeePaymentAction =
@@ -288,7 +297,7 @@ export default class BlsSigner extends Signer {
 
     return {
       transactions,
-      awaitBatch: (confirmations?: number) => {
+      awaitBatchReceipt: (confirmations?: number) => {
         return this.provider.waitForTransaction(hash, confirmations);
       },
     };
@@ -351,6 +360,21 @@ export default class BlsSigner extends Signer {
   ): Promise<string> {
     await this.initPromise;
 
+    let nonce: BigNumber;
+    if (transactionBatch.batchOptions) {
+      const validatedBatchOptions = await this._validateBatchOptions(
+        transactionBatch.batchOptions,
+      );
+
+      nonce = validatedBatchOptions.nonce as BigNumber;
+    } else {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
     const actions: Array<ActionData> = transactionBatch.transactions.map(
       (transaction, i) => {
         if (!transaction.to) {
@@ -363,12 +387,6 @@ export default class BlsSigner extends Signer {
           encodedFunction: transaction.data?.toString() ?? "0x",
         };
       },
-    );
-
-    const nonce = await BlsWalletWrapper.Nonce(
-      this.wallet.PublicKey(),
-      this.verificationGatewayAddress,
-      this.provider,
     );
 
     const actionsWithFeePaymentAction =
@@ -444,6 +462,21 @@ export default class BlsSigner extends Signer {
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
     throw new Error("_legacySignMessage() is not implemented");
+  }
+
+  async _validateBatchOptions(
+    batchOptions: BatchOptions,
+  ): Promise<BatchOptions> {
+    const expectedChainId = await this.getChainId();
+
+    if (batchOptions.chainId !== expectedChainId) {
+      throw new Error(
+        `Supplied chain ID ${batchOptions.chainId} does not match the expected chain ID ${expectedChainId}`,
+      );
+    }
+
+    batchOptions.nonce = BigNumber.from(batchOptions.nonce);
+    return batchOptions;
   }
 }
 

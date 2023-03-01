@@ -221,7 +221,7 @@ describe("Signer contract interaction tests", function () {
 
       // Act
       const result = await blsSigners[0].sendTransactionBatch(transactionBatch);
-      await result.awaitBatch();
+      await result.awaitBatchReceipt();
 
       // Assert
       const newBalance = await mockERC20.balanceOf(spender);
@@ -445,7 +445,7 @@ describe("Signer contract interaction tests", function () {
 
       // Act
       const result = await blsSigners[3].sendTransactionBatch(transactionBatch);
-      await result.awaitBatch();
+      await result.awaitBatchReceipt();
 
       // Assert
       expect(await mockERC721.ownerOf(tokenId)).to.equal(spender);

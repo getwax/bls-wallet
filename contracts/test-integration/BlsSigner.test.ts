@@ -178,7 +178,7 @@ describe("BlsSigner", () => {
     const transaction = await blsSigner.sendTransactionBatch({
       transactions: transactionBatch,
     });
-    await transaction.awaitBatch();
+    await transaction.awaitBatchReceipt();
 
     // Assert
     expect(await blsProvider.getBalance(recipients[0])).to.equal(
@@ -190,6 +190,67 @@ describe("BlsSigner", () => {
     expect(await blsProvider.getBalance(recipients[2])).to.equal(
       expectedAmount,
     );
+  });
+
+  it("should not retrieve nonce when sending a transaction batch with batch options", async () => {
+    // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+
+    const recipient = ethers.Wallet.createRandom().address;
+    const expectedAmount = parseEther("1");
+
+    const transactionBatch = {
+      transactions: [
+        {
+          to: recipient,
+          value: expectedAmount,
+        },
+      ],
+      batchOptions: {
+        gas: ethers.utils.parseUnits("40000"),
+        maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
+        maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
+        nonce: 0,
+        chainId: 1337,
+        accessList: [],
+      },
+    };
+
+    // Act
+    const transaction = await blsSigner.sendTransactionBatch(transactionBatch);
+    await transaction.awaitBatchReceipt();
+
+    // Assert
+    expect(await blsProvider.getBalance(recipient)).to.equal(expectedAmount);
+
+    // Nonce is supplied with batch options so spy should not be called
+    expect(spy).to.have.been.called.exactly(0);
+    chai.spy.restore(spy);
+  });
+
+  it("should retrieve nonce when sending a transaction batch without batch options", async () => {
+    // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+    const recipient = ethers.Wallet.createRandom().address;
+    const expectedAmount = parseEther("1");
+
+    // Act
+    const transaction = await blsSigner.sendTransactionBatch({
+      transactions: [
+        {
+          to: recipient,
+          value: expectedAmount,
+        },
+      ],
+    });
+    await transaction.awaitBatchReceipt();
+
+    // Assert
+    expect(await blsProvider.getBalance(recipient)).to.equal(expectedAmount);
+
+    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
+    expect(spy).to.have.been.called.exactly(1);
+    chai.spy.restore(spy);
   });
 
   it("should throw an error sending & signing a transaction batch when 'transaction.to' has not been defined", async () => {
@@ -362,6 +423,50 @@ describe("BlsSigner", () => {
     );
   });
 
+  it("should validate batch options", async () => {
+    // Arrange
+    const batchOptions = {
+      gas: ethers.utils.parseUnits("40000"),
+      maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
+      maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
+      nonce: 39,
+      chainId: 1337,
+      accessList: [],
+    };
+
+    // Act
+    const result = await blsSigner._validateBatchOptions(batchOptions);
+
+    // Assert
+    expect(result).to.deep.equal(batchOptions);
+    expect(result.nonce).to.equal(BigNumber.from("39"));
+    expect(result.nonce).to.have.property("add");
+    expect(result.nonce).to.not.be.a("number");
+  });
+
+  it("should throw error for wrong chain id when validating batch options", async () => {
+    // Arrange
+    const invalidChainId = 123;
+    const batchOptions = {
+      gas: BigNumber.from("40000"),
+      maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
+      maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
+      nonce: 1,
+      chainId: invalidChainId,
+      accessList: [],
+    };
+
+    // Act
+    const result = async () =>
+      await blsSigner._validateBatchOptions(batchOptions);
+
+    // Assert
+    expect(result()).to.be.rejectedWith(
+      Error,
+      `Supplied chain ID ${invalidChainId} does not match the expected chain ID 1337`,
+    );
+  });
+
   it("should throw an error when invalid private key is supplied", async () => {
     // Arrange
     const newBlsProvider = new Experimental.BlsProvider(
@@ -513,7 +618,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it.only("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
+  it("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
     // Arrange
     const expectedAmount = parseEther("1");
 
@@ -607,6 +712,56 @@ describe("BlsSigner", () => {
       Error,
       'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
     );
+  });
+
+  it("should not retrieve nonce when signing a transaction batch with batch options", async () => {
+    // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+
+    const transactionBatch = {
+      transactions: [
+        {
+          to: ethers.Wallet.createRandom().address,
+          value: parseEther("1"),
+        },
+      ],
+      batchOptions: {
+        gas: ethers.utils.parseUnits("40000"),
+        maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
+        maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
+        nonce: 0,
+        chainId: 1337,
+        accessList: [],
+      },
+    };
+
+    // Act
+    await blsSigner.signTransactionBatch(transactionBatch);
+
+    // Assert
+    // Nonce is supplied with batch options so spy should not be called
+    expect(spy).to.have.been.called.exactly(0);
+    chai.spy.restore(spy);
+  });
+
+  it("should retrieve nonce when signing a transaction batch without batch options", async () => {
+    // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+
+    // Act
+    await blsSigner.signTransactionBatch({
+      transactions: [
+        {
+          to: ethers.Wallet.createRandom().address,
+          value: parseEther("1"),
+        },
+      ],
+    });
+
+    // Assert
+    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
+    expect(spy).to.have.been.called.exactly(1);
+    chai.spy.restore(spy);
   });
 
   it("should check transaction", async () => {

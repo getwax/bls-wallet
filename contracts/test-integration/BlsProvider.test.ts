@@ -276,7 +276,7 @@ describe("BlsProvider", () => {
     const result = await blsProvider.sendTransactionBatch(
       signedTransactionBatch,
     );
-    await result.awaitBatch();
+    await result.awaitBatchReceipt();
 
     // Assert
     expect(await blsProvider.getBalance(recipients[0])).to.equal(
@@ -339,7 +339,7 @@ describe("BlsProvider", () => {
     const result = await blsProvider.sendTransactionBatch(
       JSON.stringify(bundleToDto(aggregatedBundle)),
     );
-    await result.awaitBatch();
+    await result.awaitBatchReceipt();
 
     // Assert
     expect(await blsProvider.getBalance(firstRecipient)).to.equal(
