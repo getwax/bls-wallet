@@ -294,7 +294,6 @@ export default class Fixture {
     return wallets;
   }
   
-  // TODO: This is a temporary solution to get the health check service working
   createHealthCheckService(
     bundleTable: BundleTable,
   ) {
