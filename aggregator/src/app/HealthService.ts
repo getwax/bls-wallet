@@ -23,7 +23,6 @@ export class AggregatorServiceHealthCheck extends HealthIndicator {
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
   name = 'Aggregator';
   status: ResourceHealth = ResourceHealth.Unhealthy;
-  details: string | undefined;
   
   async checkHealth(): Promise<void> {
     try {
@@ -69,7 +68,6 @@ export class RPCServiceHealthCheck extends HealthIndicator  {
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
   name = 'RPC';
   status: ResourceHealth = ResourceHealth.Unhealthy;
-  details: string | undefined;
 
   async checkHealth(): Promise<void> {
     try {
@@ -122,7 +120,6 @@ export class DBServiceHealthCheck extends HealthIndicator  {
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
   name = 'DB';
   status: ResourceHealth = ResourceHealth.Unhealthy;
-  details: string | undefined;
 
   checkHealth(): void {
     // wrap synchronous code in a promise so we can use async/await
@@ -178,7 +175,7 @@ export default class HealthService {
           
     return {
       status: this.overallHealth,
-      results: this.checks.map(check => ({
+      dependencies: this.checks.map(check => ({
         name: check.name,
         status: check.status,
       }))
@@ -188,7 +185,7 @@ export default class HealthService {
 
 type HealthCheckResult = {
   status: ResourceHealth,
-  results: {
+  dependencies: {
     name: string,
     status: ResourceHealth
   }[]
