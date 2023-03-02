@@ -10,7 +10,7 @@ export type NetworkConfig = {
    * Contract addresses
    */
   addresses: {
-    create2Deployer: string;
+    safeSingletonFactory: string;
     precompileCostEstimator: string;
     verificationGateway: string;
     blsLibrary: string;
@@ -54,7 +54,7 @@ export function validateConfig(cfg: UnvalidatedConfig): NetworkConfig {
   return {
     parameters: assertUnknownRecord(cfg.parameters),
     addresses: {
-      create2Deployer: assertString(cfg.addresses.create2Deployer),
+      safeSingletonFactory: assertString(cfg.addresses.safeSingletonFactory),
       precompileCostEstimator: assertString(
         cfg.addresses.precompileCostEstimator,
       ),

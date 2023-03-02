@@ -1,12 +1,10 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 
 import { BlsWalletWrapper, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
-import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import { BLSWallet, VerificationGateway } from "../typechain-types";
 
 const signWalletAddress = async (
@@ -24,23 +22,6 @@ const signWalletAddress = async (
 };
 
 describe("Recovery", async function () {
-  this.beforeAll(async function () {
-    // deploy the deployer contract for the transient hardhat network
-    if (network.name === "hardhat") {
-      // fund deployer wallet address
-      const fundedSigner = (await ethers.getSigners())[0];
-      await (
-        await fundedSigner.sendTransaction({
-          to: defaultDeployerAddress(),
-          value: ethers.utils.parseEther("1"),
-        })
-      ).wait();
-
-      // deploy the precompile contract (via deployer)
-      console.log("PCE:", await deployAndRunPrecompileCostEstimator());
-    }
-  });
-
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
   let vg: VerificationGateway;
@@ -55,7 +36,7 @@ describe("Recovery", async function () {
   let salt;
   let recoveryHash;
   beforeEach(async function () {
-    fx = await Fixture.create();
+    fx = await Fixture.getSingleton();
     vg = fx.verificationGateway;
 
     wallet1 = await fx.createBLSWallet();
@@ -107,7 +88,21 @@ describe("Recovery", async function () {
     );
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 2, 30_000_000);
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        gas: 30_000_000,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
 
     await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash2);
   });
@@ -132,7 +127,21 @@ describe("Recovery", async function () {
     expect(hashFromWallet).to.equal(hash1);
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await fx.call(wallet1, vg, "setPendingBLSKeyForWallet", [], 1, 30_000_000);
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        gas: 30_000_000,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
 
     walletForHash = await vg.walletFromHash(hash1);
     expect(walletForHash).to.equal(wallet1.address);
@@ -232,10 +241,7 @@ describe("Recovery", async function () {
       "test salt",
       fx.verificationGateway,
     );
-    const recoveryBundleTxn = await fx.verificationGateway.processBundle(
-      recoveryBundle,
-    );
-    await recoveryBundleTxn.wait();
+    await fx.processBundleWithExtraGas(recoveryBundle);
 
     const newHash = wallet4.blsWalletSigner.getPublicKeyHash(newPrivateKey);
     expect(await vg.hashFromWallet(wallet4.address)).to.eql(newHash);
@@ -269,13 +275,23 @@ describe("Recovery", async function () {
     );
 
     // wallet 2 recovers wallet 1 to key 3
-    await fx.call(
-      wallet2,
-      vg,
-      "recoverWallet",
-      [addressSignature, hash1, salt, wallet3.PublicKey()],
-      await wallet2.Nonce(),
-      30_000_000,
+    await fx.processBundleWithExtraGas(
+      wallet2.sign({
+        nonce: await wallet2.Nonce(),
+        gas: 30_000_000,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData("recoverWallet", [
+              addressSignature,
+              hash1,
+              salt,
+              wallet3.PublicKey(),
+            ]),
+          },
+        ],
+      }),
     );
 
     // don't trust, verify
@@ -323,13 +339,20 @@ describe("Recovery", async function () {
     // Here this seems to be wallet2, not wallet (wallet being recovered)
     // recoveredWalletNonce++
 
-    await fx.call(
-      wallet1,
-      vg,
-      "setPendingBLSKeyForWallet",
-      [],
-      await wallet1.Nonce(),
-      30_000_000,
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        gas: 30_000_000,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
     );
 
     const addressSignature = await signWalletAddress(
@@ -355,13 +378,20 @@ describe("Recovery", async function () {
     recoveredWalletNonce++;
 
     // check attacker's key not set after waiting full safety delay
-    await fx.call(
-      walletAttacker,
-      vg,
-      "setPendingBLSKeyForWallet",
-      [],
-      await walletAttacker.Nonce(),
-      30_000_000,
+    await fx.processBundleWithExtraGas(
+      walletAttacker.sign({
+        nonce: await walletAttacker.Nonce(),
+        gas: 30_000_000,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
     );
     /**
      * TODO (merge-ok)
@@ -374,13 +404,20 @@ describe("Recovery", async function () {
      * For now cast to 'any'.
      */
     await wallet2.syncWallet(vg as any);
-    await fx.call(
-      wallet2,
-      vg,
-      "setPendingBLSKeyForWallet",
-      [],
-      await wallet2.Nonce(),
-      30_000_000,
+    await fx.processBundleWithExtraGas(
+      wallet2.sign({
+        nonce: await wallet2.Nonce(),
+        gas: 30_000_000,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg.address,
+            encodedFunction: vg.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
     );
 
     await expect(vg.walletFromHash(hash1)).to.eventually.not.equal(

@@ -1,9 +1,5 @@
 import { providers } from "ethers";
 import {
-  BNPairingPrecompileCostEstimator,
-  BNPairingPrecompileCostEstimator__factory as BNPairingPrecompileCostEstimatorFactory,
-  Create2Deployer,
-  Create2Deployer__factory as Create2DeployerFactory,
   VerificationGateway,
   VerificationGateway__factory as VerificationGatewayFactory,
   BLSOpen,
@@ -21,8 +17,6 @@ import { NetworkConfig } from "./NetworkConfig";
  * BLS Wallet Contracts
  */
 export type BlsWalletContracts = Readonly<{
-  create2Deployer: Create2Deployer;
-  precompileCostEstimator: BNPairingPrecompileCostEstimator;
   verificationGateway: VerificationGateway;
   blsLibrary: BLSOpen;
   blsExpander: BLSExpander;
@@ -42,19 +36,12 @@ export const connectToContracts = async (
   { addresses }: NetworkConfig,
 ): Promise<BlsWalletContracts> => {
   const [
-    create2Deployer,
-    precompileCostEstimator,
     verificationGateway,
     blsLibrary,
     blsExpander,
     aggregatorUtilities,
     testToken,
   ] = await Promise.all([
-    Create2DeployerFactory.connect(addresses.create2Deployer, provider),
-    BNPairingPrecompileCostEstimatorFactory.connect(
-      addresses.create2Deployer,
-      provider,
-    ),
     VerificationGatewayFactory.connect(addresses.verificationGateway, provider),
     BLSOpenFactory.connect(addresses.blsLibrary, provider),
     BLSExpanderFactory.connect(addresses.blsExpander, provider),
@@ -63,8 +50,6 @@ export const connectToContracts = async (
   ]);
 
   return {
-    create2Deployer,
-    precompileCostEstimator,
     verificationGateway,
     blsLibrary,
     blsExpander,

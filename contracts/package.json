@@ -25,6 +25,9 @@
     "ethers": "^5.7.2",
     "hardhat": "^2.12.1"
   },
+  "peerDependencies": {
+    "ethers": "^5.0.0"
+  },
   "devDependencies": {
     "@ethereumjs/tx": "^4.0.1",
     "@nomiclabs/hardhat-ethers": "^2.2.1",

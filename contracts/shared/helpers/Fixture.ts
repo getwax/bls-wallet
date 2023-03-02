@@ -2,31 +2,40 @@
 
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
-import { Signer, Contract, BigNumber, BigNumberish, providers } from "ethers";
+import {
+  Signer,
+  Contract,
+  BigNumber,
+  BigNumberish,
+  providers,
+  Overrides,
+} from "ethers";
 
 import {
   BlsWalletWrapper,
   BlsWalletSigner,
   initBlsWalletSigner,
   Bundle,
+  getOperationResults,
 } from "../../clients/src";
 
 import Range from "./Range";
-import Create2Fixture from "./Create2Fixture";
 import {
-  AggregatorUtilities,
-  BLSExpander,
-  BLSOpen,
-  BLSWallet__factory,
-  ProxyAdmin,
-  BLSExpanderDelegator__factory,
-  BLSExpanderDelegator,
   VerificationGateway,
+  BLSOpen,
+  BLSExpander,
+  BLSExpanderDelegator,
+  AggregatorUtilities,
 } from "../../typechain-types";
+import deploy from "../deploy";
+import { fail } from "assert";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
   static readonly DEFAULT_BLS_ACCOUNTS_LENGTH = 5;
+
+  // eslint-disable-next-line no-use-before-define
+  static singleton?: Fixture;
 
   static readonly expanderIndexes = {
     fallback: 0,
@@ -46,8 +55,6 @@ export default class Fixture {
     public blsExpanderDelegator: BLSExpanderDelegator,
     public utilities: AggregatorUtilities,
 
-    // eslint-disable-next-line camelcase
-    public BLSWallet: BLSWallet__factory,
     public blsWalletSigner: BlsWalletSigner,
   ) {}
 
@@ -61,69 +68,13 @@ export default class Fixture {
       signers.map((acc) => acc.getAddress()),
     )) as string[];
 
-    const create2Fixture = Create2Fixture.create();
-
-    // deploy wallet implementation contract
-    const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
-    const initializedEvents = await blsWalletImpl.queryFilter(
-      blsWalletImpl.filters.Initialized(),
-    );
-    if (!initializedEvents.length) {
-      await blsWalletImpl.initialize(ethers.constants.AddressZero);
-    }
-
-    const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
-    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
-    const proxyAdmin = (await ProxyAdmin.deploy()) as ProxyAdmin;
-    await proxyAdmin.deployed();
-    // deploy Verification Gateway
-    const verificationGateway = (await create2Fixture.create2Contract(
-      "VerificationGateway",
-      ethers.utils.defaultAbiCoder.encode(
-        ["address", "address", "address"],
-        [bls.address, blsWalletImpl.address, proxyAdmin.address],
-      ),
-    )) as VerificationGateway;
-    await (
-      await proxyAdmin.transferOwnership(verificationGateway.address)
-    ).wait();
-
-    // deploy BLSExpander Gateway
-    const blsExpander = (await create2Fixture.create2Contract(
-      "BLSExpander",
-      ethers.utils.defaultAbiCoder.encode(
-        ["address"],
-        [verificationGateway.address],
-      ),
-    )) as BLSExpander;
-
-    const blsExpanderDelegatorUntyped = await create2Fixture.create2Contract(
-      "BLSExpanderDelegator",
-      ethers.utils.defaultAbiCoder.encode(
-        ["address"],
-        [verificationGateway.address],
-      ),
-    );
-
-    const blsExpanderDelegator = BLSExpanderDelegator__factory.connect(
-      blsExpanderDelegatorUntyped.address,
-      blsExpanderDelegatorUntyped.signer,
-    );
-
-    const fallbackExpander = await create2Fixture.create2Contract(
-      "FallbackExpander",
-    );
-
-    await (
-      await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
-    ).wait();
-
-    // deploy utilities
-    const utilities = (await create2Fixture.create2Contract(
-      "AggregatorUtilities",
-    )) as AggregatorUtilities;
-
-    const BLSWallet = await ethers.getContractFactory("BLSWallet");
+    const {
+      verificationGateway,
+      blsLibrary: bls,
+      blsExpander,
+      blsExpanderDelegator,
+      aggregatorUtilities: utilities,
+    } = await deploy(signers[0]);
 
     return new Fixture(
       chainId,
@@ -135,9 +86,18 @@ export default class Fixture {
       blsExpander,
       blsExpanderDelegator,
       utilities,
-      BLSWallet,
       await initBlsWalletSigner({ chainId }),
     );
+  }
+
+  /**
+   * The fixture is tied to the chain which is a singleton. It does some things
+   * on creation that can only be done once, so it's useful to get this as a
+   * singleton.
+   */
+  static async getSingleton() {
+    Fixture.singleton ??= await Fixture.create();
+    return Fixture.singleton;
   }
 
   /**
@@ -157,6 +117,49 @@ export default class Fixture {
       this.verificationGateway.address,
       this.provider,
     );
+  }
+
+  /**
+   * Wraps verificationGateway.processBundle, also making sure that all the
+   * operations are successful.
+   */
+  async processBundle(bundle: Bundle, overrides: Overrides = {}) {
+    const receipt = await (
+      await this.verificationGateway.processBundle(bundle, overrides)
+    ).wait();
+
+    for (const [i, result] of getOperationResults(receipt).entries()) {
+      if (result.error) {
+        fail(
+          [
+            "Operation",
+            i,
+            "failed at action",
+            `${result.error.actionIndex}:`,
+            result.error.message,
+          ].join(" "),
+        );
+      }
+    }
+
+    return receipt;
+  }
+
+  /**
+   * There seems to be a bug where the automatic gas limit is somtimes not
+   * enough in our testing environment. This method works around that by adding
+   * 50% to the gas estimate.
+   */
+  async processBundleWithExtraGas(bundle: Bundle, overrides: Overrides = {}) {
+    const gasEstimate =
+      await this.verificationGateway.estimateGas.processBundle(
+        bundle,
+        overrides,
+      );
+
+    const gasLimit = gasEstimate.add(gasEstimate.div(2));
+
+    return await this.processBundle(bundle, { ...overrides, gasLimit });
   }
 
   bundleFrom(

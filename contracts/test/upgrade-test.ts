@@ -3,20 +3,17 @@ import { BigNumber, ContractReceipt } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
-import { BLSOpen, ProxyAdmin } from "../typechain-types";
 import {
   ActionData,
   BlsWalletWrapper,
   getOperationResults,
 } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
-import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import {
   proxyAdminBundle,
   proxyAdminCall,
 } from "../shared/helpers/callProxyAdmin";
-import Create2Fixture from "../shared/helpers/Create2Fixture";
+import deploy from "../shared/deploy";
 
 const expectOperationsToSucceed = (txnReceipt: ContractReceipt) => {
   const opResults = getOperationResults(txnReceipt);
@@ -38,27 +35,10 @@ const expectOperationFailure = (
 };
 
 describe("Upgrade", async function () {
-  this.beforeAll(async function () {
-    // deploy the deployer contract for the transient hardhat network
-    if (network.name === "hardhat") {
-      // fund deployer wallet address
-      const fundedSigner = (await ethers.getSigners())[0];
-      await (
-        await fundedSigner.sendTransaction({
-          to: defaultDeployerAddress(),
-          value: ethers.utils.parseEther("1"),
-        })
-      ).wait();
-
-      // deploy the precompile contract (via deployer)
-      console.log("PCE:", await deployAndRunPrecompileCostEstimator());
-    }
-  });
-
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
   let fx: Fixture;
   beforeEach(async () => {
-    fx = await Fixture.create();
+    fx = await Fixture.getSingleton();
   });
 
   it("should upgrade wallet contract", async () => {
@@ -99,22 +79,15 @@ describe("Upgrade", async function () {
 
   it("should register with new verification gateway", async () => {
     // Deploy new verification gateway
-    const create2Fixture = Create2Fixture.create();
-    const bls = (await create2Fixture.create2Contract("BLSOpen")) as BLSOpen;
-    const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
-    const proxyAdmin2 = (await ProxyAdmin.deploy()) as ProxyAdmin;
-    await proxyAdmin2.deployed();
 
-    const blsWalletImpl = await create2Fixture.create2Contract("BLSWallet");
-    const VerificationGateway = await ethers.getContractFactory(
-      "VerificationGateway",
+    const [signer] = await ethers.getSigners();
+
+    const deployment2 = await deploy(
+      signer,
+      ethers.utils.solidityPack(["uint256"], [2]),
     );
-    const vg2 = await VerificationGateway.deploy(
-      bls.address,
-      blsWalletImpl.address,
-      proxyAdmin2.address,
-    );
-    await (await proxyAdmin2.transferOwnership(vg2.address)).wait();
+
+    const vg2 = deployment2.verificationGateway;
 
     // Recreate hubble bls signer
     const walletOldVg = await fx.createBLSWallet();
@@ -243,19 +216,17 @@ describe("Upgrade", async function () {
 
     // Now actually perform the upgrade so we can perform some more detailed
     // checks.
-    await (
-      await fx.verificationGateway.processBundle(
-        walletOldVg.sign({
-          nonce: BigNumber.from(1),
-          gas: BigNumber.from(30_000_000),
-          actions: [
-            setExternalWalletAction,
-            changeProxyAction,
-            setTrustedBLSGatewayAction,
-          ],
-        }),
-      )
-    ).wait();
+    await fx.processBundleWithExtraGas(
+      walletOldVg.sign({
+        nonce: BigNumber.from(1),
+        gas: BigNumber.from(30_000_000),
+        actions: [
+          setExternalWalletAction,
+          changeProxyAction,
+          setTrustedBLSGatewayAction,
+        ],
+      }),
+    );
 
     // Create required objects for data/contracts for checks
     const proxyAdmin = await ethers.getContractAt(
@@ -378,7 +349,22 @@ describe("Upgrade", async function () {
     const hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
-    await fx.call(wallet1, vg1, "setPendingBLSKeyForWallet", [], 2, 30_000_000);
+
+    await fx.processBundleWithExtraGas(
+      wallet1.sign({
+        nonce: 2,
+        gas: BigNumber.from(30_000_000),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: vg1.address,
+            encodedFunction: vg1.interface.encodeFunctionData(
+              "setPendingBLSKeyForWallet",
+            ),
+          },
+        ],
+      }),
+    );
 
     await expect(vg1.walletFromHash(hash1)).to.eventually.equal(
       ethers.constants.AddressZero,

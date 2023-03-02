@@ -12,9 +12,7 @@ import { exec as execCb } from "child_process";
 import { writeFile } from "fs/promises";
 import { ethers } from "hardhat";
 import { NetworkConfig } from "../clients/src";
-import deployDeployer from "../shared/helpers/deployDeployer";
-import precompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-import Fixture from "../shared/helpers/Fixture";
+import deploy from "../shared/deploy";
 
 dotenv.config();
 const exec = util.promisify(execCb);
@@ -39,15 +37,12 @@ async function main() {
   console.log("starting bls-wallet contracts deployment");
   const genesisBlock = await ethers.provider.getBlockNumber();
 
-  console.log("deploying create2Deployer...");
-  const create2Deployer = await deployDeployer();
+  const chainid = (await ethers.provider.getNetwork()).chainId;
 
-  console.log("deploying precompile cost estimator...");
-  const precompileCostEstimatorAddress = await precompileCostEstimator();
+  const [signer] = await ethers.getSigners();
 
-  console.log("deploying bls-wallet contracts...");
-  const fx = await Fixture.create();
-  const [deployedBy] = fx.addresses;
+  console.log("deploying contracts...");
+  const deployment = await deploy(signer);
 
   console.log("deploying test token...");
   // These can be run in parallel
@@ -56,21 +51,21 @@ async function main() {
   const netCfg: NetworkConfig = {
     parameters: {},
     addresses: {
-      create2Deployer: create2Deployer.address,
-      precompileCostEstimator: precompileCostEstimatorAddress,
-      blsLibrary: fx.blsLibrary.address,
-      verificationGateway: fx.verificationGateway.address,
-      blsExpander: fx.blsExpander.address,
-      utilities: fx.utilities.address,
+      safeSingletonFactory: deployment.singletonFactory.address,
+      precompileCostEstimator: deployment.precompileCostEstimator.address,
+      blsLibrary: deployment.blsLibrary.address,
+      verificationGateway: deployment.verificationGateway.address,
+      blsExpander: deployment.blsExpander.address,
+      utilities: deployment.aggregatorUtilities.address,
       testToken,
     },
     auxiliary: {
-      chainid: fx.chainId,
+      chainid,
       // From VerificationGateway.sol:BLS_DOMAIN
       domain:
         "0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc",
       genesisBlock,
-      deployedBy,
+      deployedBy: signer.address,
       version,
     },
   };

@@ -1,15 +1,12 @@
 import { expect } from "chai";
 
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
-import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-// import splitHex256 from "../shared/helpers/splitHex256";
-import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import {
   bundleCompressedOperations,
   compressAsFallback,
@@ -22,26 +19,9 @@ describe("WalletActions", async function () {
     return;
   }
 
-  this.beforeAll(async function () {
-    // deploy the deployer contract for the transient hardhat network
-    if (network.name === "hardhat") {
-      // fund deployer wallet address
-      const fundedSigner = (await ethers.getSigners())[0];
-      await (
-        await fundedSigner.sendTransaction({
-          to: defaultDeployerAddress(),
-          value: parseEther("1"),
-        })
-      ).wait();
-
-      // deploy the precompile contract (via deployer)
-      console.log("PCE:", await deployAndRunPrecompileCostEstimator());
-    }
-  });
-
   let fx: Fixture;
   beforeEach(async function () {
-    fx = await Fixture.create();
+    fx = await Fixture.getSingleton();
   });
 
   it("should register new wallet", async function () {

@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { NetworkConfig } from "../src";
 import {
   UnvalidatedMultiNetworkConfig,
   getMultiConfig,
@@ -7,10 +8,10 @@ import {
 const getValue = (networkKey: string, propName: string) =>
   `${networkKey}-${propName}`;
 
-const getSingleConfig = (networkKey: string) => ({
+const getSingleConfig = (networkKey: string): NetworkConfig => ({
   parameters: {},
   addresses: {
-    create2Deployer: getValue(networkKey, "create2Deployer"),
+    safeSingletonFactory: getValue(networkKey, "safeSingletonFactory"),
     precompileCostEstimator: getValue(networkKey, "precompileCostEstimator"),
     verificationGateway: getValue(networkKey, "verificationGateway"),
     blsLibrary: getValue(networkKey, "blsLibrary"),
