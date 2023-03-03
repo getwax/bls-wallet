@@ -64,16 +64,14 @@ export default class BlsWalletWrapper {
    * @param privateKey private key associated with the wallet
    * @param verificationGatewayAddress address of the VerficationGateway contract
    * @param signerOrProvider ethers.js Signer or Provider
-   * @param blsWalletSigner (optional) a BLS Wallet signer
    * @returns The wallet's address
    */
   static async Address(
     privateKey: string,
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
-    blsWalletSigner?: BlsWalletSigner,
   ): Promise<string> {
-    blsWalletSigner ??= await this.#BlsWalletSigner(
+    const blsWalletSigner = await this.#BlsWalletSigner(
       signerOrProvider,
       privateKey,
     );
