@@ -161,6 +161,9 @@ describe("Provider tests", function () {
         .transfer(recipient, amountToTransfer);
       await tx.wait();
 
+      // wait 1 second to ensure listener count updates
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Assert
       expect((await erc20.balanceOf(recipient)).sub(balanceBefore)).to.equal(
         amountToTransfer,
