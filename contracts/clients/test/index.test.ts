@@ -96,6 +96,7 @@ describe("index", () => {
       ],
       signature: bundle.signature,
     };
+
     expect(verify(bundleBadMessage, walletAddress)).to.equal(false);
   });
 

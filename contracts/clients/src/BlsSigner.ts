@@ -22,7 +22,7 @@ export default class BlsSigner extends Signer {
   constructor(
     constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
-    privateKey: string | Promise<string>, // remove?
+    privateKey: string,
     readonly addressOrIndex?: string | number,
   ) {
     super();
@@ -53,10 +53,9 @@ export default class BlsSigner extends Signer {
     }
   }
 
-  private async initializeWallet(privateKey: string | Promise<string>) {
-    const resolvedPrivateKey = await privateKey;
+  private async initializeWallet(privateKey: string) {
     this.wallet = await BlsWalletWrapper.connect(
-      resolvedPrivateKey,
+      privateKey,
       this.verificationGatewayAddress,
       this.provider,
     );

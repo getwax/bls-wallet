@@ -87,18 +87,18 @@ export default class Fixture {
     ).wait();
 
     // deploy BLSExpander Gateway
-    const blsExpander = await create2Fixture.create2Contract(
+    const blsExpander = (await create2Fixture.create2Contract(
       "BLSExpander",
       ethers.utils.defaultAbiCoder.encode(
         ["address"],
         [verificationGateway.address],
       ),
-    );
+    )) as BLSExpander;
 
     // deploy utilities
-    const utilities = await create2Fixture.create2Contract(
+    const utilities = (await create2Fixture.create2Contract(
       "AggregatorUtilities",
-    );
+    )) as AggregatorUtilities;
 
     const BLSWallet = await ethers.getContractFactory("BLSWallet");
 
