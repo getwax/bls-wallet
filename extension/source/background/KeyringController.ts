@@ -124,7 +124,10 @@ export default class KeyringController {
         () => new Error('Wallet already exists'),
       );
 
-      const { address, privateKey } = await this.BlsWalletWrapper(pKey);
+      const {
+        address,
+        blsWalletSigner: { privateKey },
+      } = await this.BlsWalletWrapper(pKey);
       return { address, privateKey };
     },
 

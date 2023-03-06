@@ -10,6 +10,6 @@ const wallet = await TestBlsWallet(
 );
 
 console.log({
-  privateKey: wallet.privateKey,
+  privateKey: wallet.blsWalletSigner.privateKey,
   address: wallet.walletContract.address,
 });
