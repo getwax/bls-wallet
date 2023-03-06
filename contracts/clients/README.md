@@ -365,9 +365,9 @@ import ethers from "ethers";
 import { initBlsWalletSigner } from "bls-wallet-clients";
 
 (async () => {
-  const signer = await initBlsWalletSigner({ chainId: 10 });
-
   const privateKey = "0x...256 bits of private hex data here";
+
+  const signer = await initBlsWalletSigner({ chainId: 10, privateKey });
 
   const someToken = new ethers.Contract(
     ...
@@ -387,7 +387,6 @@ import { initBlsWalletSigner } from "bls-wallet-clients";
         ethers.BigNumber.from(10).pow(18),
       ]),
     },
-    privateKey,
   );
 
   // Send bundle to an aggregator or use it with VerificationGateway directly.

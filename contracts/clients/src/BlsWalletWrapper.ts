@@ -330,6 +330,11 @@ export default class BlsWalletWrapper {
     return await initBlsWalletSigner({ chainId, privateKey });
   }
 
+  /**
+   * Binds the BlsWalletSigner instance to a new private key and chainId
+   *
+   * @returns The updated BlsWalletSigner object
+   */
   async setBlsWalletSigner(
     signerOrProvider: SignerOrProvider,
     privateKey: string,
