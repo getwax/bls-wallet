@@ -246,7 +246,6 @@ describe("Recovery", async function () {
       fx,
       wallet1.address,
       walletAttacker.blsWalletSigner.privateKey,
-      // walletAttacker.privateKey,
     );
 
     // Attacker assumed to have compromised wallet1 bls key, and wishes to reset
@@ -330,8 +329,7 @@ describe("Recovery", async function () {
      *
      * For now cast to 'any'.
      */
-    await wallet2.syncWallet(vg as any, wallet2.blsWalletSigner.privateKey);
-    // await wallet2.syncWallet(vg as any);
+    await wallet2.syncWallet(vg as any);
     await fx.call(
       wallet2,
       vg,
@@ -350,7 +348,7 @@ describe("Recovery", async function () {
       blsWallet.address,
     );
 
-    // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
+    // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
     const res = await fx.callStatic(
       wallet2,
       vg,

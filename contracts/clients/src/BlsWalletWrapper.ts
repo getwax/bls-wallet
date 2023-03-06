@@ -157,12 +157,9 @@ export default class BlsWalletWrapper {
     return blsWalletWrapper;
   }
 
-  async syncWallet(
-    verificationGateway: VerificationGateway,
-    privateKey: string,
-  ) {
+  async syncWallet(verificationGateway: VerificationGateway) {
     this.address = await BlsWalletWrapper.Address(
-      privateKey,
+      this.blsWalletSigner.privateKey,
       verificationGateway.address,
       verificationGateway.provider,
     );
