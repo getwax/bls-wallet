@@ -15,4 +15,11 @@ contract AddressRegistry {
 
         emit AddressRegistered(id, addr);
     }
+
+    function lookup(uint256 id) external view returns (address) {
+        address addr = addresses[id];
+        require(addr != address(0), "AddressRegistry: Address not found");
+
+        return addr;
+    }
 }

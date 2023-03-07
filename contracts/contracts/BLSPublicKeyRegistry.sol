@@ -15,4 +15,21 @@ contract BLSPublicKeyRegistry {
 
         emit BLSPublicKeyRegistered(id, blsPublicKey);
     }
+
+    function lookup(uint256 id) external view returns (uint256[4] memory) {
+        uint256[4] memory blsPublicKey = blsPublicKeys[id];
+        require(!isZeroBLSPublicKey(blsPublicKey), "BLSPublicKeyRegistry: BLS public key not found");
+
+        return blsPublicKey;
+    }
+
+    function isZeroBLSPublicKey(uint256[4] memory blsPublicKey) internal pure returns (bool) {
+        for (uint i = 0; i < 4; i++) {
+            if (blsPublicKey[i] != 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
