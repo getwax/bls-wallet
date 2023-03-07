@@ -6,14 +6,14 @@ contract BLSPublicKeyRegistry {
     mapping(uint256 => uint256[4]) public blsPublicKeys;
     uint public nextId = 0;
 
-    event BLSPublicKeyRegistered(uint256 id, uint256[4] indexed blsPublicKey);
+    event BLSPublicKeyRegistered(uint256 id, bytes32 indexed blsPublicKeyHash);
 
     function register(uint256[4] memory blsPublicKey) external {
         uint256 id = nextId;
         nextId += 1;
         blsPublicKeys[id] = blsPublicKey;
 
-        emit BLSPublicKeyRegistered(id, blsPublicKey);
+        emit BLSPublicKeyRegistered(id, keccak256(abi.encode(blsPublicKey)));
     }
 
     function lookup(uint256 id) external view returns (uint256[4] memory) {
