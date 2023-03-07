@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 contract BLSPublicKeyRegistry {
     mapping(uint256 => uint256[4]) public blsPublicKeys;
-    uint public nextId = 0;
+    uint256 public nextId = 0;
 
     event BLSPublicKeyRegistered(uint256 id, bytes32 indexed blsPublicKeyHash);
 

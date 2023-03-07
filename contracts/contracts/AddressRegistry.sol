@@ -4,7 +4,7 @@ pragma abicoder v2;
 
 contract AddressRegistry {
     mapping(uint256 => address) public addresses;
-    uint public nextId = 0;
+    uint256 public nextId = 0;
 
     event AddressRegistered(uint256 id, address indexed addr);
 
