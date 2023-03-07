@@ -3,6 +3,7 @@ pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
 import "./lib/VLQ.sol";
+import "./lib/PseudoFloat.sol";
 import "./interfaces/IExpander.sol";
 import "./interfaces/IWallet.sol";
 
@@ -22,16 +23,16 @@ import "./interfaces/IWallet.sol";
  * 24f1fc8a1f7256dc2914e524966309df2226fd329373aaaae1881bf5cd0c62f4 // BLS key
  *
  * 00 // nonce: 0
- * 868d20 // gas: 100,000
+ * 3100 // gas: 100,000
  * 02 // two actions
  *
  * // Action 1
- * 95ecd98ed5f38000 // ethValue: 12300000000000000 (0.0123 ETH)
+ * 7b0f // ethValue: 12300000000000000 (0.0123 ETH)
  * 70997970c51812dc3a010c7d01b50e0d17dc79c8 // contractAddress
  * 00 // encodedFunction: (empty)
  *
  * // Action 2
- * 82dd9fbdf38000 // ethValue: 12000000000000 (0.000012 ETH)
+ * 6c01 // ethValue: 12000000000000 (0.000012 ETH)
  * 4bd2e4e99b50a2a9e6b9dabfa3c8dcd1f885f008 // contractAddress (AggUtils)
  * 04 // 4 bytes for encodedFunction
  * 1dfea6a0 // sendEthToTxOrigin
@@ -39,8 +40,8 @@ import "./interfaces/IWallet.sol";
  * The proposal doc for the new expander lists the same example ("Example of an
  * Expanded User Operation" https://hackmd.io/0q7H3Ad0Su-I4RWWK8wQPA) using the
  * solidity ABI, which uses 608 bytes. Here we've encoded the same thing (plus
- * gas) in 194 bytes, which is (about) 70% smaller. (If you account for the
- * zero-byte discount, the saving is still over 30%.)
+ * gas) in 182 bytes, which is 70% smaller. (If you account for the zero-byte
+ * discount, the saving is still over 30%.)
  */
 contract FallbackExpander is IExpander {
     function expand(bytes calldata stream) external pure returns (
@@ -49,30 +50,30 @@ contract FallbackExpander is IExpander {
         uint256 bytesRead
     ) {
         uint256 originalStreamLen = stream.length;
-        uint256 vlqValue;
+        uint256 decodedValue;
 
         senderPublicKey = abi.decode(stream[:128], (uint256[4]));
         stream = stream[128:];
 
-        (vlqValue, stream) = VLQ.decode(stream);
-        operation.nonce = vlqValue;
+        (decodedValue, stream) = VLQ.decode(stream);
+        operation.nonce = decodedValue;
 
-        (vlqValue, stream) = VLQ.decode(stream);
-        operation.gas = vlqValue;
+        (decodedValue, stream) = PseudoFloat.decode(stream);
+        operation.gas = decodedValue;
 
-        (vlqValue, stream) = VLQ.decode(stream);
-        operation.actions = new IWallet.ActionData[](vlqValue);
+        (decodedValue, stream) = VLQ.decode(stream);
+        operation.actions = new IWallet.ActionData[](decodedValue);
 
         for (uint256 i = 0; i < operation.actions.length; i++) {
             uint256 ethValue;
-            (ethValue, stream) = VLQ.decode(stream);
+            (ethValue, stream) = PseudoFloat.decode(stream);
 
             address contractAddress = address(bytes20(stream[:20]));
             stream = stream[20:];
 
-            (vlqValue, stream) = VLQ.decode(stream);
-            bytes memory encodedFunction = stream[:vlqValue];
-            stream = stream[vlqValue:];
+            (decodedValue, stream) = VLQ.decode(stream);
+            bytes memory encodedFunction = stream[:decodedValue];
+            stream = stream[decodedValue:];
 
             operation.actions[i] = IWallet.ActionData({
                 ethValue: ethValue,

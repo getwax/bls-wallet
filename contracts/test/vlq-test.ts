@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { VLQ, VLQ__factory } from "../typechain-types";
 
-describe("vlq", function () {
+describe("VLQ", function () {
   let vlq: VLQ;
 
   this.beforeAll(async () => {

@@ -26,12 +26,12 @@ export function compressAsFallback(
   );
 
   result.push(encodeVLQ(operation.nonce));
-  result.push(encodeVLQ(operation.gas));
+  result.push(encodePseudoFloat(operation.gas));
 
   result.push(encodeVLQ(operation.actions.length));
 
   for (const action of operation.actions) {
-    result.push(encodeVLQ(action.ethValue));
+    result.push(encodePseudoFloat(action.ethValue));
     result.push(action.contractAddress);
 
     const fnHex = ethers.utils.hexlify(action.encodedFunction);
@@ -56,7 +56,7 @@ function remove0x(hexString: string) {
   return hexString.slice(2);
 }
 
-function encodeVLQ(x: BigNumberish) {
+export function encodeVLQ(x: BigNumberish) {
   x = BigNumber.from(x);
 
   const segments: number[] = [];
@@ -82,4 +82,28 @@ function encodeVLQ(x: BigNumberish) {
   }
 
   return result;
+}
+
+export function encodePseudoFloat(x: BigNumberish) {
+  x = BigNumber.from(x);
+
+  if (x.eq(0)) {
+    return "0x00";
+  }
+
+  let exponent = 0;
+
+  while (x.mod(10).eq(0) && exponent < 30) {
+    x = x.div(10);
+    exponent++;
+  }
+
+  const exponentBits = (exponent + 1).toString(2).padStart(5, "0");
+  const lowest3Bits = x.mod(8).toNumber().toString(2).padStart(3, "0");
+
+  const firstByte = parseInt(`${exponentBits}${lowest3Bits}`, 2)
+    .toString(16)
+    .padStart(2, "0");
+
+  return hexJoin([`0x${firstByte}`, encodeVLQ(x.div(8))]);
 }
