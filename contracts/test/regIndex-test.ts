@@ -18,4 +18,16 @@ describe("RegIndex", function () {
     expect(value).to.eq(0);
     expect(stream).to.eq("0x");
   });
+
+  it("0x000001 -> 1", async () => {
+    const [value, stream] = await regIndex.decodePublic("0x000001");
+    expect(value).to.eq(1);
+    expect(stream).to.eq("0x");
+  });
+
+  it("0xffff7f -> 8,388,607", async () => {
+    const [value, stream] = await regIndex.decodePublic("0xffff7f");
+    expect(value).to.eq(8_388_607);
+    expect(stream).to.eq("0x");
+  });
 });
