@@ -25,7 +25,10 @@ library RegIndex {
     function decode(
         bytes calldata stream
     ) internal pure returns (uint256, bytes calldata) {
-        uint256 value = (uint256(uint8(stream[0])) << 8) + uint8(stream[1]);
+        uint256 value = (
+            (uint256(uint8(stream[0])) << 15) +
+            (uint256(uint8(stream[1])) << 7)
+        );
 
         // Note: This is now basically the VLQ code inlined into here. We could
         // just call VLQ.decode(), but making that BigEndian is trickier than
