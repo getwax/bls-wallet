@@ -1,10 +1,12 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.15;
 
+import "./VLQ.sol";
+
 /**
  * Registry Index
  * 
- * This is just two fixed bytes followed by VLQ.
+ * This is just a VLQ followed by 2 fixed bytes.
  * 
  * This format has a 3-byte minimum and allows for >8m indexes at 3 bytes. Exact
  * values are:
@@ -25,36 +27,14 @@ library RegIndex {
     function decode(
         bytes calldata stream
     ) internal pure returns (uint256, bytes calldata) {
-        uint256 value = (
-            (uint256(uint8(stream[0])) << 15) +
-            (uint256(uint8(stream[1])) << 7)
-        );
+        uint256 value;
+        (value, stream) = VLQ.decode(stream);
+        value <<= 16;
 
-        // Note: This is now basically the VLQ code inlined into here. We could
-        // just call VLQ.decode(), but making that BigEndian is trickier than
-        // just inlining a modified version. (The first two bytes need to be
-        // shifted up depending on how long the VLQ is, and VLQ.decode doesn't
-        // tell us that directly.)
+        value += (uint256(uint8(stream[0])) << 8);
+        value += uint256(uint8(stream[1]));
 
-        uint256 bytesRead = 2;
-
-        while (true) {
-            uint8 currentByte = uint8(stream[bytesRead++]);
-
-            // Add the lowest 7 bits to the value
-            value += currentByte & 0x7f;
-
-            // If the highest bit is zero, stop
-            if (currentByte & 0x80 == 0) {
-                break;
-            }
-
-            // We're continuing. Shift the value 7 bits to the left (higher) to
-            // make room.
-            value <<= 7;
-        }
-
-        return (value, stream[bytesRead:]);
+        return (value, stream[2:]);
     }
 
     /**
