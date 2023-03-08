@@ -7,8 +7,15 @@ import "./VLQ.sol";
  * Registry Index
  * 
  * This is just two fixed bytes followed by VLQ.
+ * 
+ * This format has a 3-byte minimum and allows for >8m indexes at 3 bytes. Exact
+ * values are:
+ * - 3 bytes: 2^23        =       8,388,608 indexes
+ * - 4 bytes: 2^30 - 2^23 =   1,065,353,216 indexes
+ * - 5 bytes: 2^37 - 2^30 = 136,365,211,648 indexes
+ * (In theory, this goes all the way to uint256max, which uses 37 bytes.)
  *
- * This format has a 3-byte minimum size with the following advantages over VLQ:
+ * This format has following advantages over VLQ:
  * - Provides 4x the number of indexes at each width.
  * - Avoids negative perception caused by the exclusivity of 1 and 2 byte
  *   indexes.
