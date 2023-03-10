@@ -51,9 +51,19 @@ contract FallbackExpander is IExpander {
     ) {
         uint256 originalStreamLen = stream.length;
         uint256 decodedValue;
+        bool decodedBit;
+        uint256 registryUsageBitStream;
 
-        senderPublicKey = abi.decode(stream[:128], (uint256[4]));
-        stream = stream[128:];
+        (registryUsageBitStream, stream) = VLQ.decode(stream);
+
+        (decodedBit, registryUsageBitStream) = decodeBit(registryUsageBitStream);
+
+        if (decodedBit) {
+            require(false, "TODO: Use registry for senderPublicKey");
+        } else {
+            senderPublicKey = abi.decode(stream[:128], (uint256[4]));
+            stream = stream[128:];
+        }
 
         (decodedValue, stream) = VLQ.decode(stream);
         operation.nonce = decodedValue;
@@ -68,8 +78,16 @@ contract FallbackExpander is IExpander {
             uint256 ethValue;
             (ethValue, stream) = PseudoFloat.decode(stream);
 
-            address contractAddress = address(bytes20(stream[:20]));
-            stream = stream[20:];
+            address contractAddress;
+
+            (decodedBit, registryUsageBitStream) = decodeBit(registryUsageBitStream);
+
+            if (decodedBit) {
+                require(false, "TODO: Use registry for contractAddress");
+            } else {
+                contractAddress = address(bytes20(stream[:20]));
+                stream = stream[20:];
+            }
 
             (decodedValue, stream) = VLQ.decode(stream);
             bytes memory encodedFunction = stream[:decodedValue];
@@ -83,5 +101,9 @@ contract FallbackExpander is IExpander {
         }
         
         bytesRead = originalStreamLen - stream.length;
+    }
+
+    function decodeBit(uint256 bitStream) internal pure returns (bool, uint256) {
+        return ((bitStream & 1) == 1, bitStream >> 1);
     }
 }

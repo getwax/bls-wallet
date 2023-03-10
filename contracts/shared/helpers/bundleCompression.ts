@@ -21,6 +21,9 @@ export function compressAsFallback(
 
   result.push(encodeVLQ(fallbackExpanderIndex));
 
+  // registryUsageBitStream
+  result.push(encodeVLQ(0));
+
   result.push(
     ethers.utils.defaultAbiCoder.encode(["uint256[4]"], [blsPublicKey]),
   );
