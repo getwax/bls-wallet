@@ -58,6 +58,12 @@ export default class BlsSigner extends Signer {
 
   readonly initPromise: Promise<void>;
 
+  /**
+   * @param constructorGuard prevents BlsSigner constructor being called directly
+   * @param provider BlsProvider accociated with this signer
+   * @param privateKey private key for the account this signer represents
+   * @param addressOrIndex (not Used) address or index of this account, managed by the connected Ethereum node
+   */
   constructor(
     constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
@@ -92,6 +98,7 @@ export default class BlsSigner extends Signer {
     }
   }
 
+  /** instantiates a BLS Wallet and then connects the signer to it */
   private async initializeWallet(privateKey: string | Promise<string>) {
     const resolvedPrivateKey = await privateKey;
     this.wallet = await BlsWalletWrapper.connect(
@@ -101,6 +108,18 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  /**
+   * Sends transactions to be executed. Converts the TransactionRequest
+   * to a bundles and adds it to the connected aggregator
+   *
+   * @remarks the transaction hash returned in the transaction response does
+   * not correspond to a transaction hash that can be viewed on a block
+   * explorer. It instead represents the bundle hash, which can be used to
+   * get a transaction receipt that has a hash that can be used on a block explorer
+   *
+   * @param transaction transaction request object
+   * @returns a transaction response object that can be awaited to get the transaction receipt
+   */
   override async sendTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<ethers.providers.TransactionResponse> {
@@ -225,6 +244,9 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  /**
+   * @returns the address associated with the BlsSigner
+   */
   async getAddress(): Promise<string> {
     await this.initPromise;
     if (this._address) {
@@ -251,6 +273,12 @@ export default class BlsSigner extends Signer {
     ]);
   }
 
+  /**
+   * Signs a transaction that can be executed by the BlsProvider
+   *
+   * @param transaction transaction request object
+   * @returns a signed bundle as a string
+   */
   override async signTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
@@ -343,7 +371,7 @@ export default class BlsSigner extends Signer {
   }
 
   /** Sign a message */
-  // TODO: Come back to this once we support EIP-1271
+  // TODO: bls-wallet #201 Come back to this once we support EIP-1271
   override async signMessage(message: Bytes | string): Promise<string> {
     await this.initPromise;
     if (isBytes(message)) {
@@ -366,6 +394,9 @@ export default class BlsSigner extends Signer {
     throw new Error("_signTypedData() is not implemented");
   }
 
+  /**
+   * @returns a new Signer object which does not perform additional checks when sending a transaction
+   */
   connectUnchecked(): BlsSigner {
     return new UncheckedBlsSigner(
       _constructorGuard,
@@ -379,6 +410,10 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  /**
+   * @param transaction transaction request object
+   * @returns transaction hash for the transaction, corresponds to a bundle hash
+   */
   async sendUncheckedTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
@@ -455,6 +490,12 @@ export default class BlsSigner extends Signer {
 }
 
 export class UncheckedBlsSigner extends BlsSigner {
+  /**
+   * @remarks as with other transaction methods, the transaction hash returned represents the bundle hash
+   *
+   * @param transaction transaction request object
+   * @returns the transaction response object with only the transaction hash property populated with a valid value
+   */
   override async sendTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<ethers.providers.TransactionResponse> {

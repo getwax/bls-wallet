@@ -28,6 +28,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly verificationGatewayAddress: string;
   readonly aggregatorUtilitiesAddress: string;
 
+  /**
+   * @param aggregatorUrl the url for an aggregator instance
+   * @param verificationGatewayAddress verification gateway contract address
+   * @param aggregatorUtilitiesAddress aggregator utilities contract address
+   * @param url rpc url
+   * @param network the network the provider should connect to
+   */
   constructor(
     aggregatorUrl: string,
     verificationGatewayAddress: string,
@@ -41,6 +48,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     this.aggregatorUtilitiesAddress = aggregatorUtilitiesAddress;
   }
 
+  /**
+   * @param transaction transaction request object
+   * @returns the amount of gas that would be required to submit the transaction to the network
+   */
   override async estimateGas(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<BigNumber> {
@@ -90,6 +101,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return addSafetyPremiumToFee(feeRequired);
   }
 
+  /**
+   * Sends transactions to be executed. Adds the signed
+   * bundle to the connected aggregator
+   *
+   * @param signedTransaction a signed bundle
+   * @returns a transaction response object that can be awaited to get the transaction receipt
+   */
   override async sendTransaction(
     signedTransaction: string | Promise<string>,
   ): Promise<ethers.providers.TransactionResponse> {
@@ -149,6 +167,11 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
   }
 
+  /**
+   * @param privateKey private key for the account the signer represents
+   * @param addressOrIndex (not Used) address or index of the account, managed by the connected Ethereum node
+   * @returns a new BlsSigner instance
+   */
   override getSigner(
     privateKey: string,
     addressOrIndex?: string | number,
@@ -156,6 +179,11 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return new BlsSigner(_constructorGuard, this, privateKey, addressOrIndex);
   }
 
+  /**
+   * @param privateKey private key for the account the signer represents
+   * @param addressOrIndex (not Used) address or index of the account, managed by the connected Ethereum node
+   * @returns a new UncheckedBlsSigner instance
+   */
   override getUncheckedSigner(
     privateKey: string,
     addressOrIndex?: string,
@@ -163,6 +191,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return this.getSigner(privateKey, addressOrIndex).connectUnchecked();
   }
 
+  /**
+   * @remarks the transaction hash argument corresponds to a bundle hash and cannot be used on a block explorer.
+   * Instead, the transaction hash returned in the transaction receipt from this method can be used in a block explorer.
+   *
+   * @param transactionHash the transaction hash returned from the BlsProvider and BlsSigner sendTransaction methods
+   * @returns the transaction receipt that corressponds to the transaction hash (bundle hash)
+   */
   override async getTransactionReceipt(
     transactionHash: string | Promise<string>,
   ): Promise<ethers.providers.TransactionReceipt> {
@@ -170,6 +205,15 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return this._getTransactionReceipt(resolvedTransactionHash, 1, 20);
   }
 
+  /**
+   * @remarks the transaction hash argument cannot be used on a block explorer. It instead corresponds to a bundle hash.
+   * The transaction hash returned in the transaction receipt from this method can be used in a block explorer.
+   *
+   * @param transactionHash the transaction hash returned from sending a transaction
+   * @param confirmations (not used) the number of confirmations to wait for before returning the transaction receipt
+   * @param retries the number of retries to poll the receipt for
+   * @returns
+   */
   override async waitForTransaction(
     transactionHash: string,
     confirmations?: number,
@@ -182,6 +226,11 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
   }
 
+  /**
+   * @param address the address that the method gets the transaction count from
+   * @param blockTag the specific block tag to get the transaction count from
+   * @returns the the number of transactions an account has sent
+   */
   override async getTransactionCount(
     address: string | Promise<string>,
     blockTag?:
