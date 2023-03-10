@@ -39,7 +39,7 @@ if ("failures" in resp) {
 
 You will have to poll for the bundle receipt once you have added a bundle to an aggregator. The transaction hash is located on the bundle receipt. The property you need is `bundleReceipt.transactionHash`. This represents the transaction hash for the bundle submitted to the Verification Gatewaty, and can be used in a block explorer.
 
-Note this transaction is reprentative of the entire bundle submitted by the aggregator, and does not represent individual operations. To retrieve information about individual operations, use the get `getOperationResults` helper method which is explained under the [VerificationGateway](#verificationgateway) section below.
+Note this transaction is reprentative of the entire bundle submitted by the aggregator, and does not represent individual operations. To retrieve information about individual operations, use the `getOperationResults` helper method which is explained under the [VerificationGateway](#verificationgateway) section below.
 
 ```ts
 import { Aggregator } from "bls-wallet-clients";

@@ -11,6 +11,7 @@ import {
   AggregatorUtilities__factory,
   BLSWallet__factory,
 } from "../typechain-types";
+import { getOperationResults } from "./OperationResults";
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
@@ -147,6 +148,40 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     addressOrIndex?: string,
   ): UncheckedBlsSigner {
     return this.getSigner(privateKey, addressOrIndex).connectUnchecked();
+  }
+
+  // TODO: #192 Add ability for bls-wallet-clients to generate a determinisitc hash of a bundle
+  /**
+   * @param transactionHash the bundle hash
+   * @returns the transaction response associated with the bundle hash
+   */
+  override async getTransaction(
+    transactionHash: string | Promise<string>,
+  ): Promise<ethers.providers.TransactionResponse> {
+    const resolvedTransactionhash = await transactionHash;
+    const transactionReceipt = await this.getTransactionReceipt(
+      transactionHash,
+    );
+
+    // TODO: no guarantee we pull the correct operation result from this
+    // Is there a way we can link a tx hash with an operation?
+    const operationResult = getOperationResults(transactionReceipt);
+
+    return {
+      hash: resolvedTransactionhash,
+      to: operationResult[0].actions[0].contractAddress,
+      from: operationResult[0].walletAddress,
+      nonce: operationResult[0].nonce.toNumber(),
+      gasLimit: BigNumber.from("0x0"),
+      data: operationResult[0].actions[0].encodedFunction.toString(),
+      value: BigNumber.from(operationResult[0].actions[0].ethValue),
+      chainId: (await this.getNetwork()).chainId,
+      type: 2,
+      confirmations: 1,
+      wait: (confirmations?: number) => {
+        return this.waitForTransaction(resolvedTransactionhash, confirmations);
+      },
+    };
   }
 
   override async getTransactionReceipt(
