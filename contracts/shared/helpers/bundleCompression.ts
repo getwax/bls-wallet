@@ -21,9 +21,11 @@ export function compressAsFallback(
 
   result.push(encodeVLQ(fallbackExpanderIndex));
 
-  // registryUsageBitStream
-  result.push(encodeVLQ(0));
+  const resultIndexForRegUsageBitStream = result.length;
+  const regUsageBitStream: boolean[] = [];
+  result.push("0x"); // Placeholder to overwrite
 
+  regUsageBitStream.push(false);
   result.push(
     ethers.utils.defaultAbiCoder.encode(["uint256[4]"], [blsPublicKey]),
   );
@@ -35,6 +37,7 @@ export function compressAsFallback(
 
   for (const action of operation.actions) {
     result.push(encodePseudoFloat(action.ethValue));
+    regUsageBitStream.push(false);
     result.push(action.contractAddress);
 
     const fnHex = ethers.utils.hexlify(action.encodedFunction);
@@ -43,6 +46,8 @@ export function compressAsFallback(
     result.push(encodeVLQ(fnLen));
     result.push(fnHex);
   }
+
+  result[resultIndexForRegUsageBitStream] = encodeBitStream(regUsageBitStream);
 
   return hexJoin(result);
 }
@@ -121,4 +126,44 @@ export function encodeRegIndex(regIndex: BigNumberish) {
     encodeVLQ(vlqValue),
     `0x${fixedValue.toString(16).padStart(4, "0")}`,
   ]);
+}
+
+/**
+ * Bit streams are just the bits of a uint256 encoded as a VLQ.
+ *
+ * Notably, the bits are little endian - the first bit is the *lowest* bit. This
+ * is because the lowest bit is clearly the 1-valued bit, but the highest valued
+ * bit could be anywhere - there's infinitely many zero-bits to choose from.
+ *
+ * If it wasn't for this need to be little endian, we'd definitely use big
+ * endian (like our other encodings generally do), since that's preferred by the
+ * EVM and the ecosystem:
+ *
+ * ```ts
+ * const abi = new ethers.utils.AbiCoder():
+ * console.log(abi.encode(["uint"], [0xff]));
+ * // 0x00000000000000000000000000000000000000000000000000000000000000ff
+ *
+ * // If Ethereum used little endian (like x86), it would instead be:
+ * // 0xff00000000000000000000000000000000000000000000000000000000000000
+ * ```
+ */
+export function encodeBitStream(bitStream: boolean[]) {
+  let stream = 0;
+  let bitValue = 1;
+
+  const abi = new ethers.utils.AbiCoder();
+  abi.encode(["uint"], [0xff]);
+
+  for (const bit of bitStream) {
+    if (bit) {
+      stream += bitValue;
+    }
+
+    bitValue *= 2;
+  }
+
+  const streamVLQ = encodeVLQ(stream);
+
+  return streamVLQ;
 }
