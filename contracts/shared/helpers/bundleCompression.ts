@@ -130,6 +130,8 @@ export function encodeRegIndex(regIndex: BigNumberish) {
 
 /**
  * Bit streams are just the bits of a uint256 encoded as a VLQ.
+ * (Technically the encoding is unbounded, but 256 booleans is a lot and it's
+ * much easier to just decode the VLQ into a uint256 in the EVM.)
  *
  * Notably, the bits are little endian - the first bit is the *lowest* bit. This
  * is because the lowest bit is clearly the 1-valued bit, but the highest valued

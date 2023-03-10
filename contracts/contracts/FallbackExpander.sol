@@ -2,6 +2,9 @@
 pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
+import "./AddressRegistry.sol";
+import "./BLSPublicKeyRegistry.sol";
+import "./lib/RegIndex.sol";
 import "./lib/VLQ.sol";
 import "./lib/PseudoFloat.sol";
 import "./interfaces/IExpander.sol";
@@ -44,7 +47,18 @@ import "./interfaces/IWallet.sol";
  * discount, the saving is still over 30%.)
  */
 contract FallbackExpander is IExpander {
-    function expand(bytes calldata stream) external pure returns (
+    BLSPublicKeyRegistry public blsPublicKeyRegistry;
+    AddressRegistry public addressRegistry;
+
+    constructor(
+        BLSPublicKeyRegistry blsPublicKeyRegistryParam,
+        AddressRegistry addressRegistryParam
+    ) {
+        blsPublicKeyRegistry = blsPublicKeyRegistryParam;
+        addressRegistry = addressRegistryParam;
+    }
+
+    function expand(bytes calldata stream) external view returns (
         uint256[4] memory senderPublicKey,
         IWallet.Operation memory operation,
         uint256 bytesRead
@@ -56,10 +70,13 @@ contract FallbackExpander is IExpander {
 
         (registryUsageBitStream, stream) = VLQ.decode(stream);
 
-        (decodedBit, registryUsageBitStream) = decodeBit(registryUsageBitStream);
+        (decodedBit, registryUsageBitStream) = decodeBit(
+            registryUsageBitStream
+        );
 
         if (decodedBit) {
-            require(false, "TODO: Use registry for senderPublicKey");
+            (decodedValue, stream) = RegIndex.decode(stream);
+            senderPublicKey = blsPublicKeyRegistry.lookup(decodedValue);
         } else {
             senderPublicKey = abi.decode(stream[:128], (uint256[4]));
             stream = stream[128:];
@@ -83,7 +100,8 @@ contract FallbackExpander is IExpander {
             (decodedBit, registryUsageBitStream) = decodeBit(registryUsageBitStream);
 
             if (decodedBit) {
-                require(false, "TODO: Use registry for contractAddress");
+                (decodedValue, stream) = RegIndex.decode(stream);
+                contractAddress = addressRegistry.lookup(decodedValue);
             } else {
                 contractAddress = address(bytes20(stream[:20]));
                 stream = stream[20:];
