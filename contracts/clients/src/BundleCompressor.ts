@@ -1,7 +1,8 @@
 import { ethers } from "ethers";
 import { encodeVLQ, hexJoin } from "./encodeUtils";
 import IOperationCompressor from "./IOperationCompressor";
-import { Bundle } from "./signer";
+import { Bundle, Operation, PublicKey } from "./signer";
+import Range from "./helpers/Range";
 
 export default class BundleCompressor {
   compressors: [number, IOperationCompressor][] = [];
@@ -10,40 +11,47 @@ export default class BundleCompressor {
     this.compressors.push([expanderIndex, compressor]);
   }
 
-  compress(bundle: Bundle): string {
-    const compressedOperations: string[] = [];
+  async compressOperation(
+    blsPublicKey: PublicKey,
+    operation: Operation,
+  ): Promise<string> {
+    let expanderIndexAndData: [number, string] | undefined;
 
+    for (const [expanderIndex, compressor] of this.compressors) {
+      const data = await compressor.compress(blsPublicKey, operation);
+
+      if (data === undefined) {
+        continue;
+      }
+
+      expanderIndexAndData = [expanderIndex, data];
+      break;
+    }
+
+    if (expanderIndexAndData === undefined) {
+      throw new Error("Failed to compress operation");
+    }
+
+    const [expanderIndex, data] = expanderIndexAndData;
+
+    return hexJoin([encodeVLQ(expanderIndex), data]);
+  }
+
+  async compress(bundle: Bundle): Promise<string> {
     const len = bundle.operations.length;
 
     if (bundle.senderPublicKeys.length !== len) {
       throw new Error("ops vs keys length mismatch");
     }
 
-    for (let i = 0; i < len; i++) {
-      let expanderIndexAndData: [number, string] | undefined;
-
-      for (const [expanderIndex, compressor] of this.compressors) {
-        const data = compressor.compress(
+    const compressedOperations = await Promise.all(
+      Range(len).map((i) =>
+        this.compressOperation(
           bundle.senderPublicKeys[i],
           bundle.operations[i],
-        );
-
-        if (data === undefined) {
-          continue;
-        }
-
-        expanderIndexAndData = [expanderIndex, data];
-        break;
-      }
-
-      if (expanderIndexAndData === undefined) {
-        throw new Error(`Failed to compress operation i=${i}`);
-      }
-
-      const [expanderIndex, data] = expanderIndexAndData;
-
-      compressedOperations.push(hexJoin([encodeVLQ(expanderIndex), data]));
-    }
+        ),
+      ),
+    );
 
     return hexJoin([
       encodeVLQ(bundle.operations.length),

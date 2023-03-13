@@ -191,7 +191,7 @@ describe("WalletActions", async function () {
       ],
     });
 
-    const compressedBundle = fx.bundleCompressor.compress(bundle);
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
 
     await (await fx.blsExpanderDelegator.run(compressedBundle)).wait();
 

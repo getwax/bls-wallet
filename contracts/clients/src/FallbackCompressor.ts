@@ -155,7 +155,7 @@ export default class FallbackCompressor implements IOperationCompressor {
     );
   }
 
-  compress(blsPublicKey: PublicKey, operation: Operation) {
+  async compress(blsPublicKey: PublicKey, operation: Operation) {
     const result: string[] = [];
 
     const resultIndexForRegUsageBitStream = result.length;
