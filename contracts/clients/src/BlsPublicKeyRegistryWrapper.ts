@@ -1,0 +1,116 @@
+/* eslint-disable camelcase */
+
+import { BigNumber, BigNumberish, ethers, Signer } from "ethers";
+import { solidityKeccak256 } from "ethers/lib/utils";
+import {
+  BLSPublicKeyRegistry,
+  BLSPublicKeyRegistry__factory,
+} from "../typechain-types";
+import SafeSingletonFactory, {
+  SafeSingletonFactoryViewer,
+} from "./SafeSingletonFactory";
+import { PublicKey } from "./signer";
+
+export default class BlsPublicKeyRegistryWrapper {
+  constructor(public registry: BLSPublicKeyRegistry) {}
+
+  static async wrap(
+    registry: BLSPublicKeyRegistry,
+  ): Promise<BlsPublicKeyRegistryWrapper> {
+    return new BlsPublicKeyRegistryWrapper(registry);
+  }
+
+  static async deployNew(signer: Signer): Promise<BlsPublicKeyRegistryWrapper> {
+    const factory = new BLSPublicKeyRegistry__factory(signer);
+
+    return BlsPublicKeyRegistryWrapper.wrap(await factory.deploy());
+  }
+
+  static async connectOrDeploy(
+    signerOrFactory: Signer | SafeSingletonFactory,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ): Promise<BlsPublicKeyRegistryWrapper> {
+    let factory: SafeSingletonFactory;
+
+    if (signerOrFactory instanceof SafeSingletonFactory) {
+      factory = signerOrFactory;
+    } else {
+      factory = await SafeSingletonFactory.init(signerOrFactory);
+    }
+
+    const registry = await factory.connectOrDeploy(
+      BLSPublicKeyRegistry__factory,
+      [],
+      salt,
+    );
+
+    return BlsPublicKeyRegistryWrapper.wrap(registry);
+  }
+
+  static async connectIfDeployed(
+    provider: ethers.providers.Provider,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ): Promise<BlsPublicKeyRegistryWrapper | undefined> {
+    const factoryViewer = new SafeSingletonFactoryViewer(
+      provider,
+      (await provider.getNetwork()).chainId,
+    );
+
+    const registry = await factoryViewer.connectIfDeployed(
+      BLSPublicKeyRegistry__factory,
+      [],
+      salt,
+    );
+
+    return registry ? BlsPublicKeyRegistryWrapper.wrap(registry) : undefined;
+  }
+
+  async lookup(id: BigNumberish): Promise<PublicKey | undefined> {
+    const blsPublicKey = await Promise.all([
+      this.registry.blsPublicKeys(id, 0),
+      this.registry.blsPublicKeys(id, 1),
+      this.registry.blsPublicKeys(id, 2),
+      this.registry.blsPublicKeys(id, 3),
+    ]);
+
+    if (blsPublicKey.every((x) => x.eq(0))) {
+      return undefined;
+    }
+
+    return blsPublicKey;
+  }
+
+  async reverseLookup(blsPublicKey: PublicKey): Promise<BigNumber | undefined> {
+    const blsPublicKeyHash = solidityKeccak256(["uint256[4]"], [blsPublicKey]);
+
+    const events = await this.registry.queryFilter(
+      this.registry.filters.BLSPublicKeyRegistered(null, blsPublicKeyHash),
+    );
+
+    const id = events.at(-1)?.args?.id;
+
+    return id;
+  }
+
+  async register(blsPublicKey: PublicKey): Promise<BigNumber> {
+    await (await this.registry.register(blsPublicKey)).wait();
+
+    const id = await this.reverseLookup(blsPublicKey);
+
+    if (id === undefined) {
+      throw new Error("Registration completed but couldn't find id");
+    }
+
+    return id;
+  }
+
+  async registerIfNeeded(blsPublicKey: PublicKey): Promise<BigNumber> {
+    let id = await this.reverseLookup(blsPublicKey);
+
+    if (id === undefined) {
+      id = await this.register(blsPublicKey);
+    }
+
+    return id;
+  }
+}

@@ -42,6 +42,7 @@ export {
 } from "./SafeSingletonFactory";
 
 export { default as AddressRegistryWrapper } from "./AddressRegistryWrapper";
+export { default as BlsPublicKeyRegistryWrapper } from "./BlsPublicKeyRegistryWrapper";
 
 const Experimental_ = {
   BlsProvider,
