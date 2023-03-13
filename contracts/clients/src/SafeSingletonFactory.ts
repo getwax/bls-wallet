@@ -161,11 +161,17 @@ export default class SafeSingletonFactory {
     deployParams: DeployParams<CFC>,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ): Promise<ReturnType<InstanceType<CFC>["attach"]> | undefined> {
-    return this.viewer.connectIfDeployed(
+    let contract = await this.viewer.connectIfDeployed(
       ContractFactoryConstructor,
       deployParams,
       salt,
     );
+
+    if (contract !== undefined) {
+      contract = contract.connect(this.signer) as typeof contract;
+    }
+
+    return contract;
   }
 
   async connectOrDeploy<CFC extends ContractFactoryConstructor>(

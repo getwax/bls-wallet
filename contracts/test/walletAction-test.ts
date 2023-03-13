@@ -7,10 +7,6 @@ import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
-import {
-  bundleCompressedOperations,
-  compressAsFallback,
-} from "../shared/helpers/bundleCompression";
 import { getOperationResults } from "../clients/src";
 
 describe("WalletActions", async function () {
@@ -195,20 +191,9 @@ describe("WalletActions", async function () {
       ],
     });
 
-    await (
-      await fx.blsExpanderDelegator.run(
-        bundleCompressedOperations(
-          [
-            compressAsFallback(
-              Fixture.expanderIndexes.fallback,
-              bundle.senderPublicKeys[0],
-              bundle.operations[0],
-            ),
-          ],
-          bundle.signature,
-        ),
-      )
-    ).wait();
+    const compressedBundle = fx.bundleCompressor.compress(bundle);
+
+    await (await fx.blsExpanderDelegator.run(compressedBundle)).wait();
 
     await expect(
       fx.provider.getBalance(sendWallet.address),

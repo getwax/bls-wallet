@@ -16,6 +16,7 @@ import {
   BLSPublicKeyRegistry__factory,
   BNPairingPrecompileCostEstimator,
   BNPairingPrecompileCostEstimator__factory,
+  FallbackExpander,
   FallbackExpander__factory,
   VerificationGateway,
   VerificationGateway__factory,
@@ -29,6 +30,7 @@ export type Deployment = {
   blsLibrary: BLSOpen;
   verificationGateway: VerificationGateway;
   blsExpander: BLSExpander;
+  fallbackExpander: FallbackExpander;
   blsPublicKeyRegistry: BLSPublicKeyRegistry;
   addressRegistry: AddressRegistry;
   blsExpanderDelegator: BLSExpanderDelegator;
@@ -113,6 +115,7 @@ export default async function deploy(
     blsLibrary,
     verificationGateway,
     blsExpander,
+    fallbackExpander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,

@@ -14,16 +14,10 @@ import { PublicKey } from "./signer";
 export default class BlsPublicKeyRegistryWrapper {
   constructor(public registry: BLSPublicKeyRegistry) {}
 
-  static async wrap(
-    registry: BLSPublicKeyRegistry,
-  ): Promise<BlsPublicKeyRegistryWrapper> {
-    return new BlsPublicKeyRegistryWrapper(registry);
-  }
-
   static async deployNew(signer: Signer): Promise<BlsPublicKeyRegistryWrapper> {
     const factory = new BLSPublicKeyRegistry__factory(signer);
 
-    return BlsPublicKeyRegistryWrapper.wrap(await factory.deploy());
+    return new BlsPublicKeyRegistryWrapper(await factory.deploy());
   }
 
   static async connectOrDeploy(
@@ -44,7 +38,7 @@ export default class BlsPublicKeyRegistryWrapper {
       salt,
     );
 
-    return BlsPublicKeyRegistryWrapper.wrap(registry);
+    return new BlsPublicKeyRegistryWrapper(registry);
   }
 
   static async connectIfDeployed(
@@ -62,7 +56,7 @@ export default class BlsPublicKeyRegistryWrapper {
       salt,
     );
 
-    return registry ? BlsPublicKeyRegistryWrapper.wrap(registry) : undefined;
+    return registry ? new BlsPublicKeyRegistryWrapper(registry) : undefined;
   }
 
   async lookup(id: BigNumberish): Promise<PublicKey | undefined> {

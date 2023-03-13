@@ -3,7 +3,7 @@
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
-import { encodeRegIndex } from "../shared/helpers/bundleCompression";
+import { encodeRegIndex } from "../clients/src";
 import { RegIndex, RegIndex__factory } from "../typechain-types";
 
 describe("RegIndex", function () {

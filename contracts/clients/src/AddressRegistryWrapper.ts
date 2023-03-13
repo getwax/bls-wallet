@@ -10,16 +10,10 @@ import SafeSingletonFactory, {
 export default class AddressRegistryWrapper {
   constructor(public registry: AddressRegistry) {}
 
-  static async wrap(
-    registry: AddressRegistry,
-  ): Promise<AddressRegistryWrapper> {
-    return new AddressRegistryWrapper(registry);
-  }
-
   static async deployNew(signer: Signer): Promise<AddressRegistryWrapper> {
     const factory = new AddressRegistry__factory(signer);
 
-    return AddressRegistryWrapper.wrap(await factory.deploy());
+    return new AddressRegistryWrapper(await factory.deploy());
   }
 
   static async connectOrDeploy(
@@ -40,7 +34,7 @@ export default class AddressRegistryWrapper {
       salt,
     );
 
-    return AddressRegistryWrapper.wrap(registry);
+    return new AddressRegistryWrapper(registry);
   }
 
   static async connectIfDeployed(
@@ -58,7 +52,7 @@ export default class AddressRegistryWrapper {
       salt,
     );
 
-    return registry ? AddressRegistryWrapper.wrap(registry) : undefined;
+    return registry ? new AddressRegistryWrapper(registry) : undefined;
   }
 
   async lookup(id: BigNumberish): Promise<string | undefined> {

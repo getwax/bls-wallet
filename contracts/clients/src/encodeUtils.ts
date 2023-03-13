@@ -1,62 +1,10 @@
-import { ethers, BigNumber, BigNumberish } from "ethers";
-import { PublicKey, Operation, Signature } from "../../clients/src";
+import { BigNumber, BigNumberish, ethers } from "ethers";
 
-export function bundleCompressedOperations(
-  compressedOperations: string[],
-  signature: Signature,
-) {
-  return hexJoin([
-    encodeVLQ(compressedOperations.length),
-    ...compressedOperations,
-    ethers.utils.defaultAbiCoder.encode(["uint256[2]"], [signature]),
-  ]);
-}
-
-export function compressAsFallback(
-  fallbackExpanderIndex: number,
-  blsPublicKey: PublicKey,
-  operation: Operation,
-): string {
-  const result: string[] = [];
-
-  result.push(encodeVLQ(fallbackExpanderIndex));
-
-  const resultIndexForRegUsageBitStream = result.length;
-  const regUsageBitStream: boolean[] = [];
-  result.push("0x"); // Placeholder to overwrite
-
-  regUsageBitStream.push(false);
-  result.push(
-    ethers.utils.defaultAbiCoder.encode(["uint256[4]"], [blsPublicKey]),
-  );
-
-  result.push(encodeVLQ(operation.nonce));
-  result.push(encodePseudoFloat(operation.gas));
-
-  result.push(encodeVLQ(operation.actions.length));
-
-  for (const action of operation.actions) {
-    result.push(encodePseudoFloat(action.ethValue));
-    regUsageBitStream.push(false);
-    result.push(action.contractAddress);
-
-    const fnHex = ethers.utils.hexlify(action.encodedFunction);
-    const fnLen = (fnHex.length - 2) / 2;
-
-    result.push(encodeVLQ(fnLen));
-    result.push(fnHex);
-  }
-
-  result[resultIndexForRegUsageBitStream] = encodeBitStream(regUsageBitStream);
-
-  return hexJoin(result);
-}
-
-function hexJoin(hexStrings: string[]) {
+export function hexJoin(hexStrings: string[]) {
   return "0x" + hexStrings.map(remove0x).join("");
 }
 
-function remove0x(hexString: string) {
+export function remove0x(hexString: string) {
   if (!hexString.startsWith("0x")) {
     throw new Error("Expected 0x prefix");
   }
