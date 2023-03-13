@@ -12,6 +12,7 @@ import BlsPublicKeyRegistryWrapper from "./BlsPublicKeyRegistryWrapper";
 import {
   encodeBitStream,
   encodePseudoFloat,
+  encodeRegIndex,
   encodeVLQ,
   hexJoin,
 } from "./encodeUtils";
@@ -162,10 +163,20 @@ export default class FallbackCompressor implements IOperationCompressor {
     const regUsageBitStream: boolean[] = [];
     result.push("0x"); // Placeholder to overwrite
 
-    regUsageBitStream.push(false);
-    result.push(
-      ethers.utils.defaultAbiCoder.encode(["uint256[4]"], [blsPublicKey]),
+    const blsPublicKeyId = await this.blsPublicKeyRegistry.reverseLookup(
+      blsPublicKey,
     );
+
+    if (blsPublicKeyId === undefined) {
+      regUsageBitStream.push(false);
+
+      result.push(
+        ethers.utils.defaultAbiCoder.encode(["uint256[4]"], [blsPublicKey]),
+      );
+    } else {
+      regUsageBitStream.push(true);
+      result.push(encodeRegIndex(blsPublicKeyId));
+    }
 
     result.push(encodeVLQ(operation.nonce));
     result.push(encodePseudoFloat(operation.gas));
@@ -174,8 +185,18 @@ export default class FallbackCompressor implements IOperationCompressor {
 
     for (const action of operation.actions) {
       result.push(encodePseudoFloat(action.ethValue));
-      regUsageBitStream.push(false);
-      result.push(action.contractAddress);
+
+      const addressId = await this.addressRegistry.reverseLookup(
+        action.contractAddress,
+      );
+
+      if (addressId === undefined) {
+        regUsageBitStream.push(false);
+        result.push(action.contractAddress);
+      } else {
+        regUsageBitStream.push(true);
+        result.push(encodeRegIndex(addressId));
+      }
 
       const fnHex = ethers.utils.hexlify(action.encodedFunction);
       const fnLen = (fnHex.length - 2) / 2;

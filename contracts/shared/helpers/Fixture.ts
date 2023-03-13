@@ -56,6 +56,7 @@ export default class Fixture {
     public blsExpander: BLSExpander,
     public blsExpanderDelegator: BLSExpanderDelegator,
     public bundleCompressor: BundleCompressor,
+    public fallbackCompressor: FallbackCompressor,
     public utilities: AggregatorUtilities,
 
     public blsWalletSigner: BlsWalletSigner,
@@ -80,8 +81,10 @@ export default class Fixture {
       aggregatorUtilities: utilities,
     } = await deploy(signers[0]);
 
-    const fallbackCompressor = await FallbackCompressor.connectIfDeployed(
-      signers[0].provider!,
+    // FIXME: Should be able to use connectIfDeployed here, but we get a missing
+    // provider error.
+    const fallbackCompressor = await FallbackCompressor.connectOrDeploy(
+      signers[0],
     );
 
     if (
@@ -103,6 +106,7 @@ export default class Fixture {
       blsExpander,
       blsExpanderDelegator,
       bundleCompressor,
+      fallbackCompressor,
       utilities,
       await initBlsWalletSigner({ chainId }),
     );
