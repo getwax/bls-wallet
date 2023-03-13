@@ -63,11 +63,17 @@ export default class SafeSingletonFactory {
     },
   };
 
+  // eslint-disable-next-line no-use-before-define
+  viewer: SafeSingletonFactoryViewer;
+
   constructor(
     public signer: ethers.Signer,
     public provider: ethers.providers.Provider,
+    public chainId: number,
     public address: string,
-  ) {}
+  ) {
+    this.viewer = new SafeSingletonFactoryViewer(provider, chainId);
+  }
 
   static async init(signer: ethers.Signer): Promise<SafeSingletonFactory> {
     assert(signer.provider !== undefined, "Expected signer with provider");
@@ -81,7 +87,12 @@ export default class SafeSingletonFactory {
     const existingCode = await signer.provider.getCode(address);
 
     if (existingCode !== "0x") {
-      return new SafeSingletonFactory(signer, signer.provider, address);
+      return new SafeSingletonFactory(
+        signer,
+        signer.provider,
+        chainId,
+        address,
+      );
     }
 
     const deployment = SafeSingletonFactory.deployments[chainId];
@@ -116,6 +127,7 @@ export default class SafeSingletonFactory {
     return new SafeSingletonFactory(
       signer,
       signer.provider,
+      chainId,
       deployment.address,
     );
   }
@@ -125,20 +137,38 @@ export default class SafeSingletonFactory {
     deployParams: DeployParams<CFC>,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ) {
-    const contractFactory = new ContractFactoryConstructor();
-
-    const initCode =
-      contractFactory.bytecode +
-      contractFactory.interface.encodeDeploy(deployParams).slice(2);
-
-    return ethers.utils.getCreate2Address(
-      this.address,
+    return this.viewer.calculateAddress(
+      ContractFactoryConstructor,
+      deployParams,
       salt,
-      ethers.utils.keccak256(initCode),
     );
   }
 
-  async deploy<CFC extends ContractFactoryConstructor>(
+  async isDeployed<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ): Promise<boolean> {
+    return this.viewer.isDeployed(
+      ContractFactoryConstructor,
+      deployParams,
+      salt,
+    );
+  }
+
+  async connectIfDeployed<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ): Promise<ReturnType<InstanceType<CFC>["attach"]> | undefined> {
+    return this.viewer.connectIfDeployed(
+      ContractFactoryConstructor,
+      deployParams,
+      salt,
+    );
+  }
+
+  async connectOrDeploy<CFC extends ContractFactoryConstructor>(
     ContractFactoryConstructor: CFC,
     deployParams: DeployParams<CFC>,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
@@ -196,6 +226,77 @@ export default class SafeSingletonFactory {
     assert(deployedCode !== "0x", "Failed to deploy to expected address");
 
     return contractFactory.attach(address).connect(this.signer) as ReturnType<
+      InstanceType<CFC>["attach"]
+    >;
+  }
+}
+
+export class SafeSingletonFactoryViewer {
+  safeSingletonFactoryAddress: string;
+
+  constructor(
+    public provider: ethers.providers.Provider,
+    public chainId: number,
+  ) {
+    this.safeSingletonFactoryAddress =
+      SafeSingletonFactory.deployments[chainId]?.address ??
+      SafeSingletonFactory.sharedAddress;
+  }
+
+  calculateAddress<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ) {
+    const contractFactory = new ContractFactoryConstructor();
+
+    const initCode =
+      contractFactory.bytecode +
+      contractFactory.interface.encodeDeploy(deployParams).slice(2);
+
+    return ethers.utils.getCreate2Address(
+      this.safeSingletonFactoryAddress,
+      salt,
+      ethers.utils.keccak256(initCode),
+    );
+  }
+
+  async isDeployed<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ) {
+    const address = this.calculateAddress(
+      ContractFactoryConstructor,
+      deployParams,
+      salt,
+    );
+
+    const existingCode = await this.provider.getCode(address);
+
+    return existingCode !== "0x";
+  }
+
+  async connectIfDeployed<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ): Promise<ReturnType<InstanceType<CFC>["attach"]> | undefined> {
+    const address = this.calculateAddress(
+      ContractFactoryConstructor,
+      deployParams,
+      salt,
+    );
+
+    const existingCode = await this.provider.getCode(address);
+
+    if (existingCode === "0x") {
+      return undefined;
+    }
+
+    const contractFactory = new ContractFactoryConstructor();
+
+    return contractFactory.attach(address) as ReturnType<
       InstanceType<CFC>["attach"]
     >;
   }

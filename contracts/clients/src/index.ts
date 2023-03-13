@@ -36,6 +36,11 @@ import { BlsWalletContracts, connectToContracts } from "./BlsWalletContracts";
 
 export * from "./signer";
 
+export {
+  default as SafeSingletonFactory,
+  SafeSingletonFactoryViewer,
+} from "./SafeSingletonFactory";
+
 const Experimental_ = {
   BlsProvider,
   BlsSigner,
