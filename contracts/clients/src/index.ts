@@ -41,6 +41,8 @@ export {
   SafeSingletonFactoryViewer,
 } from "./SafeSingletonFactory";
 
+export { default as AddressRegistryWrapper } from "./AddressRegistryWrapper";
+
 const Experimental_ = {
   BlsProvider,
   BlsSigner,
