@@ -1,5 +1,5 @@
 import assert from "assert";
-import { ethers } from "ethers";
+import { ethers, Signer } from "ethers";
 
 /**
  * Filters out the optional elements of an array type because an optional
@@ -63,16 +63,23 @@ export default class SafeSingletonFactory {
     },
   };
 
+  provider: ethers.providers.Provider;
+
   // eslint-disable-next-line no-use-before-define
   viewer: SafeSingletonFactoryViewer;
 
   constructor(
     public signer: ethers.Signer,
-    public provider: ethers.providers.Provider,
     public chainId: number,
     public address: string,
   ) {
-    this.viewer = new SafeSingletonFactoryViewer(provider, chainId);
+    if (signer.provider === undefined) {
+      throw new Error("Expected signer with provider");
+    }
+
+    this.provider = signer.provider;
+
+    this.viewer = new SafeSingletonFactoryViewer(signer, chainId);
   }
 
   static async init(signer: ethers.Signer): Promise<SafeSingletonFactory> {
@@ -87,12 +94,7 @@ export default class SafeSingletonFactory {
     const existingCode = await signer.provider.getCode(address);
 
     if (existingCode !== "0x") {
-      return new SafeSingletonFactory(
-        signer,
-        signer.provider,
-        chainId,
-        address,
-      );
+      return new SafeSingletonFactory(signer, chainId, address);
     }
 
     const deployment = SafeSingletonFactory.deployments[chainId];
@@ -124,12 +126,7 @@ export default class SafeSingletonFactory {
     const deployedCode = await signer.provider.getCode(deployment.address);
     assert(deployedCode !== "0x", "Failed to deploy safe singleton factory");
 
-    return new SafeSingletonFactory(
-      signer,
-      signer.provider,
-      chainId,
-      deployment.address,
-    );
+    return new SafeSingletonFactory(signer, chainId, deployment.address);
   }
 
   calculateAddress<CFC extends ContractFactoryConstructor>(
@@ -239,14 +236,31 @@ export default class SafeSingletonFactory {
 
 export class SafeSingletonFactoryViewer {
   safeSingletonFactoryAddress: string;
+  signer?: Signer;
+  provider: ethers.providers.Provider;
 
   constructor(
-    public provider: ethers.providers.Provider,
+    public signerOrProvider: ethers.providers.Provider | Signer,
     public chainId: number,
   ) {
     this.safeSingletonFactoryAddress =
       SafeSingletonFactory.deployments[chainId]?.address ??
       SafeSingletonFactory.sharedAddress;
+
+    let provider: ethers.providers.Provider | undefined;
+
+    if (ethers.providers.Provider.isProvider(signerOrProvider)) {
+      provider = signerOrProvider;
+    } else {
+      provider = signerOrProvider.provider;
+      this.signer = signerOrProvider;
+    }
+
+    if (!provider) {
+      throw new Error("No provider found");
+    }
+
+    this.provider = provider;
   }
 
   calculateAddress<CFC extends ContractFactoryConstructor>(
@@ -302,8 +316,14 @@ export class SafeSingletonFactoryViewer {
 
     const contractFactory = new ContractFactoryConstructor();
 
-    return contractFactory.attach(address) as ReturnType<
+    let contract = contractFactory.attach(address) as ReturnType<
       InstanceType<CFC>["attach"]
     >;
+
+    if (this.signer) {
+      contract = contract.connect(this.signer) as typeof contract;
+    }
+
+    return contract;
   }
 }
