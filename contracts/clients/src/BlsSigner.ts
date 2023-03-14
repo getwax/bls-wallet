@@ -1,13 +1,52 @@
 /* eslint-disable camelcase */
-import { ethers, BigNumber, Signer, Bytes } from "ethers";
-import { Deferrable, hexlify, isBytes, RLP } from "ethers/lib/utils";
-import { AggregatorUtilities__factory } from "../typechain-types";
+import { ethers, BigNumber, Signer, Bytes, BigNumberish } from "ethers";
+import {
+  AccessListish,
+  Deferrable,
+  hexlify,
+  isBytes,
+  RLP,
+} from "ethers/lib/utils";
 
 import BlsProvider from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
+import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
 import { ActionData, bundleToDto } from "./signer";
 
 export const _constructorGuard = {};
+
+/**
+ * @property gas - (THIS PROPERTY IS NOT USED BY BLS WALLET) transaction gas limit
+ * @property maxPriorityFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) miner tip aka priority fee
+ * @property maxFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
+ * @property nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
+ * @property chainId - chain ID that this transaction is valid on
+ * @property accessList - (THIS PROPERTY IS NOT USED BY BLS WALLET) EIP-2930 access list
+ */
+export type BatchOptions = {
+  gas?: BigNumberish;
+  maxPriorityFeePerGas: BigNumberish;
+  maxFeePerGas: BigNumberish;
+  nonce: BigNumberish;
+  chainId: number;
+  accessList?: AccessListish;
+};
+
+/**
+ * @property transactions - an array of transaction objects
+ * @property batchOptions - optional batch options taken into account by smart contract wallets
+ */
+export type TransactionBatch = {
+  transactions: Array<ethers.providers.TransactionRequest>;
+  batchOptions?: BatchOptions;
+};
+
+export interface TransactionBatchResponse {
+  transactions: Array<ethers.providers.TransactionResponse>;
+  awaitBatchReceipt: (
+    confirmations?: number,
+  ) => Promise<ethers.providers.TransactionReceipt>;
+}
 
 export default class BlsSigner extends Signer {
   override readonly provider: BlsProvider;
@@ -76,7 +115,6 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
     const action: ActionData = {
       ethValue: transaction.value?.toString() ?? "0",
       contractAddress: transaction.to.toString(),
@@ -84,25 +122,14 @@ export default class BlsSigner extends Signer {
     };
 
     const feeEstimate = await this.provider.estimateGas(transaction);
-
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this.provider,
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      [action],
+      feeEstimate,
     );
 
     const bundle = this.wallet.sign({
       nonce,
-      actions: [
-        action,
-        {
-          ethValue: feeEstimate,
-          contractAddress: this.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
     });
     const result = await this.provider.aggregator.add(bundle);
 
@@ -112,6 +139,77 @@ export default class BlsSigner extends Signer {
 
     return this.constructTransactionResponse(
       action,
+      result.hash,
+      this.wallet.address,
+      nonce,
+    );
+  }
+
+  async sendTransactionBatch(
+    transactionBatch: TransactionBatch,
+  ): Promise<TransactionBatchResponse> {
+    await this.initPromise;
+
+    let nonce: BigNumber;
+    if (transactionBatch.batchOptions) {
+      const validatedBatchOptions = await this._validateBatchOptions(
+        transactionBatch.batchOptions,
+      );
+
+      nonce = validatedBatchOptions.nonce as BigNumber;
+    } else {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
+    const actions: Array<ActionData> = transactionBatch.transactions.map(
+      (transaction, i) => {
+        if (!transaction.to) {
+          throw new TypeError(`Transaction.to is missing on transaction ${i}`);
+        }
+
+        return {
+          ethValue: transaction.value?.toString() ?? "0",
+          contractAddress: transaction.to!.toString(),
+          encodedFunction: transaction.data?.toString() ?? "0x",
+        };
+      },
+    );
+
+    const actionsWithFeePaymentAction =
+      this.provider._addFeePaymentActionForFeeEstimation(actions);
+
+    const feeEstimate = await this.provider.aggregator.estimateFee(
+      this.wallet.sign({
+        nonce,
+        actions: [...actionsWithFeePaymentAction],
+      }),
+    );
+
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(feeEstimate.feeRequired),
+    );
+
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      actions,
+      safeFee,
+    );
+
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [...actionsWithSafeFee],
+    });
+    const result = await this.provider.aggregator.add(bundle);
+
+    if ("failures" in result) {
+      throw new Error(JSON.stringify(result.failures));
+    }
+
+    return this.constructTransactionBatchResponse(
+      actions,
       result.hash,
       this.wallet.address,
       nonce,
@@ -149,7 +247,7 @@ export default class BlsSigner extends Signer {
       hash,
       to: action.contractAddress,
       from,
-      nonce: BigNumber.from(nonce).toNumber(),
+      nonce: nonce.toNumber(),
       gasLimit: BigNumber.from("0x0"),
       data: action.encodedFunction.toString(),
       value: BigNumber.from(action.ethValue),
@@ -157,6 +255,49 @@ export default class BlsSigner extends Signer {
       type: 2,
       confirmations: 1,
       wait: (confirmations?: number) => {
+        return this.provider.waitForTransaction(hash, confirmations);
+      },
+    };
+  }
+
+  async constructTransactionBatchResponse(
+    actions: Array<ActionData>,
+    hash: string,
+    from: string,
+    nonce?: BigNumber,
+  ): Promise<TransactionBatchResponse> {
+    await this.initPromise;
+    const chainId = await this.getChainId();
+    if (!nonce) {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
+    const transactions: Array<ethers.providers.TransactionResponse> =
+      actions.map((action) => {
+        return {
+          hash,
+          to: action.contractAddress,
+          from,
+          nonce: nonce!.toNumber(),
+          gasLimit: BigNumber.from("0x0"),
+          data: action.encodedFunction.toString(),
+          value: BigNumber.from(action.ethValue),
+          chainId,
+          type: 2,
+          confirmations: 1,
+          wait: (confirmations?: number) => {
+            return this.provider.waitForTransaction(hash, confirmations);
+          },
+        };
+      });
+
+    return {
+      transactions,
+      awaitBatchReceipt: (confirmations?: number) => {
         return this.provider.waitForTransaction(hash, confirmations);
       },
     };
@@ -201,24 +342,75 @@ export default class BlsSigner extends Signer {
 
     const feeEstimate = await this.provider.estimateGas(transaction);
 
-    const aggregatorUtilitiesContract = AggregatorUtilities__factory.connect(
-      this.aggregatorUtilitiesAddress,
-      this.provider,
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      [action],
+      feeEstimate,
     );
 
     const bundle = this.wallet.sign({
       nonce,
-      actions: [
-        action,
-        {
-          ethValue: feeEstimate,
-          contractAddress: this.aggregatorUtilitiesAddress,
-          encodedFunction:
-            aggregatorUtilitiesContract.interface.encodeFunctionData(
-              "sendEthToTxOrigin",
-            ),
-        },
-      ],
+      actions: [...actionsWithSafeFee],
+    });
+
+    return JSON.stringify(bundleToDto(bundle));
+  }
+
+  async signTransactionBatch(
+    transactionBatch: TransactionBatch,
+  ): Promise<string> {
+    await this.initPromise;
+
+    let nonce: BigNumber;
+    if (transactionBatch.batchOptions) {
+      const validatedBatchOptions = await this._validateBatchOptions(
+        transactionBatch.batchOptions,
+      );
+
+      nonce = validatedBatchOptions.nonce as BigNumber;
+    } else {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
+    const actions: Array<ActionData> = transactionBatch.transactions.map(
+      (transaction, i) => {
+        if (!transaction.to) {
+          throw new TypeError(`Transaction.to is missing on transaction ${i}`);
+        }
+
+        return {
+          ethValue: transaction.value?.toString() ?? "0",
+          contractAddress: transaction.to!.toString(),
+          encodedFunction: transaction.data?.toString() ?? "0x",
+        };
+      },
+    );
+
+    const actionsWithFeePaymentAction =
+      this.provider._addFeePaymentActionForFeeEstimation(actions);
+
+    const feeEstimate = await this.provider.aggregator.estimateFee(
+      this.wallet.sign({
+        nonce,
+        actions: [...actionsWithFeePaymentAction],
+      }),
+    );
+
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(feeEstimate.feeRequired),
+    );
+
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      actions,
+      safeFee,
+    );
+
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [...actionsWithSafeFee],
     });
 
     return JSON.stringify(bundleToDto(bundle));
@@ -270,6 +462,21 @@ export default class BlsSigner extends Signer {
 
   async _legacySignMessage(message: Bytes | string): Promise<string> {
     throw new Error("_legacySignMessage() is not implemented");
+  }
+
+  async _validateBatchOptions(
+    batchOptions: BatchOptions,
+  ): Promise<BatchOptions> {
+    const expectedChainId = await this.getChainId();
+
+    if (batchOptions.chainId !== expectedChainId) {
+      throw new Error(
+        `Supplied chain ID ${batchOptions.chainId} does not match the expected chain ID ${expectedChainId}`,
+      );
+    }
+
+    batchOptions.nonce = BigNumber.from(batchOptions.nonce);
+    return batchOptions;
   }
 }
 

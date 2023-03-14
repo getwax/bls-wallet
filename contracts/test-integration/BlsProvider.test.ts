@@ -5,6 +5,7 @@ import { formatEther, parseEther } from "ethers/lib/utils";
 
 import {
   BlsWalletWrapper,
+  bundleToDto,
   Experimental,
   MockERC20__factory,
   NetworkConfig,
@@ -99,7 +100,7 @@ describe("BlsProvider", () => {
     await expect(gasEstimate()).to.not.be.rejected;
   });
 
-  it("should send ETH (empty call) given a valid bundle successfully", async () => {
+  it("should send ETH (empty call) given a valid bundle", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
     const expectedBalance = parseEther("1");
@@ -125,6 +126,64 @@ describe("BlsProvider", () => {
     ).to.equal(expectedBalance);
   });
 
+  it("should throw an error when sending multiple signed operations to sendTransaction", async () => {
+    // Arrange
+    const expectedAmount = parseEther("1");
+    const verySafeFee = parseEther("0.1");
+    const firstRecipient = ethers.Wallet.createRandom().address;
+    const secondRecipient = ethers.Wallet.createRandom().address;
+
+    const firstActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
+        {
+          ethValue: expectedAmount,
+          contractAddress: firstRecipient,
+          encodedFunction: "0x",
+        },
+      ],
+      verySafeFee,
+    );
+    const secondActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
+        {
+          ethValue: expectedAmount,
+          contractAddress: secondRecipient,
+          encodedFunction: "0x",
+        },
+      ],
+      verySafeFee,
+    );
+
+    const firstOperation = {
+      nonce: await blsSigner.wallet.Nonce(),
+      actions: [...firstActionWithSafeFee],
+    };
+    const secondOperation = {
+      nonce: (await blsSigner.wallet.Nonce()).add(1),
+      actions: [...secondActionWithSafeFee],
+    };
+
+    const firstBundle = blsSigner.wallet.sign(firstOperation);
+    const secondBundle = blsSigner.wallet.sign(secondOperation);
+
+    const aggregatedBundle = blsSigner.wallet.blsWalletSigner.aggregate([
+      firstBundle,
+      secondBundle,
+    ]);
+
+    // Act
+    const result = async () =>
+      await blsProvider.sendTransaction(
+        JSON.stringify(bundleToDto(aggregatedBundle)),
+      );
+
+    // Assert
+    await expect(result()).to.rejectedWith(
+      Error,
+      "Can only operate on single operations. Call provider.sendTransactionBatch instead",
+    );
+  });
+
   it("should get the account nonce when the signer constructs the transaction response", async () => {
     // Arrange
     const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
@@ -147,6 +206,7 @@ describe("BlsProvider", () => {
     // Once when calling "signer.signTransaction", once when calling "blsProvider.estimateGas", and once when calling "blsSigner.constructTransactionResponse".
     // This unit test is concerned with the latter being called.
     expect(spy).to.have.been.called.exactly(3);
+    chai.spy.restore(spy);
   });
 
   it("should throw an error when sending a modified signed transaction", async () => {
@@ -173,18 +233,174 @@ describe("BlsProvider", () => {
     );
   });
 
-  it("should throw an error when sending an invalid signed transaction", async () => {
+  it("should throw an error when sending invalid signed transactions", async () => {
     // Arrange
     const invalidTransaction = "Invalid signed transaction";
 
     // Act
     const result = async () =>
       await blsProvider.sendTransaction(invalidTransaction);
+    const batchResult = async () =>
+      await blsProvider.sendTransaction(invalidTransaction);
 
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
       "Unexpected token I in JSON at position 0",
+    );
+    await expect(batchResult()).to.be.rejectedWith(
+      Error,
+      "Unexpected token I in JSON at position 0",
+    );
+  });
+
+  it("should send a batch of ETH transfers (empty calls) given a valid bundle", async () => {
+    // Arrange
+    const expectedAmount = parseEther("1");
+    const recipients = [];
+    const unsignedTransactionBatch = [];
+
+    for (let i = 0; i < 3; i++) {
+      recipients.push(ethers.Wallet.createRandom().address);
+      unsignedTransactionBatch.push({
+        to: recipients[i],
+        value: expectedAmount,
+      });
+    }
+
+    const signedTransactionBatch = await blsSigner.signTransactionBatch({
+      transactions: unsignedTransactionBatch,
+    });
+
+    // Act
+    const result = await blsProvider.sendTransactionBatch(
+      signedTransactionBatch,
+    );
+    await result.awaitBatchReceipt();
+
+    // Assert
+    expect(await blsProvider.getBalance(recipients[0])).to.equal(
+      expectedAmount,
+    );
+    expect(await blsProvider.getBalance(recipients[1])).to.equal(
+      expectedAmount,
+    );
+    expect(await blsProvider.getBalance(recipients[2])).to.equal(
+      expectedAmount,
+    );
+  });
+
+  it("should send a batch of ETH transfers (empty calls) given two aggregated bundles", async () => {
+    // Arrange
+    const expectedAmount = parseEther("1");
+    const verySafeFee = parseEther("0.1");
+    const firstRecipient = ethers.Wallet.createRandom().address;
+    const secondRecipient = ethers.Wallet.createRandom().address;
+
+    const firstActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
+        {
+          ethValue: expectedAmount,
+          contractAddress: firstRecipient,
+          encodedFunction: "0x",
+        },
+      ],
+      verySafeFee,
+    );
+    const secondActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
+        {
+          ethValue: expectedAmount,
+          contractAddress: secondRecipient,
+          encodedFunction: "0x",
+        },
+      ],
+      verySafeFee,
+    );
+
+    const firstOperation = {
+      nonce: await blsSigner.wallet.Nonce(),
+      actions: [...firstActionWithSafeFee],
+    };
+    const secondOperation = {
+      nonce: (await blsSigner.wallet.Nonce()).add(1),
+      actions: [...secondActionWithSafeFee],
+    };
+
+    const firstBundle = blsSigner.wallet.sign(firstOperation);
+    const secondBundle = blsSigner.wallet.sign(secondOperation);
+
+    const aggregatedBundle = blsSigner.wallet.blsWalletSigner.aggregate([
+      firstBundle,
+      secondBundle,
+    ]);
+
+    // Act
+    const result = await blsProvider.sendTransactionBatch(
+      JSON.stringify(bundleToDto(aggregatedBundle)),
+    );
+    await result.awaitBatchReceipt();
+
+    // Assert
+    expect(await blsProvider.getBalance(firstRecipient)).to.equal(
+      expectedAmount,
+    );
+    expect(await blsProvider.getBalance(secondRecipient)).to.equal(
+      expectedAmount,
+    );
+  });
+
+  it("should get the account nonce when the signer constructs the transaction batch response", async () => {
+    // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+    const recipient = ethers.Wallet.createRandom().address;
+    const expectedBalance = parseEther("1");
+
+    const unsignedTransaction = {
+      value: expectedBalance.toString(),
+      to: recipient,
+      data: "0x",
+    };
+    const signedTransaction = await blsSigner.signTransactionBatch({
+      transactions: [unsignedTransaction],
+    });
+
+    // Act
+    await blsProvider.sendTransactionBatch(signedTransaction);
+
+    // Assert
+    // Once when calling "signer.signTransaction", and once when calling "blsSigner.constructTransactionResponse".
+    // This unit test is concerned with the latter being called.
+    expect(spy).to.have.been.called.exactly(2);
+    chai.spy.restore(spy);
+  });
+
+  it("should throw an error when sending a modified signed transaction", async () => {
+    // Arrange
+    const address = await blsSigner.getAddress();
+
+    const signedTransaction = await blsSigner.signTransactionBatch({
+      transactions: [
+        {
+          value: parseEther("1"),
+          to: ethers.Wallet.createRandom().address,
+          data: "0x",
+        },
+      ],
+    });
+
+    const userBundle = JSON.parse(signedTransaction);
+    userBundle.operations[0].actions[0].ethValue = parseEther("2");
+    const invalidBundle = JSON.stringify(userBundle);
+
+    // Act
+    const result = async () =>
+      await blsProvider.sendTransactionBatch(invalidBundle);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      `[{"type":"invalid-signature","description":"invalid signature for wallet address ${address}"}]`,
     );
   });
 
