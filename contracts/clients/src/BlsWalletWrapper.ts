@@ -30,7 +30,6 @@ export default class BlsWalletWrapper {
   public address: string;
   private constructor(
     public blsWalletSigner: BlsWalletSigner,
-    public privateKey: string,
     public walletContract: BLSWallet,
   ) {
     this.address = walletContract.address;
@@ -65,22 +64,23 @@ export default class BlsWalletWrapper {
    * @param privateKey private key associated with the wallet
    * @param verificationGatewayAddress address of the VerficationGateway contract
    * @param signerOrProvider ethers.js Signer or Provider
-   * @param blsWalletSigner (optional) a BLS Wallet signer
    * @returns The wallet's address
    */
   static async Address(
     privateKey: string,
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
-    blsWalletSigner?: BlsWalletSigner,
   ): Promise<string> {
-    blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
+    const blsWalletSigner = await this.#BlsWalletSigner(
+      signerOrProvider,
+      privateKey,
+    );
 
     const verificationGateway = VerificationGateway__factory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
-    const pubKeyHash = blsWalletSigner.getPublicKeyHash(privateKey);
+    const pubKeyHash = blsWalletSigner.getPublicKeyHash();
 
     const existingAddress = await verificationGateway.walletFromHash(
       pubKeyHash,
@@ -98,7 +98,6 @@ export default class BlsWalletWrapper {
       blsWalletSigner,
       verificationGateway,
       expectedAddress,
-      privateKey,
     );
 
     return expectedAddress;
@@ -147,11 +146,11 @@ export default class BlsWalletWrapper {
     );
     const blsWalletSigner = await initBlsWalletSigner({
       chainId: (await verificationGateway.provider.getNetwork()).chainId,
+      privateKey,
     });
 
     const blsWalletWrapper = new BlsWalletWrapper(
       blsWalletSigner,
-      privateKey,
       await BlsWalletWrapper.BLSWallet(privateKey, verificationGateway),
     );
 
@@ -160,7 +159,7 @@ export default class BlsWalletWrapper {
 
   async syncWallet(verificationGateway: VerificationGateway) {
     this.address = await BlsWalletWrapper.Address(
-      this.privateKey,
+      this.blsWalletSigner.privateKey,
       verificationGateway.address,
       verificationGateway.provider,
     );
@@ -228,16 +227,12 @@ export default class BlsWalletWrapper {
 
   /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
   sign(operation: Operation): Bundle {
-    return this.blsWalletSigner.sign(
-      operation,
-      this.privateKey,
-      this.walletContract.address,
-    );
+    return this.blsWalletSigner.sign(operation, this.walletContract.address);
   }
 
   /** Sign a message */
   signMessage(message: string): Signature {
-    return this.blsWalletSigner.signMessage(message, this.privateKey);
+    return this.blsWalletSigner.signMessage(message);
   }
 
   /**
@@ -246,7 +241,7 @@ export default class BlsWalletWrapper {
    * @returns Wallet's BLS public key.
    */
   PublicKey(): PublicKey {
-    return this.blsWalletSigner.getPublicKey(this.privateKey);
+    return this.blsWalletSigner.getPublicKey();
   }
 
   /**
@@ -255,7 +250,7 @@ export default class BlsWalletWrapper {
    * @returns Wallet's BLS public key as a string.
    */
   PublicKeyStr(): string {
-    return this.blsWalletSigner.getPublicKeyStr(this.privateKey);
+    return this.blsWalletSigner.getPublicKeyStr();
   }
 
   async getSetRecoveryHashBundle(
@@ -263,7 +258,7 @@ export default class BlsWalletWrapper {
     recoverWalletAddress: string,
   ): Promise<Bundle> {
     const saltHash = ethers.utils.formatBytes32String(salt);
-    const walletHash = this.blsWalletSigner.getPublicKeyHash(this.privateKey);
+    const walletHash = this.blsWalletSigner.getPublicKeyHash();
     const recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
       [recoverWalletAddress, walletHash, saltHash],
@@ -325,13 +320,37 @@ export default class BlsWalletWrapper {
 
   static async #BlsWalletSigner(
     signerOrProvider: SignerOrProvider,
+    privateKey: string,
   ): Promise<BlsWalletSigner> {
     const chainId =
       "getChainId" in signerOrProvider
         ? await signerOrProvider.getChainId()
         : (await signerOrProvider.getNetwork()).chainId;
 
-    return await initBlsWalletSigner({ chainId });
+    return await initBlsWalletSigner({ chainId, privateKey });
+  }
+
+  /**
+   * Binds the BlsWalletSigner instance to a new private key and chainId
+   *
+   * @returns The updated BlsWalletSigner object
+   */
+  async setBlsWalletSigner(
+    signerOrProvider: SignerOrProvider,
+    privateKey: string,
+  ): Promise<BlsWalletSigner> {
+    const chainId =
+      "getChainId" in signerOrProvider
+        ? await signerOrProvider.getChainId()
+        : (await signerOrProvider.getNetwork()).chainId;
+
+    const newBlsWalletSigner = await initBlsWalletSigner({
+      chainId,
+      privateKey,
+    });
+
+    this.blsWalletSigner = newBlsWalletSigner;
+    return newBlsWalletSigner;
   }
 
   // Calculates the expected address the wallet will be created at
@@ -369,9 +388,8 @@ export default class BlsWalletWrapper {
     blsWalletSigner: BlsWalletSigner,
     verificationGateway: VerificationGateway,
     walletAddress: string,
-    privateKey: string,
   ): Promise<void> {
-    const pubKeyHash = blsWalletSigner.getPublicKeyHash(privateKey);
+    const pubKeyHash = blsWalletSigner.getPublicKeyHash();
     const existingPubKeyHash = await verificationGateway.hashFromWallet(
       walletAddress,
     );
