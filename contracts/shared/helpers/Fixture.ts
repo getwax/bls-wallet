@@ -18,6 +18,7 @@ import {
   Bundle,
   getOperationResults,
   FallbackCompressor,
+  BlsRegistrationCompressor,
   BundleCompressor,
 } from "../../clients/src";
 
@@ -88,7 +89,15 @@ export default class Fixture {
       throw new Error("Fallback compressor not set up correctly");
     }
 
+    const blsRegistrationCompressor =
+      await BlsRegistrationCompressor.connectIfDeployed(signers[0]);
+
+    if (blsRegistrationCompressor === undefined) {
+      throw new Error("BLS registration compressor not set up correctly");
+    }
+
     const bundleCompressor = new BundleCompressor();
+    bundleCompressor.addCompressor(1, blsRegistrationCompressor);
     bundleCompressor.addCompressor(0, fallbackCompressor);
 
     return new Fixture(
