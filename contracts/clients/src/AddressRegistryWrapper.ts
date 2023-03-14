@@ -3,6 +3,7 @@
 import { BigNumber, BigNumberish, ethers, Signer } from "ethers";
 import { AddressRegistry } from "../typechain-types/contracts/AddressRegistry";
 import { AddressRegistry__factory } from "../typechain-types/factories/contracts/AddressRegistry__factory";
+import SignerOrProvider from "./helpers/SignerOrProvider";
 import SafeSingletonFactory, {
   SafeSingletonFactoryViewer,
 } from "./SafeSingletonFactory";
@@ -20,13 +21,7 @@ export default class AddressRegistryWrapper {
     signerOrFactory: Signer | SafeSingletonFactory,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ): Promise<AddressRegistryWrapper> {
-    let factory: SafeSingletonFactory;
-
-    if (signerOrFactory instanceof SafeSingletonFactory) {
-      factory = signerOrFactory;
-    } else {
-      factory = await SafeSingletonFactory.init(signerOrFactory);
-    }
+    const factory = await SafeSingletonFactory.from(signerOrFactory);
 
     const registry = await factory.connectOrDeploy(
       AddressRegistry__factory,
@@ -38,12 +33,11 @@ export default class AddressRegistryWrapper {
   }
 
   static async connectIfDeployed(
-    provider: ethers.providers.Provider,
+    signerOrProvider: SignerOrProvider,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ): Promise<AddressRegistryWrapper | undefined> {
-    const factoryViewer = new SafeSingletonFactoryViewer(
-      provider,
-      (await provider.getNetwork()).chainId,
+    const factoryViewer = await SafeSingletonFactoryViewer.from(
+      signerOrProvider,
     );
 
     const registry = await factoryViewer.connectIfDeployed(

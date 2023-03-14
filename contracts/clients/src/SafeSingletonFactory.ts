@@ -1,5 +1,6 @@
 import assert from "assert";
 import { ethers, Signer } from "ethers";
+import SignerOrProvider from "./helpers/SignerOrProvider";
 
 /**
  * Filters out the optional elements of an array type because an optional
@@ -68,7 +69,7 @@ export default class SafeSingletonFactory {
   // eslint-disable-next-line no-use-before-define
   viewer: SafeSingletonFactoryViewer;
 
-  constructor(
+  private constructor(
     public signer: ethers.Signer,
     public chainId: number,
     public address: string,
@@ -127,6 +128,14 @@ export default class SafeSingletonFactory {
     assert(deployedCode !== "0x", "Failed to deploy safe singleton factory");
 
     return new SafeSingletonFactory(signer, chainId, deployment.address);
+  }
+
+  static async from(signerOrFactory: ethers.Signer | SafeSingletonFactory) {
+    if (signerOrFactory instanceof SafeSingletonFactory) {
+      return signerOrFactory;
+    }
+
+    return await SafeSingletonFactory.init(signerOrFactory);
   }
 
   calculateAddress<CFC extends ContractFactoryConstructor>(
@@ -240,7 +249,7 @@ export class SafeSingletonFactoryViewer {
   provider: ethers.providers.Provider;
 
   constructor(
-    public signerOrProvider: ethers.providers.Provider | Signer,
+    public signerOrProvider: SignerOrProvider,
     public chainId: number,
   ) {
     this.safeSingletonFactoryAddress =
@@ -261,6 +270,20 @@ export class SafeSingletonFactoryViewer {
     }
 
     this.provider = provider;
+  }
+
+  static async from(signerOrProvider: SignerOrProvider) {
+    const provider = ethers.providers.Provider.isProvider(signerOrProvider)
+      ? signerOrProvider
+      : signerOrProvider.provider;
+
+    if (!provider) {
+      throw new Error("No provider found");
+    }
+
+    const network = await provider.getNetwork();
+
+    return new SafeSingletonFactoryViewer(signerOrProvider, network.chainId);
   }
 
   calculateAddress<CFC extends ContractFactoryConstructor>(

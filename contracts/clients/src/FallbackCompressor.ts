@@ -16,6 +16,7 @@ import {
   encodeVLQ,
   hexJoin,
 } from "./encodeUtils";
+import SignerOrProvider from "./helpers/SignerOrProvider";
 import IOperationCompressor from "./IOperationCompressor";
 import SafeSingletonFactory, {
   SafeSingletonFactoryViewer,
@@ -84,13 +85,7 @@ export default class FallbackCompressor implements IOperationCompressor {
     signerOrFactory: Signer | SafeSingletonFactory,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ): Promise<FallbackCompressor> {
-    let factory: SafeSingletonFactory;
-
-    if (signerOrFactory instanceof SafeSingletonFactory) {
-      factory = signerOrFactory;
-    } else {
-      factory = await SafeSingletonFactory.init(signerOrFactory);
-    }
+    const factory = await SafeSingletonFactory.from(signerOrFactory);
 
     const [blsPublicKeyRegistry, addressRegistry] = await Promise.all([
       BlsPublicKeyRegistryWrapper.connectOrDeploy(factory, salt),
@@ -111,12 +106,11 @@ export default class FallbackCompressor implements IOperationCompressor {
   }
 
   static async connectIfDeployed(
-    provider: ethers.providers.Provider,
+    signerOrProvider: SignerOrProvider,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ): Promise<FallbackCompressor | undefined> {
-    const factoryViewer = new SafeSingletonFactoryViewer(
-      provider,
-      (await provider.getNetwork()).chainId,
+    const factoryViewer = await SafeSingletonFactoryViewer.from(
+      signerOrProvider,
     );
 
     const blsPublicKeyRegistry = await factoryViewer.connectIfDeployed(

@@ -6,6 +6,7 @@ import {
   BLSPublicKeyRegistry,
   BLSPublicKeyRegistry__factory,
 } from "../typechain-types";
+import SignerOrProvider from "./helpers/SignerOrProvider";
 import SafeSingletonFactory, {
   SafeSingletonFactoryViewer,
 } from "./SafeSingletonFactory";
@@ -24,13 +25,7 @@ export default class BlsPublicKeyRegistryWrapper {
     signerOrFactory: Signer | SafeSingletonFactory,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ): Promise<BlsPublicKeyRegistryWrapper> {
-    let factory: SafeSingletonFactory;
-
-    if (signerOrFactory instanceof SafeSingletonFactory) {
-      factory = signerOrFactory;
-    } else {
-      factory = await SafeSingletonFactory.init(signerOrFactory);
-    }
+    const factory = await SafeSingletonFactory.from(signerOrFactory);
 
     const registry = await factory.connectOrDeploy(
       BLSPublicKeyRegistry__factory,
@@ -42,12 +37,11 @@ export default class BlsPublicKeyRegistryWrapper {
   }
 
   static async connectIfDeployed(
-    provider: ethers.providers.Provider,
+    signerOrProvider: SignerOrProvider,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
   ): Promise<BlsPublicKeyRegistryWrapper | undefined> {
-    const factoryViewer = new SafeSingletonFactoryViewer(
-      provider,
-      (await provider.getNetwork()).chainId,
+    const factoryViewer = await SafeSingletonFactoryViewer.from(
+      signerOrProvider,
     );
 
     const registry = await factoryViewer.connectIfDeployed(
