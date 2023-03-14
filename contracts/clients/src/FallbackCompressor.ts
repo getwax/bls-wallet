@@ -33,21 +33,23 @@ export default class FallbackCompressor implements IOperationCompressor {
   static async wrap(
     fallbackExpander: FallbackExpander,
   ): Promise<FallbackCompressor> {
-    if (fallbackExpander.signer === undefined) {
-      throw new Error("A signer is required");
-    }
+    const [blsPublicKeyRegistryAddress, addressRegistryAddress] =
+      await Promise.all([
+        fallbackExpander.blsPublicKeyRegistry(),
+        fallbackExpander.addressRegistry(),
+      ]);
 
     return new FallbackCompressor(
       fallbackExpander,
       new BlsPublicKeyRegistryWrapper(
         BLSPublicKeyRegistry__factory.connect(
-          await fallbackExpander.blsPublicKeyRegistry(),
+          blsPublicKeyRegistryAddress,
           fallbackExpander.signer,
         ),
       ),
       new AddressRegistryWrapper(
         AddressRegistry__factory.connect(
-          await fallbackExpander.addressRegistry(),
+          addressRegistryAddress,
           fallbackExpander.signer,
         ),
       ),
