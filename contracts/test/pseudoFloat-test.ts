@@ -34,6 +34,45 @@ describe("PseudoFloat", function () {
     expect(stream).to.eq("0x");
   });
 
+  it("1.23*10^n encode and decode, for all valid values of n", async () => {
+    // This test demonstrates that although only 10^30 can be put into the
+    // encoded exponent, this does not limit the range of values that can be
+    // represented. This is because the encoded mantissa can be arbitrarily
+    // large, and will include any additional factors of 10 that cannot be
+    // absorbed by the exponent.
+
+    // 1.23 * 10^2 = 123. Any smaller n produces a fractional value.
+    const firstValidN = 2;
+
+    // 1.23 * 10^76 = approx 2^253. Any larger n produces value > 2^256-1.
+    const lastValidN = 76;
+
+    for (let n = firstValidN; n <= lastValidN; n++) {
+      const value = BigNumber.from(123).mul(
+        BigNumber.from(10).pow(n - 2), // -2 to correct for 123 = 1.23 * 10^2
+      );
+
+      const encoded = encodePseudoFloat(value);
+      const [decodedValue, stream] = await pseudoFloat.decodePublic(encoded);
+      expect(decodedValue).to.eq(value);
+      expect(stream).to.eq("0x");
+    }
+  });
+
+  it("10^77 encode and decode", async () => {
+    const encoded = encodePseudoFloat(BigNumber.from(10).pow(77));
+    const [value, stream] = await pseudoFloat.decodePublic(encoded);
+    expect(value).to.eq(BigNumber.from(10).pow(77));
+    expect(stream).to.eq("0x");
+  });
+
+  it("MaxUint256 encode and decode", async () => {
+    const encoded = encodePseudoFloat(ethers.constants.MaxUint256);
+    const [value, stream] = await pseudoFloat.decodePublic(encoded);
+    expect(value).to.eq(ethers.constants.MaxUint256);
+    expect(stream).to.eq("0x");
+  });
+
   it("Test tx.values from 20 blocks", async () => {
     // The non-zero tx.value amounts of transactions in mainnet blocks 16472849
     // to 16472868, excluding zeros.
