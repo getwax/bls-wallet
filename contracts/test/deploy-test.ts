@@ -3,7 +3,7 @@
 import { expect } from "chai";
 
 import { ethers } from "hardhat";
-import SafeSingletonFactory from "../shared/SafeSingletonFactory";
+import { SafeSingletonFactory } from "../clients/src";
 import { MockERC20__factory } from "../typechain-types";
 
 describe("SafeSingletonFactory", async () => {
@@ -26,7 +26,7 @@ describe("SafeSingletonFactory", async () => {
 
     expect(await ethers.provider.getCode(expectedAddress)).to.equal("0x");
 
-    await singletonFactory.deploy(MockERC20__factory, [
+    await singletonFactory.connectOrDeploy(MockERC20__factory, [
       "TestToken123",
       "TOK",
       0,
@@ -39,7 +39,7 @@ describe("SafeSingletonFactory", async () => {
     const [signer] = await ethers.getSigners();
     const singletonFactory = await SafeSingletonFactory.init(signer);
 
-    await singletonFactory.deploy(MockERC20__factory, [
+    await singletonFactory.connectOrDeploy(MockERC20__factory, [
       "TestToken123",
       "TOK",
       0,
@@ -48,7 +48,7 @@ describe("SafeSingletonFactory", async () => {
     const txCount = await signer.getTransactionCount();
 
     // Deploy the same contract (with the same salt (defaults to 0))
-    await singletonFactory.deploy(MockERC20__factory, [
+    await singletonFactory.connectOrDeploy(MockERC20__factory, [
       "TestToken123",
       "TOK",
       0,

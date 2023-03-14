@@ -2,13 +2,8 @@
 
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import { solidityKeccak256 } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import type { PublicKey } from "../clients/src";
-import {
-  BLSPublicKeyRegistry,
-  BLSPublicKeyRegistry__factory,
-} from "../typechain-types";
+import { type PublicKey, BlsPublicKeyRegistryWrapper } from "../clients/src";
 
 const blsPublicKey = [
   "0x2fa5eae26e850147f76823375b9ee060fdb3838c8ec31e89c44aadf1cb3360b8",
@@ -18,20 +13,15 @@ const blsPublicKey = [
 ].map((x) => BigNumber.from(x)) as PublicKey;
 
 describe("BLSPublicKeyRegistry", async () => {
-  let blsPublicKeyRegistry: BLSPublicKeyRegistry;
+  let blsPublicKeyRegistry: BlsPublicKeyRegistryWrapper;
 
   beforeEach(async () => {
     const [signer] = await ethers.getSigners();
-    const blsPublicKeyRegistryFactory = new BLSPublicKeyRegistry__factory(
-      signer,
-    );
-    blsPublicKeyRegistry = await blsPublicKeyRegistryFactory.deploy();
+    blsPublicKeyRegistry = await BlsPublicKeyRegistryWrapper.deployNew(signer);
   });
 
   it("should register BLS public key", async () => {
-    await expect(blsPublicKeyRegistry.lookup(0)).to.be.revertedWith(
-      "BLSPublicKeyRegistry: BLS public key not found",
-    );
+    expect(blsPublicKeyRegistry.lookup(0)).to.eventually.eq(undefined);
 
     await blsPublicKeyRegistry.register(blsPublicKey);
 
@@ -41,7 +31,7 @@ describe("BLSPublicKeyRegistry", async () => {
   });
 
   it("should enable finding the id of an BLS public key", async () => {
-    expect(await findBLSPublicKeyId(blsPublicKeyRegistry, blsPublicKey)).to.eq(
+    expect(blsPublicKeyRegistry.reverseLookup(blsPublicKey)).to.eventually.eq(
       undefined,
     );
 
@@ -50,23 +40,8 @@ describe("BLSPublicKeyRegistry", async () => {
     // Doesn't seem like much to find id 0, but without the indexed event we'd
     // need to store the reverse mapping on-chain (in expensive regular storage)
     // or in a centralized off-chain database.
-    expect(await findBLSPublicKeyId(blsPublicKeyRegistry, blsPublicKey)).to.eq(
+    expect(blsPublicKeyRegistry.reverseLookup(blsPublicKey)).to.eventually.eq(
       0,
     );
   });
 });
-
-async function findBLSPublicKeyId(
-  blsPublicKeyRegistry: BLSPublicKeyRegistry,
-  blsPublicKey: PublicKey,
-) {
-  const blsPublicKeyHash = solidityKeccak256(["uint256[4]"], [blsPublicKey]);
-
-  const events = await blsPublicKeyRegistry.queryFilter(
-    blsPublicKeyRegistry.filters.BLSPublicKeyRegistered(null, blsPublicKeyHash),
-  );
-
-  const id = events.at(0)?.args?.id;
-
-  return id;
-}

@@ -17,7 +17,7 @@ import {
   VerificationGateway__factory,
 } from "../typechain-types";
 
-import SafeSingletonFactory from "./SafeSingletonFactory";
+import { SafeSingletonFactory } from "../clients/src";
 
 export type Deployment = {
   singletonFactory: SafeSingletonFactory;
@@ -35,7 +35,7 @@ export default async function deploy(
 ): Promise<Deployment> {
   const singletonFactory = await SafeSingletonFactory.init(signer);
 
-  const precompileCostEstimator = await singletonFactory.deploy(
+  const precompileCostEstimator = await singletonFactory.connectOrDeploy(
     BNPairingPrecompileCostEstimator__factory,
     [],
     salt,
@@ -43,27 +43,31 @@ export default async function deploy(
 
   await (await precompileCostEstimator.run()).wait();
 
-  const blsLibrary = await singletonFactory.deploy(BLSOpen__factory, [], salt);
+  const blsLibrary = await singletonFactory.connectOrDeploy(
+    BLSOpen__factory,
+    [],
+    salt,
+  );
 
-  const verificationGateway = await singletonFactory.deploy(
+  const verificationGateway = await singletonFactory.connectOrDeploy(
     VerificationGateway__factory,
     [blsLibrary.address],
     salt,
   );
 
-  const blsExpander = await singletonFactory.deploy(
+  const blsExpander = await singletonFactory.connectOrDeploy(
     BLSExpander__factory,
     [verificationGateway.address],
     salt,
   );
 
-  const blsExpanderDelegator = await singletonFactory.deploy(
+  const blsExpanderDelegator = await singletonFactory.connectOrDeploy(
     BLSExpanderDelegator__factory,
     [verificationGateway.address],
     salt,
   );
 
-  const fallbackExpander = await singletonFactory.deploy(
+  const fallbackExpander = await singletonFactory.connectOrDeploy(
     FallbackExpander__factory,
     [],
     salt,
@@ -79,7 +83,7 @@ export default async function deploy(
     throw new Error("Existing expander at index 0 is not fallbackExpander");
   }
 
-  const aggregatorUtilities = await singletonFactory.deploy(
+  const aggregatorUtilities = await singletonFactory.connectOrDeploy(
     AggregatorUtilities__factory,
     [],
     salt,
