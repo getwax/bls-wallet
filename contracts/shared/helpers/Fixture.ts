@@ -77,19 +77,14 @@ export default class Fixture {
       blsLibrary: bls,
       blsExpander,
       blsExpanderDelegator,
-      fallbackExpander,
       aggregatorUtilities: utilities,
     } = await deploy(signers[0]);
 
-    // FIXME: Should be able to use connectIfDeployed here, but we get a missing
-    // provider error.
-    const fallbackCompressor = await FallbackCompressor.connectOrDeploy(
+    const fallbackCompressor = await FallbackCompressor.connectIfDeployed(
       signers[0],
     );
 
-    if (
-      fallbackCompressor.fallbackExpander.address !== fallbackExpander.address
-    ) {
+    if (fallbackCompressor === undefined) {
       throw new Error("Fallback compressor not set up correctly");
     }
 
