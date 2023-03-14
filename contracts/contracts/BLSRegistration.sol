@@ -9,9 +9,9 @@ import "./AggregatorUtilities.sol";
 import "./lib/PseudoFloat.sol";
 
 contract BLSRegistration is IExpander {
-  BLSPublicKeyRegistry blsPublicKeyRegistry;
-  AddressRegistry addressRegistry;
-  AggregatorUtilities aggregatorUtilities;
+  BLSPublicKeyRegistry public blsPublicKeyRegistry;
+  AddressRegistry public addressRegistry;
+  AggregatorUtilities public aggregatorUtilities;
 
   constructor(
     BLSPublicKeyRegistry blsPublicKeyRegistryParam,

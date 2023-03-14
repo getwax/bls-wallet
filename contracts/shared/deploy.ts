@@ -18,6 +18,7 @@ import {
   BNPairingPrecompileCostEstimator__factory,
   FallbackExpander,
   FallbackExpander__factory,
+  BLSRegistration__factory,
   VerificationGateway,
   VerificationGateway__factory,
 } from "../typechain-types";
@@ -108,6 +109,26 @@ export default async function deploy(
     [],
     salt,
   );
+
+  const blsRegistration = await singletonFactory.connectOrDeploy(
+    BLSRegistration__factory,
+    [
+      blsPublicKeyRegistry.address,
+      addressRegistry.address,
+      aggregatorUtilities.address,
+    ],
+  );
+
+  // TODO: Deduplicate
+  const existingExpander1 = await blsExpanderDelegator.expanders(1);
+
+  if (existingExpander1 === ethers.constants.AddressZero) {
+    await (
+      await blsExpanderDelegator.registerExpander(1, blsRegistration.address)
+    ).wait();
+  } else if (existingExpander1 !== blsRegistration.address) {
+    throw new Error("Existing expander at index 1 is not blsRegistration");
+  }
 
   return {
     singletonFactory,
