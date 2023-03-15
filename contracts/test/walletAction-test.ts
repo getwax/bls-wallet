@@ -4,6 +4,7 @@ import { ethers } from "hardhat";
 
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
+import hexLen from "../shared/helpers/hexLen";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
@@ -579,11 +580,3 @@ describe("WalletActions", async function () {
   //   expect(balanceAfter.sub(balanceBefore)).to.equal(rewardAmountToSend);
   // })
 });
-
-function hexLen(str: string) {
-  if (!str.startsWith("0x")) {
-    throw new Error("Not a hex string");
-  }
-
-  return (str.length - 2) / 2;
-}
