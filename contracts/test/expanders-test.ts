@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 
 import Fixture from "../shared/helpers/Fixture";
 import hexLen from "../shared/helpers/hexLen";
+import receiptOf from "../shared/helpers/receiptOf";
 
 describe("Expanders", async function () {
   it("should transfer ETH", async function () {
@@ -418,12 +419,3 @@ describe("Expanders", async function () {
     );
   });
 });
-
-async function receiptOf(
-  responsePromise: Promise<ethers.providers.TransactionResponse>,
-): Promise<ethers.providers.TransactionReceipt> {
-  const response = await responsePromise;
-  const receipt = await response.wait();
-
-  return receipt;
-}
