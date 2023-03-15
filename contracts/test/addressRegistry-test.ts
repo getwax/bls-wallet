@@ -2,26 +2,24 @@
 
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { AddressRegistry, AddressRegistry__factory } from "../typechain-types";
+import { AddressRegistryWrapper } from "../clients/src";
 
 describe("AddressRegistry", async () => {
-  let addressRegistry: AddressRegistry;
+  let addressRegistry: AddressRegistryWrapper;
 
   beforeEach(async () => {
     const [signer] = await ethers.getSigners();
-    const addressRegistryFactory = new AddressRegistry__factory(signer);
-    addressRegistry = await addressRegistryFactory.deploy();
+    addressRegistry = await AddressRegistryWrapper.deployNew(signer);
   });
 
   it("should register address", async () => {
     const [signer] = await ethers.getSigners();
     const address = await signer.getAddress();
 
-    await expect(addressRegistry.lookup(0)).to.be.revertedWith(
-      "AddressRegistry: Address not found",
-    );
+    await expect(addressRegistry.lookup(0)).to.eventually.eq(undefined);
 
-    await addressRegistry.register(address);
+    const id = await addressRegistry.register(address);
+    expect(id).to.eq(0);
 
     const address0 = await addressRegistry.lookup(0);
     expect(address0).to.equal(address);
@@ -31,23 +29,13 @@ describe("AddressRegistry", async () => {
     const [signer] = await ethers.getSigners();
     const address = await signer.getAddress();
 
-    expect(await findAddressId(addressRegistry, address)).to.eq(undefined);
+    const idBeforeRegister = await addressRegistry.reverseLookup(address);
+    expect(idBeforeRegister).to.eq(undefined);
 
-    await addressRegistry.register(address);
+    const id = await addressRegistry.register(address);
+    expect(id).to.eq(0);
 
-    expect(await findAddressId(addressRegistry, address)).to.eq(0);
+    const idAfterRegister = await addressRegistry.reverseLookup(address);
+    expect(idAfterRegister).to.eq(0);
   });
 });
-
-async function findAddressId(
-  addressRegistry: AddressRegistry,
-  address: string,
-) {
-  const events = await addressRegistry.queryFilter(
-    addressRegistry.filters.AddressRegistered(null, address),
-  );
-
-  const id = events.at(0)?.args?.id;
-
-  return id;
-}
