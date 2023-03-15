@@ -107,3 +107,15 @@ export function encodePseudoFloat(x: BigNumberish) {
 
   return hexJoin([`0x${firstByte}`, encodeVLQ(x.div(8))]);
 }
+
+export function encodeRegIndex(regIndex: BigNumberish) {
+  regIndex = BigNumber.from(regIndex);
+
+  const vlqValue = regIndex.div(0x010000);
+  const fixedValue = regIndex.mod(0x010000).toNumber();
+
+  return hexJoin([
+    encodeVLQ(vlqValue),
+    `0x${fixedValue.toString(16).padStart(4, "0")}`,
+  ]);
+}
