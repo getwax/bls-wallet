@@ -137,7 +137,6 @@ describe("Expanders", async function () {
               - signature
     */
     expect(hexLen(compressedBundle)).to.eq(81);
-    console.log(compressedBundle);
 
     await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
 
@@ -199,6 +198,80 @@ describe("Expanders", async function () {
     */
     const compressedBundle = await fx.bundleCompressor.compress(bundle);
     expect(hexLen(compressedBundle)).to.eq(200);
+
+    await receiptOf(fx.processCompressedBundleWithExtraGas(compressedBundle));
+
+    await expect(
+      fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
+    ).to.eventually.be.gte(0);
+  });
+
+  it("should register wallet using BLSRegistration expander including tx.origin payment", async function () {
+    const fx = await Fixture.getSingleton();
+
+    // Ballpark expected payment - about USD$0.08 at time of writing. Keeping
+    // this to 3 significant figures allows it to be encoded in just
+    // 2 bytes: 0x6137.
+    const txOriginPayment = ethers.utils.parseEther("0.0000441");
+
+    const wallet = await fx.createBLSWallet();
+
+    await receiptOf(
+      fx.signers[0].sendTransaction({
+        to: wallet.address,
+        value: txOriginPayment,
+      }),
+    );
+
+    await expect(
+      fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
+    ).to.eventually.eq(undefined);
+
+    const bundle = await wallet.signWithGasEstimate(
+      {
+        nonce: await wallet.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.blsRegistration.address,
+            encodedFunction: fx.blsRegistration.interface.encodeFunctionData(
+              "register",
+              [wallet.PublicKey()],
+            ),
+          },
+          {
+            ethValue: txOriginPayment,
+            contractAddress: fx.utilities.address,
+            encodedFunction:
+              fx.utilities.interface.encodeFunctionData("sendEthToTxOrigin"),
+          },
+        ],
+      },
+      0.1,
+    );
+
+    /*
+      Example:
+
+      01        - One operation
+      01        - Use expander 1 (BLSRegistration)
+      
+      22bc47fccdbe6c24750461b31174eab762c80ef962233145ddbaf76fa6ae6a71
+      096d2756e4b6138da227448accf0684ec7f2e50f36c9f4b10072fef79ae61672
+      128253cba8eb329b24df35b3a5106266496548566802c5cf8123295d941ca1c8
+      185c8698db69361dc5ce278bf1ebba677a7a1020ed83e6741caa16a993989d1a
+                - wallet's public key
+
+      00        - nonce: 0
+      0b828c62  - gas: 275219
+      6137      - tx.origin payment: 0.0000441 ETH
+
+      2c7bbcf33acb0da83f14ec713d14efaa33a89c3011d94d8cf9323bbfc02dad7e
+      2f65b7eceb0a7ba25da362a8f4d4b37be133015b234126a7b86a146de2d9663c
+                - signature
+    */
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+    expect(hexLen(compressedBundle)).to.eq(201);
 
     await receiptOf(fx.processCompressedBundleWithExtraGas(compressedBundle));
 
