@@ -4,7 +4,6 @@ import { ethers } from "hardhat";
 
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
-import hexLen from "../shared/helpers/hexLen";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
