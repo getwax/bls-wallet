@@ -1,54 +1,10 @@
-import { ethers, BigNumber, BigNumberish } from "ethers";
-import { PublicKey, Operation, Signature } from "../../clients/src";
+import { BigNumber, BigNumberish, ethers } from "ethers";
 
-export function bundleCompressedOperations(
-  compressedOperations: string[],
-  signature: Signature,
-) {
-  return hexJoin([
-    encodeVLQ(compressedOperations.length),
-    ...compressedOperations,
-    ethers.utils.defaultAbiCoder.encode(["uint256[2]"], [signature]),
-  ]);
-}
-
-export function compressAsFallback(
-  fallbackExpanderIndex: number,
-  blsPublicKey: PublicKey,
-  operation: Operation,
-): string {
-  const result: string[] = [];
-
-  result.push(encodeVLQ(fallbackExpanderIndex));
-
-  result.push(
-    ethers.utils.defaultAbiCoder.encode(["uint256[4]"], [blsPublicKey]),
-  );
-
-  result.push(encodeVLQ(operation.nonce));
-  result.push(encodePseudoFloat(operation.gas));
-
-  result.push(encodeVLQ(operation.actions.length));
-
-  for (const action of operation.actions) {
-    result.push(encodePseudoFloat(action.ethValue));
-    result.push(action.contractAddress);
-
-    const fnHex = ethers.utils.hexlify(action.encodedFunction);
-    const fnLen = (fnHex.length - 2) / 2;
-
-    result.push(encodeVLQ(fnLen));
-    result.push(fnHex);
-  }
-
-  return hexJoin(result);
-}
-
-function hexJoin(hexStrings: string[]) {
+export function hexJoin(hexStrings: string[]) {
   return "0x" + hexStrings.map(remove0x).join("");
 }
 
-function remove0x(hexString: string) {
+export function remove0x(hexString: string) {
   if (!hexString.startsWith("0x")) {
     throw new Error("Expected 0x prefix");
   }
@@ -118,4 +74,46 @@ export function encodeRegIndex(regIndex: BigNumberish) {
     encodeVLQ(vlqValue),
     `0x${fixedValue.toString(16).padStart(4, "0")}`,
   ]);
+}
+
+/**
+ * Bit streams are just the bits of a uint256 encoded as a VLQ.
+ * (Technically the encoding is unbounded, but 256 booleans is a lot and it's
+ * much easier to just decode the VLQ into a uint256 in the EVM.)
+ *
+ * Notably, the bits are little endian - the first bit is the *lowest* bit. This
+ * is because the lowest bit is clearly the 1-valued bit, but the highest valued
+ * bit could be anywhere - there's infinitely many zero-bits to choose from.
+ *
+ * If it wasn't for this need to be little endian, we'd definitely use big
+ * endian (like our other encodings generally do), since that's preferred by the
+ * EVM and the ecosystem:
+ *
+ * ```ts
+ * const abi = new ethers.utils.AbiCoder():
+ * console.log(abi.encode(["uint"], [0xff]));
+ * // 0x00000000000000000000000000000000000000000000000000000000000000ff
+ *
+ * // If Ethereum used little endian (like x86), it would instead be:
+ * // 0xff00000000000000000000000000000000000000000000000000000000000000
+ * ```
+ */
+export function encodeBitStream(bitStream: boolean[]) {
+  let stream = 0;
+  let bitValue = 1;
+
+  const abi = new ethers.utils.AbiCoder();
+  abi.encode(["uint"], [0xff]);
+
+  for (const bit of bitStream) {
+    if (bit) {
+      stream += bitValue;
+    }
+
+    bitValue *= 2;
+  }
+
+  const streamVLQ = encodeVLQ(stream);
+
+  return streamVLQ;
 }

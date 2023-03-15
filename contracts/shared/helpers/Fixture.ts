@@ -17,6 +17,8 @@ import {
   initBlsWalletSigner,
   Bundle,
   getOperationResults,
+  FallbackCompressor,
+  BundleCompressor,
 } from "../../clients/src";
 
 import Range from "./Range";
@@ -53,6 +55,8 @@ export default class Fixture {
     public blsLibrary: BLSOpen,
     public blsExpander: BLSExpander,
     public blsExpanderDelegator: BLSExpanderDelegator,
+    public bundleCompressor: BundleCompressor,
+    public fallbackCompressor: FallbackCompressor,
     public utilities: AggregatorUtilities,
 
     public blsWalletSigner: BlsWalletSigner,
@@ -76,6 +80,17 @@ export default class Fixture {
       aggregatorUtilities: utilities,
     } = await deploy(signers[0]);
 
+    const fallbackCompressor = await FallbackCompressor.connectIfDeployed(
+      signers[0],
+    );
+
+    if (fallbackCompressor === undefined) {
+      throw new Error("Fallback compressor not set up correctly");
+    }
+
+    const bundleCompressor = new BundleCompressor();
+    bundleCompressor.addCompressor(0, fallbackCompressor);
+
     return new Fixture(
       chainId,
       ethers.provider,
@@ -85,6 +100,8 @@ export default class Fixture {
       bls,
       blsExpander,
       blsExpanderDelegator,
+      bundleCompressor,
+      fallbackCompressor,
       utilities,
       await initBlsWalletSigner({ chainId }),
     );

@@ -43,6 +43,9 @@ export {
 
 export { default as AddressRegistryWrapper } from "./AddressRegistryWrapper";
 export { default as BlsPublicKeyRegistryWrapper } from "./BlsPublicKeyRegistryWrapper";
+export { default as FallbackCompressor } from "./FallbackCompressor";
+export { default as BundleCompressor } from "./BundleCompressor";
+export * from "./encodeUtils";
 
 const Experimental_ = {
   BlsProvider,

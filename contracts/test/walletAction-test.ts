@@ -7,10 +7,6 @@ import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
-import {
-  bundleCompressedOperations,
-  compressAsFallback,
-} from "../shared/helpers/bundleCompression";
 import { getOperationResults } from "../clients/src";
 
 describe("WalletActions", async function () {
@@ -195,20 +191,71 @@ describe("WalletActions", async function () {
       ],
     });
 
-    await (
-      await fx.blsExpanderDelegator.run(
-        bundleCompressedOperations(
-          [
-            compressAsFallback(
-              Fixture.expanderIndexes.fallback,
-              bundle.senderPublicKeys[0],
-              bundle.operations[0],
-            ),
-          ],
-          bundle.signature,
-        ),
-      )
-    ).wait();
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+
+    await (await fx.blsExpanderDelegator.run(compressedBundle)).wait();
+
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(0);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(ethToTransfer);
+  });
+
+  it("should send ETH with function call via fallback expander and registries", async function () {
+    // send money to sender bls wallet
+    const sendWallet = await fx.createBLSWallet();
+    const ethToTransfer = parseEther("0.001");
+    await fx.signers[0].sendTransaction({
+      to: sendWallet.address,
+      value: ethToTransfer,
+    });
+
+    const MockAuction = await ethers.getContractFactory("MockAuction");
+    const mockAuction = await MockAuction.deploy();
+    await mockAuction.deployed();
+
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(ethToTransfer);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(0);
+
+    const bundle = await sendWallet.signWithGasEstimate({
+      nonce: 0,
+      actions: [
+        {
+          ethValue: ethToTransfer,
+          contractAddress: mockAuction.address,
+          encodedFunction: mockAuction.interface.encodeFunctionData("buyItNow"),
+        },
+      ],
+    });
+
+    let compressedBundle = await fx.bundleCompressor.compress(bundle);
+    const initialCompressedSize = hexLen(compressedBundle);
+
+    await fx.fallbackCompressor.blsPublicKeyRegistry.register(
+      sendWallet.PublicKey(),
+    );
+
+    compressedBundle = await fx.bundleCompressor.compress(bundle);
+    const blsRegSaving = initialCompressedSize - hexLen(compressedBundle);
+
+    await Promise.all([
+      fx.fallbackCompressor.addressRegistry.register(sendWallet.address),
+      fx.fallbackCompressor.addressRegistry.register(mockAuction.address),
+    ]);
+
+    compressedBundle = await fx.bundleCompressor.compress(bundle);
+    const totalRegSaving = initialCompressedSize - hexLen(compressedBundle);
+
+    expect(blsRegSaving).to.be.greaterThan(0);
+    expect(totalRegSaving).to.be.greaterThan(blsRegSaving);
+
+    await (await fx.blsExpanderDelegator.run(compressedBundle)).wait();
 
     await expect(
       fx.provider.getBalance(sendWallet.address),
@@ -532,3 +579,11 @@ describe("WalletActions", async function () {
   //   expect(balanceAfter.sub(balanceBefore)).to.equal(rewardAmountToSend);
   // })
 });
+
+function hexLen(str: string) {
+  if (!str.startsWith("0x")) {
+    throw new Error("Not a hex string");
+  }
+
+  return (str.length - 2) / 2;
+}

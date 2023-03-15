@@ -2,6 +2,8 @@
 
 import { ethers } from "ethers";
 import {
+  AddressRegistry,
+  AddressRegistry__factory,
   AggregatorUtilities,
   AggregatorUtilities__factory,
   BLSExpander,
@@ -10,8 +12,11 @@ import {
   BLSExpander__factory,
   BLSOpen,
   BLSOpen__factory,
+  BLSPublicKeyRegistry,
+  BLSPublicKeyRegistry__factory,
   BNPairingPrecompileCostEstimator,
   BNPairingPrecompileCostEstimator__factory,
+  FallbackExpander,
   FallbackExpander__factory,
   VerificationGateway,
   VerificationGateway__factory,
@@ -25,6 +30,9 @@ export type Deployment = {
   blsLibrary: BLSOpen;
   verificationGateway: VerificationGateway;
   blsExpander: BLSExpander;
+  fallbackExpander: FallbackExpander;
+  blsPublicKeyRegistry: BLSPublicKeyRegistry;
+  addressRegistry: AddressRegistry;
   blsExpanderDelegator: BLSExpanderDelegator;
   aggregatorUtilities: AggregatorUtilities;
 };
@@ -67,9 +75,21 @@ export default async function deploy(
     salt,
   );
 
+  const blsPublicKeyRegistry = await singletonFactory.connectOrDeploy(
+    BLSPublicKeyRegistry__factory,
+    [],
+    salt,
+  );
+
+  const addressRegistry = await singletonFactory.connectOrDeploy(
+    AddressRegistry__factory,
+    [],
+    salt,
+  );
+
   const fallbackExpander = await singletonFactory.connectOrDeploy(
     FallbackExpander__factory,
-    [],
+    [blsPublicKeyRegistry.address, addressRegistry.address],
     salt,
   );
 
@@ -95,6 +115,9 @@ export default async function deploy(
     blsLibrary,
     verificationGateway,
     blsExpander,
+    fallbackExpander,
+    blsPublicKeyRegistry,
+    addressRegistry,
     blsExpanderDelegator,
     aggregatorUtilities,
   };

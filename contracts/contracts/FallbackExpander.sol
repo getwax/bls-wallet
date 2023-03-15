@@ -2,6 +2,9 @@
 pragma solidity >=0.7.0 <0.9.0;
 pragma abicoder v2;
 
+import "./AddressRegistry.sol";
+import "./BLSPublicKeyRegistry.sol";
+import "./lib/RegIndex.sol";
 import "./lib/VLQ.sol";
 import "./lib/PseudoFloat.sol";
 import "./interfaces/IExpander.sol";
@@ -44,16 +47,40 @@ import "./interfaces/IWallet.sol";
  * discount, the saving is still over 30%.)
  */
 contract FallbackExpander is IExpander {
-    function expand(bytes calldata stream) external pure returns (
+    BLSPublicKeyRegistry public blsPublicKeyRegistry;
+    AddressRegistry public addressRegistry;
+
+    constructor(
+        BLSPublicKeyRegistry blsPublicKeyRegistryParam,
+        AddressRegistry addressRegistryParam
+    ) {
+        blsPublicKeyRegistry = blsPublicKeyRegistryParam;
+        addressRegistry = addressRegistryParam;
+    }
+
+    function expand(bytes calldata stream) external view returns (
         uint256[4] memory senderPublicKey,
         IWallet.Operation memory operation,
         uint256 bytesRead
     ) {
         uint256 originalStreamLen = stream.length;
         uint256 decodedValue;
+        bool decodedBit;
+        uint256 registryUsageBitStream;
 
-        senderPublicKey = abi.decode(stream[:128], (uint256[4]));
-        stream = stream[128:];
+        (registryUsageBitStream, stream) = VLQ.decode(stream);
+
+        (decodedBit, registryUsageBitStream) = decodeBit(
+            registryUsageBitStream
+        );
+
+        if (decodedBit) {
+            (decodedValue, stream) = RegIndex.decode(stream);
+            senderPublicKey = blsPublicKeyRegistry.lookup(decodedValue);
+        } else {
+            senderPublicKey = abi.decode(stream[:128], (uint256[4]));
+            stream = stream[128:];
+        }
 
         (decodedValue, stream) = VLQ.decode(stream);
         operation.nonce = decodedValue;
@@ -68,8 +95,17 @@ contract FallbackExpander is IExpander {
             uint256 ethValue;
             (ethValue, stream) = PseudoFloat.decode(stream);
 
-            address contractAddress = address(bytes20(stream[:20]));
-            stream = stream[20:];
+            address contractAddress;
+
+            (decodedBit, registryUsageBitStream) = decodeBit(registryUsageBitStream);
+
+            if (decodedBit) {
+                (decodedValue, stream) = RegIndex.decode(stream);
+                contractAddress = addressRegistry.lookup(decodedValue);
+            } else {
+                contractAddress = address(bytes20(stream[:20]));
+                stream = stream[20:];
+            }
 
             (decodedValue, stream) = VLQ.decode(stream);
             bytes memory encodedFunction = stream[:decodedValue];
@@ -83,5 +119,9 @@ contract FallbackExpander is IExpander {
         }
         
         bytesRead = originalStreamLen - stream.length;
+    }
+
+    function decodeBit(uint256 bitStream) internal pure returns (bool, uint256) {
+        return ((bitStream & 1) == 1, bitStream >> 1);
     }
 }

@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { RLP } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { encodePseudoFloat } from "../shared/helpers/bundleCompression";
+import { encodePseudoFloat } from "../clients/src";
 import { PseudoFloat, PseudoFloat__factory } from "../typechain-types";
 
 describe("PseudoFloat", function () {
