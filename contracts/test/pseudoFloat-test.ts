@@ -1,18 +1,19 @@
-/* eslint-disable camelcase */
-
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { RLP } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { encodePseudoFloat } from "../clients/src";
-import { PseudoFloat, PseudoFloat__factory } from "../typechain-types";
+import {
+  PseudoFloat,
+  PseudoFloat__factory as PseudoFloatFactory,
+} from "../typechain-types";
 
 describe("PseudoFloat", function () {
   let pseudoFloat: PseudoFloat;
 
   this.beforeAll(async () => {
     const [eoa] = await ethers.getSigners();
-    const factory = new PseudoFloat__factory(eoa);
+    const factory = new PseudoFloatFactory(eoa);
     pseudoFloat = await factory.deploy();
   });
 

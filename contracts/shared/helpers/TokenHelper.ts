@@ -3,8 +3,10 @@ import { utils, BigNumber, Signer } from "ethers";
 import { BlsWalletWrapper } from "../../clients/src";
 
 import Fixture from "./Fixture";
-/* eslint-disable camelcase */
-import { IERC20, MockERC20__factory } from "../../typechain-types";
+import {
+  IERC20,
+  MockERC20__factory as MockERC20Factory,
+} from "../../typechain-types";
 
 export default class TokenHelper {
   static readonly initialSupply = utils.parseUnits("1000000");
@@ -24,7 +26,7 @@ export default class TokenHelper {
     balanceAddress: string | undefined = undefined,
   ): Promise<IERC20> {
     const [signer] = await ethers.getSigners();
-    const mockERC20 = await new MockERC20__factory(signer).deploy(
+    const mockERC20 = await new MockERC20Factory(signer).deploy(
       "AnyToken",
       "TOK",
       TokenHelper.initialSupply,

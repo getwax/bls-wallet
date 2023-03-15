@@ -1,8 +1,6 @@
-/* eslint-disable camelcase */
-
 import { BigNumber, BigNumberish, ethers, Signer } from "ethers";
 import { AddressRegistry } from "../typechain-types/contracts/AddressRegistry";
-import { AddressRegistry__factory } from "../typechain-types/factories/contracts/AddressRegistry__factory";
+import { AddressRegistry__factory as AddressRegistryFactory } from "../typechain-types/factories/contracts/AddressRegistry__factory";
 import SignerOrProvider from "./helpers/SignerOrProvider";
 import SafeSingletonFactory, {
   SafeSingletonFactoryViewer,
@@ -12,7 +10,7 @@ export default class AddressRegistryWrapper {
   constructor(public registry: AddressRegistry) {}
 
   static async deployNew(signer: Signer): Promise<AddressRegistryWrapper> {
-    const factory = new AddressRegistry__factory(signer);
+    const factory = new AddressRegistryFactory(signer);
 
     return new AddressRegistryWrapper(await factory.deploy());
   }
@@ -24,7 +22,7 @@ export default class AddressRegistryWrapper {
     const factory = await SafeSingletonFactory.from(signerOrFactory);
 
     const registry = await factory.connectOrDeploy(
-      AddressRegistry__factory,
+      AddressRegistryFactory,
       [],
       salt,
     );
@@ -41,7 +39,7 @@ export default class AddressRegistryWrapper {
     );
 
     const registry = await factoryViewer.connectIfDeployed(
-      AddressRegistry__factory,
+      AddressRegistryFactory,
       [],
       salt,
     );

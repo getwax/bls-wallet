@@ -1,14 +1,13 @@
-/* eslint-disable camelcase */
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { VLQ, VLQ__factory } from "../typechain-types";
+import { VLQ, VLQ__factory as VLQFactory } from "../typechain-types";
 
 describe("VLQ", function () {
   let vlq: VLQ;
 
   this.beforeAll(async () => {
     const [eoa] = await ethers.getSigners();
-    const factory = new VLQ__factory(eoa);
+    const factory = new VLQFactory(eoa);
     vlq = await factory.deploy();
   });
 

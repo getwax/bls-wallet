@@ -1,11 +1,9 @@
-/* eslint-disable camelcase */
-
 import { ethers, Signer } from "ethers";
 import {
-  AddressRegistry__factory,
-  BLSPublicKeyRegistry__factory,
+  AddressRegistry__factory as AddressRegistryFactory,
+  BLSPublicKeyRegistry__factory as BLSPublicKeyRegistryFactory,
   FallbackExpander,
-  FallbackExpander__factory,
+  FallbackExpander__factory as FallbackExpanderFactory,
 } from "../typechain-types";
 import AddressRegistryWrapper from "./AddressRegistryWrapper";
 import BlsPublicKeyRegistryWrapper from "./BlsPublicKeyRegistryWrapper";
@@ -42,13 +40,13 @@ export default class FallbackCompressor implements IOperationCompressor {
     return new FallbackCompressor(
       fallbackExpander,
       new BlsPublicKeyRegistryWrapper(
-        BLSPublicKeyRegistry__factory.connect(
+        BLSPublicKeyRegistryFactory.connect(
           blsPublicKeyRegistryAddress,
           fallbackExpander.signer,
         ),
       ),
       new AddressRegistryWrapper(
-        AddressRegistry__factory.connect(
+        AddressRegistryFactory.connect(
           addressRegistryAddress,
           fallbackExpander.signer,
         ),
@@ -57,11 +55,9 @@ export default class FallbackCompressor implements IOperationCompressor {
   }
 
   static async deployNew(signer: Signer): Promise<FallbackCompressor> {
-    const blsPublicKeyRegistryFactory = new BLSPublicKeyRegistry__factory(
-      signer,
-    );
+    const blsPublicKeyRegistryFactory = new BLSPublicKeyRegistryFactory(signer);
 
-    const addressRegistryFactory = new AddressRegistry__factory(signer);
+    const addressRegistryFactory = new AddressRegistryFactory(signer);
 
     const [blsPublicKeyRegistryContract, addressRegistryContract] =
       await Promise.all([
@@ -69,7 +65,7 @@ export default class FallbackCompressor implements IOperationCompressor {
         addressRegistryFactory.deploy(),
       ]);
 
-    const fallbackExpanderFactory = new FallbackExpander__factory(signer);
+    const fallbackExpanderFactory = new FallbackExpanderFactory(signer);
 
     const fallbackExpanderContract = await fallbackExpanderFactory.deploy(
       blsPublicKeyRegistryContract.address,
@@ -95,7 +91,7 @@ export default class FallbackCompressor implements IOperationCompressor {
     ]);
 
     const fallbackExpanderContract = await factory.connectOrDeploy(
-      FallbackExpander__factory,
+      FallbackExpanderFactory,
       [blsPublicKeyRegistry.registry.address, addressRegistry.registry.address],
       salt,
     );
@@ -116,7 +112,7 @@ export default class FallbackCompressor implements IOperationCompressor {
     );
 
     const blsPublicKeyRegistry = await factoryViewer.connectIfDeployed(
-      BLSPublicKeyRegistry__factory,
+      BLSPublicKeyRegistryFactory,
       [],
       salt,
     );
@@ -126,7 +122,7 @@ export default class FallbackCompressor implements IOperationCompressor {
     }
 
     const addressRegistry = await factoryViewer.connectIfDeployed(
-      AddressRegistry__factory,
+      AddressRegistryFactory,
       [],
       salt,
     );
@@ -136,7 +132,7 @@ export default class FallbackCompressor implements IOperationCompressor {
     }
 
     const fallbackExpander = await factoryViewer.connectIfDeployed(
-      FallbackExpander__factory,
+      FallbackExpanderFactory,
       [blsPublicKeyRegistry.address, addressRegistry.address],
       salt,
     );

@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 import "@nomiclabs/hardhat-ethers";
 import { ethers, network } from "hardhat";
 import {

@@ -1,10 +1,8 @@
-/* eslint-disable camelcase */
-
 import { expect } from "chai";
 
 import { ethers } from "hardhat";
 import { SafeSingletonFactory } from "../clients/src";
-import { MockERC20__factory } from "../typechain-types";
+import { MockERC20__factory as MockERC20Factory } from "../typechain-types";
 
 describe("SafeSingletonFactory", async () => {
   it("should deploy SafeSingletonFactory to expected address", async () => {
@@ -20,13 +18,13 @@ describe("SafeSingletonFactory", async () => {
     const singletonFactory = await SafeSingletonFactory.init(signer);
 
     const expectedAddress = singletonFactory.calculateAddress(
-      MockERC20__factory,
+      MockERC20Factory,
       ["TestToken123", "TOK", 0],
     );
 
     expect(await ethers.provider.getCode(expectedAddress)).to.equal("0x");
 
-    await singletonFactory.connectOrDeploy(MockERC20__factory, [
+    await singletonFactory.connectOrDeploy(MockERC20Factory, [
       "TestToken123",
       "TOK",
       0,
@@ -39,7 +37,7 @@ describe("SafeSingletonFactory", async () => {
     const [signer] = await ethers.getSigners();
     const singletonFactory = await SafeSingletonFactory.init(signer);
 
-    await singletonFactory.connectOrDeploy(MockERC20__factory, [
+    await singletonFactory.connectOrDeploy(MockERC20Factory, [
       "TestToken123",
       "TOK",
       0,
@@ -48,7 +46,7 @@ describe("SafeSingletonFactory", async () => {
     const txCount = await signer.getTransactionCount();
 
     // Deploy the same contract (with the same salt (defaults to 0))
-    await singletonFactory.connectOrDeploy(MockERC20__factory, [
+    await singletonFactory.connectOrDeploy(MockERC20Factory, [
       "TestToken123",
       "TOK",
       0,

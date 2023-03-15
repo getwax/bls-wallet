@@ -1,26 +1,24 @@
-/* eslint-disable camelcase */
-
 import { ethers } from "ethers";
 import {
   AddressRegistry,
-  AddressRegistry__factory,
+  AddressRegistry__factory as AddressRegistryFactory,
   AggregatorUtilities,
-  AggregatorUtilities__factory,
+  AggregatorUtilities__factory as AggregatorUtilitiesFactory,
   BLSExpander,
   BLSExpanderDelegator,
-  BLSExpanderDelegator__factory,
-  BLSExpander__factory,
+  BLSExpanderDelegator__factory as BLSExpanderDelegatorFactory,
+  BLSExpander__factory as BLSExpanderFactory,
   BLSOpen,
-  BLSOpen__factory,
+  BLSOpen__factory as BLSOpenFactory,
   BLSPublicKeyRegistry,
-  BLSPublicKeyRegistry__factory,
+  BLSPublicKeyRegistry__factory as BLSPublicKeyRegistryFactory,
   BNPairingPrecompileCostEstimator,
-  BNPairingPrecompileCostEstimator__factory,
+  BNPairingPrecompileCostEstimator__factory as BNPairingPrecompileCostEstimatorFactory,
   FallbackExpander,
-  FallbackExpander__factory,
-  BLSRegistration__factory,
+  FallbackExpander__factory as FallbackExpanderFactory,
+  BLSRegistration__factory as BLSRegistrationFactory,
   VerificationGateway,
-  VerificationGateway__factory,
+  VerificationGateway__factory as VerificationGatewayFactory,
   BLSRegistration,
 } from "../typechain-types";
 
@@ -48,7 +46,7 @@ export default async function deploy(
   const singletonFactory = await SafeSingletonFactory.init(signer);
 
   const precompileCostEstimator = await singletonFactory.connectOrDeploy(
-    BNPairingPrecompileCostEstimator__factory,
+    BNPairingPrecompileCostEstimatorFactory,
     [],
     salt,
   );
@@ -56,19 +54,19 @@ export default async function deploy(
   await (await precompileCostEstimator.run()).wait();
 
   const blsLibrary = await singletonFactory.connectOrDeploy(
-    BLSOpen__factory,
+    BLSOpenFactory,
     [],
     salt,
   );
 
   const verificationGateway = await singletonFactory.connectOrDeploy(
-    VerificationGateway__factory,
+    VerificationGatewayFactory,
     [blsLibrary.address],
     salt,
   );
 
   const aggregatorUtilities = await singletonFactory.connectOrDeploy(
-    AggregatorUtilities__factory,
+    AggregatorUtilitiesFactory,
     [],
     salt,
   );
@@ -109,37 +107,37 @@ async function deployExpanders(
   salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
 ) {
   const blsExpander = await singletonFactory.connectOrDeploy(
-    BLSExpander__factory,
+    BLSExpanderFactory,
     [verificationGateway.address],
     salt,
   );
 
   const blsExpanderDelegator = await singletonFactory.connectOrDeploy(
-    BLSExpanderDelegator__factory,
+    BLSExpanderDelegatorFactory,
     [verificationGateway.address],
     salt,
   );
 
   const blsPublicKeyRegistry = await singletonFactory.connectOrDeploy(
-    BLSPublicKeyRegistry__factory,
+    BLSPublicKeyRegistryFactory,
     [],
     salt,
   );
 
   const addressRegistry = await singletonFactory.connectOrDeploy(
-    AddressRegistry__factory,
+    AddressRegistryFactory,
     [],
     salt,
   );
 
   const fallbackExpander = await singletonFactory.connectOrDeploy(
-    FallbackExpander__factory,
+    FallbackExpanderFactory,
     [blsPublicKeyRegistry.address, addressRegistry.address],
     salt,
   );
 
   const blsRegistration = await singletonFactory.connectOrDeploy(
-    BLSRegistration__factory,
+    BLSRegistrationFactory,
     [
       blsPublicKeyRegistry.address,
       addressRegistry.address,

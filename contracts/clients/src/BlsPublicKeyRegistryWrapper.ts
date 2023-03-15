@@ -1,10 +1,8 @@
-/* eslint-disable camelcase */
-
 import { BigNumber, BigNumberish, ethers, Signer } from "ethers";
 import { solidityKeccak256 } from "ethers/lib/utils";
 import {
   BLSPublicKeyRegistry,
-  BLSPublicKeyRegistry__factory,
+  BLSPublicKeyRegistry__factory as BLSPublicKeyRegistryFactory,
 } from "../typechain-types";
 import SignerOrProvider from "./helpers/SignerOrProvider";
 import SafeSingletonFactory, {
@@ -16,7 +14,7 @@ export default class BlsPublicKeyRegistryWrapper {
   constructor(public registry: BLSPublicKeyRegistry) {}
 
   static async deployNew(signer: Signer): Promise<BlsPublicKeyRegistryWrapper> {
-    const factory = new BLSPublicKeyRegistry__factory(signer);
+    const factory = new BLSPublicKeyRegistryFactory(signer);
 
     return new BlsPublicKeyRegistryWrapper(await factory.deploy());
   }
@@ -28,7 +26,7 @@ export default class BlsPublicKeyRegistryWrapper {
     const factory = await SafeSingletonFactory.from(signerOrFactory);
 
     const registry = await factory.connectOrDeploy(
-      BLSPublicKeyRegistry__factory,
+      BLSPublicKeyRegistryFactory,
       [],
       salt,
     );
@@ -45,7 +43,7 @@ export default class BlsPublicKeyRegistryWrapper {
     );
 
     const registry = await factoryViewer.connectIfDeployed(
-      BLSPublicKeyRegistry__factory,
+      BLSPublicKeyRegistryFactory,
       [],
       salt,
     );
