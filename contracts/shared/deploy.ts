@@ -21,6 +21,7 @@ import {
   BLSRegistration__factory,
   VerificationGateway,
   VerificationGateway__factory,
+  BLSRegistration,
 } from "../typechain-types";
 
 import { SafeSingletonFactory } from "../clients/src";
@@ -36,6 +37,7 @@ export type Deployment = {
   addressRegistry: AddressRegistry;
   blsExpanderDelegator: BLSExpanderDelegator;
   aggregatorUtilities: AggregatorUtilities;
+  blsRegistration: BLSRegistration;
 };
 
 export default async function deploy(
@@ -141,5 +143,6 @@ export default async function deploy(
     addressRegistry,
     blsExpanderDelegator,
     aggregatorUtilities,
+    blsRegistration,
   };
 }

@@ -149,6 +149,63 @@ describe("Expanders", async function () {
       transferAmount,
     );
   });
+
+  it("should register wallet using BLSRegistration expander", async function () {
+    const fx = await Fixture.getSingleton();
+
+    const wallet = await fx.createBLSWallet();
+
+    await expect(
+      fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
+    ).to.eventually.eq(undefined);
+
+    const bundle = await wallet.signWithGasEstimate(
+      {
+        nonce: await wallet.Nonce(),
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.blsRegistration.address,
+            encodedFunction: fx.blsRegistration.interface.encodeFunctionData(
+              "register",
+              [wallet.PublicKey()],
+            ),
+          },
+        ],
+      },
+      0.1,
+    );
+
+    /*
+      Example:
+
+      01        - One operation
+      01        - Use expander 1 (BLSRegistration)
+
+      0d69e9cfa163ffb58b31f72acbf21594c658f928a2aa4c255588404190ee1174
+      269b211c15311f421f563fa5275979cd41a76cd1fc1ee42cfbc0b846f615715f
+      2d89fbd2625c4eb382361e29ac430cc7e273d121525edc1ebce9ebbf4784e7a0
+      02267651f3015fb63f1eedb45c63e8482e00b89321260678608542be29ab7417
+                - wallet's public key
+                  (without this expander, we'd need to include this twice)
+
+      00        - nonce: 0
+      0f81db3b  - gas: 224735 (could be rounded up to 225000 to save 2 bytes)
+      00        - No tx.origin payment
+
+      253d3a07f2e329270026b45981d96e057334d149da4f0d6b9a364685d516a737
+      2175276eb5a574bf295e72b76decff5eee3db560786bf57a9197f45675b8af31
+                - signature
+    */
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+    expect(hexLen(compressedBundle)).to.eq(200);
+
+    await receiptOf(fx.processCompressedBundleWithExtraGas(compressedBundle));
+
+    await expect(
+      fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
+    ).to.eventually.be.gte(0);
+  });
 });
 
 async function receiptOf(

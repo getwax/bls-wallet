@@ -29,6 +29,7 @@ import {
   BLSExpander,
   BLSExpanderDelegator,
   AggregatorUtilities,
+  BLSRegistration,
 } from "../../typechain-types";
 import deploy from "../deploy";
 import { fail } from "assert";
@@ -59,6 +60,7 @@ export default class Fixture {
     public bundleCompressor: BundleCompressor,
     public fallbackCompressor: FallbackCompressor,
     public utilities: AggregatorUtilities,
+    public blsRegistration: BLSRegistration,
 
     public blsWalletSigner: BlsWalletSigner,
   ) {}
@@ -79,6 +81,7 @@ export default class Fixture {
       blsExpander,
       blsExpanderDelegator,
       aggregatorUtilities: utilities,
+      blsRegistration,
     } = await deploy(signers[0]);
 
     const fallbackCompressor = await FallbackCompressor.connectIfDeployed(
@@ -112,6 +115,7 @@ export default class Fixture {
       bundleCompressor,
       fallbackCompressor,
       utilities,
+      blsRegistration,
       await initBlsWalletSigner({ chainId }),
     );
   }
@@ -186,6 +190,23 @@ export default class Fixture {
     const gasLimit = gasEstimate.add(gasEstimate.div(2));
 
     return await this.processBundle(bundle, { ...overrides, gasLimit });
+  }
+
+  async processCompressedBundleWithExtraGas(
+    compressedBundle: string,
+    overrides: Overrides = {},
+  ) {
+    const gasEstimate = await this.blsExpanderDelegator.estimateGas.run(
+      compressedBundle,
+      overrides,
+    );
+
+    const gasLimit = gasEstimate.add(gasEstimate.div(2));
+
+    return await this.blsExpanderDelegator.run(compressedBundle, {
+      ...overrides,
+      gasLimit,
+    });
   }
 
   bundleFrom(
