@@ -255,7 +255,7 @@ describe("Expanders", async function () {
 
       01        - One operation
       01        - Use expander 1 (BLSRegistration)
-      
+
       22bc47fccdbe6c24750461b31174eab762c80ef962233145ddbaf76fa6ae6a71
       096d2756e4b6138da227448accf0684ec7f2e50f36c9f4b10072fef79ae61672
       128253cba8eb329b24df35b3a5106266496548566802c5cf8123295d941ca1c8
@@ -278,6 +278,144 @@ describe("Expanders", async function () {
     await expect(
       fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
     ).to.eventually.be.gte(0);
+  });
+
+  it("should process additional ETH transfers efficiently", async function () {
+    const fx = await Fixture.getSingleton();
+
+    const { addressRegistry, blsPublicKeyRegistry } = fx.fallbackCompressor;
+
+    const wallets = await fx.createBLSWallets(3);
+
+    await Promise.all(
+      wallets
+        .map((wallet) => [
+          blsPublicKeyRegistry.register(wallet.PublicKey()),
+          addressRegistry.register(wallet.address),
+          receiptOf(
+            fx.signers[0].sendTransaction({
+              to: wallet.address,
+              value: ethers.utils.parseEther("1.0"),
+            }),
+          ),
+        ])
+        .flat(),
+    );
+
+    //           0.1 ETH           0.2 ETH           0.3 ETH
+    // wallet[0]   ->    wallet[1]   ->    wallet[2]   ->    wallet[0]
+
+    const bundle0 = await wallets[0].signWithGasEstimate({
+      nonce: await wallets[0].Nonce(),
+      actions: [
+        {
+          ethValue: ethers.utils.parseEther("0.1"),
+          contractAddress: wallets[1].address,
+          encodedFunction: "0x",
+        },
+      ],
+    });
+
+    const bundle1 = await wallets[1].signWithGasEstimate({
+      nonce: await wallets[1].Nonce(),
+      actions: [
+        {
+          ethValue: ethers.utils.parseEther("0.2"),
+          contractAddress: wallets[2].address,
+          encodedFunction: "0x",
+        },
+      ],
+    });
+
+    const bundle2 = await wallets[2].signWithGasEstimate({
+      nonce: await wallets[2].Nonce(),
+      actions: [
+        {
+          ethValue: ethers.utils.parseEther("0.3"),
+          contractAddress: wallets[0].address,
+          encodedFunction: "0x",
+        },
+      ],
+    });
+
+    const compressedBundle0 = await fx.bundleCompressor.compress(bundle0);
+
+    const compressedBundle01 = await fx.bundleCompressor.compress(
+      fx.blsWalletSigner.aggregate([bundle0, bundle1]),
+    );
+
+    const compressedBundle012 = await fx.bundleCompressor.compress(
+      fx.blsWalletSigner.aggregate([bundle0, bundle1, bundle2]),
+    );
+
+    const bundle0Bytes = hexLen(compressedBundle0);
+
+    const bytesToAddBundle1 =
+      hexLen(compressedBundle01) - hexLen(compressedBundle0);
+
+    const bytesToAddBundle2 =
+      hexLen(compressedBundle012) - hexLen(compressedBundle01);
+
+    expect(bundle0Bytes).to.eq(81);
+    expect(bytesToAddBundle1).to.eq(16);
+    expect(bytesToAddBundle2).to.eq(16);
+
+    /*
+      Example:
+
+      03      - Three operations
+      
+      First operation:
+
+        00      - Use expander 0 (fallback expander)
+        03      - 0x03 = 0b11 - bit stream with 2 true bits (tells us to use
+                  registries)
+        000000  - Registry index for wallet[0]'s public key
+        00      - nonce: 0
+        0aa720  - gas: 40194
+        01      - one action
+        9100    - 0.1 ETH
+        000001  - Registry index for wallet[1]'s address
+        00      - 0 bytes of encoded function
+
+      Second operation:
+
+        00      - Use expander 0 (fallback expander)
+        03      - 0x03 = 0b11 - bit stream with 2 true bits (tells us to use
+                  registries)
+        000001  - Registry index for wallet[1]'s public key
+        00      - nonce: 0
+        0aa720  - gas: 40194
+        01      - one action
+        9200    - 0.2 ETH
+        000002  - Registry index for wallet[2]'s address
+        00      - 0 bytes of encoded function
+
+      Third operation:
+
+        00      - Use expander 0 (fallback expander)
+        03      - 0x03 = 0b11 - bit stream with 2 true bits (tells us to use
+                  registries)
+        000002  - Registry index for wallet[2]'s public key
+        00      - nonce: 0
+        0aa720  - gas: 40194
+        01      - one action
+        9300    - 0.3 ETH
+        000000  - Registry index for wallet[0]'s address
+        00      - 0 bytes of encoded function
+
+      2fe064bfddd1efca5596bbbb62a3ffd910b640f5923462408d04ddbdfaef289f
+      13e9fe34f0ec3465d44718cb6f93697dfbb0000a54287b3acaea5594f36b9aa1
+              - signature
+    */
+    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle012));
+
+    await expect(fx.provider.getBalance(wallets[0].address)).to.eventually.eq(
+      ethers.utils
+        .parseEther("1.0")
+        .add(ethers.utils.parseEther("0.3")) // Received
+        .sub(ethers.utils.parseEther("0.1")), // Sent
+    );
   });
 });
 
