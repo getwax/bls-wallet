@@ -4,6 +4,7 @@ pragma abicoder v2;
 
 import "./AddressRegistry.sol";
 import "./BLSPublicKeyRegistry.sol";
+import "./AggregatorUtilities.sol";
 import "./lib/RegIndex.sol";
 import "./lib/VLQ.sol";
 import "./lib/PseudoFloat.sol";
@@ -49,13 +50,16 @@ import "./interfaces/IWallet.sol";
 contract FallbackExpander is IExpander {
     BLSPublicKeyRegistry public blsPublicKeyRegistry;
     AddressRegistry public addressRegistry;
+    AggregatorUtilities public aggregatorUtilities;
 
     constructor(
         BLSPublicKeyRegistry blsPublicKeyRegistryParam,
-        AddressRegistry addressRegistryParam
+        AddressRegistry addressRegistryParam,
+        AggregatorUtilities aggregatorUtilitiesParam
     ) {
         blsPublicKeyRegistry = blsPublicKeyRegistryParam;
         addressRegistry = addressRegistryParam;
+        aggregatorUtilities = aggregatorUtilitiesParam;
     }
 
     function expand(bytes calldata stream) external view returns (
@@ -66,12 +70,12 @@ contract FallbackExpander is IExpander {
         uint256 originalStreamLen = stream.length;
         uint256 decodedValue;
         bool decodedBit;
-        uint256 registryUsageBitStream;
+        uint256 bitStream;
 
-        (registryUsageBitStream, stream) = VLQ.decode(stream);
+        (bitStream, stream) = VLQ.decode(stream);
 
-        (decodedBit, registryUsageBitStream) = decodeBit(
-            registryUsageBitStream
+        (decodedBit, bitStream) = decodeBit(
+            bitStream
         );
 
         if (decodedBit) {
@@ -88,16 +92,26 @@ contract FallbackExpander is IExpander {
         (decodedValue, stream) = PseudoFloat.decode(stream);
         operation.gas = decodedValue;
 
-        (decodedValue, stream) = VLQ.decode(stream);
-        operation.actions = new IWallet.ActionData[](decodedValue);
+        uint256 actionLen;
+        (actionLen, stream) = VLQ.decode(stream);
+        operation.actions = new IWallet.ActionData[](actionLen);
 
-        for (uint256 i = 0; i < operation.actions.length; i++) {
+        // hasTxOriginPayment
+        (decodedBit, bitStream) = decodeBit(bitStream);
+
+        if (decodedBit) {
+            // We would use a separate variable for this, but the solidity
+            // compiler makes it important to minimize local variables.
+            actionLen -= 1;
+        }
+
+        for (uint256 i = 0; i < actionLen; i++) {
             uint256 ethValue;
             (ethValue, stream) = PseudoFloat.decode(stream);
 
             address contractAddress;
 
-            (decodedBit, registryUsageBitStream) = decodeBit(registryUsageBitStream);
+            (decodedBit, bitStream) = decodeBit(bitStream);
 
             if (decodedBit) {
                 (decodedValue, stream) = RegIndex.decode(stream);
@@ -117,7 +131,17 @@ contract FallbackExpander is IExpander {
                 encodedFunction: encodedFunction
             });
         }
-        
+
+        if (actionLen < operation.actions.length) {
+            (decodedValue, stream) = PseudoFloat.decode(stream);
+
+            operation.actions[actionLen] = IWallet.ActionData({
+                ethValue: decodedValue,
+                contractAddress: address(aggregatorUtilities),
+                encodedFunction: abi.encodeWithSignature("sendEthToTxOrigin()")
+            });
+        }
+
         bytesRead = originalStreamLen - stream.length;
     }
 

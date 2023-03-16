@@ -132,7 +132,11 @@ async function deployExpanders(
 
   const fallbackExpander = await singletonFactory.connectOrDeploy(
     FallbackExpanderFactory,
-    [blsPublicKeyRegistry.address, addressRegistry.address],
+    [
+      blsPublicKeyRegistry.address,
+      addressRegistry.address,
+      aggregatorUtilities.address,
+    ],
     salt,
   );
 

@@ -4,6 +4,8 @@ import {
   BLSPublicKeyRegistry__factory as BLSPublicKeyRegistryFactory,
   FallbackExpander,
   FallbackExpander__factory as FallbackExpanderFactory,
+  AggregatorUtilities,
+  AggregatorUtilities__factory as AggregatorUtilitiesFactory,
 } from "../typechain-types";
 import AddressRegistryWrapper from "./AddressRegistryWrapper";
 import BlsPublicKeyRegistryWrapper from "./BlsPublicKeyRegistryWrapper";
@@ -19,23 +21,28 @@ import IOperationCompressor from "./IOperationCompressor";
 import SafeSingletonFactory, {
   SafeSingletonFactoryViewer,
 } from "./SafeSingletonFactory";
-import { Operation, PublicKey } from "./signer";
+import { ActionData, Operation, PublicKey } from "./signer/types";
 
 export default class FallbackCompressor implements IOperationCompressor {
   private constructor(
     public fallbackExpander: FallbackExpander,
     public blsPublicKeyRegistry: BlsPublicKeyRegistryWrapper,
     public addressRegistry: AddressRegistryWrapper,
+    public aggregatorUtilities: AggregatorUtilities,
   ) {}
 
   static async wrap(
     fallbackExpander: FallbackExpander,
   ): Promise<FallbackCompressor> {
-    const [blsPublicKeyRegistryAddress, addressRegistryAddress] =
-      await Promise.all([
-        fallbackExpander.blsPublicKeyRegistry(),
-        fallbackExpander.addressRegistry(),
-      ]);
+    const [
+      blsPublicKeyRegistryAddress,
+      addressRegistryAddress,
+      aggregatorUtilitiesAddress,
+    ] = await Promise.all([
+      fallbackExpander.blsPublicKeyRegistry(),
+      fallbackExpander.addressRegistry(),
+      fallbackExpander.aggregatorUtilities(),
+    ]);
 
     return new FallbackCompressor(
       fallbackExpander,
@@ -51,31 +58,41 @@ export default class FallbackCompressor implements IOperationCompressor {
           fallbackExpander.signer,
         ),
       ),
+      AggregatorUtilitiesFactory.connect(
+        aggregatorUtilitiesAddress,
+        fallbackExpander.signer,
+      ),
     );
   }
 
   static async deployNew(signer: Signer): Promise<FallbackCompressor> {
     const blsPublicKeyRegistryFactory = new BLSPublicKeyRegistryFactory(signer);
-
     const addressRegistryFactory = new AddressRegistryFactory(signer);
+    const aggregatorUtilitiesFactory = new AggregatorUtilitiesFactory(signer);
 
-    const [blsPublicKeyRegistryContract, addressRegistryContract] =
-      await Promise.all([
-        blsPublicKeyRegistryFactory.deploy(),
-        addressRegistryFactory.deploy(),
-      ]);
+    const [
+      blsPublicKeyRegistryContract,
+      addressRegistryContract,
+      aggregatorUtilitiesContract,
+    ] = await Promise.all([
+      blsPublicKeyRegistryFactory.deploy(),
+      addressRegistryFactory.deploy(),
+      aggregatorUtilitiesFactory.deploy(),
+    ]);
 
     const fallbackExpanderFactory = new FallbackExpanderFactory(signer);
 
     const fallbackExpanderContract = await fallbackExpanderFactory.deploy(
       blsPublicKeyRegistryContract.address,
       addressRegistryContract.address,
+      aggregatorUtilitiesContract.address,
     );
 
     return new FallbackCompressor(
       fallbackExpanderContract,
       new BlsPublicKeyRegistryWrapper(blsPublicKeyRegistryContract),
       new AddressRegistryWrapper(addressRegistryContract),
+      aggregatorUtilitiesContract,
     );
   }
 
@@ -85,14 +102,20 @@ export default class FallbackCompressor implements IOperationCompressor {
   ): Promise<FallbackCompressor> {
     const factory = await SafeSingletonFactory.from(signerOrFactory);
 
-    const [blsPublicKeyRegistry, addressRegistry] = await Promise.all([
-      BlsPublicKeyRegistryWrapper.connectOrDeploy(factory, salt),
-      AddressRegistryWrapper.connectOrDeploy(factory, salt),
-    ]);
+    const [blsPublicKeyRegistry, addressRegistry, aggregatorUtilities] =
+      await Promise.all([
+        BlsPublicKeyRegistryWrapper.connectOrDeploy(factory, salt),
+        AddressRegistryWrapper.connectOrDeploy(factory, salt),
+        factory.connectOrDeploy(AggregatorUtilitiesFactory, [], salt),
+      ]);
 
     const fallbackExpanderContract = await factory.connectOrDeploy(
       FallbackExpanderFactory,
-      [blsPublicKeyRegistry.registry.address, addressRegistry.registry.address],
+      [
+        blsPublicKeyRegistry.registry.address,
+        addressRegistry.registry.address,
+        aggregatorUtilities.address,
+      ],
       salt,
     );
 
@@ -100,6 +123,7 @@ export default class FallbackCompressor implements IOperationCompressor {
       fallbackExpanderContract,
       blsPublicKeyRegistry,
       addressRegistry,
+      aggregatorUtilities,
     );
   }
 
@@ -111,29 +135,23 @@ export default class FallbackCompressor implements IOperationCompressor {
       signerOrProvider,
     );
 
-    const blsPublicKeyRegistry = await factoryViewer.connectIfDeployed(
-      BLSPublicKeyRegistryFactory,
-      [],
-      salt,
-    );
-
-    if (!blsPublicKeyRegistry) {
-      return undefined;
-    }
-
-    const addressRegistry = await factoryViewer.connectIfDeployed(
-      AddressRegistryFactory,
-      [],
-      salt,
-    );
-
-    if (!addressRegistry) {
-      return undefined;
-    }
+    const [
+      blsPublicKeyRegistryAddress,
+      addressRegistryAddress,
+      aggregatorUtilitiesAddress,
+    ] = await Promise.all([
+      factoryViewer.calculateAddress(BLSPublicKeyRegistryFactory, [], salt),
+      factoryViewer.calculateAddress(AddressRegistryFactory, [], salt),
+      factoryViewer.calculateAddress(AggregatorUtilitiesFactory, [], salt),
+    ]);
 
     const fallbackExpander = await factoryViewer.connectIfDeployed(
       FallbackExpanderFactory,
-      [blsPublicKeyRegistry.address, addressRegistry.address],
+      [
+        blsPublicKeyRegistryAddress,
+        addressRegistryAddress,
+        aggregatorUtilitiesAddress,
+      ],
       salt,
     );
 
@@ -141,18 +159,14 @@ export default class FallbackCompressor implements IOperationCompressor {
       return undefined;
     }
 
-    return new FallbackCompressor(
-      fallbackExpander,
-      new BlsPublicKeyRegistryWrapper(blsPublicKeyRegistry),
-      new AddressRegistryWrapper(addressRegistry),
-    );
+    return await FallbackCompressor.wrap(fallbackExpander);
   }
 
   async compress(blsPublicKey: PublicKey, operation: Operation) {
     const result: string[] = [];
 
     const resultIndexForRegUsageBitStream = result.length;
-    const regUsageBitStream: boolean[] = [];
+    const bitStream: boolean[] = [];
     result.push("0x"); // Placeholder to overwrite
 
     const blsPublicKeyId = await this.blsPublicKeyRegistry.reverseLookup(
@@ -160,13 +174,13 @@ export default class FallbackCompressor implements IOperationCompressor {
     );
 
     if (blsPublicKeyId === undefined) {
-      regUsageBitStream.push(false);
+      bitStream.push(false);
 
       result.push(
         ethers.utils.defaultAbiCoder.encode(["uint256[4]"], [blsPublicKey]),
       );
     } else {
-      regUsageBitStream.push(true);
+      bitStream.push(true);
       result.push(encodeRegIndex(blsPublicKeyId));
     }
 
@@ -175,7 +189,28 @@ export default class FallbackCompressor implements IOperationCompressor {
 
     result.push(encodeVLQ(operation.actions.length));
 
-    for (const action of operation.actions) {
+    const lastAction = operation.actions.at(-1);
+    let txOriginPaymentAction: ActionData | undefined;
+
+    let regularActions: ActionData[];
+
+    if (
+      lastAction !== undefined &&
+      lastAction.contractAddress === this.aggregatorUtilities.address &&
+      ethers.utils.hexlify(lastAction.encodedFunction) ===
+        this.aggregatorUtilities.interface.encodeFunctionData(
+          "sendEthToTxOrigin",
+        )
+    ) {
+      bitStream.push(true);
+      txOriginPaymentAction = lastAction;
+      regularActions = operation.actions.slice(0, -1);
+    } else {
+      bitStream.push(false);
+      regularActions = operation.actions;
+    }
+
+    for (const action of regularActions) {
       result.push(encodePseudoFloat(action.ethValue));
 
       const addressId = await this.addressRegistry.reverseLookup(
@@ -183,10 +218,10 @@ export default class FallbackCompressor implements IOperationCompressor {
       );
 
       if (addressId === undefined) {
-        regUsageBitStream.push(false);
+        bitStream.push(false);
         result.push(action.contractAddress);
       } else {
-        regUsageBitStream.push(true);
+        bitStream.push(true);
         result.push(encodeRegIndex(addressId));
       }
 
@@ -197,8 +232,11 @@ export default class FallbackCompressor implements IOperationCompressor {
       result.push(fnHex);
     }
 
-    result[resultIndexForRegUsageBitStream] =
-      encodeBitStream(regUsageBitStream);
+    if (txOriginPaymentAction !== undefined) {
+      result.push(encodePseudoFloat(txOriginPaymentAction.ethValue));
+    }
+
+    result[resultIndexForRegUsageBitStream] = encodeBitStream(bitStream);
 
     return hexJoin(result);
   }
