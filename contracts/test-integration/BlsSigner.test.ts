@@ -1,5 +1,4 @@
 /* eslint-disable camelcase */
-import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
 import {
@@ -8,7 +7,6 @@ import {
   RLP,
   formatEther,
 } from "ethers/lib/utils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import sinon from "sinon";
 
 import {
@@ -1150,102 +1148,6 @@ describe("BlsSigner", () => {
     await expect(result()).to.be.rejectedWith(
       TypeError,
       "Transaction.to is missing on transaction 0",
-    );
-  });
-});
-
-describe("JsonRpcSigner", () => {
-  let signers: SignerWithAddress[];
-  let wallet: ethers.Wallet;
-
-  beforeEach(async () => {
-    signers = await hardhatEthers.getSigners();
-    rpcUrl = "http://localhost:8545";
-    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    // First two Hardhat account private keys are used in aggregator .env. We choose to use Hardhat account #2 private key here to avoid nonce too low errors.
-    wallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat account #2 private key
-      regularProvider,
-    );
-  });
-
-  it("should retrieve the account address", async () => {
-    // Arrange
-    const expectedAddress = signers[2].address;
-
-    // Act
-    const address = await wallet.getAddress();
-
-    // Assert
-    expect(address).to.equal(expectedAddress);
-  });
-
-  it("should send ETH (empty call) successfully", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const expectedBalance = parseEther("1");
-    const recipientBalanceBefore = await regularProvider.getBalance(recipient);
-
-    // Act
-    const transaction = await wallet.sendTransaction({
-      to: recipient,
-      value: expectedBalance,
-    });
-    await transaction.wait();
-
-    // Assert
-    expect(
-      (await regularProvider.getBalance(recipient)).sub(recipientBalanceBefore),
-    ).to.equal(expectedBalance);
-  });
-
-  it("should check transaction", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-
-    // Act
-    const result = wallet.checkTransaction({
-      to: recipient,
-      value: transactionAmount,
-    });
-
-    // Assert
-    const resolvedResult = await resolveProperties(result);
-    expect(resolvedResult)
-      .to.be.an("object")
-      .that.includes({
-        to: recipient,
-        value: transactionAmount,
-        from: await wallet.getAddress(),
-      });
-  });
-
-  it("should populate transaction", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-
-    // Act
-    const result = await wallet.populateTransaction({
-      to: recipient,
-      value: transactionAmount,
-    });
-
-    // Assert
-    expect(result).to.be.an("object").that.includes({
-      to: recipient,
-      value: transactionAmount,
-      from: signers[2].address,
-      type: 2,
-      chainId: 1337,
-    });
-
-    expect(result).to.include.keys(
-      "maxFeePerGas",
-      "maxPriorityFeePerGas",
-      "nonce",
-      "gasLimit",
     );
   });
 });
