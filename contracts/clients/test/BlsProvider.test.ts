@@ -25,7 +25,7 @@ describe("BlsProvider", () => {
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
-      chainId: 0x7a69,
+      chainId: 0x539, // 1337
     };
 
     privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
@@ -60,11 +60,12 @@ describe("BlsProvider", () => {
     expect(uncheckedBlsSigner).to.be.instanceOf(UncheckedBlsSigner);
   });
 
-  it("should return a new signer if one has not been instantiated", async () => {
+  it("should return a new signer", async () => {
     // Arrange
+    const newVerificationGateway = "newMockVerificationGatewayAddress";
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
-      verificationGateway,
+      newVerificationGateway,
       aggregatorUtilities,
       rpcUrl,
       network,
@@ -77,34 +78,11 @@ describe("BlsProvider", () => {
 
     // Assert
     expect(newBlsSigner).to.not.equal(blsSigner);
-    expect(newBlsSigner).to.equal(newBlsProvider.getSigner(newPrivateKey));
-  });
-
-  it("should throw an error when this.signer has not been assigned", async () => {
-    // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
+    expect(newBlsSigner.provider.verificationGatewayAddress).to.not.equal(
       verificationGateway,
-      aggregatorUtilities,
-      rpcUrl,
-      network,
     );
-
-    const recipient = ethers.Wallet.createRandom().address;
-    const value = parseEther("1");
-    const transactionRequest = {
-      to: recipient,
-      value,
-    };
-
-    // Act
-    const gasEstimate = async () =>
-      await newBlsProvider.estimateGas(transactionRequest);
-
-    // Assert
-    await expect(gasEstimate()).to.be.rejectedWith(
-      Error,
-      "Call provider.getSigner first",
+    expect(newBlsSigner.provider.verificationGatewayAddress).to.equal(
+      newVerificationGateway,
     );
   });
 
@@ -112,6 +90,7 @@ describe("BlsProvider", () => {
     // Arrange
     const transaction = {
       value: parseEther("1"),
+      // Explicitly omit 'to'
     };
 
     // Act
@@ -124,28 +103,21 @@ describe("BlsProvider", () => {
     );
   });
 
-  it("should throw an error sending a transaction when this.signer is not defined", async () => {
+  it("should throw an error estimating gas when 'transaction.from' has not been defined", async () => {
     // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
-      verificationGateway,
-      aggregatorUtilities,
-      rpcUrl,
-      network,
-    );
-    const signedTransaction = blsSigner.signTransaction({
-      to: ethers.Wallet.createRandom().address,
+    const transaction = {
       value: parseEther("1"),
-    });
+      to: ethers.Wallet.createRandom().address,
+      // Explicitly omit 'from'
+    };
 
     // Act
-    const result = async () =>
-      await newBlsProvider.sendTransaction(signedTransaction);
+    const result = async () => await blsProvider.estimateGas(transaction);
 
     // Assert
     await expect(result()).to.be.rejectedWith(
-      Error,
-      "Call provider.getSigner first",
+      TypeError,
+      "Transaction.from should be defined",
     );
   });
 
@@ -158,5 +130,91 @@ describe("BlsProvider", () => {
 
     // Assert
     expect(connection).to.deep.equal(expectedConnection);
+  });
+
+  it("should throw an error when sending invalid signed transactions", async () => {
+    // Arrange
+    const invalidTransaction = "Invalid signed transaction";
+
+    // Act
+    const result = async () =>
+      await blsProvider.sendTransaction(invalidTransaction);
+    const batchResult = async () =>
+      await blsProvider.sendTransaction(invalidTransaction);
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "Unexpected token I in JSON at position 0",
+    );
+    await expect(batchResult()).to.be.rejectedWith(
+      Error,
+      "Unexpected token I in JSON at position 0",
+    );
+  });
+
+  it("should get the polling interval", async () => {
+    // Arrange
+    const expectedpollingInterval = 4000; // default
+    const updatedInterval = 1000;
+
+    // Act
+    const pollingInterval = blsProvider.pollingInterval;
+    blsProvider.pollingInterval = updatedInterval;
+    const updatedPollingInterval = blsProvider.pollingInterval;
+
+    // Assert
+    expect(pollingInterval).to.equal(expectedpollingInterval);
+    expect(updatedPollingInterval).to.equal(updatedInterval);
+  });
+
+  it("should get the event listener count and remove all listeners", async () => {
+    blsProvider.on("block", () => {});
+    blsProvider.on("error", () => {});
+    expect(blsProvider.listenerCount("block")).to.equal(1);
+    expect(blsProvider.listenerCount("error")).to.equal(1);
+    expect(blsProvider.listenerCount()).to.equal(2);
+
+    blsProvider.removeAllListeners();
+    expect(blsProvider.listenerCount("block")).to.equal(0);
+    expect(blsProvider.listenerCount("error")).to.equal(0);
+    expect(blsProvider.listenerCount()).to.equal(0);
+  });
+
+  it("should return true and an array of listeners if polling", async () => {
+    // Arrange
+    const expectedListener = () => {};
+
+    // Act
+    blsProvider.on("block", expectedListener);
+    const listeners = blsProvider.listeners("block");
+    const isPolling = blsProvider.polling;
+    blsProvider.removeAllListeners();
+
+    // Assert
+    expect(listeners).to.deep.equal([expectedListener]);
+    expect(isPolling).to.be.true;
+  });
+
+  it("should be a provider", async () => {
+    // Arrange & Act
+    const isProvider = Experimental.BlsProvider.isProvider(blsProvider);
+    const isProviderWithInvalidProvider =
+      Experimental.BlsProvider.isProvider(blsSigner);
+
+    // Assert
+    expect(isProvider).to.equal(true);
+    expect(isProviderWithInvalidProvider).to.equal(false);
+  });
+
+  it("should a return a promise which will stall until the network has heen established", async () => {
+    // Arrange
+    const expectedReady = { name: "localhost", chainId: 1337 };
+
+    // Act
+    const ready = await blsProvider.ready;
+
+    // Assert
+    expect(ready).to.deep.equal(expectedReady);
   });
 });
