@@ -186,6 +186,50 @@ describe("Signer contract interaction tests", function () {
       expect(newBalance.sub(initialBalance)).to.equal(erc20ToTransfer);
     });
 
+    it("approve() and transferFrom() calls batched together", async () => {
+      // Arrange
+      const MockTokenSpender = await ethers.getContractFactory(
+        "MockTokenSpender",
+      );
+      const mockTokenSpender = await MockTokenSpender.connect(
+        fundedWallet,
+      ).deploy();
+      await mockTokenSpender.deployed();
+
+      const spender = mockTokenSpender.address;
+      const initialBalance = await mockERC20.balanceOf(spender);
+      const erc20ToTransfer = utils.parseUnits("33.6");
+
+      const transactionBatch = {
+        transactions: [
+          {
+            to: mockERC20.address,
+            value: 0,
+            data: mockERC20.interface.encodeFunctionData("approve", [
+              spender,
+              erc20ToTransfer,
+            ]),
+          },
+          {
+            to: spender,
+            value: 0,
+            data: mockTokenSpender.interface.encodeFunctionData(
+              "TransferERC20ToSelf",
+              [mockERC20.address, erc20ToTransfer],
+            ),
+          },
+        ],
+      };
+
+      // Act
+      const result = await blsSigners[0].sendTransactionBatch(transactionBatch);
+      await result.awaitBatchReceipt();
+
+      // Assert
+      const newBalance = await mockERC20.balanceOf(spender);
+      expect(newBalance.sub(initialBalance)).to.equal(erc20ToTransfer);
+    });
+
     it("should return the expected fee", async () => {
       // Arrange
       const recipient = await blsSigners[1].getAddress();
@@ -408,6 +452,52 @@ describe("Signer contract interaction tests", function () {
       await approve.wait();
 
       expect(await mockERC721.getApproved(tokenId)).to.equal(spender);
+    });
+
+    it("approve() and transferFrom() calls batched together", async () => {
+      // Arrange
+      const MockTokenSpender = await ethers.getContractFactory(
+        "MockTokenSpender",
+      );
+      const mockTokenSpender = await MockTokenSpender.connect(
+        fundedWallet,
+      ).deploy();
+      await mockTokenSpender.deployed();
+
+      const owner = await blsSigners[3].getAddress();
+      const spender = mockTokenSpender.address;
+      const tokenId = 7;
+
+      const mint = await mockERC721.connect(blsSigners[0]).mint(owner, tokenId);
+      await mint.wait();
+
+      const transactionBatch = {
+        transactions: [
+          {
+            to: mockERC721.address,
+            value: 0,
+            data: mockERC721.interface.encodeFunctionData("approve", [
+              spender,
+              tokenId,
+            ]),
+          },
+          {
+            to: mockTokenSpender.address,
+            value: 0,
+            data: mockTokenSpender.interface.encodeFunctionData(
+              "TransferERC721ToSelf",
+              [mockERC721.address, tokenId],
+            ),
+          },
+        ],
+      };
+
+      // Act
+      const result = await blsSigners[3].sendTransactionBatch(transactionBatch);
+      await result.awaitBatchReceipt();
+
+      // Assert
+      expect(await mockERC721.ownerOf(tokenId)).to.equal(spender);
     });
 
     it("should not fail when estimating gas for different scenarios", async () => {
