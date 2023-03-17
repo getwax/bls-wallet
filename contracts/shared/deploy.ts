@@ -18,11 +18,14 @@ import {
   BNPairingPrecompileCostEstimator__factory,
   FallbackExpander,
   FallbackExpander__factory,
+  BLSRegistration__factory,
   VerificationGateway,
   VerificationGateway__factory,
+  BLSRegistration,
 } from "../typechain-types";
 
 import { SafeSingletonFactory } from "../clients/src";
+import receiptOf from "./helpers/receiptOf";
 
 export type Deployment = {
   singletonFactory: SafeSingletonFactory;
@@ -35,6 +38,7 @@ export type Deployment = {
   addressRegistry: AddressRegistry;
   blsExpanderDelegator: BLSExpanderDelegator;
   aggregatorUtilities: AggregatorUtilities;
+  blsRegistration: BLSRegistration;
 };
 
 export default async function deploy(
@@ -63,6 +67,47 @@ export default async function deploy(
     salt,
   );
 
+  const aggregatorUtilities = await singletonFactory.connectOrDeploy(
+    AggregatorUtilities__factory,
+    [],
+    salt,
+  );
+
+  const {
+    blsExpander,
+    fallbackExpander,
+    blsPublicKeyRegistry,
+    addressRegistry,
+    blsExpanderDelegator,
+    blsRegistration,
+  } = await deployExpanders(
+    singletonFactory,
+    verificationGateway,
+    aggregatorUtilities,
+    salt,
+  );
+
+  return {
+    singletonFactory,
+    precompileCostEstimator,
+    blsLibrary,
+    verificationGateway,
+    blsExpander,
+    fallbackExpander,
+    blsPublicKeyRegistry,
+    addressRegistry,
+    blsExpanderDelegator,
+    aggregatorUtilities,
+    blsRegistration,
+  };
+}
+
+async function deployExpanders(
+  singletonFactory: SafeSingletonFactory,
+  verificationGateway: VerificationGateway,
+  aggregatorUtilities: AggregatorUtilities,
+  salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+) {
   const blsExpander = await singletonFactory.connectOrDeploy(
     BLSExpander__factory,
     [verificationGateway.address],
@@ -93,32 +138,41 @@ export default async function deploy(
     salt,
   );
 
-  const existingExpander0 = await blsExpanderDelegator.expanders(0);
-
-  if (existingExpander0 === ethers.constants.AddressZero) {
-    await (
-      await blsExpanderDelegator.registerExpander(0, fallbackExpander.address)
-    ).wait();
-  } else if (existingExpander0 !== fallbackExpander.address) {
-    throw new Error("Existing expander at index 0 is not fallbackExpander");
-  }
-
-  const aggregatorUtilities = await singletonFactory.connectOrDeploy(
-    AggregatorUtilities__factory,
-    [],
-    salt,
+  const blsRegistration = await singletonFactory.connectOrDeploy(
+    BLSRegistration__factory,
+    [
+      blsPublicKeyRegistry.address,
+      addressRegistry.address,
+      aggregatorUtilities.address,
+    ],
   );
 
+  await registerExpanders(blsExpanderDelegator, [
+    fallbackExpander.address,
+    blsRegistration.address,
+  ]);
+
   return {
-    singletonFactory,
-    precompileCostEstimator,
-    blsLibrary,
-    verificationGateway,
     blsExpander,
     fallbackExpander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,
-    aggregatorUtilities,
+    blsRegistration,
   };
+}
+
+async function registerExpanders(
+  blsExpanderDelegator: BLSExpanderDelegator,
+  expanders: string[],
+) {
+  for (const [i, expander] of expanders.entries()) {
+    const existingExpander = await blsExpanderDelegator.expanders(i);
+
+    if (existingExpander === ethers.constants.AddressZero) {
+      await receiptOf(blsExpanderDelegator.registerExpander(i, expander));
+    } else if (existingExpander !== expanders[i]) {
+      throw new Error(`Existing expander at index ${i} is not ${expander}`);
+    }
+  }
 }

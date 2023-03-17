@@ -18,6 +18,7 @@ import {
   Bundle,
   getOperationResults,
   FallbackCompressor,
+  BlsRegistrationCompressor,
   BundleCompressor,
 } from "../../clients/src";
 
@@ -28,6 +29,7 @@ import {
   BLSExpander,
   BLSExpanderDelegator,
   AggregatorUtilities,
+  BLSRegistration,
 } from "../../typechain-types";
 import deploy from "../deploy";
 import { fail } from "assert";
@@ -58,6 +60,7 @@ export default class Fixture {
     public bundleCompressor: BundleCompressor,
     public fallbackCompressor: FallbackCompressor,
     public utilities: AggregatorUtilities,
+    public blsRegistration: BLSRegistration,
 
     public blsWalletSigner: BlsWalletSigner,
   ) {}
@@ -78,6 +81,7 @@ export default class Fixture {
       blsExpander,
       blsExpanderDelegator,
       aggregatorUtilities: utilities,
+      blsRegistration,
     } = await deploy(signers[0]);
 
     const fallbackCompressor = await FallbackCompressor.connectIfDeployed(
@@ -88,7 +92,15 @@ export default class Fixture {
       throw new Error("Fallback compressor not set up correctly");
     }
 
+    const blsRegistrationCompressor =
+      await BlsRegistrationCompressor.connectIfDeployed(signers[0]);
+
+    if (blsRegistrationCompressor === undefined) {
+      throw new Error("BLS registration compressor not set up correctly");
+    }
+
     const bundleCompressor = new BundleCompressor();
+    bundleCompressor.addCompressor(1, blsRegistrationCompressor);
     bundleCompressor.addCompressor(0, fallbackCompressor);
 
     return new Fixture(
@@ -103,6 +115,7 @@ export default class Fixture {
       bundleCompressor,
       fallbackCompressor,
       utilities,
+      blsRegistration,
       await initBlsWalletSigner({ chainId }),
     );
   }
@@ -177,6 +190,23 @@ export default class Fixture {
     const gasLimit = gasEstimate.add(gasEstimate.div(2));
 
     return await this.processBundle(bundle, { ...overrides, gasLimit });
+  }
+
+  async processCompressedBundleWithExtraGas(
+    compressedBundle: string,
+    overrides: Overrides = {},
+  ) {
+    const gasEstimate = await this.blsExpanderDelegator.estimateGas.run(
+      compressedBundle,
+      overrides,
+    );
+
+    const gasLimit = gasEstimate.add(gasEstimate.div(2));
+
+    return await this.blsExpanderDelegator.run(compressedBundle, {
+      ...overrides,
+      gasLimit,
+    });
   }
 
   bundleFrom(
