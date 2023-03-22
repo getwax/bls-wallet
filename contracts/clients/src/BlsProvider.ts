@@ -2,7 +2,7 @@
 import { ethers, BigNumber } from "ethers";
 import { Deferrable } from "ethers/lib/utils";
 
-import { ActionData, Bundle } from "./signer/types";
+import { ActionData, Bundle, PublicKey } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner, {
   TransactionBatchResponse,
@@ -14,14 +14,19 @@ import BlsWalletWrapper from "./BlsWalletWrapper";
 import {
   AggregatorUtilities__factory,
   BLSWallet__factory,
+  VerificationGateway__factory,
 } from "../typechain-types";
 import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
+
+export type PublicKeyLinkedToActions = {
+  publicKey: PublicKey;
+  actions: Array<ActionData>;
+};
 
 export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregator: Aggregator;
   readonly verificationGatewayAddress: string;
   readonly aggregatorUtilitiesAddress: string;
-  signer!: BlsSigner;
 
   constructor(
     aggregatorUrl: string,
@@ -39,34 +44,43 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   override async estimateGas(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<BigNumber> {
-    if (!transaction.to) {
+    const resolvedTransaction = await ethers.utils.resolveProperties(
+      transaction,
+    );
+
+    if (!resolvedTransaction.to) {
       throw new TypeError("Transaction.to should be defined");
     }
-
-    // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
-    // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
-    // We do not want to pass the private key to this method.
-    if (!this.signer) {
-      throw new Error("Call provider.getSigner first");
+    if (!resolvedTransaction.from) {
+      throw new TypeError("Transaction.from should be defined");
     }
 
     const action: ActionData = {
-      ethValue: transaction.value?.toString() ?? "0",
-      contractAddress: transaction.to.toString(),
-      encodedFunction: transaction.data?.toString() ?? "0x",
+      ethValue: resolvedTransaction.value?.toString() ?? "0",
+      contractAddress: resolvedTransaction.to.toString(),
+      encodedFunction: resolvedTransaction.data?.toString() ?? "0x",
     };
 
-    const nonce = await BlsWalletWrapper.Nonce(
-      this.signer.wallet.PublicKey(),
-      this.verificationGatewayAddress,
-      this,
+    const nonce = await this.getTransactionCount(
+      resolvedTransaction.from.toString(),
     );
 
     const actionWithFeePaymentAction =
       this._addFeePaymentActionForFeeEstimation([action]);
 
+    // TODO: (merge-ok) bls-wallet #560 Estimate fee without requiring a signed bundle
+    // There is no way to estimate the cost of a bundle without signing a bundle. The
+    // alternative would be to use a signer instance in this method which is undesirable,
+    // as this would result in tight coupling between a provider and a signer.
+    const throwawayPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const throwawayBlsWalletWrapper = await BlsWalletWrapper.connect(
+      throwawayPrivateKey,
+      this.verificationGatewayAddress,
+      this,
+    );
+
     const feeEstimate = await this.aggregator.estimateFee(
-      this.signer.wallet.sign({
+      throwawayBlsWalletWrapper.sign({
         nonce,
         actions: [...actionWithFeePaymentAction],
       }),
@@ -79,13 +93,6 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   override async sendTransaction(
     signedTransaction: string | Promise<string>,
   ): Promise<ethers.providers.TransactionResponse> {
-    // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
-    // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
-    // We do not want to pass the private key to this method.
-    if (!this.signer) {
-      throw new Error("Call provider.getSigner first");
-    }
-
     const resolvedTransaction = await signedTransaction;
     const bundle: Bundle = JSON.parse(resolvedTransaction);
 
@@ -107,23 +114,16 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       encodedFunction: bundle.operations[0].actions[0].encodedFunction,
     };
 
-    return this.signer.constructTransactionResponse(
+    return await this._constructTransactionResponse(
       actionData,
+      bundle.senderPublicKeys[0],
       result.hash,
-      this.signer.wallet.address,
     );
   }
 
   async sendTransactionBatch(
     signedTransactionBatch: string,
   ): Promise<TransactionBatchResponse> {
-    // TODO: bls-wallet #413 Move references to private key outside of BlsSigner.
-    // Without doing this, we would have to call `const signer = this.getSigner(privateKey)`.
-    // We do not want to pass the private key to this method.
-    if (!this.signer) {
-      throw new Error("Call provider.getSigner first");
-    }
-
     const bundle: Bundle = JSON.parse(signedTransactionBatch);
 
     const result = await this.aggregator.add(bundle);
@@ -132,14 +132,20 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       throw new Error(JSON.stringify(result.failures));
     }
 
-    const actionData: Array<ActionData> = bundle.operations
-      .map((operation) => operation.actions)
-      .flat();
+    const publicKeysLinkedToActions: Array<PublicKeyLinkedToActions> =
+      bundle.senderPublicKeys.map((publicKey, i) => {
+        const operation = bundle.operations[i];
+        const actions = operation.actions;
 
-    return this.signer.constructTransactionBatchResponse(
-      actionData,
+        return {
+          publicKey,
+          actions,
+        };
+      });
+
+    return await this._constructTransactionBatchResponse(
+      publicKeysLinkedToActions,
       result.hash,
-      this.signer.wallet.address,
     );
   }
 
@@ -147,18 +153,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     privateKey: string,
     addressOrIndex?: string | number,
   ): BlsSigner {
-    if (this.signer) {
-      return this.signer;
-    }
-
-    const signer = new BlsSigner(
-      _constructorGuard,
-      this,
-      privateKey,
-      addressOrIndex,
-    );
-    this.signer = signer;
-    return signer;
+    return new BlsSigner(_constructorGuard, this, privateKey, addressOrIndex);
   }
 
   override getUncheckedSigner(
@@ -294,5 +289,105 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
           ),
       },
     ];
+  }
+
+  async _constructTransactionResponse(
+    action: ActionData,
+    publicKey: PublicKey,
+    hash: string,
+    nonce?: BigNumber,
+  ): Promise<ethers.providers.TransactionResponse> {
+    const chainId = await this.send("eth_chainId", []);
+
+    if (!nonce) {
+      nonce = await BlsWalletWrapper.Nonce(
+        publicKey,
+        this.verificationGatewayAddress,
+        this,
+      );
+    }
+
+    const verificationGateway = VerificationGateway__factory.connect(
+      this.verificationGatewayAddress,
+      this,
+    );
+    const from = await BlsWalletWrapper.AddressFromPublicKey(
+      publicKey,
+      verificationGateway,
+    );
+
+    return {
+      hash,
+      to: action.contractAddress,
+      from,
+      nonce: nonce.toNumber(),
+      gasLimit: BigNumber.from("0x0"),
+      data: action.encodedFunction.toString(),
+      value: BigNumber.from(action.ethValue),
+      chainId: parseInt(chainId, 16),
+      type: 2,
+      confirmations: 1,
+      wait: (confirmations?: number) => {
+        return this.waitForTransaction(hash, confirmations);
+      },
+    };
+  }
+
+  async _constructTransactionBatchResponse(
+    publicKeysLinkedToActions: Array<PublicKeyLinkedToActions>,
+    hash: string,
+    nonce?: BigNumber,
+  ): Promise<TransactionBatchResponse> {
+    const chainId = await this.send("eth_chainId", []);
+    const verificationGateway = VerificationGateway__factory.connect(
+      this.verificationGatewayAddress,
+      this,
+    );
+
+    const transactions: Array<ethers.providers.TransactionResponse> = [];
+
+    for (const publicKeyLinkedToActions of publicKeysLinkedToActions) {
+      const from = await BlsWalletWrapper.AddressFromPublicKey(
+        publicKeyLinkedToActions.publicKey,
+        verificationGateway,
+      );
+
+      if (!nonce) {
+        nonce = await BlsWalletWrapper.Nonce(
+          publicKeyLinkedToActions.publicKey,
+          this.verificationGatewayAddress,
+          this,
+        );
+      }
+
+      for (const action of publicKeyLinkedToActions.actions) {
+        if (action.contractAddress === this.aggregatorUtilitiesAddress) {
+          break;
+        }
+
+        transactions.push({
+          hash,
+          to: action.contractAddress,
+          from,
+          nonce: nonce!.toNumber(),
+          gasLimit: BigNumber.from("0x0"),
+          data: action.encodedFunction.toString(),
+          value: BigNumber.from(action.ethValue),
+          chainId: parseInt(chainId, 16),
+          type: 2,
+          confirmations: 1,
+          wait: (confirmations?: number) => {
+            return this.waitForTransaction(hash, confirmations);
+          },
+        });
+      }
+    }
+
+    return {
+      transactions,
+      awaitBatchReceipt: (confirmations?: number) => {
+        return this.waitForTransaction(hash, confirmations);
+      },
+    };
   }
 }

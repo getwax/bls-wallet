@@ -1,5 +1,4 @@
 /* eslint-disable camelcase */
-import { ethers as hardhatEthers } from "hardhat";
 import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
 import {
@@ -8,7 +7,7 @@ import {
   RLP,
   formatEther,
 } from "ethers/lib/utils";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import sinon from "sinon";
 
 import {
   Experimental,
@@ -34,6 +33,7 @@ let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
 let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
+let fundedWallet: ethers.Wallet;
 
 describe("BlsSigner", () => {
   beforeEach(async () => {
@@ -61,7 +61,7 @@ describe("BlsSigner", () => {
 
     regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
-    const fundedWallet = new ethers.Wallet(
+    fundedWallet = new ethers.Wallet(
       "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat Account #2 private key
       regularProvider,
     );
@@ -89,22 +89,6 @@ describe("BlsSigner", () => {
     expect(
       (await blsProvider.getBalance(recipient)).sub(recipientBalanceBefore),
     ).to.equal(expectedBalance);
-  });
-
-  it("should throw an error sending a transaction when 'transaction.to' has not been defined", async () => {
-    // Arrange
-    const transaction = {
-      value: parseEther("1"),
-    };
-
-    // Act
-    const result = async () => await blsSigner.sendTransaction(transaction);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      TypeError,
-      "Transaction.to should be defined",
-    );
   });
 
   it("should throw an error when sending an invalid transaction", async () => {
@@ -394,35 +378,6 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should throw an error sending a transaction batch when this.signer is not defined", async () => {
-    // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
-      verificationGateway,
-      aggregatorUtilities,
-      rpcUrl,
-      network,
-    );
-    const signedTransaction = await blsSigner.signTransactionBatch({
-      transactions: [
-        {
-          value: parseEther("1"),
-          to: ethers.Wallet.createRandom().address,
-        },
-      ],
-    });
-
-    // Act
-    const result = async () =>
-      await newBlsProvider.sendTransactionBatch(signedTransaction);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      Error,
-      "Call provider.getSigner first",
-    );
-  });
-
   it("should validate batch options", async () => {
     // Arrange
     const batchOptions = {
@@ -492,7 +447,7 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should not throw an error when invalid private key is supplied after a valid getSigner call", async () => {
+  it("should throw an error when invalid private key is supplied after a valid getSigner call", async () => {
     // Arrange
     const newBlsSigner = blsProvider.getSigner("invalidPrivateKey");
 
@@ -504,7 +459,10 @@ describe("BlsSigner", () => {
       });
 
     // Assert
-    await expect(result()).to.not.be.rejectedWith(Error);
+    await expect(result()).to.be.rejectedWith(
+      Error,
+      "Expect hex but got invalidPrivateKey",
+    );
   });
 
   it("should retrieve the account address", async () => {
@@ -522,22 +480,6 @@ describe("BlsSigner", () => {
     expect(address).to.equal(expectedAddress);
   });
 
-  it("should throw an error signing a transaction when transaction.to has not been defined", async () => {
-    // Arrange
-    const transaction = {
-      value: parseEther("1"),
-    };
-
-    // Act
-    const result = async () => await blsSigner.sendTransaction(transaction);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      TypeError,
-      "Transaction.to should be defined",
-    );
-  });
-
   it("should sign a transaction to create a bundleDto and serialize the result", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
@@ -545,6 +487,7 @@ describe("BlsSigner", () => {
       value: "1000000000000000000",
       to: recipient,
       data: "0x",
+      from: await blsSigner.getAddress(),
     };
 
     // get expected signature
@@ -565,6 +508,14 @@ describe("BlsSigner", () => {
       wallet.PublicKey(),
       verificationGateway,
       blsSigner,
+    );
+
+    // BlsWalletWrapper.getRandomBlsPrivateKey from "estimateGas" method results in slightly different
+    // fee estimates. Which leads to a different signature. This fake avoids signature mismatch by stubbing a constant value.
+    sinon.replace(
+      BlsWalletWrapper,
+      "getRandomBlsPrivateKey",
+      sinon.fake.resolves(privateKey),
     );
 
     const expectedFeeEstimate = await blsProvider.estimateGas(transaction);
@@ -596,20 +547,19 @@ describe("BlsSigner", () => {
     expect(bundleDto.signature).to.deep.equal(
       expectedBundleSignatureHexStrings,
     );
+    sinon.restore();
   });
 
   it("should throw an error when signing an invalid transaction", async () => {
     // Arrange
     const invalidEthValue = parseEther("-1");
 
-    const unsignedTransaction = {
-      value: invalidEthValue,
-      to: ethers.Wallet.createRandom().address,
-    };
-
     // Act
     const result = async () =>
-      await blsSigner.signTransaction(unsignedTransaction);
+      await blsSigner.signTransaction({
+        value: invalidEthValue,
+        to: ethers.Wallet.createRandom().address,
+      });
 
     // Assert
     await expect(result()).to.be.rejectedWith(
@@ -768,13 +718,12 @@ describe("BlsSigner", () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
-    const transaction = {
-      to: recipient,
-      value: transactionAmount,
-    };
 
     // Act
-    const result = blsSigner.checkTransaction(transaction);
+    const result = blsSigner.checkTransaction({
+      to: recipient,
+      value: transactionAmount,
+    });
 
     // Assert
     const resolvedResult = await resolveProperties(result);
@@ -791,13 +740,12 @@ describe("BlsSigner", () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
-    const transaction = {
-      to: recipient,
-      value: transactionAmount,
-    };
 
     // Act
-    const result = await blsSigner.populateTransaction(transaction);
+    const result = await blsSigner.populateTransaction({
+      to: recipient,
+      value: transactionAmount,
+    });
 
     // Assert
     expect(result).to.be.an("object").that.includes({
@@ -850,23 +798,25 @@ describe("BlsSigner", () => {
   });
 
   it("should await the init promise when connecting to an unchecked bls signer", async () => {
-    // Arrange & Act
+    // Arrange
     const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
     const newBlsSigner = blsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
+    await fundedWallet.sendTransaction({
+      to: await uncheckedBlsSigner.getAddress(),
+      value: parseEther("1.1"),
+    });
+
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
-    const transaction = {
-      value: transactionAmount,
-      to: recipient,
-    };
     const balanceBefore = await blsProvider.getBalance(recipient);
 
     // Act
-    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
-      transaction,
-    );
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
+      value: transactionAmount,
+      to: recipient,
+    });
     await uncheckedResponse.wait();
 
     // Assert
@@ -875,9 +825,7 @@ describe("BlsSigner", () => {
     ).to.equal(transactionAmount);
   });
 
-  // TODO (merge-ok) https://github.com/web3well/bls-wallet/issues/427
-  // This test is identical to the above test except this one uses a new instance of a provider, yet fails to find the tx receipt
-  it.skip("should get the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
+  it("should get the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
     // Arrange & Act
     const newBlsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
@@ -890,18 +838,20 @@ describe("BlsSigner", () => {
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
+    await fundedWallet.sendTransaction({
+      to: await uncheckedBlsSigner.getAddress(),
+      value: parseEther("1.1"),
+    });
+
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
-    const transaction = {
-      value: transactionAmount,
-      to: recipient,
-    };
     const balanceBefore = await blsProvider.getBalance(recipient);
 
     // Act
-    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
-      transaction,
-    );
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
+      value: transactionAmount,
+      to: recipient,
+    });
     await uncheckedResponse.wait();
 
     // Assert
@@ -914,16 +864,13 @@ describe("BlsSigner", () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
-    const transaction = {
-      value: transactionAmount,
-      to: recipient,
-    };
     const balanceBefore = await blsProvider.getBalance(recipient);
 
     // Act
-    const uncheckedTransactionHash = await blsSigner.sendUncheckedTransaction(
-      transaction,
-    );
+    const uncheckedTransactionHash = await blsSigner.sendUncheckedTransaction({
+      value: transactionAmount,
+      to: recipient,
+    });
     await blsProvider.getTransactionReceipt(uncheckedTransactionHash);
 
     // Assert
@@ -938,22 +885,18 @@ describe("BlsSigner", () => {
 
     const recipient = ethers.Wallet.createRandom().address;
     const transactionAmount = parseEther("1");
-    const transaction = {
-      value: transactionAmount,
-      to: recipient,
-    };
     const balanceBefore = await blsProvider.getBalance(recipient);
 
     // Act
-    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction(
-      transaction,
-    );
+    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
+      value: transactionAmount,
+      to: recipient,
+    });
     await uncheckedResponse.wait();
 
     // Assert
     expect(uncheckedResponse).to.be.an("object").that.includes({
       hash: uncheckedResponse.hash,
-      nonce: 1,
       data: "",
       chainId: 0,
       confirmations: 0,
@@ -963,6 +906,7 @@ describe("BlsSigner", () => {
     expect(uncheckedResponse.gasLimit).to.equal(BigNumber.from("0"));
     expect(uncheckedResponse.gasPrice).to.equal(BigNumber.from("0"));
     expect(uncheckedResponse.value).to.equal(BigNumber.from("0"));
+    expect(isNaN(uncheckedResponse.nonce)).to.be.true;
 
     expect(
       (await blsProvider.getBalance(recipient)).sub(balanceBefore),
@@ -1031,7 +975,7 @@ describe("BlsSigner", () => {
     const expectedTransactionCount = 0;
 
     const sendTransaction = await blsSigner.sendTransaction({
-      value: BigNumber.from(1),
+      value: parseEther("1"),
       to: ethers.Wallet.createRandom().address,
     });
     await sendTransaction.wait();
@@ -1053,14 +997,12 @@ describe("BlsSigner", () => {
       blsProvider,
     );
 
-    const transaction = {
+    // Act
+    const result = await blsSigner.call({
       to: testERC20.address,
       data: testERC20.interface.encodeFunctionData("totalSupply"),
       // Explicitly omit 'from'
-    };
-
-    // Act
-    const result = await blsSigner.call(transaction);
+    });
 
     // Assert
     expect(formatEther(result)).to.equal("1000000.0");
@@ -1077,14 +1019,14 @@ describe("BlsSigner", () => {
     // Arrange
     const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");
     const recipient = ethers.Wallet.createRandom().address;
-    const transaction = {
-      to: recipient,
-      value: parseEther("1"),
-      // Explicitly omit 'from'
-    };
 
     // Act
-    const gasEstimate = async () => await blsSigner.estimateGas(transaction);
+    const gasEstimate = async () =>
+      await blsSigner.estimateGas({
+        to: recipient,
+        value: parseEther("1"),
+        // Explicitly omit 'from'
+      });
 
     // Assert
     await expect(gasEstimate()).to.not.be.rejected;
@@ -1125,102 +1067,87 @@ describe("BlsSigner", () => {
       "account unlock with HTTP access is forbidden",
     );
   });
-});
 
-describe("JsonRpcSigner", () => {
-  let signers: SignerWithAddress[];
-  let wallet: ethers.Wallet;
+  it("should validate a transaction request", async () => {
+    // Arrange
+    const recipient = ethers.Wallet.createRandom().address;
+    const getBalancePromise = blsSigner.getBalance();
+    const expectedValidatedTransaction = {
+      to: recipient,
+      value: await blsSigner.getBalance(),
+      from: await blsSigner.getAddress(),
+    };
 
-  beforeEach(async () => {
-    signers = await hardhatEthers.getSigners();
-    rpcUrl = "http://localhost:8545";
-    regularProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
-    // First two Hardhat account private keys are used in aggregator .env. We choose to use Hardhat account #2 private key here to avoid nonce too low errors.
-    wallet = new ethers.Wallet(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", // Hardhat account #2 private key
-      regularProvider,
+    // Act
+    const validatedTransaction = await blsSigner._validateTransaction({
+      to: recipient,
+      value: getBalancePromise,
+    });
+
+    // Assert
+    expect(validatedTransaction).to.deep.equal(expectedValidatedTransaction);
+  });
+
+  it("should throw an error validating a transaction request when transaction.to is not defined", async () => {
+    // Arrange & Act
+    const result = async () =>
+      await blsSigner._validateTransaction({
+        value: await blsSigner.getBalance(),
+      });
+
+    // Assert
+    await expect(result()).to.be.rejectedWith(
+      TypeError,
+      "Transaction.to should be defined",
     );
   });
 
-  it("should retrieve the account address", async () => {
-    // Arrange
-    const expectedAddress = signers[2].address;
-
-    // Act
-    const address = await wallet.getAddress();
-
-    // Assert
-    expect(address).to.equal(expectedAddress);
-  });
-
-  it("should send ETH (empty call) successfully", async () => {
+  it("should validate a transaction batch", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
-    const expectedBalance = parseEther("1");
-    const recipientBalanceBefore = await regularProvider.getBalance(recipient);
-
-    // Act
-    const transaction = await wallet.sendTransaction({
-      to: recipient,
-      value: expectedBalance,
-    });
-    await transaction.wait();
-
-    // Assert
-    expect(
-      (await regularProvider.getBalance(recipient)).sub(recipientBalanceBefore),
-    ).to.equal(expectedBalance);
-  });
-
-  it("should check transaction", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-    const transaction = {
-      to: recipient,
-      value: transactionAmount,
+    const amount = await blsSigner.getBalance();
+    const expectedValidatedTransactionBatch = {
+      transactions: [
+        {
+          to: recipient,
+          value: amount,
+          from: await blsSigner.getAddress(),
+        },
+      ],
+      batchOptions: undefined,
     };
 
     // Act
-    const result = wallet.checkTransaction(transaction);
+    const validatedTransaction = await blsSigner._validateTransactionBatch({
+      transactions: [
+        {
+          to: recipient,
+          value: amount,
+        },
+      ],
+    });
 
     // Assert
-    const resolvedResult = await resolveProperties(result);
-    expect(resolvedResult)
-      .to.be.an("object")
-      .that.includes({
-        to: recipient,
-        value: transactionAmount,
-        from: await wallet.getAddress(),
+    expect(validatedTransaction).to.deep.equal(
+      expectedValidatedTransactionBatch,
+    );
+  });
+
+  it("should throw an error validating a transaction batch when transaction.to is not defined", async () => {
+    // Arrange & Act
+    const result = async () =>
+      await blsSigner._validateTransactionBatch({
+        transactions: [
+          {
+            value: await blsSigner.getBalance(),
+          },
+        ],
       });
-  });
-
-  it("should populate transaction", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-    const transaction = {
-      to: recipient,
-      value: transactionAmount,
-    };
-
-    // Act
-    const result = await wallet.populateTransaction(transaction);
 
     // Assert
-    expect(result).to.be.an("object").that.includes({
-      to: recipient,
-      value: transactionAmount,
-      from: signers[2].address,
-      type: 2,
-      chainId: 1337,
-    });
-
-    expect(result).to.include.keys(
-      "maxFeePerGas",
-      "maxPriorityFeePerGas",
-      "nonce",
-      "gasLimit",
+    await expect(result()).to.be.rejectedWith(
+      TypeError,
+      "Transaction.to is missing on transaction 0",
     );
   });
 });

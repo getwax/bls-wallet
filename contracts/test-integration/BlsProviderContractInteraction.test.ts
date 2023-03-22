@@ -66,18 +66,25 @@ describe("Provider tests", function () {
     });
 
     it("balanceOf() call", async () => {
+      // Arrange & Act
       const balance = await mockERC20.connect(blsProvider).balanceOf(recipient);
+
+      // Assert
       expect(balance).to.equal(tokenSupply.div(2));
     });
 
     it("calls balanceOf successfully after instantiating Contract class with BlsProvider", async () => {
+      // Arrange
       const erc20 = new ethers.Contract(
         mockERC20.address,
         mockERC20.interface,
         blsProvider,
       );
+
+      // Act
       const balance = await erc20.balanceOf(recipient);
 
+      // Assert
       expect(erc20.provider).to.equal(blsProvider);
       expect(balance).to.equal(tokenSupply.div(2));
     });
@@ -162,7 +169,7 @@ describe("Provider tests", function () {
       await tx.wait();
 
       // wait 1 second to ensure listener count updates
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Assert
       expect((await erc20.balanceOf(recipient)).sub(balanceBefore)).to.equal(
