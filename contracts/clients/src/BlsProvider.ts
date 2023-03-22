@@ -68,6 +68,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     const actionWithFeePaymentAction =
       this._addFeePaymentActionForFeeEstimation([action]);
 
+    // TODO: (merge-ok) bls-wallet #560 Estimate fee without requiring a signed bundle
+    // There is no way to estimate the cost of a bundle without signing a bundle. The
+    // alternative would be to use a signer instance in this method which is undesirable,
+    // as this would result in tight coupling between a provider and a signer.
     const throwawayPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
     const throwawayBlsWalletWrapper = await BlsWalletWrapper.connect(
       throwawayPrivateKey,
