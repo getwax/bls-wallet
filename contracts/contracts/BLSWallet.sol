@@ -201,11 +201,11 @@ contract BLSWallet is Initializable, IWallet
     * @dev ERC-1271 signature validation
     */
     function isValidSignature(
-        bytes32 _hash,
-        bytes memory _signature
+        bytes32 hash,
+        bytes memory signature
     ) public view returns (bytes4 magicValue) {
 
-        bool verified = IVerificationGateway(trustedBLSGateway).validateSignature(_hash, _signature);
+        bool verified = IVerificationGateway(trustedBLSGateway).validateSignature(hash, signature);
 
         if (verified) {
             magicValue = 0x1626ba7e;

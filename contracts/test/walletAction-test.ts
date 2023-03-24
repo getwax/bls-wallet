@@ -385,10 +385,10 @@ describe("WalletActions", async function () {
 
     await expect(
       blsWallet.isValidSignature(hashedMessage, shortSignature),
-    ).to.be.rejectedWith("Input bytes length must be 64.");
+    ).to.be.rejectedWith("VG: Sig bytes length must be 64");
     await expect(
       blsWallet.isValidSignature(hashedMessage, longSignature),
-    ).to.be.rejectedWith("Input bytes length must be 64.");
+    ).to.be.rejectedWith("VG: Sig bytes length must be 64");
   });
 
   it("(ERC-1271) should fail to verify message when not called from BLS Wallet", async function () {
