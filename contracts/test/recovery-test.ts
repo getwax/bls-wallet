@@ -5,6 +5,7 @@ import { ethers } from "hardhat";
 
 import { BlsWalletWrapper, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
+import getPublicKeyFromHash from "../shared/helpers/getPublicKeyFromHash";
 import { BLSWallet, VerificationGateway } from "../typechain-types";
 
 const signWalletAddress = async (
@@ -126,6 +127,9 @@ describe("Recovery", async function () {
     expect(BigNumber.from(hashFromWallet)).to.not.equal(BigNumber.from(0));
     expect(hashFromWallet).to.equal(hash1);
 
+    let publicKeyFromHash = await getPublicKeyFromHash(vg, hash1);
+    expect(publicKeyFromHash).to.deep.equal(wallet1.PublicKey());
+
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await fx.processBundleWithExtraGas(
       wallet1.sign({
@@ -148,6 +152,9 @@ describe("Recovery", async function () {
 
     hashFromWallet = await vg.hashFromWallet(wallet1.address);
     expect(hashFromWallet).to.equal(hash1);
+
+    publicKeyFromHash = await getPublicKeyFromHash(vg, hash1);
+    expect(publicKeyFromHash).to.deep.equal(wallet1.PublicKey());
   });
 
   it("should set recovery hash", async function () {
@@ -244,8 +251,10 @@ describe("Recovery", async function () {
     await fx.processBundleWithExtraGas(recoveryBundle);
 
     const newHash = wallet4.blsWalletSigner.getPublicKeyHash(newPrivateKey);
+    const newPublicKey = wallet4.blsWalletSigner.getPublicKey(newPrivateKey);
     expect(await vg.hashFromWallet(wallet4.address)).to.eql(newHash);
     expect(await vg.walletFromHash(newHash)).to.eql(wallet4.address);
+    expect(await getPublicKeyFromHash(vg, newHash)).to.deep.equal(newPublicKey);
   });
 
   it("should recover blswallet via blswallet to new bls key", async function () {
@@ -298,6 +307,9 @@ describe("Recovery", async function () {
     const hash3 = wallet3.blsWalletSigner.getPublicKeyHash(wallet3.privateKey);
     await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash3);
     await expect(vg.walletFromHash(hash3)).to.eventually.eql(wallet1.address);
+    await expect(getPublicKeyFromHash(vg, hash3)).to.eventually.deep.equal(
+      wallet3.PublicKey(),
+    );
   });
 
   it("should recover before bls key update", async function () {
@@ -371,6 +383,9 @@ describe("Recovery", async function () {
     // key reset via recovery
     await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash2);
     await expect(vg.walletFromHash(hash2)).to.eventually.eql(wallet1.address);
+    await expect(getPublicKeyFromHash(vg, hash2)).to.eventually.deep.equal(
+      safeKey,
+    );
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2 + 1); // wait remainder the time
     // NB: advancing the time makes an empty tx with lazywallet[1]
@@ -423,6 +438,10 @@ describe("Recovery", async function () {
     await expect(vg.walletFromHash(hash1)).to.eventually.not.equal(
       blsWallet.address,
     );
+    await expect(getPublicKeyFromHash(vg, hash1)).to.eventually.not.deep.equal(
+      wallet1.PublicKey(),
+    );
+
     await expect(vg.walletFromHash(hashAttacker)).to.eventually.not.equal(
       blsWallet.address,
     );
@@ -519,19 +538,26 @@ describe("Recovery", async function () {
       .recoverWallet(addressSignature, hash1, salt, wallet2.PublicKey());
     await recoveryTxn.wait();
 
-    const [wallet1PubkeyHash, wallet2PubkeyHash, wallet1Nonce, wallet2Nonce] =
-      await Promise.all([
-        vg.hashFromWallet(wallet1.address),
-        vg.hashFromWallet(wallet2.address),
-        wallet1.Nonce(),
-        wallet2.Nonce(),
-      ]);
+    const [
+      wallet1PubkeyHash,
+      wallet2PubkeyHash,
+      wallet1Nonce,
+      wallet2Nonce,
+      publicKey,
+    ] = await Promise.all([
+      vg.hashFromWallet(wallet1.address),
+      vg.hashFromWallet(wallet2.address),
+      wallet1.Nonce(),
+      wallet2.Nonce(),
+      getPublicKeyFromHash(vg, hash2),
+    ]);
     expect(wallet1PubkeyHash).to.eql(hash2);
     expect(wallet2PubkeyHash).to.eql(hash2);
     expect(wallet1Nonce.toNumber()).to.eql(wallet2Nonce.toNumber());
+    expect(publicKey).to.deep.equal(wallet2.PublicKey());
 
     // Attempt to run a bundle from wallet 2 through wallet 1
-    // Signiuture verification should fail as addresses differ
+    // Signature verification should fail as addresses differ
     const invalidBundle = wallet2.sign({
       nonce: await wallet2.Nonce(),
       gas: 30_000_000,

@@ -31,8 +31,9 @@ contract VerificationGateway
     BLSWallet public immutable blsWalletLogic = new BLSWallet();
     mapping(bytes32 => IWallet) public walletFromHash;
     mapping(IWallet => bytes32) public hashFromWallet;
+    mapping(bytes32 => uint256[BLS_KEY_LEN]) public BLSPublicKeyFromHash;
 
-    //mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
+    // mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
     mapping(bytes32 => uint256[BLS_KEY_LEN]) public pendingBLSPublicKeyFromHash;
     mapping(bytes32 => uint256[2]) public pendingMessageSenderSignatureFromHash;
     mapping(bytes32 => uint256) public pendingBLSPublicKeyTimeFromHash;
@@ -323,7 +324,7 @@ contract VerificationGateway
                 address(walletProxyAdmin),
                 getInitializeData()
             )));
-            updateWalletHashMappings(publicKeyHash, blsWallet);
+            updateWalletHashMappings(publicKeyHash, blsWallet, publicKey);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
@@ -380,21 +381,24 @@ contract VerificationGateway
             publicKey
         ));
         emit BLSKeySetForWallet(publicKey, wallet);
-        updateWalletHashMappings(publicKeyHash, wallet);
+        updateWalletHashMappings(publicKeyHash, wallet, publicKey);
     }
 
     /** @dev Only to be called on wallet creation, and in `safeSetWallet` */
     function updateWalletHashMappings(
         bytes32 publicKeyHash,
-        IWallet wallet
+        IWallet wallet,
+        uint256[BLS_KEY_LEN] memory publicKey
     ) private {
         // remove reference from old hash
         bytes32 oldHash = hashFromWallet[wallet];
         walletFromHash[oldHash] = IWallet(address(0));
+        BLSPublicKeyFromHash[oldHash] = [0,0,0,0];
 
         // update new hash / wallet mappings
         walletFromHash[publicKeyHash] = wallet;
         hashFromWallet[wallet] = publicKeyHash;
+        BLSPublicKeyFromHash[publicKeyHash] = publicKey;
     }
 
     function getInitializeData() private view returns (bytes memory) {
