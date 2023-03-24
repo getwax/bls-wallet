@@ -113,6 +113,33 @@ contract VerificationGateway
         require(verified, "VG: Sig not verified");
     }
 
+    function validateSignature(
+        bytes32 _hash,
+        bytes memory _signature
+    ) public view returns (bool verified) {
+        IWallet wallet = IWallet(msg.sender);
+        bytes32 existingHash = hashFromWallet[wallet];
+        require(
+            (IWallet(msg.sender) == walletFromHash[existingHash]),
+            "VG: not called from wallet"
+        );
+
+        uint256[BLS_KEY_LEN] memory publicKey = BLSPublicKeyFromHash[existingHash];
+
+        bytes memory concatenatedHash = bytes.concat(_hash);
+
+        uint256[2] memory message = blsLib.hashToPoint(
+            BLS_DOMAIN,
+            concatenatedHash
+        );
+
+        require(_signature.length == 64, "Input bytes length must be 64.");
+        uint256[2] memory signature = abi.decode(_signature, (uint256[2]));
+
+        verified = blsLib.verifySingle(signature, publicKey, message);
+        require(verified, "VG: Sig not verified");
+    }
+
     /**
     If an existing wallet contract wishes to be called by this verification
     gateway, it can directly register itself with a simple signed msg.

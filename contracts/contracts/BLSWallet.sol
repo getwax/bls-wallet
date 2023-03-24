@@ -7,6 +7,9 @@ pragma abicoder v2;
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IWallet.sol";
 
+interface IVerificationGateway {
+    function validateSignature(bytes32 _hash, bytes memory _signature) external view returns (bool);
+}
 
 /** Minimal upgradable smart contract wallet.
     Generic calls can only be requested by its trusted gateway.
@@ -191,6 +194,21 @@ contract BLSWallet is Initializable, IWallet
             }
 
             results[i] = result;
+        }
+    }
+
+    /**
+    * @dev ERC-1271 signature validation
+    */
+    function isValidSignature(
+        bytes32 _hash,
+        bytes memory _signature
+    ) public view returns (bytes4 magicValue) {
+
+        bool verified = IVerificationGateway(trustedBLSGateway).validateSignature(_hash, _signature);
+
+        if (verified) {
+            magicValue = 0x1626ba7e;
         }
     }
 
