@@ -2,6 +2,7 @@ import { signer } from "@thehubbleproject/bls";
 
 import aggregate from "./aggregate";
 import defaultDomain from "./defaultDomain";
+import getDomain from "./getDomain";
 import getPublicKey from "./getPublicKey";
 import getPublicKeyHash from "./getPublicKeyHash";
 import getPublicKeyStr from "./getPublicKeyStr";
@@ -16,11 +17,12 @@ export * from "./conversions";
 export type BlsWalletSigner = AsyncReturnType<typeof initBlsWalletSigner>;
 
 export async function initBlsWalletSigner({
-  domain = defaultDomain,
   chainId,
   privateKey,
+  verificationGateway,
 }: {
   domain?: Uint8Array;
+  verificationGateway: string;
   chainId: number;
   privateKey: string;
 }) {
@@ -31,6 +33,8 @@ export async function initBlsWalletSigner({
   // the creation of the signer factory, we're ensuring that mcl-wasm is
   // properly initialized for all use cases, not just signing.
   const signerFactory = await signer.BlsSignerFactory.new();
+
+  const domain = getDomain(chainId, verificationGateway);
 
   return {
     aggregate,

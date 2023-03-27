@@ -9,6 +9,8 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 
 import "./interfaces/IWallet.sol";
 
+import "hardhat/console.sol";
+
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
 verified Operations that have been respectively signed.
@@ -19,7 +21,7 @@ is the calling wallet's address.
 contract VerificationGateway
 {
     /** Domain chosen arbitrarily */
-    bytes32 BLS_DOMAIN = keccak256(abi.encodePacked(uint32(0xfeedbee5)));
+    bytes32 BLS_DOMAIN;
     uint8 constant BLS_KEY_LEN = 4;
 
     IBLS public immutable blsLib;
@@ -73,6 +75,7 @@ contract VerificationGateway
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
         walletProxyAdmin = ProxyAdmin(proxyAdmin);
+        BLS_DOMAIN = keccak256(abi.encode(block.chainid, address(this)));
     }
 
     /** Throw if bundle not valid or signature verification fails */
@@ -353,7 +356,7 @@ contract VerificationGateway
     ) private {
         // verify the given wallet was signed for by the bls key
         uint256[2] memory addressMsg = blsLib.hashToPoint(
-            BLS_DOMAIN,
+            BLS_DOMAIN, // second domain here
             abi.encodePacked(wallet)
         );
         require(

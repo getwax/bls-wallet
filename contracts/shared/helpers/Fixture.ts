@@ -146,7 +146,11 @@ export default class Fixture {
       blsExpander,
       utilities,
       BLSWallet,
-      await initBlsWalletSigner({ chainId, privateKey }),
+      await initBlsWalletSigner({
+        chainId,
+        privateKey,
+        verificationGateway: verificationGateway.address,
+      }),
     );
   }
 

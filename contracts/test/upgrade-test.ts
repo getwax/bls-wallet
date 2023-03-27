@@ -181,8 +181,7 @@ describe("Upgrade", async function () {
     {
       // Fail if setExternalWalletAction is skipped
 
-      const { successes } =
-        await fx.verificationGateway.callStatic.processBundle(
+      const result = await fx.verificationGateway.callStatic.processBundle(
           walletOldVg.sign({
             nonce: BigNumber.from(2),
             actions: [
@@ -193,7 +192,7 @@ describe("Upgrade", async function () {
           }),
         );
 
-      expect(successes).to.deep.equal([false]);
+      expect(result.successes).to.deep.equal([false]);
     }
 
     {
@@ -229,7 +228,7 @@ describe("Upgrade", async function () {
           }),
         );
 
-      expect(successes).to.deep.equal([true]);
+      expect(successes).to.deep.equal([true]); // blake fails here
     }
 
     expect(await vg2.walletFromHash(hash)).not.to.equal(walletAddress);
