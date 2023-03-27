@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IWallet.sol";
 
 interface IVerificationGateway {
-    function validateSignature(bytes32 _hash, bytes memory _signature) external view returns (bool);
+    function isValidSignature(bytes32 _hash, bytes memory _signature) external view returns (bool);
 }
 
 /** Minimal upgradable smart contract wallet.
@@ -204,8 +204,7 @@ contract BLSWallet is Initializable, IWallet
         bytes32 hash,
         bytes memory signature
     ) public view returns (bytes4 magicValue) {
-
-        bool verified = IVerificationGateway(trustedBLSGateway).validateSignature(hash, signature);
+        bool verified = IVerificationGateway(trustedBLSGateway).isValidSignature(hash, signature);
 
         if (verified) {
             magicValue = 0x1626ba7e;

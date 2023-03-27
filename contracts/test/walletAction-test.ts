@@ -398,10 +398,7 @@ describe("WalletActions", async function () {
     const mockSignature = ethers.utils.arrayify("0x00");
 
     await expect(
-      fx.verificationGateway.validateSignature(
-        mockHashedMessage,
-        mockSignature,
-      ),
+      fx.verificationGateway.isValidSignature(mockHashedMessage, mockSignature),
     ).to.be.rejectedWith("VG: not called from wallet");
   });
 

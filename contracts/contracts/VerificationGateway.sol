@@ -113,20 +113,16 @@ contract VerificationGateway
         require(verified, "VG: Sig not verified");
     }
 
-    function validateSignature(
+    function isValidSignature(
         bytes32 hash,
         bytes memory signature
-    ) public view returns (bool verified) {
+    ) public view onlyWallet(hashFromWallet[IWallet(msg.sender)]) returns (bool verified) {
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
-        require(
-            (IWallet(msg.sender) == walletFromHash[existingHash]),
-            "VG: not called from wallet"
-        );
 
         uint256[BLS_KEY_LEN] memory publicKey = BLSPublicKeyFromHash[existingHash];
 
-        bytes memory concatenatedHash = bytes.concat(hash);
+        bytes memory concatenatedHash = abi.encode(hash);
 
         uint256[2] memory message = blsLib.hashToPoint(
             BLS_DOMAIN,
