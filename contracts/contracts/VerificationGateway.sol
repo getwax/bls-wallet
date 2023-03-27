@@ -133,7 +133,6 @@ contract VerificationGateway
         uint256[2] memory decodedSignature = abi.decode(signature, (uint256[2]));
 
         verified = blsLib.verifySingle(decodedSignature, publicKey, message);
-        require(verified, "VG: Sig not verified");
     }
 
     /**

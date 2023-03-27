@@ -208,6 +208,8 @@ contract BLSWallet is Initializable, IWallet
 
         if (verified) {
             magicValue = 0x1626ba7e;
+        } else {
+            magicValue = 0xffffffff;
         }
     }
 

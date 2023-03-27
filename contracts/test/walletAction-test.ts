@@ -331,12 +331,17 @@ describe("WalletActions", async function () {
       ethers.utils.hexlify(signatureWithWrongMessage[1]).substring(2);
     const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
 
+    const expectedMagicValue = "0xffffffff";
+
     // initial call needed to ensure isValidSignature is successful
     await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
 
-    await expect(
-      blsWallet.isValidSignature(hashedMessage, signatureBytes),
-    ).to.be.rejectedWith("VG: Sig not verified");
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedMagicValue);
   });
 
   it("(ERC-1271) should fail to verify message signed by another wallet", async function () {
@@ -355,12 +360,17 @@ describe("WalletActions", async function () {
       ethers.utils.hexlify(signature[1]).substring(2);
     const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
 
+    const expectedMagicValue = "0xffffffff";
+
     // initial call needed to ensure isValidSignature is successful
     await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
 
-    await expect(
-      blsWallet.isValidSignature(hashedMessage, signatureBytes),
-    ).to.be.rejectedWith("VG: Sig not verified");
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedMagicValue);
   });
 
   it("(ERC-1271) should fail to verify message when signature is not 64 bytes long", async function () {
