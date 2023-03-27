@@ -116,17 +116,18 @@ contract VerificationGateway
     function isValidSignature(
         bytes32 hash,
         bytes memory signature
-    ) public view onlyWallet(hashFromWallet[IWallet(msg.sender)]) returns (bool verified) {
+    ) public view returns (bool verified) {
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
+        require(existingHash != 0, "VG: not called from wallet");
 
         uint256[BLS_KEY_LEN] memory publicKey = BLSPublicKeyFromHash[existingHash];
 
-        bytes memory concatenatedHash = abi.encode(hash);
+        bytes memory hashBytes = abi.encode(hash);
 
         uint256[2] memory message = blsLib.hashToPoint(
             BLS_DOMAIN,
-            concatenatedHash
+            hashBytes
         );
 
         require(signature.length == 64, "VG: Sig bytes length must be 64");
