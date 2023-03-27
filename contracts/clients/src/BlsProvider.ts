@@ -6,6 +6,9 @@ import { ActionData, Bundle, PublicKey } from "./signer/types";
 import Aggregator, { BundleReceipt } from "./Aggregator";
 import BlsSigner, {
   TransactionBatchResponse,
+  // Used for sendTransactionBatch TSdoc comment
+  // eslint-disable-next-line no-unused-vars
+  TransactionBatch,
   UncheckedBlsSigner,
   _constructorGuard,
 } from "./BlsSigner";
@@ -18,6 +21,7 @@ import {
 } from "../typechain-types";
 import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
 
+/** Public key linked to actions parsed from a bundle */
 export type PublicKeyLinkedToActions = {
   publicKey: PublicKey;
   actions: Array<ActionData>;
@@ -29,11 +33,11 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   readonly aggregatorUtilitiesAddress: string;
 
   /**
-   * @param aggregatorUrl the url for an aggregator instance
-   * @param verificationGatewayAddress verification gateway contract address
-   * @param aggregatorUtilitiesAddress aggregator utilities contract address
-   * @param url rpc url
-   * @param network the network the provider should connect to
+   * @param aggregatorUrl The url for an aggregator instance
+   * @param verificationGatewayAddress Verification gateway contract address
+   * @param aggregatorUtilitiesAddress Aggregator utilities contract address
+   * @param url Rpc url
+   * @param network The network the provider should connect to
    */
   constructor(
     aggregatorUrl: string,
@@ -49,8 +53,8 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   }
 
   /**
-   * @param transaction transaction request object
-   * @returns the amount of gas that would be required to submit the transaction to the network
+   * @param transaction Transaction request object
+   * @returns An estimate of the amount of gas that would be required to submit the transaction to the network
    */
   override async estimateGas(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
@@ -102,11 +106,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   }
 
   /**
-   * Sends transactions to be executed. Adds the signed
-   * bundle to the connected aggregator
+   * Sends transaction to be executed. Adds the signed bundle to the aggregator
    *
-   * @param signedTransaction a signed bundle
-   * @returns a transaction response object that can be awaited to get the transaction receipt
+   * @param signedTransaction A signed bundle
+   * @returns A transaction response object that can be awaited to get the transaction receipt
    */
   override async sendTransaction(
     signedTransaction: string | Promise<string>,
@@ -139,6 +142,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
   }
 
+  /**
+   * @param signedTransactionBatch A signed {@link TransactionBatch}
+   * @returns A transaction batch response object that can be awaited to get the transaction receipt
+   */
   async sendTransactionBatch(
     signedTransactionBatch: string,
   ): Promise<TransactionBatchResponse> {
@@ -168,9 +175,9 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   }
 
   /**
-   * @param privateKey private key for the account the signer represents
-   * @param addressOrIndex (not Used) address or index of the account, managed by the connected Ethereum node
-   * @returns a new BlsSigner instance
+   * @param privateKey Private key for the account the signer represents
+   * @param addressOrIndex (Not Used) address or index of the account, managed by the connected Ethereum node
+   * @returns A new BlsSigner instance
    */
   override getSigner(
     privateKey: string,
@@ -180,9 +187,9 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   }
 
   /**
-   * @param privateKey private key for the account the signer represents
-   * @param addressOrIndex (not Used) address or index of the account, managed by the connected Ethereum node
-   * @returns a new UncheckedBlsSigner instance
+   * @param privateKey Private key for the account the signer represents
+   * @param addressOrIndex (Not Used) address or index of the account, managed by the connected Ethereum node
+   * @returns A new UncheckedBlsSigner instance
    */
   override getUncheckedSigner(
     privateKey: string,
@@ -192,11 +199,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   }
 
   /**
-   * @remarks the transaction hash argument corresponds to a bundle hash and cannot be used on a block explorer.
+   * Gets the transaction receipt associated with the transaction (bundle) hash
+   *
+   * @remarks The transaction hash argument corresponds to a bundle hash and cannot be used on a block explorer.
    * Instead, the transaction hash returned in the transaction receipt from this method can be used in a block explorer.
    *
-   * @param transactionHash the transaction hash returned from the BlsProvider and BlsSigner sendTransaction methods
-   * @returns the transaction receipt that corressponds to the transaction hash (bundle hash)
+   * @param transactionHash The transaction hash returned from the BlsProvider and BlsSigner sendTransaction methods. This is technically a bundle hash
+   * @returns The transaction receipt that corressponds to the transaction hash (bundle hash)
    */
   override async getTransactionReceipt(
     transactionHash: string | Promise<string>,
@@ -206,12 +215,14 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   }
 
   /**
-   * @remarks the transaction hash argument cannot be used on a block explorer. It instead corresponds to a bundle hash.
+   * Gets the transaction receipt associated with the transaction (bundle) hash
+   *
+   * @remarks The transaction hash argument cannot be used on a block explorer. It instead corresponds to a bundle hash.
    * The transaction hash returned in the transaction receipt from this method can be used in a block explorer.
    *
-   * @param transactionHash the transaction hash returned from sending a transaction
-   * @param confirmations (not used) the number of confirmations to wait for before returning the transaction receipt
-   * @param retries the number of retries to poll the receipt for
+   * @param transactionHash The transaction hash returned from sending a transaction. This is technically a bundle hash
+   * @param confirmations (Not used) the number of confirmations to wait for before returning the transaction receipt
+   * @param retries The number of retries to poll the receipt for
    * @returns
    */
   override async waitForTransaction(
@@ -227,9 +238,9 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
   }
 
   /**
-   * @param address the address that the method gets the transaction count from
-   * @param blockTag the specific block tag to get the transaction count from
-   * @returns the the number of transactions an account has sent
+   * @param address The address that the method gets the transaction count from
+   * @param blockTag The specific block tag to get the transaction count from
+   * @returns The number of transactions an account has sent
    */
   override async getTransactionCount(
     address: string | Promise<string>,
