@@ -31,8 +31,9 @@ contract VerificationGateway
     BLSWallet public immutable blsWalletLogic = new BLSWallet();
     mapping(bytes32 => IWallet) public walletFromHash;
     mapping(IWallet => bytes32) public hashFromWallet;
+    mapping(bytes32 => uint256[BLS_KEY_LEN]) public BLSPublicKeyFromHash;
 
-    //mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
+    // mapping from an existing wallet's bls key hash to pending variables when setting a new BLS key
     mapping(bytes32 => uint256[BLS_KEY_LEN]) public pendingBLSPublicKeyFromHash;
     mapping(bytes32 => uint256[2]) public pendingMessageSenderSignatureFromHash;
     mapping(bytes32 => uint256) public pendingBLSPublicKeyTimeFromHash;
@@ -110,6 +111,29 @@ contract VerificationGateway
         );
 
         require(verified, "VG: Sig not verified");
+    }
+
+    function isValidSignature(
+        bytes32 hash,
+        bytes memory signature
+    ) public view returns (bool verified) {
+        IWallet wallet = IWallet(msg.sender);
+        bytes32 existingHash = hashFromWallet[wallet];
+        require(existingHash != 0, "VG: not called from wallet");
+
+        uint256[BLS_KEY_LEN] memory publicKey = BLSPublicKeyFromHash[existingHash];
+
+        bytes memory hashBytes = abi.encode(hash);
+
+        uint256[2] memory message = blsLib.hashToPoint(
+            BLS_DOMAIN,
+            hashBytes
+        );
+
+        require(signature.length == 64, "VG: Sig bytes length must be 64");
+        uint256[2] memory decodedSignature = abi.decode(signature, (uint256[2]));
+
+        verified = blsLib.verifySingle(decodedSignature, publicKey, message);
     }
 
     /**
@@ -323,7 +347,7 @@ contract VerificationGateway
                 address(walletProxyAdmin),
                 getInitializeData()
             )));
-            updateWalletHashMappings(publicKeyHash, blsWallet);
+            updateWalletHashMappings(publicKeyHash, blsWallet, publicKey);
             emit WalletCreated(
                 address(blsWallet),
                 publicKey
@@ -380,21 +404,24 @@ contract VerificationGateway
             publicKey
         ));
         emit BLSKeySetForWallet(publicKey, wallet);
-        updateWalletHashMappings(publicKeyHash, wallet);
+        updateWalletHashMappings(publicKeyHash, wallet, publicKey);
     }
 
     /** @dev Only to be called on wallet creation, and in `safeSetWallet` */
     function updateWalletHashMappings(
         bytes32 publicKeyHash,
-        IWallet wallet
+        IWallet wallet,
+        uint256[BLS_KEY_LEN] memory publicKey
     ) private {
         // remove reference from old hash
         bytes32 oldHash = hashFromWallet[wallet];
         walletFromHash[oldHash] = IWallet(address(0));
+        BLSPublicKeyFromHash[oldHash] = [0,0,0,0];
 
         // update new hash / wallet mappings
         walletFromHash[publicKeyHash] = wallet;
         hashFromWallet[wallet] = publicKeyHash;
+        BLSPublicKeyFromHash[publicKeyHash] = publicKey;
     }
 
     function getInitializeData() private view returns (bytes memory) {

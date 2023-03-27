@@ -13,6 +13,7 @@ import {
   proxyAdminBundle,
   proxyAdminCall,
 } from "../shared/helpers/callProxyAdmin";
+import getPublicKeyFromHash from "../shared/helpers/getPublicKeyFromHash";
 import deploy from "../shared/deploy";
 
 const expectOperationsToSucceed = (txnReceipt: ContractReceipt) => {
@@ -240,6 +241,9 @@ describe("Upgrade", async function () {
     await expect(proxyAdmin.getProxyAdmin(walletAddress)).to.eventually.equal(
       proxyAdmin.address,
     );
+    await expect(getPublicKeyFromHash(vg2, hash)).to.eventually.deep.equal(
+      walletOldVg.PublicKey(),
+    );
 
     const blsWallet = await ethers.getContractAt("BLSWallet", walletAddress);
     // New verification gateway pending
@@ -307,6 +311,9 @@ describe("Upgrade", async function () {
     await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
       hash1,
     );
+    await expect(getPublicKeyFromHash(vg1, hash1)).to.eventually.deep.equal(
+      wallet1.PublicKey(),
+    );
 
     // wallet 2 bls key signs message containing address of wallet 1
     const addressMessage = solidityPack(["address"], [wallet1.address]);
@@ -369,11 +376,20 @@ describe("Upgrade", async function () {
     await expect(vg1.walletFromHash(hash1)).to.eventually.equal(
       ethers.constants.AddressZero,
     );
+    await expect(getPublicKeyFromHash(vg1, hash1)).to.eventually.deep.equal([
+      "0x00",
+      "0x00",
+      "0x00",
+      "0x00",
+    ]);
     await expect(vg1.walletFromHash(hash2)).to.eventually.equal(
       wallet1.address,
     );
     await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
       hash2,
+    );
+    await expect(getPublicKeyFromHash(vg1, hash2)).to.eventually.deep.equal(
+      wallet2.PublicKey(),
     );
   });
 

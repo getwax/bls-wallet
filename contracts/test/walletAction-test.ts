@@ -183,6 +183,130 @@ describe("WalletActions", async function () {
     await expect(fx.verificationGateway.callStatic.verify(tx)).to.be.rejected;
   });
 
+  it("(ERC-1271) should verify message", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signature = wallet.signMessage(hashedMessage);
+    const concatenatedSignature =
+      ethers.utils.hexlify(signature[0]) +
+      ethers.utils.hexlify(signature[1]).substring(2);
+    const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
+
+    const expectedBytes4MagicValue = ethers.utils
+      .solidityKeccak256(["string"], ["isValidSignature(bytes32,bytes)"])
+      .substring(0, 10);
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedBytes4MagicValue);
+  });
+
+  it("(ERC-1271) should fail to verify message when the wrong message is signed", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signatureWithWrongMessage = wallet.signMessage("0x1234");
+    const concatenatedSignature =
+      ethers.utils.hexlify(signatureWithWrongMessage[0]) +
+      ethers.utils.hexlify(signatureWithWrongMessage[1]).substring(2);
+    const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
+
+    const expectedMagicValue = "0xffffffff";
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedMagicValue);
+  });
+
+  it("(ERC-1271) should fail to verify message signed by another wallet", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const imposterWallet = await fx.createBLSWallet();
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signature = imposterWallet.signMessage(hashedMessage);
+    const concatenatedSignature =
+      ethers.utils.hexlify(signature[0]) +
+      ethers.utils.hexlify(signature[1]).substring(2);
+    const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
+
+    const expectedMagicValue = "0xffffffff";
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedMagicValue);
+  });
+
+  it("(ERC-1271) should fail to verify message when signature is not 64 bytes long", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signature = wallet.signMessage(hashedMessage);
+    const longConcatenatedSignature =
+      ethers.utils.hexlify(signature[0]) +
+      ethers.utils.hexlify(signature[1]).substring(2) +
+      ethers.utils.hexlify("0x12").substring(2);
+
+    const shortSignature = ethers.utils.arrayify("0x00");
+    const longSignature = ethers.utils.arrayify(longConcatenatedSignature);
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    await expect(
+      blsWallet.isValidSignature(hashedMessage, shortSignature),
+    ).to.be.rejectedWith("VG: Sig bytes length must be 64");
+    await expect(
+      blsWallet.isValidSignature(hashedMessage, longSignature),
+    ).to.be.rejectedWith("VG: Sig bytes length must be 64");
+  });
+
+  it("(ERC-1271) should fail to verify message when not called from BLS Wallet", async function () {
+    const mockHashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+    const mockSignature = ethers.utils.arrayify("0x00");
+
+    await expect(
+      fx.verificationGateway.isValidSignature(mockHashedMessage, mockSignature),
+    ).to.be.rejectedWith("VG: not called from wallet");
+  });
+
   it("should process individual calls", async function () {
     const th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     const wallets = await th.walletTokenSetup();
