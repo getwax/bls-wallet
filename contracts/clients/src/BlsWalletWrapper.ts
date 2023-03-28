@@ -148,7 +148,7 @@ export default class BlsWalletWrapper {
     const blsWalletSigner = await initBlsWalletSigner({
       chainId: (await verificationGateway.provider.getNetwork()).chainId,
       privateKey,
-      verificationGateway: verificationGatewayAddress,
+      verificationGatewayAddress,
     });
 
     const blsWalletWrapper = new BlsWalletWrapper(
@@ -333,7 +333,7 @@ export default class BlsWalletWrapper {
     return await initBlsWalletSigner({
       chainId,
       privateKey,
-      verificationGateway: verificationGatewayAddress,
+      verificationGatewayAddress,
     });
   }
 
@@ -354,7 +354,7 @@ export default class BlsWalletWrapper {
     const newBlsWalletSigner = await initBlsWalletSigner({
       chainId,
       privateKey,
-      verificationGateway: this.walletContract.address,
+      verificationGatewayAddress: this.walletContract.address,
     });
 
     this.blsWalletSigner = newBlsWalletSigner;

@@ -149,7 +149,7 @@ export default class Fixture {
       await initBlsWalletSigner({
         chainId,
         privateKey,
-        verificationGateway: verificationGateway.address,
+        verificationGatewayAddress: verificationGateway.address,
       }),
     );
   }

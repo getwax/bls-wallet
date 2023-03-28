@@ -18,9 +18,9 @@ export type BlsWalletSigner = AsyncReturnType<typeof initBlsWalletSigner>;
 export async function initBlsWalletSigner({
   chainId,
   privateKey,
-  verificationGateway,
+  verificationGatewayAddress,
 }: {
-  verificationGateway: string;
+  verificationGatewayAddress: string;
   chainId: number;
   privateKey: string;
 }) {
@@ -32,8 +32,8 @@ export async function initBlsWalletSigner({
   // properly initialized for all use cases, not just signing.
   const signerFactory = await signer.BlsSignerFactory.new();
 
-  const bundleDomain = getDomain(chainId, verificationGateway, "Bundle");
-  const walletDomain = getDomain(chainId, verificationGateway, "Wallet");
+  const bundleDomain = getDomain(chainId, verificationGatewayAddress, "Bundle");
+  const walletDomain = getDomain(chainId, verificationGatewayAddress, "Wallet");
 
   return {
     aggregate,
