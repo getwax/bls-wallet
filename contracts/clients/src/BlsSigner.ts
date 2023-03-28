@@ -16,11 +16,13 @@ import { ActionData, bundleToDto } from "./signer";
 export const _constructorGuard = {};
 
 /**
- * @property gas - (THIS PROPERTY IS NOT USED BY BLS WALLET) transaction gas limit
- * @property maxPriorityFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) miner tip aka priority fee
- * @property maxFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
- * @property nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
- * @property chainId - chain ID that this transaction is valid on
+ * Based on draft wallet_batchTransactions rpc proposal https://hackmd.io/HFHohGDbRSGgUFI2rk22bA?view
+ *
+ * @property gas - (THIS PROPERTY IS NOT USED BY BLS WALLET) Transaction gas limit
+ * @property maxPriorityFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) Miner tip aka priority fee
+ * @property maxFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) The maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
+ * @property nonce - Integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
+ * @property chainId - Chain ID that this transaction is valid on
  * @property accessList - (THIS PROPERTY IS NOT USED BY BLS WALLET) EIP-2930 access list
  */
 export type BatchOptions = {
@@ -33,14 +35,18 @@ export type BatchOptions = {
 };
 
 /**
- * @property transactions - an array of transaction objects
- * @property batchOptions - optional batch options taken into account by smart contract wallets
+ * @property transactions - An array of Ethers transaction objects
+ * @property batchOptions - Optional batch options taken into account by smart contract wallets. See {@link BatchOptions}
  */
 export type TransactionBatch = {
   transactions: Array<ethers.providers.TransactionRequest>;
   batchOptions?: BatchOptions;
 };
 
+/**
+ * @property transactions - An array of Ethers transaction response objects
+ * @property awaitBatchReceipt - A function that returns a promise that resolves to a transaction receipt
+ */
 export interface TransactionBatchResponse {
   transactions: Array<ethers.providers.TransactionResponse>;
   awaitBatchReceipt: (
@@ -58,6 +64,12 @@ export default class BlsSigner extends Signer {
 
   readonly initPromise: Promise<void>;
 
+  /**
+   * @param constructorGuard Prevents BlsSigner constructor being called directly
+   * @param provider BlsProvider accociated with this signer
+   * @param privateKey Private key for the account this signer represents
+   * @param addressOrIndex (Not used) Address or index of this account, managed by the connected Ethereum node
+   */
   constructor(
     constructorGuard: Record<string, unknown>,
     provider: BlsProvider,
@@ -92,6 +104,7 @@ export default class BlsSigner extends Signer {
     }
   }
 
+  /** Instantiates a BLS Wallet and then connects the signer to it */
   private async initializeWallet(privateKey: string | Promise<string>) {
     const resolvedPrivateKey = await privateKey;
     this.wallet = await BlsWalletWrapper.connect(
@@ -101,6 +114,18 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  /**
+   * Sends transactions to be executed. Converts the TransactionRequest
+   * to a bundle and adds it to the aggregator
+   *
+   * @remarks The transaction hash returned in the transaction response does
+   * NOT correspond to a transaction hash that can be viewed on a block
+   * explorer. It instead represents the bundle hash, which can be used to
+   * get a transaction receipt that has a hash that can be used on a block explorer
+   *
+   * @param transaction Transaction request object
+   * @returns A transaction response object that can be awaited to get the transaction receipt
+   */
   override async sendTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<ethers.providers.TransactionResponse> {
@@ -148,6 +173,10 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  /**
+   * @param transactionBatch A transaction batch object
+   * @returns A transaction batch response object that can be awaited to get the transaction receipt
+   */
   async sendTransactionBatch(
     transactionBatch: TransactionBatch,
   ): Promise<TransactionBatchResponse> {
@@ -225,6 +254,9 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  /**
+   * @returns The address associated with the BlsSigner
+   */
   async getAddress(): Promise<string> {
     await this.initPromise;
     if (this._address) {
@@ -251,6 +283,12 @@ export default class BlsSigner extends Signer {
     ]);
   }
 
+  /**
+   * @remarks Signs a transaction that can be executed by the BlsProvider
+   *
+   * @param transaction Transaction request object
+   * @returns A signed bundle as a string
+   */
   override async signTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
@@ -285,6 +323,12 @@ export default class BlsSigner extends Signer {
     return JSON.stringify(bundleToDto(bundle));
   }
 
+  /**
+   * Signs a transaction batch that can be executed by the BlsProvider
+   *
+   * @param transactionBatch A transaction batch object
+   * @returns A signed bundle containing all transactions from the transaction batch as a string
+   */
   async signTransactionBatch(
     transactionBatch: TransactionBatch,
   ): Promise<string> {
@@ -342,8 +386,8 @@ export default class BlsSigner extends Signer {
     return JSON.stringify(bundleToDto(bundle));
   }
 
-  /** Sign a message */
-  // TODO: Come back to this once we support EIP-1271
+  /** Signs a message */
+  // TODO: bls-wallet #201 Come back to this once we support EIP-1271
   override async signMessage(message: Bytes | string): Promise<string> {
     await this.initPromise;
     if (isBytes(message)) {
@@ -366,6 +410,9 @@ export default class BlsSigner extends Signer {
     throw new Error("_signTypedData() is not implemented");
   }
 
+  /**
+   * @returns A new Signer object which does not perform additional checks when sending a transaction
+   */
   connectUnchecked(): BlsSigner {
     return new UncheckedBlsSigner(
       _constructorGuard,
@@ -379,6 +426,10 @@ export default class BlsSigner extends Signer {
     );
   }
 
+  /**
+   * @param transaction Transaction request object
+   * @returns Transaction hash for the transaction, corresponds to a bundle hash
+   */
   async sendUncheckedTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<string> {
@@ -455,6 +506,12 @@ export default class BlsSigner extends Signer {
 }
 
 export class UncheckedBlsSigner extends BlsSigner {
+  /**
+   * As with other transaction methods, the transaction hash returned represents the bundle hash, NOT a transaction hash you can use on a block explorer
+   *
+   * @param transaction Transaction request object
+   * @returns The transaction response object with only the transaction hash property populated with a valid value
+   */
   override async sendTransaction(
     transaction: Deferrable<ethers.providers.TransactionRequest>,
   ): Promise<ethers.providers.TransactionResponse> {
