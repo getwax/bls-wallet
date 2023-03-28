@@ -42,7 +42,7 @@ describe("Expanders", async function () {
       01      - One operation
       00      - Use expander 0 (fallback expander)
       00      - Bit stream with all zeros (all false)
-                (tells us not to use registries)
+                (tells us not to use registries and not to pay tx.origin)
 
       1d7c587bfcce8e06c0eda8689f65f040332b9215e535cf5fc918c373784c0049
       1331ae05ceb5d4b9c21d9baf0f5a7903c79da0969671f5e93e246ff45325bd27
@@ -123,8 +123,10 @@ describe("Expanders", async function () {
 
       01      - One operation
       00      - Use expander 0 (fallback expander)
-      03      - 0x03 = 0b11 - bit stream with 2 true bits (tells us to use
-                registries)
+      05      - 0x05 = 0b101 - bit stream:
+                - 1: Use registry for sendWallet's public key
+                - 0: Don't include a tx.origin payment
+                - 1: Use registry for recvWallet's address
       000000  - Registry index for sendWallet's public key
       00      - nonce: 0
       0abf55  - gas: 65194
@@ -138,6 +140,93 @@ describe("Expanders", async function () {
               - signature
     */
     expect(hexLen(compressedBundle)).to.eq(81);
+
+    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+
+    await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
+      0,
+    );
+
+    await expect(fx.provider.getBalance(recvWallet.address)).to.eventually.eq(
+      transferAmount,
+    );
+  });
+
+  it("should transfer ETH using registries and tx.origin payment", async function () {
+    const fx = await Fixture.getSingleton();
+
+    const transferAmount = ethers.utils.parseEther("1.0");
+
+    // Ballpark required payment, a bit under USD $0.01 at the time of writing
+    const txOriginPaymentAmount = ethers.utils.parseEther("0.000005");
+
+    const [sendWallet, recvWallet] = await fx.createBLSWallets(2);
+
+    await receiptOf(
+      fx.signers[0].sendTransaction({
+        to: sendWallet.address,
+        value: transferAmount.add(txOriginPaymentAmount),
+      }),
+    );
+
+    await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
+      transferAmount.add(txOriginPaymentAmount),
+    );
+
+    const { blsPublicKeyRegistry, addressRegistry } = fx.fallbackCompressor;
+
+    await Promise.all(
+      [sendWallet, recvWallet]
+        .map((wallet) => [
+          blsPublicKeyRegistry.register(wallet.PublicKey()),
+          addressRegistry.register(wallet.address),
+        ])
+        .flat(),
+    );
+
+    const bundle = await sendWallet.signWithGasEstimate({
+      nonce: await sendWallet.Nonce(),
+      actions: [
+        {
+          ethValue: transferAmount,
+          contractAddress: recvWallet.address,
+          encodedFunction: "0x",
+        },
+        {
+          ethValue: txOriginPaymentAmount,
+          contractAddress: fx.utilities.address,
+          encodedFunction:
+            fx.utilities.interface.encodeFunctionData("sendEthToTxOrigin"),
+        },
+      ],
+    });
+
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+
+    /*
+      Example:
+
+      01      - One operation
+      00      - Use expander 0 (fallback expander)
+      07      - 0x07 = 0b111 bit stream:
+                - 1: Use registry for BLS key
+                - 1: Include a tx.origin payment
+                - 1: Use registry for address
+      000000  - Registry index for sendWallet's public key
+      00      - nonce: 0
+      0bec0b  - gas: 110683
+      02      - two actions
+      9900    - 1 ETH
+      000001  - Registry index for recvWallet's address
+      00      - 0 bytes for encoded function
+      6d00    - Pay 0.000005 ETH to tx.origin
+
+      1d0848c4b7dad98043414a8ae395c5b2d82fd47f9584b4e5c71bdb18765672fd
+      0d4e1be8b50854fc20cf4948f44b9b3440a59e545e4c93d4f3870f7df5acece3
+              - signature
+    */
+    expect(hexLen(compressedBundle)).to.eq(83);
+    // Just 2 extra bytes for the tx.origin payment
 
     await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
 
