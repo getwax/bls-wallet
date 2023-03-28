@@ -20,7 +20,7 @@ is the calling wallet's address.
  */
 contract VerificationGateway
 {
-    bytes32 PoP_DOMAIN;
+    bytes32 WALLET_DOMAIN;
     bytes32 BUNDLE_DOMAIN;
     uint8 constant BLS_KEY_LEN = 4;
 
@@ -75,10 +75,10 @@ contract VerificationGateway
         blsLib = bls;
         blsWalletLogic = blsWalletImpl;
         walletProxyAdmin = ProxyAdmin(proxyAdmin);
-        PoP_DOMAIN = keccak256(abi.encodePacked(
+        WALLET_DOMAIN = keccak256(abi.encodePacked(
             block.chainid,
             address(this),
-            "ProofOfPossession"
+            "Wallet"
         ));
         BUNDLE_DOMAIN = keccak256(abi.encodePacked(
             block.chainid,
@@ -365,7 +365,7 @@ contract VerificationGateway
     ) private {
         // verify the given wallet was signed for by the bls key
         uint256[2] memory addressMsg = blsLib.hashToPoint(
-            PoP_DOMAIN,
+            WALLET_DOMAIN,
             abi.encodePacked(wallet)
         );
         require(

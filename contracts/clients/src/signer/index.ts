@@ -20,7 +20,6 @@ export async function initBlsWalletSigner({
   privateKey,
   verificationGateway,
 }: {
-  domain?: Uint8Array;
   verificationGateway: string;
   chainId: number;
   privateKey: string;
@@ -33,21 +32,17 @@ export async function initBlsWalletSigner({
   // properly initialized for all use cases, not just signing.
   const signerFactory = await signer.BlsSignerFactory.new();
 
-  const budleDomain = getDomain(chainId, verificationGateway, "Bundle");
-  const popDomain = getDomain(
-    chainId,
-    verificationGateway,
-    "ProofOfPossession",
-  );
+  const bundleDomain = getDomain(chainId, verificationGateway, "Bundle");
+  const walletDomain = getDomain(chainId, verificationGateway, "Wallet");
 
   return {
     aggregate,
-    getPublicKey: getPublicKey(signerFactory, budleDomain, privateKey),
-    getPublicKeyHash: getPublicKeyHash(signerFactory, budleDomain, privateKey),
-    getPublicKeyStr: getPublicKeyStr(signerFactory, budleDomain, privateKey),
-    sign: sign(signerFactory, budleDomain, chainId, privateKey),
-    signMessage: signMessage(signerFactory, popDomain, privateKey),
-    verify: verify(budleDomain, chainId),
+    getPublicKey: getPublicKey(signerFactory, bundleDomain, privateKey),
+    getPublicKeyHash: getPublicKeyHash(signerFactory, bundleDomain, privateKey),
+    getPublicKeyStr: getPublicKeyStr(signerFactory, bundleDomain, privateKey),
+    sign: sign(signerFactory, bundleDomain, chainId, privateKey),
+    signMessage: signMessage(signerFactory, walletDomain, privateKey),
+    verify: verify(bundleDomain, chainId),
     privateKey,
   };
 }
