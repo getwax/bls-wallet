@@ -330,7 +330,11 @@ export default class BlsWalletWrapper {
         ? await signerOrProvider.getChainId()
         : (await signerOrProvider.getNetwork()).chainId;
 
-    return await initBlsWalletSigner({ chainId, privateKey, verificationGateway: verificationGatewayAddress });
+    return await initBlsWalletSigner({
+      chainId,
+      privateKey,
+      verificationGateway: verificationGatewayAddress,
+    });
   }
 
   /**

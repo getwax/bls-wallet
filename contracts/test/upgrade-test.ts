@@ -182,15 +182,15 @@ describe("Upgrade", async function () {
       // Fail if setExternalWalletAction is skipped
 
       const result = await fx.verificationGateway.callStatic.processBundle(
-          walletOldVg.sign({
-            nonce: BigNumber.from(2),
-            actions: [
-              // skip: setExternalWalletAction,
-              changeProxyAction,
-              setTrustedBLSGatewayAction,
-            ],
-          }),
-        );
+        walletOldVg.sign({
+          nonce: BigNumber.from(2),
+          actions: [
+            // skip: setExternalWalletAction,
+            changeProxyAction,
+            setTrustedBLSGatewayAction,
+          ],
+        }),
+      );
 
       expect(result.successes).to.deep.equal([false]);
     }
