@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 import { ethers, BigNumber } from "ethers";
 import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
 import {
@@ -13,10 +11,10 @@ import {
 
 import {
   BLSWallet,
-  BLSWallet__factory,
-  TransparentUpgradeableProxy__factory,
+  BLSWallet__factory as BLSWalletFactory,
+  TransparentUpgradeableProxy__factory as TransparentUpgradeableProxyFactory,
   VerificationGateway,
-  VerificationGateway__factory,
+  VerificationGateway__factory as VerificationGatewayFactory,
 } from "../typechain-types";
 
 import getRandomBlsPrivateKey from "./signer/getRandomBlsPrivateKey";
@@ -48,7 +46,7 @@ export default class BlsWalletWrapper {
       verificationGateway.provider,
     );
 
-    return BLSWallet__factory.connect(
+    return BLSWalletFactory.connect(
       contractAddress,
       verificationGateway.provider,
     );
@@ -78,7 +76,7 @@ export default class BlsWalletWrapper {
   ): Promise<string> {
     blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
 
-    const verificationGateway = VerificationGateway__factory.connect(
+    const verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
@@ -143,7 +141,7 @@ export default class BlsWalletWrapper {
     verificationGatewayAddress: string,
     provider: ethers.providers.Provider,
   ): Promise<BlsWalletWrapper> {
-    const verificationGateway = VerificationGateway__factory.connect(
+    const verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
       provider,
     );
@@ -171,7 +169,7 @@ export default class BlsWalletWrapper {
       verificationGateway.provider,
     );
 
-    this.walletContract = BLSWallet__factory.connect(
+    this.walletContract = BLSWalletFactory.connect(
       this.address,
       verificationGateway.provider,
     );
@@ -201,7 +199,7 @@ export default class BlsWalletWrapper {
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<BigNumber> {
-    const verificationGateway = VerificationGateway__factory.connect(
+    const verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
@@ -215,7 +213,7 @@ export default class BlsWalletWrapper {
       publicKeyHash,
     );
 
-    const walletContract = BLSWallet__factory.connect(
+    const walletContract = BLSWalletFactory.connect(
       contractAddress,
       signerOrProvider,
     );
@@ -257,7 +255,7 @@ export default class BlsWalletWrapper {
       ? await this.walletContract.trustedBLSGateway()
       : this.defaultGatewayAddress;
 
-    const gateway = VerificationGateway__factory.connect(
+    const gateway = VerificationGatewayFactory.connect(
       gatewayAddress,
       this.walletContract.provider,
     );
@@ -391,7 +389,7 @@ export default class BlsWalletWrapper {
     ]);
 
     const initFunctionParams =
-      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
+      BLSWalletFactory.createInterface().encodeFunctionData("initialize", [
         verificationGateway.address,
       ]);
 
@@ -401,7 +399,7 @@ export default class BlsWalletWrapper {
       ethers.utils.solidityKeccak256(
         ["bytes", "bytes"],
         [
-          TransparentUpgradeableProxy__factory.bytecode,
+          TransparentUpgradeableProxyFactory.bytecode,
           ethers.utils.defaultAbiCoder.encode(
             ["address", "address", "bytes"],
             [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],

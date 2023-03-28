@@ -14,8 +14,7 @@ import {
   ActionData,
   BlsWalletWrapper,
   NetworkConfig,
-  // eslint-disable-next-line camelcase
-  MockERC20__factory,
+  MockERC20Factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
@@ -556,8 +555,7 @@ describe("BlsSigner", () => {
     // Arrange
     const spy = chai.spy.on(Experimental.BlsProvider.prototype, "call");
 
-    // eslint-disable-next-line camelcase
-    const testERC20 = MockERC20__factory.connect(
+    const testERC20 = MockERC20Factory.connect(
       networkConfig.addresses.testToken,
       blsProvider,
     );

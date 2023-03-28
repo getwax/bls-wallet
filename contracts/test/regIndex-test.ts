@@ -1,17 +1,18 @@
-/* eslint-disable camelcase */
-
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 import { encodeRegIndex } from "../clients/src";
-import { RegIndex, RegIndex__factory } from "../typechain-types";
+import {
+  RegIndex,
+  RegIndex__factory as RegIndexFactory,
+} from "../typechain-types";
 
 describe("RegIndex", function () {
   let regIndex: RegIndex;
 
   this.beforeAll(async () => {
     const [eoa] = await ethers.getSigners();
-    const factory = new RegIndex__factory(eoa);
+    const factory = new RegIndexFactory(eoa);
     regIndex = await factory.deploy();
   });
 

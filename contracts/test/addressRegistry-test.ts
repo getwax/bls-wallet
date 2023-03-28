@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { AddressRegistryWrapper } from "../clients/src";

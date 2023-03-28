@@ -1,13 +1,11 @@
-/* eslint-disable camelcase */
-
 import { BigNumber, ethers, Signer } from "ethers";
 import {
-  AddressRegistry__factory,
+  AddressRegistry__factory as AddressRegistryFactory,
   AggregatorUtilities,
-  AggregatorUtilities__factory,
-  BLSPublicKeyRegistry__factory,
+  AggregatorUtilities__factory as AggregatorUtilitiesFactory,
+  BLSPublicKeyRegistry__factory as BLSPublicKeyRegistryFactory,
   BLSRegistration,
-  BLSRegistration__factory,
+  BLSRegistration__factory as BLSRegistrationFactory,
 } from "../typechain-types";
 import AddressRegistryWrapper from "./AddressRegistryWrapper";
 import BlsPublicKeyRegistryWrapper from "./BlsPublicKeyRegistryWrapper";
@@ -43,18 +41,18 @@ export default class BlsRegistrationCompressor implements IOperationCompressor {
     return new BlsRegistrationCompressor(
       blsRegistration,
       new BlsPublicKeyRegistryWrapper(
-        BLSPublicKeyRegistry__factory.connect(
+        BLSPublicKeyRegistryFactory.connect(
           blsPublicKeyRegistryAddress,
           blsRegistration.signer,
         ),
       ),
       new AddressRegistryWrapper(
-        AddressRegistry__factory.connect(
+        AddressRegistryFactory.connect(
           addressRegistryAddress,
           blsRegistration.signer,
         ),
       ),
-      AggregatorUtilities__factory.connect(
+      AggregatorUtilitiesFactory.connect(
         aggregatorUtilitiesAddress,
         blsRegistration.signer,
       ),
@@ -62,12 +60,10 @@ export default class BlsRegistrationCompressor implements IOperationCompressor {
   }
 
   static async deployNew(signer: Signer): Promise<BlsRegistrationCompressor> {
-    const blsPublicKeyRegistryFactory = new BLSPublicKeyRegistry__factory(
-      signer,
-    );
+    const blsPublicKeyRegistryFactory = new BLSPublicKeyRegistryFactory(signer);
 
-    const addressRegistryFactory = new AddressRegistry__factory(signer);
-    const aggregatorUtilitiesFactory = new AggregatorUtilities__factory(signer);
+    const addressRegistryFactory = new AddressRegistryFactory(signer);
+    const aggregatorUtilitiesFactory = new AggregatorUtilitiesFactory(signer);
 
     const [
       blsPublicKeyRegistryContract,
@@ -79,7 +75,7 @@ export default class BlsRegistrationCompressor implements IOperationCompressor {
       aggregatorUtilitiesFactory.deploy(),
     ]);
 
-    const blsRegistrationFactory = new BLSRegistration__factory(signer);
+    const blsRegistrationFactory = new BLSRegistrationFactory(signer);
 
     const blsRegistrationContract = await blsRegistrationFactory.deploy(
       blsPublicKeyRegistryContract.address,
@@ -105,11 +101,11 @@ export default class BlsRegistrationCompressor implements IOperationCompressor {
       await Promise.all([
         BlsPublicKeyRegistryWrapper.connectOrDeploy(factory, salt),
         AddressRegistryWrapper.connectOrDeploy(factory, salt),
-        factory.connectOrDeploy(AggregatorUtilities__factory, [], salt),
+        factory.connectOrDeploy(AggregatorUtilitiesFactory, [], salt),
       ]);
 
     const blsRegistrationContract = await factory.connectOrDeploy(
-      BLSRegistration__factory,
+      BLSRegistrationFactory,
       [
         blsPublicKeyRegistry.registry.address,
         addressRegistry.registry.address,
@@ -135,25 +131,25 @@ export default class BlsRegistrationCompressor implements IOperationCompressor {
     );
 
     const blsPublicKeyRegistryAddress = factoryViewer.calculateAddress(
-      BLSPublicKeyRegistry__factory,
+      BLSPublicKeyRegistryFactory,
       [],
       salt,
     );
 
     const addressRegistryAddress = factoryViewer.calculateAddress(
-      AddressRegistry__factory,
+      AddressRegistryFactory,
       [],
       salt,
     );
 
     const aggregatorUtilitiesAddress = factoryViewer.calculateAddress(
-      AggregatorUtilities__factory,
+      AggregatorUtilitiesFactory,
       [],
       salt,
     );
 
     const blsRegistration = await factoryViewer.connectIfDeployed(
-      BLSRegistration__factory,
+      BLSRegistrationFactory,
       [
         blsPublicKeyRegistryAddress,
         addressRegistryAddress,
