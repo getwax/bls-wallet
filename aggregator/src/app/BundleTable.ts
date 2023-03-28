@@ -60,14 +60,14 @@ export type BundleRow = Row;
 function fromRawRow(rawRow: RawRow | sqlite.Row): Row {
   if (Array.isArray(rawRow)) {
     rawRow = {
-      id: rawRow[0],
-      status: rawRow[1],
-      hash: rawRow[2],
-      bundle: rawRow[3],
-      eligibleAfter: rawRow[4],
-      nextEligibilityDelay: rawRow[5],
-      submitError: rawRow[6],
-      receipt: rawRow[7],
+      id: rawRow[0] as number,
+      status: rawRow[1] as string,
+      hash: rawRow[2] as string,
+      bundle: rawRow[3] as string,
+      eligibleAfter: rawRow[4] as string,
+      nextEligibilityDelay: rawRow[5] as string,
+      submitError: rawRow[6] as string | null,
+      receipt: rawRow[7] as string | null,
     };
   }
 
