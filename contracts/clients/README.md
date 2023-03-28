@@ -332,8 +332,13 @@ import { initBlsWalletSigner } from "bls-wallet-clients";
 
 (async () => {
   const privateKey = "0x...256 bits of private hex data here";
+  const verificationGatewayAddress = "0x123...456";
 
-  const signer = await initBlsWalletSigner({ chainId: 10, privateKey });
+  const signer = await initBlsWalletSigner({
+    chainId: 10,
+    privateKey,
+    verificationGatewayAddress
+  });
 
   const someToken = new ethers.Contract(
     ...
