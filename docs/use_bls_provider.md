@@ -15,7 +15,7 @@ The `BlsProvider` and `BlsSigner` are covered by over 100 test cases, including 
 ### Instantiating a BlsProvider
 
 ```ts
-import { Experimental, BlsWalletWrapper } from "bls-wallet-clients";
+import { Experimental } from "bls-wallet-clients";
 
 const aggregatorUrl = "http://localhost:3000";
 const verificationGateway = "0x123";
@@ -44,12 +44,10 @@ import { BlsWalletWrapper } from "bls-wallet-clients";
 
 const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 
+const signer = provider.getSigner(privateKey);
+
 // Send funds to this address if the wallet does not exist
-const address = await BlsWalletWrapper.Address(
-    privateKey,
-    verificationGatewayAddress,
-    provider
-);
+const address = await signer.getAddress();
 ```
 
 ### Instantiating a BlsSigner
