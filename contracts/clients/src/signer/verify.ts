@@ -26,7 +26,7 @@ export default (domain: Uint8Array, chainId: number) =>
         BigNumber.from(n3).toHexString(),
       ]),
       bundle.operations.map((op) =>
-        encodeMessageForSigning(chainId)(op, walletAddress),
+        encodeMessageForSigning()(op, walletAddress),
       ),
     );
   };

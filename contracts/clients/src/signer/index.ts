@@ -1,7 +1,6 @@
 import { signer } from "@thehubbleproject/bls";
 
 import aggregate from "./aggregate";
-import defaultDomain from "./defaultDomain";
 import getDomain from "./getDomain";
 import getPublicKey from "./getPublicKey";
 import getPublicKeyHash from "./getPublicKeyHash";
@@ -34,16 +33,21 @@ export async function initBlsWalletSigner({
   // properly initialized for all use cases, not just signing.
   const signerFactory = await signer.BlsSignerFactory.new();
 
-  const domain = getDomain(chainId, verificationGateway);
+  const budleDomain = getDomain(chainId, verificationGateway, "Bundle");
+  const popDomain = getDomain(
+    chainId,
+    verificationGateway,
+    "ProofOfPossession",
+  );
 
   return {
     aggregate,
-    getPublicKey: getPublicKey(signerFactory, domain, privateKey),
-    getPublicKeyHash: getPublicKeyHash(signerFactory, domain, privateKey),
-    getPublicKeyStr: getPublicKeyStr(signerFactory, domain, privateKey),
-    sign: sign(signerFactory, domain, chainId, privateKey),
-    signMessage: signMessage(signerFactory, domain, privateKey),
-    verify: verify(domain, chainId),
+    getPublicKey: getPublicKey(signerFactory, budleDomain, privateKey),
+    getPublicKeyHash: getPublicKeyHash(signerFactory, budleDomain, privateKey),
+    getPublicKeyStr: getPublicKeyStr(signerFactory, budleDomain, privateKey),
+    sign: sign(signerFactory, budleDomain, chainId, privateKey),
+    signMessage: signMessage(signerFactory, popDomain, privateKey),
+    verify: verify(budleDomain, chainId),
     privateKey,
   };
 }

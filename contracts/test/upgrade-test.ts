@@ -228,7 +228,7 @@ describe("Upgrade", async function () {
           }),
         );
 
-      expect(successes).to.deep.equal([true]); // blake fails here
+      expect(successes).to.deep.equal([true]);
     }
 
     expect(await vg2.walletFromHash(hash)).not.to.equal(walletAddress);
@@ -277,7 +277,7 @@ describe("Upgrade", async function () {
 
     await walletNewVg.syncWallet(vg2);
     // Check new gateway has wallet via static call through new gateway
-    const bundleResult = await vg2.callStatic.processBundle(  // blake now failing here
+    const bundleResult = await vg2.callStatic.processBundle(
       fx.blsWalletSigner.aggregate([
         walletNewVg.sign({
           nonce: BigNumber.from(3),
