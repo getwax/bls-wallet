@@ -6,7 +6,8 @@ import { formatEther, parseEther } from "ethers/lib/utils";
 import {
   BlsWalletWrapper,
   bundleToDto,
-  Experimental,
+  BlsProvider,
+  BlsSigner,
   MockERC20__factory,
   NetworkConfig,
 } from "../clients/src";
@@ -21,8 +22,8 @@ let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
 let privateKey: string;
-let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
-let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
+let blsProvider: BlsProvider;
+let blsSigner: BlsSigner;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
 
@@ -39,9 +40,9 @@ describe("BlsProvider", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
+    privateKey = await BlsSigner.getRandomBlsPrivateKey();
 
-    blsProvider = new Experimental.BlsProvider(
+    blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,

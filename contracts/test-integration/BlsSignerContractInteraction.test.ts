@@ -3,12 +3,10 @@ import { ethers } from "hardhat";
 import { BigNumber, utils, Wallet } from "ethers";
 import sinon from "sinon";
 
-import { Experimental, BlsWalletWrapper } from "../clients/src";
+import { BlsProvider, BlsSigner, BlsWalletWrapper } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
-async function getRandomSigners(
-  numSigners: number,
-): Promise<typeof Experimental.BlsSigner[]> {
+async function getRandomSigners(numSigners: number): Promise<BlsSigner[]> {
   const networkConfig = await getNetworkConfig("local");
 
   const aggregatorUrl = "http://localhost:3000";
@@ -22,8 +20,8 @@ async function getRandomSigners(
 
   const signers = [];
   for (let i = 0; i < numSigners; i++) {
-    const privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
-    const blsProvider = new Experimental.BlsProvider(
+    const privateKey = await BlsSigner.getRandomBlsPrivateKey();
+    const blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,

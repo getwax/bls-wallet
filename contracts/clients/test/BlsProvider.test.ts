@@ -2,8 +2,8 @@ import { expect } from "chai";
 import { ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 
-import { Experimental } from "../src";
-import BlsSigner, { UncheckedBlsSigner } from "../src/BlsSigner";
+import { BlsProvider, BlsSigner } from "../src";
+import { UncheckedBlsSigner } from "../src/BlsSigner";
 
 let aggregatorUrl: string;
 let verificationGateway: string;
@@ -12,8 +12,8 @@ let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
 let privateKey: string;
-let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
-let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
+let blsProvider: BlsProvider;
+let blsSigner: BlsSigner;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
 
@@ -28,9 +28,9 @@ describe("BlsProvider", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
+    privateKey = await BlsSigner.getRandomBlsPrivateKey();
 
-    blsProvider = new Experimental.BlsProvider(
+    blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
@@ -63,7 +63,7 @@ describe("BlsProvider", () => {
   it("should return a new signer", async () => {
     // Arrange
     const newVerificationGateway = "newMockVerificationGatewayAddress";
-    const newBlsProvider = new Experimental.BlsProvider(
+    const newBlsProvider = new BlsProvider(
       aggregatorUrl,
       newVerificationGateway,
       aggregatorUtilities,
@@ -72,7 +72,7 @@ describe("BlsProvider", () => {
     );
 
     // Act
-    const newPrivateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
+    const newPrivateKey = await BlsSigner.getRandomBlsPrivateKey();
 
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
 
@@ -198,9 +198,8 @@ describe("BlsProvider", () => {
 
   it("should be a provider", async () => {
     // Arrange & Act
-    const isProvider = Experimental.BlsProvider.isProvider(blsProvider);
-    const isProviderWithInvalidProvider =
-      Experimental.BlsProvider.isProvider(blsSigner);
+    const isProvider = BlsProvider.isProvider(blsProvider);
+    const isProviderWithInvalidProvider = BlsProvider.isProvider(blsSigner);
 
     // Assert
     expect(isProvider).to.equal(true);
