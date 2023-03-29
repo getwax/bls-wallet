@@ -95,14 +95,14 @@ describe("Upgrade", async function () {
     const walletAddress = walletOldVg.address;
     const blsSecret = walletOldVg.privateKey;
 
-    const wallet = await BlsWalletWrapper.connect(
-      blsSecret,
-      fx.verificationGateway.address,
-      fx.verificationGateway.provider,
-    );
     // Sign simple address message
     const addressMessage = solidityPack(["address"], [walletAddress]);
-    const addressSignature = wallet.signMessage(addressMessage);
+    const walletNewVg = await BlsWalletWrapper.connect(
+      blsSecret,
+      vg2.address,
+      vg2.provider,
+    );
+    const addressSignature = walletNewVg.signMessage(addressMessage);
 
     const proxyAdmin2Address = await vg2.walletProxyAdmin();
     // Get admin action to change proxy
@@ -259,10 +259,11 @@ describe("Upgrade", async function () {
       vg2.address,
     );
 
+    await walletNewVg.syncWallet(vg2);
     // Check new gateway has wallet via static call through new gateway
     const bundleResult = await vg2.callStatic.processBundle(
       fx.blsWalletSigner.aggregate([
-        walletOldVg.sign({
+        walletNewVg.sign({
           nonce: BigNumber.from(2),
           gas: BigNumber.from(30_000_000),
           actions: [

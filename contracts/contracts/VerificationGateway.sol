@@ -19,11 +19,8 @@ is the calling wallet's address.
  */
 contract VerificationGateway
 {
-    /**
-     * Chosen arbitrarily
-     * =keccak256(abi.encodePacked(uint32(0xfeedbee5)))
-     */
-    bytes32 BLS_DOMAIN = 0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc;
+    bytes32 WALLET_DOMAIN;
+    bytes32 BUNDLE_DOMAIN;
     uint8 constant BLS_KEY_LEN = 4;
 
     IBLS public immutable blsLib;
@@ -66,6 +63,16 @@ contract VerificationGateway
     constructor(IBLS bls) {
         blsLib = bls;
         blsWalletLogic.initialize(address(0));
+        WALLET_DOMAIN = keccak256(abi.encodePacked(
+            block.chainid,
+            address(this),
+            "Wallet"
+        ));
+        BUNDLE_DOMAIN = keccak256(abi.encodePacked(
+            block.chainid,
+            address(this),
+            "Bundle"
+        ));
     }
 
     /** Throw if bundle not valid or signature verification fails */
@@ -126,7 +133,7 @@ contract VerificationGateway
         bytes memory hashBytes = abi.encode(hash);
 
         uint256[2] memory message = blsLib.hashToPoint(
-            BLS_DOMAIN,
+            WALLET_DOMAIN,
             hashBytes
         );
 
@@ -393,7 +400,7 @@ contract VerificationGateway
     ) private {
         // verify the given wallet was signed for by the bls key
         uint256[2] memory addressMsg = blsLib.hashToPoint(
-            BLS_DOMAIN,
+            WALLET_DOMAIN,
             abi.encodePacked(wallet)
         );
         require(
@@ -454,9 +461,8 @@ contract VerificationGateway
             );
         }
         return blsLib.hashToPoint(
-            BLS_DOMAIN,
+            BUNDLE_DOMAIN,
             abi.encodePacked(
-                block.chainid,
                 walletAddress,
                 op.nonce,
                 keccak256(encodedActionData)

@@ -74,7 +74,10 @@ export default class BlsWalletWrapper {
     signerOrProvider: SignerOrProvider,
     blsWalletSigner?: BlsWalletSigner,
   ): Promise<string> {
-    blsWalletSigner ??= await this.#BlsWalletSigner(signerOrProvider);
+    blsWalletSigner ??= await this.#BlsWalletSigner(
+      signerOrProvider,
+      verificationGatewayAddress,
+    );
 
     const verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
@@ -147,6 +150,7 @@ export default class BlsWalletWrapper {
     );
     const blsWalletSigner = await initBlsWalletSigner({
       chainId: (await verificationGateway.provider.getNetwork()).chainId,
+      verificationGatewayAddress,
     });
 
     const blsWalletWrapper = new BlsWalletWrapper(
@@ -369,13 +373,14 @@ export default class BlsWalletWrapper {
 
   static async #BlsWalletSigner(
     signerOrProvider: SignerOrProvider,
+    verificationGatewayAddress: string,
   ): Promise<BlsWalletSigner> {
     const chainId =
       "getChainId" in signerOrProvider
         ? await signerOrProvider.getChainId()
         : (await signerOrProvider.getNetwork()).chainId;
 
-    return await initBlsWalletSigner({ chainId });
+    return await initBlsWalletSigner({ chainId, verificationGatewayAddress });
   }
 
   // Calculates the expected address the wallet will be created at

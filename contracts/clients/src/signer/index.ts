@@ -1,7 +1,7 @@
 import { signer } from "@thehubbleproject/bls";
 
 import aggregate from "./aggregate";
-import defaultDomain from "./defaultDomain";
+import getDomain from "./getDomain";
 import getPublicKey from "./getPublicKey";
 import getPublicKeyHash from "./getPublicKeyHash";
 import getPublicKeyStr from "./getPublicKeyStr";
@@ -16,11 +16,11 @@ export * from "./conversions";
 export type BlsWalletSigner = AsyncReturnType<typeof initBlsWalletSigner>;
 
 export async function initBlsWalletSigner({
-  domain = defaultDomain,
   chainId,
+  verificationGatewayAddress,
 }: {
-  domain?: Uint8Array;
   chainId: number;
+  verificationGatewayAddress: string;
 }) {
   // Note: Getting signers via this factory ensures that mcl-wasm's underlying
   // init() has been called when signing. However, other operations such as
@@ -30,13 +30,16 @@ export async function initBlsWalletSigner({
   // properly initialized for all use cases, not just signing.
   const signerFactory = await signer.BlsSignerFactory.new();
 
+  const bundleDomain = getDomain(chainId, verificationGatewayAddress, "Bundle");
+  const walletDomain = getDomain(chainId, verificationGatewayAddress, "Wallet");
+
   return {
     aggregate,
-    getPublicKey: getPublicKey(signerFactory, domain),
-    getPublicKeyHash: getPublicKeyHash(signerFactory, domain),
-    getPublicKeyStr: getPublicKeyStr(signerFactory, domain),
-    sign: sign(signerFactory, domain, chainId),
-    signMessage: signMessage(signerFactory, domain),
-    verify: verify(domain, chainId),
+    getPublicKey: getPublicKey(signerFactory, bundleDomain),
+    getPublicKeyHash: getPublicKeyHash(signerFactory, bundleDomain),
+    getPublicKeyStr: getPublicKeyStr(signerFactory, bundleDomain),
+    sign: sign(signerFactory, bundleDomain, chainId),
+    signMessage: signMessage(signerFactory, walletDomain),
+    verify: verify(bundleDomain, chainId),
   };
 }
