@@ -40,9 +40,9 @@ const provider = new Experimental.BlsProvider(
 **Important:** Ensure that the BLS wallet you are linking the `BlsSigner` to via the private key is funded. Alternatively, if a wallet doesn't yet exist, it will be lazily created on the first transaction. In this scenario, you can create a random BLS private key with the following helper method and fund that account. It will need to be funded in order to send its first transaction.
 
 ```ts
-import { BlsWalletWrapper } from "bls-wallet-clients";
+import { Experimental } from "bls-wallet-clients";
 
-const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+const privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
 
 const signer = provider.getSigner(privateKey);
 

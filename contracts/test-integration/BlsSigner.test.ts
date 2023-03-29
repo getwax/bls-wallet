@@ -48,7 +48,7 @@ describe("BlsSigner", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
 
     blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
@@ -799,7 +799,7 @@ describe("BlsSigner", () => {
 
   it("should await the init promise when connecting to an unchecked bls signer", async () => {
     // Arrange
-    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const newPrivateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
     const newBlsSigner = blsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
@@ -834,7 +834,7 @@ describe("BlsSigner", () => {
       rpcUrl,
       network,
     );
-    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const newPrivateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 

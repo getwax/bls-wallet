@@ -115,6 +115,13 @@ export default class BlsSigner extends Signer {
   }
 
   /**
+   * @returns a random BLS private key
+   */
+  static async getRandomBlsPrivateKey(): Promise<string> {
+    return await BlsWalletWrapper.getRandomBlsPrivateKey();
+  }
+
+  /**
    * Sends transactions to be executed. Converts the TransactionRequest
    * to a bundle and adds it to the aggregator
    *
