@@ -68,6 +68,8 @@ jobs:
         deno-version: ${{ env.DENO_VERSION }}
     - uses: ./.github/actions/setup-contracts-clients
 
+    - uses: mxschmitt/action-tmate@v3
+
     # Setup node & contracts
     - working-directory: ./contracts
       run: yarn start &
@@ -76,3 +78,4 @@ jobs:
 
     - run: cp .env.local.example .env
     - run: deno test --allow-net --allow-env --allow-read
+    - run: sleep 3600
