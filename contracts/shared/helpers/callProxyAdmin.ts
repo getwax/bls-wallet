@@ -33,7 +33,7 @@ export async function proxyAdminBundle(
   );
   const encodedWalletAdminCall =
     fx.verificationGateway.interface.encodeFunctionData("walletAdminCall", [
-      wallet.blsWalletSigner.getPublicKeyHash(wallet.privateKey),
+      wallet.blsWalletSigner.getPublicKeyHash(),
       encodedGetProxyAdmin,
     ]);
   const action: ActionData = {

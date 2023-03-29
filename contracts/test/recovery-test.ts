@@ -33,7 +33,7 @@ describe("Recovery", async function () {
   let blsWallet: BLSWallet;
   let blsWallet3: BLSWallet;
   let recoverySigner;
-  let hash1, hash2, hashAttacker;
+  let wallet1PublicKeyHash, wallet2PublicKeyHash, walletAttackerPublicKeyHash;
   let salt;
   let recoveryHash;
   beforeEach(async function () {
@@ -48,15 +48,14 @@ describe("Recovery", async function () {
     blsWallet3 = await ethers.getContractAt("BLSWallet", wallet3.address);
     recoverySigner = (await ethers.getSigners())[1];
 
-    hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
-    hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
-    hashAttacker = wallet2.blsWalletSigner.getPublicKeyHash(
-      walletAttacker.privateKey,
-    );
+    wallet1PublicKeyHash = wallet1.blsWalletSigner.getPublicKeyHash();
+    wallet2PublicKeyHash = wallet2.blsWalletSigner.getPublicKeyHash();
+    walletAttackerPublicKeyHash =
+      walletAttacker.blsWalletSigner.getPublicKeyHash();
     salt = "0x1234567812345678123456781234567812345678123456781234567812345678";
     recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
-      [recoverySigner.address, hash1, salt],
+      [recoverySigner.address, wallet1PublicKeyHash, salt],
     );
   });
 
@@ -71,12 +70,12 @@ describe("Recovery", async function () {
       )
     ).wait();
 
-    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash1);
+    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(wallet1PublicKeyHash);
 
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet2.privateKey,
+      wallet2.blsWalletSigner.privateKey,
     );
 
     await fx.call(
@@ -105,7 +104,7 @@ describe("Recovery", async function () {
       }),
     );
 
-    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash2);
+    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(wallet2PublicKeyHash);
   });
 
   it("should NOT override public key hash after creation", async function () {
@@ -119,15 +118,15 @@ describe("Recovery", async function () {
       )
     ).wait();
 
-    let walletForHash = await vg.walletFromHash(hash1);
+    let walletForHash = await vg.walletFromHash(wallet1PublicKeyHash);
     expect(BigNumber.from(walletForHash)).to.not.equal(BigNumber.from(0));
     expect(walletForHash).to.equal(wallet1.address);
 
     let hashFromWallet = await vg.hashFromWallet(wallet1.address);
     expect(BigNumber.from(hashFromWallet)).to.not.equal(BigNumber.from(0));
-    expect(hashFromWallet).to.equal(hash1);
+    expect(hashFromWallet).to.equal(wallet1PublicKeyHash);
 
-    let publicKeyFromHash = await getPublicKeyFromHash(vg, hash1);
+    let publicKeyFromHash = await getPublicKeyFromHash(vg, wallet1PublicKeyHash);
     expect(publicKeyFromHash).to.deep.equal(wallet1.PublicKey());
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
@@ -147,13 +146,13 @@ describe("Recovery", async function () {
       }),
     );
 
-    walletForHash = await vg.walletFromHash(hash1);
+    walletForHash = await vg.walletFromHash(wallet1PublicKeyHash);
     expect(walletForHash).to.equal(wallet1.address);
 
     hashFromWallet = await vg.hashFromWallet(wallet1.address);
-    expect(hashFromWallet).to.equal(hash1);
+    expect(hashFromWallet).to.equal(wallet1PublicKeyHash);
 
-    publicKeyFromHash = await getPublicKeyFromHash(vg, hash1);
+    publicKeyFromHash = await getPublicKeyFromHash(vg, wallet1PublicKeyHash);
     expect(publicKeyFromHash).to.deep.equal(wallet1.PublicKey());
   });
 
@@ -173,7 +172,7 @@ describe("Recovery", async function () {
     salt = "0x" + "AB".repeat(32);
     const newRecoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
-      [recoverySigner.address, hash1, salt],
+      [recoverySigner.address, wallet1PublicKeyHash, salt],
     );
     await fx.call(
       wallet1,
@@ -263,7 +262,7 @@ describe("Recovery", async function () {
     // wallet 2 address is recovery address of wallet 1
     recoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
-      [wallet2.address, hash1, salt],
+      [wallet2.address, wallet1PublicKeyHash, salt],
     );
     let w1Nonce = 0;
     await fx.call(
@@ -280,7 +279,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet3.privateKey,
+      wallet3.blsWalletSigner.privateKey,
     );
 
     // wallet 2 recovers wallet 1 to key 3
@@ -326,7 +325,7 @@ describe("Recovery", async function () {
     const attackSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      walletAttacker.privateKey,
+      walletAttacker.blsWalletSigner.privateKey,
     );
 
     // Attacker assumed to have compromised wallet1 bls key, and wishes to reset
@@ -339,12 +338,20 @@ describe("Recovery", async function () {
       recoveredWalletNonce++,
       30_000_000,
     );
+
     const pendingKey = await Promise.all(
       [0, 1, 2, 3].map(async (i) =>
-        (await vg.pendingBLSPublicKeyFromHash(hash1, i)).toHexString(),
+        (
+          await vg.pendingBLSPublicKeyFromHash(wallet1PublicKeyHash, i)
+        ).toHexString(),
       ),
     );
-    expect(pendingKey).to.deep.equal(walletAttacker.PublicKey());
+
+    const attackerPublicKeyHexStrings = walletAttacker
+      .PublicKey()
+      .map((keyElement) => BigNumber.from(keyElement).toHexString());
+
+    expect(pendingKey).to.deep.equal(attackerPublicKeyHexStrings);
 
     await fx.advanceTimeBy(safetyDelaySeconds / 2); // wait half the time
     // NB: advancing the time makes an empty tx with lazywallet[1]
@@ -370,20 +377,20 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet2.privateKey,
+      wallet2.blsWalletSigner.privateKey,
     );
     const safeKey = wallet2.PublicKey();
 
     await (
       await fx.verificationGateway
         .connect(recoverySigner)
-        .recoverWallet(addressSignature, hash1, salt, safeKey)
+        .recoverWallet(addressSignature, wallet1PublicKeyHash, salt, safeKey)
     ).wait();
 
     // key reset via recovery
-    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(hash2);
-    await expect(vg.walletFromHash(hash2)).to.eventually.eql(wallet1.address);
-    await expect(getPublicKeyFromHash(vg, hash2)).to.eventually.deep.equal(
+    await expect(vg.hashFromWallet(wallet1.address)).to.eventually.eql(wallet2PublicKeyHash);
+    await expect(vg.walletFromHash(wallet2PublicKeyHash)).to.eventually.eql(wallet1.address);
+    await expect(getPublicKeyFromHash(vg, wallet2PublicKeyHash)).to.eventually.deep.equal(
       safeKey,
     );
 
@@ -442,19 +449,22 @@ describe("Recovery", async function () {
       wallet1.PublicKey(),
     );
 
-    await expect(vg.walletFromHash(hashAttacker)).to.eventually.not.equal(
+    await expect(vg.walletFromHash(wallet1PublicKeyHash)).to.eventually.not.equal(
       blsWallet.address,
     );
-    await expect(vg.walletFromHash(hash2)).to.eventually.equal(
+    await expect(vg.walletFromHash(walletAttackerPublicKeyHash)).to.eventually.equal(
+      blsWallet.address,
+    );
+    await expect(vg.walletFromHash(wallet2PublicKeyHash)).to.eventually.equal(
       blsWallet.address,
     );
 
-    // // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
+    // verify recovered bls key can successfully call wallet-only function (eg setTrustedGateway)
     const res = await fx.callStatic(
       wallet2,
       vg,
       "setTrustedBLSGateway",
-      [hash2, vg.address],
+      [wallet2PublicKeyHash, vg.address],
       await wallet2.Nonce(),
       30_000_000,
     );
@@ -471,7 +481,7 @@ describe("Recovery", async function () {
     // Attacker users recovery signer to set their recovery hash
     const attackerRecoveryHash = ethers.utils.solidityKeccak256(
       ["address", "bytes32", "bytes32"],
-      [recoverySigner.address, hashAttacker, salt],
+      [recoverySigner.address, walletAttackerPublicKeyHash, salt],
     );
     await fx.call(
       walletAttacker,
@@ -492,7 +502,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       walletAttacker.address,
-      walletAttacker.privateKey,
+      walletAttacker.blsWalletSigner.privateKey,
     );
     const wallet1Key = await wallet1.PublicKey();
 
@@ -500,7 +510,7 @@ describe("Recovery", async function () {
     await expect(
       fx.verificationGateway
         .connect(recoverySigner)
-        .recoverWallet(addressSignature, hashAttacker, salt, wallet1Key),
+        .recoverWallet(addressSignature, walletAttackerPublicKeyHash, salt, wallet1Key),
     ).to.be.rejectedWith("VG: Sig not verified");
   });
 
@@ -530,12 +540,17 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
-      wallet2.privateKey,
+      wallet2.blsWalletSigner.privateKey,
     );
 
     const recoveryTxn = await fx.verificationGateway
       .connect(recoverySigner)
-      .recoverWallet(addressSignature, hash1, salt, wallet2.PublicKey());
+      .recoverWallet(
+        addressSignature,
+        wallet1PublicKeyHash,
+        salt,
+        wallet2.PublicKey(),
+      );
     await recoveryTxn.wait();
 
     const [
@@ -551,8 +566,8 @@ describe("Recovery", async function () {
       wallet2.Nonce(),
       getPublicKeyFromHash(vg, hash2),
     ]);
-    expect(wallet1PubkeyHash).to.eql(hash2);
-    expect(wallet2PubkeyHash).to.eql(hash2);
+    expect(wallet1PubkeyHash).to.eql(wallet2PublicKeyHash);
+    expect(wallet2PubkeyHash).to.eql(wallet2PublicKeyHash);
     expect(wallet1Nonce.toNumber()).to.eql(wallet2Nonce.toNumber());
     expect(publicKey).to.deep.equal(wallet2.PublicKey());
 

@@ -133,7 +133,10 @@ export default class EthereumService {
 
     const nextNonce = BigNumber.from(await wallet.getTransactionCount());
     const chainId = await wallet.getChainId();
-    const blsWalletSigner = await initBlsWalletSigner({ chainId });
+    const blsWalletSigner = await initBlsWalletSigner({
+      chainId,
+      privateKey: aggPrivateKey,
+    });
 
     return new EthereumService(
       emit,

@@ -48,15 +48,16 @@ const samples = (() => {
 
 describe("index", () => {
   it("signs and verifies transaction", async () => {
-    const { sign, verify } = await initBlsWalletSigner({
-      chainId: 123,
-      domain,
-    });
-
     const { bundleTemplate, privateKey, otherPrivateKey, walletAddress } =
       samples;
 
-    const bundle = sign(bundleTemplate, privateKey, walletAddress);
+    const { sign, verify } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+      privateKey,
+    });
+
+    const bundle = sign(bundleTemplate, walletAddress);
 
     expect(bundle.signature).to.deep.equal([
       "0x2c1b0dc6643375e05a6f2ba3d23b1ce941253010b13a127e22f5db647dc37952",
@@ -65,9 +66,16 @@ describe("index", () => {
 
     expect(verify(bundle, walletAddress)).to.equal(true);
 
+    const { sign: signWithOtherPrivateKey } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+      privateKey: otherPrivateKey,
+    });
+
     const bundleBadSig = {
       ...bundle,
-      signature: sign(bundleTemplate, otherPrivateKey, walletAddress).signature,
+      signature: signWithOtherPrivateKey(bundleTemplate, walletAddress)
+        .signature,
     };
 
     expect(verify(bundleBadSig, walletAddress)).to.equal(false);
@@ -94,11 +102,6 @@ describe("index", () => {
   });
 
   it("aggregates transactions", async () => {
-    const { sign, aggregate, verify } = await initBlsWalletSigner({
-      chainId: 123,
-      domain,
-    });
-
     const {
       bundleTemplate,
       privateKey,
@@ -107,8 +110,19 @@ describe("index", () => {
       otherWalletAddress,
     } = samples;
 
-    const bundle1 = sign(bundleTemplate, privateKey, walletAddress);
-    const bundle2 = sign(bundleTemplate, otherPrivateKey, otherWalletAddress);
+    const { sign, aggregate, verify } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+      privateKey,
+    });
+    const { sign: signWithOtherPrivateKey } = await initBlsWalletSigner({
+      chainId: 123,
+      domain,
+      privateKey: otherPrivateKey,
+    });
+
+    const bundle1 = sign(bundleTemplate, walletAddress);
+    const bundle2 = signWithOtherPrivateKey(bundleTemplate, otherWalletAddress);
     const aggBundle = aggregate([bundle1, bundle2]);
 
     expect(aggBundle.signature).to.deep.equal([
@@ -146,12 +160,13 @@ describe("index", () => {
   });
 
   it("can aggregate transactions which already have multiple subTransactions", async () => {
+    const { bundleTemplate, privateKey, walletAddress } = samples;
+
     const { sign, aggregate, verify } = await initBlsWalletSigner({
       chainId: 123,
       domain,
+      privateKey,
     });
-
-    const { bundleTemplate, privateKey, walletAddress } = samples;
 
     const bundles = Range(4).map((i) =>
       sign(
@@ -164,7 +179,6 @@ describe("index", () => {
             },
           ],
         },
-        privateKey,
         walletAddress,
       ),
     );
@@ -178,12 +192,15 @@ describe("index", () => {
   });
 
   it("generates expected publicKeyStr", async () => {
+    const { privateKey } = samples;
+
     const { getPublicKeyStr } = await initBlsWalletSigner({
       chainId: 123,
       domain,
+      privateKey,
     });
 
-    expect(getPublicKeyStr(samples.privateKey)).to.equal(
+    expect(getPublicKeyStr()).to.equal(
       [
         "0x",
         "027c3c0483be2722a29a0229bef64b2d8c1f8d4e954b0203d01ce342608b6eb8",
@@ -195,9 +212,12 @@ describe("index", () => {
   });
 
   it("aggregates an empty bundle", async () => {
+    const { privateKey } = samples;
+
     const { aggregate } = await initBlsWalletSigner({
       chainId: 123,
       domain,
+      privateKey,
     });
 
     const emptyBundle = aggregate([]);
@@ -207,9 +227,12 @@ describe("index", () => {
   });
 
   it("verifies an empty bundle", async () => {
+    const { privateKey } = samples;
+
     const { aggregate, verify } = await initBlsWalletSigner({
       chainId: 123,
       domain,
+      privateKey,
     });
 
     const emptyBundle = aggregate([]);

@@ -101,6 +101,8 @@ export default class Fixture {
     bundleCompressor.addCompressor(1, blsRegistrationCompressor);
     bundleCompressor.addCompressor(0, fallbackCompressor);
 
+    const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+
     return new Fixture(
       chainId,
       ethers.provider,
@@ -114,7 +116,7 @@ export default class Fixture {
       fallbackCompressor,
       utilities,
       blsRegistration,
-      await initBlsWalletSigner({ chainId }),
+      await initBlsWalletSigner({ chainId, privateKey }),
     );
   }
 

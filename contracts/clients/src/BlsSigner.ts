@@ -1,15 +1,57 @@
-import { ethers, BigNumber, Signer, Bytes } from "ethers";
-import { Deferrable, hexlify, isBytes, RLP } from "ethers/lib/utils";
+/* eslint-disable camelcase */
+import { ethers, BigNumber, Signer, Bytes, BigNumberish } from "ethers";
+import {
+  AccessListish,
+  Deferrable,
+  hexlify,
+  isBytes,
+  RLP,
+} from "ethers/lib/utils";
 
-import BlsProvider from "./BlsProvider";
+import BlsProvider, { PublicKeyLinkedToActions } from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
+import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
 import { ActionData, bundleToDto } from "./signer";
 
 export const _constructorGuard = {};
 
+/**
+ * @property gas - (THIS PROPERTY IS NOT USED BY BLS WALLET) transaction gas limit
+ * @property maxPriorityFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) miner tip aka priority fee
+ * @property maxFeePerGas - (THIS PROPERTY IS NOT USED BY BLS WALLET) the maximum total fee per gas the sender is willing to pay (includes the network/base fee and miner/priority fee) in wei
+ * @property nonce - integer of a nonce. This allows overwriting your own pending transactions that use the same nonce
+ * @property chainId - chain ID that this transaction is valid on
+ * @property accessList - (THIS PROPERTY IS NOT USED BY BLS WALLET) EIP-2930 access list
+ */
+export type BatchOptions = {
+  gas?: BigNumberish;
+  maxPriorityFeePerGas: BigNumberish;
+  maxFeePerGas: BigNumberish;
+  nonce: BigNumberish;
+  chainId: number;
+  accessList?: AccessListish;
+};
+
+/**
+ * @property transactions - an array of transaction objects
+ * @property batchOptions - optional batch options taken into account by smart contract wallets
+ */
+export type TransactionBatch = {
+  transactions: Array<ethers.providers.TransactionRequest>;
+  batchOptions?: BatchOptions;
+};
+
+export interface TransactionBatchResponse {
+  transactions: Array<ethers.providers.TransactionResponse>;
+  awaitBatchReceipt: (
+    confirmations?: number,
+  ) => Promise<ethers.providers.TransactionReceipt>;
+}
+
 export default class BlsSigner extends Signer {
   override readonly provider: BlsProvider;
   readonly verificationGatewayAddress!: string;
+  readonly aggregatorUtilitiesAddress!: string;
   wallet!: BlsWalletWrapper;
   _index: number;
   _address: string;
@@ -25,6 +67,7 @@ export default class BlsSigner extends Signer {
     super();
     this.provider = provider;
     this.verificationGatewayAddress = this.provider.verificationGatewayAddress;
+    this.aggregatorUtilitiesAddress = this.provider.aggregatorUtilitiesAddress;
     this.initPromise = this.initializeWallet(privateKey);
 
     if (constructorGuard !== _constructorGuard) {
@@ -67,12 +110,7 @@ export default class BlsSigner extends Signer {
       throw new TypeError("Transaction.to should be defined");
     }
 
-    // TODO: bls-wallet #375 Add multi-action transactions to BlsProvider & BlsSigner
-    const action: ActionData = {
-      ethValue: transaction.value?.toString() ?? "0",
-      contractAddress: transaction.to.toString(),
-      encodedFunction: transaction.data?.toString() ?? "0x",
-    };
+    const validatedTransaction = await this._validateTransaction(transaction);
 
     const nonce = await BlsWalletWrapper.Nonce(
       this.wallet.PublicKey(),
@@ -80,9 +118,21 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    const bundle = await this.wallet.signWithGasEstimate({
+    const action: ActionData = {
+      ethValue: validatedTransaction.value?.toString() ?? "0",
+      contractAddress: validatedTransaction.to!.toString(),
+      encodedFunction: validatedTransaction.data?.toString() ?? "0x",
+    };
+
+    const feeEstimate = await this.provider.estimateGas(validatedTransaction);
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      [action],
+      feeEstimate,
+    );
+
+    const bundle = this.wallet.sign({
       nonce,
-      actions: [action],
+      actions: [...actionsWithSafeFee],
     });
     const result = await this.provider.aggregator.add(bundle);
 
@@ -90,10 +140,87 @@ export default class BlsSigner extends Signer {
       throw new Error(JSON.stringify(result.failures));
     }
 
-    return this.constructTransactionResponse(
+    return await this.provider._constructTransactionResponse(
       action,
+      bundle.senderPublicKeys[0],
       result.hash,
-      this.wallet.address,
+      nonce,
+    );
+  }
+
+  async sendTransactionBatch(
+    transactionBatch: TransactionBatch,
+  ): Promise<TransactionBatchResponse> {
+    await this.initPromise;
+
+    const validatedTransactionBatch = await this._validateTransactionBatch(
+      transactionBatch,
+    );
+
+    let nonce: BigNumber;
+    if (transactionBatch.batchOptions) {
+      nonce = validatedTransactionBatch.batchOptions!.nonce as BigNumber;
+    } else {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
+    const actions: Array<ActionData> = transactionBatch.transactions.map(
+      (transaction) => {
+        return {
+          ethValue: transaction.value?.toString() ?? "0",
+          contractAddress: transaction.to!.toString(),
+          encodedFunction: transaction.data?.toString() ?? "0x",
+        };
+      },
+    );
+
+    const actionsWithFeePaymentAction =
+      this.provider._addFeePaymentActionForFeeEstimation(actions);
+
+    const feeEstimate = await this.provider.aggregator.estimateFee(
+      this.wallet.sign({
+        nonce,
+        actions: [...actionsWithFeePaymentAction],
+      }),
+    );
+
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(feeEstimate.feeRequired),
+    );
+
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      actions,
+      safeFee,
+    );
+
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [...actionsWithSafeFee],
+    });
+    const result = await this.provider.aggregator.add(bundle);
+
+    if ("failures" in result) {
+      throw new Error(JSON.stringify(result.failures));
+    }
+
+    const publicKeysLinkedToActions: Array<PublicKeyLinkedToActions> =
+      bundle.senderPublicKeys.map((publicKey, i) => {
+        const operation = bundle.operations[i];
+        const actions = operation.actions;
+
+        return {
+          publicKey,
+          actions,
+        };
+      });
+
+    return await this.provider._constructTransactionBatchResponse(
+      publicKeysLinkedToActions,
+      result.hash,
       nonce,
     );
   }
@@ -106,40 +233,6 @@ export default class BlsSigner extends Signer {
 
     this._address = this.wallet.address;
     return this._address;
-  }
-
-  // Construct a response that follows the ethers TransactionResponse type
-  async constructTransactionResponse(
-    action: ActionData,
-    hash: string,
-    from: string,
-    nonce?: BigNumber,
-  ): Promise<ethers.providers.TransactionResponse> {
-    await this.initPromise;
-    const chainId = await this.getChainId();
-    if (!nonce) {
-      nonce = await BlsWalletWrapper.Nonce(
-        this.wallet.PublicKey(),
-        this.verificationGatewayAddress,
-        this.provider,
-      );
-    }
-
-    return {
-      hash,
-      to: action.contractAddress,
-      from,
-      nonce: BigNumber.from(nonce).toNumber(),
-      gasLimit: BigNumber.from("0x0"),
-      data: action.encodedFunction.toString(),
-      value: BigNumber.from(action.ethValue),
-      chainId,
-      type: 2,
-      confirmations: 1,
-      wait: (confirmations?: number) => {
-        return this.provider.waitForTransaction(hash, confirmations);
-      },
-    };
   }
 
   /**
@@ -163,14 +256,12 @@ export default class BlsSigner extends Signer {
   ): Promise<string> {
     await this.initPromise;
 
-    if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined");
-    }
+    const validatedTransaction = await this._validateTransaction(transaction);
 
     const action: ActionData = {
-      ethValue: transaction.value?.toString() ?? "0",
-      contractAddress: transaction.to.toString(),
-      encodedFunction: transaction.data?.toString() ?? "0x",
+      ethValue: validatedTransaction.value?.toString() ?? "0",
+      contractAddress: validatedTransaction.to!.toString(),
+      encodedFunction: validatedTransaction.data?.toString() ?? "0x",
     };
 
     const nonce = await BlsWalletWrapper.Nonce(
@@ -179,10 +270,75 @@ export default class BlsSigner extends Signer {
       this.provider,
     );
 
-    const bundle = await this.wallet.signWithGasEstimate({
+    const feeEstimate = await this.provider.estimateGas(validatedTransaction);
+
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      [action],
+      feeEstimate,
+    );
+
+    const bundle = this.wallet.sign({
       nonce,
-      actions: [action],
+      actions: [...actionsWithSafeFee],
     });
+
+    return JSON.stringify(bundleToDto(bundle));
+  }
+
+  async signTransactionBatch(
+    transactionBatch: TransactionBatch,
+  ): Promise<string> {
+    await this.initPromise;
+
+    const validatedTransactionBatch = await this._validateTransactionBatch(
+      transactionBatch,
+    );
+
+    let nonce: BigNumber;
+    if (transactionBatch.batchOptions) {
+      nonce = validatedTransactionBatch.batchOptions!.nonce as BigNumber;
+    } else {
+      nonce = await BlsWalletWrapper.Nonce(
+        this.wallet.PublicKey(),
+        this.verificationGatewayAddress,
+        this.provider,
+      );
+    }
+
+    const actions: Array<ActionData> = transactionBatch.transactions.map(
+      (transaction) => {
+        return {
+          ethValue: transaction.value?.toString() ?? "0",
+          contractAddress: transaction.to!.toString(),
+          encodedFunction: transaction.data?.toString() ?? "0x",
+        };
+      },
+    );
+
+    const actionsWithFeePaymentAction =
+      this.provider._addFeePaymentActionForFeeEstimation(actions);
+
+    const feeEstimate = await this.provider.aggregator.estimateFee(
+      this.wallet.sign({
+        nonce,
+        actions: [...actionsWithFeePaymentAction],
+      }),
+    );
+
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(feeEstimate.feeRequired),
+    );
+
+    const actionsWithSafeFee = this.provider._addFeePaymentActionWithSafeFee(
+      actions,
+      safeFee,
+    );
+
+    const bundle = this.wallet.sign({
+      nonce,
+      actions: [...actionsWithSafeFee],
+    });
+
     return JSON.stringify(bundleToDto(bundle));
   }
 
@@ -214,10 +370,10 @@ export default class BlsSigner extends Signer {
     return new UncheckedBlsSigner(
       _constructorGuard,
       this.provider,
-      this.wallet?.privateKey ??
+      this.wallet?.blsWalletSigner.privateKey ??
         (async (): Promise<string> => {
           await this.initPromise;
-          return this.wallet.privateKey;
+          return this.wallet.blsWalletSigner.privateKey;
         })(),
       this._address || this._index,
     );
@@ -233,6 +389,69 @@ export default class BlsSigner extends Signer {
   async _legacySignMessage(message: Bytes | string): Promise<string> {
     throw new Error("_legacySignMessage() is not implemented");
   }
+
+  async _validateTransaction(
+    transaction: Deferrable<ethers.providers.TransactionRequest>,
+  ): Promise<ethers.providers.TransactionRequest> {
+    const resolvedTransaction = await ethers.utils.resolveProperties(
+      transaction,
+    );
+
+    if (!resolvedTransaction.to) {
+      throw new TypeError("Transaction.to should be defined");
+    }
+
+    if (!resolvedTransaction.from) {
+      resolvedTransaction.from = await this.getAddress();
+    }
+
+    return resolvedTransaction;
+  }
+
+  async _validateTransactionBatch(
+    transactionBatch: TransactionBatch,
+  ): Promise<TransactionBatch> {
+    const signerAddress = await this.getAddress();
+
+    const validatedTransactions: Array<ethers.providers.TransactionRequest> =
+      transactionBatch.transactions.map((transaction, i) => {
+        if (!transaction.to) {
+          throw new TypeError(`Transaction.to is missing on transaction ${i}`);
+        }
+
+        if (!transaction.from) {
+          transaction.from = signerAddress;
+        }
+
+        return {
+          ...transaction,
+        };
+      });
+
+    const validatedBatchOptions = transactionBatch.batchOptions
+      ? await this._validateBatchOptions(transactionBatch.batchOptions)
+      : transactionBatch.batchOptions;
+
+    return {
+      transactions: validatedTransactions,
+      batchOptions: validatedBatchOptions,
+    };
+  }
+
+  async _validateBatchOptions(
+    batchOptions: BatchOptions,
+  ): Promise<BatchOptions> {
+    const expectedChainId = await this.getChainId();
+
+    if (batchOptions.chainId !== expectedChainId) {
+      throw new Error(
+        `Supplied chain ID ${batchOptions.chainId} does not match the expected chain ID ${expectedChainId}`,
+      );
+    }
+
+    batchOptions.nonce = BigNumber.from(batchOptions.nonce);
+    return batchOptions;
+  }
 }
 
 export class UncheckedBlsSigner extends BlsSigner {
@@ -244,7 +463,7 @@ export class UncheckedBlsSigner extends BlsSigner {
     const transactionResponse = await super.sendTransaction(transaction);
     return {
       hash: transactionResponse.hash,
-      nonce: 1,
+      nonce: NaN,
       gasLimit: BigNumber.from(0),
       gasPrice: BigNumber.from(0),
       data: "",

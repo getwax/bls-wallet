@@ -6,6 +6,63 @@ Accepts transaction bundles (including bundles that contain a single
 transaction) and submits aggregations of these bundles to the configured
 Verification Gateway.
 
+## Docker Usage
+
+Docker images of the aggregator are
+[available on DockerHub](https://hub.docker.com/r/blswallet/aggregator).
+
+If you're targeting a network that
+[already has a deployment of the BLSWallet contracts](../contracts/networks),
+you can use these images standalone (without this repository) as follows:
+
+```sh
+mkdir aggregator
+cd aggregator
+
+curl https://raw.githubusercontent.com/web3well/bls-wallet/main/aggregator/.env.example >.env
+
+# Replace CHOSEN_NETWORK below
+curl https://raw.githubusercontent.com/web3well/bls-wallet/main/contracts/networks/CHOSEN_NETWORK.json >networkConfig.json
+```
+
+In `.env`:
+
+- Change `RPC_URL`
+  - (If using `localhost`, you probably want `host.docker.internal`)
+- Change `PRIVATE_KEY_AGG`
+- Ignore `NETWORK_CONFIG_PATH` (it's not used inside docker)
+- See [Configuration](#configuration) for more detail and other options
+
+If you're running in production, you might want to set
+`AUTO_CREATE_INTERNAL_BLS_WALLET` to `false`. The internal BLS wallet is needed
+for user fee estimation. Creating it is a one-time setup that will use
+`PRIVATE_KEY_AGG` to pay for gas. You can create it explicitly like this:
+
+```sh
+docker run \
+  --rm \
+  -it \
+  --mount type=bind,source="$PWD/.env",target=/app/.env \
+  --mount type=bind,source="$PWD/networkConfig.json",target=/app/networkConfig.json \
+  blswallet/aggregator \
+  ./ts/programs/createInternalBlsWallet.ts
+```
+
+Finally, start the aggregator:
+
+```sh
+docker run \
+  --name choose-container-name \ # Optional
+  -d \ # Optional
+  -p3000:3000 \ # If you chose a different PORT in .env, change it here too
+  --restart=unless-stopped \ # Optional
+  --mount type=bind,source="$PWD/.env",target=/app/.env \
+  --mount type=bind,source="$PWD/networkConfig.json",target=/app/networkConfig.json \
+  blswallet/aggregator # Tags of the form :git-$VERSION are also available
+```
+
+(You may need to remove the comments before pasting into your terminal.)
+
 ## Installation
 
 Install [Deno](deno.land)
@@ -68,6 +125,20 @@ Can be run locally or hosted.
 # Or if you have a named environment (see configuration section):
 # ./programs/aggregator.ts --env <name>
 ```
+
+**Note**: It's also possible to run the aggregator directly from github:
+
+```sh
+deno run \
+  --allow-net \
+  --allow-env \
+  --allow-read=. \
+  --allow-write=. \
+  https://raw.githubusercontent.com/web3well/bls-wallet/main/aggregator/programs/aggregator.ts
+```
+
+(This can be done without a clone of the repository, but you'll still need to
+set up `.env` and your network config.)
 
 ## Testing
 
@@ -260,16 +331,9 @@ Make sure your Deno version is
 ## Hosting Guide
 
 1. Configure your server to allow TCP on ports 80 and 443
-2. Follow the [Installation](#Installation) instructions
-3. Install docker and nginx:
+2. Install docker and nginx:
    `sudo apt update && sudo apt install docker.io nginx`
-
-4. Run `./programs/build.ts`
-
-- If you're using a named environment, add `--env <name>`
-- If `docker` requires `sudo`, add `--sudo-docker`
-
-5. Configure log rotation in docker by setting `/etc/docker/daemon.json` to
+3. Configure log rotation in docker by setting `/etc/docker/daemon.json` to
 
 ```json
 {
@@ -283,18 +347,9 @@ Make sure your Deno version is
 
 and restart docker `sudo systemctl restart docker`
 
-6. Load the docker image: `sudo docker load <docker-image.tar.gz`
-7. Copy `./programs/start-docker.sh` onto the server
-8. Run the aggregator:
-
-```sh
-VERSION=abc1234 ./start-docker.sh
-# Replace abc1234 with the first 7 characters of the git sha used when building
-# A .env file is also required. You can also specify an alternative path using
-# ENV_PATH=/custom/path/to/.env
-```
-
-9. Create `/etc/nginx/sites-available/aggregator`
+4. Follow the [Docker Usage](#docker-usage) instructions (just use port 3000,
+   external requests are handled by nginx)
+5. Create `/etc/nginx/sites-available/aggregator`
 
 ```nginx
 server {
@@ -317,7 +372,7 @@ This allows you to add some static content at `/home/aggregator/static-content`.
 Adding static content is optional; requests that don't match static content will
 be passed to the aggregator.
 
-10. Create a symlink in sites-enabled
+6. Create a symlink in sites-enabled
 
 ```sh
 ln -s /etc/nginx/sites-available/aggregator /etc/nginx/sites-enabled/aggregator
@@ -325,5 +380,5 @@ ln -s /etc/nginx/sites-available/aggregator /etc/nginx/sites-enabled/aggregator
 
 Reload nginx for config to take effect: `sudo nginx -s reload`
 
-11. Set up https for your domain by following the instructions at
-    https://certbot.eff.org/lets-encrypt/ubuntufocal-nginx.
+7. Set up https for your domain by following the instructions at
+   https://certbot.eff.org/lets-encrypt/ubuntufocal-nginx.
