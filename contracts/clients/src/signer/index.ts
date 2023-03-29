@@ -38,8 +38,8 @@ export async function initBlsWalletSigner({
     getPublicKey: getPublicKey(signerFactory, bundleDomain),
     getPublicKeyHash: getPublicKeyHash(signerFactory, bundleDomain),
     getPublicKeyStr: getPublicKeyStr(signerFactory, bundleDomain),
-    sign: sign(signerFactory, bundleDomain, chainId),
+    sign: sign(signerFactory, bundleDomain),
     signMessage: signMessage(signerFactory, walletDomain),
-    verify: verify(bundleDomain, chainId),
+    verify: verify(bundleDomain),
   };
 }
