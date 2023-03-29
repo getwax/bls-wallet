@@ -441,7 +441,7 @@ describe("BlsProvider", () => {
       value: parseEther("1"),
     });
 
-    const expectedToAddress = "0x689A095B4507Bfa302eef8551F90fB322B3451c6"; // Verification Gateway address
+    const expectedToAddress = "0x14EE47429DEf3462142AE5f8d1E263E0B137bA63"; // Verification Gateway address
     const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
 
     // Act
@@ -502,7 +502,7 @@ describe("BlsProvider", () => {
       value: parseEther("1"),
     });
 
-    const expectedToAddress = "0x689A095B4507Bfa302eef8551F90fB322B3451c6"; // Verification Gateway address
+    const expectedToAddress = "0x14EE47429DEf3462142AE5f8d1E263E0B137bA63"; // Verification Gateway address
     const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
 
     // Act
