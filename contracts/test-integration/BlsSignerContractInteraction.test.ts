@@ -22,7 +22,7 @@ async function getRandomSigners(
 
   const signers = [];
   for (let i = 0; i < numSigners; i++) {
-    const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
     const blsProvider = new Experimental.BlsProvider(
       aggregatorUrl,
       verificationGateway,
