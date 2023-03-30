@@ -79,6 +79,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     const nonce = await this.getTransactionCount(
       resolvedTransaction.from.toString(),
     );
+    console.log("nonce:", nonce);
 
     const actionWithFeePaymentAction =
       this._addFeePaymentActionForFeeEstimation([action]);
@@ -103,7 +104,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
 
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
-    console.log("feeRequired:", feeRequired);
+    console.log(
+      "feeRequired:",
+      ethers.utils.parseUnits(feeRequired.toString()),
+    );
     return addSafetyPremiumToFee(feeRequired);
   }
 

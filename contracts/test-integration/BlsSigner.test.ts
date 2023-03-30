@@ -511,7 +511,9 @@ describe("BlsSigner", () => {
       verificationGateway,
       blsSigner,
     );
+    console.log("expectedNonce:", expectedNonce);
 
+    console.log("expected privateKey:", privateKey);
     // BlsWalletWrapper.getRandomBlsPrivateKey from "estimateGas" method results in slightly different
     // fee estimates. Which leads to a different signature. This fake avoids signature mismatch by stubbing a constant value.
     sinon.replace(
@@ -529,6 +531,8 @@ describe("BlsSigner", () => {
         actions: [...actionsWithFeePaymentAction],
       }),
     );
+
+    console.log("expected feeRequired", expectedFeeEstimate.feeRequired);
 
     const safeFee = addSafetyPremiumToFee(
       BigNumber.from(expectedFeeEstimate.feeRequired),
