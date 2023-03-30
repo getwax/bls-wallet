@@ -16,6 +16,8 @@ import BundleTable from "./BundleTable.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import AggregationStrategyRouter from "./AggregationStrategyRouter.ts";
 
+// Temporary comment to test CI
+
 export default async function app(emit: (evt: AppEvent) => void) {
   const { addresses } = await getNetworkConfig();
 
