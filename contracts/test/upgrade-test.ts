@@ -3,6 +3,7 @@ import { BigNumber, ContractReceipt } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
+import { expectPubkeysEql } from "./expect";
 import {
   ActionData,
   BlsWalletWrapper,
@@ -93,7 +94,7 @@ describe("Upgrade", async function () {
     // Recreate hubble bls signer
     const walletOldVg = await fx.createBLSWallet();
     const walletAddress = walletOldVg.address;
-    const blsSecret = walletOldVg.privateKey;
+    const blsSecret = walletOldVg.blsWalletSigner.privateKey;
 
     // Sign simple address message
     const addressMessage = solidityPack(["address"], [walletAddress]);
@@ -124,9 +125,7 @@ describe("Upgrade", async function () {
     // Advance time one week
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
 
-    const hash = walletOldVg.blsWalletSigner.getPublicKeyHash(
-      walletOldVg.privateKey,
-    );
+    const hash = walletOldVg.blsWalletSigner.getPublicKeyHash();
 
     const setExternalWalletAction: ActionData = {
       ethValue: BigNumber.from(0),
@@ -241,7 +240,8 @@ describe("Upgrade", async function () {
     await expect(proxyAdmin.getProxyAdmin(walletAddress)).to.eventually.equal(
       proxyAdmin.address,
     );
-    await expect(getPublicKeyFromHash(vg2, hash)).to.eventually.deep.equal(
+    expectPubkeysEql(
+      await getPublicKeyFromHash(vg2, hash),
       walletOldVg.PublicKey(),
     );
 
@@ -289,22 +289,25 @@ describe("Upgrade", async function () {
   it("should change mapping of an address to hash", async () => {
     const vg1 = fx.verificationGateway;
 
-    const wallet1 = await fx.createBLSWallet();
-    const wallet2 = await fx.createBLSWallet();
+    const [wallet1, wallet2] = await fx.createBLSWallets(2);
 
-    // Process an empty operation for wallet1 so that the gateway knows about
-    // its hash mapping
-    await (
-      await fx.verificationGateway.processBundle(
-        wallet1.sign({
-          nonce: 0,
-          gas: 30_000_000,
-          actions: [],
-        }),
-      )
-    ).wait();
+    // create wallet 1 & 2 to check they are mapped on vg correctly
+    const createBundle = wallet1.blsWalletSigner.aggregate([
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        gas: BigNumber.from(30_000_000),
+        actions: [],
+      }),
+      wallet2.sign({
+        nonce: await wallet2.Nonce(),
+        gas: BigNumber.from(30_000_000),
+        actions: [],
+      }),
+    ]);
+    const createTxn = await fx.verificationGateway.processBundle(createBundle);
+    await createTxn.wait();
 
-    const hash1 = wallet1.blsWalletSigner.getPublicKeyHash(wallet1.privateKey);
+    const hash1 = wallet1.blsWalletSigner.getPublicKeyHash();
 
     await expect(vg1.walletFromHash(hash1)).to.eventually.equal(
       wallet1.address,
@@ -312,7 +315,8 @@ describe("Upgrade", async function () {
     await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
       hash1,
     );
-    await expect(getPublicKeyFromHash(vg1, hash1)).to.eventually.deep.equal(
+    expectPubkeysEql(
+      await getPublicKeyFromHash(vg1, hash1),
       wallet1.PublicKey(),
     );
 
@@ -354,7 +358,7 @@ describe("Upgrade", async function () {
 
     // wallet 1's hash is pointed to null address
     // wallet 2's hash is now pointed to wallet 1's address
-    const hash2 = wallet2.blsWalletSigner.getPublicKeyHash(wallet2.privateKey);
+    const hash2 = wallet2.blsWalletSigner.getPublicKeyHash();
 
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
 
@@ -389,7 +393,8 @@ describe("Upgrade", async function () {
     await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
       hash2,
     );
-    await expect(getPublicKeyFromHash(vg1, hash2)).to.eventually.deep.equal(
+    expectPubkeysEql(
+      await getPublicKeyFromHash(vg1, hash2),
       wallet2.PublicKey(),
     );
   });
