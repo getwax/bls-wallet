@@ -16,7 +16,7 @@ import {
   // MockERC20__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
-import addSafetyPremiumToFee from "../clients/src/helpers/addSafetyDivisorToFee";
+// import addSafetyPremiumToFee from "../clients/src/helpers/addSafetyDivisorToFee";
 
 let networkConfig: NetworkConfig;
 
@@ -499,12 +499,15 @@ describe("BlsSigner", () => {
       encodedFunction: "0x",
     };
 
+    console.log("expectedAction:", expectedAction);
+
     const wallet = await BlsWalletWrapper.connect(
       privateKey,
       verificationGateway,
       blsProvider,
     );
     const walletAddress = wallet.address;
+    console.log("expected wallet:", wallet);
 
     const expectedNonce = await BlsWalletWrapper.Nonce(
       wallet.PublicKey(),
@@ -522,25 +525,27 @@ describe("BlsSigner", () => {
       sinon.fake.resolves(privateKey),
     );
 
-    const actionsWithFeePaymentAction =
-      blsProvider._addFeePaymentActionForFeeEstimation([expectedAction]);
+    const expectedFeeEstimate = await blsProvider.estimateGas(transaction);
 
-    const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
-      blsSigner.wallet.sign({
-        nonce: expectedNonce,
-        actions: [...actionsWithFeePaymentAction],
-      }),
-    );
+    // const actionsWithFeePaymentAction =
+    //   blsProvider._addFeePaymentActionForFeeEstimation([expectedAction]);
 
-    console.log("expected feeRequired", expectedFeeEstimate.feeRequired);
+    // const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
+    //   blsSigner.wallet.sign({
+    //     nonce: expectedNonce,
+    //     actions: [...actionsWithFeePaymentAction],
+    //   }),
+    // );
 
-    const safeFee = addSafetyPremiumToFee(
-      BigNumber.from(expectedFeeEstimate.feeRequired),
-    );
+    console.log("expectedFeeEstimate", expectedFeeEstimate);
+
+    // const safeFee = addSafetyPremiumToFee(
+    //   BigNumber.from(expectedFeeEstimate.feeRequired),
+    // );
 
     const actionsWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
       [expectedAction],
-      safeFee,
+      expectedFeeEstimate,
     );
 
     const expectedOperation = {

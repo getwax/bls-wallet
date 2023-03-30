@@ -75,6 +75,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       contractAddress: resolvedTransaction.to.toString(),
       encodedFunction: resolvedTransaction.data?.toString() ?? "0x",
     };
+    console.log("action:", action);
 
     const nonce = await this.getTransactionCount(
       resolvedTransaction.from.toString(),
@@ -89,12 +90,13 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     // alternative would be to use a signer instance in this method which is undesirable,
     // as this would result in tight coupling between a provider and a signer.
     const throwawayPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
-    console.log("throwawayPrivateKey:", throwawayPrivateKey);
+    console.log("throwaway privateKey:", throwawayPrivateKey);
     const throwawayBlsWalletWrapper = await BlsWalletWrapper.connect(
       throwawayPrivateKey,
       this.verificationGatewayAddress,
       this,
     );
+    console.log("throwaway wallet:", throwawayBlsWalletWrapper);
 
     const feeEstimate = await this.aggregator.estimateFee(
       throwawayBlsWalletWrapper.sign({
@@ -104,7 +106,10 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
 
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
-    console.log("feeRequired:", ethers.utils.formatUnits(feeRequired));
+    console.log(
+      "feeEstimate:",
+      ethers.utils.formatUnits(addSafetyPremiumToFee(feeRequired)),
+    );
     return addSafetyPremiumToFee(feeRequired);
   }
 
