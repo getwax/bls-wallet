@@ -14,7 +14,7 @@ import {
   ActionData,
   BlsWalletWrapper,
   NetworkConfig,
-  MockERC20__factory,
+  MockERC20Factory,
   Operation,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
@@ -527,6 +527,7 @@ describe("BlsSigner", () => {
 
     const expectedOperation = {
       nonce: expectedNonce,
+      gas: BigNumber.from(30_000_000),
       actions: [...actionsWithSafeFee],
     };
 
@@ -609,6 +610,7 @@ describe("BlsSigner", () => {
     const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
       blsSigner.wallet.sign({
         nonce: expectedNonce,
+        gas: BigNumber.from(30_000_000),
         actions: [...actionsWithFeePaymentAction],
       }),
     );
@@ -622,14 +624,14 @@ describe("BlsSigner", () => {
       safeFee,
     );
 
-    const expectedOperation: Operation = {
+    const op: Omit<Operation, "gas"> = {
       nonce: expectedNonce,
       actions: [...actionsWithSafeFee],
     };
-    const gas = await wallet.estimateGas(operation);
+    const gas = await wallet.estimateGas(op);
 
     const expectedBundle = wallet.blsWalletSigner.sign(
-      { ...operation, gas },
+      { ...op, gas },
       walletAddress,
     );
 

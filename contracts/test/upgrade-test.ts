@@ -3,6 +3,7 @@ import { BigNumber, ContractReceipt } from "ethers";
 import { solidityPack } from "ethers/lib/utils";
 import { ethers, network } from "hardhat";
 
+import { expectPubkeysEql } from "./expect";
 import {
   ActionData,
   BlsWalletWrapper,
@@ -239,7 +240,8 @@ describe("Upgrade", async function () {
     await expect(proxyAdmin.getProxyAdmin(walletAddress)).to.eventually.equal(
       proxyAdmin.address,
     );
-    await expect(getPublicKeyFromHash(vg2, hash)).to.eventually.deep.equal(
+    expectPubkeysEql(
+      await getPublicKeyFromHash(vg2, hash),
       walletOldVg.PublicKey(),
     );
 
@@ -286,20 +288,23 @@ describe("Upgrade", async function () {
   it("should change mapping of an address to hash", async () => {
     const vg1 = fx.verificationGateway;
 
-    const wallet1 = await fx.createBLSWallet();
-    const wallet2 = await fx.createBLSWallet();
+    const [wallet1, wallet2] = await fx.createBLSWallets(2);
 
-    const wallet1 = await BlsWalletWrapper.connect(
-      lazyWallet1.privateKey,
-      vg1.address,
-      vg1.provider,
-    );
-
-    const wallet2 = await BlsWalletWrapper.connect(
-      lazyWallet2.privateKey,
-      vg1.address,
-      vg1.provider,
-    );
+    // create wallet 1 & 2 to check they are mapped on vg correctly
+    const createBundle = wallet1.blsWalletSigner.aggregate([
+      wallet1.sign({
+        nonce: await wallet1.Nonce(),
+        gas: BigNumber.from(30_000_000),
+        actions: [],
+      }),
+      wallet2.sign({
+        nonce: await wallet2.Nonce(),
+        gas: BigNumber.from(30_000_000),
+        actions: [],
+      }),
+    ]);
+    const createTxn = await fx.verificationGateway.processBundle(createBundle);
+    await createTxn.wait();
 
     const hash1 = wallet1.blsWalletSigner.getPublicKeyHash();
 
@@ -309,7 +314,8 @@ describe("Upgrade", async function () {
     await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
       hash1,
     );
-    await expect(getPublicKeyFromHash(vg1, hash1)).to.eventually.deep.equal(
+    expectPubkeysEql(
+      await getPublicKeyFromHash(vg1, hash1),
       wallet1.PublicKey(),
     );
 
@@ -386,7 +392,8 @@ describe("Upgrade", async function () {
     await expect(vg1.hashFromWallet(wallet1.address)).to.eventually.equal(
       hash2,
     );
-    await expect(getPublicKeyFromHash(vg1, hash2)).to.eventually.deep.equal(
+    expectPubkeysEql(
+      await getPublicKeyFromHash(vg1, hash2),
       wallet2.PublicKey(),
     );
   });
