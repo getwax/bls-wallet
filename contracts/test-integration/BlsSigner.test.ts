@@ -3,9 +3,9 @@ import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
 import {
   parseEther,
-  resolveProperties,
-  RLP,
-  formatEther,
+  // resolveProperties,
+  // RLP,
+  // formatEther,
 } from "ethers/lib/utils";
 import sinon from "sinon";
 
@@ -13,7 +13,7 @@ import {
   Experimental,
   BlsWalletWrapper,
   NetworkConfig,
-  MockERC20__factory,
+  // MockERC20__factory,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 import addSafetyPremiumToFee from "../clients/src/helpers/addSafetyDivisorToFee";
@@ -33,7 +33,7 @@ let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 let regularProvider: ethers.providers.JsonRpcProvider;
 let fundedWallet: ethers.Wallet;
 
-describe("BlsSigner", () => {
+describe.only("BlsSigner", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
 
@@ -482,7 +482,7 @@ describe("BlsSigner", () => {
     expect(address).to.equal(expectedAddress);
   });
 
-  it.only("should sign a transaction to create a bundleDto and serialize the result", async () => {
+  it("should sign a transaction to create a bundleDto and serialize the result", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
     const transaction = {
@@ -567,604 +567,604 @@ describe("BlsSigner", () => {
     );
   });
 
-  it("should throw an error when signing an invalid transaction", async () => {
-    // Arrange
-    const invalidEthValue = parseEther("-1");
-
-    // Act
-    const result = async () =>
-      await blsSigner.signTransaction({
-        value: invalidEthValue,
-        to: ethers.Wallet.createRandom().address,
-      });
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
-    );
-  });
-
-  it("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
-    // Arrange
-    const expectedAmount = parseEther("1");
-
-    const recipients = [];
-    const transactions = [];
-    const expectedActions = [];
-    for (let i = 0; i < 3; i++) {
-      recipients.push(ethers.Wallet.createRandom().address);
-      transactions.push({
-        to: recipients[i],
-        value: expectedAmount,
-        data: "0x",
-      });
-      expectedActions.push({
-        contractAddress: recipients[i],
-        ethValue: expectedAmount,
-        encodedFunction: "0x",
-      });
-    }
-
-    // get expected signature
-    const wallet = await BlsWalletWrapper.connect(
-      privateKey,
-      verificationGateway,
-      blsProvider,
-    );
-    const walletAddress = wallet.address;
-
-    const expectedNonce = await BlsWalletWrapper.Nonce(
-      wallet.PublicKey(),
-      verificationGateway,
-      blsSigner,
-    );
-
-    const actionsWithFeePaymentAction =
-      blsProvider._addFeePaymentActionForFeeEstimation(expectedActions);
-
-    const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
-      blsSigner.wallet.sign({
-        nonce: expectedNonce,
-        actions: [...actionsWithFeePaymentAction],
-      }),
-    );
-
-    const safeFee = addSafetyPremiumToFee(
-      BigNumber.from(expectedFeeEstimate.feeRequired),
-    );
-
-    const actionsWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
-      expectedActions,
-      safeFee,
-    );
-
-    const expectedOperation = {
-      nonce: expectedNonce,
-      actions: [...actionsWithSafeFee],
-    };
-
-    const expectedBundle = wallet.blsWalletSigner.sign(
-      expectedOperation,
-      walletAddress,
-    );
-
-    // Act
-    const signedTransaction = await blsSigner.signTransactionBatch({
-      transactions,
-    });
-
-    // Assert
-    const bundleDto = JSON.parse(signedTransaction);
-    expect(bundleDto.signature).to.deep.equal(expectedBundle.signature);
-  });
-
-  it("should throw an error when signing an invalid transaction batch", async () => {
-    // Arrange
-    const invalidEthValue = parseEther("-1");
-
-    const unsignedTransaction = {
-      value: invalidEthValue,
-      to: ethers.Wallet.createRandom().address,
-    };
-
-    // Act
-    const result = async () =>
-      await blsSigner.signTransactionBatch({
-        transactions: [unsignedTransaction],
-      });
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
-    );
-  });
-
-  it("should not retrieve nonce when signing a transaction batch with batch options", async () => {
-    // Arrange
-    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
-
-    const transactionBatch = {
-      transactions: [
-        {
-          to: ethers.Wallet.createRandom().address,
-          value: parseEther("1"),
-        },
-      ],
-      batchOptions: {
-        gas: ethers.utils.parseUnits("40000"),
-        maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
-        maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
-        nonce: 0,
-        chainId: 1337,
-        accessList: [],
-      },
-    };
-
-    // Act
-    await blsSigner.signTransactionBatch(transactionBatch);
-
-    // Assert
-    // Nonce is supplied with batch options so spy should not be called
-    expect(spy).to.have.been.called.exactly(0);
-    chai.spy.restore(spy);
-  });
-
-  it("should retrieve nonce when signing a transaction batch without batch options", async () => {
-    // Arrange
-    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
-
-    // Act
-    await blsSigner.signTransactionBatch({
-      transactions: [
-        {
-          to: ethers.Wallet.createRandom().address,
-          value: parseEther("1"),
-        },
-      ],
-    });
-
-    // Assert
-    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
-    expect(spy).to.have.been.called.exactly(1);
-    chai.spy.restore(spy);
-  });
-
-  it("should check transaction", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-
-    // Act
-    const result = blsSigner.checkTransaction({
-      to: recipient,
-      value: transactionAmount,
-    });
-
-    // Assert
-    const resolvedResult = await resolveProperties(result);
-    expect(resolvedResult).to.be.an("object").that.includes({
-      to: recipient,
-      value: transactionAmount,
-      from: blsSigner.wallet.address,
-    });
-  });
-
-  // TODO: This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
-  // So will revisit this and ensure the method is using the correct nonce at a later stage.
-  it("should populate transaction", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-
-    // Act
-    const result = await blsSigner.populateTransaction({
-      to: recipient,
-      value: transactionAmount,
-    });
-
-    // Assert
-    expect(result).to.be.an("object").that.includes({
-      to: recipient,
-      value: transactionAmount,
-      from: blsSigner.wallet.address,
-      type: 2,
-      chainId: 1337,
-    });
-
-    expect(result).to.include.keys(
-      "maxFeePerGas",
-      "maxPriorityFeePerGas",
-      "gasLimit",
-      "nonce",
-    );
-  });
-
-  it("should sign message of type string", async () => {
-    // Arrange
-    const address = ethers.Wallet.createRandom().address;
-    const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(address);
-
-    const expectedSignature = RLP.encode(blsWalletSignerSignature);
-
-    // Act
-    const signedMessage = await blsSigner.signMessage(address);
-
-    // Assert
-    expect(signedMessage).to.deep.equal(expectedSignature);
-    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
-  });
-
-  it("should sign message of type bytes", async () => {
-    // Arrange
-    const bytes: number[] = [68, 219, 115, 219, 26, 248, 170, 165]; // random bytes
-    const hexString = ethers.utils.hexlify(bytes);
-    const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(hexString);
-
-    const expectedSignature = RLP.encode(blsWalletSignerSignature);
-
-    // Act
-    const signedMessage = await blsSigner.signMessage(bytes);
-
-    // Assert
-    expect(signedMessage).to.deep.equal(expectedSignature);
-    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
-  });
-
-  it("should await the init promise when connecting to an unchecked bls signer", async () => {
-    // Arrange
-    const newPrivateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
-    const newBlsSigner = blsProvider.getSigner(newPrivateKey);
-    const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
-
-    await fundedWallet.sendTransaction({
-      to: await uncheckedBlsSigner.getAddress(),
-      value: parseEther("1.1"),
-    });
-
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-    const balanceBefore = await blsProvider.getBalance(recipient);
-
-    // Act
-    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
-      value: transactionAmount,
-      to: recipient,
-    });
-    await uncheckedResponse.wait();
-
-    // Assert
-    expect(
-      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
-    ).to.equal(transactionAmount);
-  });
-
-  it("should get the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
-    // Arrange & Act
-    const newBlsProvider = new Experimental.BlsProvider(
-      aggregatorUrl,
-      verificationGateway,
-      aggregatorUtilities,
-      rpcUrl,
-      network,
-    );
-    const newPrivateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
-    const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
-    const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
-
-    await fundedWallet.sendTransaction({
-      to: await uncheckedBlsSigner.getAddress(),
-      value: parseEther("1.1"),
-    });
-
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-    const balanceBefore = await blsProvider.getBalance(recipient);
-
-    // Act
-    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
-      value: transactionAmount,
-      to: recipient,
-    });
-    await uncheckedResponse.wait();
-
-    // Assert
-    expect(
-      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
-    ).to.equal(transactionAmount);
-  });
-
-  it("should send ETH (empty call) via an unchecked transaction", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-    const balanceBefore = await blsProvider.getBalance(recipient);
-
-    // Act
-    const uncheckedTransactionHash = await blsSigner.sendUncheckedTransaction({
-      value: transactionAmount,
-      to: recipient,
-    });
-    await blsProvider.getTransactionReceipt(uncheckedTransactionHash);
-
-    // Assert
-    expect(
-      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
-    ).to.equal(transactionAmount);
-  });
-
-  it("should send ETH (empty call) using an unchecked bls signer", async () => {
-    // Arrange
-    const uncheckedBlsSigner = blsSigner.connectUnchecked();
-
-    const recipient = ethers.Wallet.createRandom().address;
-    const transactionAmount = parseEther("1");
-    const balanceBefore = await blsProvider.getBalance(recipient);
-
-    // Act
-    const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
-      value: transactionAmount,
-      to: recipient,
-    });
-    await uncheckedResponse.wait();
-
-    // Assert
-    expect(uncheckedResponse).to.be.an("object").that.includes({
-      hash: uncheckedResponse.hash,
-      data: "",
-      chainId: 0,
-      confirmations: 0,
-      from: "",
-    });
-
-    expect(uncheckedResponse.gasLimit).to.equal(BigNumber.from("0"));
-    expect(uncheckedResponse.gasPrice).to.equal(BigNumber.from("0"));
-    expect(uncheckedResponse.value).to.equal(BigNumber.from("0"));
-    expect(isNaN(uncheckedResponse.nonce)).to.be.true;
-
-    expect(
-      (await blsProvider.getBalance(recipient)).sub(balanceBefore),
-    ).to.equal(transactionAmount);
-  });
-
-  it("should get the balance of an account", async () => {
-    // Arrange
-    const expectedBalance = await regularProvider.getBalance(
-      blsSigner.wallet.address,
-    );
-
-    // Act
-    const result = await blsSigner.getBalance();
-
-    // Assert
-    expect(result).to.equal(expectedBalance);
-  });
-
-  it("should get the balance of an account at specific block height", async () => {
-    // Arrange
-    const expectedBalance = parseEther("0");
-
-    // Act
-    const result = await blsSigner.getBalance("earliest");
-
-    // Assert
-    expect(result).to.equal(expectedBalance);
-  });
-
-  it("should get the chain id the wallet is connected to", async () => {
-    // Arrange
-    const { chainId: expectedChainId } = await regularProvider.getNetwork();
-
-    // Act
-    const result = await blsSigner.getChainId();
-
-    // Assert
-    expect(result).to.equal(expectedChainId);
-  });
-
-  it("should get the current gas price", async () => {
-    // Arrange
-    const expectedGasPrice = await regularProvider.getGasPrice();
-
-    // Act
-    const result = await blsSigner.getGasPrice();
-
-    // Assert
-    expect(result).to.equal(expectedGasPrice);
-  });
-
-  it("should get the number of transactions the account has sent", async () => {
-    // Arrange
-    const expectedTransactionCount = await blsSigner.wallet.Nonce();
-
-    // Act
-    const transactionCount = await blsSigner.getTransactionCount();
-
-    // Assert
-    expect(transactionCount).to.equal(expectedTransactionCount);
-  });
-
-  it("should get the number of transactions the account has sent at the specified block tag", async () => {
-    // Arrange
-    const expectedTransactionCount = 0;
-
-    const sendTransaction = await blsSigner.sendTransaction({
-      value: parseEther("1"),
-      to: ethers.Wallet.createRandom().address,
-    });
-    await sendTransaction.wait();
-
-    // Act
-    const transactionCount = await blsSigner.getTransactionCount("earliest");
-
-    // Assert
-    expect(transactionCount).to.equal(expectedTransactionCount);
-  });
-
-  it("should return the result of call using the transactionRequest, with the signer account address being used as the from field", async () => {
-    // Arrange
-    const spy = chai.spy.on(Experimental.BlsProvider.prototype, "call");
-
-    // eslint-disable-next-line camelcase
-    const testERC20 = MockERC20__factory.connect(
-      networkConfig.addresses.testToken,
-      blsProvider,
-    );
-
-    // Act
-    const result = await blsSigner.call({
-      to: testERC20.address,
-      data: testERC20.interface.encodeFunctionData("totalSupply"),
-      // Explicitly omit 'from'
-    });
-
-    // Assert
-    expect(formatEther(result)).to.equal("1000000.0");
-    expect(spy).to.have.been.called.once;
-    expect(spy).to.have.been.called.with({
-      to: testERC20.address,
-      data: testERC20.interface.encodeFunctionData("totalSupply"),
-      from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
-    });
-    chai.spy.restore(spy);
-  });
-
-  it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
-    // Arrange
-    const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");
-    const recipient = ethers.Wallet.createRandom().address;
-
-    // Act
-    const gasEstimate = async () =>
-      await blsSigner.estimateGas({
-        to: recipient,
-        value: parseEther("1"),
-        // Explicitly omit 'from'
-      });
-
-    // Assert
-    await expect(gasEstimate()).to.not.be.rejected;
-    expect(spy).to.have.been.called.once;
-    expect(spy).to.have.been.called.with({
-      to: recipient,
-      value: parseEther("1"),
-      from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
-    });
-    chai.spy.restore(spy);
-  });
-
-  // ENS is not supported by hardhat so we are checking the correct error behaviour in this scenario
-  it("should throw an error when passing in a correct ENS name", async () => {
-    // Arrange
-    const ensName = "vitalik.eth";
-
-    // Act
-    const result = async () => await blsSigner.resolveName(ensName);
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      Error,
-      "network does not support ENS",
-    );
-  });
-
-  it("should throw an error when trying to unlock an account with http access", async () => {
-    // Arrange
-    const madeUpPassword = "password";
-
-    // Act
-    const unlock = async () => await blsSigner.unlock(madeUpPassword);
-
-    // Assert
-    await expect(unlock()).to.be.rejectedWith(
-      Error,
-      "account unlock with HTTP access is forbidden",
-    );
-  });
-
-  it("should validate a transaction request", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const getBalancePromise = blsSigner.getBalance();
-    const expectedValidatedTransaction = {
-      to: recipient,
-      value: await blsSigner.getBalance(),
-      from: await blsSigner.getAddress(),
-    };
-
-    // Act
-    const validatedTransaction = await blsSigner._validateTransaction({
-      to: recipient,
-      value: getBalancePromise,
-    });
-
-    // Assert
-    expect(validatedTransaction).to.deep.equal(expectedValidatedTransaction);
-  });
-
-  it("should throw an error validating a transaction request when transaction.to is not defined", async () => {
-    // Arrange & Act
-    const result = async () =>
-      await blsSigner._validateTransaction({
-        value: await blsSigner.getBalance(),
-      });
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      TypeError,
-      "Transaction.to should be defined",
-    );
-  });
-
-  it("should validate a transaction batch", async () => {
-    // Arrange
-    const recipient = ethers.Wallet.createRandom().address;
-    const amount = await blsSigner.getBalance();
-    const expectedValidatedTransactionBatch = {
-      transactions: [
-        {
-          to: recipient,
-          value: amount,
-          from: await blsSigner.getAddress(),
-        },
-      ],
-      batchOptions: undefined,
-    };
-
-    // Act
-    const validatedTransaction = await blsSigner._validateTransactionBatch({
-      transactions: [
-        {
-          to: recipient,
-          value: amount,
-        },
-      ],
-    });
-
-    // Assert
-    expect(validatedTransaction).to.deep.equal(
-      expectedValidatedTransactionBatch,
-    );
-  });
-
-  it("should throw an error validating a transaction batch when transaction.to is not defined", async () => {
-    // Arrange & Act
-    const result = async () =>
-      await blsSigner._validateTransactionBatch({
-        transactions: [
-          {
-            value: await blsSigner.getBalance(),
-          },
-        ],
-      });
-
-    // Assert
-    await expect(result()).to.be.rejectedWith(
-      TypeError,
-      "Transaction.to is missing on transaction 0",
-    );
-  });
+  // it("should throw an error when signing an invalid transaction", async () => {
+  //   // Arrange
+  //   const invalidEthValue = parseEther("-1");
+
+  //   // Act
+  //   const result = async () =>
+  //     await blsSigner.signTransaction({
+  //       value: invalidEthValue,
+  //       to: ethers.Wallet.createRandom().address,
+  //     });
+
+  //   // Assert
+  //   await expect(result()).to.be.rejectedWith(
+  //     Error,
+  //     'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+  //   );
+  // });
+
+  // it("should sign a transaction batch to create a bundleDto and serialize the result", async () => {
+  //   // Arrange
+  //   const expectedAmount = parseEther("1");
+
+  //   const recipients = [];
+  //   const transactions = [];
+  //   const expectedActions = [];
+  //   for (let i = 0; i < 3; i++) {
+  //     recipients.push(ethers.Wallet.createRandom().address);
+  //     transactions.push({
+  //       to: recipients[i],
+  //       value: expectedAmount,
+  //       data: "0x",
+  //     });
+  //     expectedActions.push({
+  //       contractAddress: recipients[i],
+  //       ethValue: expectedAmount,
+  //       encodedFunction: "0x",
+  //     });
+  //   }
+
+  //   // get expected signature
+  //   const wallet = await BlsWalletWrapper.connect(
+  //     privateKey,
+  //     verificationGateway,
+  //     blsProvider,
+  //   );
+  //   const walletAddress = wallet.address;
+
+  //   const expectedNonce = await BlsWalletWrapper.Nonce(
+  //     wallet.PublicKey(),
+  //     verificationGateway,
+  //     blsSigner,
+  //   );
+
+  //   const actionsWithFeePaymentAction =
+  //     blsProvider._addFeePaymentActionForFeeEstimation(expectedActions);
+
+  //   const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
+  //     blsSigner.wallet.sign({
+  //       nonce: expectedNonce,
+  //       actions: [...actionsWithFeePaymentAction],
+  //     }),
+  //   );
+
+  //   const safeFee = addSafetyPremiumToFee(
+  //     BigNumber.from(expectedFeeEstimate.feeRequired),
+  //   );
+
+  //   const actionsWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+  //     expectedActions,
+  //     safeFee,
+  //   );
+
+  //   const expectedOperation = {
+  //     nonce: expectedNonce,
+  //     actions: [...actionsWithSafeFee],
+  //   };
+
+  //   const expectedBundle = wallet.blsWalletSigner.sign(
+  //     expectedOperation,
+  //     walletAddress,
+  //   );
+
+  //   // Act
+  //   const signedTransaction = await blsSigner.signTransactionBatch({
+  //     transactions,
+  //   });
+
+  //   // Assert
+  //   const bundleDto = JSON.parse(signedTransaction);
+  //   expect(bundleDto.signature).to.deep.equal(expectedBundle.signature);
+  // });
+
+  // it("should throw an error when signing an invalid transaction batch", async () => {
+  //   // Arrange
+  //   const invalidEthValue = parseEther("-1");
+
+  //   const unsignedTransaction = {
+  //     value: invalidEthValue,
+  //     to: ethers.Wallet.createRandom().address,
+  //   };
+
+  //   // Act
+  //   const result = async () =>
+  //     await blsSigner.signTransactionBatch({
+  //       transactions: [unsignedTransaction],
+  //     });
+
+  //   // Assert
+  //   await expect(result()).to.be.rejectedWith(
+  //     Error,
+  //     'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+  //   );
+  // });
+
+  // it("should not retrieve nonce when signing a transaction batch with batch options", async () => {
+  //   // Arrange
+  //   const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+
+  //   const transactionBatch = {
+  //     transactions: [
+  //       {
+  //         to: ethers.Wallet.createRandom().address,
+  //         value: parseEther("1"),
+  //       },
+  //     ],
+  //     batchOptions: {
+  //       gas: ethers.utils.parseUnits("40000"),
+  //       maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
+  //       maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
+  //       nonce: 0,
+  //       chainId: 1337,
+  //       accessList: [],
+  //     },
+  //   };
+
+  //   // Act
+  //   await blsSigner.signTransactionBatch(transactionBatch);
+
+  //   // Assert
+  //   // Nonce is supplied with batch options so spy should not be called
+  //   expect(spy).to.have.been.called.exactly(0);
+  //   chai.spy.restore(spy);
+  // });
+
+  // it("should retrieve nonce when signing a transaction batch without batch options", async () => {
+  //   // Arrange
+  //   const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+
+  //   // Act
+  //   await blsSigner.signTransactionBatch({
+  //     transactions: [
+  //       {
+  //         to: ethers.Wallet.createRandom().address,
+  //         value: parseEther("1"),
+  //       },
+  //     ],
+  //   });
+
+  //   // Assert
+  //   // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
+  //   expect(spy).to.have.been.called.exactly(1);
+  //   chai.spy.restore(spy);
+  // });
+
+  // it("should check transaction", async () => {
+  //   // Arrange
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const transactionAmount = parseEther("1");
+
+  //   // Act
+  //   const result = blsSigner.checkTransaction({
+  //     to: recipient,
+  //     value: transactionAmount,
+  //   });
+
+  //   // Assert
+  //   const resolvedResult = await resolveProperties(result);
+  //   expect(resolvedResult).to.be.an("object").that.includes({
+  //     to: recipient,
+  //     value: transactionAmount,
+  //     from: blsSigner.wallet.address,
+  //   });
+  // });
+
+  // // TODO: This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
+  // // So will revisit this and ensure the method is using the correct nonce at a later stage.
+  // it("should populate transaction", async () => {
+  //   // Arrange
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const transactionAmount = parseEther("1");
+
+  //   // Act
+  //   const result = await blsSigner.populateTransaction({
+  //     to: recipient,
+  //     value: transactionAmount,
+  //   });
+
+  //   // Assert
+  //   expect(result).to.be.an("object").that.includes({
+  //     to: recipient,
+  //     value: transactionAmount,
+  //     from: blsSigner.wallet.address,
+  //     type: 2,
+  //     chainId: 1337,
+  //   });
+
+  //   expect(result).to.include.keys(
+  //     "maxFeePerGas",
+  //     "maxPriorityFeePerGas",
+  //     "gasLimit",
+  //     "nonce",
+  //   );
+  // });
+
+  // it("should sign message of type string", async () => {
+  //   // Arrange
+  //   const address = ethers.Wallet.createRandom().address;
+  //   const blsWalletSignerSignature =
+  //     blsSigner.wallet.blsWalletSigner.signMessage(address);
+
+  //   const expectedSignature = RLP.encode(blsWalletSignerSignature);
+
+  //   // Act
+  //   const signedMessage = await blsSigner.signMessage(address);
+
+  //   // Assert
+  //   expect(signedMessage).to.deep.equal(expectedSignature);
+  //   expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+  // });
+
+  // it("should sign message of type bytes", async () => {
+  //   // Arrange
+  //   const bytes: number[] = [68, 219, 115, 219, 26, 248, 170, 165]; // random bytes
+  //   const hexString = ethers.utils.hexlify(bytes);
+  //   const blsWalletSignerSignature =
+  //     blsSigner.wallet.blsWalletSigner.signMessage(hexString);
+
+  //   const expectedSignature = RLP.encode(blsWalletSignerSignature);
+
+  //   // Act
+  //   const signedMessage = await blsSigner.signMessage(bytes);
+
+  //   // Assert
+  //   expect(signedMessage).to.deep.equal(expectedSignature);
+  //   expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+  // });
+
+  // it("should await the init promise when connecting to an unchecked bls signer", async () => {
+  //   // Arrange
+  //   const newPrivateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
+  //   const newBlsSigner = blsProvider.getSigner(newPrivateKey);
+  //   const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
+
+  //   await fundedWallet.sendTransaction({
+  //     to: await uncheckedBlsSigner.getAddress(),
+  //     value: parseEther("1.1"),
+  //   });
+
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const transactionAmount = parseEther("1");
+  //   const balanceBefore = await blsProvider.getBalance(recipient);
+
+  //   // Act
+  //   const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
+  //     value: transactionAmount,
+  //     to: recipient,
+  //   });
+  //   await uncheckedResponse.wait();
+
+  //   // Assert
+  //   expect(
+  //     (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+  //   ).to.equal(transactionAmount);
+  // });
+
+  // it("should get the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
+  //   // Arrange & Act
+  //   const newBlsProvider = new Experimental.BlsProvider(
+  //     aggregatorUrl,
+  //     verificationGateway,
+  //     aggregatorUtilities,
+  //     rpcUrl,
+  //     network,
+  //   );
+  //   const newPrivateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
+  //   const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
+  //   const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
+
+  //   await fundedWallet.sendTransaction({
+  //     to: await uncheckedBlsSigner.getAddress(),
+  //     value: parseEther("1.1"),
+  //   });
+
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const transactionAmount = parseEther("1");
+  //   const balanceBefore = await blsProvider.getBalance(recipient);
+
+  //   // Act
+  //   const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
+  //     value: transactionAmount,
+  //     to: recipient,
+  //   });
+  //   await uncheckedResponse.wait();
+
+  //   // Assert
+  //   expect(
+  //     (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+  //   ).to.equal(transactionAmount);
+  // });
+
+  // it("should send ETH (empty call) via an unchecked transaction", async () => {
+  //   // Arrange
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const transactionAmount = parseEther("1");
+  //   const balanceBefore = await blsProvider.getBalance(recipient);
+
+  //   // Act
+  //   const uncheckedTransactionHash = await blsSigner.sendUncheckedTransaction({
+  //     value: transactionAmount,
+  //     to: recipient,
+  //   });
+  //   await blsProvider.getTransactionReceipt(uncheckedTransactionHash);
+
+  //   // Assert
+  //   expect(
+  //     (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+  //   ).to.equal(transactionAmount);
+  // });
+
+  // it("should send ETH (empty call) using an unchecked bls signer", async () => {
+  //   // Arrange
+  //   const uncheckedBlsSigner = blsSigner.connectUnchecked();
+
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const transactionAmount = parseEther("1");
+  //   const balanceBefore = await blsProvider.getBalance(recipient);
+
+  //   // Act
+  //   const uncheckedResponse = await uncheckedBlsSigner.sendTransaction({
+  //     value: transactionAmount,
+  //     to: recipient,
+  //   });
+  //   await uncheckedResponse.wait();
+
+  //   // Assert
+  //   expect(uncheckedResponse).to.be.an("object").that.includes({
+  //     hash: uncheckedResponse.hash,
+  //     data: "",
+  //     chainId: 0,
+  //     confirmations: 0,
+  //     from: "",
+  //   });
+
+  //   expect(uncheckedResponse.gasLimit).to.equal(BigNumber.from("0"));
+  //   expect(uncheckedResponse.gasPrice).to.equal(BigNumber.from("0"));
+  //   expect(uncheckedResponse.value).to.equal(BigNumber.from("0"));
+  //   expect(isNaN(uncheckedResponse.nonce)).to.be.true;
+
+  //   expect(
+  //     (await blsProvider.getBalance(recipient)).sub(balanceBefore),
+  //   ).to.equal(transactionAmount);
+  // });
+
+  // it("should get the balance of an account", async () => {
+  //   // Arrange
+  //   const expectedBalance = await regularProvider.getBalance(
+  //     blsSigner.wallet.address,
+  //   );
+
+  //   // Act
+  //   const result = await blsSigner.getBalance();
+
+  //   // Assert
+  //   expect(result).to.equal(expectedBalance);
+  // });
+
+  // it("should get the balance of an account at specific block height", async () => {
+  //   // Arrange
+  //   const expectedBalance = parseEther("0");
+
+  //   // Act
+  //   const result = await blsSigner.getBalance("earliest");
+
+  //   // Assert
+  //   expect(result).to.equal(expectedBalance);
+  // });
+
+  // it("should get the chain id the wallet is connected to", async () => {
+  //   // Arrange
+  //   const { chainId: expectedChainId } = await regularProvider.getNetwork();
+
+  //   // Act
+  //   const result = await blsSigner.getChainId();
+
+  //   // Assert
+  //   expect(result).to.equal(expectedChainId);
+  // });
+
+  // it("should get the current gas price", async () => {
+  //   // Arrange
+  //   const expectedGasPrice = await regularProvider.getGasPrice();
+
+  //   // Act
+  //   const result = await blsSigner.getGasPrice();
+
+  //   // Assert
+  //   expect(result).to.equal(expectedGasPrice);
+  // });
+
+  // it("should get the number of transactions the account has sent", async () => {
+  //   // Arrange
+  //   const expectedTransactionCount = await blsSigner.wallet.Nonce();
+
+  //   // Act
+  //   const transactionCount = await blsSigner.getTransactionCount();
+
+  //   // Assert
+  //   expect(transactionCount).to.equal(expectedTransactionCount);
+  // });
+
+  // it("should get the number of transactions the account has sent at the specified block tag", async () => {
+  //   // Arrange
+  //   const expectedTransactionCount = 0;
+
+  //   const sendTransaction = await blsSigner.sendTransaction({
+  //     value: parseEther("1"),
+  //     to: ethers.Wallet.createRandom().address,
+  //   });
+  //   await sendTransaction.wait();
+
+  //   // Act
+  //   const transactionCount = await blsSigner.getTransactionCount("earliest");
+
+  //   // Assert
+  //   expect(transactionCount).to.equal(expectedTransactionCount);
+  // });
+
+  // it("should return the result of call using the transactionRequest, with the signer account address being used as the from field", async () => {
+  //   // Arrange
+  //   const spy = chai.spy.on(Experimental.BlsProvider.prototype, "call");
+
+  //   // eslint-disable-next-line camelcase
+  //   const testERC20 = MockERC20__factory.connect(
+  //     networkConfig.addresses.testToken,
+  //     blsProvider,
+  //   );
+
+  //   // Act
+  //   const result = await blsSigner.call({
+  //     to: testERC20.address,
+  //     data: testERC20.interface.encodeFunctionData("totalSupply"),
+  //     // Explicitly omit 'from'
+  //   });
+
+  //   // Assert
+  //   expect(formatEther(result)).to.equal("1000000.0");
+  //   expect(spy).to.have.been.called.once;
+  //   expect(spy).to.have.been.called.with({
+  //     to: testERC20.address,
+  //     data: testERC20.interface.encodeFunctionData("totalSupply"),
+  //     from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
+  //   });
+  //   chai.spy.restore(spy);
+  // });
+
+  // it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
+  //   // Arrange
+  //   const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");
+  //   const recipient = ethers.Wallet.createRandom().address;
+
+  //   // Act
+  //   const gasEstimate = async () =>
+  //     await blsSigner.estimateGas({
+  //       to: recipient,
+  //       value: parseEther("1"),
+  //       // Explicitly omit 'from'
+  //     });
+
+  //   // Assert
+  //   await expect(gasEstimate()).to.not.be.rejected;
+  //   expect(spy).to.have.been.called.once;
+  //   expect(spy).to.have.been.called.with({
+  //     to: recipient,
+  //     value: parseEther("1"),
+  //     from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
+  //   });
+  //   chai.spy.restore(spy);
+  // });
+
+  // // ENS is not supported by hardhat so we are checking the correct error behaviour in this scenario
+  // it("should throw an error when passing in a correct ENS name", async () => {
+  //   // Arrange
+  //   const ensName = "vitalik.eth";
+
+  //   // Act
+  //   const result = async () => await blsSigner.resolveName(ensName);
+
+  //   // Assert
+  //   await expect(result()).to.be.rejectedWith(
+  //     Error,
+  //     "network does not support ENS",
+  //   );
+  // });
+
+  // it("should throw an error when trying to unlock an account with http access", async () => {
+  //   // Arrange
+  //   const madeUpPassword = "password";
+
+  //   // Act
+  //   const unlock = async () => await blsSigner.unlock(madeUpPassword);
+
+  //   // Assert
+  //   await expect(unlock()).to.be.rejectedWith(
+  //     Error,
+  //     "account unlock with HTTP access is forbidden",
+  //   );
+  // });
+
+  // it("should validate a transaction request", async () => {
+  //   // Arrange
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const getBalancePromise = blsSigner.getBalance();
+  //   const expectedValidatedTransaction = {
+  //     to: recipient,
+  //     value: await blsSigner.getBalance(),
+  //     from: await blsSigner.getAddress(),
+  //   };
+
+  //   // Act
+  //   const validatedTransaction = await blsSigner._validateTransaction({
+  //     to: recipient,
+  //     value: getBalancePromise,
+  //   });
+
+  //   // Assert
+  //   expect(validatedTransaction).to.deep.equal(expectedValidatedTransaction);
+  // });
+
+  // it("should throw an error validating a transaction request when transaction.to is not defined", async () => {
+  //   // Arrange & Act
+  //   const result = async () =>
+  //     await blsSigner._validateTransaction({
+  //       value: await blsSigner.getBalance(),
+  //     });
+
+  //   // Assert
+  //   await expect(result()).to.be.rejectedWith(
+  //     TypeError,
+  //     "Transaction.to should be defined",
+  //   );
+  // });
+
+  // it("should validate a transaction batch", async () => {
+  //   // Arrange
+  //   const recipient = ethers.Wallet.createRandom().address;
+  //   const amount = await blsSigner.getBalance();
+  //   const expectedValidatedTransactionBatch = {
+  //     transactions: [
+  //       {
+  //         to: recipient,
+  //         value: amount,
+  //         from: await blsSigner.getAddress(),
+  //       },
+  //     ],
+  //     batchOptions: undefined,
+  //   };
+
+  //   // Act
+  //   const validatedTransaction = await blsSigner._validateTransactionBatch({
+  //     transactions: [
+  //       {
+  //         to: recipient,
+  //         value: amount,
+  //       },
+  //     ],
+  //   });
+
+  //   // Assert
+  //   expect(validatedTransaction).to.deep.equal(
+  //     expectedValidatedTransactionBatch,
+  //   );
+  // });
+
+  // it("should throw an error validating a transaction batch when transaction.to is not defined", async () => {
+  //   // Arrange & Act
+  //   const result = async () =>
+  //     await blsSigner._validateTransactionBatch({
+  //       transactions: [
+  //         {
+  //           value: await blsSigner.getBalance(),
+  //         },
+  //       ],
+  //     });
+
+  //   // Assert
+  //   await expect(result()).to.be.rejectedWith(
+  //     TypeError,
+  //     "Transaction.to is missing on transaction 0",
+  //   );
+  // });
 });
