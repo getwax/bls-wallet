@@ -11,11 +11,9 @@ import sinon from "sinon";
 
 import {
   Experimental,
-  ActionData,
   BlsWalletWrapper,
   NetworkConfig,
   MockERC20__factory,
-  Operation,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 import addSafetyPremiumToFee from "../clients/src/helpers/addSafetyDivisorToFee";
@@ -70,6 +68,10 @@ describe("BlsSigner", () => {
       to: await blsSigner.getAddress(),
       value: parseEther("10"),
     });
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it("should send ETH (empty call) successfully", async () => {
@@ -491,7 +493,7 @@ describe("BlsSigner", () => {
     };
 
     // get expected signature
-    const expectedAction: ActionData = {
+    const expectedAction = {
       ethValue: parseEther("1"),
       contractAddress: recipient,
       encodedFunction: "0x",
@@ -518,11 +520,23 @@ describe("BlsSigner", () => {
       sinon.fake.resolves(privateKey),
     );
 
-    const expectedFeeEstimate = await blsProvider.estimateGas(transaction);
+    const actionsWithFeePaymentAction =
+      blsProvider._addFeePaymentActionForFeeEstimation([expectedAction]);
+
+    const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
+      blsSigner.wallet.sign({
+        nonce: expectedNonce,
+        actions: [...actionsWithFeePaymentAction],
+      }),
+    );
+
+    const safeFee = addSafetyPremiumToFee(
+      BigNumber.from(expectedFeeEstimate.feeRequired),
+    );
 
     const actionsWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
       [expectedAction],
-      expectedFeeEstimate,
+      safeFee,
     );
 
     const expectedOperation = {
@@ -547,7 +561,6 @@ describe("BlsSigner", () => {
     expect(bundleDto.signature).to.deep.equal(
       expectedBundleSignatureHexStrings,
     );
-    sinon.restore();
   });
 
   it("should throw an error when signing an invalid transaction", async () => {
@@ -622,7 +635,7 @@ describe("BlsSigner", () => {
       safeFee,
     );
 
-    const expectedOperation: Operation = {
+    const expectedOperation = {
       nonce: expectedNonce,
       actions: [...actionsWithSafeFee],
     };

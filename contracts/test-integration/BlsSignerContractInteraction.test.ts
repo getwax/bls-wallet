@@ -78,6 +78,10 @@ describe("Signer contract interaction tests", function () {
       await mockERC20.transfer(await blsSigners[0].getAddress(), tokenSupply);
     });
 
+    this.afterEach(() => {
+      sinon.restore();
+    });
+
     it("balanceOf() call", async () => {
       const initialBalance = await mockERC20.balanceOf(
         await blsSigners[0].getAddress(),
@@ -256,7 +260,6 @@ describe("Signer contract interaction tests", function () {
 
       // Assert
       expect(fee).to.equal(expectedFee);
-      sinon.restore();
     });
 
     it("should not fail when estimating gas for different scenarios", async () => {
