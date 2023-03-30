@@ -511,7 +511,7 @@ describe("BlsSigner", () => {
       verificationGateway,
       blsSigner,
     );
-    console.log("expectedNonce:", expectedNonce);
+    console.log("expectedNonce:", ethers.utils.formatUnits(expectedNonce));
 
     console.log("expected privateKey:", privateKey);
     // BlsWalletWrapper.getRandomBlsPrivateKey from "estimateGas" method results in slightly different

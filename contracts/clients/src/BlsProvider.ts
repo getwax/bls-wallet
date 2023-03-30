@@ -104,10 +104,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
 
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
-    console.log(
-      "feeRequired:",
-      ethers.utils.parseUnits(feeRequired.toString()),
-    );
+    console.log("feeRequired:", ethers.utils.formatUnits(feeRequired));
     return addSafetyPremiumToFee(feeRequired);
   }
 
