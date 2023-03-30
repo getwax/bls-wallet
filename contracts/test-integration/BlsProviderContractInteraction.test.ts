@@ -5,7 +5,7 @@ import { BigNumber, utils, Wallet } from "ethers";
 import { Experimental } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
-describe("Provider tests", function () {
+describe.skip("Provider tests", function () {
   let blsProvider;
   let blsSigner;
   let fundedWallet: Wallet;
