@@ -33,7 +33,7 @@ let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 let regularProvider: ethers.providers.JsonRpcProvider;
 let fundedWallet: ethers.Wallet;
 
-describe.only("BlsSigner", () => {
+describe("BlsSigner", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
 

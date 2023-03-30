@@ -36,7 +36,7 @@ async function getRandomSigners(
   return signers;
 }
 
-describe("Signer contract interaction tests", function () {
+describe.skip("Signer contract interaction tests", function () {
   let blsSigners;
   let fundedWallet: Wallet;
 

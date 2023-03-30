@@ -26,7 +26,7 @@ let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
 
-describe("BlsProvider", () => {
+describe.skip("BlsProvider", () => {
   beforeEach(async () => {
     networkConfig = await getNetworkConfig("local");
 
