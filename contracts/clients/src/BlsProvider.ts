@@ -88,6 +88,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     // alternative would be to use a signer instance in this method which is undesirable,
     // as this would result in tight coupling between a provider and a signer.
     const throwawayPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    console.log("throwawayPrivateKey:", throwawayPrivateKey);
     const throwawayBlsWalletWrapper = await BlsWalletWrapper.connect(
       throwawayPrivateKey,
       this.verificationGatewayAddress,
@@ -102,6 +103,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     );
 
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
+    console.log("feeRequired:", feeRequired);
     return addSafetyPremiumToFee(feeRequired);
   }
 

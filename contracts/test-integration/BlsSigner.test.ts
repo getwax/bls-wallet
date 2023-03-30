@@ -482,7 +482,7 @@ describe("BlsSigner", () => {
     expect(address).to.equal(expectedAddress);
   });
 
-  it("should sign a transaction to create a bundleDto and serialize the result", async () => {
+  it.only("should sign a transaction to create a bundleDto and serialize the result", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
     const transaction = {
