@@ -1,161 +1,78 @@
-import { axiod } from "../../deps.ts";
 import BundleTable from "./BundleTable.ts";
-import AppEvent from "./AppEvent.ts";
 import assert from "../helpers/assert.ts";
-import * as env from "../env.ts";
 
-abstract class HealthIndicator {
-  constructor(
-    public emit: (evt: AppEvent) => void,
-  ){}
-  abstract name: string;
-  status: ResourceHealth = ResourceHealth.Unhealthy;
+export type ResourceHealth = 'healthy' | 'unhealthy';
+
+type HealthIndicator = {
+  name: string;
+  status: ResourceHealth;
+  details?: string;
+  checkHealth(): Promise<void> | void;
+};
+
+export class ServiceHealthCheck implements HealthIndicator {
+  // Starts out in the Unhealthy state by default until it can be verified as Healthy
+  name: string;
+  status: ResourceHealth = 'unhealthy';
   details: string | undefined;
-  abstract checkHealth(): Promise<void> | void;
-}
+  url: string;
 
-export enum ResourceHealth {
-  Healthy = 'HEALTHY',
-  Unhealthy = 'UNHEALTHY'
-}
+  constructor(name: string, url: string) {
+    this.name = name;
+    this.url = url;
+  }
 
-export class AggregatorServiceHealthCheck extends HealthIndicator {
-  // Starts out in the Unhealthy state by default until it can be verified as Healthy
-  name = 'Aggregator';
-  status: ResourceHealth = ResourceHealth.Unhealthy;
-  
   async checkHealth(): Promise<void> {
     try {
-      const response = await axiod.get(new URL(env.ORIGIN, "/Bundle/health").toString());
+      const response = await fetch(this.url); 
+
       if (response.status === 200) {
-        this.status = ResourceHealth.Healthy;
-        this.emit({
-          type: "service-healthy",
-          data: {
-            name: this.name,
-            status: ResourceHealth.Healthy,
-          },
-        });
+        this.status = 'healthy';
       } else {
-        this.status = ResourceHealth.Unhealthy;
-        this.details = `Aggregator returned status code ${response.status}`;
-        this.emit({
-          type: "service-unhealthy",
-          data: {
-            name: this.name,
-            status: ResourceHealth.Unhealthy,
-            detail: `Aggregator returned status code ${response.status}`,
-          },
-        });
+        this.status = 'unhealthy';
+        this.details = `${this.name} returned status code ${response.status}`;
       }
     } catch (e) {
-      this.status = ResourceHealth.Unhealthy;
+      this.status = 'unhealthy';
       this.details = e.message;
-      this.emit({
-        type: "service-unhealthy",
-        data: {
-          name: this.name,
-          status: ResourceHealth.Unhealthy,
-          detail: e.message,
-        },
-      });
-      //console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
     }
   }
 }
 
-export class RPCServiceHealthCheck extends HealthIndicator  {
-  // Starts out in the Unhealthy state by default until it can be verified as Healthy
-  name = 'RPC';
-  status: ResourceHealth = ResourceHealth.Unhealthy;
-
-  async checkHealth(): Promise<void> {
-    try {
-      const response = await axiod.get(env.RPC_URL);
-      if (response.status === 200) {
-        this.status = ResourceHealth.Healthy;
-        this.emit({
-          type: "service-healthy",
-          data: {
-            name: this.name,
-            status: ResourceHealth.Healthy,
-          },
-        });
-      } else {
-        this.status = ResourceHealth.Unhealthy;
-        this.details = `RPC returned status code ${response.status}`;
-        this.emit({
-          type: "service-unhealthy",
-          data: {
-            name: this.name,
-            status: ResourceHealth.Unhealthy,
-            detail: `RPC returned status code ${response.status}`,
-          },
-        });
-      }
-    } catch (e) {
-      this.status = ResourceHealth.Unhealthy;
-      this.details = e.message;
-      this.emit({
-        type: "service-unhealthy",
-        data: {
-          name: this.name,
-          status: ResourceHealth.Unhealthy,
-          detail: e.message,
-        },
-      });
-      //console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
-    }
-  }
-}
-
-export class DBServiceHealthCheck extends HealthIndicator  {
+export class DBServiceHealthCheck implements HealthIndicator  {
   constructor(
-    public emit: (evt: AppEvent) => void,
     private bundleTable: BundleTable,
-  ){
-    super(emit);
-  }
-
+  ){}
   // Starts out in the Unhealthy state by default until it can be verified as Healthy
   name = 'DB';
-  status: ResourceHealth = ResourceHealth.Unhealthy;
+  status: ResourceHealth = 'unhealthy';
+  details?: string | undefined;
 
   checkHealth(): void {
-    // wrap synchronous code in a promise so we can use async/await
       try {      
-        const [[now]] = [...this.bundleTable.dbQuery("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")];
+        const [[now]] = this.bundleTable.dbQuery("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");
         const dbTime = new Date(`${now}Z`).getTime();
         assert(typeof dbTime === "number");
-        this.status = ResourceHealth.Healthy;
-        this.emit({
-          type: "service-healthy",
-          data: {
-            name: this.name,
-            status: ResourceHealth.Healthy,
-          },
-        });
+        this.status = 'healthy';
       } catch (e) {
-        this.status = ResourceHealth.Unhealthy;
+        this.status = 'unhealthy';
         this.details = e.message;
-        this.emit({
-          type: "service-unhealthy",
-          data: {
-            name: this.name,
-            status: ResourceHealth.Unhealthy,
-            detail: e.message,
-          },
-        });
-        //console.log(`HEALTH: ${this.name} is unhealthy.`, e.message);
       }
   }
 }
 
+type HealthCheckResult = {
+  status: ResourceHealth,
+  dependencies: {
+    name: string,
+    status: ResourceHealth
+  }[]
+};
+
 export default class HealthService {
-  public overallHealth: ResourceHealth = ResourceHealth.Healthy;
+  public overallHealth: ResourceHealth = 'healthy';
   
   constructor(
-    public emit: (evt: AppEvent) => void,
     private readonly checks: HealthIndicator[],
   ){
     this.checks = checks;
@@ -167,11 +84,11 @@ export default class HealthService {
     );
 
     const anyUnhealthy = this.checks.some(item =>
-      item.status === ResourceHealth.Unhealthy
+      item.status === 'unhealthy'
     );
     this.overallHealth = anyUnhealthy
-      ? ResourceHealth.Unhealthy
-      : ResourceHealth.Healthy;
+      ? 'unhealthy'
+      : 'healthy';
           
     return {
       status: this.overallHealth,
@@ -182,11 +99,3 @@ export default class HealthService {
     };
   }
 }
-
-type HealthCheckResult = {
-  status: ResourceHealth,
-  dependencies: {
-    name: string,
-    status: ResourceHealth
-  }[]
-};

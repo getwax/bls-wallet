@@ -87,21 +87,6 @@ type AppEvent =
       duration: number;
     };
   }
-  | {
-    type: "service-healthy";
-    data: {
-      name: string;
-      status: string;
-    };
-  } 
-  | {
-    type: "service-unhealthy";
-    data: {
-      name: string;
-      status: string;
-      detail: string;
-    };
-  }
   ;
 
 
