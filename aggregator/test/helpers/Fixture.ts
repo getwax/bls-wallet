@@ -25,7 +25,7 @@ import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
 import AggregationStrategy, {
   AggregationStrategyConfig,
 } from "../../src/app/AggregationStrategy.ts";
-import HealthService, {DBServiceHealthCheck, RPCServiceHealthCheck} from "../../src/app/HealthService.ts";
+import HealthService from "../../src/app/HealthService.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -294,18 +294,8 @@ export default class Fixture {
     return wallets;
   }
   
-  createHealthCheckService(
-    bundleTable: BundleTable,
-  ) {
-    const dbServiceHealthCheck = new DBServiceHealthCheck(this.emit, bundleTable);
-    const rpcServiceHealthCheck = new RPCServiceHealthCheck(this.emit);
-    const healthCheckService = new HealthService(
-      this.emit,
-      [
-        dbServiceHealthCheck,
-        rpcServiceHealthCheck,
-      ]
-    );
+  createHealthCheckService() {
+    const healthCheckService = new HealthService();
     
     return healthCheckService;
   }
