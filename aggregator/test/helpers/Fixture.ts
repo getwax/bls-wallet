@@ -25,6 +25,7 @@ import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
 import AggregationStrategy, {
   AggregationStrategyConfig,
 } from "../../src/app/AggregationStrategy.ts";
+import HealthService from "../../src/app/HealthService.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -291,6 +292,12 @@ export default class Fixture {
     }
 
     return wallets;
+  }
+  
+  createHealthCheckService() {
+    const healthCheckService = new HealthService();
+    
+    return healthCheckService;
   }
 
   async cleanup() {
