@@ -162,7 +162,7 @@ export default class BlsSigner extends Signer {
       feeEstimate,
     );
 
-    const bundle = this.wallet.sign({
+    const bundle = await this.wallet.signWithGasEstimate({
       nonce,
       actions: [...actionsWithSafeFee],
     });
@@ -217,11 +217,13 @@ export default class BlsSigner extends Signer {
     const actionsWithFeePaymentAction =
       this.provider._addFeePaymentActionForFeeEstimation(actions);
 
+    const bundleWithFeePaymentAction = await this.wallet.signWithGasEstimate({
+      nonce,
+      actions: [...actionsWithFeePaymentAction],
+    });
+
     const feeEstimate = await this.provider.aggregator.estimateFee(
-      this.wallet.sign({
-        nonce,
-        actions: [...actionsWithFeePaymentAction],
-      }),
+      bundleWithFeePaymentAction,
     );
 
     const safeFee = addSafetyPremiumToFee(
@@ -233,7 +235,7 @@ export default class BlsSigner extends Signer {
       safeFee,
     );
 
-    const bundle = this.wallet.sign({
+    const bundle = await this.wallet.signWithGasEstimate({
       nonce,
       actions: [...actionsWithSafeFee],
     });
@@ -322,7 +324,7 @@ export default class BlsSigner extends Signer {
       feeEstimate,
     );
 
-    const bundle = this.wallet.sign({
+    const bundle = await this.wallet.signWithGasEstimate({
       nonce,
       actions: [...actionsWithSafeFee],
     });
@@ -369,11 +371,13 @@ export default class BlsSigner extends Signer {
     const actionsWithFeePaymentAction =
       this.provider._addFeePaymentActionForFeeEstimation(actions);
 
+    const bundleWithFeePaymentAction = await this.wallet.signWithGasEstimate({
+      nonce,
+      actions: [...actionsWithFeePaymentAction],
+    });
+
     const feeEstimate = await this.provider.aggregator.estimateFee(
-      this.wallet.sign({
-        nonce,
-        actions: [...actionsWithFeePaymentAction],
-      }),
+      bundleWithFeePaymentAction,
     );
 
     const safeFee = addSafetyPremiumToFee(
@@ -385,7 +389,7 @@ export default class BlsSigner extends Signer {
       safeFee,
     );
 
-    const bundle = this.wallet.sign({
+    const bundle = await this.wallet.signWithGasEstimate({
       nonce,
       actions: [...actionsWithSafeFee],
     });

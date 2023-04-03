@@ -94,12 +94,12 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       this,
     );
 
-    const feeEstimate = await this.aggregator.estimateFee(
-      throwawayBlsWalletWrapper.sign({
-        nonce,
-        actions: [...actionWithFeePaymentAction],
-      }),
-    );
+    const bundle = await throwawayBlsWalletWrapper.signWithGasEstimate({
+      nonce,
+      actions: [...actionWithFeePaymentAction],
+    });
+
+    const feeEstimate = await this.aggregator.estimateFee(bundle);
 
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
     return addSafetyPremiumToFee(feeRequired);
