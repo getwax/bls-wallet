@@ -140,6 +140,10 @@ contract ERC20Expander is IExpander {
             return decodeApproveMax(stream, bitStream);
         }
 
+        if (methodIndex == 4) {
+            return decodeMint(stream, bitStream);
+        }
+
         revert("Unrecognized ERC20 method index");
     }
 
@@ -235,6 +239,27 @@ contract ERC20Expander is IExpander {
                 spender,
                 type(uint256).max
             ),
+            stream,
+            bitStream
+        );
+    }
+
+    function decodeMint(
+        bytes calldata stream,
+        uint256 bitStream
+    ) internal view returns (
+        bytes memory,
+        bytes calldata,
+        uint256
+    ) {
+        address to;
+        (to, stream, bitStream) = decodeAddress(stream, bitStream);
+
+        uint256 value;
+        (value, stream) = PseudoFloat.decode(stream);
+
+        return (
+            abi.encodeWithSignature("mint(address,uint256)", to, value),
             stream,
             bitStream
         );
