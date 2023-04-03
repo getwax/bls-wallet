@@ -649,7 +649,7 @@ describe("Expanders", async function () {
                 first)
       000000  - Registry index for sendWallet's public key
       00      - nonce: 0
-      0bb917  - gas: (TODO) 76,185
+      0bb917  - gas: 58,555
       01      - one action
       000000  - Registry index for ERC20 address
       03      - approve (max)

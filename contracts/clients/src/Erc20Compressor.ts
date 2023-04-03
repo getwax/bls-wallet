@@ -221,8 +221,6 @@ export default class Erc20Compressor implements IOperationCompressor {
         result.push(encodeRegIndex(addressId));
       }
 
-      // TODO: Be different here
-
       const success = await this.compressFunctionCall(
         action.encodedFunction,
         result,

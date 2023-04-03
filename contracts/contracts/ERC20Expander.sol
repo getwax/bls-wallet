@@ -12,7 +12,35 @@ import "./interfaces/IExpander.sol";
 import "./interfaces/IWallet.sol";
 
 /**
- * TODO
+ * An expander that supports ERC20 operations.
+ *
+ * This is a bit of a first pass, it could be more compact:
+ * - Optimize specifically for transfer
+ * - Require registries, removing the need for a bit stream
+ * - Use a fixed gas value
+ * - Use a dedicated ERC20 registry, allowing a single byte for popular
+ *   currencies (and 2 bytes for all but the most obscure currencies)
+ * - Use a fixed tx.origin reward (or call contract that computes an appropriate
+ *   reward)
+ *
+ * This would get us down to about 11 bytes. (Current example is 20 bytes.)
+ *
+ * Example:
+ *
+ * 0f      - 0x0f = 0b1111 bit stream:
+ *           - 1: Use registry for BLS key
+ *           - 1: Include a tx.origin payment
+ *           - 1: Use registry for ERC20 address
+ *           - 1: Use registry for recipient address
+ * 000000  - Registry index for sendWallet's public key
+ * 00      - nonce: 0
+ * 0bda28  - gas: 92,483
+ * 02      - two actions
+ * 000000  - Registry index for ERC20 address
+ * 00      - transfer
+ * 000002  - Registry index for recipient address
+ * 9100    - 0.1 MCK (amount/value)
+ * 6d00    - Pay 0.000005 ETH to tx.origin
  */
 contract ERC20Expander is IExpander {
     BLSPublicKeyRegistry public blsPublicKeyRegistry;
