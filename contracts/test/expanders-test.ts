@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "ethers";
+import { MockERC20Factory, SafeSingletonFactory } from "../clients/src";
 
 import Fixture from "../shared/helpers/Fixture";
 import hexLen from "../shared/helpers/hexLen";
@@ -505,6 +506,96 @@ describe("Expanders", async function () {
         .parseEther("1.0")
         .add(ethers.utils.parseEther("0.3")) // Received
         .sub(ethers.utils.parseEther("0.1")), // Sent
+    );
+  });
+
+  it("should transfer ERC20 using registries and tx.origin payment", async function () {
+    const fx = await Fixture.getSingleton();
+    const { addressRegistry, blsPublicKeyRegistry } = fx.fallbackCompressor;
+    const [sendWallet, recvWallet] = await fx.createBLSWallets(2);
+    const singletonFactory = await SafeSingletonFactory.init(fx.signers[0]);
+
+    // Ballpark required payment, a bit under USD $0.01 at the time of writing
+    const txOriginPaymentAmount = ethers.utils.parseEther("0.000005");
+
+    const erc20 = await singletonFactory.connectOrDeploy(MockERC20Factory, [
+      "MockToken",
+      "MCK",
+      0,
+    ]);
+
+    await Promise.all([
+      addressRegistry.register(erc20.address),
+      receiptOf(
+        fx.signers[0].sendTransaction({
+          to: sendWallet.address,
+          value: txOriginPaymentAmount,
+        }),
+      ),
+      ...[sendWallet, recvWallet]
+        .map((wallet) => [
+          blsPublicKeyRegistry.register(wallet.PublicKey()),
+          addressRegistry.register(wallet.address),
+          receiptOf(erc20.mint(wallet.address, ethers.utils.parseEther("1.0"))),
+        ])
+        .flat(),
+    ]);
+
+    const bundle = await sendWallet.signWithGasEstimate({
+      nonce: await sendWallet.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: erc20.address,
+          encodedFunction: erc20.interface.encodeFunctionData("transfer", [
+            recvWallet.address,
+            ethers.utils.parseEther("0.1"),
+          ]),
+        },
+        {
+          ethValue: txOriginPaymentAmount,
+          contractAddress: fx.utilities.address,
+          encodedFunction:
+            fx.utilities.interface.encodeFunctionData("sendEthToTxOrigin"),
+        },
+      ],
+    });
+
+    /*
+      Example:
+
+      01      - One operation
+      02      - Use expander 2 (ERC20 expander)
+      0f      - 0x0f = 0b1111 bit stream:
+                - 1: Use registry for BLS key
+                - 1: Include a tx.origin payment
+                - 1: Use registry for ERC20 address
+                - 1: Use registry for recipient address
+      000000  - Registry index for sendWallet's public key
+      00      - nonce: 0
+      0bda28  - gas: 92,483
+      02      - two actions
+      00      - 0 ETH
+      000000  - Registry index for ERC20 address
+      000002  - Registry index for recipient address
+      9100    - 0.1 MCK
+      6d00    - Pay 0.000005 ETH to tx.origin
+
+      279ef4bad05ee777d6c6c497592676242f51a9150f6b7c0e4ae5b36445c6d248
+      0613346680c8f2b9c3a143a378c2e56a770da56b76d9cb0b8eee29a2e2ac87b7
+              - signature
+    */
+
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+
+    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+
+    await expect(erc20.balanceOf(sendWallet.address)).to.eventually.eq(
+      ethers.utils.parseEther("0.9"),
+    );
+
+    await expect(erc20.balanceOf(recvWallet.address)).to.eventually.eq(
+      ethers.utils.parseEther("1.1"),
     );
   });
 });

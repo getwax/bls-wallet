@@ -18,6 +18,7 @@ import {
   FallbackCompressor,
   BlsRegistrationCompressor,
   BundleCompressor,
+  Erc20Compressor,
 } from "../../clients/src";
 
 import Range from "./Range";
@@ -90,6 +91,12 @@ export default class Fixture {
       throw new Error("Fallback compressor not set up correctly");
     }
 
+    const erc20Compressor = await Erc20Compressor.connectIfDeployed(signers[0]);
+
+    if (erc20Compressor === undefined) {
+      throw new Error("ERC20 compressor not set up correctly");
+    }
+
     const blsRegistrationCompressor =
       await BlsRegistrationCompressor.connectIfDeployed(signers[0]);
 
@@ -98,6 +105,7 @@ export default class Fixture {
     }
 
     const bundleCompressor = new BundleCompressor();
+    bundleCompressor.addCompressor(2, erc20Compressor);
     bundleCompressor.addCompressor(1, blsRegistrationCompressor);
     bundleCompressor.addCompressor(0, fallbackCompressor);
 
