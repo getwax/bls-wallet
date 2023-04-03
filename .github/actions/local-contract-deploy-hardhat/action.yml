@@ -10,8 +10,4 @@ runs:
 
     - working-directory: ./contracts
       shell: bash
-      run: yarn hardhat fundDeployer --network gethDev
-
-    - working-directory: ./contracts
-      shell: bash
       run: yarn hardhat run scripts/deploy_all.ts --network gethDev

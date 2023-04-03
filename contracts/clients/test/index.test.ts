@@ -18,6 +18,7 @@ const samples = (() => {
 
   const bundleTemplate: Operation = {
     nonce: BigNumber.from(123),
+    gas: 30_000_000,
     actions: [
       {
         ethValue: BigNumber.from(0),

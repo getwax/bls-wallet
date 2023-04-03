@@ -8,7 +8,7 @@ import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
 async function getRandomSigners(
   numSigners: number,
-): Promise<typeof Experimental.BlsSigner[]> {
+): Promise<(typeof Experimental.BlsSigner)[]> {
   const networkConfig = await getNetworkConfig("local");
 
   const aggregatorUrl = "http://localhost:3000";
@@ -374,10 +374,9 @@ describe("Signer contract interaction tests", function () {
         .safeMint(recipient, tokenId);
       await mint.wait();
 
-      // Assert
-      expect(await mockERC721.connect(blsSigners[1]).ownerOf(tokenId)).to.equal(
-        recipient,
-      );
+      await expect(
+        mockERC721.connect(blsSigners[1]).ownerOf(tokenId),
+      ).to.eventually.equal(recipient);
     });
 
     it("mint() call", async () => {
@@ -392,9 +391,9 @@ describe("Signer contract interaction tests", function () {
       await mint.wait();
 
       // Assert
-      expect(await mockERC721.connect(blsSigners[1]).ownerOf(tokenId)).to.equal(
-        recipient,
-      );
+      await expect(
+        mockERC721.connect(blsSigners[1]).ownerOf(tokenId),
+      ).to.eventually.equal(recipient);
     });
 
     it("balanceOf() call", async () => {
@@ -424,14 +423,17 @@ describe("Signer contract interaction tests", function () {
       const mint = await mockERC721.connect(blsSigners[0]).mint(owner, tokenId);
       await mint.wait();
 
-      // Act
+      // Check signer[3] owns the token
+      await expect(mockERC721.ownerOf(tokenId)).to.eventually.equal(owner);
+
+      // Transfer the token from signer 3 to signer 2
       const transfer = await mockERC721
         .connect(blsSigners[3])
         .transferFrom(owner, recipient, tokenId);
       await transfer.wait();
 
       // Assert
-      expect(await mockERC721.ownerOf(tokenId)).to.equal(recipient);
+      await expect(mockERC721.ownerOf(tokenId)).to.eventually.equal(recipient);
     });
 
     it("approve() call", async () => {
@@ -451,7 +453,9 @@ describe("Signer contract interaction tests", function () {
         .approve(spender, tokenId);
       await approve.wait();
 
-      expect(await mockERC721.getApproved(tokenId)).to.equal(spender);
+      await expect(mockERC721.getApproved(tokenId)).to.eventually.equal(
+        spender,
+      );
     });
 
     it("approve() and transferFrom() calls batched together", async () => {

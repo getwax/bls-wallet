@@ -29,7 +29,7 @@ contract BLSExpander {
     function blsCallMultiCheckRewardIncrease(
         IERC20 tokenRewardAddress,
         uint256 tokenRewardAmount,
-        VerificationGateway.Bundle calldata bundle
+        IWallet.Bundle calldata bundle
         // uint256[4][] calldata publicKeys,
         // uint256[2] memory signature,
         // VerificationGateway.TxSet[] calldata txs
@@ -102,6 +102,7 @@ contract BLSExpander {
     function blsCallMultiSameCallerContractFunction(
         uint256[4] calldata publicKey,
         uint256 nonce,
+        uint256 gas,
         uint256[2] calldata signature,
         address contractAddress,
         bytes4 methodId,
@@ -109,7 +110,7 @@ contract BLSExpander {
     ) external {
         uint256 length = encodedParamSets.length;
 
-        VerificationGateway.Bundle memory bundle;
+        IWallet.Bundle memory bundle;
         bundle.signature = signature;
 
         bundle.senderPublicKeys = new uint256[4][](1);
@@ -117,6 +118,7 @@ contract BLSExpander {
 
         bundle.operations = new IWallet.Operation[](1);
         bundle.operations[0].nonce = nonce;
+        bundle.operations[0].gas = gas;
         bundle.operations[0].actions = new IWallet.ActionData[](length);
         for (uint256 i=0; i<length; i++) {
             bundle.operations[0].actions[i].ethValue = 0;
@@ -185,7 +187,7 @@ contract BLSExpander {
         }
 
         // Use them to re-create bundle
-        VerificationGateway.Bundle memory bundle;
+        IWallet.Bundle memory bundle;
         bundle.signature = addressBundle.signature;
         bundle.senderPublicKeys = senderPublicKeys;
         bundle.operations = addressBundle.operations;

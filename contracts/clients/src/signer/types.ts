@@ -8,6 +8,7 @@ export type ActionData = {
 
 export type Operation = {
   nonce: BigNumberish;
+  gas: BigNumberish;
   actions: ActionData[];
 };
 
@@ -28,6 +29,7 @@ export type ActionDataDto = {
 
 export type OperationDto = {
   nonce: string;
+  gas: string;
   actions: ActionDataDto[];
 };
 

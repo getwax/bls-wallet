@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import chai, { expect } from "chai";
 import { BigNumber, ethers } from "ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
@@ -7,7 +6,7 @@ import {
   BlsWalletWrapper,
   bundleToDto,
   Experimental,
-  MockERC20__factory,
+  MockERC20Factory,
   NetworkConfig,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
@@ -66,7 +65,7 @@ describe("BlsProvider", () => {
   it("calls a getter method on a contract using call()", async () => {
     // Arrange
     const expectedSupply = "1000000.0";
-    const testERC20 = MockERC20__factory.connect(
+    const testERC20 = MockERC20Factory.connect(
       networkConfig.addresses.testToken,
       blsProvider,
     );

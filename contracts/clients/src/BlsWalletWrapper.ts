@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 import { ethers, BigNumber } from "ethers";
 import { keccak256, solidityKeccak256, solidityPack } from "ethers/lib/utils";
 import {
@@ -13,10 +11,10 @@ import {
 
 import {
   BLSWallet,
-  BLSWallet__factory,
-  TransparentUpgradeableProxy__factory,
+  BLSWallet__factory as BLSWalletFactory,
+  TransparentUpgradeableProxy__factory as TransparentUpgradeableProxyFactory,
   VerificationGateway,
-  VerificationGateway__factory,
+  VerificationGateway__factory as VerificationGatewayFactory,
 } from "../typechain-types";
 
 import getRandomBlsPrivateKey from "./signer/getRandomBlsPrivateKey";
@@ -28,9 +26,11 @@ type SignerOrProvider = ethers.Signer | ethers.providers.Provider;
  */
 export default class BlsWalletWrapper {
   public address: string;
+  public blockGasLimit: BigNumber = BigNumber.from(0);
   private constructor(
     public blsWalletSigner: BlsWalletSigner,
     public walletContract: BLSWallet,
+    public defaultGatewayAddress: string,
   ) {
     this.address = walletContract.address;
   }
@@ -45,7 +45,7 @@ export default class BlsWalletWrapper {
       verificationGateway.provider,
     );
 
-    return BLSWallet__factory.connect(
+    return BLSWalletFactory.connect(
       contractAddress,
       verificationGateway.provider,
     );
@@ -76,7 +76,7 @@ export default class BlsWalletWrapper {
       privateKey,
     );
 
-    const verificationGateway = VerificationGateway__factory.connect(
+    const verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
@@ -140,7 +140,7 @@ export default class BlsWalletWrapper {
     verificationGatewayAddress: string,
     provider: ethers.providers.Provider,
   ): Promise<BlsWalletWrapper> {
-    const verificationGateway = VerificationGateway__factory.connect(
+    const verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
       provider,
     );
@@ -152,7 +152,11 @@ export default class BlsWalletWrapper {
     const blsWalletWrapper = new BlsWalletWrapper(
       blsWalletSigner,
       await BlsWalletWrapper.BLSWallet(privateKey, verificationGateway),
+      verificationGateway.address,
     );
+    blsWalletWrapper.blockGasLimit = (
+      await provider.getBlock("latest")
+    ).gasLimit;
 
     return blsWalletWrapper;
   }
@@ -164,7 +168,7 @@ export default class BlsWalletWrapper {
       verificationGateway.provider,
     );
 
-    this.walletContract = BLSWallet__factory.connect(
+    this.walletContract = BLSWalletFactory.connect(
       this.address,
       verificationGateway.provider,
     );
@@ -194,7 +198,7 @@ export default class BlsWalletWrapper {
     verificationGatewayAddress: string,
     signerOrProvider: SignerOrProvider,
   ): Promise<BigNumber> {
-    const verificationGateway = VerificationGateway__factory.connect(
+    const verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
       signerOrProvider,
     );
@@ -208,7 +212,7 @@ export default class BlsWalletWrapper {
       publicKeyHash,
     );
 
-    const walletContract = BLSWallet__factory.connect(
+    const walletContract = BLSWalletFactory.connect(
       contractAddress,
       signerOrProvider,
     );
@@ -223,6 +227,46 @@ export default class BlsWalletWrapper {
     }
 
     return await walletContract.nonce();
+  }
+
+  /** Sign an operation with an estimate of the gas required. */
+  async signWithGasEstimate(
+    operation: Omit<Operation, "gas">,
+
+    /**
+     * Optional: Multiply estimate by `(1+overhead)` to account for uncertainty.
+     * Reduces the chance of running out of gas.
+     */
+    overhead = 0,
+  ): Promise<Bundle> {
+    let gas = await this.estimateGas(operation);
+    gas = gas.add(gas.div(10000).mul(Math.ceil(overhead * 10000)));
+
+    return this.sign({ ...operation, gas });
+  }
+
+  /** Estimate the gas needed for an operation. */
+  async estimateGas(operation: Omit<Operation, "gas">): Promise<BigNumber> {
+    const exists =
+      (await this.walletContract.provider.getCode(this.address)) !== "0x";
+
+    const gatewayAddress = exists
+      ? await this.walletContract.trustedBLSGateway()
+      : this.defaultGatewayAddress;
+
+    const gateway = VerificationGatewayFactory.connect(
+      gatewayAddress,
+      this.walletContract.provider,
+    );
+
+    const gas = await gateway
+      .connect(ethers.constants.AddressZero)
+      .callStatic.measureOperationGas(this.PublicKey(), {
+        ...operation,
+        gas: this.blockGasLimit,
+      });
+
+    return gas;
   }
 
   /** Sign an operation, producing a `Bundle` object suitable for use with an aggregator. */
@@ -264,7 +308,7 @@ export default class BlsWalletWrapper {
       [recoverWalletAddress, walletHash, saltHash],
     );
 
-    return this.sign({
+    return await this.signWithGasEstimate({
       nonce: await this.Nonce(),
       actions: [
         {
@@ -298,7 +342,7 @@ export default class BlsWalletWrapper {
     );
     const saltHash = ethers.utils.formatBytes32String(recoverySalt);
 
-    return this.sign({
+    return await this.signWithGasEstimate({
       nonce: await this.Nonce(),
       actions: [
         {
@@ -364,7 +408,7 @@ export default class BlsWalletWrapper {
     ]);
 
     const initFunctionParams =
-      BLSWallet__factory.createInterface().encodeFunctionData("initialize", [
+      BLSWalletFactory.createInterface().encodeFunctionData("initialize", [
         verificationGateway.address,
       ]);
 
@@ -374,7 +418,7 @@ export default class BlsWalletWrapper {
       ethers.utils.solidityKeccak256(
         ["bytes", "bytes"],
         [
-          TransparentUpgradeableProxy__factory.bytecode,
+          TransparentUpgradeableProxyFactory.bytecode,
           ethers.utils.defaultAbiCoder.encode(
             ["address", "address", "bytes"],
             [blsWalletLogicAddress, proxyAdminAddress, initFunctionParams],

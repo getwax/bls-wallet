@@ -9,7 +9,6 @@ import chaiAsPromised from "chai-as-promised";
 import spies from "chai-spies";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
-import defaultDeployerWallets from "./shared/helpers/defaultDeployerWallet";
 
 dotenv.config();
 
@@ -50,21 +49,6 @@ task("privateKeys", "Prints the private keys for accounts")
       console.log(wallet.privateKey);
       console.log(separator);
     }
-  });
-
-task("fundDeployer", "Sends ETH to create2Deployer contract from first signer")
-  .addOptionalParam("amount", "Amount of ETH to send", "1.0")
-  .setAction(async ({ amount }: { amount: string }, hre) => {
-    const [account0] = await hre.ethers.getSigners();
-    const deployerAddress = defaultDeployerWallets(hre.ethers).address;
-
-    console.log(`${account0.address} -> ${deployerAddress} ${amount} ETH`);
-
-    const txnRes = await account0.sendTransaction({
-      to: deployerAddress,
-      value: hre.ethers.utils.parseEther(amount),
-    });
-    await txnRes.wait();
   });
 
 task("sendEth", "Sends ETH to an address")

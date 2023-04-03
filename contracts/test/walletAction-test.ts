@@ -1,15 +1,12 @@
 import { expect } from "chai";
 
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 
 import Fixture from "../shared/helpers/Fixture";
 import TokenHelper from "../shared/helpers/TokenHelper";
 
 import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
-import deployAndRunPrecompileCostEstimator from "../shared/helpers/deployAndRunPrecompileCostEstimator";
-// import splitHex256 from "../shared/helpers/splitHex256";
-import { defaultDeployerAddress } from "../shared/helpers/deployDeployer";
 import { getOperationResults } from "../clients/src";
 
 describe("WalletActions", async function () {
@@ -18,30 +15,13 @@ describe("WalletActions", async function () {
     return;
   }
 
-  this.beforeAll(async function () {
-    // deploy the deployer contract for the transient hardhat network
-    if (network.name === "hardhat") {
-      // fund deployer wallet address
-      const fundedSigner = (await ethers.getSigners())[0];
-      await (
-        await fundedSigner.sendTransaction({
-          to: defaultDeployerAddress(),
-          value: parseEther("1"),
-        })
-      ).wait();
-
-      // deploy the precompile contract (via deployer)
-      console.log("PCE:", await deployAndRunPrecompileCostEstimator());
-    }
-  });
-
   let fx: Fixture;
   beforeEach(async function () {
-    fx = await Fixture.create();
+    fx = await Fixture.getSingleton();
   });
 
   it("should register new wallet", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
     expect(fx.verificationGateway.address).to.equal(
       fx.verificationGateway.address,
     );
@@ -78,7 +58,7 @@ describe("WalletActions", async function () {
   });
 
   it("should receive ETH", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
     const walletBalanceBefore = await fx.provider.getBalance(wallet.address);
 
@@ -93,10 +73,10 @@ describe("WalletActions", async function () {
     expect(walletBalanceAfter.sub(walletBalanceBefore)).to.equal(ethToTransfer);
   });
 
-  it("should send ETH (empty call)", async function () {
+  it("should send ETH", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
-    const recvWallet = await fx.lazyBlsWallets[1]();
+    const sendWallet = await fx.createBLSWallet();
+    const recvWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.0001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
@@ -110,7 +90,7 @@ describe("WalletActions", async function () {
       recvWallet.address,
     );
 
-    const tx = sendWallet.sign({
+    const tx = await sendWallet.signWithGasEstimate({
       nonce: await sendWallet.Nonce(),
       actions: [
         {
@@ -138,7 +118,7 @@ describe("WalletActions", async function () {
 
   it("should send ETH with function call", async function () {
     // send money to sender bls wallet
-    const sendWallet = await fx.lazyBlsWallets[0]();
+    const sendWallet = await fx.createBLSWallet();
     const ethToTransfer = parseEther("0.001");
     await fx.signers[0].sendTransaction({
       to: sendWallet.address,
@@ -149,15 +129,17 @@ describe("WalletActions", async function () {
     const mockAuction = await MockAuction.deploy();
     await mockAuction.deployed();
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(
-      ethToTransfer,
-    );
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(0);
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(ethToTransfer);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(0);
 
-    await fx.verificationGateway.processBundle(
-      fx.blsWalletSigner.aggregate([
-        sendWallet.sign({
-          nonce: BigNumber.from(1),
+    await (
+      await fx.verificationGateway.processBundle(
+        await sendWallet.signWithGasEstimate({
+          nonce: 0,
           actions: [
             {
               ethValue: ethToTransfer,
@@ -167,19 +149,21 @@ describe("WalletActions", async function () {
             },
           ],
         }),
-      ]),
-    );
+      )
+    ).wait();
 
-    expect(await fx.provider.getBalance(sendWallet.address)).to.equal(0);
-    expect(await fx.provider.getBalance(mockAuction.address)).to.equal(
-      ethToTransfer,
-    );
+    await expect(
+      fx.provider.getBalance(sendWallet.address),
+    ).to.eventually.equal(0);
+    await expect(
+      fx.provider.getBalance(mockAuction.address),
+    ).to.eventually.equal(ethToTransfer);
   });
 
   it("should check signature", async function () {
-    const wallet = await fx.lazyBlsWallets[0]();
+    const wallet = await fx.createBLSWallet();
 
-    const tx = wallet.sign({
+    const tx = await wallet.signWithGasEstimate({
       nonce: await wallet.Nonce(),
       actions: [
         {
@@ -199,8 +183,132 @@ describe("WalletActions", async function () {
     await expect(fx.verificationGateway.callStatic.verify(tx)).to.be.rejected;
   });
 
+  it("(ERC-1271) should verify message", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signature = wallet.signMessage(hashedMessage);
+    const concatenatedSignature =
+      ethers.utils.hexlify(signature[0]) +
+      ethers.utils.hexlify(signature[1]).substring(2);
+    const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
+
+    const expectedBytes4MagicValue = ethers.utils
+      .solidityKeccak256(["string"], ["isValidSignature(bytes32,bytes)"])
+      .substring(0, 10);
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedBytes4MagicValue);
+  });
+
+  it("(ERC-1271) should fail to verify message when the wrong message is signed", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signatureWithWrongMessage = wallet.signMessage("0x1234");
+    const concatenatedSignature =
+      ethers.utils.hexlify(signatureWithWrongMessage[0]) +
+      ethers.utils.hexlify(signatureWithWrongMessage[1]).substring(2);
+    const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
+
+    const expectedMagicValue = "0xffffffff";
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedMagicValue);
+  });
+
+  it("(ERC-1271) should fail to verify message signed by another wallet", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const imposterWallet = await fx.createBLSWallet();
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signature = imposterWallet.signMessage(hashedMessage);
+    const concatenatedSignature =
+      ethers.utils.hexlify(signature[0]) +
+      ethers.utils.hexlify(signature[1]).substring(2);
+    const signatureBytes = ethers.utils.arrayify(concatenatedSignature);
+
+    const expectedMagicValue = "0xffffffff";
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    const magicValue = await blsWallet.isValidSignature(
+      hashedMessage,
+      signatureBytes,
+    );
+
+    expect(magicValue).to.equal(expectedMagicValue);
+  });
+
+  it("(ERC-1271) should fail to verify message when signature is not 64 bytes long", async function () {
+    const wallet = await fx.createBLSWallet();
+    const blsWallet = await ethers.getContractAt("BLSWallet", wallet.address);
+
+    const hashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+
+    const signature = wallet.signMessage(hashedMessage);
+    const longConcatenatedSignature =
+      ethers.utils.hexlify(signature[0]) +
+      ethers.utils.hexlify(signature[1]).substring(2) +
+      ethers.utils.hexlify("0x12").substring(2);
+
+    const shortSignature = ethers.utils.arrayify("0x00");
+    const longSignature = ethers.utils.arrayify(longConcatenatedSignature);
+
+    // initial call needed to ensure isValidSignature is successful
+    await fx.call(wallet, blsWallet, "nonce", [], 0, 30_000_000);
+
+    await expect(
+      blsWallet.isValidSignature(hashedMessage, shortSignature),
+    ).to.be.rejectedWith("VG: Sig bytes length must be 64");
+    await expect(
+      blsWallet.isValidSignature(hashedMessage, longSignature),
+    ).to.be.rejectedWith("VG: Sig bytes length must be 64");
+  });
+
+  it("(ERC-1271) should fail to verify message when not called from BLS Wallet", async function () {
+    const mockHashedMessage = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("I'm a message"),
+    );
+    const mockSignature = ethers.utils.arrayify("0x00");
+
+    await expect(
+      fx.verificationGateway.isValidSignature(mockHashedMessage, mockSignature),
+    ).to.be.rejectedWith("VG: not called from wallet");
+  });
+
   it("should process individual calls", async function () {
-    const th = new TokenHelper(fx);
+    const th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     const wallets = await th.walletTokenSetup();
 
     // check each wallet has start amount
@@ -227,13 +335,13 @@ describe("WalletActions", async function () {
   });
 
   it("should allow other operations when one fails", async () => {
-    const th = new TokenHelper(fx);
+    const th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     const [sender1, sender2, recipient] = await th.walletTokenSetup();
 
     await (
       await fx.verificationGateway.processBundle(
         fx.blsWalletSigner.aggregate([
-          sender1.sign({
+          await sender1.signWithGasEstimate({
             nonce: await sender1.Nonce(),
             actions: [
               {
@@ -251,7 +359,7 @@ describe("WalletActions", async function () {
               },
             ],
           }),
-          sender2.sign({
+          await sender2.signWithGasEstimate({
             nonce: await sender2.Nonce(),
             actions: [
               {
@@ -282,12 +390,12 @@ describe("WalletActions", async function () {
   });
 
   it("should prevent other actions within an operation when one fails", async () => {
-    const th = new TokenHelper(fx);
+    const th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
     const [sender, recipient] = await th.walletTokenSetup();
 
     const r: ContractReceipt = await (
       await fx.verificationGateway.processBundle(
-        sender.sign({
+        await sender.signWithGasEstimate({
           nonce: await sender.Nonce(),
           actions: [
             // Send tokens to recipient.
@@ -332,9 +440,11 @@ describe("WalletActions", async function () {
   });
 
   it("should airdrop (multicall)", async function () {
-    const th = new TokenHelper(fx);
+    const walletCount = Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH;
 
-    const wallets = await fx.createBLSWallets();
+    const th = new TokenHelper(fx, walletCount);
+
+    const wallets = await fx.createBLSWallets(walletCount);
     const testToken = await TokenHelper.deployTestToken();
 
     // send all to first address
@@ -347,7 +457,7 @@ describe("WalletActions", async function () {
 
     const nonce = await wallets[0].Nonce();
 
-    const tx = wallets[0].sign({
+    const tx = await wallets[0].signWithGasEstimate({
       nonce,
       actions: wallets.map((recvWallet) => ({
         ethValue: BigNumber.from(0),
@@ -363,6 +473,7 @@ describe("WalletActions", async function () {
       await fx.blsExpander.blsCallMultiSameCallerContractFunction(
         tx.senderPublicKeys[0],
         nonce,
+        tx.operations[0].gas,
         tx.signature,
         testToken.address,
         testToken.interface.getSighash("transfer"),
@@ -387,16 +498,16 @@ describe("WalletActions", async function () {
   //   // Use blsCallMultiCheckRewardIncrease function to check reward amount
 
   //   // prepare bls signers, wallets, eth and token balances
-  //   const rewarder = await fx.lazyBlsWallets[0]();
-  //   const wallet1 = await fx.lazyBlsWallets[1]();
-  //   const wallet2 = await fx.lazyBlsWallets[2]();
+  //   const rewarder = await fx.createBLSWallet();
+  //   const wallet1 = await fx.createBLSWallet();
+  //   const wallet2 = await fx.createBLSWallet();
 
   //   let ethToTransfer = utils.parseEther("0.0001");
   //   await fx.signers[0].sendTransaction({
   //     to: wallet1.address,
   //     value: ethToTransfer
   //   });
-  //   th = new TokenHelper(fx);
+  //   th = new TokenHelper(fx, Fixture.DEFAULT_BLS_ACCOUNTS_LENGTH);
   //   let testToken = await TokenHelper.deployTestToken();
   //   await(await testToken.connect(fx.signers[0]).transfer(
   //     rewarder.address,

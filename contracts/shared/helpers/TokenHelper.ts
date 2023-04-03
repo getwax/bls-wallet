@@ -3,18 +3,20 @@ import { utils, BigNumber, Signer } from "ethers";
 import { BlsWalletWrapper } from "../../clients/src";
 
 import Fixture from "./Fixture";
-/* eslint-disable camelcase */
-import { IERC20, MockERC20__factory } from "../../typechain-types";
+import {
+  IERC20,
+  MockERC20__factory as MockERC20Factory,
+} from "../../typechain-types";
 
 export default class TokenHelper {
   static readonly initialSupply = utils.parseUnits("1000000");
   readonly userStartAmount: BigNumber;
 
   testToken: IERC20 | undefined;
-  constructor(public fx: Fixture) {
+  constructor(public fx: Fixture, public walletCount: number) {
     this.userStartAmount = TokenHelper.initialSupply.div(
       // +1 to keep some tokens for the aggregator
-      fx.lazyBlsWallets.length + 1,
+      walletCount + 1,
     );
     this.testToken = undefined;
   }
@@ -24,7 +26,7 @@ export default class TokenHelper {
     balanceAddress: string | undefined = undefined,
   ): Promise<IERC20> {
     const [signer] = await ethers.getSigners();
-    const mockERC20 = await new MockERC20__factory(signer).deploy(
+    const mockERC20 = await new MockERC20Factory(signer).deploy(
       "AnyToken",
       "TOK",
       TokenHelper.initialSupply,
@@ -57,7 +59,7 @@ export default class TokenHelper {
   }
 
   async walletTokenSetup(): Promise<BlsWalletWrapper[]> {
-    const wallets = await this.fx.createBLSWallets();
+    const wallets = await this.fx.createBLSWallets(this.walletCount);
 
     this.testToken = await TokenHelper.deployTestToken();
     await this.distributeTokens(this.fx.signers[0], this.testToken, wallets);
@@ -72,7 +74,7 @@ export default class TokenHelper {
     amount: BigNumber,
   ) {
     await this.fx.verificationGateway.processBundle(
-      sender.sign({
+      await sender.signWithGasEstimate({
         nonce,
         actions: [
           {
