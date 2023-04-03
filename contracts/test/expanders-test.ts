@@ -661,7 +661,6 @@ describe("Expanders", async function () {
     */
 
     const compressedBundle = await fx.bundleCompressor.compress(bundle);
-    console.log({ compressedBundle });
 
     await expect(
       erc20.allowance(sendWallet.address, recvWallet.address),
