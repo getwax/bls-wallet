@@ -15,7 +15,7 @@ import AppEvent from "./AppEvent.ts";
 import BundleTable from "./BundleTable.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import AggregationStrategyRouter from "./AggregationStrategyRouter.ts";
-import HealthService, {DBServiceHealthCheck, ServiceHealthCheck} from "./HealthService.ts";
+import HealthService from "./HealthService.ts";
 import HealthRouter from "./HealthRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
@@ -66,16 +66,7 @@ export default async function app(emit: (evt: AppEvent) => void) {
     bundleTable,
   );
 
-  const dbServiceHealthCheck = new DBServiceHealthCheck(bundleTable);
-  const rpcServiceHealthCheck = new ServiceHealthCheck('RPC', env.RPC_URL);
-  const aggregatorServiceHealthCheck = new ServiceHealthCheck('Aggregator', new URL('/Bundle/health', env.ORIGIN).toString());
-  const healthService = new HealthService(
-    [
-      dbServiceHealthCheck,
-      rpcServiceHealthCheck,
-      aggregatorServiceHealthCheck,
-    ]
-  )
+  const healthService = new HealthService();
 
   const routers = [
     BundleRouter(bundleService),

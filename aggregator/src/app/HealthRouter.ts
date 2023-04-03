@@ -10,7 +10,7 @@ export default function HealthRouter(healthService: HealthService) {
       const healthResults = await healthService.getHealth();
       console.log(`Status: ${healthResults.status}\n`);
       ctx.response.status = healthResults.status == 'healthy' ? 200 : 503;
-      ctx.response.body = { status: healthResults.status, dependencies: healthResults.dependencies };
+      ctx.response.body = { status: healthResults.status };
   });
   return router;
 }
