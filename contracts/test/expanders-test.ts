@@ -575,8 +575,8 @@ describe("Expanders", async function () {
       00      - nonce: 0
       0bda28  - gas: 92,483
       02      - two actions
-      00      - 0 ETH
       000000  - Registry index for ERC20 address
+      00      - transfer
       000002  - Registry index for recipient address
       9100    - 0.1 MCK
       6d00    - Pay 0.000005 ETH to tx.origin
@@ -597,5 +597,80 @@ describe("Expanders", async function () {
     await expect(erc20.balanceOf(recvWallet.address)).to.eventually.eq(
       ethers.utils.parseEther("1.1"),
     );
+  });
+
+  it("should approve max ERC20 using registries", async function () {
+    const fx = await Fixture.getSingleton();
+    const { addressRegistry, blsPublicKeyRegistry } = fx.fallbackCompressor;
+    const [sendWallet, recvWallet] = await fx.createBLSWallets(2);
+    const singletonFactory = await SafeSingletonFactory.init(fx.signers[0]);
+
+    const erc20 = await singletonFactory.connectOrDeploy(MockERC20Factory, [
+      "MockToken",
+      "MCK",
+      0,
+    ]);
+
+    await Promise.all([
+      addressRegistry.register(erc20.address),
+      ...[sendWallet, recvWallet]
+        .map((wallet) => [
+          blsPublicKeyRegistry.register(wallet.PublicKey()),
+          addressRegistry.register(wallet.address),
+        ])
+        .flat(),
+    ]);
+
+    const bundle = await sendWallet.signWithGasEstimate({
+      nonce: await sendWallet.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: erc20.address,
+          encodedFunction: erc20.interface.encodeFunctionData("approve", [
+            recvWallet.address,
+            ethers.constants.MaxUint256,
+          ]),
+        },
+      ],
+    });
+
+    /*
+      Example:
+
+      01      - One operation
+      02      - Use expander 2 (ERC20 expander)
+      0d      - 0x0d = 0b1101 bit stream:
+                - 1: Use registry for BLS key
+                - 0: Do not include a tx.origin payment
+                - 1: Use registry for ERC20 address
+                - 1: Use registry for spender address
+                (The read order is 'backwards' because the lowest bit is read
+                first)
+      000000  - Registry index for sendWallet's public key
+      00      - nonce: 0
+      0bb917  - gas: (TODO) 76,185
+      01      - one action
+      000000  - Registry index for ERC20 address
+      03      - approve (max)
+      000002  - Registry index for spender address
+
+      2bcf9cdda381531edb01b34b913aa361d5f9cb9da95a41d2ff408d41c8514be0
+      1d42409bcd8703f8e0c10d528b8aaf6bf51236cee4ea9653a72a8382b1cba655
+              - signature
+    */
+
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+    console.log({ compressedBundle });
+
+    await expect(
+      erc20.allowance(sendWallet.address, recvWallet.address),
+    ).to.eventually.eq(0);
+
+    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+
+    await expect(
+      erc20.allowance(sendWallet.address, recvWallet.address),
+    ).to.eventually.eq(ethers.constants.MaxUint256);
   });
 });
