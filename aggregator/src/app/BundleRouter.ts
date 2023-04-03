@@ -39,10 +39,5 @@ export default function BundleRouter(bundleService: BundleService) {
     },
   );
 
-  router.get("bundle/health", (ctx) => {
-    ctx.response.status = 200;
-    ctx.response.body = { status: "OK" };
-  });
-
   return router;
 }

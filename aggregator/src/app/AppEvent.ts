@@ -86,8 +86,7 @@ type AppEvent =
       status: number;
       duration: number;
     };
-  }
-  ;
+  };
 
 
 export default AppEvent;
