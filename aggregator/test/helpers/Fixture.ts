@@ -5,7 +5,7 @@ import {
   BlsWalletWrapper,
   ethers,
   MockERC20,
-  MockERC20__factory,
+  MockERC20Factory,
   NetworkConfig,
   sqlite,
 } from "../../deps.ts";
@@ -132,7 +132,7 @@ export default class Fixture {
     public aggregationStrategy: AggregationStrategy,
     public networkConfig: NetworkConfig,
   ) {
-    this.testErc20 = MockERC20__factory.connect(
+    this.testErc20 = MockERC20Factory.connect(
       this.networkConfig.addresses.testToken,
       this.ethereumService.wallet.provider,
     );
@@ -246,7 +246,7 @@ export default class Fixture {
         const topUp = BigNumber.from(tokenBalance).sub(balance);
 
         if (topUp.gt(0)) {
-          return wallet.sign({
+          return await wallet.signWithGasEstimate({
             nonce: (await wallet.Nonce()).add(i),
             actions: [
               {
@@ -262,7 +262,7 @@ export default class Fixture {
         }
 
         if (topUp.lt(0)) {
-          return wallet.sign({
+          return await wallet.signWithGasEstimate({
             nonce: (await wallet.Nonce()).add(i),
             actions: [
               {

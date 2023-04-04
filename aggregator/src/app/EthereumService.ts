@@ -1,6 +1,6 @@
 import {
   AggregatorUtilities,
-  AggregatorUtilities__factory,
+  AggregatorUtilitiesFactory,
   BaseContract,
   BigNumber,
   BlsWalletSigner,
@@ -11,7 +11,7 @@ import {
   ethers,
   initBlsWalletSigner,
   VerificationGateway,
-  VerificationGateway__factory,
+  VerificationGatewayFactory,
   Wallet,
 } from "../../deps.ts";
 
@@ -78,12 +78,12 @@ export default class EthereumService {
     utilitiesAddress: string,
     public nextNonce: BigNumber,
   ) {
-    this.verificationGateway = VerificationGateway__factory.connect(
+    this.verificationGateway = VerificationGatewayFactory.connect(
       verificationGatewayAddress,
       this.wallet,
     );
 
-    this.utilities = AggregatorUtilities__factory.connect(
+    this.utilities = AggregatorUtilitiesFactory.connect(
       utilitiesAddress,
       this.wallet,
     );
@@ -122,13 +122,15 @@ export default class EthereumService {
         ].join(" "));
       }
 
-      await (await VerificationGateway__factory.connect(
+      await (await VerificationGatewayFactory.connect(
         verificationGatewayAddress,
         wallet,
-      ).processBundle(blsWalletWrapper.sign({
-        nonce: 0,
-        actions: [],
-      }))).wait();
+      ).processBundle(
+        await blsWalletWrapper.signWithGasEstimate({
+          nonce: 0,
+          actions: [],
+        }),
+      )).wait();
     }
 
     const nextNonce = BigNumber.from(await wallet.getTransactionCount());

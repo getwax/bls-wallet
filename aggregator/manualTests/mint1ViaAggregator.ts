@@ -3,11 +3,11 @@
 import { ActionData } from "https://esm.sh/v99/bls-wallet-clients@0.8.0-efa2e06/dist/src/index.d.ts";
 import {
   AggregatorClient,
-  AggregatorUtilities__factory,
+  AggregatorUtilitiesFactory,
   BigNumber,
   delay,
   ethers,
-  MockERC20__factory,
+  MockERC20Factory,
 } from "../deps.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
 import assert from "../src/helpers/assert.ts";
@@ -22,7 +22,7 @@ const walletIndex = Number(walletIndexStr);
 const { addresses } = await getNetworkConfig();
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
-const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
+const testErc20 = MockERC20Factory.connect(addresses.testToken, provider);
 const client = new AggregatorClient(env.ORIGIN);
 
 const wallet = await TestBlsWallet(provider, walletIndex);
@@ -48,21 +48,23 @@ const mintAction: ActionData = {
   ),
 };
 
-const sendEthToTxOrigin = AggregatorUtilities__factory
+const sendEthToTxOrigin = AggregatorUtilitiesFactory
   .createInterface()
   .encodeFunctionData("sendEthToTxOrigin");
 
-const feeEstimation = await client.estimateFee(wallet.sign({
-  nonce,
-  actions: [
-    mintAction,
-    {
-      ethValue: 1,
-      contractAddress: addresses.utilities,
-      encodedFunction: sendEthToTxOrigin,
-    },
-  ],
-}));
+const feeEstimation = await client.estimateFee(
+  await wallet.signWithGasEstimate({
+    nonce,
+    actions: [
+      mintAction,
+      {
+        ethValue: 1,
+        contractAddress: addresses.utilities,
+        encodedFunction: sendEthToTxOrigin,
+      },
+    ],
+  }),
+);
 
 console.log({ feeEstimation });
 
@@ -91,7 +93,7 @@ const feeAction: ActionData = {
   encodedFunction: sendEthToTxOrigin,
 };
 
-const bundle = wallet.sign({
+const bundle = await wallet.signWithGasEstimate({
   nonce: await wallet.Nonce(),
   actions: [mintAction, feeAction],
 });

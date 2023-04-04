@@ -23,7 +23,7 @@ Fixture.test("submits a single action in a timed submission", async (fx) => {
 
   const [wallet] = await fx.setupWallets(1);
 
-  const bundle = wallet.sign({
+  const bundle = await wallet.signWithGasEstimate({
     nonce: await wallet.Nonce(),
     actions: [
       {
@@ -78,20 +78,22 @@ Fixture.test("submits a full submission without delay", async (fx) => {
   const firstWallet = wallets[0];
   const nonce = await firstWallet.Nonce();
 
-  const bundles = wallets.map((wallet) =>
-    wallet.sign({
-      nonce,
-      actions: [
-        {
-          ethValue: 0,
-          contractAddress: fx.testErc20.address,
-          encodedFunction: fx.testErc20.interface.encodeFunctionData(
-            "mint",
-            [firstWallet.address, 1],
-          ),
-        },
-      ],
-    })
+  const bundles = await Promise.all(
+    wallets.map((wallet) =>
+      wallet.signWithGasEstimate({
+        nonce,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
+              "mint",
+              [firstWallet.address, 1],
+            ),
+          },
+        ],
+      })
+    ),
   );
 
   for (const b of bundles) {
@@ -121,20 +123,22 @@ Fixture.test(
     const firstWallet = wallets[0];
     const nonce = await firstWallet.Nonce();
 
-    const bundles = wallets.map((wallet) =>
-      wallet.sign({
-        nonce,
-        actions: [
-          {
-            ethValue: 0,
-            contractAddress: fx.testErc20.address,
-            encodedFunction: fx.testErc20.interface.encodeFunctionData(
-              "mint",
-              [firstWallet.address, 1],
-            ),
-          },
-        ],
-      })
+    const bundles = await Promise.all(
+      wallets.map((wallet) =>
+        wallet.signWithGasEstimate({
+          nonce,
+          actions: [
+            {
+              ethValue: 0,
+              contractAddress: fx.testErc20.address,
+              encodedFunction: fx.testErc20.interface.encodeFunctionData(
+                "mint",
+                [firstWallet.address, 1],
+              ),
+            },
+          ],
+        })
+      ),
     );
 
     // Prevent submission from triggering on max aggregation size.
@@ -185,6 +189,7 @@ Fixture.test(
     const bundles = Range(3).reverse().map((i) =>
       wallet.sign({
         nonce: walletNonce.add(i),
+        gas: 1_000_000,
         actions: [
           {
             ethValue: 0,
@@ -273,6 +278,7 @@ Fixture.test("retains failing bundle when its eligibility delay is smaller than 
   const bundle = wallet.sign({
     // Future nonce makes this a failing bundle
     nonce: (await wallet.Nonce()).add(1),
+    gas: 1_000_000,
     actions: [
       {
         ethValue: 0,
@@ -313,6 +319,7 @@ Fixture.test("updates status of failing bundle when its eligibility delay is lar
   const bundle = wallet.sign({
     // Future nonce makes this a failing bundle
     nonce: (await wallet.Nonce()).add(1),
+    gas: 1_000_000,
     actions: [
       {
         ethValue: 0,
