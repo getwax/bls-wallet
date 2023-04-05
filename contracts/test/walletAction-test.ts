@@ -9,7 +9,7 @@ import { BigNumber, ContractReceipt } from "ethers";
 import { parseEther, solidityPack } from "ethers/lib/utils";
 import { getOperationResults } from "../clients/src";
 
-describe("WalletActions", async function () {
+describe.only("WalletActions", async function () {
   if (`${process.env.DEPLOYER_DEPLOYMENT}` === "true") {
     console.log("Skipping non-deployer tests.");
     return;

@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.so
 import "./interfaces/IWallet.sol";
 import "./BLSWallet.sol";
 
+import "hardhat/console.sol";
+
 /**
 A non-upgradable gateway used to create BLSWallets and call them with
 verified Operations that have been respectively signed.
@@ -48,6 +50,13 @@ contract VerificationGateway
         IWallet.ActionData[] actions,
         bool success,
         bytes[] results
+    );
+
+    event WalletOperationFailed(
+        bytes32 indexed walletHash,
+        address indexed wallet,
+        uint256 nonce,
+        bytes returnData
     );
 
     event PendingBLSKeySet(
@@ -317,8 +326,8 @@ contract VerificationGateway
     Can be called with a single operation with no actions.
     */
     function processBundle(
-        IWallet.Bundle memory bundle
-    ) external returns (
+        IWallet.Bundle calldata bundle
+    ) external payable returns (
         bool[] memory successes,
         bytes[][] memory results
     ) {
@@ -329,25 +338,65 @@ contract VerificationGateway
         successes = new bool[](opLength);
         results = new bytes[][](opLength);
         for (uint256 i = 0; i<opLength; i++) {
-            IWallet wallet = getOrCreateWallet(bundle.senderPublicKeys[i]);
 
-            // check nonce then perform action
-            if (bundle.operations[i].nonce == wallet.nonce{gas:20000}()) {
-                // request wallet perform operation
-                (
-                    bool success,
-                    bytes[] memory resultSet
-                ) = wallet.performOperation{gas:bundle.operations[i].gas}(bundle.operations[i]);
+            bytes32 publicKeyHash = keccak256(abi.encodePacked(bundle.senderPublicKeys[i]));
+            address walletAddress = address(walletFromHash[publicKeyHash]);
+
+            // try wallet calls, catching if they throw
+            try this._processWalletOperation(
+                bundle.senderPublicKeys[i],
+                bundle.operations[i]
+            ) returns (
+                bool success,
+                bytes[] memory resultSet
+            ) {
+                walletAddress = address(walletFromHash[publicKeyHash]);
+
+                console.log("   vg: pass"); //TODO remove log event without creating errors
+
                 successes[i] = success;
                 results[i] = resultSet;
                 emit WalletOperationProcessed(
-                    address(wallet),
+                    walletAddress,
                     bundle.operations[i].nonce,
                     bundle.operations[i].actions,
                     successes[i],
                     results[i]
                 );
+                address(0).staticcall(""); //TODO remove this line without creating more errors
             }
+            catch (bytes memory returnData) { //TODO add tests for wallet implementations that throw
+                console.log("   vg: fail");
+                successes[i] = false;
+                results[i] = new bytes[](1);
+                results[i][0] = returnData;
+                emit WalletOperationFailed(
+                    publicKeyHash,
+                    walletAddress,
+                    bundle.operations[i].nonce,
+                    returnData
+                );
+            }
+        }
+    }
+
+    /**
+    Perform wallet related functions that could throw.
+    @dev Restricted to only be called by this contract, but needs to be public
+    so that it can be used in a try/catch block.
+     */
+    function _processWalletOperation(
+        uint256[4] calldata senderPublicKey,
+        IWallet.Operation calldata operation
+    ) public payable onlyThis returns (
+        bool success,
+        bytes[] memory resultSet
+    )
+    {
+        IWallet wallet = getOrCreateWallet(senderPublicKey);
+        // check nonce then perform action
+        if (operation.nonce == wallet.nonce{gas:20000}()) {
+            (success, resultSet) = wallet.performOperation{gas:operation.gas}(operation);
         }
     }
 
@@ -460,6 +509,11 @@ contract VerificationGateway
             "VG: not called from wallet"
         );
         _;
+    }
+
+    modifier onlyThis() {
+        require(msg.sender == address(this), "VG: not called from VG");
+         _;
     }
 
     function messagePoint(
