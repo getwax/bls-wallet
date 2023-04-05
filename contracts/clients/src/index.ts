@@ -36,20 +36,6 @@ import { BlsWalletContracts, connectToContracts } from "./BlsWalletContracts";
 
 export * from "./signer";
 
-const Experimental_ = {
-  BlsProvider,
-  BlsSigner,
-};
-
-/**
- * The Experimental namespace exposes APIs that are unstable.
- * Unstable in the sense that the APIs will be less functional, less well-tested, and/or are expected to change.
- */
-namespace Experimental {
-  export const BlsProvider = Experimental_.BlsProvider;
-  export const BlsSigner = Experimental_.BlsSigner;
-}
-
 export {
   Aggregator,
   BlsWalletWrapper,
@@ -77,5 +63,6 @@ export {
   MockERC20,
   BlsWalletContracts,
   connectToContracts,
-  Experimental,
+  BlsProvider,
+  BlsSigner,
 };
