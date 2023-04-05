@@ -15,6 +15,8 @@ import AppEvent from "./AppEvent.ts";
 import BundleTable from "./BundleTable.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import AggregationStrategyRouter from "./AggregationStrategyRouter.ts";
+import HealthService from "./HealthService.ts";
+import HealthRouter from "./HealthRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
   const { addresses } = await getNetworkConfig();
@@ -64,10 +66,13 @@ export default async function app(emit: (evt: AppEvent) => void) {
     bundleTable,
   );
 
+  const healthService = new HealthService();
+
   const routers = [
     BundleRouter(bundleService),
     AdminRouter(adminService),
     AggregationStrategyRouter(aggregationStrategy),
+    HealthRouter(healthService),
   ];
 
   const app = new Application();
