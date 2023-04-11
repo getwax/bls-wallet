@@ -21,7 +21,7 @@
     "@types/koa__cors": "^3.3.0",
     "@types/koa__router": "^8.0.11",
     "@types/node-fetch": "^2.6.1",
-    "bls-wallet-clients": "0.8.2-1452ef5",
+    "bls-wallet-clients": "0.8.3",
     "fp-ts": "^2.12.1",
     "io-ts": "^2.2.16",
     "io-ts-reporters": "^2.0.1",

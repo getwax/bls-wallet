@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { BigNumber, utils, Wallet } from "ethers";
 
-import { Experimental } from "../clients/src";
+import { BlsProvider, BlsSigner } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
 describe("Provider tests", function () {
@@ -12,7 +12,7 @@ describe("Provider tests", function () {
 
   this.beforeAll(async () => {
     const networkConfig = await getNetworkConfig("local");
-    const privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
+    const privateKey = await BlsSigner.getRandomBlsPrivateKey();
     const aggregatorUrl = "http://localhost:3000";
     const verificationGateway = networkConfig.addresses.verificationGateway;
     const aggregatorUtilities = networkConfig.addresses.utilities;
@@ -21,7 +21,7 @@ describe("Provider tests", function () {
       name: "localhost",
       chainId: 0x539, // 1337
     };
-    blsProvider = new Experimental.BlsProvider(
+    blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
