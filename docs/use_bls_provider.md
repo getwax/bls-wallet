@@ -15,7 +15,7 @@ The `BlsProvider` and `BlsSigner` are covered by over 100 test cases, including 
 ### Instantiating a BlsProvider
 
 ```ts
-import { Experimental } from "bls-wallet-clients";
+import { BlsProvider } from "bls-wallet-clients";
 
 const aggregatorUrl = "http://localhost:3000";
 const verificationGateway = "0x123";
@@ -26,7 +26,7 @@ const network = {
     chainId: 0x539, // 1337
 };
 
-const provider = new Experimental.BlsProvider(
+const provider = new BlsProvider(
     aggregatorUrl,
     verificationGateway,
     aggregatorUtilities,
@@ -40,9 +40,9 @@ const provider = new Experimental.BlsProvider(
 **Important:** Ensure that the BLS wallet you are linking the `BlsSigner` to via the private key is funded. Alternatively, if a wallet doesn't yet exist, it will be lazily created on the first transaction. In this scenario, you can create a random BLS private key with the following helper method and fund that account. It will need to be funded in order to send its first transaction.
 
 ```ts
-import { Experimental } from "bls-wallet-clients";
+import { BlsSigner } from "bls-wallet-clients";
 
-const privateKey = await Experimental.BlsSigner.getRandomBlsPrivateKey();
+const privateKey = await BlsSigner.getRandomBlsPrivateKey();
 
 const signer = provider.getSigner(privateKey);
 
