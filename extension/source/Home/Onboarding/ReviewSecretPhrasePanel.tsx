@@ -26,7 +26,7 @@ const WordInReview: FunctionComponent<{
 
     if (guess === word) {
       return [
-        'border-2',
+        'padding-border-2',
         'border-positive-500',
         'bg-positive-500',
         'focus:border-positive-500',
@@ -35,7 +35,7 @@ const WordInReview: FunctionComponent<{
 
     if (word.startsWith(guess)) {
       return [
-        'border-2',
+        'padding-border-2',
         'border-neutral-500',
         'bg-neutral-500',
         'focus:border-neutral-500',
@@ -43,7 +43,7 @@ const WordInReview: FunctionComponent<{
     }
 
     return [
-      'border-2',
+      'padding-border-2',
       'border-alert-500',
       'bg-alert-500',
       'focus:border-alert-500',
