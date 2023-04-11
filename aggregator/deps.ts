@@ -62,8 +62,8 @@ export {
   decodeError,
   ERC20Factory,
   getConfig,
-  MockERC20__factory,
-  VerificationGateway__factory,
+  MockERC20Factory,
+  VerificationGatewayFactory,
 } from "https://esm.sh/bls-wallet-clients@0.8.3-f6ab5d9";
 
 // Workaround for esbuild's export-star bug

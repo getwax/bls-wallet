@@ -9,6 +9,7 @@ const BundleDto = io.type({
   ),
   operations: io.array(io.type({
     nonce: io.string,
+    gas: io.string,
     actions: io.array(io.type({
       ethValue: io.string,
       contractAddress: io.string,
