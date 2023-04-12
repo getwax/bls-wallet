@@ -653,6 +653,9 @@ describe("Recovery", async function () {
       wallet2.blsWalletSigner.privateKey,
     );
 
+    // this call will succeed even with invalidSignatureExpiryTimestamp, as the
+    // wallet already has a bls key registered with the verification gateway.
+    // This means setSafeWallet is not called, and we don't make the signature expiry check
     await fx.call(
       wallet1,
       vg,
@@ -662,6 +665,7 @@ describe("Recovery", async function () {
       30_000_000,
     );
 
+    // advance time by safetyDelaySeconds + 1 to ensure the signature has expired
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
 
     const bundleWithExpiredTimestamp = wallet1.sign({
@@ -704,7 +708,7 @@ describe("Recovery", async function () {
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
       signatureExpiryOffsetSeconds +
-      1;
+      1; // add one second so the timestamp will be different to signatureExpiryTimestamp
 
     const addressSignature = await signWalletAddress(
       fx,
@@ -713,6 +717,9 @@ describe("Recovery", async function () {
       wallet2.blsWalletSigner.privateKey,
     );
 
+    // this call will succeed even with invalidSignatureExpiryTimestamp, as the
+    // wallet already has a bls key registered with the verification gateway.
+    // This means setSafeWallet is not called, and we don't make the signature expiry check
     await fx.call(
       wallet1,
       vg,
