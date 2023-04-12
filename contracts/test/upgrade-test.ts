@@ -38,7 +38,7 @@ const expectOperationFailure = (
 
 describe("Upgrade", async function () {
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
-  const signatureExpiryWindow = 1200;
+  const signatureExpiryOffsetSeconds = 1200;
   let fx: Fixture;
   beforeEach(async () => {
     fx = await Fixture.getSingleton();
@@ -107,8 +107,7 @@ describe("Upgrade", async function () {
     const signatureExpiryTimestamp =
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
-      signatureExpiryWindow;
-
+      signatureExpiryOffsetSeconds;
     const addressMessage = solidityPack(
       ["address", "uint256"],
       [walletAddress, signatureExpiryTimestamp],
@@ -335,7 +334,7 @@ describe("Upgrade", async function () {
     const signatureExpiryTimestamp =
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
-      signatureExpiryWindow;
+      signatureExpiryOffsetSeconds;
     const addressMessage = solidityPack(
       ["address", "uint256"],
       [wallet1.address, signatureExpiryTimestamp],

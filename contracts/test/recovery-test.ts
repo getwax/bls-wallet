@@ -29,7 +29,7 @@ const signWalletAddress = async (
 
 describe("Recovery", async function () {
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
-  const signatureExpiryWindow = 1200;
+  const signatureExpiryOffsetSeconds = 1200;
   let fx: Fixture;
   let vg: VerificationGateway;
   let wallet1: BlsWalletWrapper;
@@ -83,7 +83,7 @@ describe("Recovery", async function () {
     const signatureExpiryTimestamp =
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
-      signatureExpiryWindow;
+      signatureExpiryOffsetSeconds;
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
@@ -150,7 +150,7 @@ describe("Recovery", async function () {
     const signatureExpiryTimestamp =
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
-      signatureExpiryWindow;
+      signatureExpiryOffsetSeconds;
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await fx.processBundleWithExtraGas(
       wallet1.sign({
@@ -265,7 +265,8 @@ describe("Recovery", async function () {
     await bundleTxn.wait();
 
     const signatureExpiryTimestamp =
-      (await fx.provider.getBlock("latest")).timestamp + signatureExpiryWindow;
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     // Recover wallet
     const recoveryBundle = await wallet3.getRecoverWalletBundle(
       wallet4.address,
@@ -302,7 +303,8 @@ describe("Recovery", async function () {
 
     // key 3 signs wallet 1 address
     const signatureExpiryTimestamp =
-      (await fx.provider.getBlock("latest")).timestamp + signatureExpiryWindow;
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     const wallet3 = await fx.createBLSWallet();
     const addressSignature = await signWalletAddress(
       fx,
@@ -356,7 +358,7 @@ describe("Recovery", async function () {
     const signatureExpiryTimestamp =
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
-      signatureExpiryWindow;
+      signatureExpiryOffsetSeconds;
     const attackSignature = await signWalletAddress(
       fx,
       wallet1.address,
@@ -532,7 +534,8 @@ describe("Recovery", async function () {
     );
 
     const signatureExpiryTimestamp =
-      (await fx.provider.getBlock("latest")).timestamp + signatureExpiryWindow;
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     const addressSignature = await signWalletAddress(
       fx,
       walletAttacker.address,
@@ -579,7 +582,8 @@ describe("Recovery", async function () {
     );
 
     const signatureExpiryTimestamp =
-      (await fx.provider.getBlock("latest")).timestamp + signatureExpiryWindow;
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
@@ -694,12 +698,12 @@ describe("Recovery", async function () {
     const signatureExpiryTimestamp =
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
-      signatureExpiryWindow;
+      signatureExpiryOffsetSeconds;
 
     const incorrectSignatureExpiryTimestamp =
       (await fx.provider.getBlock("latest")).timestamp +
       safetyDelaySeconds +
-      signatureExpiryWindow +
+      signatureExpiryOffsetSeconds +
       1;
 
     const addressSignature = await signWalletAddress(
