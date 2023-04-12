@@ -5,7 +5,7 @@ import encodeMessageForSigning from "./encodeMessageForSigning";
 import type { Bundle } from "./types";
 import isValidEmptyBundle from "./isValidEmptyBundle";
 
-export default (domain: Uint8Array, chainId: number) =>
+export default (domain: Uint8Array) =>
   (bundle: Bundle, walletAddress: string): boolean => {
     // hubbleBls verifier incorrectly rejects empty bundles
     if (isValidEmptyBundle(bundle)) {
@@ -26,7 +26,7 @@ export default (domain: Uint8Array, chainId: number) =>
         BigNumber.from(n3).toHexString(),
       ]),
       bundle.operations.map((op) =>
-        encodeMessageForSigning(chainId)(op, walletAddress),
+        encodeMessageForSigning()(op, walletAddress),
       ),
     );
   };
