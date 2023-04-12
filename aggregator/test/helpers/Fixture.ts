@@ -75,9 +75,10 @@ export default class Fixture {
   static async create(testName: string): Promise<Fixture> {
     const netCfg = await getNetworkConfig();
     const rng = testRng.seed(testName);
+    const emit = (evt: AppEvent) => fx.emit(evt);
 
     const ethereumService = await EthereumService.create(
-      (evt) => fx.emit(evt),
+      emit,
       netCfg.addresses.verificationGateway,
       netCfg.addresses.utilities,
       env.PRIVATE_KEY_AGG,
@@ -96,6 +97,7 @@ export default class Fixture {
         ethereumService.blsWalletSigner,
         ethereumService,
         aggregationStrategyDefaultTestConfig,
+        emit,
       ),
       netCfg,
     );
@@ -172,6 +174,7 @@ export default class Fixture {
           this.blsWalletSigner,
           this.ethereumService,
           aggregationStrategyConfig,
+          this.emit,
         );
 
     const bundleService = new BundleService(

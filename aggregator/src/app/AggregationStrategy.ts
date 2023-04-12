@@ -410,13 +410,21 @@ export default class AggregationStrategy {
         continue;
       }
 
-      const newAggregateGas = aggregateGas
-        .add(gasEstimate)
-        .sub(bundleOverheadGas);
+      const bundleEstimate = gasEstimate.sub(bundleOverheadGas);
+      const newAggregateGas = aggregateGas.add(bundleEstimate);
 
       if (newAggregateGas.gt(this.config.maxGasPerBundle)) {
         // Bundle would cause us to exceed maxGasPerBundle, so don't include it,
         // but also don't mark it as failed.
+        this.emit({
+          type: "aggregate-bundle-exceeds-max-gas",
+          data: {
+            hash: row.hash,
+            gasEstimate: bundleEstimate.toNumber(),
+            aggregateGasEstimate: newAggregateGas.toNumber(),
+            maxGasPerBundle: this.config.maxGasPerBundle,
+          },
+        });
         continue;
       }
 

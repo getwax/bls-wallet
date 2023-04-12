@@ -10,7 +10,7 @@ const bundleServiceConfig = {
 };
 
 const aggregationStrategyConfig: AggregationStrategyConfig = {
-  maxGasPerBundle: 900000,
+  maxGasPerBundle: 1_000_000,
   fees: nil,
   bundleCheckingConcurrency: 8,
 };
