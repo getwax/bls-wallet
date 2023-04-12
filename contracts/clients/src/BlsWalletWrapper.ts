@@ -330,13 +330,17 @@ export default class BlsWalletWrapper {
     newPrivateKey: string,
     recoverySalt: string,
     verificationGateway: VerificationGateway,
+    signatureExpiryTimestamp: number,
   ): Promise<Bundle> {
     const updatedWallet = await BlsWalletWrapper.connect(
       newPrivateKey,
       verificationGateway.address,
       verificationGateway.provider,
     );
-    const addressMessage = solidityPack(["address"], [recoveryAddress]);
+    const addressMessage = solidityPack(
+      ["address", "uint256"],
+      [recoveryAddress, signatureExpiryTimestamp],
+    );
     const addressSignature = updatedWallet.signMessage(addressMessage);
 
     const recoveryWalletHash = await verificationGateway.hashFromWallet(
@@ -357,6 +361,7 @@ export default class BlsWalletWrapper {
               recoveryWalletHash,
               saltHash,
               updatedWallet.PublicKey(),
+              signatureExpiryTimestamp,
             ],
           ),
         },
