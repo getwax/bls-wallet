@@ -71,7 +71,7 @@ export default class AggregatorController {
       );
 
       const nonce = (await wallet.Nonce()).toString();
-      const bundle = await wallet.sign({ nonce, actions });
+      const bundle = await wallet.signWithGasEstimate({ nonce, actions });
 
       const aggregatorUrl =
         this.preferredAggregators[providerId] ?? network.aggregatorUrl;

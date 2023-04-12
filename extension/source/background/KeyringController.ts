@@ -1,8 +1,7 @@
 import {
   BlsWalletWrapper,
   Aggregator,
-  // eslint-disable-next-line camelcase
-  VerificationGateway__factory,
+  VerificationGatewayFactory,
 } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import { keccak256 } from 'ethers/lib/utils';
@@ -295,7 +294,7 @@ export default class KeyringController {
     const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
 
     // eslint-disable-next-line camelcase
-    const verificationGatewayContract = VerificationGateway__factory.connect(
+    const verificationGatewayContract = VerificationGatewayFactory.connect(
       netCfg.addresses.verificationGateway,
       await this.ethersProvider.read(),
     );

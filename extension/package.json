@@ -34,6 +34,7 @@
     "@tanstack/react-table": "^8.2.3",
     "@types/bs58check": "^2.1.0",
     "advanced-css-reset": "^1.2.2",
+    "assert-browserify": "^2.0.0",
     "async-mutex": "^0.3.2",
     "axios": "^0.27.2",
     "bls-wallet-clients": "0.8.3-f6ab5d9",

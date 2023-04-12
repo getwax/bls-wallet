@@ -1,12 +1,10 @@
 import React, { useMemo } from 'react';
 
 import {
-  AggregatorUtilities__factory, // eslint-disable-line
+  AggregatorUtilitiesFactory,
   BlsWalletWrapper,
-  // eslint-disable-next-line camelcase
-  MockERC20__factory,
-  // eslint-disable-next-line camelcase
-  VerificationGateway__factory,
+  MockERC20Factory,
+  VerificationGatewayFactory,
 } from 'bls-wallet-clients';
 import extensionLocalCellCollection from './cells/extensionLocalCellCollection';
 import encryptedLocalCellCollection from './cells/encryptedLocalCellCollection';
@@ -79,17 +77,17 @@ function getQuillContextValue() {
 
     window.debug.contracts = {
       // eslint-disable-next-line camelcase
-      verificationGateway: VerificationGateway__factory.connect(
+      verificationGateway: VerificationGatewayFactory.connect(
         netCfg.addresses.verificationGateway,
         ethersProvider,
       ),
       // eslint-disable-next-line camelcase
-      testToken: MockERC20__factory.connect(
+      testToken: MockERC20Factory.connect(
         netCfg.addresses.testToken,
         ethersProvider,
       ),
       // eslint-disable-next-line camelcase
-      aggregatorUtilities: AggregatorUtilities__factory.connect(
+      aggregatorUtilities: AggregatorUtilitiesFactory.connect(
         netCfg.addresses.utilities,
         ethersProvider,
       ),
