@@ -25,6 +25,9 @@
     "lint": "./scripts/addFileStubsIfNeeded.sh && eslint . --ext .ts,.tsx,.js --max-warnings 0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
+  "resolutions": {
+    "@ethersproject/signing-key": "5.7.0"
+  },
   "dependencies": {
     "@babel/runtime": "^7.16.3",
     "@ethereumjs/tx": "^3.5.1",
