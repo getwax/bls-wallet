@@ -38,6 +38,7 @@ const expectOperationFailure = (
 
 describe("Upgrade", async function () {
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
+  const signatureExpiryWindow = 1200;
   let fx: Fixture;
   beforeEach(async () => {
     fx = await Fixture.getSingleton();
@@ -97,11 +98,20 @@ describe("Upgrade", async function () {
     const blsSecret = walletOldVg.blsWalletSigner.privateKey;
 
     // Sign simple address message
-    const addressMessage = solidityPack(["address"], [walletAddress]);
     const walletNewVg = await BlsWalletWrapper.connect(
       blsSecret,
       vg2.address,
       vg2.provider,
+    );
+
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryWindow;
+
+    const addressMessage = solidityPack(
+      ["address", "uint256"],
+      [walletAddress, signatureExpiryTimestamp],
     );
     const addressSignature = walletNewVg.signMessage(addressMessage);
 
@@ -133,6 +143,7 @@ describe("Upgrade", async function () {
       encodedFunction: vg2.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         walletOldVg.PublicKey(),
+        signatureExpiryTimestamp,
       ]),
     };
 
@@ -321,7 +332,14 @@ describe("Upgrade", async function () {
     );
 
     // wallet 2 bls key signs message containing address of wallet 1
-    const addressMessage = solidityPack(["address"], [wallet1.address]);
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryWindow;
+    const addressMessage = solidityPack(
+      ["address", "uint256"],
+      [wallet1.address, signatureExpiryTimestamp],
+    );
     const addressSignature = wallet2.signMessage(addressMessage);
 
     const setExternalWalletAction: ActionData = {
@@ -330,6 +348,7 @@ describe("Upgrade", async function () {
       encodedFunction: vg1.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         wallet2.PublicKey(),
+        signatureExpiryTimestamp,
       ]),
     };
 
@@ -372,6 +391,7 @@ describe("Upgrade", async function () {
             contractAddress: vg1.address,
             encodedFunction: vg1.interface.encodeFunctionData(
               "setPendingBLSKeyForWallet",
+              [signatureExpiryTimestamp],
             ),
           },
         ],
@@ -382,10 +402,10 @@ describe("Upgrade", async function () {
       ethers.constants.AddressZero,
     );
     await expect(getPublicKeyFromHash(vg1, hash1)).to.eventually.deep.equal([
-      "0x00",
-      "0x00",
-      "0x00",
-      "0x00",
+      BigNumber.from(0),
+      BigNumber.from(0),
+      BigNumber.from(0),
+      BigNumber.from(0),
     ]);
     await expect(vg1.walletFromHash(hash2)).to.eventually.equal(
       wallet1.address,
