@@ -402,10 +402,10 @@ describe("Upgrade", async function () {
       ethers.constants.AddressZero,
     );
     await expect(getPublicKeyFromHash(vg1, hash1)).to.eventually.deep.equal([
-      BigNumber.from(0),
-      BigNumber.from(0),
-      BigNumber.from(0),
-      BigNumber.from(0),
+      "0x00",
+      "0x00",
+      "0x00",
+      "0x00",
     ]);
     await expect(vg1.walletFromHash(hash2)).to.eventually.equal(
       wallet1.address,

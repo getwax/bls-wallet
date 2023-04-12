@@ -148,7 +148,9 @@ describe("Recovery", async function () {
     );
 
     const signatureExpiryTimestamp =
-      (await fx.provider.getBlock("latest")).timestamp + signatureExpiryWindow;
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryWindow;
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await fx.processBundleWithExtraGas(
       wallet1.sign({
@@ -623,6 +625,118 @@ describe("Recovery", async function () {
     });
     await expect(
       fx.verificationGateway.processBundle(invalidBundle),
+    ).to.be.rejectedWith("VG: Sig not verified");
+  });
+
+  it("should revert when updating a bls key if signature has expired", async function () {
+    await (
+      await vg.processBundle(
+        wallet1.sign({
+          nonce: 0,
+          gas: 30_000_000,
+          actions: [],
+        }),
+      )
+    ).wait();
+
+    const invalidSignatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp + safetyDelaySeconds;
+
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      invalidSignatureExpiryTimestamp,
+      wallet2.blsWalletSigner.privateKey,
+    );
+
+    await fx.call(
+      wallet1,
+      vg,
+      "setBLSKeyForWallet",
+      [addressSignature, wallet2.PublicKey(), invalidSignatureExpiryTimestamp],
+      1,
+      30_000_000,
+    );
+
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
+
+    const bundleWithExpiredTimestamp = wallet1.sign({
+      nonce: await wallet1.Nonce(),
+      gas: 30_000_000,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: vg.address,
+          encodedFunction: vg.interface.encodeFunctionData(
+            "setPendingBLSKeyForWallet",
+            [invalidSignatureExpiryTimestamp],
+          ),
+        },
+      ],
+    });
+
+    await expect(
+      fx.processBundleWithExtraGas(bundleWithExpiredTimestamp),
+    ).to.be.rejectedWith("VG: message expired");
+  });
+
+  it("should revert when updating a bls key if there is an expiry timestamp mismatch", async function () {
+    await (
+      await vg.processBundle(
+        wallet1.sign({
+          nonce: 0,
+          gas: 30_000_000,
+          actions: [],
+        }),
+      )
+    ).wait();
+
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryWindow;
+
+    const incorrectSignatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryWindow +
+      1;
+
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      signatureExpiryTimestamp,
+      wallet2.blsWalletSigner.privateKey,
+    );
+
+    await fx.call(
+      wallet1,
+      vg,
+      "setBLSKeyForWallet",
+      [addressSignature, wallet2.PublicKey(), signatureExpiryTimestamp],
+      1,
+      30_000_000,
+    );
+
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
+
+    const bundleWithIncorrectTimestamp = wallet1.sign({
+      nonce: await wallet1.Nonce(),
+      gas: 30_000_000,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: vg.address,
+          encodedFunction: vg.interface.encodeFunctionData(
+            "setPendingBLSKeyForWallet",
+            [incorrectSignatureExpiryTimestamp],
+          ),
+        },
+      ],
+    });
+
+    await expect(
+      fx.processBundleWithExtraGas(bundleWithIncorrectTimestamp),
     ).to.be.rejectedWith("VG: Sig not verified");
   });
 });
