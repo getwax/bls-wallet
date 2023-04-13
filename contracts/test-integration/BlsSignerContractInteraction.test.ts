@@ -6,6 +6,8 @@ import sinon from "sinon";
 import { BlsProvider, BlsSigner, BlsWalletWrapper } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 
+let blsProvider: BlsProvider;
+
 async function getRandomSigners(numSigners: number): Promise<BlsSigner[]> {
   const networkConfig = await getNetworkConfig("local");
 
@@ -21,7 +23,7 @@ async function getRandomSigners(numSigners: number): Promise<BlsSigner[]> {
   const signers = [];
   for (let i = 0; i < numSigners; i++) {
     const privateKey = await BlsSigner.getRandomBlsPrivateKey();
-    const blsProvider = new BlsProvider(
+    blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
@@ -230,10 +232,19 @@ describe("Signer contract interaction tests", function () {
 
     it("should return the expected fee", async () => {
       // Arrange
+      const privateKey = await BlsSigner.getRandomBlsPrivateKey();
+      const signer = blsProvider.getSigner(privateKey);
+
+      const fundFreshSignerTx = await fundedWallet.sendTransaction({
+        to: await signer.getAddress(),
+        value: utils.parseEther("10"),
+      });
+      await fundFreshSignerTx.wait();
+
       const recipient = await blsSigners[1].getAddress();
       const amount = ethers.utils.parseUnits("1");
       const expectedTransaction = await mockERC20
-        .connect(blsSigners[0])
+        .connect(signer)
         .populateTransaction.transfer(recipient, amount);
 
       // BlsWalletWrapper.getRandomBlsPrivateKey from "estimateGas" method results in slightly different
@@ -241,15 +252,15 @@ describe("Signer contract interaction tests", function () {
       sinon.replace(
         BlsWalletWrapper,
         "getRandomBlsPrivateKey",
-        sinon.fake.resolves(blsSigners[0].wallet.blsWalletSigner.privateKey),
+        sinon.fake.resolves(signer.wallet.blsWalletSigner.privateKey),
       );
-      const expectedFee = await blsSigners[0].provider.estimateGas(
+      const expectedFee = await signer.provider.estimateGas(
         expectedTransaction,
       );
 
       // Act
       const fee = await mockERC20
-        .connect(blsSigners[0])
+        .connect(signer)
         .estimateGas.transfer(recipient, amount);
 
       // Assert
