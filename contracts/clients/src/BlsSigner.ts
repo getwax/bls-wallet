@@ -138,10 +138,6 @@ export default class BlsSigner extends Signer {
   ): Promise<ethers.providers.TransactionResponse> {
     await this.initPromise;
 
-    if (!transaction.to) {
-      throw new TypeError("Transaction.to should be defined");
-    }
-
     const validatedTransaction = await this._validateTransaction(transaction);
 
     const nonce = await BlsWalletWrapper.Nonce(
@@ -195,7 +191,7 @@ export default class BlsSigner extends Signer {
 
     let nonce: BigNumber;
     if (transactionBatch.batchOptions) {
-      nonce = validatedTransactionBatch.batchOptions!.nonce as BigNumber;
+      nonce = BigNumber.from(validatedTransactionBatch.batchOptions!.nonce);
     } else {
       nonce = await BlsWalletWrapper.Nonce(
         this.wallet.PublicKey(),

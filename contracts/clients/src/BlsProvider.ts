@@ -96,14 +96,6 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       this,
     );
 
-    // const throwawayBlsWalletWrapperNonce =
-    //   await throwawayBlsWalletWrapper.Nonce();
-    // console.log(
-    //   "throwawayBlsWalletWrapper Nonce:",
-    //   throwawayBlsWalletWrapperNonce,
-    // );
-    // console.log("nonce:", nonce);
-
     const bundle = await throwawayBlsWalletWrapper.signWithGasEstimate({
       nonce,
       actions: [...actionWithFeePaymentAction],
