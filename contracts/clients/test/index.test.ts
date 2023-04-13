@@ -1,12 +1,10 @@
 import { BigNumber } from "ethers";
-import { keccak256, arrayify } from "ethers/lib/utils";
 import { expect } from "chai";
 
 import { initBlsWalletSigner, Bundle, Operation } from "../src/signer";
 
 import Range from "./helpers/Range";
 
-const domain = arrayify(keccak256("0xfeedbee5"));
 const weiPerToken = BigNumber.from(10).pow(18);
 
 const samples = (() => {
@@ -15,6 +13,8 @@ const samples = (() => {
   // Random addresses
   const walletAddress = "0x1337AF0f4b693fd1c36d7059a0798Ff05a60DFFE";
   const otherWalletAddress = "0x42C8157D539825daFD6586B119db53761a2a91CD";
+  const verificationGatewayAddress =
+    "0xC8CD2BE653759aed7B0996315821AAe71e1FEAdF";
 
   const bundleTemplate: Operation = {
     nonce: BigNumber.from(123),
@@ -43,6 +43,7 @@ const samples = (() => {
     otherPrivateKey,
     walletAddress,
     otherWalletAddress,
+    verificationGatewayAddress,
   };
 })();
 
@@ -53,7 +54,7 @@ describe("index", () => {
 
     const { sign, verify } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey,
     });
 
@@ -68,7 +69,7 @@ describe("index", () => {
 
     const { sign: signWithOtherPrivateKey } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey: otherPrivateKey,
     });
 
@@ -112,12 +113,12 @@ describe("index", () => {
 
     const { sign, aggregate, verify } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey,
     });
     const { sign: signWithOtherPrivateKey } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey: otherPrivateKey,
     });
 
@@ -164,7 +165,7 @@ describe("index", () => {
 
     const { sign, aggregate, verify } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey,
     });
 
@@ -196,7 +197,7 @@ describe("index", () => {
 
     const { getPublicKeyStr } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey,
     });
 
@@ -216,7 +217,7 @@ describe("index", () => {
 
     const { aggregate } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey,
     });
 
@@ -231,7 +232,7 @@ describe("index", () => {
 
     const { aggregate, verify } = await initBlsWalletSigner({
       chainId: 123,
-      domain,
+      verificationGatewayAddress: samples.verificationGatewayAddress,
       privateKey,
     });
 

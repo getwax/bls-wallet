@@ -19,11 +19,8 @@ is the calling wallet's address.
  */
 contract VerificationGateway
 {
-    /**
-     * Chosen arbitrarily
-     * =keccak256(abi.encodePacked(uint32(0xfeedbee5)))
-     */
-    bytes32 BLS_DOMAIN = 0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc;
+    bytes32 WALLET_DOMAIN;
+    bytes32 BUNDLE_DOMAIN;
     uint8 constant BLS_KEY_LEN = 4;
 
     IBLS public immutable blsLib;
@@ -66,6 +63,16 @@ contract VerificationGateway
     constructor(IBLS bls) {
         blsLib = bls;
         blsWalletLogic.initialize(address(0));
+        WALLET_DOMAIN = keccak256(abi.encodePacked(
+            block.chainid,
+            address(this),
+            "Wallet"
+        ));
+        BUNDLE_DOMAIN = keccak256(abi.encodePacked(
+            block.chainid,
+            address(this),
+            "Bundle"
+        ));
     }
 
     /** Throw if bundle not valid or signature verification fails */
@@ -126,7 +133,7 @@ contract VerificationGateway
         bytes memory hashBytes = abi.encode(hash);
 
         uint256[2] memory message = blsLib.hashToPoint(
-            BLS_DOMAIN,
+            WALLET_DOMAIN,
             hashBytes
         );
 
@@ -144,17 +151,19 @@ contract VerificationGateway
     @dev overrides previous wallet address registered with the given public key
     @param messageSenderSignature signature of message containing only the calling address
     @param publicKey that signed the caller's address
+    @param signatureExpiryTimestamp that the signature is valid until
      */
     function setBLSKeyForWallet(
         uint256[2] memory messageSenderSignature,
-        uint256[BLS_KEY_LEN] memory publicKey
+        uint256[BLS_KEY_LEN] memory publicKey,
+        uint256 signatureExpiryTimestamp
     ) public {
         require(blsLib.isZeroBLSKey(publicKey) == false, "VG: key is zero");
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
         if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
             // set it instantly
-            safeSetWallet(messageSenderSignature, publicKey, wallet);
+            safeSetWallet(messageSenderSignature, publicKey, wallet, signatureExpiryTimestamp);
         }
         else { // wallet already has a key registered, set after delay
             pendingMessageSenderSignatureFromHash[existingHash] = messageSenderSignature;
@@ -163,8 +172,10 @@ contract VerificationGateway
             emit PendingBLSKeySet(existingHash, publicKey);
         }
     }
-
-    function setPendingBLSKeyForWallet() public {
+    /** 
+    @param signatureExpiryTimestamp that the signature is valid until
+    */
+    function setPendingBLSKeyForWallet(uint256 signatureExpiryTimestamp) public {
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
         require(existingHash != bytes32(0), "VG: hash not found");
@@ -175,7 +186,8 @@ contract VerificationGateway
             safeSetWallet(
                 pendingMessageSenderSignatureFromHash[existingHash],
                 pendingBLSPublicKeyFromHash[existingHash],
-                wallet
+                wallet,
+                signatureExpiryTimestamp
             );
             pendingMessageSenderSignatureFromHash[existingHash] = [0,0];
             pendingBLSPublicKeyTimeFromHash[existingHash] = 0;
@@ -242,19 +254,21 @@ contract VerificationGateway
     @param blsKeyHash calling wallet's bls public key hash
     @param salt used in the recovery hash
     @param newBLSKey to set as the wallet's bls public key
+    @param signatureExpiryTimestamp that the signature is valid until
      */
     function recoverWallet(
         uint256[2] memory walletAddressSignature,
         bytes32 blsKeyHash,
         bytes32 salt,
-        uint256[BLS_KEY_LEN] memory newBLSKey
+        uint256[BLS_KEY_LEN] memory newBLSKey,
+        uint256 signatureExpiryTimestamp
     ) public {
         IWallet wallet = walletFromHash[blsKeyHash];
         bytes32 recoveryHash = keccak256(
             abi.encodePacked(msg.sender, blsKeyHash, salt)
         );
         if (recoveryHash == wallet.recoveryHash()) {
-            safeSetWallet(walletAddressSignature, newBLSKey, wallet);
+            safeSetWallet(walletAddressSignature, newBLSKey, wallet, signatureExpiryTimestamp);
             wallet.recover();
         }
     }
@@ -382,22 +396,28 @@ contract VerificationGateway
 
     /**
     @dev safely sets/overwrites the wallet for the given public key, ensuring it is properly signed
-    @param wallletAddressSignature signature of message containing only the wallet address
+    @param walletAddressSignature signature of message containing only the wallet address
     @param publicKey that signed the wallet address
     @param wallet address to set
+    @param signatureExpiryTimestamp that the signature is valid until
      */
     function safeSetWallet(
-        uint256[2] memory wallletAddressSignature,
+        uint256[2] memory walletAddressSignature,
         uint256[BLS_KEY_LEN] memory publicKey,
-        IWallet wallet
+        IWallet wallet,
+        uint256 signatureExpiryTimestamp
     ) private {
+        require(
+            block.timestamp < signatureExpiryTimestamp,
+            "VG: message expired"
+        );
         // verify the given wallet was signed for by the bls key
         uint256[2] memory addressMsg = blsLib.hashToPoint(
-            BLS_DOMAIN,
-            abi.encodePacked(wallet)
+            WALLET_DOMAIN,
+            abi.encodePacked(wallet, signatureExpiryTimestamp)
         );
         require(
-            blsLib.verifySingle(wallletAddressSignature, publicKey, addressMsg),
+            blsLib.verifySingle(walletAddressSignature, publicKey, addressMsg),
             "VG: Sig not verified"
         );
         bytes32 publicKeyHash = keccak256(abi.encodePacked(
@@ -454,9 +474,8 @@ contract VerificationGateway
             );
         }
         return blsLib.hashToPoint(
-            BLS_DOMAIN,
+            BUNDLE_DOMAIN,
             abi.encodePacked(
-                block.chainid,
                 walletAddress,
                 op.nonce,
                 keccak256(encodedActionData)

@@ -4,7 +4,7 @@ import { solidityPack } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 
 import { expectPubkeysEql, expectPubkeysNotEql } from "./expect";
-import { BlsWalletWrapper, Signature } from "../clients/src";
+import { BlsWalletWrapper, PublicKey, Signature } from "../clients/src";
 import Fixture from "../shared/helpers/Fixture";
 import getPublicKeyFromHash from "../shared/helpers/getPublicKeyFromHash";
 import { BLSWallet, VerificationGateway } from "../typechain-types";
@@ -12,9 +12,13 @@ import { BLSWallet, VerificationGateway } from "../typechain-types";
 const signWalletAddress = async (
   fx: Fixture,
   senderAddr: string,
+  signatureExpiryTimestamp: number,
   signerPrivKey: string,
 ): Promise<Signature> => {
-  const addressMessage = solidityPack(["address"], [senderAddr]);
+  const addressMessage = solidityPack(
+    ["address", "uint256"],
+    [senderAddr, signatureExpiryTimestamp],
+  );
   const wallet = await BlsWalletWrapper.connect(
     signerPrivKey,
     fx.verificationGateway.address,
@@ -25,6 +29,7 @@ const signWalletAddress = async (
 
 describe("Recovery", async function () {
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
+  const signatureExpiryOffsetSeconds = 1200;
   let fx: Fixture;
   let vg: VerificationGateway;
   let wallet1: BlsWalletWrapper;
@@ -75,9 +80,14 @@ describe("Recovery", async function () {
       wallet1PublicKeyHash,
     );
 
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryOffsetSeconds;
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
+      signatureExpiryTimestamp,
       wallet2.blsWalletSigner.privateKey,
     );
 
@@ -85,7 +95,7 @@ describe("Recovery", async function () {
       wallet1,
       vg,
       "setBLSKeyForWallet",
-      [addressSignature, wallet2.PublicKey()],
+      [addressSignature, wallet2.PublicKey(), signatureExpiryTimestamp],
       1,
       30_000_000,
     );
@@ -101,6 +111,7 @@ describe("Recovery", async function () {
             contractAddress: vg.address,
             encodedFunction: vg.interface.encodeFunctionData(
               "setPendingBLSKeyForWallet",
+              [signatureExpiryTimestamp],
             ),
           },
         ],
@@ -136,6 +147,10 @@ describe("Recovery", async function () {
       wallet1.PublicKey(),
     );
 
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryOffsetSeconds;
     await fx.advanceTimeBy(safetyDelaySeconds + 1);
     await fx.processBundleWithExtraGas(
       wallet1.sign({
@@ -147,6 +162,7 @@ describe("Recovery", async function () {
             contractAddress: vg.address,
             encodedFunction: vg.interface.encodeFunctionData(
               "setPendingBLSKeyForWallet",
+              [signatureExpiryTimestamp],
             ),
           },
         ],
@@ -248,12 +264,16 @@ describe("Recovery", async function () {
     const bundleTxn = await fx.verificationGateway.processBundle(bundle);
     await bundleTxn.wait();
 
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     // Recover wallet
     const recoveryBundle = await wallet3.getRecoverWalletBundle(
       wallet4.address,
       wallet4.blsWalletSigner.privateKey,
       "test salt",
       fx.verificationGateway,
+      signatureExpiryTimestamp,
     );
     await fx.processBundleWithExtraGas(recoveryBundle);
 
@@ -282,10 +302,14 @@ describe("Recovery", async function () {
     );
 
     // key 3 signs wallet 1 address
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     const wallet3 = await fx.createBLSWallet();
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
+      signatureExpiryTimestamp,
       wallet3.blsWalletSigner.privateKey,
     );
 
@@ -303,6 +327,7 @@ describe("Recovery", async function () {
               wallet1PublicKeyHash,
               salt,
               wallet3.PublicKey(),
+              signatureExpiryTimestamp,
             ]),
           },
         ],
@@ -330,9 +355,14 @@ describe("Recovery", async function () {
       30_000_000,
     );
 
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryOffsetSeconds;
     const attackSignature = await signWalletAddress(
       fx,
       wallet1.address,
+      signatureExpiryTimestamp,
       walletAttacker.blsWalletSigner.privateKey,
     );
 
@@ -342,17 +372,17 @@ describe("Recovery", async function () {
       wallet1,
       vg,
       "setBLSKeyForWallet",
-      [attackSignature, walletAttacker.PublicKey()],
+      [attackSignature, walletAttacker.PublicKey(), signatureExpiryTimestamp],
       recoveredWalletNonce++,
       30_000_000,
     );
 
-    const pendingKey = await Promise.all(
+    const pendingKey = (await Promise.all(
       [0, 1, 2, 3].map(
         async (i) =>
           await vg.pendingBLSPublicKeyFromHash(wallet1PublicKeyHash, i),
       ),
-    );
+    )) as PublicKey;
 
     expectPubkeysEql(pendingKey, walletAttacker.PublicKey());
 
@@ -371,6 +401,7 @@ describe("Recovery", async function () {
             contractAddress: vg.address,
             encodedFunction: vg.interface.encodeFunctionData(
               "setPendingBLSKeyForWallet",
+              [signatureExpiryTimestamp],
             ),
           },
         ],
@@ -380,6 +411,7 @@ describe("Recovery", async function () {
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
+      signatureExpiryTimestamp,
       wallet2.blsWalletSigner.privateKey,
     );
     const safeKey = wallet2.PublicKey();
@@ -387,7 +419,13 @@ describe("Recovery", async function () {
     await (
       await fx.verificationGateway
         .connect(recoverySigner)
-        .recoverWallet(addressSignature, wallet1PublicKeyHash, salt, safeKey)
+        .recoverWallet(
+          addressSignature,
+          wallet1PublicKeyHash,
+          salt,
+          safeKey,
+          signatureExpiryTimestamp,
+        )
     ).wait();
 
     // key reset via recovery
@@ -416,6 +454,7 @@ describe("Recovery", async function () {
             contractAddress: vg.address,
             encodedFunction: vg.interface.encodeFunctionData(
               "setPendingBLSKeyForWallet",
+              [signatureExpiryTimestamp],
             ),
           },
         ],
@@ -433,6 +472,7 @@ describe("Recovery", async function () {
             contractAddress: vg.address,
             encodedFunction: vg.interface.encodeFunctionData(
               "setPendingBLSKeyForWallet",
+              [signatureExpiryTimestamp],
             ),
           },
         ],
@@ -493,9 +533,13 @@ describe("Recovery", async function () {
       attackerRecoveryHash,
     );
 
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     const addressSignature = await signWalletAddress(
       fx,
       walletAttacker.address,
+      signatureExpiryTimestamp,
       walletAttacker.blsWalletSigner.privateKey,
     );
     const wallet1Key = await wallet1.PublicKey();
@@ -509,6 +553,7 @@ describe("Recovery", async function () {
           walletAttackerPublicKeyHash,
           salt,
           wallet1Key,
+          signatureExpiryTimestamp,
         ),
     ).to.be.rejectedWith("VG: Sig not verified");
   });
@@ -536,9 +581,13 @@ describe("Recovery", async function () {
       30_000_000,
     );
 
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      signatureExpiryOffsetSeconds;
     const addressSignature = await signWalletAddress(
       fx,
       wallet1.address,
+      signatureExpiryTimestamp,
       wallet2.blsWalletSigner.privateKey,
     );
 
@@ -549,6 +598,7 @@ describe("Recovery", async function () {
         wallet1PublicKeyHash,
         salt,
         wallet2.PublicKey(),
+        signatureExpiryTimestamp,
       );
     await recoveryTxn.wait();
 
@@ -579,6 +629,125 @@ describe("Recovery", async function () {
     });
     await expect(
       fx.verificationGateway.processBundle(invalidBundle),
+    ).to.be.rejectedWith("VG: Sig not verified");
+  });
+
+  it("should revert when updating a bls key if signature has expired", async function () {
+    await (
+      await vg.processBundle(
+        wallet1.sign({
+          nonce: 0,
+          gas: 30_000_000,
+          actions: [],
+        }),
+      )
+    ).wait();
+
+    const invalidSignatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp + safetyDelaySeconds;
+
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      invalidSignatureExpiryTimestamp,
+      wallet2.blsWalletSigner.privateKey,
+    );
+
+    // this call will succeed even with invalidSignatureExpiryTimestamp, as the
+    // wallet already has a bls key registered with the verification gateway.
+    // This means setSafeWallet is not called, and we don't make the signature expiry check
+    await fx.call(
+      wallet1,
+      vg,
+      "setBLSKeyForWallet",
+      [addressSignature, wallet2.PublicKey(), invalidSignatureExpiryTimestamp],
+      1,
+      30_000_000,
+    );
+
+    // advance time by safetyDelaySeconds + 1 to ensure the signature has expired
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
+
+    const bundleWithExpiredTimestamp = wallet1.sign({
+      nonce: await wallet1.Nonce(),
+      gas: 30_000_000,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: vg.address,
+          encodedFunction: vg.interface.encodeFunctionData(
+            "setPendingBLSKeyForWallet",
+            [invalidSignatureExpiryTimestamp],
+          ),
+        },
+      ],
+    });
+
+    await expect(
+      fx.processBundleWithExtraGas(bundleWithExpiredTimestamp),
+    ).to.be.rejectedWith("VG: message expired");
+  });
+
+  it("should revert when updating a bls key if there is an expiry timestamp mismatch", async function () {
+    await (
+      await vg.processBundle(
+        wallet1.sign({
+          nonce: 0,
+          gas: 30_000_000,
+          actions: [],
+        }),
+      )
+    ).wait();
+
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryOffsetSeconds;
+
+    const incorrectSignatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryOffsetSeconds +
+      1; // add one second so the timestamp will be different to signatureExpiryTimestamp
+
+    const addressSignature = await signWalletAddress(
+      fx,
+      wallet1.address,
+      signatureExpiryTimestamp,
+      wallet2.blsWalletSigner.privateKey,
+    );
+
+    // this call will succeed even with invalidSignatureExpiryTimestamp, as the
+    // wallet already has a bls key registered with the verification gateway.
+    // This means setSafeWallet is not called, and we don't make the signature expiry check
+    await fx.call(
+      wallet1,
+      vg,
+      "setBLSKeyForWallet",
+      [addressSignature, wallet2.PublicKey(), signatureExpiryTimestamp],
+      1,
+      30_000_000,
+    );
+
+    await fx.advanceTimeBy(safetyDelaySeconds + 1);
+
+    const bundleWithIncorrectTimestamp = wallet1.sign({
+      nonce: await wallet1.Nonce(),
+      gas: 30_000_000,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: vg.address,
+          encodedFunction: vg.interface.encodeFunctionData(
+            "setPendingBLSKeyForWallet",
+            [incorrectSignatureExpiryTimestamp],
+          ),
+        },
+      ],
+    });
+
+    await expect(
+      fx.processBundleWithExtraGas(bundleWithIncorrectTimestamp),
     ).to.be.rejectedWith("VG: Sig not verified");
   });
 });
