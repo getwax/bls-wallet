@@ -76,17 +76,14 @@ function getQuillContextValue() {
     }
 
     window.debug.contracts = {
-      // eslint-disable-next-line camelcase
       verificationGateway: VerificationGatewayFactory.connect(
         netCfg.addresses.verificationGateway,
         ethersProvider,
       ),
-      // eslint-disable-next-line camelcase
       testToken: MockERC20Factory.connect(
         netCfg.addresses.testToken,
         ethersProvider,
       ),
-      // eslint-disable-next-line camelcase
       aggregatorUtilities: AggregatorUtilitiesFactory.connect(
         netCfg.addresses.utilities,
         ethersProvider,

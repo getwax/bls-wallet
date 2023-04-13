@@ -28,8 +28,8 @@ const signWalletAddress = async (
 };
 
 describe("Recovery", async function () {
-  const safetyDelaySeconds = 7 * 24 * 60 * 60;
-  const signatureExpiryOffsetSeconds = 1200;
+  const safetyDelaySeconds = 7 * 24 * 60 * 60; // one week
+  const signatureExpiryOffsetSeconds = 20 * 60; // 20 minutes
   let fx: Fixture;
   let vg: VerificationGateway;
   let wallet1: BlsWalletWrapper;
