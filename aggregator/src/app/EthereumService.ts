@@ -138,6 +138,7 @@ export default class EthereumService {
     const blsWalletSigner = await initBlsWalletSigner({
       chainId,
       privateKey: aggPrivateKey,
+      verificationGatewayAddress,
     });
 
     return new EthereumService(

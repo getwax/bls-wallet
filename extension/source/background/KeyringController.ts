@@ -304,13 +304,12 @@ export default class KeyringController {
       provider,
     );
 
-    const latestBlock = await provider.getBlock("latest");
+    const latestBlock = await provider.getBlock('latest');
     const signatureExpiryOffsetSeconds = 20 * 60; // 20 minutes
     const safetyDelaySeconds = 7 * 24 * 60 * 60; // one week
 
-    const signatureExpiryTimestamp = latestBlock.timestamp +
-      safetyDelaySeconds +
-      signatureExpiryOffsetSeconds;
+    const signatureExpiryTimestamp =
+      latestBlock.timestamp + safetyDelaySeconds + signatureExpiryOffsetSeconds;
 
     const bundle = await signerWallet.getRecoverWalletBundle(
       recoveryWalletAddress,
