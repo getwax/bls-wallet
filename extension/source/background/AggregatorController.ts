@@ -1,6 +1,7 @@
-import { Aggregator, BlsWalletWrapper } from 'bls-wallet-clients';
-import { ethers } from 'ethers';
+import { Aggregator, BlsWalletWrapper, ActionData } from 'bls-wallet-clients';
+import { BigNumber, ethers } from 'ethers';
 
+import { AggregatorUtilities__factory as AggregatorUtilitiesFactory } from 'bls-wallet-clients/dist/typechain-types';
 import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
@@ -71,12 +72,24 @@ export default class AggregatorController {
       );
 
       const nonce = (await wallet.Nonce()).toString();
-      const bundle = await wallet.sign({ nonce, actions });
 
       const aggregatorUrl =
         this.preferredAggregators[providerId] ?? network.aggregatorUrl;
 
       const agg = new Aggregator(aggregatorUrl);
+
+      const actionsWithFeePaymentAction = await this.addFeePaymentAction(
+        nonce,
+        actions,
+        wallet,
+        agg,
+      );
+
+      const bundle = wallet.sign({
+        nonce,
+        actions: actionsWithFeePaymentAction,
+      });
+
       const result = await agg.add(bundle);
 
       assert(!('failures' in result), () => new Error(JSON.stringify(result)));
@@ -158,4 +171,55 @@ export default class AggregatorController {
       this.preferredAggregators[providerId] = preferredAggregator;
     },
   });
+
+  async addFeePaymentAction(
+    nonce: string,
+    actions: Array<ActionData>,
+    wallet: BlsWalletWrapper,
+    aggregator: Aggregator,
+  ) {
+    const network = await this.networkController.network.read();
+    const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
+    const ethersProvider = await this.ethersProvider.read();
+
+    const aggregatorUtilitiesAddress = netCfg.addresses.utilities;
+    const aggregatorUtilitiesContract = AggregatorUtilitiesFactory.connect(
+      aggregatorUtilitiesAddress,
+      ethersProvider,
+    );
+
+    const actionsWithFeePaymentAction = [
+      ...actions,
+      {
+        ethValue: 1,
+        contractAddress: aggregatorUtilitiesAddress,
+        encodedFunction:
+          aggregatorUtilitiesContract.interface.encodeFunctionData(
+            'sendEthToTxOrigin',
+          ),
+      },
+    ];
+
+    const feeEstimateBundle = wallet.sign({
+      nonce,
+      actions: [...actionsWithFeePaymentAction],
+    });
+
+    const feeEstimate = await aggregator.estimateFee(feeEstimateBundle);
+    const feeRequired = BigNumber.from(feeEstimate.feeRequired);
+    const safetyPremium = feeRequired.div(5);
+    const safeFee = feeRequired.add(safetyPremium);
+
+    return [
+      ...actions,
+      {
+        ethValue: safeFee,
+        contractAddress: aggregatorUtilitiesAddress,
+        encodedFunction:
+          aggregatorUtilitiesContract.interface.encodeFunctionData(
+            'sendEthToTxOrigin',
+          ),
+      },
+    ];
+  }
 }
