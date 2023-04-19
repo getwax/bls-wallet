@@ -25,7 +25,7 @@ To run the dev server:
 yarn run dev:chrome # or dev:firefox etc, see scripts in package.json
 ```
 
-Reset the extension. This is useful for getting the wallet to clean slate in development. You can acheive this in your browser by either:
+Reset the extension. This is useful for getting the wallet to a clean slate in development. You can achieve this in your browser by either:
 
 - Removing the extension and then re-adding via "Load unpacked".
 - Or run `debug.reset();` twice in the background page console.

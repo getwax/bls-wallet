@@ -1,7 +1,11 @@
-import { Aggregator, BlsWalletWrapper, ActionData } from 'bls-wallet-clients';
+import {
+  Aggregator,
+  BlsWalletWrapper,
+  AggregatorUtilities__factory as AggregatorUtilitiesFactory,
+  ActionData,
+} from 'bls-wallet-clients';
 import { BigNumber, ethers } from 'ethers';
 
-import { AggregatorUtilities__factory as AggregatorUtilitiesFactory } from 'bls-wallet-clients/dist/typechain-types';
 import assert from '../helpers/assert';
 import ensureType from '../helpers/ensureType';
 import { PartialRpcImpl, RpcClient, SendTransactionParams } from '../types/Rpc';
