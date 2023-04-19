@@ -22,7 +22,7 @@ describe("BlsSigner", () => {
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
-      chainId: 0x7a69,
+      chainId: 0x539,
     };
 
     privateKey = await BlsSigner.getRandomBlsPrivateKey();

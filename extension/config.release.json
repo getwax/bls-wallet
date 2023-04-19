@@ -15,7 +15,7 @@
     },
     "local": {
       "blockExplorerUrl": "N/A",
-      "chainId": "0x7a69",
+      "chainId": "0x539",
       "displayName": "Local Network",
       "logo": "",
       "rpcTarget": "http://127.0.0.1:8545",
