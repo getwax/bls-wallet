@@ -17,6 +17,19 @@ Interaction with web3 applications can be slow, costly, and risky.
 3. transfer L2 erc20 tokens
 4. use contract wallet with L2 dapps (coming soon)
 
+## Getting started
+
+To run the dev server:
+
+```sh
+yarn run dev:chrome # or dev:firefox etc, see scripts in package.json
+```
+
+Reset the extension. This is useful for getting the wallet to clean slate in development. You can acheive this in your browser by either:
+
+- Removing the extension and then re-adding via "Load unpacked".
+- Or run `debug.reset();` twice in the background page console.
+
 ## Feature Summary
 
 ### MVP (uses Optimism)
@@ -89,10 +102,3 @@ Interaction with web3 applications can be slow, costly, and risky.
     - method name - nonce - (send)
   - (aggregate) - (send all)
 
-## Development
-
-To run the dev server:
-
-```sh
-yarn run dev:chrome # or dev:firefox etc, see scripts in package.json
-```

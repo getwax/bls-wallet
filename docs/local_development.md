@@ -109,6 +109,7 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 - In general, the bundle or submission issues we've encountered have been us misconfiguring the data in the bundle or not configuring the aggregator properly.
 - Be careful using Hardhat accounts 0 and 1 in your code when running a local aggregator. This is because the local aggregator config uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get around this by not using accounts 0 and 1 elsewhere, or changing the default accounts that the aggregator uses locally.
 - When packages are updated in the aggregator, you'll need to reload the deno cache as the setup script won't do this for you. You can do this with `deno cache -r deps.ts` in the `./aggregator` directory.
+- If running Quill against a local hardhat node with (`yarn start-hardhat`) instead of the local geth node (`yarn start`), you'll need to update the local network in `./extension/config.json` to use chainId `31337`. This is because the geth node uses a chainId of `1337` instead. If you're using MetaMask to fund Quill, make sure the localhost network uses chainId `31337` too.
 
 ### Tests
 
