@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write
 
-import { ActionData } from "https://esm.sh/v99/bls-wallet-clients@0.8.0-efa2e06/dist/src/index.d.ts";
 import {
+  ActionData,
   AggregatorClient,
   AggregatorUtilitiesFactory,
   BigNumber,

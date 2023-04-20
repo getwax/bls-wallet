@@ -41,6 +41,7 @@ export const keccak256 = ethers.utils.keccak256;
 export const shuffled: <T>(array: T[]) => T[] = ethers.utils.shuffled;
 
 export type {
+  ActionData,
   AggregatorUtilities,
   BlsWalletSigner,
   Bundle,
