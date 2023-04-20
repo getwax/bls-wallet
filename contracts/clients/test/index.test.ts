@@ -61,8 +61,8 @@ describe("index", () => {
     const bundle = sign(bundleTemplate, walletAddress);
 
     expect(bundle.signature).to.deep.equal([
-      "0x2c1b0dc6643375e05a6f2ba3d23b1ce941253010b13a127e22f5db647dc37952",
-      "0x0338f96fc67ce194a74a459791865ac2eb304fc214fd0962775078d12aea5b7e",
+      "0x21135f40b38f55236ceb637ad8f2d6d4e8081bc1c37ea08273838f839008b9cd",
+      "0x16515fb0821c039e127dd8e4a70c7004aec1baf698802fc16e7cf8d2ae0bb14a",
     ]);
 
     expect(verify(bundle, walletAddress)).to.equal(true);
@@ -127,8 +127,8 @@ describe("index", () => {
     const aggBundle = aggregate([bundle1, bundle2]);
 
     expect(aggBundle.signature).to.deep.equal([
-      "0x2319fc81d339dce4678c73429dfd2f11766742ed1e41df5a2ba2bf4863d877b5",
-      "0x1bb25c15ad1f2f967a80a7a65c7593fcd66b59bf092669707baf2db726e8e714",
+      "0x20c3afd45d2c7cd72003752377cf6853569bccd23abf962967a9245091b69c3b",
+      "0x1ff4a18f1e920206f849e50df41e7bab6377d3908a8198d9c9268ca01ae70552",
     ]);
 
     expect(verify(bundle1, walletAddress)).to.equal(true);

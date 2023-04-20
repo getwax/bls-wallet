@@ -116,7 +116,7 @@ For each network, the deployer contract can be deployed with the following scrip
 
 To run integration tests:
 
-1. cd into `./contracts` and run `yarn start-hardhat`
+1. cd into `./contracts` and run `yarn start`
 2. cd into `./aggregator` and run `./programs/aggregator.ts`
 3. from `./contracts`, run `yarn test-integration`.
 

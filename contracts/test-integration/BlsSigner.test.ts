@@ -16,7 +16,6 @@ import {
   BlsWalletWrapper,
   NetworkConfig,
   MockERC20Factory,
-  Operation,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 import addSafetyPremiumToFee from "../clients/src/helpers/addSafetyDivisorToFee";
@@ -106,7 +105,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 
@@ -283,7 +282,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 
@@ -566,7 +565,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 
@@ -597,7 +596,6 @@ describe("BlsSigner", () => {
       verificationGateway,
       blsProvider,
     );
-    const walletAddress = wallet.address;
 
     const expectedNonce = await BlsWalletWrapper.Nonce(
       wallet.PublicKey(),
@@ -609,9 +607,8 @@ describe("BlsSigner", () => {
       blsProvider._addFeePaymentActionForFeeEstimation(expectedActions);
 
     const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
-      blsSigner.wallet.sign({
+      await blsSigner.wallet.signWithGasEstimate({
         nonce: expectedNonce,
-        gas: BigNumber.from(30_000_000),
         actions: [...actionsWithFeePaymentAction],
       }),
     );
@@ -625,16 +622,10 @@ describe("BlsSigner", () => {
       safeFee,
     );
 
-    const op: Omit<Operation, "gas"> = {
+    const expectedBundle = await wallet.signWithGasEstimate({
       nonce: expectedNonce,
       actions: [...actionsWithSafeFee],
-    };
-    const gas = await wallet.estimateGas(op);
-
-    const expectedBundle = wallet.blsWalletSigner.sign(
-      { ...op, gas },
-      walletAddress,
-    );
+    });
 
     // Act
     const signedTransaction = await blsSigner.signTransactionBatch({
@@ -664,7 +655,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 

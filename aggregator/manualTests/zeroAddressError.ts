@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write
 
-import { AggregatorClient, ethers, MockERC20__factory } from "../deps.ts";
+import { AggregatorClient, ethers, MockERC20Factory } from "../deps.ts";
 
 // import EthereumService from "../src/app/EthereumService.ts";
 import * as env from "../test/env.ts";
@@ -20,10 +20,10 @@ const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 //   env.PRIVATE_KEY_AGG,
 // );
 
-const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
+const testErc20 = MockERC20Factory.connect(addresses.testToken, provider);
 const wallet = await TestBlsWallet(provider);
 
-const bundle = wallet.sign({
+const bundle = await wallet.signWithGasEstimate({
   nonce: await wallet.Nonce(),
   actions: [{
     ethValue: 0,

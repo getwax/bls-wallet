@@ -4,7 +4,7 @@ import {
   Bundle,
   decodeError,
   ERC20,
-  ERC20__factory,
+  ERC20Factory,
   ethers,
   OperationResultError,
   Semaphore,
@@ -410,13 +410,21 @@ export default class AggregationStrategy {
         continue;
       }
 
-      const newAggregateGas = (aggregateGas
-        .add(gasEstimate)
-        .sub(bundleOverheadGas));
+      const bundleEstimate = gasEstimate.sub(bundleOverheadGas);
+      const newAggregateGas = aggregateGas.add(bundleEstimate);
 
       if (newAggregateGas.gt(this.config.maxGasPerBundle)) {
         // Bundle would cause us to exceed maxGasPerBundle, so don't include it,
         // but also don't mark it as failed.
+        this.emit({
+          type: "aggregate-bundle-exceeds-max-gas",
+          data: {
+            hash: row.hash,
+            gasEstimate: bundleEstimate.toNumber(),
+            aggregateGasEstimate: newAggregateGas.toNumber(),
+            maxGasPerBundle: this.config.maxGasPerBundle,
+          },
+        });
         continue;
       }
 
@@ -514,7 +522,7 @@ export default class AggregationStrategy {
       return nil;
     }
 
-    return ERC20__factory.connect(
+    return ERC20Factory.connect(
       this.config.fees.address,
       this.ethereumService.wallet.provider,
     );
@@ -647,8 +655,13 @@ export default class AggregationStrategy {
     // wallet creation would be included in the bundle overhead.
     assert(nonce.gt(0));
 
-    const bundle1 = wallet.sign({ nonce, actions: [] });
-    const bundle2 = wallet.sign({ nonce: nonce.add(1), actions: [] });
+    const bundle1 = wallet.sign({ nonce, gas: 1_000_000, actions: [] });
+
+    const bundle2 = wallet.sign({
+      nonce: nonce.add(1),
+      gas: 1_000_000,
+      actions: [],
+    });
 
     const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
       es.verificationGateway.estimateGas.processBundle(bundle1),
