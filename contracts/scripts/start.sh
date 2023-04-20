@@ -19,6 +19,7 @@ docker run --name $CONTAINER --rm -p8545:8545 ethereum/client-go:stable \
   --http.api eth,web3,personal,net \
   --http.addr=0.0.0.0 \
   --http.vhosts='*' \
+  --http.corsdomain='*' \
   --dev \
   --dev.period=0 \
   &
