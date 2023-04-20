@@ -1,7 +1,7 @@
 import {
   Aggregator,
   BlsWalletWrapper,
-  AggregatorUtilities__factory as AggregatorUtilitiesFactory,
+  AggregatorUtilitiesFactory,
   ActionData,
 } from 'bls-wallet-clients';
 import { BigNumber, ethers } from 'ethers';
@@ -89,7 +89,7 @@ export default class AggregatorController {
         agg,
       );
 
-      const bundle = wallet.sign({
+      const bundle = await wallet.signWithGasEstimate({
         nonce,
         actions: actionsWithFeePaymentAction,
       });
@@ -204,7 +204,7 @@ export default class AggregatorController {
       },
     ];
 
-    const feeEstimateBundle = wallet.sign({
+    const feeEstimateBundle = await wallet.signWithGasEstimate({
       nonce,
       actions: [...actionsWithFeePaymentAction],
     });

@@ -3,7 +3,7 @@
 import {
   BlsWalletWrapper,
   ethers,
-  VerificationGateway__factory,
+  VerificationGatewayFactory,
   Wallet,
 } from "../deps.ts";
 import * as env from "../src/env.ts";
@@ -14,7 +14,7 @@ const wallet = new Wallet(env.PRIVATE_KEY_AGG, provider);
 
 const { addresses } = await getNetworkConfig();
 
-const vg = VerificationGateway__factory.connect(
+const vg = VerificationGatewayFactory.connect(
   addresses.verificationGateway,
   wallet,
 );
@@ -32,10 +32,12 @@ const nonce = await internalBlsWallet.Nonce();
 if (!nonce.eq(0)) {
   console.log("Already exists with nonce", nonce.toNumber());
 } else {
-  await (await vg.processBundle(internalBlsWallet.sign({
-    nonce: 0,
-    actions: [],
-  }))).wait();
+  await (await vg.processBundle(
+    await internalBlsWallet.signWithGasEstimate({
+      nonce: 0,
+      actions: [],
+    }),
+  )).wait();
 
   console.log("Created successfully");
 }

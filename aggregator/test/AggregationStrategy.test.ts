@@ -9,7 +9,7 @@ import Fixture from "./helpers/Fixture.ts";
 Fixture.test("nonzero fee estimate from default test config", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
 
-  const bundle = wallet.sign({
+  const bundle = await wallet.signWithGasEstimate({
     nonce: await wallet.Nonce(),
     actions: [
       {
@@ -51,7 +51,7 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
 
   const nonce = await wallet.Nonce();
 
-  let bundle = wallet.sign({
+  let bundle = await wallet.signWithGasEstimate({
     nonce,
     actions: [
       {
@@ -84,7 +84,7 @@ Fixture.test("includes bundle in aggregation when estimated fee is provided", as
   assertEquals(feeEstimation.feeDetected, BigNumber.from(1));
 
   // Redefine bundle using the estimated fee
-  bundle = wallet.sign({
+  bundle = await wallet.signWithGasEstimate({
     nonce,
     actions: [
       {
@@ -135,7 +135,7 @@ Fixture.test("includes submitError on failed row when bundle callStaticSequence 
 
   const nonce = await wallet.Nonce();
 
-  const bundle = wallet.sign({
+  const bundle = await wallet.signWithGasEstimate({
     nonce,
     actions: [
       {

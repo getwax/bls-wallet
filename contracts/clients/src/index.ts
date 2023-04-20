@@ -1,68 +1,44 @@
-import Aggregator from "./Aggregator";
-import BlsWalletWrapper from "./BlsWalletWrapper";
-import BlsProvider from "./BlsProvider";
-import BlsSigner from "./BlsSigner";
+export { default as Aggregator } from "./Aggregator";
+export { default as BlsWalletWrapper } from "./BlsWalletWrapper";
+export { default as BlsProvider } from "./BlsProvider";
+export { default as BlsSigner } from "./BlsSigner";
 
-// eslint-disable-next-line camelcase
-import { VerificationGateway__factory } from "../typechain-types/factories/contracts/VerificationGateway__factory";
-import type { VerificationGateway } from "../typechain-types/contracts/VerificationGateway";
-
-// eslint-disable-next-line camelcase
-import { AggregatorUtilities__factory } from "../typechain-types/factories/contracts/AggregatorUtilities__factory";
-import type { AggregatorUtilities } from "../typechain-types/contracts/AggregatorUtilities";
-
-// eslint-disable-next-line camelcase
-import { ERC20__factory } from "../typechain-types/factories/@openzeppelin/contracts/token/ERC20/ERC20__factory";
-import type { ERC20 } from "../typechain-types/@openzeppelin/contracts/token/ERC20/ERC20";
-
-// eslint-disable-next-line camelcase
-import { MockERC20__factory } from "../typechain-types/factories/contracts/mock/MockERC20__factory";
-import type { MockERC20 } from "../typechain-types/contracts/mock/MockERC20";
-
-import { NetworkConfig, getConfig, validateConfig } from "./NetworkConfig";
-import {
+export { NetworkConfig, getConfig, validateConfig } from "./NetworkConfig";
+export {
   MultiNetworkConfig,
   getMultiConfig,
   validateMultiConfig,
 } from "./MultiNetworkConfig";
+export { BlsWalletContracts, connectToContracts } from "./BlsWalletContracts";
 
-import {
+export {
   OperationResult,
   getOperationResults,
   decodeError,
   OperationResultError,
 } from "./OperationResults";
-import { BlsWalletContracts, connectToContracts } from "./BlsWalletContracts";
+
+export {
+  VerificationGateway__factory as VerificationGatewayFactory,
+  AggregatorUtilities__factory as AggregatorUtilitiesFactory,
+  ERC20__factory as ERC20Factory,
+  MockERC20__factory as MockERC20Factory,
+  type VerificationGateway,
+  type AggregatorUtilities,
+  type ERC20,
+  type MockERC20,
+} from "../typechain-types";
 
 export * from "./signer";
 
 export {
-  Aggregator,
-  BlsWalletWrapper,
-  NetworkConfig,
-  getConfig,
-  validateConfig,
-  MultiNetworkConfig,
-  getMultiConfig,
-  validateMultiConfig,
-  OperationResult,
-  OperationResultError,
-  getOperationResults,
-  decodeError,
-  // eslint-disable-next-line camelcase
-  VerificationGateway__factory,
-  VerificationGateway,
-  // eslint-disable-next-line camelcase
-  AggregatorUtilities__factory,
-  AggregatorUtilities,
-  // eslint-disable-next-line camelcase
-  ERC20__factory,
-  ERC20,
-  // eslint-disable-next-line camelcase
-  MockERC20__factory,
-  MockERC20,
-  BlsWalletContracts,
-  connectToContracts,
-  BlsProvider,
-  BlsSigner,
-};
+  default as SafeSingletonFactory,
+  SafeSingletonFactoryViewer,
+} from "./SafeSingletonFactory";
+
+export { default as AddressRegistryWrapper } from "./AddressRegistryWrapper";
+export { default as BlsPublicKeyRegistryWrapper } from "./BlsPublicKeyRegistryWrapper";
+export { default as FallbackCompressor } from "./FallbackCompressor";
+export { default as BlsRegistrationCompressor } from "./BlsRegistrationCompressor";
+export { default as BundleCompressor } from "./BundleCompressor";
+export * from "./encodeUtils";

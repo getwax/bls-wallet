@@ -13,6 +13,7 @@ const sampleRows: BundleRow[] = [
       operations: [
         {
           nonce: "0x01",
+          gas: "0x01",
           actions: [
             {
               ethValue: "0x00",

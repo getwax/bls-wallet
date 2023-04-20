@@ -6,7 +6,7 @@ Fixture.test("adds valid bundle", async (fx) => {
   const bundleService = fx.createBundleService();
   const [wallet] = await fx.setupWallets(1);
 
-  const tx = wallet.sign({
+  const tx = await wallet.signWithGasEstimate({
     nonce: await wallet.Nonce(),
     actions: [
       {
@@ -20,7 +20,7 @@ Fixture.test("adds valid bundle", async (fx) => {
     ],
   });
 
-  assertEquals(await bundleService.bundleTable.count(), 0);
+  assertEquals(bundleService.bundleTable.count(), 0);
 
   assertBundleSucceeds(await bundleService.add(tx));
 
@@ -33,6 +33,7 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
 
   const operation: Operation = {
     nonce: await wallet.Nonce(),
+    gas: 0,
     actions: [
       {
         ethValue: 0,
@@ -71,6 +72,7 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
 
   const tx = wallet.sign({
     nonce: (await wallet.Nonce()).sub(1),
+    gas: 1_000_000,
     actions: [
       {
         ethValue: 0,
@@ -103,6 +105,7 @@ Fixture.test(
 
     const operation: Operation = {
       nonce: (await wallet.Nonce()).sub(1),
+      gas: 0,
       actions: [
         {
           ethValue: 0,
@@ -148,6 +151,7 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
 
   const tx = wallet.sign({
     nonce: (await wallet.Nonce()).add(1),
+    gas: 100000,
     actions: [
       {
         ethValue: 0,

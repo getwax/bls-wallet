@@ -41,6 +41,7 @@ export const keccak256 = ethers.utils.keccak256;
 export const shuffled: <T>(array: T[]) => T[] = ethers.utils.shuffled;
 
 export type {
+  ActionData,
   AggregatorUtilities,
   BlsWalletSigner,
   Bundle,
@@ -53,21 +54,21 @@ export type {
   PublicKey,
   Signature,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.8.3";
+} from "https://esm.sh/bls-wallet-clients@0.8.3-c34db60";
 
 export {
   Aggregator as AggregatorClient,
-  AggregatorUtilities__factory,
+  AggregatorUtilitiesFactory,
   BlsWalletWrapper,
   decodeError,
-  ERC20__factory,
+  ERC20Factory,
   getConfig,
-  MockERC20__factory,
-  VerificationGateway__factory,
-} from "https://esm.sh/bls-wallet-clients@0.8.3";
+  MockERC20Factory,
+  VerificationGatewayFactory,
+} from "https://esm.sh/bls-wallet-clients@0.8.3-c34db60";
 
 // Workaround for esbuild's export-star bug
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.8.3";
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.8.3-c34db60";
 const { bundleFromDto, bundleToDto, initBlsWalletSigner } = blsWalletClients;
 export { bundleFromDto, bundleToDto, initBlsWalletSigner };
 

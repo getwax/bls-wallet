@@ -10,12 +10,12 @@ let config;
 
 let blsAddresses: string[];
 
-async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
+async function setup(): Promise<Fixture> {
   config = await getNetworkConfig(network.name);
   console.log("config:", config);
 
   console.log("Creating fixture from use wallet...");
-  const fx = await Fixture.create(blsSecretNumbers.length, blsSecretNumbers);
+  const fx = await Fixture.create();
 
   console.log("Attaching to token:", config.addresses.testToken);
   const ERC20 = await ethers.getContractFactory("MockERC20");
@@ -26,13 +26,9 @@ async function setup(blsSecretNumbers: number[]): Promise<Fixture> {
 
 async function main() {
   // setup fixture with bls wallet secret numbers
-  const fx = await setup([
-    +process.env.BLS_SECRET_NUM_1,
-    +process.env.BLS_SECRET_NUM_2,
-    +process.env.BLS_SECRET_NUM_3,
-  ]);
+  const fx = await setup();
 
-  blsAddresses = (await fx.createBLSWallets()).map((wallet) => wallet.address);
+  blsAddresses = (await fx.createBLSWallets(3)).map((wallet) => wallet.address);
   console.log(`BlsWallet contract addresses: ${blsAddresses}`);
 
   // blsWallets = blsAddresses.map((a) => fx.BLSWallet.attach(a));

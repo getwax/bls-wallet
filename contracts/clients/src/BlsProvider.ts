@@ -76,9 +76,11 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       encodedFunction: resolvedTransaction.data?.toString() ?? "0x",
     };
 
-    const nonce = await this.getTransactionCount(
-      resolvedTransaction.from.toString(),
-    );
+    // set to zero at all times as an error will be thrown. If the
+    // nonce of the actual wallet is more than 0, there will be a
+    // nonce mistmatch as signWithGasEstimate with check the operation
+    // nonce against the throwawayBlsWalletWrapper nonce, which is always zero
+    const nonce = 0;
 
     const actionWithFeePaymentAction =
       this._addFeePaymentActionForFeeEstimation([action]);
@@ -94,12 +96,12 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
       this,
     );
 
-    const feeEstimate = await this.aggregator.estimateFee(
-      throwawayBlsWalletWrapper.sign({
-        nonce,
-        actions: [...actionWithFeePaymentAction],
-      }),
-    );
+    const bundle = await throwawayBlsWalletWrapper.signWithGasEstimate({
+      nonce,
+      actions: [...actionWithFeePaymentAction],
+    });
+
+    const feeEstimate = await this.aggregator.estimateFee(bundle);
 
     const feeRequired = BigNumber.from(feeEstimate.feeRequired);
     return addSafetyPremiumToFee(feeRequired);

@@ -9,7 +9,7 @@ const client = new AggregatorClient(env.ORIGIN);
 const fx = await Fixture.create(import.meta.url);
 const [wallet] = await fx.setupWallets(1);
 
-const bundle = wallet.sign({
+const bundle = await wallet.signWithGasEstimate({
   nonce: await wallet.Nonce(),
   actions: [{
     ethValue: 0,

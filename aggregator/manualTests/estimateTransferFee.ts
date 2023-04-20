@@ -19,7 +19,7 @@ await (await adminWallet.sendTransaction({
   value: 1,
 })).wait();
 
-const bundle = wallet.sign({
+const bundle = await wallet.signWithGasEstimate({
   nonce: await wallet.Nonce(),
   actions: [{
     ethValue: 1,

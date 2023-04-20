@@ -1,14 +1,14 @@
 #!/usr/bin/env -S deno run --allow-net --allow-env --allow-read --allow-write
 
-import { ActionData } from "https://esm.sh/v99/bls-wallet-clients@0.8.0-efa2e06/dist/src/index.d.ts";
 import {
+  ActionData,
   AggregatorClient,
-  AggregatorUtilities__factory,
+  AggregatorUtilitiesFactory,
   BigNumber,
   Bundle,
   delay,
   ethers,
-  MockERC20__factory,
+  MockERC20Factory,
 } from "../deps.ts";
 import AdminWallet from "../src/chain/AdminWallet.ts";
 import assert from "../src/helpers/assert.ts";
@@ -29,10 +29,10 @@ if (!Number.isFinite(walletN)) {
 const { addresses } = await getNetworkConfig();
 
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
-const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
+const testErc20 = MockERC20Factory.connect(addresses.testToken, provider);
 const client = new AggregatorClient(env.ORIGIN);
 
-const sendEthToTxOrigin = AggregatorUtilities__factory
+const sendEthToTxOrigin = AggregatorUtilitiesFactory
   .createInterface()
   .encodeFunctionData("sendEthToTxOrigin");
 
@@ -67,17 +67,19 @@ for (const [i, wallet] of wallets.entries()) {
     value: 1,
   })).wait();
 
-  const feeEstimation = await client.estimateFee(wallet.sign({
-    nonce,
-    actions: [
-      mintAction,
-      {
-        ethValue: 1,
-        contractAddress: addresses.utilities,
-        encodedFunction: sendEthToTxOrigin,
-      },
-    ],
-  }));
+  const feeEstimation = await client.estimateFee(
+    await wallet.signWithGasEstimate({
+      nonce,
+      actions: [
+        mintAction,
+        {
+          ethValue: 1,
+          contractAddress: addresses.utilities,
+          encodedFunction: sendEthToTxOrigin,
+        },
+      ],
+    }),
+  );
 
   assert(feeEstimation.feeType === "ether");
 
@@ -104,10 +106,12 @@ for (const [i, wallet] of wallets.entries()) {
     encodedFunction: sendEthToTxOrigin,
   };
 
-  bundles.push(wallet.sign({
-    nonce,
-    actions: [mintAction, feeAction],
-  }));
+  bundles.push(
+    await wallet.signWithGasEstimate({
+      nonce,
+      actions: [mintAction, feeAction],
+    }),
+  );
 }
 
 console.log("Sending mint bundles to aggregator");
