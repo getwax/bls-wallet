@@ -10,7 +10,6 @@ import errorHandler from "./errorHandler.ts";
 import notFoundHandler from "./notFoundHandler.ts";
 import Mutex from "../helpers/Mutex.ts";
 import Clock from "../helpers/Clock.ts";
-import getNetworkConfig from "../helpers/getNetworkConfig.ts";
 import AppEvent from "./AppEvent.ts";
 import BundleTable from "./BundleTable.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
@@ -19,8 +18,6 @@ import HealthService from "./HealthService.ts";
 import HealthRouter from "./HealthRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
-  const { addresses } = await getNetworkConfig();
-
   const clock = Clock.create();
 
   const bundleTableMutex = new Mutex();
