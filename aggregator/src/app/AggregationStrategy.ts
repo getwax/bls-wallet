@@ -462,13 +462,13 @@ export default class AggregationStrategy {
           : es.Call(es.aggregatorUtilities, "ethBalanceOf", [
             es.wallet.address,
           ]),
-        bundles.map((bundle) =>
+        await Promise.all(bundles.map(async (bundle) =>
           es.Call(
-            es.verificationGateway,
-            "processBundle",
-            [bundle],
+            es.bundleCompressor.blsExpanderDelegator,
+            "run",
+            [await es.bundleCompressor.compress(bundle)],
           )
-        ),
+        )),
       );
 
     return Range(bundles.length).map((i) => {
@@ -537,8 +537,9 @@ export default class AggregationStrategy {
 
     bundleOverheadGas ??= await this.measureBundleOverheadGas();
 
-    const gasEstimate = await this.ethereumService.verificationGateway
-      .estimateGas.processBundle(bundle);
+    const gasEstimate = await this.ethereumService.estimateCompressedGas(
+      bundle,
+    );
 
     const marginalGasEstimate = gasEstimate.sub(bundleOverheadGas);
 
@@ -627,8 +628,7 @@ export default class AggregationStrategy {
       }
 
       const gasEstimate = feeInfo?.gasEstimate ??
-        await this.ethereumService.verificationGateway
-          .estimateGas.processBundle(bundle);
+        await this.ethereumService.estimateCompressedGas(bundle);
 
       return {
         success,
@@ -666,8 +666,8 @@ export default class AggregationStrategy {
     });
 
     const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
-      es.verificationGateway.estimateGas.processBundle(bundle1),
-      es.verificationGateway.estimateGas.processBundle(
+      es.estimateCompressedGas(bundle1),
+      es.estimateCompressedGas(
         this.blsWalletSigner.aggregate([bundle1, bundle2]),
       ),
     ]);

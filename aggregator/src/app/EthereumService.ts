@@ -310,20 +310,23 @@ export default class EthereumService {
     assert(bundle.operations.length > 0, "Cannot process empty bundle");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
-    const processBundleArgs: Parameters<VerificationGateway["processBundle"]> =
-      [
-        bundle,
-        {
-          nonce: this.NextNonce(),
-          ...await this.GasConfig(),
-        },
-      ];
+    const compressedBundle = await this.bundleCompressor.compress(bundle);
+
+    const processBundleArgs: Parameters<
+      (typeof this.bundleCompressor.blsExpanderDelegator)["run"]
+    > = [
+      compressedBundle,
+      {
+        nonce: this.NextNonce(),
+        ...await this.GasConfig(),
+      },
+    ];
 
     const attempt = async () => {
       let txResponse: ethers.providers.TransactionResponse;
 
       try {
-        txResponse = await this.verificationGateway.processBundle(
+        txResponse = await this.bundleCompressor.blsExpanderDelegator.run(
           ...processBundleArgs,
         );
       } catch (error) {
@@ -384,6 +387,14 @@ export default class EthereumService {
     }
 
     throw new Error("Expected return or throw from attempt loop");
+  }
+
+  async estimateCompressedGas(bundle: Bundle): Promise<BigNumber> {
+    const compressedBundle = await this.bundleCompressor.compress(bundle);
+
+    return this.bundleCompressor.blsExpanderDelegator.estimateGas.run(
+      compressedBundle,
+    );
   }
 
   async GasConfig() {
