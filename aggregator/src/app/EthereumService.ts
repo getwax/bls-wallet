@@ -312,6 +312,17 @@ export default class EthereumService {
 
     const compressedBundle = await this.bundleCompressor.compress(bundle);
 
+    const [rawTx, rawCompressedTx] = await Promise.all([
+      this.verificationGateway.populateTransaction.processBundle(bundle).then(
+        (tx) => this.wallet.signTransaction(tx),
+      ),
+      this.bundleCompressor.blsExpanderDelegator.populateTransaction
+        .run(compressedBundle).then((tx) => this.wallet.signTransaction(tx)),
+    ]);
+
+    const txLen = ethers.utils.hexDataLength(rawTx);
+    const compressedTxLen = ethers.utils.hexDataLength(rawCompressedTx);
+
     const processBundleArgs: Parameters<
       (typeof this.bundleCompressor.blsExpanderDelegator)["run"]
     > = [
@@ -355,7 +366,7 @@ export default class EthereumService {
     for (let i = 0; i < maxAttempts; i++) {
       this.emit({
         type: "submission-attempt",
-        data: { attemptNumber: i + 1, publicKeyShorts },
+        data: { attemptNumber: i + 1, publicKeyShorts, txLen, compressedTxLen },
       });
 
       const attemptResult = await attempt();
