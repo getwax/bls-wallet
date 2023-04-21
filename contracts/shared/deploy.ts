@@ -164,10 +164,10 @@ async function deployExpanders(
     salt,
   );
 
-  await registerExpanders(blsExpanderDelegator, [
-    fallbackExpander.address,
-    blsRegistration.address,
-    erc20Expander.address,
+  await Promise.all([
+    registerExpanderIfNeeded(blsExpanderDelegator, fallbackExpander.address),
+    registerExpanderIfNeeded(blsExpanderDelegator, blsRegistration.address),
+    registerExpanderIfNeeded(blsExpanderDelegator, erc20Expander.address),
   ]);
 
   return {
@@ -181,17 +181,17 @@ async function deployExpanders(
   };
 }
 
-async function registerExpanders(
+async function registerExpanderIfNeeded(
   blsExpanderDelegator: BLSExpanderDelegator,
-  expanders: string[],
+  expander: string,
 ) {
-  for (const [i, expander] of expanders.entries()) {
-    const existingExpander = await blsExpanderDelegator.expanders(i);
+  const registrations = await blsExpanderDelegator.queryFilter(
+    blsExpanderDelegator.filters.ExpanderRegistered(null, expander),
+  );
 
-    if (existingExpander === ethers.constants.AddressZero) {
-      await receiptOf(blsExpanderDelegator.registerExpander(i, expander));
-    } else if (existingExpander !== expanders[i]) {
-      throw new Error(`Existing expander at index ${i} is not ${expander}`);
-    }
+  if (registrations.length > 0) {
+    return;
   }
+
+  await receiptOf(blsExpanderDelegator.registerExpander(expander));
 }

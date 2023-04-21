@@ -104,10 +104,10 @@ export default class Fixture {
       throw new Error("BLS registration compressor not set up correctly");
     }
 
-    const bundleCompressor = new BundleCompressor();
-    bundleCompressor.addCompressor(2, erc20Compressor);
-    bundleCompressor.addCompressor(1, blsRegistrationCompressor);
-    bundleCompressor.addCompressor(0, fallbackCompressor);
+    const bundleCompressor = new BundleCompressor(blsExpanderDelegator);
+    await bundleCompressor.addCompressor(erc20Compressor);
+    await bundleCompressor.addCompressor(blsRegistrationCompressor);
+    await bundleCompressor.addCompressor(fallbackCompressor);
 
     const privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
 

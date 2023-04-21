@@ -160,6 +160,10 @@ export default class Erc20Compressor implements IOperationCompressor {
     return await Erc20Compressor.wrap(erc20Expander);
   }
 
+  getExpanderAddress(): string {
+    return this.erc20Expander.address;
+  }
+
   async compress(blsPublicKey: PublicKey, operation: Operation) {
     const result: string[] = [];
 

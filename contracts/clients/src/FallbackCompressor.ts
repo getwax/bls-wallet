@@ -162,6 +162,10 @@ export default class FallbackCompressor implements IOperationCompressor {
     return await FallbackCompressor.wrap(fallbackExpander);
   }
 
+  getExpanderAddress(): string {
+    return this.fallbackExpander.address;
+  }
+
   async compress(blsPublicKey: PublicKey, operation: Operation) {
     const result: string[] = [];
 
