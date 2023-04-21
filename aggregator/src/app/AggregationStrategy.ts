@@ -459,7 +459,9 @@ export default class AggregationStrategy {
       .callStaticSequenceWithMeasure(
         feeToken
           ? es.Call(feeToken, "balanceOf", [es.wallet.address])
-          : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]),
+          : es.Call(es.aggregatorUtilities, "ethBalanceOf", [
+            es.wallet.address,
+          ]),
         bundles.map((bundle) =>
           es.Call(
             es.verificationGateway,
