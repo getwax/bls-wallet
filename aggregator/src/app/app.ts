@@ -39,8 +39,6 @@ export default async function app(emit: (evt: AppEvent) => void) {
 
   const ethereumService = await EthereumService.create(
     emit,
-    addresses.verificationGateway,
-    addresses.utilities,
     env.PRIVATE_KEY_AGG,
   );
 

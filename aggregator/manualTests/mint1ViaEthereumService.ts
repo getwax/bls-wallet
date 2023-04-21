@@ -14,8 +14,6 @@ const ethereumService = await EthereumService.create(
   (evt) => {
     console.log(evt);
   },
-  addresses.verificationGateway,
-  addresses.utilities,
   env.PRIVATE_KEY_AGG,
 );
 
