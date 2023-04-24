@@ -224,7 +224,9 @@ export default class SafeSingletonFactory {
 
       throw new Error(
         [
-          "Insufficient funds:",
+          "Account",
+          await this.signer.getAddress(),
+          "has insufficient funds:",
           ethers.utils.formatEther(balance),
           "ETH, need (approx):",
           ethers.utils.formatEther(gasEstimate.mul(gasPrice)),
