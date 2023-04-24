@@ -5,7 +5,8 @@ import { formatEther, parseEther } from "ethers/lib/utils";
 import {
   BlsWalletWrapper,
   bundleToDto,
-  Experimental,
+  BlsProvider,
+  BlsSigner,
   MockERC20Factory,
   NetworkConfig,
 } from "../clients/src";
@@ -20,8 +21,8 @@ let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
 let privateKey: string;
-let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
-let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
+let blsProvider: BlsProvider;
+let blsSigner: BlsSigner;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
 
@@ -38,9 +39,9 @@ describe("BlsProvider", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    privateKey = await BlsSigner.getRandomBlsPrivateKey();
 
-    blsProvider = new Experimental.BlsProvider(
+    blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
@@ -149,17 +150,23 @@ describe("BlsProvider", () => {
       verySafeFee,
     );
 
+    const nonce = await blsSigner.wallet.Nonce();
+
     const firstOperation = {
-      nonce: await blsSigner.wallet.Nonce(),
+      nonce,
       actions: [...firstActionWithSafeFee],
     };
     const secondOperation = {
-      nonce: (await blsSigner.wallet.Nonce()).add(1),
+      nonce,
       actions: [...secondActionWithSafeFee],
     };
 
-    const firstBundle = blsSigner.wallet.sign(firstOperation);
-    const secondBundle = blsSigner.wallet.sign(secondOperation);
+    const firstBundle = await blsSigner.wallet.signWithGasEstimate(
+      firstOperation,
+    );
+    const secondBundle = await blsSigner.wallet.signWithGasEstimate(
+      secondOperation,
+    );
 
     const aggregatedBundle = blsSigner.wallet.blsWalletSigner.aggregate([
       firstBundle,
@@ -286,12 +293,16 @@ describe("BlsProvider", () => {
       verySafeFee,
     );
 
+    const nonce = await blsSigner.wallet.Nonce();
+
     const firstOperation = {
-      nonce: await blsSigner.wallet.Nonce(),
+      nonce,
+      gas: verySafeFee,
       actions: [...firstActionWithSafeFee],
     };
     const secondOperation = {
-      nonce: (await blsSigner.wallet.Nonce()).add(1),
+      nonce: nonce.add(1),
+      gas: verySafeFee,
       actions: [...secondActionWithSafeFee],
     };
 
@@ -439,8 +450,7 @@ describe("BlsProvider", () => {
       to: ethers.Wallet.createRandom().address,
       value: parseEther("1"),
     });
-
-    const expectedToAddress = "0x689A095B4507Bfa302eef8551F90fB322B3451c6"; // Verification Gateway address
+    const expectedToAddress = networkConfig.addresses.verificationGateway;
     const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
 
     // Act
@@ -501,7 +511,7 @@ describe("BlsProvider", () => {
       value: parseEther("1"),
     });
 
-    const expectedToAddress = "0x689A095B4507Bfa302eef8551F90fB322B3451c6"; // Verification Gateway address
+    const expectedToAddress = networkConfig.addresses.verificationGateway;
     const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
 
     // Act

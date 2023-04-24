@@ -7,7 +7,8 @@
         "verificationGateway": "0xae7DF242c589D479A5cF8fEA681736e0E0Bb1FB9",
         "blsExpander": "0x4473e39a5F33A83B81387bb5F816354F04E724a3",
         "utilities": "0x76cE3c1F2E6d87c355560fCbd28ccAcAe03f95F6",
-        "testToken": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f"
+        "testToken": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
+        "safeSingletonFactory": "n/a"
     },
     "auxiliary": {
         "chainid": 421613,

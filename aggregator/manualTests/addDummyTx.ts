@@ -17,6 +17,7 @@ const bundle: Bundle = {
   senderPublicKeys: [[dummyHex(32), dummyHex(32), dummyHex(32), dummyHex(32)]],
   operations: [{
     nonce: BigNumber.from(0),
+    gas: BigNumber.from(0),
     actions: [{
       ethValue: BigNumber.from(0),
       contractAddress: dummyHex(20),

@@ -124,7 +124,11 @@ export default class Fixture {
       fallbackCompressor,
       utilities,
       blsRegistration,
-      await initBlsWalletSigner({ chainId, privateKey }),
+      await initBlsWalletSigner({
+        chainId,
+        privateKey,
+        verificationGatewayAddress: verificationGateway.address,
+      }),
     );
   }
 

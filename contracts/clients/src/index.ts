@@ -1,5 +1,7 @@
 export { default as Aggregator } from "./Aggregator";
 export { default as BlsWalletWrapper } from "./BlsWalletWrapper";
+export { default as BlsProvider } from "./BlsProvider";
+export { default as BlsSigner } from "./BlsSigner";
 
 export { NetworkConfig, getConfig, validateConfig } from "./NetworkConfig";
 export {
@@ -41,5 +43,3 @@ export { default as Erc20Compressor } from "./Erc20Compressor";
 export { default as BlsRegistrationCompressor } from "./BlsRegistrationCompressor";
 export { default as BundleCompressor } from "./BundleCompressor";
 export * from "./encodeUtils";
-
-export * as Experimental from "./Experimental";

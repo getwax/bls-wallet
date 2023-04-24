@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "ethers";
 
-import { Experimental, BlsWalletWrapper } from "../src";
+import { BlsProvider, BlsSigner } from "../src";
 import { UncheckedBlsSigner } from "../src/BlsSigner";
 
 let aggregatorUrl: string;
@@ -11,8 +11,8 @@ let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
 let privateKey: string;
-let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
-let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
+let blsProvider: BlsProvider;
+let blsSigner: BlsSigner;
 
 describe("BlsSigner", () => {
   beforeEach(async () => {
@@ -22,12 +22,12 @@ describe("BlsSigner", () => {
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
-      chainId: 0x7a69,
+      chainId: 0x539,
     };
 
-    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    privateKey = await BlsSigner.getRandomBlsPrivateKey();
 
-    blsProvider = new Experimental.BlsProvider(
+    blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
@@ -74,13 +74,13 @@ describe("BlsSigner", () => {
 
     // Assert
     expect(provider._isProvider).to.be.true;
-    expect(provider).to.be.instanceOf(Experimental.BlsProvider);
+    expect(provider).to.be.instanceOf(BlsProvider);
   });
 
   it("should detect whether an object is a valid signer", async () => {
     // Arrange & Act
-    const validSigner = Experimental.BlsSigner.isSigner(blsSigner);
-    const invalidSigner = Experimental.BlsSigner.isSigner({});
+    const validSigner = BlsSigner.isSigner(blsSigner);
+    const invalidSigner = BlsSigner.isSigner({});
 
     // Assert
     expect(validSigner).to.be.true;

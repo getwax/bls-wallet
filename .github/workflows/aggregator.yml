@@ -73,6 +73,8 @@ jobs:
       run: yarn start &
     - working-directory: ./contracts
       run: ./scripts/wait-for-rpc.sh
+    - working-directory: ./contracts
+      run: ./scripts/wait-for-contract-deploy.sh
 
     - run: cp .env.local.example .env
     - run: deno test --allow-net --allow-env --allow-read

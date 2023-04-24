@@ -5,7 +5,7 @@ import {
   BlsWalletWrapper,
   ethers,
   MockERC20,
-  MockERC20__factory,
+  MockERC20Factory,
   NetworkConfig,
   sqlite,
 } from "../../deps.ts";
@@ -25,6 +25,7 @@ import BundleTable, { BundleRow } from "../../src/app/BundleTable.ts";
 import AggregationStrategy, {
   AggregationStrategyConfig,
 } from "../../src/app/AggregationStrategy.ts";
+import HealthService from "../../src/app/HealthService.ts";
 
 // deno-lint-ignore no-explicit-any
 type ExplicitAny = any;
@@ -74,9 +75,10 @@ export default class Fixture {
   static async create(testName: string): Promise<Fixture> {
     const netCfg = await getNetworkConfig();
     const rng = testRng.seed(testName);
+    const emit = (evt: AppEvent) => fx.emit(evt);
 
     const ethereumService = await EthereumService.create(
-      (evt) => fx.emit(evt),
+      emit,
       netCfg.addresses.verificationGateway,
       netCfg.addresses.utilities,
       env.PRIVATE_KEY_AGG,
@@ -95,6 +97,7 @@ export default class Fixture {
         ethereumService.blsWalletSigner,
         ethereumService,
         aggregationStrategyDefaultTestConfig,
+        emit,
       ),
       netCfg,
     );
@@ -131,7 +134,7 @@ export default class Fixture {
     public aggregationStrategy: AggregationStrategy,
     public networkConfig: NetworkConfig,
   ) {
-    this.testErc20 = MockERC20__factory.connect(
+    this.testErc20 = MockERC20Factory.connect(
       this.networkConfig.addresses.testToken,
       this.ethereumService.wallet.provider,
     );
@@ -171,6 +174,7 @@ export default class Fixture {
           this.blsWalletSigner,
           this.ethereumService,
           aggregationStrategyConfig,
+          this.emit,
         );
 
     const bundleService = new BundleService(
@@ -245,7 +249,7 @@ export default class Fixture {
         const topUp = BigNumber.from(tokenBalance).sub(balance);
 
         if (topUp.gt(0)) {
-          return wallet.sign({
+          return await wallet.signWithGasEstimate({
             nonce: (await wallet.Nonce()).add(i),
             actions: [
               {
@@ -261,7 +265,7 @@ export default class Fixture {
         }
 
         if (topUp.lt(0)) {
-          return wallet.sign({
+          return await wallet.signWithGasEstimate({
             nonce: (await wallet.Nonce()).add(i),
             actions: [
               {
@@ -291,6 +295,12 @@ export default class Fixture {
     }
 
     return wallets;
+  }
+  
+  createHealthCheckService() {
+    const healthCheckService = new HealthService();
+    
+    return healthCheckService;
   }
 
   async cleanup() {

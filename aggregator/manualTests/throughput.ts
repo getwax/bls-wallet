@@ -6,7 +6,7 @@ import {
   BlsWalletWrapper,
   delay,
   ethers,
-  MockERC20__factory,
+  MockERC20Factory,
 } from "../deps.ts";
 
 import * as env from "../test/env.ts";
@@ -43,7 +43,7 @@ const { addresses } = await getNetworkConfig();
 const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 const adminWallet = AdminWallet(provider);
 
-const testErc20 = MockERC20__factory.connect(addresses.testToken, provider);
+const testErc20 = MockERC20Factory.connect(addresses.testToken, provider);
 
 const client = new AggregatorClient(env.ORIGIN);
 
@@ -56,7 +56,7 @@ const [recvWallet, ...sendWallets] = await Promise.all(
 log("Checking/minting test tokens...");
 
 for (const wallet of sendWallets) {
-  const testErc20 = MockERC20__factory.connect(
+  const testErc20 = MockERC20Factory.connect(
     addresses.testToken,
     adminWallet,
   );
@@ -90,7 +90,7 @@ let txsAdded = 0;
 let txsCompleted = 0;
 let sendWalletIndex = 0;
 
-pollingLoop(() => {
+pollingLoop(async () => {
   // Send transactions
 
   const lead = txsSent - txsCompleted;
@@ -102,7 +102,7 @@ pollingLoop(() => {
     const nonce = nextNonceMap.get(sendWallet)!;
     nextNonceMap.set(sendWallet, nonce.add(1));
 
-    const bundle = sendWallet.sign({
+    const bundle = await sendWallet.signWithGasEstimate({
       nonce,
       actions: [{
         ethValue: 0,

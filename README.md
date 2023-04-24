@@ -11,6 +11,7 @@ You can watch a full end-to-end demo of the project [here](https://www.youtube.c
 - See an [overview](./docs/system_overview.md) of BLS Wallet & how the components work together.
 - Use BLS Wallet in [a browser/NodeJS/Deno app](./docs/use_bls_wallet_clients.md).
 - Use BLS Wallet in [your L2 dApp](./docs/use_bls_wallet_dapp.md) for cheaper, multi action transactions.
+- Use BLS Wallet components and features with an [ethers.js provider and signer](./use_bls_provider.md)
 
 ### Setup your development environment
 

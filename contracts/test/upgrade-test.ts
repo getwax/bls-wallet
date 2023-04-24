@@ -38,6 +38,7 @@ const expectOperationFailure = (
 
 describe("Upgrade", async function () {
   const safetyDelaySeconds = 7 * 24 * 60 * 60;
+  const signatureExpiryOffsetSeconds = 1200;
   let fx: Fixture;
   beforeEach(async () => {
     fx = await Fixture.getSingleton();
@@ -96,14 +97,22 @@ describe("Upgrade", async function () {
     const walletAddress = walletOldVg.address;
     const blsSecret = walletOldVg.blsWalletSigner.privateKey;
 
-    const wallet = await BlsWalletWrapper.connect(
-      blsSecret,
-      fx.verificationGateway.address,
-      fx.verificationGateway.provider,
-    );
     // Sign simple address message
-    const addressMessage = solidityPack(["address"], [walletAddress]);
-    const addressSignature = wallet.signMessage(addressMessage);
+    const walletNewVg = await BlsWalletWrapper.connect(
+      blsSecret,
+      vg2.address,
+      vg2.provider,
+    );
+
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryOffsetSeconds;
+    const addressMessage = solidityPack(
+      ["address", "uint256"],
+      [walletAddress, signatureExpiryTimestamp],
+    );
+    const addressSignature = walletNewVg.signMessage(addressMessage);
 
     const proxyAdmin2Address = await vg2.walletProxyAdmin();
     // Get admin action to change proxy
@@ -133,6 +142,7 @@ describe("Upgrade", async function () {
       encodedFunction: vg2.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         walletOldVg.PublicKey(),
+        signatureExpiryTimestamp,
       ]),
     };
 
@@ -259,10 +269,11 @@ describe("Upgrade", async function () {
       vg2.address,
     );
 
+    await walletNewVg.syncWallet(vg2);
     // Check new gateway has wallet via static call through new gateway
     const bundleResult = await vg2.callStatic.processBundle(
       fx.blsWalletSigner.aggregate([
-        walletOldVg.sign({
+        walletNewVg.sign({
           nonce: BigNumber.from(2),
           gas: BigNumber.from(30_000_000),
           actions: [
@@ -320,7 +331,14 @@ describe("Upgrade", async function () {
     );
 
     // wallet 2 bls key signs message containing address of wallet 1
-    const addressMessage = solidityPack(["address"], [wallet1.address]);
+    const signatureExpiryTimestamp =
+      (await fx.provider.getBlock("latest")).timestamp +
+      safetyDelaySeconds +
+      signatureExpiryOffsetSeconds;
+    const addressMessage = solidityPack(
+      ["address", "uint256"],
+      [wallet1.address, signatureExpiryTimestamp],
+    );
     const addressSignature = wallet2.signMessage(addressMessage);
 
     const setExternalWalletAction: ActionData = {
@@ -329,6 +347,7 @@ describe("Upgrade", async function () {
       encodedFunction: vg1.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         wallet2.PublicKey(),
+        signatureExpiryTimestamp,
       ]),
     };
 
@@ -371,6 +390,7 @@ describe("Upgrade", async function () {
             contractAddress: vg1.address,
             encodedFunction: vg1.interface.encodeFunctionData(
               "setPendingBLSKeyForWallet",
+              [signatureExpiryTimestamp],
             ),
           },
         ],

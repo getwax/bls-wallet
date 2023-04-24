@@ -8,7 +8,7 @@ Fixture.test("EthereumService submits mint action", async (fx) => {
   const [wallet] = await fx.setupWallets(1);
   const startBalance = await fx.testErc20.balanceOf(wallet.address);
 
-  const bundle = wallet.sign({
+  const bundle = await wallet.signWithGasEstimate({
     nonce: await wallet.Nonce(),
     actions: [
       {
@@ -32,7 +32,7 @@ Fixture.test("EthereumService submits mint action", async (fx) => {
 Fixture.test("EthereumService submits transfer action", async (fx) => {
   const wallets = await fx.setupWallets(2);
 
-  const bundle = wallets[0].sign({
+  const bundle = await wallets[0].signWithGasEstimate({
     nonce: await wallets[0].Nonce(),
     actions: [
       {
@@ -62,6 +62,7 @@ Fixture.test("EthereumService submits aggregated bundle", async (fx) => {
   const bundle = fx.blsWalletSigner.aggregate([
     wallet.sign({
       nonce: walletNonce,
+      gas: 1_000_000,
       actions: [
         {
           ethValue: 0,
@@ -75,6 +76,7 @@ Fixture.test("EthereumService submits aggregated bundle", async (fx) => {
     }),
     wallet.sign({
       nonce: walletNonce.add(1),
+      gas: 1_000_000,
       actions: [
         {
           ethValue: 0,
@@ -102,21 +104,24 @@ Fixture.test("EthereumService submits large aggregate mint bundle", async (fx) =
   const size = 11;
 
   const bundle = fx.blsWalletSigner.aggregate(
-    Range(size).map((i) =>
-      wallet.sign({
-        nonce: walletNonce.add(i),
-        actions: [
-          // TODO (merge-ok): Add single operation multi-action variation of this test
-          {
-            ethValue: 0,
-            contractAddress: fx.testErc20.address,
-            encodedFunction: fx.testErc20.interface.encodeFunctionData(
-              "mint",
-              [wallet.address, 1],
-            ),
-          },
-        ],
-      })
+    await Promise.all(
+      Range(size).map((i) =>
+        wallet.sign({
+          nonce: walletNonce.add(i),
+          gas: 1_000_000,
+          actions: [
+            // TODO (merge-ok): Add single operation multi-action variation of this test
+            {
+              ethValue: 0,
+              contractAddress: fx.testErc20.address,
+              encodedFunction: fx.testErc20.interface.encodeFunctionData(
+                "mint",
+                [wallet.address, 1],
+              ),
+            },
+          ],
+        })
+      ),
     ),
   );
 
@@ -137,6 +142,7 @@ Fixture.test("EthereumService sends large aggregate transfer bundle", async (fx)
     Range(size).map((i) =>
       sendWallet.sign({
         nonce: sendWalletNonce.add(i),
+        gas: 1_000_000,
         actions: [
           {
             ethValue: 0,
@@ -170,6 +176,7 @@ Fixture.test(
         Range(5).map((i) =>
           wallet.sign({
             nonce: walletNonce.add(i),
+            gas: 1_000_000,
             actions: [
               {
                 ethValue: 0,
@@ -238,7 +245,7 @@ Fixture.test("callStaticSequence - correctly measures transfer", async (fx) => {
     value: transferAmount,
   })).wait();
 
-  const bundle = sendWallet.sign({
+  const bundle = await sendWallet.signWithGasEstimate({
     nonce: await sendWallet.Nonce(),
     actions: [
       {

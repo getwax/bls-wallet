@@ -1,9 +1,8 @@
 import { BundleDto } from "../../deps.ts";
 
-type ParseResult<T> = (
+type ParseResult<T> =
   | { success: T }
-  | { failures: string[] }
-);
+  | { failures: string[] };
 
 type Parser<T> = (value: unknown) => ParseResult<T>;
 
@@ -96,14 +95,12 @@ export function parseArray<T>(
   };
 }
 
-type DataTuple<ParserTuple> = (
-  ParserTuple extends Parser<unknown>[] ? (
+type DataTuple<ParserTuple> = ParserTuple extends Parser<unknown>[] ? (
     ParserTuple extends [Parser<infer T>, ...infer Tail]
       ? [T, ...DataTuple<Tail>]
       : []
   )
-    : never
-);
+  : never;
 
 export function parseTuple<ParserTuple extends Parser<unknown>[]>(
   ...parserTuple: ParserTuple
@@ -188,6 +185,7 @@ const parseActionDataDto: Parser<ActionDataDto> = parseObject({
 
 const parseOperationDto: Parser<OperationDto> = parseObject({
   nonce: parseHex(),
+  gas: parseHex(),
   actions: parseArray(parseActionDataDto),
 });
 

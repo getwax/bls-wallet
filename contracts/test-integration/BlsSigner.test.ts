@@ -10,12 +10,12 @@ import {
 import sinon from "sinon";
 
 import {
-  Experimental,
+  BlsProvider,
+  BlsSigner,
   ActionData,
   BlsWalletWrapper,
   NetworkConfig,
   MockERC20Factory,
-  Operation,
 } from "../clients/src";
 import getNetworkConfig from "../shared/helpers/getNetworkConfig";
 import addSafetyPremiumToFee from "../clients/src/helpers/addSafetyDivisorToFee";
@@ -29,8 +29,8 @@ let rpcUrl: string;
 let network: ethers.providers.Networkish;
 
 let privateKey: string;
-let blsProvider: InstanceType<typeof Experimental.BlsProvider>;
-let blsSigner: InstanceType<typeof Experimental.BlsSigner>;
+let blsProvider: BlsProvider;
+let blsSigner: BlsSigner;
 
 let regularProvider: ethers.providers.JsonRpcProvider;
 let fundedWallet: ethers.Wallet;
@@ -48,9 +48,9 @@ describe("BlsSigner", () => {
       chainId: 0x539, // 1337
     };
 
-    privateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    privateKey = await BlsSigner.getRandomBlsPrivateKey();
 
-    blsProvider = new Experimental.BlsProvider(
+    blsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
@@ -105,7 +105,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 
@@ -282,7 +282,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 
@@ -424,7 +424,7 @@ describe("BlsSigner", () => {
 
   it("should throw an error when invalid private key is supplied", async () => {
     // Arrange
-    const newBlsProvider = new Experimental.BlsProvider(
+    const newBlsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
@@ -565,7 +565,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 
@@ -596,7 +596,6 @@ describe("BlsSigner", () => {
       verificationGateway,
       blsProvider,
     );
-    const walletAddress = wallet.address;
 
     const expectedNonce = await BlsWalletWrapper.Nonce(
       wallet.PublicKey(),
@@ -608,9 +607,8 @@ describe("BlsSigner", () => {
       blsProvider._addFeePaymentActionForFeeEstimation(expectedActions);
 
     const expectedFeeEstimate = await blsProvider.aggregator.estimateFee(
-      blsSigner.wallet.sign({
+      await blsSigner.wallet.signWithGasEstimate({
         nonce: expectedNonce,
-        gas: BigNumber.from(30_000_000),
         actions: [...actionsWithFeePaymentAction],
       }),
     );
@@ -624,16 +622,10 @@ describe("BlsSigner", () => {
       safeFee,
     );
 
-    const op: Omit<Operation, "gas"> = {
+    const expectedBundle = await wallet.signWithGasEstimate({
       nonce: expectedNonce,
       actions: [...actionsWithSafeFee],
-    };
-    const gas = await wallet.estimateGas(op);
-
-    const expectedBundle = wallet.blsWalletSigner.sign(
-      { ...op, gas },
-      walletAddress,
-    );
+    });
 
     // Act
     const signedTransaction = await blsSigner.signTransactionBatch({
@@ -663,7 +655,7 @@ describe("BlsSigner", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      'invalid BigNumber value (argument="value", value=undefined, code=INVALID_ARGUMENT, version=bignumber/5.7.0)',
+      'value out-of-bounds (argument="ethValue", value="-1000000000000000000", code=INVALID_ARGUMENT, version=abi/5.7.0)',
     );
   });
 
@@ -802,7 +794,7 @@ describe("BlsSigner", () => {
 
   it("should await the init promise when connecting to an unchecked bls signer", async () => {
     // Arrange
-    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const newPrivateKey = await BlsSigner.getRandomBlsPrivateKey();
     const newBlsSigner = blsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
@@ -830,14 +822,14 @@ describe("BlsSigner", () => {
 
   it("should get the transaction receipt when using a new provider and connecting to an unchecked bls signer", async () => {
     // Arrange & Act
-    const newBlsProvider = new Experimental.BlsProvider(
+    const newBlsProvider = new BlsProvider(
       aggregatorUrl,
       verificationGateway,
       aggregatorUtilities,
       rpcUrl,
       network,
     );
-    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
+    const newPrivateKey = await BlsSigner.getRandomBlsPrivateKey();
     const newBlsSigner = newBlsProvider.getSigner(newPrivateKey);
     const uncheckedBlsSigner = newBlsSigner.connectUnchecked();
 
@@ -992,7 +984,7 @@ describe("BlsSigner", () => {
 
   it("should return the result of call using the transactionRequest, with the signer account address being used as the from field", async () => {
     // Arrange
-    const spy = chai.spy.on(Experimental.BlsProvider.prototype, "call");
+    const spy = chai.spy.on(BlsProvider.prototype, "call");
 
     const testERC20 = MockERC20Factory.connect(
       networkConfig.addresses.testToken,
@@ -1019,7 +1011,7 @@ describe("BlsSigner", () => {
 
   it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
     // Arrange
-    const spy = chai.spy.on(Experimental.BlsProvider.prototype, "estimateGas");
+    const spy = chai.spy.on(BlsProvider.prototype, "estimateGas");
     const recipient = ethers.Wallet.createRandom().address;
 
     // Act

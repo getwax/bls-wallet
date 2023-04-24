@@ -32,6 +32,15 @@ type AppEvent =
       reason?: string;
     };
   }
+  | {
+    type: "aggregate-bundle-exceeds-max-gas";
+    data: {
+      hash: string;
+      gasEstimate: number;
+      aggregateGasEstimate: number;
+      maxGasPerBundle: number;
+    };
+  }
   | { type: "unprofitable-despite-breakeven-operations" }
   | {
     type: "submission-attempt";
@@ -87,5 +96,6 @@ type AppEvent =
       duration: number;
     };
   };
+
 
 export default AppEvent;

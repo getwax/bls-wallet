@@ -100,6 +100,7 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 
 - pull latest from `main` and run the setup script from the root directory `./setup.ts`.
 - Restart the node and redeploy contracts
+- Delete `aggregator.sqlite` in `./aggregator`. This is the local DB which will get regenerated when the aggregator is started.
 - Restart the aggregator and add the "-r" flag to the command e.g `./programs/aggregator.ts -r`.
 - Reset the Quill extension in your browser if you're developing with Quill. You can do this by removing the extension and then re-adding via "Load unpacked" again. Or run `debug.reset();` twice in the background page console.
 
@@ -107,6 +108,9 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 
 - In general, the bundle or submission issues we've encountered have been us misconfiguring the data in the bundle or not configuring the aggregator properly.
 - Be careful using Hardhat accounts 0 and 1 in your code when running a local aggregator. This is because the local aggregator config uses the same key pairs as Hardhat accounts 0 and 1 by default. You can get around this by not using accounts 0 and 1 elsewhere, or changing the default accounts that the aggregator uses locally.
+- When packages are updated in the aggregator, you'll need to reload the deno cache as the setup script won't do this for you. You can do this with `deno cache -r deps.ts` in the `./aggregator` directory.
+- If running Quill against a local node, and if you're using MetaMask to fund Quill, make sure the MetaMask 
+localhost network  uses chainId `1337`.
 
 ### Tests
 

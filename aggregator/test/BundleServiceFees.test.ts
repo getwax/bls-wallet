@@ -37,7 +37,7 @@ function approveAndSendTokensToOrigin(
   fx: Fixture,
   nonce: BigNumber,
   amount: BigNumber,
-): Operation {
+): Omit<Operation, "gas"> {
   const es = fx.ethereumService;
 
   return {
@@ -68,7 +68,7 @@ Fixture.test("does not submit bundle with insufficient fee", async (fx) => {
 
   const [wallet] = await fx.setupWallets(1);
 
-  const bundle = wallet.sign({
+  const bundle = await wallet.signWithGasEstimate({
     nonce: await wallet.Nonce(),
     actions: [
       {
@@ -108,8 +108,9 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
     tokenBalance: oneToken,
   });
 
-  const bundle = wallet.sign(
+  const bundle = await wallet.signWithGasEstimate(
     approveAndSendTokensToOrigin(fx, await wallet.Nonce(), oneToken),
+    0.1,
   );
 
   const bundleResponse = await bundleService.add(bundle);
@@ -120,7 +121,7 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
     oneToken,
   );
 
-  assertEquals(await bundleService.bundleTable.count(), 1);
+  assertEquals(bundleService.bundleTable.count(), 1);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);
@@ -129,7 +130,7 @@ Fixture.test("submits bundle with sufficient token fee", async (fx) => {
   if ("failures" in bundleResponse) {
     throw new Error("Bundle failed to be created");
   }
-  const bundleRow = await bundleService.bundleTable.findBundle(
+  const bundleRow = bundleService.bundleTable.findBundle(
     bundleResponse.hash,
   );
 
@@ -158,7 +159,7 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
   })).wait();
 
   const estimation = await bundleService.aggregationStrategy.estimateFee(
-    wallet.sign({
+    await wallet.signWithGasEstimate({
       nonce,
       actions: [
         {
@@ -183,7 +184,7 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
       .sub(1), // Already sent 1 wei before
   })).wait();
 
-  const bundle = wallet.sign({
+  const bundle = await wallet.signWithGasEstimate({
     nonce: await wallet.Nonce(),
     actions: [
       {
@@ -245,8 +246,9 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
     wallet: BlsWalletWrapper,
     fee: BigNumber,
   ) {
-    const bundle = wallet.sign(
+    const bundle = await wallet.signWithGasEstimate(
       approveAndSendTokensToOrigin(fx, nonce, fee),
+      0.1,
     );
 
     assertBundleSucceeds(await bundleService.add(bundle));
@@ -275,7 +277,7 @@ Fixture.test("submits 9/10 bundles when 7th has insufficient fee", async (fx) =>
   // Restore this value now that all the bundles are added together
   bundleService.config.breakevenOperationCount = breakevenOperationCount;
 
-  assertEquals(await bundleService.bundleTable.count(), 10);
+  assertEquals(bundleService.bundleTable.count(), 10);
 
   fx.clock.advance(5000);
   await bundleService.submissionTimer.waitForCompletedSubmissions(1);

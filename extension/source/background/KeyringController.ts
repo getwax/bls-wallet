@@ -1,8 +1,7 @@
 import {
   BlsWalletWrapper,
   Aggregator,
-  // eslint-disable-next-line camelcase
-  VerificationGateway__factory,
+  VerificationGatewayFactory,
 } from 'bls-wallet-clients';
 import { ethers } from 'ethers';
 import { keccak256 } from 'ethers/lib/utils';
@@ -286,25 +285,38 @@ export default class KeyringController {
     recoverySalt: string,
     signerWalletPrivateKey: string,
   ): Promise<string> {
-    const signerWallet = await this.BlsWalletWrapper(signerWalletPrivateKey);
+    const [
+      signerWallet,
+      // Create new private key for the wallet we are recovering.
+      newPrivateKey,
+      network,
+      provider,
+    ] = await Promise.all([
+      this.BlsWalletWrapper(signerWalletPrivateKey),
+      BlsWalletWrapper.getRandomBlsPrivateKey(),
+      this.network.read(),
+      this.ethersProvider.read(),
+    ]);
 
-    // Create new private key for the wallet we are recovering.
-    const newPrivateKey = await BlsWalletWrapper.getRandomBlsPrivateKey();
-
-    const network = await this.network.read();
     const netCfg = getNetworkConfig(network, this.multiNetworkConfig);
-
-    // eslint-disable-next-line camelcase
-    const verificationGatewayContract = VerificationGateway__factory.connect(
+    const verificationGatewayContract = VerificationGatewayFactory.connect(
       netCfg.addresses.verificationGateway,
-      await this.ethersProvider.read(),
+      provider,
     );
+
+    const latestBlock = await provider.getBlock('latest');
+    const signatureExpiryOffsetSeconds = 20 * 60; // 20 minutes
+    const safetyDelaySeconds = 7 * 24 * 60 * 60; // one week
+
+    const signatureExpiryTimestamp =
+      latestBlock.timestamp + safetyDelaySeconds + signatureExpiryOffsetSeconds;
 
     const bundle = await signerWallet.getRecoverWalletBundle(
       recoveryWalletAddress,
       newPrivateKey,
       recoverySalt,
       verificationGatewayContract,
+      signatureExpiryTimestamp,
     );
 
     const { aggregatorUrl } = network;

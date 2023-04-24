@@ -74,6 +74,7 @@ export default class BlsWalletWrapper {
     const blsWalletSigner = await this.#BlsWalletSigner(
       signerOrProvider,
       privateKey,
+      verificationGatewayAddress,
     );
 
     const verificationGateway = VerificationGatewayFactory.connect(
@@ -146,6 +147,7 @@ export default class BlsWalletWrapper {
     );
     const blsWalletSigner = await initBlsWalletSigner({
       chainId: (await verificationGateway.provider.getNetwork()).chainId,
+      verificationGatewayAddress,
       privateKey,
     });
 
@@ -328,13 +330,17 @@ export default class BlsWalletWrapper {
     newPrivateKey: string,
     recoverySalt: string,
     verificationGateway: VerificationGateway,
+    signatureExpiryTimestamp: number,
   ): Promise<Bundle> {
     const updatedWallet = await BlsWalletWrapper.connect(
       newPrivateKey,
       verificationGateway.address,
       verificationGateway.provider,
     );
-    const addressMessage = solidityPack(["address"], [recoveryAddress]);
+    const addressMessage = solidityPack(
+      ["address", "uint256"],
+      [recoveryAddress, signatureExpiryTimestamp],
+    );
     const addressSignature = updatedWallet.signMessage(addressMessage);
 
     const recoveryWalletHash = await verificationGateway.hashFromWallet(
@@ -355,6 +361,7 @@ export default class BlsWalletWrapper {
               recoveryWalletHash,
               saltHash,
               updatedWallet.PublicKey(),
+              signatureExpiryTimestamp,
             ],
           ),
         },
@@ -365,36 +372,18 @@ export default class BlsWalletWrapper {
   static async #BlsWalletSigner(
     signerOrProvider: SignerOrProvider,
     privateKey: string,
+    verificationGatewayAddress: string,
   ): Promise<BlsWalletSigner> {
     const chainId =
       "getChainId" in signerOrProvider
         ? await signerOrProvider.getChainId()
         : (await signerOrProvider.getNetwork()).chainId;
 
-    return await initBlsWalletSigner({ chainId, privateKey });
-  }
-
-  /**
-   * Binds the BlsWalletSigner instance to a new private key and chainId
-   *
-   * @returns The updated BlsWalletSigner object
-   */
-  async setBlsWalletSigner(
-    signerOrProvider: SignerOrProvider,
-    privateKey: string,
-  ): Promise<BlsWalletSigner> {
-    const chainId =
-      "getChainId" in signerOrProvider
-        ? await signerOrProvider.getChainId()
-        : (await signerOrProvider.getNetwork()).chainId;
-
-    const newBlsWalletSigner = await initBlsWalletSigner({
+    return await initBlsWalletSigner({
       chainId,
       privateKey,
+      verificationGatewayAddress,
     });
-
-    this.blsWalletSigner = newBlsWalletSigner;
-    return newBlsWalletSigner;
   }
 
   // Calculates the expected address the wallet will be created at

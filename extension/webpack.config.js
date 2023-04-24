@@ -86,6 +86,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.json'],
     fallback: {
+      assert: require.resolve('assert-browserify'),
       stream: require.resolve('stream-browserify'),
       crypto: require.resolve('crypto-browserify'),
     },
