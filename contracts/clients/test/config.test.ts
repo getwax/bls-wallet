@@ -20,7 +20,8 @@ const getSingleConfig = (networkKey: string): NetworkConfig => ({
   },
   auxiliary: {
     chainid: 123,
-    domain: getValue(networkKey, "domain"),
+    walletDomain: getValue(networkKey, "walletDomain"),
+    bundleDomain: getValue(networkKey, "bundleDomain"),
     genesisBlock: 456,
     deployedBy: getValue(networkKey, "deployedBy"),
     version: getValue(networkKey, "version"),

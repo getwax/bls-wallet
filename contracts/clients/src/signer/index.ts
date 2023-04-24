@@ -32,8 +32,23 @@ export async function initBlsWalletSigner({
   // properly initialized for all use cases, not just signing.
   const signerFactory = await signer.BlsSignerFactory.new();
 
-  const bundleDomain = getDomain(chainId, verificationGatewayAddress, "Bundle");
-  const walletDomain = getDomain(chainId, verificationGatewayAddress, "Wallet");
+  const domainName = "BLS_WALLET";
+  const domainVersion = "1";
+
+  const bundleDomain = getDomain(
+    domainName,
+    domainVersion,
+    chainId,
+    verificationGatewayAddress,
+    "Bundle",
+  );
+  const walletDomain = getDomain(
+    domainName,
+    domainVersion,
+    chainId,
+    verificationGatewayAddress,
+    "Wallet",
+  );
 
   return {
     aggregate,
