@@ -164,11 +164,12 @@ async function deployExpanders(
     salt,
   );
 
-  await Promise.all([
-    registerExpanderIfNeeded(blsExpanderDelegator, fallbackExpander.address),
-    registerExpanderIfNeeded(blsExpanderDelegator, blsRegistration.address),
-    registerExpanderIfNeeded(blsExpanderDelegator, erc20Expander.address),
-  ]);
+  await registerExpanderIfNeeded(
+    blsExpanderDelegator,
+    fallbackExpander.address,
+  );
+  await registerExpanderIfNeeded(blsExpanderDelegator, blsRegistration.address);
+  await registerExpanderIfNeeded(blsExpanderDelegator, erc20Expander.address);
 
   return {
     blsExpander,
