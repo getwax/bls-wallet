@@ -79,8 +79,8 @@ async function main() {
     },
     auxiliary: {
       chainid,
-      walletDomain: ethers.utils.toUtf8String(walletDomain),
-      bundleDomain: ethers.utils.toUtf8String(bundleDomain),
+      walletDomain: ethers.utils.hexlify(walletDomain),
+      bundleDomain: ethers.utils.hexlify(bundleDomain),
       genesisBlock,
       deployedBy: signer.address,
       version,
