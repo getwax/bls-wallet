@@ -67,7 +67,7 @@ describe("Expanders", async function () {
     */
     expect(hexLen(compressedBundle)).to.eq(223);
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
       0,
@@ -142,7 +142,7 @@ describe("Expanders", async function () {
     */
     expect(hexLen(compressedBundle)).to.eq(81);
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
       0,
@@ -229,7 +229,7 @@ describe("Expanders", async function () {
     expect(hexLen(compressedBundle)).to.eq(83);
     // Just 2 extra bytes for the tx.origin payment
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
       0,
@@ -290,7 +290,7 @@ describe("Expanders", async function () {
     const compressedBundle = await fx.bundleCompressor.compress(bundle);
     expect(hexLen(compressedBundle)).to.eq(200);
 
-    await receiptOf(fx.processCompressedBundleWithExtraGas(compressedBundle));
+    await fx.processCompressedBundleWithExtraGas(compressedBundle);
 
     await expect(
       fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
@@ -364,7 +364,7 @@ describe("Expanders", async function () {
     const compressedBundle = await fx.bundleCompressor.compress(bundle);
     expect(hexLen(compressedBundle)).to.eq(201);
 
-    await receiptOf(fx.processCompressedBundleWithExtraGas(compressedBundle));
+    await fx.processCompressedBundleWithExtraGas(compressedBundle);
 
     await expect(
       fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
@@ -499,7 +499,8 @@ describe("Expanders", async function () {
       13e9fe34f0ec3465d44718cb6f93697dfbb0000a54287b3acaea5594f36b9aa1
               - signature
     */
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle012));
+
+    await fx.processCompressedBundle(compressedBundle012);
 
     await expect(fx.provider.getBalance(wallets[0].address)).to.eventually.eq(
       ethers.utils
@@ -588,7 +589,7 @@ describe("Expanders", async function () {
 
     const compressedBundle = await fx.bundleCompressor.compress(bundle);
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(erc20.balanceOf(sendWallet.address)).to.eventually.eq(
       ethers.utils.parseEther("0.9"),
@@ -666,7 +667,7 @@ describe("Expanders", async function () {
       erc20.allowance(sendWallet.address, recvWallet.address),
     ).to.eventually.eq(0);
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(
       erc20.allowance(sendWallet.address, recvWallet.address),

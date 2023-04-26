@@ -12,6 +12,7 @@ import {
   BLSRegistration__factory as BLSRegistrationFactory,
   BNPairingPrecompileCostEstimator__factory as BNPairingPrecompileCostEstimatorFactory,
   ERC20Expander__factory as ERC20ExpanderFactory,
+  ExpanderEntryPoint__factory as ExpanderEntryPointFactory,
   FallbackExpander__factory as FallbackExpanderFactory,
   VerificationGateway__factory as VerificationGatewayFactory,
 } from "../typechain-types";
@@ -137,6 +138,14 @@ export default class ContractsConnector {
         this.AddressRegistry().then((c) => c.address),
         this.AggregatorUtilities().then((c) => c.address),
       ]),
+      this.salt,
+    ),
+  );
+
+  ExpanderEntryPoint = once(async () =>
+    this.factoryViewer.connectOrThrow(
+      ExpanderEntryPointFactory,
+      [(await this.BLSExpanderDelegator()).address],
       this.salt,
     ),
   );

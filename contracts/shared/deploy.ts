@@ -22,6 +22,8 @@ import {
   BLSRegistration,
   ERC20Expander,
   ERC20Expander__factory as ERC20ExpanderFactory,
+  ExpanderEntryPoint,
+  ExpanderEntryPoint__factory as ExpanderEntryPointFactory,
 } from "../typechain-types";
 
 import { SafeSingletonFactory } from "../clients/src";
@@ -40,6 +42,7 @@ export type Deployment = {
   blsExpanderDelegator: BLSExpanderDelegator;
   aggregatorUtilities: AggregatorUtilities;
   blsRegistration: BLSRegistration;
+  expanderEntryPoint: ExpanderEntryPoint;
 };
 
 export default async function deploy(
@@ -89,6 +92,12 @@ export default async function deploy(
     salt,
   );
 
+  const expanderEntryPoint = await singletonFactory.connectOrDeploy(
+    ExpanderEntryPointFactory,
+    [blsExpanderDelegator.address],
+    salt,
+  );
+
   return {
     singletonFactory,
     precompileCostEstimator,
@@ -102,6 +111,7 @@ export default async function deploy(
     blsExpanderDelegator,
     aggregatorUtilities,
     blsRegistration,
+    expanderEntryPoint,
   };
 }
 
