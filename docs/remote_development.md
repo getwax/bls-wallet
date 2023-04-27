@@ -94,6 +94,10 @@ PRIVATE_KEY_ADMIN=PK1
 ...
 ```
 
+> **Note: The .env file in the aggregator needs to be updated everytime the network changes from local to remote and vice-versa.**
+
+> **.env.example** for **remote**
+
 `PRIVATE_KEY_AGG` & `PRIVATE_KEY_ADMIN` are private keys for funded accounts on your network/chain. See the aggregator [environment variables table](../aggregator/README.md#environment-variables) for a detailed breakdown of each env property.
 
 ## Extension
