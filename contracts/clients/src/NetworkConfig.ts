@@ -23,11 +23,15 @@ export type NetworkConfig = {
   auxiliary: {
     chainid: number;
     /**
-     * Domain used for BLS signing
+     * Domain used for signing BLS Proof of Possession messages
      */
-    domain: string;
+    walletDomain: string;
     /**
-     * Starting block contracts began dpeloyment at
+     * Domain used for signing BLS Bundle messages
+     */
+    bundleDomain: string;
+    /**
+     * Starting block contracts began deployment at
      */
     genesisBlock: number;
     /**
@@ -64,7 +68,8 @@ export function validateConfig(cfg: UnvalidatedConfig): NetworkConfig {
     },
     auxiliary: {
       chainid: assertNumber(cfg.auxiliary.chainid),
-      domain: assertString(cfg.auxiliary.domain),
+      walletDomain: assertString(cfg.auxiliary.walletDomain),
+      bundleDomain: assertString(cfg.auxiliary.bundleDomain),
       genesisBlock: assertNumber(cfg.auxiliary.genesisBlock),
       deployedBy: assertString(cfg.auxiliary.deployedBy),
       version: assertString(cfg.auxiliary.version),
