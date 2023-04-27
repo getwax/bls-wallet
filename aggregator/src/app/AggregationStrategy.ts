@@ -683,24 +683,22 @@ export default class AggregationStrategy {
 
     const bundleOverheadGas = oneOpGasEstimate.sub(opMarginalGasEstimate);
 
-    const [oneOpTx, twoOpTx] = await Promise.all([
-      es.bundleCompressor.blsExpanderDelegator.populateTransaction.run(
-        await es.bundleCompressor.compress(bundle1),
-      ),
-      es.bundleCompressor.blsExpanderDelegator.populateTransaction.run(
-        await es.bundleCompressor.compress(
-          this.blsWalletSigner.aggregate([bundle1, bundle2]),
-        ),
+    const [compressedBundle1, compressedBundle12] = await Promise.all([
+      es.bundleCompressor.compress(bundle1),
+      es.bundleCompressor.compress(
+        this.blsWalletSigner.aggregate([bundle1, bundle2]),
       ),
     ]);
 
     const [oneOpLen, twoOpLen] = await Promise.all([
-      es.wallet.signTransaction(oneOpTx).then((tx) =>
-        ethers.utils.hexDataLength(tx)
-      ),
-      es.wallet.signTransaction(twoOpTx).then((tx) =>
-        ethers.utils.hexDataLength(tx)
-      ),
+      es.wallet.signTransaction({
+        to: es.expanderEntryPoint.address,
+        data: compressedBundle1,
+      }).then((tx) => ethers.utils.hexDataLength(tx)),
+      es.wallet.signTransaction({
+        to: es.expanderEntryPoint.address,
+        data: compressedBundle12,
+      }).then((tx) => ethers.utils.hexDataLength(tx)),
     ]);
 
     const opMarginalLen = twoOpLen - oneOpLen;
