@@ -118,7 +118,7 @@ describe("OperationResults", () => {
       } as ContractReceipt;
 
       expect(() => getOperationResults(txnReceipt)).to.throw(
-        `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
+        `no events found in transaction ${txnReceipt.transactionHash}, are you sure it is a ContractReceipt from a VerificationGateway.processBundle transaction?`,
       );
     });
 

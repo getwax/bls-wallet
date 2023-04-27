@@ -117,6 +117,12 @@ const getError = (
 export const getOperationResults = (
   txnReceipt: ContractReceipt,
 ): OperationResult[] => {
+  if (!txnReceipt.events?.length) {
+    throw new Error(
+      `no events found in transaction ${txnReceipt.transactionHash}, are you sure it is a ContractReceipt from a VerificationGateway.processBundle transaction?`,
+    );
+  }
+
   const walletOpProcessedEvents = txnReceipt.events?.filter(
     (e) => e.event === "WalletOperationProcessed",
   );
