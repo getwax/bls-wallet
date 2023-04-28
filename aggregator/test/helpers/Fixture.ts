@@ -52,7 +52,7 @@ export const aggregationStrategyDefaultTestConfig: AggregationStrategyConfig = {
 export default class Fixture {
   static test(
     name: string,
-    fn: (fx: Fixture) => Promise<void>,
+    fn: (fx: Fixture) => Promise<void> | void,
   ) {
     Deno.test({
       name,

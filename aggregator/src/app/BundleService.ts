@@ -1,10 +1,12 @@
 import {
   BigNumber,
+  BigNumberish,
   BlsWalletSigner,
   BlsWalletWrapper,
   Bundle,
   delay,
   ethers,
+  Operation,
   Semaphore,
 } from "../../deps.ts";
 
@@ -18,13 +20,18 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
-import BundleTable, { BundleRow, makeHash } from "./BundleTable.ts";
+import BundleTable, { BundleRow } from "./BundleTable.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
 
 export type AddBundleResponse = { hash: string } | {
   failures: TransactionFailure[];
+};
+
+type BundleWithoutSignature = {
+  publicKey: [BigNumberish, BigNumberish, BigNumberish, BigNumberish];
+  operation: Omit<Operation, "gas">
 };
 
 export default class BundleService {
@@ -174,7 +181,7 @@ export default class BundleService {
     }
 
     return await this.runQueryGroup(async () => {
-      const hash = makeHash();
+      const hash = await this.hashBundle(bundle);
 
       this.bundleTable.add({
         status: "pending",
@@ -202,15 +209,21 @@ export default class BundleService {
     return this.bundleTable.findBundle(hash);
   }
 
+  lookupAggregateBundle(subBundleHash: string) {
+    const subBundle = this.bundleTable.findBundle(subBundleHash);
+    return this.bundleTable.findAggregateBundle(subBundle?.aggregateHash!)
+  }
+
   receiptFromBundle(bundle: BundleRow) {
     if (!bundle.receipt) {
       return nil;
     }
 
-    const { receipt, hash } = bundle;
+    const { receipt, hash, aggregateHash } = bundle;
 
     return {
       bundleHash: hash,
+      aggregateBundleHash: aggregateHash,
       to: receipt.to,
       from: receipt.from,
       contractAddress: receipt.contractAddress,
@@ -229,6 +242,46 @@ export default class BundleService {
       type: receipt.type,
       status: receipt.status,
     };
+  }
+
+  async hashBundle(bundle: Bundle): Promise<string> {
+    const bundleSubHashes = await this.#hashSubBundles(bundle);
+    const concatenatedHashes = bundleSubHashes.join("");
+    return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
+  }
+
+  async #hashSubBundles(bundle: Bundle): Promise<Array<string>> {
+    const bundlesWithoutSignature: Array<BundleWithoutSignature> =
+      bundle.operations.map((operation, index) => ({
+        publicKey: bundle.senderPublicKeys[index],
+        operation: {
+          nonce: operation.nonce,
+          actions: operation.actions,
+        },
+      }));
+  
+    const serializedBundlesWithoutSignature = bundlesWithoutSignature.map(
+        bundleWithoutSignature => {
+          return JSON.stringify({
+              publicKey: bundleWithoutSignature.publicKey,
+              operation: bundleWithoutSignature.operation,
+          });
+        }
+    );
+  
+    const hashes = await Promise.all(serializedBundlesWithoutSignature.map(async (serializedBundleWithoutSignature) => {
+      const bundleHash = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(serializedBundleWithoutSignature)
+      );
+      const chainId = (await this.ethereumService.provider.getNetwork()).chainId;
+      
+      const encoding = ethers.utils.defaultAbiCoder.encode(
+        ['bytes32', 'uint256'],
+        [bundleHash, chainId])
+      return ethers.utils.keccak256(encoding)
+    }));
+  
+    return hashes
   }
 
   async runSubmission() {
@@ -275,6 +328,13 @@ export default class BundleService {
           expectedMaxCost: ethers.utils.formatEther(expectedMaxCost),
         },
       });
+
+      if (aggregateBundle) {
+        const aggregateBundleHash = await this.hashBundle(aggregateBundle);
+        for (const row of includedRows) {
+          row.aggregateHash = aggregateBundleHash;
+        }
+      }
 
       for (const failedRow of failedRows) {
         this.emit({

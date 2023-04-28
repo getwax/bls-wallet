@@ -30,6 +30,7 @@ type RawRow = {
   nextEligibilityDelay: string;
   submitError: string | null;
   receipt: string | null;
+  aggregateHash: string | null;
 };
 
 const BundleStatuses = ["pending", "confirmed", "failed"] as const;
@@ -44,16 +45,11 @@ type Row = {
   nextEligibilityDelay: BigNumber;
   submitError?: string;
   receipt?: ethers.ContractReceipt;
+  aggregateHash?: string;
 };
 
 type InsertRow = Omit<Row, "id">;
 type InsertRawRow = Omit<RawRow, "id">;
-
-export function makeHash() {
-  const buf = new Uint8Array(32);
-  crypto.getRandomValues(buf);
-  return ethers.utils.hexlify(buf);
-}
 
 export type BundleRow = Row;
 
@@ -68,6 +64,7 @@ function fromRawRow(rawRow: RawRow | sqlite.Row): Row {
       nextEligibilityDelay: rawRow[5] as string,
       submitError: rawRow[6] as string | null,
       receipt: rawRow[7] as string | null,
+      aggregateHash: rawRow[8] as string | null,
     };
   }
 
@@ -99,6 +96,7 @@ function fromRawRow(rawRow: RawRow | sqlite.Row): Row {
     nextEligibilityDelay: BigNumber.from(rawRow.nextEligibilityDelay),
     submitError: rawRow.submitError ?? nil,
     receipt,
+    aggregateHash: rawRow.aggregateHash ?? nil,
   };
 }
 
@@ -109,6 +107,7 @@ function toInsertRawRow(row: InsertRow): InsertRawRow {
     bundle: JSON.stringify(bundleToDto(row.bundle)),
     eligibleAfter: toUint256Hex(row.eligibleAfter),
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
+    aggregateHash: row.aggregateHash ?? null,
     receipt: JSON.stringify(row.receipt),
   };
 }
@@ -123,6 +122,7 @@ function toRawRow(row: Row): RawRow {
     nextEligibilityDelay: toUint256Hex(row.nextEligibilityDelay),
     submitError: row.submitError ?? null,
     receipt: JSON.stringify(row.receipt),
+    aggregateHash: row.aggregateHash ?? null,
   };
 }
 
@@ -140,10 +140,11 @@ export default class BundleTable {
         eligibleAfter TEXT NOT NULL,
         nextEligibilityDelay TEXT NOT NULL,
         submitError TEXT,
-        receipt TEXT
+        receipt TEXT,
+        aggregateHash TEXT
       )
     `);
-  }
+  }  
 
   dbQuery(sql: string, params?: sqlite.QueryParameterSet) {
     this.onQuery(sql, params);
@@ -164,7 +165,8 @@ export default class BundleTable {
             eligibleAfter,
             nextEligibilityDelay,
             submitError,
-            receipt
+            receipt,
+            aggregateHash
           ) VALUES (
             :id,
             :status,
@@ -173,7 +175,8 @@ export default class BundleTable {
             :eligibleAfter,
             :nextEligibilityDelay,
             :submitError,
-            :receipt
+            :receipt,
+            :aggregateHash
           )
         `,
         {
@@ -184,6 +187,7 @@ export default class BundleTable {
           ":nextEligibilityDelay": rawRow.nextEligibilityDelay,
           ":submitError": rawRow.submitError,
           ":receipt": rawRow.receipt,
+          ":aggregateHash": rawRow.aggregateHash,
         },
       );
     }
@@ -202,7 +206,8 @@ export default class BundleTable {
           eligibleAfter = :eligibleAfter,
           nextEligibilityDelay = :nextEligibilityDelay,
           submitError = :submitError,
-          receipt = :receipt
+          receipt = :receipt,
+          aggregateHash = :aggregateHash
         WHERE
           id = :id
       `,
@@ -215,6 +220,7 @@ export default class BundleTable {
         ":nextEligibilityDelay": rawRow.nextEligibilityDelay,
         ":submitError": rawRow.submitError,
         ":receipt": rawRow.receipt,
+        ":aggregateHash": rawRow.aggregateHash,
       },
     );
   }
@@ -253,6 +259,21 @@ export default class BundleTable {
     );
 
     return rows.map(fromRawRow)[0];
+  }
+
+  findAggregateBundle(aggregateHash: string): Row[] | nil {
+    const rows = this.dbQuery(
+      `
+        SELECT * from bundles
+        WHERE
+          aggregateHash = :aggregateHash AND
+          status = 'confirmed'
+        ORDER BY id ASC
+      `,
+      { ":aggregateHash": aggregateHash },
+    );
+
+    return rows.map(fromRawRow);
   }
 
   count(): number {

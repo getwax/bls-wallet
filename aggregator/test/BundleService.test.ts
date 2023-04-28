@@ -1,4 +1,4 @@
-import { assertBundleSucceeds, assertEquals, Operation } from "./deps.ts";
+import { assertBundleSucceeds, assertEquals, ethers, Operation } from "./deps.ts";
 
 import Fixture from "./helpers/Fixture.ts";
 
@@ -209,6 +209,202 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
   assertBundleSucceeds(await bundleService.add(tx));
 
   assertEquals(bundleService.bundleTable.count(), 1);
+});
+
+Fixture.test("Same bundle produces same hash", async (fx) => {
+  const bundleService = fx.createBundleService();
+  const [wallet] = await fx.setupWallets(1);
+  const nonce = await wallet.Nonce();
+
+  const firstBundle = wallet.sign({
+    nonce,
+    gas: 100000,
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, "3"],
+        ),
+      },
+    ],
+  });
+
+  const secondBundle = wallet.sign({
+    nonce,
+    gas: 999999,
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, "3"],
+        ),
+      },
+    ],
+  });
+  
+  const firstBundleHash = await bundleService.hashBundle(firstBundle);
+  const secondBundleHash = await bundleService.hashBundle(secondBundle);
+  
+  assertEquals(firstBundleHash, secondBundleHash);
+});
+
+Fixture.test("hashes bundle with single operation", async (fx) => {
+  const bundleService = fx.createBundleService();
+  const [wallet] = await fx.setupWallets(1);
+  const nonce = await wallet.Nonce();
+
+  const bundle = wallet.sign({
+    nonce,
+    gas: 100000,
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, "3"],
+        ),
+      },
+    ],
+  });
+
+  const expectedSubBundleHashes = await Promise.all(bundle.operations.map(async (operation, index) => {
+    const bundlesWithoutSignature = {
+      publicKey: bundle.senderPublicKeys[index],
+        operation: {
+          nonce: operation.nonce,
+          actions: operation.actions,
+        },
+    }
+
+    const serializedBundle = JSON.stringify({
+      publicKey: bundlesWithoutSignature.publicKey,
+      operation: bundlesWithoutSignature.operation,
+    });
+
+    const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
+    const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
+
+    const encoding = ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', 'uint256'],
+      [bundleHash, chainId])
+    return ethers.utils.keccak256(encoding)
+  }));
+
+  const concatenatedHashes = expectedSubBundleHashes.join("");
+  const expectedBundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
+  
+  const hash = await bundleService.hashBundle(bundle);
+  
+  assertEquals(hash, expectedBundleHash);
+});
+
+Fixture.test("hashes bundle with multiple operations", async (fx) => {
+  const bundleService = fx.createBundleService();
+  const [wallet] = await fx.setupWallets(1);
+  const nonce = await wallet.Nonce();
+
+  const bundle = fx.blsWalletSigner.aggregate([
+    wallet.sign({
+      nonce,
+      gas: 1_000_000,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
+            "mint",
+            [wallet.address, 3],
+          ),
+        },
+      ],
+    }),
+    wallet.sign({
+      nonce: nonce.add(1),
+      gas: 1_000_000,
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: fx.testErc20.address,
+          encodedFunction: fx.testErc20.interface.encodeFunctionData(
+            "mint",
+            [wallet.address, 5],
+          ),
+        },
+      ],
+    }),
+  ]);
+
+  const expectedSubBundleHashes = await Promise.all(bundle.operations.map(async (operation, index) => {
+    const bundlesWithoutSignature = {
+      publicKey: bundle.senderPublicKeys[index],
+        operation: {
+          nonce: operation.nonce,
+          actions: operation.actions,
+        },
+    }
+
+    const serializedBundle = JSON.stringify({
+      publicKey: bundlesWithoutSignature.publicKey,
+      operation: bundlesWithoutSignature.operation,
+    });
+
+    const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
+
+    const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
+    const encoding = ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', 'uint256'],
+      [bundleHash, chainId])
+
+    return ethers.utils.keccak256(encoding)
+  }));
+
+  const concatenatedHashes = expectedSubBundleHashes.join("");
+  const expectedBundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
+
+  const hash = await bundleService.hashBundle(bundle);
+
+  assertEquals(hash, expectedBundleHash);
+});
+
+Fixture.test("hashes empty bundle", async (fx) => {
+  const bundleService = fx.createBundleService();
+  const bundle = fx.blsWalletSigner.aggregate([]);
+
+  const expectedSubBundleHashes = bundle.operations.map(async (operation, index) => {
+    const bundlesWithoutSignature = {
+      publicKey: bundle.senderPublicKeys[index],
+        operation: {
+          nonce: operation.nonce,
+          actions: operation.actions,
+        },
+    }
+
+    const serializedBundle = JSON.stringify({
+      publicKey: bundlesWithoutSignature.publicKey,
+      operation: bundlesWithoutSignature.operation,
+    });
+    
+    const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
+
+    const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
+    const encoding = ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', 'uint256'],
+      [bundleHash, chainId])
+
+    return ethers.utils.keccak256(encoding)
+  })
+
+  const concatenatedHashes = expectedSubBundleHashes.join("");
+  const expectedBundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
+
+  const hash = await bundleService.hashBundle(bundle);
+
+  assertEquals(hash, expectedBundleHash);
 });
 
 // TODO (merge-ok): Add a mechanism for limiting the number of stored

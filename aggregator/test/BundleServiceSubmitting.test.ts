@@ -358,3 +358,57 @@ Fixture.test("updates status of failing bundle when its eligibility delay is lar
   const failedBundleRow = await bundleService.bundleTable.findBundle(res.hash);
   assertEquals(failedBundleRow?.status, "failed");
 });
+
+Fixture.test("Retrieves all sub bundles included in a submitted bundle from single a sub bundle", async (fx) => {
+  const bundleService = fx.createBundleService(
+    bundleServiceConfig,
+    aggregationStrategyConfig,
+  );
+
+  const wallets = await fx.setupWallets(3);
+  const firstWallet = wallets[0];
+  const nonce = await firstWallet.Nonce();
+
+  const bundles = await Promise.all(
+    wallets.map((wallet) =>
+      wallet.signWithGasEstimate({
+        nonce,
+        actions: [
+          {
+            ethValue: 0,
+            contractAddress: fx.testErc20.address,
+            encodedFunction: fx.testErc20.interface.encodeFunctionData(
+              "mint",
+              [firstWallet.address, 1],
+            ),
+          },
+        ],
+      })
+    ),
+  );
+
+  const subBundleHashes = await Promise.all(bundles.map(async (bundle) => {
+    const res = await bundleService.add(bundle);
+
+    if ("failures" in res) {
+      throw new Error("Bundle failed to be created");
+    }
+
+    return res.hash;
+  }));
+
+  await bundleService.submissionTimer.trigger();
+  await bundleService.waitForConfirmations();
+
+  const aggregateBundle = bundleService.lookupAggregateBundle(subBundleHashes[0]);
+  
+  const firstSubBundle = bundleService.lookupBundle(subBundleHashes[0]);
+  const secondSubBundle = bundleService.lookupBundle(subBundleHashes[1]);
+  const thirdSubBundle = bundleService.lookupBundle(subBundleHashes[2]);
+
+  const orderedSubBundles = [firstSubBundle, secondSubBundle, thirdSubBundle].sort((a, b) => a!.id! - b!.id!);
+
+  assertEquals(aggregateBundle?.[0], orderedSubBundles[0]);
+  assertEquals(aggregateBundle?.[1], orderedSubBundles[1]);
+  assertEquals(aggregateBundle?.[2], orderedSubBundles[2]);
+});
