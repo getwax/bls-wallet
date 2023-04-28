@@ -63,8 +63,6 @@ cp .env.local.example .env
 
 > **Note: The .env file in the aggregator needs to be updated everytime the network changes from local to remote and vice-versa.**
 
-> **.env.local.example** for **local**
-
 ([More aggregator configuration docs.](../aggregator/README.md#configuration))
 
 ```sh
@@ -87,13 +85,14 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 1. Go to Chrome's [extension page](chrome://extensions).
 2. Enable `Developer mode`.
 3. Either click `Load unpacked extension...` and select `./extension/extension/chrome` or drag that folder into the page.
-4. Transfer eth from metamask to Quill if using `yarn start-hardhat` in `./contracts`. 
+4. Transfer ETH from a funded account to Quill - e.g. an imported MetaMask account
 
 ### Firefox
 
 1. Go to Firefox's [debugging page](about:debugging#/runtime/this-firefox).
 2. Click `Load Temporary Add-on...`.
 3. Select `./extension/extension/firefox/manifest.json`.
+4. Transfer ETH from a funded account to Quill - e.g. an imported MetaMask account
 
 **After this, you now have all the main components setup to begin local development.**
 
