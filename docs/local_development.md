@@ -87,7 +87,7 @@ yarn run dev:chrome # or dev:firefox, dev:opera
 1. Go to Chrome's [extension page](chrome://extensions).
 2. Enable `Developer mode`.
 3. Either click `Load unpacked extension...` and select `./extension/extension/chrome` or drag that folder into the page.
-4. Transfer eth from metamask to Quill if using `yarn start-hardhat` in `./contracts`. 
+4. Transfer ETH from a funded account to Quill - e.g. an imported MetaMask account
 
 ### Firefox
 
