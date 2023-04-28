@@ -30,8 +30,8 @@ export type AddBundleResponse = { hash: string } | {
 };
 
 type BundleWithoutSignature = {
-  publicKey: [BigNumberish, BigNumberish, BigNumberish, BigNumberish];
-  operation: Omit<Operation, "gas">
+  senderPublicKeys: [BigNumberish, BigNumberish, BigNumberish, BigNumberish];
+  operations: Omit<Operation, "gas">;
 };
 
 export default class BundleService {
@@ -253,8 +253,8 @@ export default class BundleService {
   async #hashSubBundles(bundle: Bundle): Promise<Array<string>> {
     const bundlesWithoutSignature: Array<BundleWithoutSignature> =
       bundle.operations.map((operation, index) => ({
-        publicKey: bundle.senderPublicKeys[index],
-        operation: {
+        senderPublicKeys: bundle.senderPublicKeys[index],
+        operations: {
           nonce: operation.nonce,
           actions: operation.actions,
         },
@@ -263,8 +263,8 @@ export default class BundleService {
     const serializedBundlesWithoutSignature = bundlesWithoutSignature.map(
         bundleWithoutSignature => {
           return JSON.stringify({
-              publicKey: bundleWithoutSignature.publicKey,
-              operation: bundleWithoutSignature.operation,
+            senderPublicKeys: bundleWithoutSignature.senderPublicKeys,
+            operations: bundleWithoutSignature.operations,
           });
         }
     );

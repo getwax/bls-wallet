@@ -274,16 +274,16 @@ Fixture.test("hashes bundle with single operation", async (fx) => {
 
   const expectedSubBundleHashes = await Promise.all(bundle.operations.map(async (operation, index) => {
     const bundlesWithoutSignature = {
-      publicKey: bundle.senderPublicKeys[index],
-        operation: {
+      senderPublicKeys: bundle.senderPublicKeys[index],
+        operations: {
           nonce: operation.nonce,
           actions: operation.actions,
         },
     }
 
     const serializedBundle = JSON.stringify({
-      publicKey: bundlesWithoutSignature.publicKey,
-      operation: bundlesWithoutSignature.operation,
+      senderPublicKeys: bundlesWithoutSignature.senderPublicKeys,
+      operations: bundlesWithoutSignature.operations,
     });
 
     const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
@@ -341,16 +341,16 @@ Fixture.test("hashes bundle with multiple operations", async (fx) => {
 
   const expectedSubBundleHashes = await Promise.all(bundle.operations.map(async (operation, index) => {
     const bundlesWithoutSignature = {
-      publicKey: bundle.senderPublicKeys[index],
-        operation: {
+      senderPublicKeys: bundle.senderPublicKeys[index],
+      operations: {
           nonce: operation.nonce,
           actions: operation.actions,
         },
     }
 
     const serializedBundle = JSON.stringify({
-      publicKey: bundlesWithoutSignature.publicKey,
-      operation: bundlesWithoutSignature.operation,
+      senderPublicKeys: bundlesWithoutSignature.senderPublicKeys,
+      operations: bundlesWithoutSignature.operations,
     });
 
     const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
@@ -377,16 +377,16 @@ Fixture.test("hashes empty bundle", async (fx) => {
 
   const expectedSubBundleHashes = bundle.operations.map(async (operation, index) => {
     const bundlesWithoutSignature = {
-      publicKey: bundle.senderPublicKeys[index],
-        operation: {
+      senderPublicKeys: bundle.senderPublicKeys[index],
+      operations: {
           nonce: operation.nonce,
           actions: operation.actions,
         },
     }
 
     const serializedBundle = JSON.stringify({
-      publicKey: bundlesWithoutSignature.publicKey,
-      operation: bundlesWithoutSignature.operation,
+      senderPublicKeys: bundlesWithoutSignature.senderPublicKeys,
+      operations: bundlesWithoutSignature.operations,
     });
     
     const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))

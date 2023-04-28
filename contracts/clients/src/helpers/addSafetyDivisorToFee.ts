@@ -6,7 +6,7 @@ import { BigNumber } from "ethers";
  * the chance that bundles get accepted during aggregation.
  *
  * @param feeEstimate fee required for bundle
- * @param safetyDivisor optional safety divisor. Default is 5
+ * @param safetyDivisor optional safety divisor. Default is 5 (adds a 20% safety margin)
  * @returns fee estimate with added safety premium
  */
 export default function addSafetyPremiumToFee(
