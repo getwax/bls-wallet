@@ -87,8 +87,6 @@ The [aggregator](../aggregator/) is a service that accepts transaction bundles (
 cd ./aggregator
 cp .env.example .env
 ```
-> **Note: This .env file now uses `arbitrum` RPCs.**
-
 
 if you are using different network, update the following values in `./aggregator/.env`.
 
