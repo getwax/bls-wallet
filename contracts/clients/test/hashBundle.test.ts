@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { hashBundle } from "../src/helpers/hashBundle";
+import hashBundle from "../src/helpers/hashBundle";
 import { Bundle } from "../src";
 import { BigNumber } from "ethers";
 
@@ -27,7 +27,7 @@ describe("hashBundle", () => {
 
     // Assert
     expect(result).to.be.a("string");
-    expect(result.length).to.equal(66); // A keccak256 hash is 32 bytes, or 64 characters, plus the "0x" prefix
+    expect(result.length).to.equal(66);
   });
 
   it("should throw an error when the number of operations does not match the number of public keys", () => {
