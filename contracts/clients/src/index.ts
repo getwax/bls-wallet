@@ -42,4 +42,5 @@ export { default as FallbackCompressor } from "./FallbackCompressor";
 export { default as Erc20Compressor } from "./Erc20Compressor";
 export { default as BlsRegistrationCompressor } from "./BlsRegistrationCompressor";
 export { default as BundleCompressor } from "./BundleCompressor";
+export { default as ContractsConnector } from "./ContractsConnector";
 export * from "./encodeUtils";
