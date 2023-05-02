@@ -257,6 +257,7 @@ export default class BundleService {
         aggregateBundle,
         includedRows,
         bundleOverheadCost,
+        bundleOverheadLen,
         expectedFee,
         expectedMaxCost,
         failedRows,
@@ -268,6 +269,7 @@ export default class BundleService {
         data: {
           includedRows: includedRows.length,
           bundleOverheadCost: ethers.utils.formatEther(bundleOverheadCost),
+          bundleOverheadLen,
           expectedFee: ethers.utils.formatEther(expectedFee),
           expectedMaxCost: ethers.utils.formatEther(expectedMaxCost),
         },

@@ -1,17 +1,20 @@
 import {
   AggregatorUtilities,
-  AggregatorUtilitiesFactory,
   BaseContract,
   BigNumber,
+  BlsRegistrationCompressor,
   BlsWalletSigner,
   BlsWalletWrapper,
   Bundle,
+  BundleCompressor,
   BytesLike,
+  ContractsConnector,
   delay,
+  Erc20Compressor,
   ethers,
+  FallbackCompressor,
   initBlsWalletSigner,
   VerificationGateway,
-  VerificationGatewayFactory,
   Wallet,
 } from "../../deps.ts";
 
@@ -65,29 +68,17 @@ type DecodeReturnType<
 > = EnforceArray<AsyncReturnType<Contract["callStatic"][Method]>>;
 
 export default class EthereumService {
-  verificationGateway: VerificationGateway;
-  utilities: AggregatorUtilities;
-
   constructor(
     public emit: (evt: AppEvent) => void,
     public wallet: Wallet,
     public provider: ethers.providers.Provider,
     public blsWalletWrapper: BlsWalletWrapper,
     public blsWalletSigner: BlsWalletSigner,
-    verificationGatewayAddress: string,
-    utilitiesAddress: string,
+    public verificationGateway: VerificationGateway,
+    public aggregatorUtilities: AggregatorUtilities,
+    public bundleCompressor: BundleCompressor,
     public nextNonce: BigNumber,
-  ) {
-    this.verificationGateway = VerificationGatewayFactory.connect(
-      verificationGatewayAddress,
-      this.wallet,
-    );
-
-    this.utilities = AggregatorUtilitiesFactory.connect(
-      utilitiesAddress,
-      this.wallet,
-    );
-  }
+  ) {}
 
   NextNonce() {
     const result = this.nextNonce;
@@ -97,17 +88,33 @@ export default class EthereumService {
 
   static async create(
     emit: (evt: AppEvent) => void,
-    verificationGatewayAddress: string,
-    utilitiesAddress: string,
     aggPrivateKey: string,
   ): Promise<EthereumService> {
     const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
     provider.pollingInterval = env.RPC_POLLING_INTERVAL;
     const wallet = EthereumService.Wallet(provider, aggPrivateKey);
 
+    const contractsConnector = await ContractsConnector.create(wallet);
+
+    const [
+      verificationGateway,
+      aggregatorUtilities,
+      blsExpanderDelegator,
+      erc20Expander,
+      blsRegistration,
+      fallbackExpander,
+    ] = await Promise.all([
+      contractsConnector.VerificationGateway(),
+      contractsConnector.AggregatorUtilities(),
+      contractsConnector.BLSExpanderDelegator(),
+      contractsConnector.ERC20Expander(),
+      contractsConnector.BLSRegistration(),
+      contractsConnector.FallbackExpander(),
+    ]);
+
     const blsWalletWrapper = await BlsWalletWrapper.connect(
       aggPrivateKey,
-      verificationGatewayAddress,
+      verificationGateway.address,
       provider,
     );
 
@@ -122,10 +129,7 @@ export default class EthereumService {
         ].join(" "));
       }
 
-      await (await VerificationGatewayFactory.connect(
-        verificationGatewayAddress,
-        wallet,
-      ).processBundle(
+      await (await verificationGateway.processBundle(
         await blsWalletWrapper.signWithGasEstimate({
           nonce: 0,
           actions: [],
@@ -138,8 +142,21 @@ export default class EthereumService {
     const blsWalletSigner = await initBlsWalletSigner({
       chainId,
       privateKey: aggPrivateKey,
-      verificationGatewayAddress,
+      verificationGatewayAddress: verificationGateway.address,
     });
+
+    const bundleCompressor = new BundleCompressor(blsExpanderDelegator);
+
+    const [erc20Compressor, blsRegistrationCompressor, fallbackCompressor] =
+      await Promise.all([
+        Erc20Compressor.wrap(erc20Expander),
+        BlsRegistrationCompressor.wrap(blsRegistration),
+        FallbackCompressor.wrap(fallbackExpander),
+      ]);
+
+    await bundleCompressor.addCompressor(erc20Compressor);
+    await bundleCompressor.addCompressor(blsRegistrationCompressor);
+    await bundleCompressor.addCompressor(fallbackCompressor);
 
     return new EthereumService(
       emit,
@@ -147,8 +164,9 @@ export default class EthereumService {
       provider,
       blsWalletWrapper,
       blsWalletSigner,
-      verificationGatewayAddress,
-      utilitiesAddress,
+      verificationGateway,
+      aggregatorUtilities,
+      bundleCompressor,
       nextNonce,
     );
   }
@@ -221,9 +239,10 @@ export default class EthereumService {
   async callStaticSequence<Calls extends CallHelper<unknown>[]>(
     ...calls: Calls
   ): Promise<MapCallHelperReturns<Calls>> {
-    const rawResults = await this.utilities.callStatic.performSequence(
-      calls.map((c) => c.value),
-    );
+    const rawResults = await this.aggregatorUtilities.callStatic
+      .performSequence(
+        calls.map((c) => c.value),
+      );
 
     const results: CallResult<unknown>[] = rawResults.map(
       ([success, result], i) => {
@@ -291,20 +310,34 @@ export default class EthereumService {
     assert(bundle.operations.length > 0, "Cannot process empty bundle");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
-    const processBundleArgs: Parameters<VerificationGateway["processBundle"]> =
-      [
-        bundle,
-        {
-          nonce: this.NextNonce(),
-          ...await this.GasConfig(),
-        },
-      ];
+    const compressedBundle = await this.bundleCompressor.compress(bundle);
+
+    const [rawTx, rawCompressedTx] = await Promise.all([
+      this.verificationGateway.populateTransaction.processBundle(bundle).then(
+        (tx) => this.wallet.signTransaction(tx),
+      ),
+      this.bundleCompressor.blsExpanderDelegator.populateTransaction
+        .run(compressedBundle).then((tx) => this.wallet.signTransaction(tx)),
+    ]);
+
+    const txLen = ethers.utils.hexDataLength(rawTx);
+    const compressedTxLen = ethers.utils.hexDataLength(rawCompressedTx);
+
+    const processBundleArgs: Parameters<
+      (typeof this.bundleCompressor.blsExpanderDelegator)["run"]
+    > = [
+      compressedBundle,
+      {
+        nonce: this.NextNonce(),
+        ...await this.GasConfig(),
+      },
+    ];
 
     const attempt = async () => {
       let txResponse: ethers.providers.TransactionResponse;
 
       try {
-        txResponse = await this.verificationGateway.processBundle(
+        txResponse = await this.bundleCompressor.blsExpanderDelegator.run(
           ...processBundleArgs,
         );
       } catch (error) {
@@ -333,7 +366,7 @@ export default class EthereumService {
     for (let i = 0; i < maxAttempts; i++) {
       this.emit({
         type: "submission-attempt",
-        data: { attemptNumber: i + 1, publicKeyShorts },
+        data: { attemptNumber: i + 1, publicKeyShorts, txLen, compressedTxLen },
       });
 
       const attemptResult = await attempt();
@@ -365,6 +398,14 @@ export default class EthereumService {
     }
 
     throw new Error("Expected return or throw from attempt loop");
+  }
+
+  async estimateCompressedGas(bundle: Bundle): Promise<BigNumber> {
+    const compressedBundle = await this.bundleCompressor.compress(bundle);
+
+    return this.bundleCompressor.blsExpanderDelegator.estimateGas.run(
+      compressedBundle,
+    );
   }
 
   async GasConfig() {

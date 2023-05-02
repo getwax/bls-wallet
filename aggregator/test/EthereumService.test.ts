@@ -260,9 +260,9 @@ Fixture.test("callStaticSequence - correctly measures transfer", async (fx) => {
   const es = fx.ethereumService;
 
   const results = await es.callStaticSequence(
-    es.Call(es.utilities, "ethBalanceOf", [recvWallet.address]),
+    es.Call(es.aggregatorUtilities, "ethBalanceOf", [recvWallet.address]),
     es.Call(es.verificationGateway, "processBundle", [bundle]),
-    es.Call(es.utilities, "ethBalanceOf", [recvWallet.address]),
+    es.Call(es.aggregatorUtilities, "ethBalanceOf", [recvWallet.address]),
   );
 
   const [balanceResultBefore, , balanceResultAfter] = results;
