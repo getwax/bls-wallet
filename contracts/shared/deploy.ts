@@ -20,6 +20,8 @@ import {
   VerificationGateway,
   VerificationGateway__factory as VerificationGatewayFactory,
   BLSRegistration,
+  ERC20Expander,
+  ERC20Expander__factory as ERC20ExpanderFactory,
 } from "../typechain-types";
 
 import { SafeSingletonFactory } from "../clients/src";
@@ -32,6 +34,7 @@ export type Deployment = {
   verificationGateway: VerificationGateway;
   blsExpander: BLSExpander;
   fallbackExpander: FallbackExpander;
+  erc20Expander: ERC20Expander;
   blsPublicKeyRegistry: BLSPublicKeyRegistry;
   addressRegistry: AddressRegistry;
   blsExpanderDelegator: BLSExpanderDelegator;
@@ -74,6 +77,7 @@ export default async function deploy(
   const {
     blsExpander,
     fallbackExpander,
+    erc20Expander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,
@@ -92,6 +96,7 @@ export default async function deploy(
     verificationGateway,
     blsExpander,
     fallbackExpander,
+    erc20Expander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,
@@ -149,14 +154,26 @@ async function deployExpanders(
     ],
   );
 
+  const erc20Expander = await singletonFactory.connectOrDeploy(
+    ERC20ExpanderFactory,
+    [
+      blsPublicKeyRegistry.address,
+      addressRegistry.address,
+      aggregatorUtilities.address,
+    ],
+    salt,
+  );
+
   await registerExpanders(blsExpanderDelegator, [
     fallbackExpander.address,
     blsRegistration.address,
+    erc20Expander.address,
   ]);
 
   return {
     blsExpander,
     fallbackExpander,
+    erc20Expander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,

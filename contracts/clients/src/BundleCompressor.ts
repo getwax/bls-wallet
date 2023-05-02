@@ -31,7 +31,13 @@ export default class BundleCompressor {
     let expanderIndexAndData: [number, string] | undefined;
 
     for (const [expanderIndex, compressor] of this.compressors) {
-      const data = await compressor.compress(blsPublicKey, operation);
+      let data: string | undefined;
+
+      try {
+        data = await compressor.compress(blsPublicKey, operation);
+      } catch {
+        continue;
+      }
 
       if (data === undefined) {
         continue;
