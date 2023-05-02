@@ -399,16 +399,16 @@ Fixture.test("Retrieves all sub bundles included in a submitted bundle from sing
 
   await bundleService.submissionTimer.trigger();
   await bundleService.waitForConfirmations();
-
-  const aggregateBundle = bundleService.lookupAggregateBundle(subBundleHashes[0]);
-  
   const firstSubBundle = bundleService.lookupBundle(subBundleHashes[0]);
   const secondSubBundle = bundleService.lookupBundle(subBundleHashes[1]);
   const thirdSubBundle = bundleService.lookupBundle(subBundleHashes[2]);
 
-  const orderedSubBundles = [firstSubBundle, secondSubBundle, thirdSubBundle].sort((a, b) => a!.id! - b!.id!);
+  const orderedSubBundles = [firstSubBundle, secondSubBundle, thirdSubBundle].sort((a, b) => a!.id - b!.id);
 
-  assertEquals(aggregateBundle?.[0], orderedSubBundles[0]);
-  assertEquals(aggregateBundle?.[1], orderedSubBundles[1]);
-  assertEquals(aggregateBundle?.[2], orderedSubBundles[2]);
+  for (const subBundleHash of subBundleHashes) {
+    const aggregateBundle = bundleService.lookupAggregateBundle(subBundleHash);
+    assertEquals(aggregateBundle?.[0], orderedSubBundles[0]);
+    assertEquals(aggregateBundle?.[1], orderedSubBundles[1]);
+    assertEquals(aggregateBundle?.[2], orderedSubBundles[2]);
+  }
 });

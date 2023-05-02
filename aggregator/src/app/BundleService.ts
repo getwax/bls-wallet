@@ -8,6 +8,7 @@ import {
   ethers,
   Operation,
   Semaphore,
+  VerificationGatewayFactory,
 } from "../../deps.ts";
 
 import { IClock } from "../helpers/Clock.ts";
@@ -24,6 +25,7 @@ import BundleTable, { BundleRow } from "./BundleTable.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
+import ExplicitAny from "../helpers/ExplicitAny.ts";
 
 export type AddBundleResponse = { hash: string } | {
   failures: TransactionFailure[];
@@ -245,43 +247,41 @@ export default class BundleService {
   }
 
   async hashBundle(bundle: Bundle): Promise<string> {
-    const bundleSubHashes = await this.#hashSubBundles(bundle);
-    const concatenatedHashes = bundleSubHashes.join("");
-    return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
-  }
-
-  async #hashSubBundles(bundle: Bundle): Promise<Array<string>> {
-    const bundlesWithoutSignature: Array<BundleWithoutSignature> =
-      bundle.operations.map((operation, index) => ({
-        senderPublicKeys: bundle.senderPublicKeys[index],
-        operations: {
-          nonce: operation.nonce,
-          actions: operation.actions,
-        },
-      }));
+    const operationsWithZeroGas = bundle.operations.map((operation) => {
+      return {
+        ...operation,
+        gas: BigNumber.from(0),
+      };
+    });
   
-    const serializedBundlesWithoutSignature = bundlesWithoutSignature.map(
-        bundleWithoutSignature => {
-          return JSON.stringify({
-            senderPublicKeys: bundleWithoutSignature.senderPublicKeys,
-            operations: bundleWithoutSignature.operations,
-          });
-        }
+    const verifyMethodName = "verify";
+    const bundleType = VerificationGatewayFactory.abi.find(
+      (entry) => "name" in entry && entry.name === verifyMethodName,
+    )?.inputs[0];
+  
+    const validatedBundle = {
+      ...bundle,
+      operations: operationsWithZeroGas,
+    };
+  
+    const encodedBundleWithZeroSignature = ethers.utils.defaultAbiCoder.encode(
+      [bundleType as ExplicitAny],
+      [
+        {
+          ...validatedBundle,
+          signature: [BigNumber.from(0), BigNumber.from(0)],
+        },
+      ],
     );
   
-    const hashes = await Promise.all(serializedBundlesWithoutSignature.map(async (serializedBundleWithoutSignature) => {
-      const bundleHash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(serializedBundleWithoutSignature)
-      );
-      const chainId = (await this.ethereumService.provider.getNetwork()).chainId;
-      
-      const encoding = ethers.utils.defaultAbiCoder.encode(
-        ['bytes32', 'uint256'],
-        [bundleHash, chainId])
-      return ethers.utils.keccak256(encoding)
-    }));
-  
-    return hashes
+    const bundleHash = ethers.utils.keccak256(encodedBundleWithZeroSignature);
+    const chainId = (await this.ethereumService.provider.getNetwork()).chainId;
+
+    const bundleAndChainIdEncoding = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "uint256"],
+      [bundleHash, chainId],
+    );
+    return ethers.utils.keccak256(bundleAndChainIdEncoding);
   }
 
   async runSubmission() {

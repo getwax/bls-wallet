@@ -1,5 +1,5 @@
-import { assertBundleSucceeds, assertEquals, ethers, Operation } from "./deps.ts";
-
+import { BigNumber, Operation, VerificationGatewayFactory, assertBundleSucceeds, assertEquals, ethers } from "./deps.ts";
+import ExplicitAny from "../src/helpers/ExplicitAny.ts";
 import Fixture from "./helpers/Fixture.ts";
 
 Fixture.test("adds valid bundle", async (fx) => {
@@ -272,31 +272,40 @@ Fixture.test("hashes bundle with single operation", async (fx) => {
     ],
   });
 
-  const expectedSubBundleHashes = await Promise.all(bundle.operations.map(async (operation, index) => {
-    const bundlesWithoutSignature = {
-      senderPublicKeys: bundle.senderPublicKeys[index],
-        operations: {
-          nonce: operation.nonce,
-          actions: operation.actions,
-        },
-    }
+  const operationsWithZeroGas = bundle.operations.map((operation) => {
+    return {
+      ...operation,
+      gas: BigNumber.from(0),
+    };
+  });
 
-    const serializedBundle = JSON.stringify({
-      senderPublicKeys: bundlesWithoutSignature.senderPublicKeys,
-      operations: bundlesWithoutSignature.operations,
-    });
+  const bundleType = VerificationGatewayFactory.abi.find(
+    (entry) => "name" in entry && entry.name === "verify",
+  )?.inputs[0];
 
-    const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
-    const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
+  const validatedBundle = {
+    ...bundle,
+    operations: operationsWithZeroGas,
+  };
 
-    const encoding = ethers.utils.defaultAbiCoder.encode(
-      ['bytes32', 'uint256'],
-      [bundleHash, chainId])
-    return ethers.utils.keccak256(encoding)
-  }));
+  const encodedBundleWithZeroSignature = ethers.utils.defaultAbiCoder.encode(
+    [bundleType as ExplicitAny],
+    [
+      {
+        ...validatedBundle,
+        signature: [BigNumber.from(0), BigNumber.from(0)],
+      },
+    ],
+  );
 
-  const concatenatedHashes = expectedSubBundleHashes.join("");
-  const expectedBundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
+  const bundleHash = ethers.utils.keccak256(encodedBundleWithZeroSignature);
+  const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
+
+  const bundleAndChainIdEncoding = ethers.utils.defaultAbiCoder.encode(
+    ["bytes32", "uint256"],
+    [bundleHash, chainId],
+  );
+  const expectedBundleHash = ethers.utils.keccak256(bundleAndChainIdEncoding);
   
   const hash = await bundleService.hashBundle(bundle);
   
@@ -339,32 +348,40 @@ Fixture.test("hashes bundle with multiple operations", async (fx) => {
     }),
   ]);
 
-  const expectedSubBundleHashes = await Promise.all(bundle.operations.map(async (operation, index) => {
-    const bundlesWithoutSignature = {
-      senderPublicKeys: bundle.senderPublicKeys[index],
-      operations: {
-          nonce: operation.nonce,
-          actions: operation.actions,
-        },
-    }
+  const operationsWithZeroGas = bundle.operations.map((operation) => {
+    return {
+      ...operation,
+      gas: BigNumber.from(0),
+    };
+  });
 
-    const serializedBundle = JSON.stringify({
-      senderPublicKeys: bundlesWithoutSignature.senderPublicKeys,
-      operations: bundlesWithoutSignature.operations,
-    });
+  const bundleType = VerificationGatewayFactory.abi.find(
+    (entry) => "name" in entry && entry.name === "verify",
+  )?.inputs[0];
 
-    const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
+  const validatedBundle = {
+    ...bundle,
+    operations: operationsWithZeroGas,
+  };
 
-    const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
-    const encoding = ethers.utils.defaultAbiCoder.encode(
-      ['bytes32', 'uint256'],
-      [bundleHash, chainId])
+  const encodedBundleWithZeroSignature = ethers.utils.defaultAbiCoder.encode(
+    [bundleType as ExplicitAny],
+    [
+      {
+        ...validatedBundle,
+        signature: [BigNumber.from(0), BigNumber.from(0)],
+      },
+    ],
+  );
 
-    return ethers.utils.keccak256(encoding)
-  }));
+  const bundleHash = ethers.utils.keccak256(encodedBundleWithZeroSignature);
+  const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
 
-  const concatenatedHashes = expectedSubBundleHashes.join("");
-  const expectedBundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
+  const bundleAndChainIdEncoding = ethers.utils.defaultAbiCoder.encode(
+    ["bytes32", "uint256"],
+    [bundleHash, chainId],
+  );
+  const expectedBundleHash = ethers.utils.keccak256(bundleAndChainIdEncoding);
 
   const hash = await bundleService.hashBundle(bundle);
 
@@ -375,32 +392,40 @@ Fixture.test("hashes empty bundle", async (fx) => {
   const bundleService = fx.createBundleService();
   const bundle = fx.blsWalletSigner.aggregate([]);
 
-  const expectedSubBundleHashes = bundle.operations.map(async (operation, index) => {
-    const bundlesWithoutSignature = {
-      senderPublicKeys: bundle.senderPublicKeys[index],
-      operations: {
-          nonce: operation.nonce,
-          actions: operation.actions,
-        },
-    }
+  const operationsWithZeroGas = bundle.operations.map((operation) => {
+    return {
+      ...operation,
+      gas: BigNumber.from(0),
+    };
+  });
 
-    const serializedBundle = JSON.stringify({
-      senderPublicKeys: bundlesWithoutSignature.senderPublicKeys,
-      operations: bundlesWithoutSignature.operations,
-    });
-    
-    const bundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(serializedBundle))
+  const bundleType = VerificationGatewayFactory.abi.find(
+    (entry) => "name" in entry && entry.name === "verify",
+  )?.inputs[0];
 
-    const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
-    const encoding = ethers.utils.defaultAbiCoder.encode(
-      ['bytes32', 'uint256'],
-      [bundleHash, chainId])
+  const validatedBundle = {
+    ...bundle,
+    operations: operationsWithZeroGas,
+  };
 
-    return ethers.utils.keccak256(encoding)
-  })
+  const encodedBundleWithZeroSignature = ethers.utils.defaultAbiCoder.encode(
+    [bundleType as ExplicitAny],
+    [
+      {
+        ...validatedBundle,
+        signature: [BigNumber.from(0), BigNumber.from(0)],
+      },
+    ],
+  );
 
-  const concatenatedHashes = expectedSubBundleHashes.join("");
-  const expectedBundleHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(concatenatedHashes));
+  const bundleHash = ethers.utils.keccak256(encodedBundleWithZeroSignature);
+  const chainId = (await bundleService.ethereumService.provider.getNetwork()).chainId;
+
+  const bundleAndChainIdEncoding = ethers.utils.defaultAbiCoder.encode(
+    ["bytes32", "uint256"],
+    [bundleHash, chainId],
+  );
+  const expectedBundleHash = ethers.utils.keccak256(bundleAndChainIdEncoding);
 
   const hash = await bundleService.hashBundle(bundle);
 
