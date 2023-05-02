@@ -7,6 +7,7 @@ import {
   BigNumberish,
   providers,
   Overrides,
+  ContractReceipt,
 } from "ethers";
 
 import {
@@ -29,9 +30,11 @@ import {
   BLSExpanderDelegator,
   AggregatorUtilities,
   BLSRegistration,
+  ExpanderEntryPoint,
 } from "../../typechain-types";
 import deploy from "../deploy";
 import { fail } from "assert";
+import receiptOf from "./receiptOf";
 
 export default class Fixture {
   static readonly ECDSA_ACCOUNTS_LENGTH = 5;
@@ -60,6 +63,7 @@ export default class Fixture {
     public fallbackCompressor: FallbackCompressor,
     public utilities: AggregatorUtilities,
     public blsRegistration: BLSRegistration,
+    public expanderEntryPoint: ExpanderEntryPoint,
 
     public blsWalletSigner: BlsWalletSigner,
   ) {}
@@ -81,6 +85,7 @@ export default class Fixture {
       blsExpanderDelegator,
       aggregatorUtilities: utilities,
       blsRegistration,
+      expanderEntryPoint,
     } = await deploy(signers[0]);
 
     const fallbackCompressor = await FallbackCompressor.connectIfDeployed(
@@ -124,6 +129,7 @@ export default class Fixture {
       fallbackCompressor,
       utilities,
       blsRegistration,
+      expanderEntryPoint,
       await initBlsWalletSigner({
         chainId,
         privateKey,
@@ -170,6 +176,12 @@ export default class Fixture {
       await this.verificationGateway.processBundle(bundle, overrides)
     ).wait();
 
+    this.checkBundleReceipt(receipt);
+
+    return receipt;
+  }
+
+  checkBundleReceipt(receipt: ContractReceipt) {
     for (const [i, result] of getOperationResults(receipt).entries()) {
       if (result.error) {
         fail(
@@ -183,8 +195,6 @@ export default class Fixture {
         );
       }
     }
-
-    return receipt;
   }
 
   /**
@@ -204,20 +214,36 @@ export default class Fixture {
     return await this.processBundle(bundle, { ...overrides, gasLimit });
   }
 
+  async processCompressedBundle(
+    compressedBundle: string,
+    overrides: Overrides = {},
+  ) {
+    const receipt = await receiptOf(
+      this.signers[0].sendTransaction({
+        ...overrides,
+        to: this.expanderEntryPoint.address,
+        data: compressedBundle,
+      }),
+    );
+
+    this.checkBundleReceipt(receipt);
+
+    return receipt;
+  }
+
   async processCompressedBundleWithExtraGas(
     compressedBundle: string,
     overrides: Overrides = {},
   ) {
-    const gasEstimate = await this.blsExpanderDelegator.estimateGas.run(
-      compressedBundle,
-      overrides,
-    );
-
-    const gasLimit = gasEstimate.add(gasEstimate.div(2));
-
-    return await this.blsExpanderDelegator.run(compressedBundle, {
+    const gasEstimate = await this.signers[0].estimateGas({
       ...overrides,
-      gasLimit,
+      to: this.expanderEntryPoint.address,
+      data: compressedBundle,
+    });
+
+    return await this.processCompressedBundle(compressedBundle, {
+      ...overrides,
+      gasLimit: gasEstimate.add(gasEstimate.div(2)),
     });
   }
 

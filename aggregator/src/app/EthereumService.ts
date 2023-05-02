@@ -67,6 +67,10 @@ type DecodeReturnType<
   Method extends keyof Contract["callStatic"],
 > = EnforceArray<AsyncReturnType<Contract["callStatic"][Method]>>;
 
+type ExpanderEntryPoint = AsyncReturnType<
+  ContractsConnector["ExpanderEntryPoint"]
+>;
+
 export default class EthereumService {
   constructor(
     public emit: (evt: AppEvent) => void,
@@ -76,6 +80,7 @@ export default class EthereumService {
     public blsWalletSigner: BlsWalletSigner,
     public verificationGateway: VerificationGateway,
     public aggregatorUtilities: AggregatorUtilities,
+    public expanderEntryPoint: ExpanderEntryPoint,
     public bundleCompressor: BundleCompressor,
     public nextNonce: BigNumber,
   ) {}
@@ -103,6 +108,7 @@ export default class EthereumService {
       erc20Expander,
       blsRegistration,
       fallbackExpander,
+      expanderEntryPoint,
     ] = await Promise.all([
       contractsConnector.VerificationGateway(),
       contractsConnector.AggregatorUtilities(),
@@ -110,6 +116,7 @@ export default class EthereumService {
       contractsConnector.ERC20Expander(),
       contractsConnector.BLSRegistration(),
       contractsConnector.FallbackExpander(),
+      contractsConnector.ExpanderEntryPoint(),
     ]);
 
     const blsWalletWrapper = await BlsWalletWrapper.connect(
@@ -166,6 +173,7 @@ export default class EthereumService {
       blsWalletSigner,
       verificationGateway,
       aggregatorUtilities,
+      expanderEntryPoint,
       bundleCompressor,
       nextNonce,
     );
@@ -316,30 +324,27 @@ export default class EthereumService {
       this.verificationGateway.populateTransaction.processBundle(bundle).then(
         (tx) => this.wallet.signTransaction(tx),
       ),
-      this.bundleCompressor.blsExpanderDelegator.populateTransaction
-        .run(compressedBundle).then((tx) => this.wallet.signTransaction(tx)),
+      this.wallet.signTransaction({
+        to: this.expanderEntryPoint.address,
+        data: compressedBundle,
+      }),
     ]);
 
     const txLen = ethers.utils.hexDataLength(rawTx);
     const compressedTxLen = ethers.utils.hexDataLength(rawCompressedTx);
 
-    const processBundleArgs: Parameters<
-      (typeof this.bundleCompressor.blsExpanderDelegator)["run"]
-    > = [
-      compressedBundle,
-      {
-        nonce: this.NextNonce(),
-        ...await this.GasConfig(),
-      },
-    ];
+    const txRequest: ethers.providers.TransactionRequest = {
+      to: this.expanderEntryPoint.address,
+      data: compressedBundle,
+      nonce: this.NextNonce(),
+      ...await this.GasConfig(),
+    };
 
     const attempt = async () => {
       let txResponse: ethers.providers.TransactionResponse;
 
       try {
-        txResponse = await this.bundleCompressor.blsExpanderDelegator.run(
-          ...processBundleArgs,
-        );
+        txResponse = await this.wallet.sendTransaction(txRequest);
       } catch (error) {
         if (/\binvalid transaction nonce\b/.test(error.message)) {
           // This can occur when the nonce is in the future, which can
@@ -403,9 +408,10 @@ export default class EthereumService {
   async estimateCompressedGas(bundle: Bundle): Promise<BigNumber> {
     const compressedBundle = await this.bundleCompressor.compress(bundle);
 
-    return this.bundleCompressor.blsExpanderDelegator.estimateGas.run(
-      compressedBundle,
-    );
+    return await this.wallet.estimateGas({
+      to: this.expanderEntryPoint.address,
+      data: compressedBundle,
+    });
   }
 
   async GasConfig() {
