@@ -1,6 +1,8 @@
 import { Operation, PublicKey } from "./signer";
 
 type IOperationCompressor = {
+  getExpanderAddress(): string;
+
   compress(
     blsPublicKey: PublicKey,
     operation: Operation,

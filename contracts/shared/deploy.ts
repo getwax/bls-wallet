@@ -20,6 +20,10 @@ import {
   VerificationGateway,
   VerificationGateway__factory as VerificationGatewayFactory,
   BLSRegistration,
+  ERC20Expander,
+  ERC20Expander__factory as ERC20ExpanderFactory,
+  ExpanderEntryPoint,
+  ExpanderEntryPoint__factory as ExpanderEntryPointFactory,
 } from "../typechain-types";
 
 import { SafeSingletonFactory } from "../clients/src";
@@ -32,11 +36,13 @@ export type Deployment = {
   verificationGateway: VerificationGateway;
   blsExpander: BLSExpander;
   fallbackExpander: FallbackExpander;
+  erc20Expander: ERC20Expander;
   blsPublicKeyRegistry: BLSPublicKeyRegistry;
   addressRegistry: AddressRegistry;
   blsExpanderDelegator: BLSExpanderDelegator;
   aggregatorUtilities: AggregatorUtilities;
   blsRegistration: BLSRegistration;
+  expanderEntryPoint: ExpanderEntryPoint;
 };
 
 export default async function deploy(
@@ -74,6 +80,7 @@ export default async function deploy(
   const {
     blsExpander,
     fallbackExpander,
+    erc20Expander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,
@@ -85,6 +92,12 @@ export default async function deploy(
     salt,
   );
 
+  const expanderEntryPoint = await singletonFactory.connectOrDeploy(
+    ExpanderEntryPointFactory,
+    [blsExpanderDelegator.address],
+    salt,
+  );
+
   return {
     singletonFactory,
     precompileCostEstimator,
@@ -92,11 +105,13 @@ export default async function deploy(
     verificationGateway,
     blsExpander,
     fallbackExpander,
+    erc20Expander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,
     aggregatorUtilities,
     blsRegistration,
+    expanderEntryPoint,
   };
 }
 
@@ -149,14 +164,27 @@ async function deployExpanders(
     ],
   );
 
-  await registerExpanders(blsExpanderDelegator, [
+  const erc20Expander = await singletonFactory.connectOrDeploy(
+    ERC20ExpanderFactory,
+    [
+      blsPublicKeyRegistry.address,
+      addressRegistry.address,
+      aggregatorUtilities.address,
+    ],
+    salt,
+  );
+
+  await registerExpanderIfNeeded(
+    blsExpanderDelegator,
     fallbackExpander.address,
-    blsRegistration.address,
-  ]);
+  );
+  await registerExpanderIfNeeded(blsExpanderDelegator, blsRegistration.address);
+  await registerExpanderIfNeeded(blsExpanderDelegator, erc20Expander.address);
 
   return {
     blsExpander,
     fallbackExpander,
+    erc20Expander,
     blsPublicKeyRegistry,
     addressRegistry,
     blsExpanderDelegator,
@@ -164,17 +192,17 @@ async function deployExpanders(
   };
 }
 
-async function registerExpanders(
+async function registerExpanderIfNeeded(
   blsExpanderDelegator: BLSExpanderDelegator,
-  expanders: string[],
+  expander: string,
 ) {
-  for (const [i, expander] of expanders.entries()) {
-    const existingExpander = await blsExpanderDelegator.expanders(i);
+  const registrations = await blsExpanderDelegator.queryFilter(
+    blsExpanderDelegator.filters.ExpanderRegistered(null, expander),
+  );
 
-    if (existingExpander === ethers.constants.AddressZero) {
-      await receiptOf(blsExpanderDelegator.registerExpander(i, expander));
-    } else if (existingExpander !== expanders[i]) {
-      throw new Error(`Existing expander at index ${i} is not ${expander}`);
-    }
+  if (registrations.length > 0) {
+    return;
   }
+
+  await receiptOf(blsExpanderDelegator.registerExpander(expander));
 }

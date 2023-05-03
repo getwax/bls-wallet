@@ -79,8 +79,6 @@ export default class Fixture {
 
     const ethereumService = await EthereumService.create(
       emit,
-      netCfg.addresses.verificationGateway,
-      netCfg.addresses.utilities,
       env.PRIVATE_KEY_AGG,
     );
 
@@ -296,10 +294,10 @@ export default class Fixture {
 
     return wallets;
   }
-  
+
   createHealthCheckService() {
     const healthCheckService = new HealthService();
-    
+
     return healthCheckService;
   }
 

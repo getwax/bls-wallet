@@ -15,11 +15,11 @@ type NonOptionalElementsOf<A extends unknown[]> = A extends [
   ? []
   : never;
 
-type ContractFactoryConstructor = {
+export type ContractFactoryConstructor = {
   new (): ethers.ContractFactory;
 };
 
-type DeployParams<CFC extends ContractFactoryConstructor> =
+export type DeployParams<CFC extends ContractFactoryConstructor> =
   NonOptionalElementsOf<Parameters<InstanceType<CFC>["deploy"]>>;
 
 type Deployment = {
@@ -224,7 +224,9 @@ export default class SafeSingletonFactory {
 
       throw new Error(
         [
-          "Insufficient funds:",
+          "Account",
+          await this.signer.getAddress(),
+          "has insufficient funds:",
           ethers.utils.formatEther(balance),
           "ETH, need (approx):",
           ethers.utils.formatEther(gasEstimate.mul(gasPrice)),
@@ -345,6 +347,32 @@ export class SafeSingletonFactoryViewer {
 
     if (this.signer) {
       contract = contract.connect(this.signer) as typeof contract;
+    }
+
+    return contract;
+  }
+
+  async connectOrThrow<CFC extends ContractFactoryConstructor>(
+    ContractFactoryConstructor: CFC,
+    deployParams: DeployParams<CFC>,
+    salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
+  ): Promise<ReturnType<InstanceType<CFC>["attach"]>> {
+    const contract = await this.connectIfDeployed(
+      ContractFactoryConstructor,
+      deployParams,
+      salt,
+    );
+
+    if (!contract) {
+      throw new Error(
+        `Contract ${
+          ContractFactoryConstructor.name
+        } not deployed at ${this.calculateAddress(
+          ContractFactoryConstructor,
+          deployParams,
+          salt,
+        )}`,
+      );
     }
 
     return contract;

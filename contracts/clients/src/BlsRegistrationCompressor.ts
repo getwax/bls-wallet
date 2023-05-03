@@ -165,6 +165,10 @@ export default class BlsRegistrationCompressor implements IOperationCompressor {
     return await BlsRegistrationCompressor.wrap(blsRegistration);
   }
 
+  getExpanderAddress(): string {
+    return this.blsRegistration.address;
+  }
+
   async compress(blsPublicKey: PublicKey, operation: Operation) {
     if (operation.actions.length > 2) {
       return undefined;

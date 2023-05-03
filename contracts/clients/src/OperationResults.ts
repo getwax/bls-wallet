@@ -1,6 +1,8 @@
 import { BigNumber, ContractReceipt, utils } from "ethers";
 import assert from "./helpers/assert";
 import { ActionData } from "./signer";
+import { Result } from "ethers/lib/utils";
+import { VerificationGateway__factory as VerificationGatewayFactory } from "../typechain-types";
 
 export const errorSelectors = {
   Error: calculateAndCheckSelector("Error(string)", "0x08c379a0"),
@@ -117,28 +119,49 @@ const getError = (
 export const getOperationResults = (
   txnReceipt: ContractReceipt,
 ): OperationResult[] => {
-  if (!txnReceipt.events?.length) {
-    throw new Error(
-      `no events found in transaction ${txnReceipt.transactionHash}, are you sure it is a ContractReceipt from a VerificationGateway.processBundle transaction?`,
+  let walletOpProcessedEvents: Result[];
+
+  if (txnReceipt.events !== undefined) {
+    walletOpProcessedEvents = txnReceipt.events
+      .filter((e) => e.event === "WalletOperationProcessed")
+      .map(({ args }) => {
+        if (!args) {
+          throw new Error("WalletOperationProcessed event missing args");
+        }
+
+        return args;
+      });
+  } else if (txnReceipt.logs !== undefined) {
+    const vgInterface = VerificationGatewayFactory.createInterface();
+
+    const WalletOperationProcessed = vgInterface.getEvent(
+      "WalletOperationProcessed",
     );
+
+    walletOpProcessedEvents = txnReceipt.logs
+      .filter(
+        (log) =>
+          log.topics[0] === vgInterface.getEventTopic(WalletOperationProcessed),
+      )
+      .map((log) =>
+        vgInterface.decodeEventLog(
+          WalletOperationProcessed,
+          log.data,
+          log.topics,
+        ),
+      );
+  } else {
+    walletOpProcessedEvents = [];
   }
 
-  const walletOpProcessedEvents = txnReceipt.events?.filter(
-    (e) => e.event === "WalletOperationProcessed",
-  );
-  if (!walletOpProcessedEvents?.length) {
+  if (walletOpProcessedEvents.length === 0) {
     throw new Error(
       `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
     );
   }
 
   return walletOpProcessedEvents.reduce<OperationResult[]>(
-    (opResults, { args }) => {
-      if (!args) {
-        throw new Error("WalletOperationProcessed event missing args");
-      }
-      const { wallet, nonce, actions: rawActions, success, results } = args;
-
+    (opResults, { wallet, nonce, actions: rawActions, success, results }) => {
       const actions = rawActions.map(
         ({
           ethValue,
@@ -156,7 +179,7 @@ export const getOperationResults = (
       );
       const error = getError(success, results);
 
-      return [
+      const ret = [
         ...opResults,
         {
           walletAddress: wallet,
@@ -167,6 +190,8 @@ export const getOperationResults = (
           error,
         },
       ];
+
+      return ret;
     },
     [],
   );

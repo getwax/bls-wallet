@@ -1,9 +1,9 @@
-import { ethers, Signer } from "ethers";
+import { BigNumber, ethers, Signer } from "ethers";
 import {
   AddressRegistry__factory as AddressRegistryFactory,
   BLSPublicKeyRegistry__factory as BLSPublicKeyRegistryFactory,
-  FallbackExpander,
-  FallbackExpander__factory as FallbackExpanderFactory,
+  ERC20Expander,
+  ERC20Expander__factory as ERC20ExpanderFactory,
   AggregatorUtilities,
   AggregatorUtilities__factory as AggregatorUtilitiesFactory,
 } from "../typechain-types";
@@ -23,49 +23,47 @@ import SafeSingletonFactory, {
 } from "./SafeSingletonFactory";
 import { ActionData, Operation, PublicKey } from "./signer/types";
 
-export default class FallbackCompressor implements IOperationCompressor {
+export default class Erc20Compressor implements IOperationCompressor {
   private constructor(
-    public fallbackExpander: FallbackExpander,
+    public erc20Expander: ERC20Expander,
     public blsPublicKeyRegistry: BlsPublicKeyRegistryWrapper,
     public addressRegistry: AddressRegistryWrapper,
     public aggregatorUtilities: AggregatorUtilities,
   ) {}
 
-  static async wrap(
-    fallbackExpander: FallbackExpander,
-  ): Promise<FallbackCompressor> {
+  static async wrap(erc20Expander: ERC20Expander): Promise<Erc20Compressor> {
     const [
       blsPublicKeyRegistryAddress,
       addressRegistryAddress,
       aggregatorUtilitiesAddress,
     ] = await Promise.all([
-      fallbackExpander.blsPublicKeyRegistry(),
-      fallbackExpander.addressRegistry(),
-      fallbackExpander.aggregatorUtilities(),
+      erc20Expander.blsPublicKeyRegistry(),
+      erc20Expander.addressRegistry(),
+      erc20Expander.aggregatorUtilities(),
     ]);
 
-    return new FallbackCompressor(
-      fallbackExpander,
+    return new Erc20Compressor(
+      erc20Expander,
       new BlsPublicKeyRegistryWrapper(
         BLSPublicKeyRegistryFactory.connect(
           blsPublicKeyRegistryAddress,
-          fallbackExpander.signer,
+          erc20Expander.signer,
         ),
       ),
       new AddressRegistryWrapper(
         AddressRegistryFactory.connect(
           addressRegistryAddress,
-          fallbackExpander.signer,
+          erc20Expander.signer,
         ),
       ),
       AggregatorUtilitiesFactory.connect(
         aggregatorUtilitiesAddress,
-        fallbackExpander.signer,
+        erc20Expander.signer,
       ),
     );
   }
 
-  static async deployNew(signer: Signer): Promise<FallbackCompressor> {
+  static async deployNew(signer: Signer): Promise<Erc20Compressor> {
     const blsPublicKeyRegistryFactory = new BLSPublicKeyRegistryFactory(signer);
     const addressRegistryFactory = new AddressRegistryFactory(signer);
     const aggregatorUtilitiesFactory = new AggregatorUtilitiesFactory(signer);
@@ -80,16 +78,16 @@ export default class FallbackCompressor implements IOperationCompressor {
       aggregatorUtilitiesFactory.deploy(),
     ]);
 
-    const fallbackExpanderFactory = new FallbackExpanderFactory(signer);
+    const erc20ExpanderFactory = new ERC20ExpanderFactory(signer);
 
-    const fallbackExpanderContract = await fallbackExpanderFactory.deploy(
+    const erc20ExpanderContract = await erc20ExpanderFactory.deploy(
       blsPublicKeyRegistryContract.address,
       addressRegistryContract.address,
       aggregatorUtilitiesContract.address,
     );
 
-    return new FallbackCompressor(
-      fallbackExpanderContract,
+    return new Erc20Compressor(
+      erc20ExpanderContract,
       new BlsPublicKeyRegistryWrapper(blsPublicKeyRegistryContract),
       new AddressRegistryWrapper(addressRegistryContract),
       aggregatorUtilitiesContract,
@@ -99,7 +97,7 @@ export default class FallbackCompressor implements IOperationCompressor {
   static async connectOrDeploy(
     signerOrFactory: Signer | SafeSingletonFactory,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
-  ): Promise<FallbackCompressor> {
+  ): Promise<Erc20Compressor> {
     const factory = await SafeSingletonFactory.from(signerOrFactory);
 
     const [blsPublicKeyRegistry, addressRegistry, aggregatorUtilities] =
@@ -109,8 +107,8 @@ export default class FallbackCompressor implements IOperationCompressor {
         factory.connectOrDeploy(AggregatorUtilitiesFactory, [], salt),
       ]);
 
-    const fallbackExpanderContract = await factory.connectOrDeploy(
-      FallbackExpanderFactory,
+    const erc20ExpanderContract = await factory.connectOrDeploy(
+      ERC20ExpanderFactory,
       [
         blsPublicKeyRegistry.registry.address,
         addressRegistry.registry.address,
@@ -119,8 +117,8 @@ export default class FallbackCompressor implements IOperationCompressor {
       salt,
     );
 
-    return new FallbackCompressor(
-      fallbackExpanderContract,
+    return new Erc20Compressor(
+      erc20ExpanderContract,
       blsPublicKeyRegistry,
       addressRegistry,
       aggregatorUtilities,
@@ -130,7 +128,7 @@ export default class FallbackCompressor implements IOperationCompressor {
   static async connectIfDeployed(
     signerOrProvider: SignerOrProvider,
     salt: ethers.utils.BytesLike = ethers.utils.solidityPack(["uint256"], [0]),
-  ): Promise<FallbackCompressor | undefined> {
+  ): Promise<Erc20Compressor | undefined> {
     const factoryViewer = await SafeSingletonFactoryViewer.from(
       signerOrProvider,
     );
@@ -145,8 +143,8 @@ export default class FallbackCompressor implements IOperationCompressor {
       factoryViewer.calculateAddress(AggregatorUtilitiesFactory, [], salt),
     ]);
 
-    const fallbackExpander = await factoryViewer.connectIfDeployed(
-      FallbackExpanderFactory,
+    const erc20Expander = await factoryViewer.connectIfDeployed(
+      ERC20ExpanderFactory,
       [
         blsPublicKeyRegistryAddress,
         addressRegistryAddress,
@@ -155,15 +153,15 @@ export default class FallbackCompressor implements IOperationCompressor {
       salt,
     );
 
-    if (!fallbackExpander) {
+    if (!erc20Expander) {
       return undefined;
     }
 
-    return await FallbackCompressor.wrap(fallbackExpander);
+    return await Erc20Compressor.wrap(erc20Expander);
   }
 
   getExpanderAddress(): string {
-    return this.fallbackExpander.address;
+    return this.erc20Expander.address;
   }
 
   async compress(blsPublicKey: PublicKey, operation: Operation) {
@@ -215,8 +213,6 @@ export default class FallbackCompressor implements IOperationCompressor {
     }
 
     for (const action of regularActions) {
-      result.push(encodePseudoFloat(action.ethValue));
-
       const addressId = await this.addressRegistry.reverseLookup(
         action.contractAddress,
       );
@@ -229,11 +225,15 @@ export default class FallbackCompressor implements IOperationCompressor {
         result.push(encodeRegIndex(addressId));
       }
 
-      const fnHex = ethers.utils.hexlify(action.encodedFunction);
-      const fnLen = (fnHex.length - 2) / 2;
+      const success = await this.compressFunctionCall(
+        action.encodedFunction,
+        result,
+        bitStream,
+      );
 
-      result.push(encodeVLQ(fnLen));
-      result.push(fnHex);
+      if (!success) {
+        return undefined;
+      }
     }
 
     if (txOriginPaymentAction !== undefined) {
@@ -244,4 +244,151 @@ export default class FallbackCompressor implements IOperationCompressor {
 
     return hexJoin(result);
   }
+
+  private async compressFunctionCall(
+    encodedFunction: ethers.utils.BytesLike,
+    result: string[],
+    bitStream: boolean[],
+  ): Promise<boolean> {
+    const encodedFunctionHex = ethers.utils.hexlify(encodedFunction);
+    const parametersHex = ethers.utils.hexDataSlice(encodedFunctionHex, 4);
+
+    if (isMethod("transfer(address,uint256)", encodedFunction)) {
+      return this.compressTransfer(parametersHex, result, bitStream);
+    }
+
+    if (isMethod("transferFrom(address,address,uint256)", encodedFunction)) {
+      return this.compressTransferFrom(parametersHex, result, bitStream);
+    }
+
+    if (isMethod("approve(address,uint256)", encodedFunction)) {
+      return this.compressApprove(parametersHex, result, bitStream);
+    }
+
+    if (isMethod("mint(address,uint256)", encodedFunction)) {
+      return this.compressMint(parametersHex, result, bitStream);
+    }
+
+    return false;
+  }
+
+  private async compressTransfer(
+    parametersHex: string,
+    result: string[],
+    bitStream: boolean[],
+  ): Promise<boolean> {
+    if (ethers.utils.hexDataLength(parametersHex) !== 2 * 32) {
+      return false;
+    }
+
+    result.push(encodeVLQ(0));
+
+    const [to, value] = ethers.utils.defaultAbiCoder.decode(
+      ["address", "uint256"],
+      parametersHex,
+    ) as [string, BigNumber];
+
+    await this.compressAddress(to, result, bitStream);
+    result.push(encodePseudoFloat(value));
+
+    return true;
+  }
+
+  private async compressTransferFrom(
+    parametersHex: string,
+    result: string[],
+    bitStream: boolean[],
+  ): Promise<boolean> {
+    if (ethers.utils.hexDataLength(parametersHex) !== 3 * 32) {
+      return false;
+    }
+
+    result.push(encodeVLQ(1));
+
+    const [from, to, value] = ethers.utils.defaultAbiCoder.decode(
+      ["address", "address", "uint256"],
+      parametersHex,
+    ) as [string, string, BigNumber];
+
+    await this.compressAddress(from, result, bitStream);
+    await this.compressAddress(to, result, bitStream);
+    result.push(encodePseudoFloat(value));
+
+    return true;
+  }
+
+  private async compressApprove(
+    parametersHex: string,
+    result: string[],
+    bitStream: boolean[],
+  ): Promise<boolean> {
+    if (ethers.utils.hexDataLength(parametersHex) !== 2 * 32) {
+      return false;
+    }
+
+    const [spender, value] = ethers.utils.defaultAbiCoder.decode(
+      ["address", "uint256"],
+      parametersHex,
+    ) as [string, BigNumber];
+
+    if (value.eq(ethers.constants.MaxUint256)) {
+      result.push(encodeVLQ(3));
+      await this.compressAddress(spender, result, bitStream);
+    } else {
+      result.push(encodeVLQ(2));
+      await this.compressAddress(spender, result, bitStream);
+      result.push(encodePseudoFloat(value));
+    }
+
+    return true;
+  }
+
+  private async compressMint(
+    parametersHex: string,
+    result: string[],
+    bitStream: boolean[],
+  ): Promise<boolean> {
+    if (ethers.utils.hexDataLength(parametersHex) !== 2 * 32) {
+      return false;
+    }
+
+    result.push(encodeVLQ(4));
+
+    const [to, value] = ethers.utils.defaultAbiCoder.decode(
+      ["address", "uint256"],
+      parametersHex,
+    ) as [string, BigNumber];
+
+    await this.compressAddress(to, result, bitStream);
+    result.push(encodePseudoFloat(value));
+
+    return true;
+  }
+
+  private async compressAddress(
+    address: string,
+    result: string[],
+    bitStream: boolean[],
+  ) {
+    const addressId = await this.addressRegistry.reverseLookup(address);
+
+    if (addressId === undefined) {
+      bitStream.push(false);
+      result.push(address);
+    } else {
+      bitStream.push(true);
+      result.push(encodeRegIndex(addressId));
+    }
+  }
+}
+
+function isMethod(
+  signature: string,
+  encodedFunction: ethers.utils.BytesLike,
+): boolean {
+  const methodId = ethers.utils
+    .keccak256(ethers.utils.toUtf8Bytes(signature))
+    .slice(0, 10);
+
+  return ethers.utils.hexlify(encodedFunction).startsWith(methodId);
 }

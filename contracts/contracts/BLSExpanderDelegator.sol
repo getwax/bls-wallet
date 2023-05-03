@@ -20,7 +20,10 @@ contract BLSExpanderDelegator {
     uint8 constant BLS_KEY_LEN = 4;
 
     IBundleProcessor gateway;
+
+    uint256 public nextExpanderId = 0;
     mapping(uint256 => IExpander) public expanders;
+    event ExpanderRegistered(uint256 id, IExpander indexed expanderAddress);
 
     constructor(IBundleProcessor gatewayParam) {
         gateway = gatewayParam;
@@ -80,14 +83,12 @@ contract BLSExpanderDelegator {
     }
 
     function registerExpander(
-        uint256 expanderIndex,
         IExpander expander
     ) external {
-        require(
-            expanders[expanderIndex] == IExpander(address(0)),
-            "Index not available"
-        );
+        uint256 expanderId = nextExpanderId;
+        nextExpanderId += 1;
+        expanders[expanderId] = expander;
 
-        expanders[expanderIndex] = expander;
+        emit ExpanderRegistered(expanderId, expander);
     }
 }

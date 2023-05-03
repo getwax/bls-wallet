@@ -48,13 +48,13 @@ function approveAndSendTokensToOrigin(
         contractAddress: fx.testErc20.address,
         encodedFunction: fx.testErc20.interface.encodeFunctionData(
           "approve",
-          [es.utilities.address, amount],
+          [es.aggregatorUtilities.address, amount],
         ),
       },
       {
         ethValue: 0,
-        contractAddress: es.utilities.address,
-        encodedFunction: es.utilities.interface.encodeFunctionData(
+        contractAddress: es.aggregatorUtilities.address,
+        encodedFunction: es.aggregatorUtilities.interface.encodeFunctionData(
           "sendTokenToTxOrigin",
           [fx.testErc20.address, amount],
         ),
@@ -164,8 +164,8 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
       actions: [
         {
           ethValue: 1,
-          contractAddress: es.utilities.address,
-          encodedFunction: es.utilities.interface.encodeFunctionData(
+          contractAddress: es.aggregatorUtilities.address,
+          encodedFunction: es.aggregatorUtilities.interface.encodeFunctionData(
             "sendEthToTxOrigin",
           ),
         },
@@ -189,8 +189,8 @@ Fixture.test("submits bundle with sufficient eth fee", async (fx) => {
     actions: [
       {
         ethValue: fee,
-        contractAddress: es.utilities.address,
-        encodedFunction: es.utilities.interface.encodeFunctionData(
+        contractAddress: es.aggregatorUtilities.address,
+        encodedFunction: es.aggregatorUtilities.interface.encodeFunctionData(
           "sendEthToTxOrigin",
         ),
       },

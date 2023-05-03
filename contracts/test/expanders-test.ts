@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "ethers";
+import { MockERC20Factory, SafeSingletonFactory } from "../clients/src";
 
 import Fixture from "../shared/helpers/Fixture";
 import hexLen from "../shared/helpers/hexLen";
@@ -66,7 +67,7 @@ describe("Expanders", async function () {
     */
     expect(hexLen(compressedBundle)).to.eq(223);
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
       0,
@@ -141,7 +142,7 @@ describe("Expanders", async function () {
     */
     expect(hexLen(compressedBundle)).to.eq(81);
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
       0,
@@ -228,7 +229,7 @@ describe("Expanders", async function () {
     expect(hexLen(compressedBundle)).to.eq(83);
     // Just 2 extra bytes for the tx.origin payment
 
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle));
+    await fx.processCompressedBundle(compressedBundle);
 
     await expect(fx.provider.getBalance(sendWallet.address)).to.eventually.eq(
       0,
@@ -289,7 +290,7 @@ describe("Expanders", async function () {
     const compressedBundle = await fx.bundleCompressor.compress(bundle);
     expect(hexLen(compressedBundle)).to.eq(200);
 
-    await receiptOf(fx.processCompressedBundleWithExtraGas(compressedBundle));
+    await fx.processCompressedBundleWithExtraGas(compressedBundle);
 
     await expect(
       fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
@@ -363,7 +364,7 @@ describe("Expanders", async function () {
     const compressedBundle = await fx.bundleCompressor.compress(bundle);
     expect(hexLen(compressedBundle)).to.eq(201);
 
-    await receiptOf(fx.processCompressedBundleWithExtraGas(compressedBundle));
+    await fx.processCompressedBundleWithExtraGas(compressedBundle);
 
     await expect(
       fx.fallbackCompressor.addressRegistry.reverseLookup(wallet.address),
@@ -498,7 +499,8 @@ describe("Expanders", async function () {
       13e9fe34f0ec3465d44718cb6f93697dfbb0000a54287b3acaea5594f36b9aa1
               - signature
     */
-    await receiptOf(fx.blsExpanderDelegator.run(compressedBundle012));
+
+    await fx.processCompressedBundle(compressedBundle012);
 
     await expect(fx.provider.getBalance(wallets[0].address)).to.eventually.eq(
       ethers.utils
@@ -506,5 +508,169 @@ describe("Expanders", async function () {
         .add(ethers.utils.parseEther("0.3")) // Received
         .sub(ethers.utils.parseEther("0.1")), // Sent
     );
+  });
+
+  it("should transfer ERC20 using registries and tx.origin payment", async function () {
+    const fx = await Fixture.getSingleton();
+    const { addressRegistry, blsPublicKeyRegistry } = fx.fallbackCompressor;
+    const [sendWallet, recvWallet] = await fx.createBLSWallets(2);
+    const singletonFactory = await SafeSingletonFactory.init(fx.signers[0]);
+
+    // Ballpark required payment, a bit under USD $0.01 at the time of writing
+    const txOriginPaymentAmount = ethers.utils.parseEther("0.000005");
+
+    const erc20 = await singletonFactory.connectOrDeploy(MockERC20Factory, [
+      "MockToken",
+      "MCK",
+      0,
+    ]);
+
+    await Promise.all([
+      addressRegistry.register(erc20.address),
+      receiptOf(
+        fx.signers[0].sendTransaction({
+          to: sendWallet.address,
+          value: txOriginPaymentAmount,
+        }),
+      ),
+      ...[sendWallet, recvWallet]
+        .map((wallet) => [
+          blsPublicKeyRegistry.register(wallet.PublicKey()),
+          addressRegistry.register(wallet.address),
+          receiptOf(erc20.mint(wallet.address, ethers.utils.parseEther("1.0"))),
+        ])
+        .flat(),
+    ]);
+
+    const bundle = await sendWallet.signWithGasEstimate({
+      nonce: await sendWallet.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: erc20.address,
+          encodedFunction: erc20.interface.encodeFunctionData("transfer", [
+            recvWallet.address,
+            ethers.utils.parseEther("0.1"),
+          ]),
+        },
+        {
+          ethValue: txOriginPaymentAmount,
+          contractAddress: fx.utilities.address,
+          encodedFunction:
+            fx.utilities.interface.encodeFunctionData("sendEthToTxOrigin"),
+        },
+      ],
+    });
+
+    /*
+      Example:
+
+      01      - One operation
+      02      - Use expander 2 (ERC20 expander)
+      0f      - 0x0f = 0b1111 bit stream:
+                - 1: Use registry for BLS key
+                - 1: Include a tx.origin payment
+                - 1: Use registry for ERC20 address
+                - 1: Use registry for recipient address
+      000000  - Registry index for sendWallet's public key
+      00      - nonce: 0
+      0bda28  - gas: 92,483
+      02      - two actions
+      000000  - Registry index for ERC20 address
+      00      - transfer
+      000002  - Registry index for recipient address
+      9100    - 0.1 MCK
+      6d00    - Pay 0.000005 ETH to tx.origin
+
+      279ef4bad05ee777d6c6c497592676242f51a9150f6b7c0e4ae5b36445c6d248
+      0613346680c8f2b9c3a143a378c2e56a770da56b76d9cb0b8eee29a2e2ac87b7
+              - signature
+    */
+
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+
+    await fx.processCompressedBundle(compressedBundle);
+
+    await expect(erc20.balanceOf(sendWallet.address)).to.eventually.eq(
+      ethers.utils.parseEther("0.9"),
+    );
+
+    await expect(erc20.balanceOf(recvWallet.address)).to.eventually.eq(
+      ethers.utils.parseEther("1.1"),
+    );
+  });
+
+  it("should approve max ERC20 using registries", async function () {
+    const fx = await Fixture.getSingleton();
+    const { addressRegistry, blsPublicKeyRegistry } = fx.fallbackCompressor;
+    const [sendWallet, recvWallet] = await fx.createBLSWallets(2);
+    const singletonFactory = await SafeSingletonFactory.init(fx.signers[0]);
+
+    const erc20 = await singletonFactory.connectOrDeploy(MockERC20Factory, [
+      "MockToken",
+      "MCK",
+      0,
+    ]);
+
+    await Promise.all([
+      addressRegistry.register(erc20.address),
+      ...[sendWallet, recvWallet]
+        .map((wallet) => [
+          blsPublicKeyRegistry.register(wallet.PublicKey()),
+          addressRegistry.register(wallet.address),
+        ])
+        .flat(),
+    ]);
+
+    const bundle = await sendWallet.signWithGasEstimate({
+      nonce: await sendWallet.Nonce(),
+      actions: [
+        {
+          ethValue: 0,
+          contractAddress: erc20.address,
+          encodedFunction: erc20.interface.encodeFunctionData("approve", [
+            recvWallet.address,
+            ethers.constants.MaxUint256,
+          ]),
+        },
+      ],
+    });
+
+    /*
+      Example:
+
+      01      - One operation
+      02      - Use expander 2 (ERC20 expander)
+      0d      - 0x0d = 0b1101 bit stream:
+                - 1: Use registry for BLS key
+                - 0: Do not include a tx.origin payment
+                - 1: Use registry for ERC20 address
+                - 1: Use registry for spender address
+                (The read order is 'backwards' because the lowest bit is read
+                first)
+      000000  - Registry index for sendWallet's public key
+      00      - nonce: 0
+      0bb917  - gas: 58,555
+      01      - one action
+      000000  - Registry index for ERC20 address
+      03      - approve (max)
+      000002  - Registry index for spender address
+
+      2bcf9cdda381531edb01b34b913aa361d5f9cb9da95a41d2ff408d41c8514be0
+      1d42409bcd8703f8e0c10d528b8aaf6bf51236cee4ea9653a72a8382b1cba655
+              - signature
+    */
+
+    const compressedBundle = await fx.bundleCompressor.compress(bundle);
+
+    await expect(
+      erc20.allowance(sendWallet.address, recvWallet.address),
+    ).to.eventually.eq(0);
+
+    await fx.processCompressedBundle(compressedBundle);
+
+    await expect(
+      erc20.allowance(sendWallet.address, recvWallet.address),
+    ).to.eventually.eq(ethers.constants.MaxUint256);
   });
 });

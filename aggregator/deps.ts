@@ -54,21 +54,26 @@ export type {
   PublicKey,
   Signature,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.8.3-c34db60";
+} from "https://esm.sh/bls-wallet-clients@0.8.3-0d52ddb";
 
 export {
   Aggregator as AggregatorClient,
   AggregatorUtilitiesFactory,
+  BlsRegistrationCompressor,
   BlsWalletWrapper,
+  BundleCompressor,
+  ContractsConnector,
   decodeError,
+  Erc20Compressor,
   ERC20Factory,
+  FallbackCompressor,
   getConfig,
   MockERC20Factory,
   VerificationGatewayFactory,
-} from "https://esm.sh/bls-wallet-clients@0.8.3-c34db60";
+} from "https://esm.sh/bls-wallet-clients@0.8.3-0d52ddb";
 
 // Workaround for esbuild's export-star bug
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.8.3-c34db60";
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.8.3-0d52ddb";
 const { bundleFromDto, bundleToDto, initBlsWalletSigner } = blsWalletClients;
 export { bundleFromDto, bundleToDto, initBlsWalletSigner };
 
