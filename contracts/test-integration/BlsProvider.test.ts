@@ -63,6 +63,10 @@ describe("BlsProvider", () => {
     });
   });
 
+  afterEach(() => {
+    chai.spy.restore();
+  });
+
   it("calls a getter method on a contract using call()", async () => {
     // Arrange
     const expectedSupply = "1000000.0";
@@ -202,7 +206,6 @@ describe("BlsProvider", () => {
     // Once when calling "signer.signTransaction", and once when calling "blsSigner.constructTransactionResponse".
     // This unit test is concerned with the latter being called.
     expect(spy).to.have.been.called.exactly(2);
-    chai.spy.restore(spy);
   });
 
   it("should throw an error when sending a modified signed transaction", async () => {
@@ -391,7 +394,6 @@ describe("BlsProvider", () => {
     // Once when calling "signer.signTransaction", and once when calling "blsSigner.constructTransactionResponse".
     // This unit test is concerned with the latter being called.
     expect(spy).to.have.been.called.exactly(2);
-    chai.spy.restore(spy);
   });
 
   it("should throw an error when sending a modified signed transaction", async () => {

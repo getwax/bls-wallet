@@ -72,6 +72,11 @@ describe("BlsSigner", () => {
     });
   });
 
+  afterEach(() => {
+    chai.spy.restore();
+    sinon.restore();
+  });
+
   it("should send ETH (empty call) successfully", async () => {
     // Arrange
     const recipient = ethers.Wallet.createRandom().address;
@@ -209,7 +214,6 @@ describe("BlsSigner", () => {
 
     // Nonce is supplied with batch options so spy should not be called
     expect(spy).to.have.been.called.exactly(0);
-    chai.spy.restore(spy);
   });
 
   it("should retrieve nonce when sending a transaction batch without batch options", async () => {
@@ -234,7 +238,6 @@ describe("BlsSigner", () => {
 
     // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
     expect(spy).to.have.been.called.exactly(1);
-    chai.spy.restore(spy);
   });
 
   it("should throw an error sending & signing a transaction batch when 'transaction.to' has not been defined", async () => {
@@ -548,7 +551,6 @@ describe("BlsSigner", () => {
     expect(bundleDto.signature).to.deep.equal(
       expectedBundleSignatureHexStrings,
     );
-    sinon.restore();
   });
 
   it("should throw an error when signing an invalid transaction", async () => {
@@ -686,7 +688,6 @@ describe("BlsSigner", () => {
     // Assert
     // Nonce is supplied with batch options so spy should not be called
     expect(spy).to.have.been.called.exactly(0);
-    chai.spy.restore(spy);
   });
 
   it("should retrieve nonce when signing a transaction batch without batch options", async () => {
@@ -706,7 +707,6 @@ describe("BlsSigner", () => {
     // Assert
     // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
     expect(spy).to.have.been.called.exactly(1);
-    chai.spy.restore(spy);
   });
 
   it("should check transaction", async () => {
@@ -1006,7 +1006,6 @@ describe("BlsSigner", () => {
       data: testERC20.interface.encodeFunctionData("totalSupply"),
       from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
     });
-    chai.spy.restore(spy);
   });
 
   it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
@@ -1030,7 +1029,6 @@ describe("BlsSigner", () => {
       value: parseEther("1"),
       from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
     });
-    chai.spy.restore(spy);
   });
 
   // ENS is not supported by hardhat so we are checking the correct error behaviour in this scenario
