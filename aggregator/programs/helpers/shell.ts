@@ -1,4 +1,6 @@
 export async function run(...cmd: string[]): Promise<void> {
+  // https://github.com/web3well/bls-wallet/issues/595
+  // deno-lint-ignore no-deprecated-deno-api
   const process = Deno.run({ cmd, stdout: "inherit", stderr: "inherit" });
 
   const unloadListener = () => {
@@ -20,6 +22,8 @@ export async function run(...cmd: string[]): Promise<void> {
 }
 
 export async function String(...cmd: string[]): Promise<string> {
+  // https://github.com/web3well/bls-wallet/issues/595
+  // deno-lint-ignore no-deprecated-deno-api
   const process = Deno.run({ cmd, stdout: "piped" });
 
   if (process.stdout === null) {
