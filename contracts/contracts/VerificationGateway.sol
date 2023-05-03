@@ -21,6 +21,8 @@ contract VerificationGateway
 {
     bytes32 WALLET_DOMAIN;
     bytes32 BUNDLE_DOMAIN;
+    string constant BLS_DOMAIN_NAME = "BLS_WALLET";
+    string constant BLS_DOMAIN_VERSION = "1";
     uint8 constant BLS_KEY_LEN = 4;
 
     IBLS public immutable blsLib;
@@ -64,11 +66,15 @@ contract VerificationGateway
         blsLib = bls;
         blsWalletLogic.initialize(address(0));
         WALLET_DOMAIN = keccak256(abi.encodePacked(
+            BLS_DOMAIN_NAME,
+            BLS_DOMAIN_VERSION,
             block.chainid,
             address(this),
             "Wallet"
         ));
         BUNDLE_DOMAIN = keccak256(abi.encodePacked(
+            BLS_DOMAIN_NAME,
+            BLS_DOMAIN_VERSION,
             block.chainid,
             address(this),
             "Bundle"

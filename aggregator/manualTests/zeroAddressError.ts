@@ -15,8 +15,6 @@ const provider = new ethers.providers.JsonRpcProvider(env.RPC_URL);
 //   (evt) => {
 //     console.log(evt);
 //   },
-//   addresses.verificationGateway,
-//   addresses.utilities,
 //   env.PRIVATE_KEY_AGG,
 // );
 

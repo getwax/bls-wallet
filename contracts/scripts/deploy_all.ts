@@ -13,6 +13,7 @@ import { writeFile } from "fs/promises";
 import { ethers } from "hardhat";
 import { NetworkConfig } from "../clients/src";
 import deploy from "../shared/deploy";
+import getDomain from "../clients/src/signer/getDomain";
 
 dotenv.config();
 const exec = util.promisify(execCb);
@@ -48,6 +49,24 @@ async function main() {
   // These can be run in parallel
   const [testToken, version] = await Promise.all([deployToken(), getVersion()]);
 
+  const domainName = "BLS_WALLET";
+  const domainVersion = "1";
+  const walletDomain = getDomain(
+    domainName,
+    domainVersion,
+    chainid,
+    deployment.verificationGateway.address,
+    "Wallet",
+  );
+
+  const bundleDomain = getDomain(
+    domainName,
+    domainVersion,
+    chainid,
+    deployment.verificationGateway.address,
+    "Bundle",
+  );
+
   const netCfg: NetworkConfig = {
     parameters: {},
     addresses: {
@@ -60,9 +79,8 @@ async function main() {
     },
     auxiliary: {
       chainid,
-      // From VerificationGateway.sol:BLS_DOMAIN
-      domain:
-        "0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc",
+      walletDomain: ethers.utils.hexlify(walletDomain),
+      bundleDomain: ethers.utils.hexlify(bundleDomain),
       genesisBlock,
       deployedBy: signer.address,
       version,

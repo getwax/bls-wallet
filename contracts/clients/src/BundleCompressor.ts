@@ -3,6 +3,7 @@ import { encodeVLQ, hexJoin } from "./encodeUtils";
 import IOperationCompressor from "./IOperationCompressor";
 import { Bundle, Operation, PublicKey } from "./signer";
 import Range from "./helpers/Range";
+import { BLSExpanderDelegator } from "../typechain-types";
 
 /**
  * Produces compressed bundles that can be passed to `BLSExpanderDelegator.run`
@@ -18,9 +19,24 @@ import Range from "./helpers/Range";
 export default class BundleCompressor {
   compressors: [number, IOperationCompressor][] = [];
 
+  constructor(public blsExpanderDelegator: BLSExpanderDelegator) {}
+
   /** Add an operation compressor. */
-  addCompressor(expanderIndex: number, compressor: IOperationCompressor) {
-    this.compressors.push([expanderIndex, compressor]);
+  async addCompressor(compressor: IOperationCompressor) {
+    const registrations = await this.blsExpanderDelegator.queryFilter(
+      this.blsExpanderDelegator.filters.ExpanderRegistered(
+        null,
+        compressor.getExpanderAddress(),
+      ),
+    );
+
+    const id = registrations.at(0)?.args?.id;
+
+    if (id === undefined) {
+      throw new Error("Expander not registered");
+    }
+
+    this.compressors.push([id.toNumber(), compressor]);
   }
 
   /** Compresses a single operation. */
@@ -31,7 +47,13 @@ export default class BundleCompressor {
     let expanderIndexAndData: [number, string] | undefined;
 
     for (const [expanderIndex, compressor] of this.compressors) {
-      const data = await compressor.compress(blsPublicKey, operation);
+      let data: string | undefined;
+
+      try {
+        data = await compressor.compress(blsPublicKey, operation);
+      } catch {
+        continue;
+      }
 
       if (data === undefined) {
         continue;

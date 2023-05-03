@@ -70,6 +70,7 @@ export type AggregationStrategyResult = {
   aggregateBundle: Bundle | nil;
   includedRows: BundleRow[];
   bundleOverheadCost: BigNumber;
+  bundleOverheadLen: number;
   expectedFee: BigNumber;
   expectedMaxCost: BigNumber;
   failedRows: BundleRow[];
@@ -105,7 +106,8 @@ export default class AggregationStrategy {
   async run(eligibleRows: BundleRow[]): Promise<AggregationStrategyResult> {
     eligibleRows = await this.#filterRows(eligibleRows);
 
-    const bundleOverheadGas = await this.measureBundleOverheadGas();
+    const { bundleOverheadGas, bundleOverheadLen } = await this
+      .measureBundleOverhead();
 
     let aggregateBundle = this.blsWalletSigner.aggregate([]);
     let aggregateGas = bundleOverheadGas;
@@ -147,6 +149,7 @@ export default class AggregationStrategy {
         bundleOverheadCost: bundleOverheadGas.mul(
           (await this.ethereumService.GasConfig()).maxFeePerGas,
         ),
+        bundleOverheadLen,
         expectedFee: BigNumber.from(0),
         expectedMaxCost: BigNumber.from(0),
         failedRows,
@@ -164,6 +167,7 @@ export default class AggregationStrategy {
       bundleOverheadCost: bundleOverheadGas.mul(
         (await this.ethereumService.GasConfig()).maxFeePerGas,
       ),
+      bundleOverheadLen,
       expectedFee,
       expectedMaxCost: aggregateBundleCheck.expectedMaxCost,
       failedRows,
@@ -217,6 +221,7 @@ export default class AggregationStrategy {
         aggregateBundle: nil,
         includedRows: [],
         bundleOverheadCost: result.bundleOverheadCost,
+        bundleOverheadLen: result.bundleOverheadLen,
         expectedFee: BigNumber.from(0),
         expectedMaxCost: BigNumber.from(0),
         failedRows,
@@ -256,6 +261,7 @@ export default class AggregationStrategy {
       aggregateBundle: nil,
       includedRows: [],
       bundleOverheadCost: result.bundleOverheadCost,
+      bundleOverheadLen: result.bundleOverheadLen,
       expectedFee: BigNumber.from(0),
       expectedMaxCost: BigNumber.from(0),
       failedRows,
@@ -459,14 +465,16 @@ export default class AggregationStrategy {
       .callStaticSequenceWithMeasure(
         feeToken
           ? es.Call(feeToken, "balanceOf", [es.wallet.address])
-          : es.Call(es.utilities, "ethBalanceOf", [es.wallet.address]),
-        bundles.map((bundle) =>
+          : es.Call(es.aggregatorUtilities, "ethBalanceOf", [
+            es.wallet.address,
+          ]),
+        await Promise.all(bundles.map(async (bundle) =>
           es.Call(
-            es.verificationGateway,
-            "processBundle",
-            [bundle],
+            es.bundleCompressor.blsExpanderDelegator,
+            "run",
+            [await es.bundleCompressor.compress(bundle)],
           )
-        ),
+        )),
       );
 
     return Range(bundles.length).map((i) => {
@@ -533,10 +541,12 @@ export default class AggregationStrategy {
       return nil;
     }
 
-    bundleOverheadGas ??= await this.measureBundleOverheadGas();
+    bundleOverheadGas ??=
+      (await this.measureBundleOverhead()).bundleOverheadGas;
 
-    const gasEstimate = await this.ethereumService.verificationGateway
-      .estimateGas.processBundle(bundle);
+    const gasEstimate = await this.ethereumService.estimateCompressedGas(
+      bundle,
+    );
 
     const marginalGasEstimate = gasEstimate.sub(bundleOverheadGas);
 
@@ -625,8 +635,7 @@ export default class AggregationStrategy {
       }
 
       const gasEstimate = feeInfo?.gasEstimate ??
-        await this.ethereumService.verificationGateway
-          .estimateGas.processBundle(bundle);
+        await this.ethereumService.estimateCompressedGas(bundle);
 
       return {
         success,
@@ -639,7 +648,7 @@ export default class AggregationStrategy {
     });
   }
 
-  async measureBundleOverheadGas() {
+  async measureBundleOverhead() {
     // The simple way to do this would be to estimate the gas of an empty
     // bundle. However, an empty bundle is a bit of a special case, in
     // particular the on-chain BLS library outright refuses to validate it. So
@@ -664,15 +673,41 @@ export default class AggregationStrategy {
     });
 
     const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
-      es.verificationGateway.estimateGas.processBundle(bundle1),
-      es.verificationGateway.estimateGas.processBundle(
+      es.estimateCompressedGas(bundle1),
+      es.estimateCompressedGas(
         this.blsWalletSigner.aggregate([bundle1, bundle2]),
       ),
     ]);
 
     const opMarginalGasEstimate = twoOpGasEstimate.sub(oneOpGasEstimate);
 
-    return oneOpGasEstimate.sub(opMarginalGasEstimate);
+    const bundleOverheadGas = oneOpGasEstimate.sub(opMarginalGasEstimate);
+
+    const [compressedBundle1, compressedBundle12] = await Promise.all([
+      es.bundleCompressor.compress(bundle1),
+      es.bundleCompressor.compress(
+        this.blsWalletSigner.aggregate([bundle1, bundle2]),
+      ),
+    ]);
+
+    const [oneOpLen, twoOpLen] = await Promise.all([
+      es.wallet.signTransaction({
+        to: es.expanderEntryPoint.address,
+        data: compressedBundle1,
+      }).then((tx) => ethers.utils.hexDataLength(tx)),
+      es.wallet.signTransaction({
+        to: es.expanderEntryPoint.address,
+        data: compressedBundle12,
+      }).then((tx) => ethers.utils.hexDataLength(tx)),
+    ]);
+
+    const opMarginalLen = twoOpLen - oneOpLen;
+    const bundleOverheadLen = oneOpLen - opMarginalLen;
+
+    return {
+      bundleOverheadGas,
+      bundleOverheadLen,
+    };
   }
 
   async #TokenDecimals(): Promise<number> {

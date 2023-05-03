@@ -15,6 +15,7 @@ type AppEvent =
     data: {
       includedRows: number;
       bundleOverheadCost: string;
+      bundleOverheadLen: number;
       expectedFee: string;
       expectedMaxCost: string;
     };
@@ -44,7 +45,12 @@ type AppEvent =
   | { type: "unprofitable-despite-breakeven-operations" }
   | {
     type: "submission-attempt";
-    data: { publicKeyShorts: string[]; attemptNumber: number };
+    data: {
+      publicKeyShorts: string[];
+      attemptNumber: number;
+      txLen: number;
+      compressedTxLen: number;
+    };
   }
   | {
     type: "submission-attempt-failed";
@@ -96,6 +102,5 @@ type AppEvent =
       duration: number;
     };
   };
-
 
 export default AppEvent;
