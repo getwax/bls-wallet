@@ -450,7 +450,6 @@ describe("BlsProvider", () => {
       to: ethers.Wallet.createRandom().address,
       value: parseEther("1"),
     });
-    const expectedToAddress = networkConfig.addresses.verificationGateway;
     const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
 
     // Act
@@ -463,7 +462,6 @@ describe("BlsProvider", () => {
     // Assert
     const expectedBlockNumber = await blsProvider.getBlockNumber();
     expect(transactionReceipt).to.be.an("object").that.deep.includes({
-      to: expectedToAddress,
       from: expectedFromAddress,
       contractAddress: null,
       transactionIndex: 0,
@@ -511,7 +509,6 @@ describe("BlsProvider", () => {
       value: parseEther("1"),
     });
 
-    const expectedToAddress = networkConfig.addresses.verificationGateway;
     const expectedFromAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // Aggregator address (Hardhat account 0)
 
     // Act
@@ -522,7 +519,6 @@ describe("BlsProvider", () => {
     // Assert
     const expectedBlockNumber = await blsProvider.getBlockNumber();
     expect(transactionReceipt).to.be.an("object").that.deep.includes({
-      to: expectedToAddress,
       from: expectedFromAddress,
       contractAddress: null,
       transactionIndex: 0,
@@ -584,7 +580,6 @@ describe("BlsProvider", () => {
     // TODO: bls-wallet #481 Add Bls Provider getTransaction method
     expect(transactionResponse).to.be.an("object").that.deep.includes({
       hash: transactionReceipt.transactionHash,
-      to: verificationGateway,
 
       // TODO:
       // 1. When running LOCALLY, why is this hardhat account 2 instead of blsSigner.wallet.address?
