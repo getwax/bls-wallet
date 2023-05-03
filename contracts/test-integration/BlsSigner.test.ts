@@ -1,12 +1,7 @@
 /* eslint-disable camelcase */
 import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
-import {
-  parseEther,
-  resolveProperties,
-  RLP,
-  formatEther,
-} from "ethers/lib/utils";
+import { parseEther, resolveProperties, formatEther } from "ethers/lib/utils";
 import sinon from "sinon";
 
 import {
@@ -762,34 +757,30 @@ describe("BlsSigner", () => {
   it("should sign message of type string", async () => {
     // Arrange
     const address = ethers.Wallet.createRandom().address;
-    const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(address);
-
-    const expectedSignature = RLP.encode(blsWalletSignerSignature);
+    const expectedSignedMessage = blsSigner.wallet.signMessage(address);
 
     // Act
     const signedMessage = await blsSigner.signMessage(address);
+    const formattedSignedMessage =
+      BlsSigner.signedMessageToSignature(signedMessage);
 
     // Assert
-    expect(signedMessage).to.deep.equal(expectedSignature);
-    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+    expect(formattedSignedMessage).to.deep.equal(expectedSignedMessage);
   });
 
   it("should sign message of type bytes", async () => {
     // Arrange
     const bytes: number[] = [68, 219, 115, 219, 26, 248, 170, 165]; // random bytes
     const hexString = ethers.utils.hexlify(bytes);
-    const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(hexString);
-
-    const expectedSignature = RLP.encode(blsWalletSignerSignature);
+    const expectedSignature = blsSigner.wallet.signMessage(hexString);
 
     // Act
     const signedMessage = await blsSigner.signMessage(bytes);
+    const formattedSignedMessage =
+      BlsSigner.signedMessageToSignature(signedMessage);
 
     // Assert
-    expect(signedMessage).to.deep.equal(expectedSignature);
-    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+    expect(formattedSignedMessage).to.deep.equal(expectedSignature);
   });
 
   it("should await the init promise when connecting to an unchecked bls signer", async () => {
