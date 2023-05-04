@@ -663,7 +663,7 @@ describe("BlsSigner", () => {
     });
   });
 
-  // TODO: This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
+  // TODO: (merge-ok) This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
   // So will revisit this and ensure the method is using the correct nonce at a later stage.
   it("should populate transaction", async () => {
     // Arrange

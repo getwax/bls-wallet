@@ -485,7 +485,7 @@ describe("BlsProvider", () => {
     );
 
     // Assert
-    // TODO: bls-wallet #481 Add Bls Provider getTransaction method
+    // TODO: (merge-ok) bls-wallet #481 Add Bls Provider getTransaction method
     expect(transactionResponse).to.be.an("object").that.deep.includes({
       hash: transactionReceipt.transactionHash,
       from: expectedFrom,
