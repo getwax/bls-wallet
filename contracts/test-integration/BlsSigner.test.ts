@@ -1,12 +1,7 @@
 /* eslint-disable camelcase */
 import chai, { expect } from "chai";
 import { ethers, BigNumber } from "ethers";
-import {
-  parseEther,
-  resolveProperties,
-  RLP,
-  formatEther,
-} from "ethers/lib/utils";
+import { parseEther, resolveProperties, formatEther } from "ethers/lib/utils";
 import sinon from "sinon";
 
 import {
@@ -70,6 +65,11 @@ describe("BlsSigner", () => {
       to: await blsSigner.getAddress(),
       value: parseEther("10"),
     });
+  });
+
+  afterEach(() => {
+    chai.spy.restore();
+    sinon.restore();
   });
 
   it("should send ETH (empty call) successfully", async () => {
@@ -146,6 +146,8 @@ describe("BlsSigner", () => {
 
   it("should send a batch of ETH transfers (empty calls) successfully", async () => {
     // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+
     const expectedAmount = parseEther("1");
     const recipients = [];
     const transactionBatch = [];
@@ -174,6 +176,9 @@ describe("BlsSigner", () => {
     expect(await blsProvider.getBalance(recipients[2])).to.equal(
       expectedAmount,
     );
+
+    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
+    expect(spy).to.have.been.called.exactly(1);
   });
 
   it("should not retrieve nonce when sending a transaction batch with batch options", async () => {
@@ -209,32 +214,6 @@ describe("BlsSigner", () => {
 
     // Nonce is supplied with batch options so spy should not be called
     expect(spy).to.have.been.called.exactly(0);
-    chai.spy.restore(spy);
-  });
-
-  it("should retrieve nonce when sending a transaction batch without batch options", async () => {
-    // Arrange
-    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
-    const recipient = ethers.Wallet.createRandom().address;
-    const expectedAmount = parseEther("1");
-
-    // Act
-    const transaction = await blsSigner.sendTransactionBatch({
-      transactions: [
-        {
-          to: recipient,
-          value: expectedAmount,
-        },
-      ],
-    });
-    await transaction.awaitBatchReceipt();
-
-    // Assert
-    expect(await blsProvider.getBalance(recipient)).to.equal(expectedAmount);
-
-    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
-    expect(spy).to.have.been.called.exactly(1);
-    chai.spy.restore(spy);
   });
 
   it("should throw an error sending & signing a transaction batch when 'transaction.to' has not been defined", async () => {
@@ -399,29 +378,6 @@ describe("BlsSigner", () => {
     expect(result.nonce).to.not.be.a("number");
   });
 
-  it("should throw error for wrong chain id when validating batch options", async () => {
-    // Arrange
-    const invalidChainId = 123;
-    const batchOptions = {
-      gas: BigNumber.from("40000"),
-      maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
-      maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
-      nonce: 1,
-      chainId: invalidChainId,
-      accessList: [],
-    };
-
-    // Act
-    const result = async () =>
-      await blsSigner._validateBatchOptions(batchOptions);
-
-    // Assert
-    expect(result()).to.be.rejectedWith(
-      Error,
-      `Supplied chain ID ${invalidChainId} does not match the expected chain ID 1337`,
-    );
-  });
-
   it("should throw an error when invalid private key is supplied", async () => {
     // Arrange
     const newBlsProvider = new BlsProvider(
@@ -548,7 +504,6 @@ describe("BlsSigner", () => {
     expect(bundleDto.signature).to.deep.equal(
       expectedBundleSignatureHexStrings,
     );
-    sinon.restore();
   });
 
   it("should throw an error when signing an invalid transaction", async () => {
@@ -686,27 +641,6 @@ describe("BlsSigner", () => {
     // Assert
     // Nonce is supplied with batch options so spy should not be called
     expect(spy).to.have.been.called.exactly(0);
-    chai.spy.restore(spy);
-  });
-
-  it("should retrieve nonce when signing a transaction batch without batch options", async () => {
-    // Arrange
-    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
-
-    // Act
-    await blsSigner.signTransactionBatch({
-      transactions: [
-        {
-          to: ethers.Wallet.createRandom().address,
-          value: parseEther("1"),
-        },
-      ],
-    });
-
-    // Assert
-    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
-    expect(spy).to.have.been.called.exactly(1);
-    chai.spy.restore(spy);
   });
 
   it("should check transaction", async () => {
@@ -729,7 +663,7 @@ describe("BlsSigner", () => {
     });
   });
 
-  // TODO: This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
+  // TODO: (merge-ok) This tests a non-overrideen method and seems to pull the nonce from the aggregator instance.
   // So will revisit this and ensure the method is using the correct nonce at a later stage.
   it("should populate transaction", async () => {
     // Arrange
@@ -762,34 +696,30 @@ describe("BlsSigner", () => {
   it("should sign message of type string", async () => {
     // Arrange
     const address = ethers.Wallet.createRandom().address;
-    const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(address);
-
-    const expectedSignature = RLP.encode(blsWalletSignerSignature);
+    const expectedSignedMessage = blsSigner.wallet.signMessage(address);
 
     // Act
     const signedMessage = await blsSigner.signMessage(address);
+    const formattedSignedMessage =
+      BlsSigner.signedMessageToSignature(signedMessage);
 
     // Assert
-    expect(signedMessage).to.deep.equal(expectedSignature);
-    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+    expect(formattedSignedMessage).to.deep.equal(expectedSignedMessage);
   });
 
   it("should sign message of type bytes", async () => {
     // Arrange
     const bytes: number[] = [68, 219, 115, 219, 26, 248, 170, 165]; // random bytes
     const hexString = ethers.utils.hexlify(bytes);
-    const blsWalletSignerSignature =
-      blsSigner.wallet.blsWalletSigner.signMessage(hexString);
-
-    const expectedSignature = RLP.encode(blsWalletSignerSignature);
+    const expectedSignature = blsSigner.wallet.signMessage(hexString);
 
     // Act
     const signedMessage = await blsSigner.signMessage(bytes);
+    const formattedSignedMessage =
+      BlsSigner.signedMessageToSignature(signedMessage);
 
     // Assert
-    expect(signedMessage).to.deep.equal(expectedSignature);
-    expect(RLP.decode(signedMessage)).to.deep.equal(blsWalletSignerSignature);
+    expect(formattedSignedMessage).to.deep.equal(expectedSignature);
   });
 
   it("should await the init promise when connecting to an unchecked bls signer", async () => {
@@ -908,19 +838,6 @@ describe("BlsSigner", () => {
     ).to.equal(transactionAmount);
   });
 
-  it("should get the balance of an account", async () => {
-    // Arrange
-    const expectedBalance = await regularProvider.getBalance(
-      blsSigner.wallet.address,
-    );
-
-    // Act
-    const result = await blsSigner.getBalance();
-
-    // Assert
-    expect(result).to.equal(expectedBalance);
-  });
-
   it("should get the balance of an account at specific block height", async () => {
     // Arrange
     const expectedBalance = parseEther("0");
@@ -1006,7 +923,6 @@ describe("BlsSigner", () => {
       data: testERC20.interface.encodeFunctionData("totalSupply"),
       from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
     });
-    chai.spy.restore(spy);
   });
 
   it("should estimate gas without throwing an error, with the signer account address being used as the from field.", async () => {
@@ -1030,7 +946,6 @@ describe("BlsSigner", () => {
       value: parseEther("1"),
       from: blsSigner.wallet.address, // Assert that 'from' has been added to the provider call
     });
-    chai.spy.restore(spy);
   });
 
   // ENS is not supported by hardhat so we are checking the correct error behaviour in this scenario

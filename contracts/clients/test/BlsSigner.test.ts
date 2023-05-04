@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 
 import { BlsProvider, BlsSigner } from "../src";
 import { UncheckedBlsSigner } from "../src/BlsSigner";
@@ -17,8 +17,8 @@ let blsSigner: BlsSigner;
 describe("BlsSigner", () => {
   beforeEach(async () => {
     aggregatorUrl = "http://localhost:3000";
-    verificationGateway = "mockVerificationGatewayAddress";
-    aggregatorUtilities = "mockAggregatorUtilitiesAddress";
+    verificationGateway = "0xC8CD2BE653759aed7B0996315821AAe71e1FEAdF";
+    aggregatorUtilities = "0xC8CD2BE653759aed7B0996315821AAe71e1FEAdF";
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -93,5 +93,28 @@ describe("BlsSigner", () => {
 
     // Assert
     expect(connect).to.throw(Error, "cannot alter JSON-RPC Signer connection");
+  });
+
+  it("should throw error for wrong chain id when validating batch options", async () => {
+    // Arrange
+    const invalidChainId = 123;
+    const batchOptions = {
+      gas: BigNumber.from("40000"),
+      maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
+      maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
+      nonce: 1,
+      chainId: invalidChainId,
+      accessList: [],
+    };
+
+    // Act
+    const result = async () =>
+      await blsSigner._validateBatchOptions(batchOptions);
+
+    // Assert
+    expect(result()).to.be.rejectedWith(
+      Error,
+      `Supplied chain ID ${invalidChainId} does not match the expected chain ID 1337`,
+    );
   });
 });
