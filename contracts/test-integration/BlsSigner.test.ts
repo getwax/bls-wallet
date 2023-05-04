@@ -146,6 +146,8 @@ describe("BlsSigner", () => {
 
   it("should send a batch of ETH transfers (empty calls) successfully", async () => {
     // Arrange
+    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
+
     const expectedAmount = parseEther("1");
     const recipients = [];
     const transactionBatch = [];
@@ -174,6 +176,9 @@ describe("BlsSigner", () => {
     expect(await blsProvider.getBalance(recipients[2])).to.equal(
       expectedAmount,
     );
+
+    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
+    expect(spy).to.have.been.called.exactly(1);
   });
 
   it("should not retrieve nonce when sending a transaction batch with batch options", async () => {
@@ -209,30 +214,6 @@ describe("BlsSigner", () => {
 
     // Nonce is supplied with batch options so spy should not be called
     expect(spy).to.have.been.called.exactly(0);
-  });
-
-  it("should retrieve nonce when sending a transaction batch without batch options", async () => {
-    // Arrange
-    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
-    const recipient = ethers.Wallet.createRandom().address;
-    const expectedAmount = parseEther("1");
-
-    // Act
-    const transaction = await blsSigner.sendTransactionBatch({
-      transactions: [
-        {
-          to: recipient,
-          value: expectedAmount,
-        },
-      ],
-    });
-    await transaction.awaitBatchReceipt();
-
-    // Assert
-    expect(await blsProvider.getBalance(recipient)).to.equal(expectedAmount);
-
-    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
-    expect(spy).to.have.been.called.exactly(1);
   });
 
   it("should throw an error sending & signing a transaction batch when 'transaction.to' has not been defined", async () => {
@@ -683,25 +664,6 @@ describe("BlsSigner", () => {
     // Assert
     // Nonce is supplied with batch options so spy should not be called
     expect(spy).to.have.been.called.exactly(0);
-  });
-
-  it("should retrieve nonce when signing a transaction batch without batch options", async () => {
-    // Arrange
-    const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
-
-    // Act
-    await blsSigner.signTransactionBatch({
-      transactions: [
-        {
-          to: ethers.Wallet.createRandom().address,
-          value: parseEther("1"),
-        },
-      ],
-    });
-
-    // Assert
-    // Nonce is not supplied with batch options so spy should be called once in sendTransactionBatch
-    expect(spy).to.have.been.called.exactly(1);
   });
 
   it("should check transaction", async () => {
