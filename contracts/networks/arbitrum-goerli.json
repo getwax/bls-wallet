@@ -3,16 +3,17 @@
     "addresses": {
         "safeSingletonFactory": "0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7",
         "precompileCostEstimator": "0x6eb8F8d661eFe36daB11147830A1e690249bB830",
-        "verificationGateway": "0x84e09390992F481E98eeb100bA4f19910c145Ede",
-        "blsExpander": "0x3F99eFb259ff4d15F3a07C2449a019ab1bF7CEa5",
+        "verificationGateway": "0xE25229F29BAD62B1198F05F32169B70a9edc84b8",
+        "blsExpander": "0x30Ae0d96Ba812F53F69deDefd8b472ce43af23A5",
         "utilities": "0x4bD2E4e99B50A2a9e6b9dABfA3C8dCD1f885F008",
-        "testToken": "0x783746Fda55512043e0BCB9b06dB620277859E02"
+        "testToken": "0x30e69AfbE8c2E8ECe8d6920512452C8d13F8962A"
     },
     "auxiliary": {
         "chainid": 421613,
-        "domain": "0x0054159611832e24cdd64c6a133e71d373c5f8553dde6c762e6bffe707ad83cc",
-        "genesisBlock": 17602348,
+        "walletDomain": "0xb8b27430df81daac9be5d58dcca2e4dd4aae72a95c3fb3f0ee9b77e5357f6bec",
+        "bundleDomain": "0xde7ef148d5c129757b1740441010559c8a17199c68ae144446131e62c0b953ff",
+        "genesisBlock": 18628869,
         "deployedBy": "0x9D5e5038c47da189f8C67A587c66a952a8b45bAb",
-        "version": "52d22bb114dd2abcc4754a05bca757435a2f33fd"
+        "version": "0d52ddb20f2a395f3fff13130459a8561533024b"
     }
 }

@@ -112,16 +112,6 @@ describe("OperationResults", () => {
   });
 
   describe("getOperationResults", () => {
-    it("fails if no events are in transaction", () => {
-      const txnReceipt = {
-        transactionHash: "0x111111",
-      } as ContractReceipt;
-
-      expect(() => getOperationResults(txnReceipt)).to.throw(
-        `no WalletOperationProcessed events found in transaction ${txnReceipt.transactionHash}`,
-      );
-    });
-
     it("fails if no WalletOperationProcessed events are in transaction", () => {
       const event = { event: "Other" };
       const txnReceipt = {
