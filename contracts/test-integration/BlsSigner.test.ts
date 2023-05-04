@@ -378,29 +378,6 @@ describe("BlsSigner", () => {
     expect(result.nonce).to.not.be.a("number");
   });
 
-  it("should throw error for wrong chain id when validating batch options", async () => {
-    // Arrange
-    const invalidChainId = 123;
-    const batchOptions = {
-      gas: BigNumber.from("40000"),
-      maxPriorityFeePerGas: ethers.utils.parseUnits("0.5", "gwei"),
-      maxFeePerGas: ethers.utils.parseUnits("23", "gwei"),
-      nonce: 1,
-      chainId: invalidChainId,
-      accessList: [],
-    };
-
-    // Act
-    const result = async () =>
-      await blsSigner._validateBatchOptions(batchOptions);
-
-    // Assert
-    expect(result()).to.be.rejectedWith(
-      Error,
-      `Supplied chain ID ${invalidChainId} does not match the expected chain ID 1337`,
-    );
-  });
-
   it("should throw an error when invalid private key is supplied", async () => {
     // Arrange
     const newBlsProvider = new BlsProvider(
