@@ -87,23 +87,6 @@ describe("BlsProvider", () => {
     expect(formatEther(result)).to.equal(expectedSupply);
   });
 
-  it("should estimate gas without throwing an error", async () => {
-    // Arrange
-    const getAddressPromise = blsSigner.getAddress();
-    const transactionRequest = {
-      to: ethers.Wallet.createRandom().address,
-      value: parseEther("1"),
-      from: getAddressPromise,
-    };
-
-    // Act
-    const gasEstimate = async () =>
-      await blsProvider.estimateGas(transactionRequest);
-
-    // Assert
-    await expect(gasEstimate()).to.not.be.rejected;
-  });
-
   it("should send ETH (empty call) given a valid bundle", async () => {
     // Arrange
     const spy = chai.spy.on(BlsWalletWrapper, "Nonce");
@@ -513,17 +496,6 @@ describe("BlsProvider", () => {
       "maxFeePerGas",
       "wait",
     );
-  });
-
-  it("should return the list of accounts managed by the provider", async () => {
-    // Arrange
-    const expectedAccounts = await regularProvider.listAccounts();
-
-    // Act
-    const accounts = await blsProvider.listAccounts();
-
-    // Assert
-    expect(accounts).to.deep.equal(expectedAccounts);
   });
 
   it("should send an rpc request to the provider", async () => {

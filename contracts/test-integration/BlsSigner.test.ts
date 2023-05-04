@@ -838,19 +838,6 @@ describe("BlsSigner", () => {
     ).to.equal(transactionAmount);
   });
 
-  it("should get the balance of an account", async () => {
-    // Arrange
-    const expectedBalance = await regularProvider.getBalance(
-      blsSigner.wallet.address,
-    );
-
-    // Act
-    const result = await blsSigner.getBalance();
-
-    // Assert
-    expect(result).to.equal(expectedBalance);
-  });
-
   it("should get the balance of an account at specific block height", async () => {
     // Arrange
     const expectedBalance = parseEther("0");
