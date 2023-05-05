@@ -137,6 +137,10 @@ describe("index", () => {
     expect(verify(bundle1, [otherWalletAddress])).to.equal(false);
     expect(verify(bundle2, [walletAddress])).to.equal(false);
 
+    expect(verify(aggBundle, [walletAddress, otherWalletAddress])).to.equal(
+      true,
+    );
+
     const aggBundleBadMessage: Bundle = {
       ...aggBundle,
       operations: [
@@ -195,6 +199,36 @@ describe("index", () => {
     const walletAddresses = new Array(4).fill(walletAddress);
 
     expect(verify(aggAggBundle, walletAddresses)).to.equal(true);
+  });
+
+  it("should fail to verify bundle with wallet address mismatches", async () => {
+    const {
+      bundleTemplate,
+      privateKey,
+      otherPrivateKey,
+      walletAddress,
+      otherWalletAddress,
+      verificationGatewayAddress,
+    } = samples;
+
+    const { sign, aggregate, verify } = await initBlsWalletSigner({
+      chainId: 123,
+      verificationGatewayAddress,
+      privateKey,
+    });
+    const { sign: signWithOtherPrivateKey } = await initBlsWalletSigner({
+      chainId: 123,
+      verificationGatewayAddress,
+      privateKey: otherPrivateKey,
+    });
+
+    const bundle1 = sign(bundleTemplate, walletAddress);
+    const bundle2 = signWithOtherPrivateKey(bundleTemplate, otherWalletAddress);
+    const aggBundle = aggregate([bundle1, bundle2]);
+
+    expect(verify(aggBundle, [otherWalletAddress, walletAddress])).to.equal(
+      false,
+    );
   });
 
   it("generates expected publicKeyStr", async () => {
