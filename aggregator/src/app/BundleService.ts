@@ -156,14 +156,15 @@ export default class BundleService {
 
     const failures: TransactionFailure[] = [];
 
-    for (const walletAddr of walletAddresses) {
-      const signedCorrectly = this.blsWalletSigner.verify(bundle, walletAddr);
-      if (!signedCorrectly) {
-        failures.push({
-          type: "invalid-signature",
-          description: `invalid signature for wallet address ${walletAddr}`,
-        });
-      }
+    const signedCorrectly = this.blsWalletSigner.verify(
+      bundle,
+      walletAddresses,
+    );
+    if (!signedCorrectly) {
+      failures.push({
+        type: "invalid-signature",
+        description: `invalid bundle signature for signature ${bundle.signature}`,
+      });
     }
 
     failures.push(...await this.ethereumService.checkNonces(bundle));
