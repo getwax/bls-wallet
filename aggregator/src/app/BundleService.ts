@@ -1,12 +1,10 @@
 import {
   BigNumber,
-  BigNumberish,
   BlsWalletSigner,
   BlsWalletWrapper,
   Bundle,
   delay,
   ethers,
-  Operation,
   Semaphore,
   VerificationGatewayFactory,
 } from "../../deps.ts";
