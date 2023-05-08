@@ -31,11 +31,6 @@ export type AddBundleResponse = { hash: string } | {
   failures: TransactionFailure[];
 };
 
-type BundleWithoutSignature = {
-  senderPublicKeys: [BigNumberish, BigNumberish, BigNumberish, BigNumberish];
-  operations: Omit<Operation, "gas">;
-};
-
 export default class BundleService {
   static defaultConfig = {
     bundleQueryLimit: env.BUNDLE_QUERY_LIMIT,

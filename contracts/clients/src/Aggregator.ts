@@ -137,7 +137,7 @@ export default class Aggregator {
     subBundleHash: string,
   ): Promise<Bundle | undefined> {
     return this.jsonGet<Bundle>(
-      `${this.origin}/aggrgateBundle/${subBundleHash}`,
+      `${this.origin}/aggregateBundle/${subBundleHash}`,
     );
   }
 
