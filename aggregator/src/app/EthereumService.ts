@@ -26,6 +26,8 @@ import toPublicKeyShort from "./helpers/toPublicKeyShort.ts";
 import AsyncReturnType from "../helpers/AsyncReturnType.ts";
 import ExplicitAny from "../helpers/ExplicitAny.ts";
 import nil from "../helpers/nil.ts";
+import hexToUint8Array from "../helpers/hexToUint8Array.ts";
+import OptimismGasPriceOracle from "./OptimismGasPriceOracle.ts";
 
 export type TxCheckResult = {
   failures: TransactionFailure[];
@@ -76,6 +78,7 @@ export default class EthereumService {
     public emit: (evt: AppEvent) => void,
     public wallet: Wallet,
     public provider: ethers.providers.Provider,
+    public chainId: number,
     public blsWalletWrapper: BlsWalletWrapper,
     public blsWalletSigner: BlsWalletSigner,
     public verificationGateway: VerificationGateway,
@@ -169,6 +172,7 @@ export default class EthereumService {
       emit,
       wallet,
       provider,
+      chainId,
       blsWalletWrapper,
       blsWalletSigner,
       verificationGateway,
@@ -405,17 +409,28 @@ export default class EthereumService {
     throw new Error("Expected return or throw from attempt loop");
   }
 
-  async estimateCompressedGas(bundle: Bundle): Promise<BigNumber> {
+  async estimateEffectiveCompressedGas(bundle: Bundle): Promise<BigNumber> {
     const compressedBundle = await this.bundleCompressor.compress(bundle);
 
-    return await this.wallet.estimateGas({
+    let gasEstimate = await this.wallet.estimateGas({
       to: this.expanderEntryPoint.address,
       data: compressedBundle,
     });
+
+    if (env.IS_OPTIMISM) {
+      const extraGasEstimate = await this.estimateEffectiveOptimismGas(
+        compressedBundle,
+        gasEstimate,
+      );
+
+      gasEstimate = gasEstimate.add(extraGasEstimate);
+    }
+
+    return gasEstimate;
   }
 
-  async GasConfig() {
-    const block = await this.provider.getBlock("latest");
+  async GasConfig(block?: ethers.providers.Block) {
+    block ??= await this.provider.getBlock("latest");
     const previousBaseFee = block.baseFeePerGas;
     assert(previousBaseFee !== null && previousBaseFee !== nil);
 
@@ -440,6 +455,55 @@ export default class EthereumService {
         .add(env.PRIORITY_FEE_PER_GAS),
       maxPriorityFeePerGas: env.PRIORITY_FEE_PER_GAS,
     };
+  }
+
+  async estimateEffectiveOptimismGas(
+    compressedBundle: string,
+    gasLimit: BigNumber,
+  ): Promise<BigNumber> {
+    const block = await this.provider.getBlock("latest");
+    const gasConfig = await this.GasConfig(block);
+
+    const txBytes = await this.wallet.signTransaction({
+      type: 2,
+      chainId: this.chainId,
+      nonce: this.nextNonce,
+      to: this.expanderEntryPoint.address,
+      data: compressedBundle,
+      ...gasConfig,
+      gasLimit,
+    });
+
+    let l1Gas = 0;
+
+    for (const byte of hexToUint8Array(txBytes)) {
+      if (byte === 0) {
+        l1Gas += 4;
+      } else {
+        l1Gas += 16;
+      }
+    }
+
+    const gasOracle = new OptimismGasPriceOracle(this.provider);
+
+    const [l1BaseFee, overhead] = await Promise.all([
+      gasOracle.l1BaseFee(),
+      gasOracle.overhead(),
+    ]);
+
+    l1Gas += overhead.toNumber();
+
+    assert(block.baseFeePerGas !== null && block.baseFeePerGas !== nil);
+    assert(env.OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE !== nil);
+
+    const adjustedL1BaseFee = l1BaseFee.toNumber() *
+      (1 + env.OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE / 100);
+
+    const feeRatio = adjustedL1BaseFee / block.baseFeePerGas.toNumber();
+
+    return BigNumber.from(
+      Math.ceil(feeRatio * l1Gas),
+    );
   }
 
   private static Wallet(

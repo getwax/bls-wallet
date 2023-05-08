@@ -544,9 +544,10 @@ export default class AggregationStrategy {
     bundleOverheadGas ??=
       (await this.measureBundleOverhead()).bundleOverheadGas;
 
-    const gasEstimate = await this.ethereumService.estimateCompressedGas(
-      bundle,
-    );
+    const gasEstimate = await this.ethereumService
+      .estimateEffectiveCompressedGas(
+        bundle,
+      );
 
     const marginalGasEstimate = gasEstimate.sub(bundleOverheadGas);
 
@@ -635,7 +636,7 @@ export default class AggregationStrategy {
       }
 
       const gasEstimate = feeInfo?.gasEstimate ??
-        await this.ethereumService.estimateCompressedGas(bundle);
+        await this.ethereumService.estimateEffectiveCompressedGas(bundle);
 
       return {
         success,
@@ -673,8 +674,8 @@ export default class AggregationStrategy {
     });
 
     const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
-      es.estimateCompressedGas(bundle1),
-      es.estimateCompressedGas(
+      es.estimateEffectiveCompressedGas(bundle1),
+      es.estimateEffectiveCompressedGas(
         this.blsWalletSigner.aggregate([bundle1, bundle2]),
       ),
     ]);

@@ -1,3 +1,4 @@
+import assert from "./helpers/assert.ts";
 import {
   optionalNumberEnv,
   requireBigNumberEnv,
@@ -95,3 +96,25 @@ export const PREVIOUS_BASE_FEE_PERCENT_INCREASE = requireNumberEnv(
 export const BUNDLE_CHECKING_CONCURRENCY = requireIntEnv(
   "BUNDLE_CHECKING_CONCURRENCY",
 );
+
+/**
+ * Optimism's strategy for charging for L1 fees requires special logic in the
+ * aggregator. In addition to gasEstimate * gasPrice, we need to replicate
+ * Optimism's calculation and pass it on to the user.
+ */
+export const IS_OPTIMISM = requireBoolEnv("IS_OPTIMISM");
+
+/**
+ * Similar to PREVIOUS_BASE_FEE_PERCENT_INCREASE, but for the L1 basefee for
+ * the optimism-specific calculation. This gets passed on to users.
+ */
+export const OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE = optionalNumberEnv(
+  "OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE",
+);
+
+if (IS_OPTIMISM) {
+  assert(
+    OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE !== nil,
+    "OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE is required when IS_OPTIMISM is true",
+  );
+}
