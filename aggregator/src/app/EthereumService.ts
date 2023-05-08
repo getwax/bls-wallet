@@ -409,6 +409,22 @@ export default class EthereumService {
     throw new Error("Expected return or throw from attempt loop");
   }
 
+  /**
+   * Estimates the amount of effective gas needed to process the bundle using
+   * compression.
+   *
+   * Here 'effective' gas means the number you need to multiply by gasPrice in
+   * order to get the right fee. There are a few cases here:
+   *
+   * 1. L1 chains (used in testing, eg gethDev)
+   *   - Effective gas is equal to regular gas
+   * 2. Arbitrum
+   *   - The Arbitrum node already responds with effective gas when calling
+   *     estimateGas
+   * 3. Optimism
+   *   - We estimate Optimism's calculation for the amount of L1 gas it will
+   *     charge for, and then convert that into an equivalend amount of L2 gas.
+   */
   async estimateEffectiveCompressedGas(bundle: Bundle): Promise<BigNumber> {
     const compressedBundle = await this.bundleCompressor.compress(bundle);
 
@@ -418,7 +434,7 @@ export default class EthereumService {
     });
 
     if (env.IS_OPTIMISM) {
-      const extraGasEstimate = await this.estimateEffectiveOptimismGas(
+      const extraGasEstimate = await this.estimateOptimismL2GasNeededForL1Gas(
         compressedBundle,
         gasEstimate,
       );
@@ -457,7 +473,18 @@ export default class EthereumService {
     };
   }
 
-  async estimateEffectiveOptimismGas(
+  /**
+   * Estimates the L1 gas that Optimism will charge us for and expresses it as
+   * an amount of equivalent L2 gas.
+   *
+   * This is very similar to what Arbitrum does, but in Arbitrum it's built-in,
+   * and you actually sign for that additional L2 gas. On Optimism, you only
+   * sign for the actual L2 gas, and optimism just adds the L1 fee.
+   *
+   * For our purposes, this works as a way to normalize the behavior between
+   * the different chains.
+   */
+  async estimateOptimismL2GasNeededForL1Gas(
     compressedBundle: string,
     gasLimit: BigNumber,
   ): Promise<BigNumber> {
