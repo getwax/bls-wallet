@@ -343,7 +343,7 @@ export default class BlsProvider extends ethers.providers.JsonRpcProvider {
     return [
       ...actions,
       {
-        ethValue: fee,
+        ethValue: fee.toHexString(),
         contractAddress: this.aggregatorUtilitiesAddress,
         encodedFunction:
           aggregatorUtilitiesContract.interface.encodeFunctionData(

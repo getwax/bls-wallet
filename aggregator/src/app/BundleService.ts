@@ -6,6 +6,7 @@ import {
   delay,
   ethers,
   Semaphore,
+  VerificationGatewayFactory,
 } from "../../deps.ts";
 
 import { IClock } from "../helpers/Clock.ts";
@@ -18,10 +19,11 @@ import * as env from "../env.ts";
 import runQueryGroup from "./runQueryGroup.ts";
 import EthereumService from "./EthereumService.ts";
 import AppEvent from "./AppEvent.ts";
-import BundleTable, { BundleRow, makeHash } from "./BundleTable.ts";
+import BundleTable, { BundleRow } from "./BundleTable.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
+import ExplicitAny from "../helpers/ExplicitAny.ts";
 
 export type AddBundleResponse = { hash: string } | {
   failures: TransactionFailure[];
@@ -174,7 +176,7 @@ export default class BundleService {
     }
 
     return await this.runQueryGroup(async () => {
-      const hash = makeHash();
+      const hash = await this.hashBundle(bundle);
 
       this.bundleTable.add({
         status: "pending",
@@ -202,15 +204,21 @@ export default class BundleService {
     return this.bundleTable.findBundle(hash);
   }
 
+  lookupAggregateBundle(subBundleHash: string) {
+    const subBundle = this.bundleTable.findBundle(subBundleHash);
+    return this.bundleTable.findAggregateBundle(subBundle?.aggregateHash!)
+  }
+
   receiptFromBundle(bundle: BundleRow) {
     if (!bundle.receipt) {
       return nil;
     }
 
-    const { receipt, hash } = bundle;
+    const { receipt, hash, aggregateHash } = bundle;
 
     return {
       bundleHash: hash,
+      aggregateBundleHash: aggregateHash,
       to: receipt.to,
       from: receipt.from,
       contractAddress: receipt.contractAddress,
@@ -229,6 +237,44 @@ export default class BundleService {
       type: receipt.type,
       status: receipt.status,
     };
+  }
+
+  async hashBundle(bundle: Bundle): Promise<string> {
+    const operationsWithZeroGas = bundle.operations.map((operation) => {
+      return {
+        ...operation,
+        gas: BigNumber.from(0),
+      };
+    });
+  
+    const verifyMethodName = "verify";
+    const bundleType = VerificationGatewayFactory.abi.find(
+      (entry) => "name" in entry && entry.name === verifyMethodName,
+    )?.inputs[0];
+  
+    const validatedBundle = {
+      ...bundle,
+      operations: operationsWithZeroGas,
+    };
+  
+    const encodedBundleWithZeroSignature = ethers.utils.defaultAbiCoder.encode(
+      [bundleType as ExplicitAny],
+      [
+        {
+          ...validatedBundle,
+          signature: [BigNumber.from(0), BigNumber.from(0)],
+        },
+      ],
+    );
+  
+    const bundleHash = ethers.utils.keccak256(encodedBundleWithZeroSignature);
+    const chainId = (await this.ethereumService.provider.getNetwork()).chainId;
+
+    const bundleAndChainIdEncoding = ethers.utils.defaultAbiCoder.encode(
+      ["bytes32", "uint256"],
+      [bundleHash, chainId],
+    );
+    return ethers.utils.keccak256(bundleAndChainIdEncoding);
   }
 
   async runSubmission() {
@@ -275,6 +321,13 @@ export default class BundleService {
           expectedMaxCost: ethers.utils.formatEther(expectedMaxCost),
         },
       });
+
+      if (aggregateBundle) {
+        const aggregateBundleHash = await this.hashBundle(aggregateBundle);
+        for (const row of includedRows) {
+          row.aggregateHash = aggregateBundleHash;
+        }
+      }
 
       for (const failedRow of failedRows) {
         this.emit({

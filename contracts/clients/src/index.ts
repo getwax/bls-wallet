@@ -18,6 +18,8 @@ export {
   OperationResultError,
 } from "./OperationResults";
 
+export { default as hashBundle } from "./helpers/hashBundle";
+
 export {
   VerificationGateway__factory as VerificationGatewayFactory,
   AggregatorUtilities__factory as AggregatorUtilitiesFactory,
