@@ -34,8 +34,8 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
       ${expanded && 'bg-white border-2 border-blue-500 shadow-xl'}
     `}
     >
-      <div className="flex place-items-center gap-4 ">
-        <div className="w-5 h-5">
+      <div className="flex place-items-center gap-4 flex-wrap">
+        <div className="flex flex-row gap-2 items-center justify-center">
           <input
             type="radio"
             checked={expanded}
@@ -43,15 +43,15 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
             className="h-5 w-5 cursor-pointer"
             {...onAction(onActionParam)}
           />
-        </div>
-
-        <div className="flex-grow flex place-items-center gap-2">
           <Blockies
             seed={wallet.address}
             className="rounded-md"
             size={5}
             scale={8}
           />
+        </div>
+
+        <div className="flex-grow flex place-items-center gap-2">
           <div>
             {wallet.name}
             <div
@@ -66,7 +66,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
           </div>
         </div>
 
-        <div className="text-body">
+        <div className="text-sm md:text-body">
           <Balance address={wallet.address} />
         </div>
       </div>
@@ -74,7 +74,7 @@ export const WalletSummary: React.FunctionComponent<IWalletSummary> = ({
       {/* Details */}
       {expanded && (
         <div className="mt-6">
-          <div className="flex gap-2">
+          <div className="flex flex-col lg:flex-row gap-2">
             <Button
               onPress={() => navigate('/wallets/send')}
               className="btn-primary"

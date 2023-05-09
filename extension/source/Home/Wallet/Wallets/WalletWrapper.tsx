@@ -24,11 +24,32 @@ export const WalletsWrapper: FunctionComponent = () => {
 
   return (
     <div className="">
-      <div className="flex justify-between place-items-center">
+      <div
+        className={[
+          'flex',
+          'flex-col',
+          'lg:flex-row',
+          'justify-between',
+          'place-items-center',
+        ].join(' ')}
+      >
         <div className="text-body">Wallets</div>
-        <div className="flex gap-2">
-          <RecoverWalletModal />
-          <Button onPress={rpc.addHDAccount} className="btn-primary">
+        <div
+          className={[
+            'flex',
+            'gap-2',
+            'mt-4',
+            'lg:mt-0',
+            'lg:ml-2',
+            'w-full',
+            'lg:w-auto',
+          ].join(' ')}
+        >
+          <RecoverWalletModal className="w-1/2" />
+          <Button
+            onPress={rpc.addHDAccount}
+            className="btn-primary w-1/2 justify-center"
+          >
             Add
           </Button>
         </div>

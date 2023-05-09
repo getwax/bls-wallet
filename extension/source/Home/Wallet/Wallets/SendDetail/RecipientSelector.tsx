@@ -49,7 +49,7 @@ const RecipientSelector: FunctionComponent<{
         <TextBox value={searchText} placeholder="Search" />
       </div>
       {recipients.length === 0 && 'No recipients found'}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-1 2xl:grid-cols-2 gap-4">
         {recipients.map((r) => {
           if (r === undefined) {
             return <div />;
@@ -60,7 +60,9 @@ const RecipientSelector: FunctionComponent<{
               key={`${r.name}:${r.address}`}
               className={[
                 'flex',
-                'flex-row',
+                'flex-col',
+                'lg:flex-row',
+                'flex-wrap',
                 'p-4',
                 'gap-4',
                 'rounded-lg',
