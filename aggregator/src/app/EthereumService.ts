@@ -513,17 +513,17 @@ export default class EthereumService {
 
     const gasOracle = new OptimismGasPriceOracle(this.provider);
 
-    const [l1BaseFee, overhead] = await Promise.all([
-      gasOracle.l1BaseFee(),
-      gasOracle.overhead(),
-    ]);
+    const { l1BaseFee, overhead, scalar, decimals } = await gasOracle
+      .getAllParams();
+
+    const scalarNum = scalar.toNumber() / (10 ** decimals.toNumber());
 
     l1Gas += overhead.toNumber();
 
     assert(block.baseFeePerGas !== null && block.baseFeePerGas !== nil);
     assert(env.OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE !== nil);
 
-    const adjustedL1BaseFee = l1BaseFee.toNumber() *
+    const adjustedL1BaseFee = l1BaseFee.toNumber() * scalarNum *
       (1 + env.OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE / 100);
 
     const feeRatio = adjustedL1BaseFee / block.baseFeePerGas.toNumber();
