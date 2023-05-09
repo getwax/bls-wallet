@@ -8,12 +8,10 @@ const oracle = new OptimismGasPriceOracle(
   new ethers.providers.JsonRpcProvider(env.RPC_URL),
 );
 
-const [l1BaseFee, overhead] = await Promise.all([
-  oracle.l1BaseFee(),
-  oracle.overhead(),
-]);
+const { l1BaseFee, overhead, scalar, decimals } = await oracle.getAllParams();
 
 console.log({
   l1BaseFee: `${(l1BaseFee.toNumber() / 1e9).toFixed(3)} gwei`,
   overhead: `${overhead.toNumber()} L1 gas`,
+  scalar: scalar.toNumber() / (10 ** decimals.toNumber()),
 });
