@@ -116,8 +116,6 @@ describe("BlsProvider", () => {
 
   it("should throw an error when sending a modified signed transaction", async () => {
     // Arrange
-    const address = await blsSigner.getAddress();
-
     const signedTransaction = await blsSigner.signTransaction({
       value: parseEther("1"),
       to: ethers.Wallet.createRandom().address,
@@ -134,7 +132,7 @@ describe("BlsProvider", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      `[{"type":"invalid-signature","description":"invalid signature for wallet address ${address}"}]`,
+      `[{"type":"invalid-signature","description":"invalid bundle signature for signature ${userBundle.signature}"}]`,
     );
   });
 
@@ -286,8 +284,6 @@ describe("BlsProvider", () => {
 
   it("should throw an error when sending a modified signed transaction", async () => {
     // Arrange
-    const address = await blsSigner.getAddress();
-
     const signedTransaction = await blsSigner.signTransactionBatch({
       transactions: [
         {
@@ -309,7 +305,7 @@ describe("BlsProvider", () => {
     // Assert
     await expect(result()).to.be.rejectedWith(
       Error,
-      `[{"type":"invalid-signature","description":"invalid signature for wallet address ${address}"}]`,
+      `[{"type":"invalid-signature","description":"invalid bundle signature for signature ${userBundle.signature}"}]`,
     );
   });
 

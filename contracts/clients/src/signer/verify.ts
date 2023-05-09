@@ -6,7 +6,7 @@ import type { Bundle } from "./types";
 import isValidEmptyBundle from "./isValidEmptyBundle";
 
 export default (domain: Uint8Array) =>
-  (bundle: Bundle, walletAddress: string): boolean => {
+  (bundle: Bundle, walletAddresses: Array<string>): boolean => {
     // hubbleBls verifier incorrectly rejects empty bundles
     if (isValidEmptyBundle(bundle)) {
       return true;
@@ -25,8 +25,8 @@ export default (domain: Uint8Array) =>
         BigNumber.from(n2).toHexString(),
         BigNumber.from(n3).toHexString(),
       ]),
-      bundle.operations.map((op) =>
-        encodeMessageForSigning()(op, walletAddress),
+      bundle.operations.map((op, i) =>
+        encodeMessageForSigning()(op, walletAddresses[i]),
       ),
     );
   };

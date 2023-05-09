@@ -54,7 +54,7 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
   // sig test)
   tx.signature = otherTx.signature;
 
-  assertEquals(await bundleService.bundleTable.count(), 0);
+  assertEquals(bundleService.bundleTable.count(), 0);
 
   const res = await bundleService.add(tx);
   if ("hash" in res) {
@@ -63,7 +63,47 @@ Fixture.test("rejects bundle with invalid signature", async (fx) => {
   assertEquals(res.failures.map((f) => f.type), ["invalid-signature"]);
 
   // Bundle table remains empty
-  assertEquals(await bundleService.bundleTable.count(), 0);
+  assertEquals(bundleService.bundleTable.count(), 0);
+});
+
+Fixture.test("rejects bundle with valid signature but invalid public key", async (fx) => {
+  const bundleService = fx.createBundleService();
+  const [wallet, otherWallet] = await fx.setupWallets(2);
+
+  const operation: Operation = {
+    nonce: await wallet.Nonce(),
+    gas: 0,
+    actions: [
+      {
+        ethValue: 0,
+        contractAddress: fx.testErc20.address,
+        encodedFunction: fx.testErc20.interface.encodeFunctionData(
+          "mint",
+          [wallet.address, "3"],
+        ),
+      },
+    ],
+  };
+
+  const tx = wallet.sign(operation);
+  const otherTx = otherWallet.sign(operation);
+
+  // Make the signature invalid
+  // Note: Bug in bls prevents just corrupting the signature (see other invalid
+  // sig test)
+  tx.senderPublicKeys[0] = otherTx.senderPublicKeys[0];
+
+  assertEquals(bundleService.bundleTable.count(), 0);
+
+  const res = await bundleService.add(tx);
+  if ("hash" in res) {
+    throw new Error("expected bundle to fail");
+  }
+  assertEquals(res.failures.map((f) => f.type), ["invalid-signature"]);
+  assertEquals(res.failures.map((f) => f.description), [`invalid bundle signature for signature ${tx.signature}`]);
+
+  // Bundle table remains empty
+  assertEquals(bundleService.bundleTable.count(), 0);
 });
 
 Fixture.test("rejects bundle with nonce from the past", async (fx) => {
@@ -85,7 +125,7 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
     ],
   });
 
-  assertEquals(await bundleService.bundleTable.count(), 0);
+  assertEquals(bundleService.bundleTable.count(), 0);
 
   const res = await bundleService.add(tx);
   if ("hash" in res) {
@@ -94,7 +134,7 @@ Fixture.test("rejects bundle with nonce from the past", async (fx) => {
   assertEquals(res.failures.map((f) => f.type), ["duplicate-nonce"]);
 
   // Bundle table remains empty
-  assertEquals(await bundleService.bundleTable.count(), 0);
+  assertEquals(bundleService.bundleTable.count(), 0);
 });
 
 Fixture.test(
@@ -128,7 +168,7 @@ Fixture.test(
     // https://github.com/thehubbleproject/hubble-bls/pull/20
     tx.signature = otherTx.signature;
 
-    assertEquals(await bundleService.bundleTable.count(), 0);
+    assertEquals(bundleService.bundleTable.count(), 0);
 
     const res = await bundleService.add(tx);
     if ("hash" in res) {
@@ -141,7 +181,7 @@ Fixture.test(
     );
 
     // Bundle table remains empty
-    assertEquals(await bundleService.bundleTable.count(), 0);
+    assertEquals(bundleService.bundleTable.count(), 0);
   },
 );
 
@@ -164,11 +204,11 @@ Fixture.test("adds bundle with future nonce", async (fx) => {
     ],
   });
 
-  assertEquals(await bundleService.bundleTable.count(), 0);
+  assertEquals(bundleService.bundleTable.count(), 0);
 
   assertBundleSucceeds(await bundleService.add(tx));
 
-  assertEquals(await bundleService.bundleTable.count(), 1);
+  assertEquals(bundleService.bundleTable.count(), 1);
 });
 
 // TODO (merge-ok): Add a mechanism for limiting the number of stored
