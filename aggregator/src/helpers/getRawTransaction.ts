@@ -1,34 +1,42 @@
 import { ethers, pick } from "../../deps.ts";
+import assert from "./assert.ts";
+import nil from "./nil.ts";
 
 export default async function getRawTransaction(
   provider: ethers.providers.Provider,
-  txHash: string,
+  txResponseOrHash: string | ethers.providers.TransactionResponse,
 ) {
-  const txResponse = await provider.getTransaction(txHash);
+  const tx = typeof txResponseOrHash === "string"
+    ? await provider.getTransaction(txResponseOrHash)
+    : txResponseOrHash;
+
+  const txHash = typeof txResponseOrHash === "string"
+    ? txResponseOrHash
+    : tx.hash;
+
+  assert(typeof txHash === "string");
+
+  const { v, r, s } = tx;
+  assert(r !== nil);
 
   const txBytes = ethers.utils.serializeTransaction(
     pick(
-      txResponse,
+      tx,
       "to",
       "nonce",
       "gasLimit",
-      ...(txResponse.type === 2 ? [] : ["gasPrice"] as const),
+      ...(tx.type === 2 ? [] : ["gasPrice"] as const),
       "data",
       "value",
       "chainId",
       "type",
-      ...(txResponse.type !== 2 ? [] : [
+      ...(tx.type !== 2 ? [] : [
         "accessList",
         "maxPriorityFeePerGas",
         "maxFeePerGas",
       ] as const),
     ),
-    pick(
-      txResponse,
-      "v",
-      "r",
-      "s",
-    ) as { v: number; r: string; s: string },
+    { v, r, s },
   );
 
   const reconstructedHash = ethers.utils.keccak256(txBytes);
