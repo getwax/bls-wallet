@@ -18,6 +18,7 @@ export default class MultiEncoder {
   encodersById: Record<number, Encoder> = {};
 
   register(id: number, encoder: Encoder) {
+    assert(id !== 0);
     this.encoders.push({ id, encoder });
     this.encodersById[id] = encoder;
   }
@@ -36,12 +37,21 @@ export default class MultiEncoder {
       ]);
     }
 
-    assert(false, `Failed to encode ${data}`);
+    return hexJoin([
+      VLQ.encode(0),
+      VLQ.encode(data.length / 2 - 1),
+      data,
+    ]);
   }
 
   decode(data: string): string {
     const stream = new ByteStream(data);
     const id = VLQ.decode(stream);
+
+    if (id.eq(0)) {
+      const len = VLQ.decode(stream);
+      return stream.getN(len.toNumber());
+    }
 
     const encoder = this.encodersById[id.toNumber()];
     assert(encoder !== nil);
