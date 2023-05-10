@@ -10,6 +10,9 @@ multiEncoder.register(1, new FallbackEncoder());
 
 const calc = new Calculator(multiEncoder);
 
-calc.checkDecodedTransactionData();
+// calc.checkDecodedTransactionData();
 
-console.log(calc.compressionRatio().toFixed(4));
+console.log(
+  "biggestEncodedMethods",
+  calc.biggestEncodedMethods().slice(0, 10),
+);

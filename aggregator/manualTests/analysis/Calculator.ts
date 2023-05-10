@@ -1,4 +1,4 @@
-import { once } from "../../deps.ts";
+import { mapValues, once } from "../../deps.ts";
 
 import blocks from "../../data/blocksSample.json" assert { type: "json" };
 import { sum } from "./util.ts";
@@ -50,30 +50,56 @@ export default class Calculator {
     return txDataByMethodId;
   });
 
-  popularMethods = once(() => {
-    return Object.entries(this.txDataByMethodId()).sort((a, b) =>
-      b[1].length - a[1].length
-    );
-  });
+  txDataStatsByMethodId = once(() =>
+    mapValues(
+      this.txDataByMethodId(),
+      (dataArray, methodId) => {
+        const count = dataArray.length;
 
-  topMethodCounts = once(() =>
-    this.popularMethods().slice(0, 10).map(([methodId, inputs]) =>
-      [methodId, inputs.length] as const
+        const baselineLen = dataArray
+          .map((data) => 1 + (methodId.length / 2 - 1) + (data.length / 2 - 1))
+          .reduce(sum);
+
+        const avgBaselineLen = baselineLen / count;
+
+        const encodedLen = dataArray
+          .map((data) =>
+            this.multiEncoder.encode(methodId + data.slice(2)).length / 2 - 1
+          )
+          .reduce(sum);
+
+        const avgEncodedLen = encodedLen / count;
+
+        return {
+          count,
+          baselineLen,
+          avgBaselineLen,
+          encodedLen,
+          avgEncodedLen,
+        };
+      },
     )
   );
+
+  popularMethods = once(() => {
+    return Object.entries(this.txDataStatsByMethodId()).sort((a, b) =>
+      b[1].count - a[1].count
+    );
+  });
 
   biggestMethods = once(() => {
-    return Object.entries(this.txDataByMethodId()).sort((a, b) =>
-      b[1].map((data) => data.length / 2 - 1).reduce(sum) -
-      a[1].map((data) => data.length / 2 - 1).reduce(sum)
+    return Object.entries(this.txDataStatsByMethodId()).sort((a, b) =>
+      b[1].baselineLen -
+      a[1].baselineLen
     );
   });
 
-  biggestMethodCounts = once(() =>
-    this.biggestMethods().slice(0, 10).map(([methodId, inputs]) =>
-      [methodId, inputs.map((data) => data.length / 2 - 1).reduce(sum)] as const
-    )
-  );
+  biggestEncodedMethods = once(() => {
+    return Object.entries(this.txDataStatsByMethodId()).sort((a, b) =>
+      b[1].encodedLen -
+      a[1].encodedLen
+    );
+  });
 
   totalLength = once(() =>
     this.transactions().map((t) => t.input.length / 2 - 1).reduce(sum)
