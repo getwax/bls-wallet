@@ -35,4 +35,11 @@ export default class ByteStream {
 
     return res;
   }
+
+  getTail(): string {
+    const res = `0x${this.data.slice(this.pos)}`;
+    this.pos = this.data.length;
+
+    return res;
+  }
 }
