@@ -7,4 +7,4 @@ const calc = new Calculator(multiEncoder);
 
 calc.checkDecodedTransactionData();
 
-console.log(calc.totalEncodedLength());
+console.log(calc.compressionRatio().toFixed(4));

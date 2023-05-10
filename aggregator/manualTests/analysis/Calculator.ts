@@ -4,6 +4,7 @@ import blocks from "../../data/blocksSample.json" assert { type: "json" };
 import { sum } from "./util.ts";
 import MultiEncoder from "./MultiEncoder.ts";
 import assert from "../../src/helpers/assert.ts";
+import VLQ from "./VLQ.ts";
 
 export default class Calculator {
   constructor(
@@ -11,9 +12,10 @@ export default class Calculator {
   ) {}
 
   transactions = once(() => blocks.map((b) => b.transactions).flat());
+  transactionData = once(() => this.transactions().map((tx) => tx.input));
 
   encodedTransactionData = once(() =>
-    this.transactions().map((tx) => this.multiEncoder.encode(tx.input))
+    this.transactionData().map((data) => this.multiEncoder.encode(data))
   );
 
   decodedTransactionData = once(() =>
@@ -37,9 +39,9 @@ export default class Calculator {
   txDataByMethodId = once(() => {
     const txDataByMethodId: Record<string, string[]> = {};
 
-    for (const tx of this.transactions()) {
-      txDataByMethodId[tx.input.slice(0, 10)] ??= [];
-      txDataByMethodId[tx.input.slice(0, 10)].push("0x" + tx.input.slice(10));
+    for (const data of this.transactionData()) {
+      txDataByMethodId[data.slice(0, 10)] ??= [];
+      txDataByMethodId[data.slice(0, 10)].push("0x" + data.slice(10));
     }
 
     return txDataByMethodId;
@@ -61,7 +63,21 @@ export default class Calculator {
     this.transactions().map((t) => t.input.length / 2 - 1).reduce(sum)
   );
 
+  baselineEncodedLength = once(() => {
+    let len = this.totalLength();
+
+    for (const txData of this.transactionData()) {
+      len += VLQ.encode(txData.length / 2 - 1).length / 2 - 1;
+    }
+
+    return len;
+  });
+
   totalEncodedLength = once(() =>
     this.encodedTransactionData().map((data) => data.length / 2 - 1).reduce(sum)
+  );
+
+  compressionRatio = once(() =>
+    this.totalEncodedLength() / this.baselineEncodedLength()
   );
 }
