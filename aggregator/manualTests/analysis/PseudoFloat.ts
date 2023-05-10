@@ -33,7 +33,7 @@ namespace PseudoFloat {
     const firstByte = stream.get();
 
     if (firstByte == 0) {
-      return 0;
+      return BigNumber.from(0);
     }
 
     const exponent = ((firstByte & 0xf8) >> 3) - 1;
