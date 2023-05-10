@@ -32,7 +32,10 @@ export default class Calculator {
     assert(decodedTransactionData.length === len);
 
     for (let i = 0; i < len; i++) {
-      assert(transactionData[i] === decodedTransactionData[i]);
+      assert(
+        transactionData[i] === decodedTransactionData[i],
+        `tx ${i}: ${transactionData[i]} !== ${decodedTransactionData[i]}`,
+      );
     }
   });
 

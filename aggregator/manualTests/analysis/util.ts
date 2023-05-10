@@ -1,3 +1,5 @@
+import { BigNumber } from "../../deps.ts";
+
 export function sum(a: number, b: number) {
   return a + b;
 }
@@ -22,4 +24,8 @@ export function remove0x(hexString: string) {
   }
 
   return hexString.slice(2);
+}
+
+export function bigNumberToWord(x: BigNumber) {
+  return "0x" + x.toHexString().slice(2).padStart(64, "0");
 }

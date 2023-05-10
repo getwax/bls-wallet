@@ -42,4 +42,8 @@ export default class ByteStream {
 
     return res;
   }
+
+  bytesRemaining() {
+    return (this.data.length - this.pos) / 2;
+  }
 }

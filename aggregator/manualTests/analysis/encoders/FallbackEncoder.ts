@@ -1,11 +1,10 @@
-import { BigNumber } from "../../../deps.ts";
 import assert from "../../../src/helpers/assert.ts";
 import nil from "../../../src/helpers/nil.ts";
 import ByteStream from "../ByteStream.ts";
 import { Encoder } from "../MultiEncoder.ts";
 import PseudoFloat from "../PseudoFloat.ts";
 import VLQ from "../VLQ.ts";
-import { getDataWords, hexJoin } from "../util.ts";
+import { bigNumberToWord, getDataWords, hexJoin } from "../util.ts";
 
 export default class FallbackEncoder implements Encoder {
   encode(data: string): string {
@@ -102,8 +101,4 @@ export default class FallbackEncoder implements Encoder {
       ...words,
     ]);
   }
-}
-
-function bigNumberToWord(x: BigNumber) {
-  return "0x" + x.toHexString().slice(2).padStart(64, "0");
 }
