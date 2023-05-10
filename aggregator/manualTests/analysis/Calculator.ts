@@ -62,6 +62,19 @@ export default class Calculator {
     )
   );
 
+  biggestMethods = once(() => {
+    return Object.entries(this.txDataByMethodId()).sort((a, b) =>
+      b[1].map((data) => data.length / 2 - 1).reduce(sum) -
+      a[1].map((data) => data.length / 2 - 1).reduce(sum)
+    );
+  });
+
+  biggestMethodCounts = once(() =>
+    this.biggestMethods().slice(0, 10).map(([methodId, inputs]) =>
+      [methodId, inputs.map((data) => data.length / 2 - 1).reduce(sum)] as const
+    )
+  );
+
   totalLength = once(() =>
     this.transactions().map((t) => t.input.length / 2 - 1).reduce(sum)
   );
