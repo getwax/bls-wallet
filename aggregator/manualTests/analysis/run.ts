@@ -1,15 +1,10 @@
-import nil from "../../src/helpers/nil.ts";
 import Calculator from "./Calculator.ts";
+import MultiEncoder from "./MultiEncoder.ts";
 
-type Encoder = {
-  encode(data: string): string | nil;
-  decode(encodedData: string): string;
-};
+const multiEncoder = new MultiEncoder();
 
-const calc = new Calculator();
+const calc = new Calculator(multiEncoder);
 
-// console.log(
-//   calc.txDataByMethodId()["0xa9059cbb"].slice(0, 10).map(getDataWords),
-// );
+calc.checkDecodedTransactionData();
 
-console.log(calc.totalLength());
+console.log(calc.totalEncodedLength());

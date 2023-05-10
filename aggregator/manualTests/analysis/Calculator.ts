@@ -2,9 +2,37 @@ import { once } from "../../deps.ts";
 
 import blocks from "../../data/blocksSample.json" assert { type: "json" };
 import { sum } from "./util.ts";
+import MultiEncoder from "./MultiEncoder.ts";
+import assert from "../../src/helpers/assert.ts";
 
 export default class Calculator {
+  constructor(
+    public multiEncoder: MultiEncoder,
+  ) {}
+
   transactions = once(() => blocks.map((b) => b.transactions).flat());
+
+  encodedTransactionData = once(() =>
+    this.transactions().map((tx) => this.multiEncoder.encode(tx.input))
+  );
+
+  decodedTransactionData = once(() =>
+    this.encodedTransactionData().map(
+      (input) => this.multiEncoder.decode(input),
+    )
+  );
+
+  checkDecodedTransactionData = once(() => {
+    const transactionData = this.transactions().map((tx) => tx.input);
+    const decodedTransactionData = this.decodedTransactionData();
+
+    const len = transactionData.length;
+    assert(decodedTransactionData.length === len);
+
+    for (let i = 0; i < len; i++) {
+      assert(transactionData[i] === decodedTransactionData[i]);
+    }
+  });
 
   txDataByMethodId = once(() => {
     const txDataByMethodId: Record<string, string[]> = {};
@@ -31,5 +59,9 @@ export default class Calculator {
 
   totalLength = once(() =>
     this.transactions().map((t) => t.input.length / 2 - 1).reduce(sum)
+  );
+
+  totalEncodedLength = once(() =>
+    this.encodedTransactionData().map((data) => data.length / 2 - 1).reduce(sum)
   );
 }
