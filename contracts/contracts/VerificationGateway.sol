@@ -168,8 +168,7 @@ contract VerificationGateway
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
         if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
-            // set it instantly
-            safeSetWallet(messageSenderSignature, publicKey, wallet, signatureExpiryTimestamp);
+            // Can't register new wallet contracts, only what this gateway deployed.
         }
         else { // wallet already has a key registered, set after delay
             pendingMessageSenderSignatureFromHash[existingHash] = messageSenderSignature;
@@ -234,6 +233,11 @@ contract VerificationGateway
                 );
             }
         }
+
+        require((selectorId != ProxyAdmin.upgrade.selector)
+            && (selectorId != ProxyAdmin.upgradeAndCall.selector),
+            "VG: wallet not upgradable"
+        );
 
         wallet.setAnyPending();
 

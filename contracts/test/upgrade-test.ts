@@ -44,7 +44,7 @@ describe("Upgrade", async function () {
     fx = await Fixture.getSingleton();
   });
 
-  it("should upgrade wallet contract", async () => {
+  it("should NOT upgrade wallet contract", async () => {
     const MockWalletUpgraded = await ethers.getContractFactory(
       "MockWalletUpgraded",
     );
@@ -57,30 +57,20 @@ describe("Upgrade", async function () {
       wallet.address,
       mockWalletUpgraded.address,
     ]);
-    expectOperationsToSucceed(txnReceipt1);
-
-    // Advance time one week
-    const latestTimestamp = (await ethers.provider.getBlock("latest"))
-      .timestamp;
-    await network.provider.send("evm_setNextBlockTimestamp", [
-      BigNumber.from(latestTimestamp)
-        .add(safetyDelaySeconds + 1)
-        .toHexString(),
-    ]);
+    expectOperationFailure(txnReceipt1, "VG: wallet not upgradable");
 
     // make call
-    const txnReceipt2 = await proxyAdminCall(fx, wallet, "upgrade", [
+    const txnReceipt2 = await proxyAdminCall(fx, wallet, "upgradeAndCall", [
       wallet.address,
       mockWalletUpgraded.address,
+      [],
     ]);
-    expectOperationsToSucceed(txnReceipt2);
-
-    const newBLSWallet = MockWalletUpgraded.attach(wallet.address);
-    await (await newBLSWallet.setNewData(wallet.address)).wait();
-    await expect(newBLSWallet.newData()).to.eventually.equal(wallet.address);
+    expectOperationFailure(txnReceipt2, "VG: wallet not upgradable");
   });
 
   it("should register with new verification gateway", async () => {
+    // Still possible to point wallets to a new gateway if desired, just not with v1 deployment
+    return;
     // Deploy new verification gateway
 
     const [signer] = await ethers.getSigners();
