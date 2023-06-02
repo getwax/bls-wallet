@@ -22,6 +22,7 @@ import BundleTable, { BundleRow, makeHash } from "./BundleTable.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
+import getOptimismL1Fee from "../helpers/getOptimismL1Fee.ts";
 
 export type AddBundleResponse = { hash: string } | {
   failures: TransactionFailure[];
@@ -34,6 +35,7 @@ export default class BundleService {
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
     maxEligibilityDelay: env.MAX_ELIGIBILITY_DELAY,
+    isOptimism: env.IS_OPTIMISM,
   };
 
   unconfirmedBundles = new Set<Bundle>();
@@ -344,7 +346,7 @@ export default class BundleService {
       try {
         const balanceBefore = await this.ethereumService.wallet.getBalance();
 
-        const receipt = await this.ethereumService.submitBundle(
+        const { response, receipt } = await this.ethereumService.submitBundle(
           aggregateBundle,
           Infinity,
           300,
@@ -363,7 +365,13 @@ export default class BundleService {
         const profit = balanceAfter.sub(balanceBefore);
 
         /** What we paid to process the bundle */
-        const cost = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+        let cost = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+        if (this.config.isOptimism) {
+          cost = cost.add(
+            await getOptimismL1Fee(this.ethereumService.provider, response),
+          );
+        }
 
         /** Fees collected from users */
         const actualFee = profit.add(cost);

@@ -318,7 +318,7 @@ export default class EthereumService {
     bundle: Bundle,
     maxAttempts = 1,
     retryDelay = 300,
-  ): Promise<ethers.providers.TransactionReceipt> {
+  ): Promise<ResponseAndReceipt> {
     assert(bundle.operations.length > 0, "Cannot process empty bundle");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
@@ -345,10 +345,10 @@ export default class EthereumService {
     };
 
     const attempt = async () => {
-      let txResponse: ethers.providers.TransactionResponse;
+      let response: ethers.providers.TransactionResponse;
 
       try {
-        txResponse = await this.wallet.sendTransaction(txRequest);
+        response = await this.wallet.sendTransaction(txRequest);
       } catch (error) {
         if (/\binvalid transaction nonce\b/.test(error.message)) {
           // This can occur when the nonce is in the future, which can
@@ -364,7 +364,10 @@ export default class EthereumService {
       }
 
       try {
-        return { type: "receipt" as const, value: await txResponse.wait() };
+        return {
+          type: "complete" as const,
+          value: { response, receipt: await response.wait() },
+        };
       } catch (error) {
         return { type: "waitError" as const, value: error };
       }
@@ -380,7 +383,7 @@ export default class EthereumService {
 
       const attemptResult = await attempt();
 
-      if (attemptResult.type === "receipt") {
+      if (attemptResult.type === "complete") {
         return attemptResult.value;
       }
 
@@ -554,3 +557,8 @@ export default class EthereumService {
     return wallet;
   }
 }
+
+type ResponseAndReceipt = {
+  response: ethers.providers.TransactionResponse;
+  receipt: ethers.providers.TransactionReceipt;
+};
