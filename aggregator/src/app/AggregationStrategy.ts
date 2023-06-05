@@ -631,7 +631,13 @@ export default class AggregationStrategy {
           expectedFee: fee,
           requiredFee: feeInfo.requiredFee,
           expectedMaxCost: feeInfo.expectedMaxCost,
-          errorReason: { message: "Insufficient fee" },
+          errorReason: {
+            message: [
+              "Insufficient fee",
+              `(provided: ${ethers.utils.formatEther(fee)},`,
+              `required: ${ethers.utils.formatEther(feeInfo.requiredFee)})`,
+            ].join(" "),
+          },
         };
       }
 
