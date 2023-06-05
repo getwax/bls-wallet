@@ -39,5 +39,19 @@ export default function BundleRouter(bundleService: BundleService) {
     },
   );
 
+  router.get(
+    "aggregateBundle/:subBundleHash",
+    (ctx) => {
+      const bundleRows = bundleService.lookupAggregateBundle(ctx.params.subBundleHash!);
+
+      if (bundleRows === nil || !bundleRows?.length) {
+        ctx.response.status = 404;
+        return;
+      }
+
+      ctx.response.body = bundleRows;
+    },
+  );
+
   return router;
 }

@@ -56,7 +56,7 @@ const OnboardingInfoPanel: FunctionComponent = () => {
   return (
     <div className="bg-blue-500 flex flex-col w-2/5">
       <div
-        className="h-screen p-32 flex flex-col justify-between"
+        className="h-screen p-4 md:p-8 xl:p-28 flex flex-col justify-between"
         style={{
           background: `center no-repeat url(${runtime.getURL(
             'assets/info-panel-pretty-curve.svg',
@@ -64,11 +64,11 @@ const OnboardingInfoPanel: FunctionComponent = () => {
         }}
       >
         <div
-          className="h-64 w-full rounded-md"
+          className="h-24 md:h-40 lg:h-64 w-full rounded-md"
           style={{
             background: `url(${runtime.getURL(
               `assets/onboarding-art-${pageIndex + 1}.svg`,
-            )}) no-repeat center`,
+            )}) no-repeat center contain`,
           }}
         />
         <div className="flex-grow text-white py-8">

@@ -29,6 +29,7 @@ const sampleRows: BundleRow[] = [
     nextEligibilityDelay: BigNumber.from(1),
     submitError: nil,
     receipt: nil,
+    aggregateHash: nil,
   },
 ];
 

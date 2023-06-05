@@ -35,7 +35,7 @@ const Balance: FunctionComponent<{ address: string }> = ({ address }) => {
     return <Loading />;
   }
 
-  return <>{ethers.utils.formatEther($balanceWeiHex)} ETH</>;
+  return <>{ethers.utils.formatEther($balanceWeiHex).slice(0, 12)} ETH</>;
 };
 
 export default Balance;
