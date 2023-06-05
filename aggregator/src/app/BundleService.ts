@@ -369,7 +369,10 @@ export default class BundleService {
 
         if (this.config.isOptimism) {
           cost = cost.add(
-            await getOptimismL1Fee(this.ethereumService.provider, response),
+            await getOptimismL1Fee(
+              this.ethereumService.provider,
+              receipt.transactionHash,
+            ),
           );
         }
 

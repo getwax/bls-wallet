@@ -1,6 +1,7 @@
 import { HTTPMethods } from "../../deps.ts";
 
 type AppEvent =
+  | { type: "starting" }
   | { type: "listening"; data: { port: number } }
   | { type: "db-query"; data: { sql: string; params: unknown } }
   | { type: "waiting-unconfirmed-space" }
