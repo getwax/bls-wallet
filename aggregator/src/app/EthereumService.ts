@@ -318,7 +318,7 @@ export default class EthereumService {
     bundle: Bundle,
     maxAttempts = 1,
     retryDelay = 300,
-  ): Promise<ResponseAndReceipt> {
+  ): Promise<ethers.providers.TransactionReceipt> {
     assert(bundle.operations.length > 0, "Cannot process empty bundle");
     assert(maxAttempts > 0, "Must have at least one attempt");
 
@@ -366,7 +366,7 @@ export default class EthereumService {
       try {
         return {
           type: "complete" as const,
-          value: { response, receipt: await response.wait() },
+          value: await response.wait(),
         };
       } catch (error) {
         return { type: "waitError" as const, value: error };
@@ -557,8 +557,3 @@ export default class EthereumService {
     return wallet;
   }
 }
-
-type ResponseAndReceipt = {
-  response: ethers.providers.TransactionResponse;
-  receipt: ethers.providers.TransactionReceipt;
-};

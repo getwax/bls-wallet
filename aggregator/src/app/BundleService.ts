@@ -346,7 +346,7 @@ export default class BundleService {
       try {
         const balanceBefore = await this.ethereumService.wallet.getBalance();
 
-        const { response, receipt } = await this.ethereumService.submitBundle(
+        const receipt = await this.ethereumService.submitBundle(
           aggregateBundle,
           Infinity,
           300,
