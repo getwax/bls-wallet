@@ -47,7 +47,7 @@ const AmountSelector: FunctionComponent<{
   return (
     <div className="flex flex-col gap-4">
       <div className="text-body">Select Amount</div>
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-start gap-2">
         <TextBox
           value={amountValid}
           className="text-right"
@@ -58,12 +58,12 @@ const AmountSelector: FunctionComponent<{
           <Display cell={selectedAsset} />
         </div>
       </div>
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-start gap-2">
         <div>
           <CurrencyDisplay chainValue={amountValidNumber} />
         </div>
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-start">
         <Button
           className="btn-primary"
           onPress={async () =>

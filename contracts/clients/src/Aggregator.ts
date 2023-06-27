@@ -44,6 +44,7 @@ export type BundleReceiptError = {
  */
 export type BlsBundleReceipt = {
   bundleHash: string;
+  aggregateBundleHash: string;
 };
 
 /**
@@ -99,7 +100,7 @@ export default class Aggregator {
   }
 
   /**
-   * Estimates the fee required for a bundle by the aggreagtor to submit it.
+   * Estimates the fee required for a bundle by the aggregator to submit it.
    *
    * @param bundle Bundle to estimates the fee for
    * @returns Estimate of the fee needed to submit the bundle
@@ -122,6 +123,21 @@ export default class Aggregator {
   ): Promise<BundleReceipt | BundleReceiptError | undefined> {
     return this.jsonGet<BundleReceipt | BundleReceiptError>(
       `${this.origin}/bundleReceipt/${hash}`,
+    );
+  }
+
+  /**
+   * Gets the aggregate bundle that a sub bundle was a part of.
+   * This will return undefined if the bundle does not exist or does not have an aggregate bundle.
+   *
+   * @param hash Hash of the bundle to find the aggregate bundle for.
+   * @returns The aggregate bundle, or undefined if either the sub bundle or aggregate bundle were not found.
+   */
+  async getAggregateBundleFromSubBundle(
+    subBundleHash: string,
+  ): Promise<Bundle | undefined> {
+    return this.jsonGet<Bundle>(
+      `${this.origin}/aggregateBundle/${subBundleHash}`,
     );
   }
 

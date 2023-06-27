@@ -54,7 +54,7 @@ export type {
   PublicKey,
   Signature,
   VerificationGateway,
-} from "https://esm.sh/bls-wallet-clients@0.8.3-0d52ddb";
+} from "https://esm.sh/bls-wallet-clients@0.9.0-2a20bfe";
 
 export {
   Aggregator as AggregatorClient,
@@ -70,12 +70,14 @@ export {
   getConfig,
   MockERC20Factory,
   VerificationGatewayFactory,
-} from "https://esm.sh/bls-wallet-clients@0.8.3-0d52ddb";
+} from "https://esm.sh/bls-wallet-clients@0.9.0-2a20bfe";
 
 // Workaround for esbuild's export-star bug
-import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.8.3-0d52ddb";
+import blsWalletClients from "https://esm.sh/bls-wallet-clients@0.9.0-2a20bfe";
 const { bundleFromDto, bundleToDto, initBlsWalletSigner } = blsWalletClients;
 export { bundleFromDto, bundleToDto, initBlsWalletSigner };
 
 export * as sqlite from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
 export { Semaphore } from "https://deno.land/x/semaphore@v1.1.2/mod.ts";
+
+export { pick } from "npm:@s-libs/micro-dash@15.2.0";

@@ -17,11 +17,12 @@ const AssetSelector: FunctionComponent<{
   return (
     <div className="flex flex-col gap-4">
       <div className="text-body">Select Asset</div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-1 2xl:grid-cols-2 gap-4">
         <div
           className={[
             'flex',
-            'flex-row',
+            'flex-col',
+            'sm:flex-row',
             'p-4',
             'gap-4',
             'rounded-lg',

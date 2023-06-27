@@ -31,7 +31,7 @@ const WorkflowNumbers: FunctionComponent<{
   );
 };
 
-const RecoverWalletModal = () => {
+const RecoverWalletModal = (props: { className?: string }) => {
   const [modalIsOpen, setIsOpen] = useState<boolean>(false);
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [walletPrivateKey, setWalletPrivateKey] = useState<string>('');
@@ -44,7 +44,7 @@ const RecoverWalletModal = () => {
   };
 
   return (
-    <div>
+    <div className={`${props.className}`}>
       <Button onPress={() => setIsOpen(true)} className="btn-secondary">
         Import
       </Button>

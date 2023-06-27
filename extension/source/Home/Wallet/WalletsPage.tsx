@@ -82,7 +82,8 @@ export const WalletsPage: React.FunctionComponent = () => (
           'bg-grey-100',
           'border-x',
           'border-grey-300',
-          'p-8',
+          'p-4',
+          'lg:p-8',
           'overflow-y-scroll',
         ].join(' ')}
       >
@@ -99,7 +100,7 @@ export const WalletsPage: React.FunctionComponent = () => (
       </div>
 
       {/* details pane */}
-      <div className="w-2/3 p-8 overflow-y-scroll">
+      <div className="w-2/3 p-4 lg:p-8 overflow-y-scroll">
         <Routes>
           {routes.map((item) => (
             <Route

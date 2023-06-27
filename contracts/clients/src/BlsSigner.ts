@@ -1,17 +1,11 @@
 /* eslint-disable camelcase */
 import { ethers, BigNumber, Signer, Bytes, BigNumberish } from "ethers";
-import {
-  AccessListish,
-  Deferrable,
-  hexlify,
-  isBytes,
-  RLP,
-} from "ethers/lib/utils";
+import { AccessListish, Deferrable, hexlify, isBytes } from "ethers/lib/utils";
 
 import BlsProvider, { PublicKeyLinkedToActions } from "./BlsProvider";
 import BlsWalletWrapper from "./BlsWalletWrapper";
 import addSafetyPremiumToFee from "./helpers/addSafetyDivisorToFee";
-import { ActionData, bundleToDto } from "./signer";
+import { ActionData, Signature, bundleToDto } from "./signer";
 
 export const _constructorGuard = {};
 
@@ -393,8 +387,15 @@ export default class BlsSigner extends Signer {
     return JSON.stringify(bundleToDto(bundle));
   }
 
-  /** Signs a message */
-  // TODO: bls-wallet #201 Come back to this once we support EIP-1271
+  /**
+   * Signs a message. Because of the function signature enforced by ethers, we cannot return the signature
+   * in it's default type. Instead, we return a concatenated string of the signature.
+   *
+   * Use BlsSigner.signedMessageToSignature to convert the concatenated signature string into a BLS Signature type.
+   *
+   * @param message the message to be signed
+   * @returns a concatenated string of the signature
+   */
   override async signMessage(message: Bytes | string): Promise<string> {
     await this.initPromise;
     if (isBytes(message)) {
@@ -402,7 +403,18 @@ export default class BlsSigner extends Signer {
     }
 
     const signedMessage = this.wallet.signMessage(message);
-    return RLP.encode(signedMessage);
+    return (
+      ethers.utils.hexlify(signedMessage[0]) +
+      ethers.utils.hexlify(signedMessage[1]).substring(2)
+    );
+  }
+
+  /** helper method to convert blsSigner.signMessage concatenated signature string into BLS Signature type */
+  static signedMessageToSignature(signedMessage: string): Signature {
+    return [
+      ethers.utils.hexlify(signedMessage.substring(0, 66)),
+      ethers.utils.hexlify("0x" + signedMessage.substring(66, 130)),
+    ];
   }
 
   override connect(provider: ethers.providers.Provider): BlsSigner {

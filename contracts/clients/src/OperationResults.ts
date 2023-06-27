@@ -119,19 +119,17 @@ const getError = (
 export const getOperationResults = (
   txnReceipt: ContractReceipt,
 ): OperationResult[] => {
-  let walletOpProcessedEvents: Result[];
+  let walletOpProcessedEvents: Result[] = (txnReceipt.events ?? [])
+    .filter((e) => e.event === "WalletOperationProcessed")
+    .map(({ args }) => {
+      if (!args) {
+        throw new Error("WalletOperationProcessed event missing args");
+      }
 
-  if (txnReceipt.events !== undefined) {
-    walletOpProcessedEvents = txnReceipt.events
-      .filter((e) => e.event === "WalletOperationProcessed")
-      .map(({ args }) => {
-        if (!args) {
-          throw new Error("WalletOperationProcessed event missing args");
-        }
+      return args;
+    });
 
-        return args;
-      });
-  } else if (txnReceipt.logs !== undefined) {
+  if (walletOpProcessedEvents.length === 0 && txnReceipt.logs !== undefined) {
     const vgInterface = VerificationGatewayFactory.createInterface();
 
     const WalletOperationProcessed = vgInterface.getEvent(
@@ -150,8 +148,6 @@ export const getOperationResults = (
           log.topics,
         ),
       );
-  } else {
-    walletOpProcessedEvents = [];
   }
 
   if (walletOpProcessedEvents.length === 0) {

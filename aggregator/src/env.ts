@@ -1,4 +1,6 @@
+import assert from "./helpers/assert.ts";
 import {
+  optionalEnv,
   optionalNumberEnv,
   requireBigNumberEnv,
   requireBoolEnv,
@@ -95,3 +97,38 @@ export const PREVIOUS_BASE_FEE_PERCENT_INCREASE = requireNumberEnv(
 export const BUNDLE_CHECKING_CONCURRENCY = requireIntEnv(
   "BUNDLE_CHECKING_CONCURRENCY",
 );
+
+/**
+ * Optimism's strategy for charging for L1 fees requires special logic in the
+ * aggregator. In addition to gasEstimate * gasPrice, we need to replicate
+ * Optimism's calculation and pass it on to the user.
+ */
+export const IS_OPTIMISM = requireBoolEnv("IS_OPTIMISM");
+
+/**
+ * Address for the Optimism gas price oracle contract. Required when
+ * IS_OPTIMISM is true.
+ */
+export const OPTIMISM_GAS_PRICE_ORACLE_ADDRESS = optionalEnv(
+  "OPTIMISM_GAS_PRICE_ORACLE_ADDRESS",
+);
+
+/**
+ * Similar to PREVIOUS_BASE_FEE_PERCENT_INCREASE, but for the L1 basefee for
+ * the optimism-specific calculation. This gets passed on to users.
+ * Required when IS_OPTIMISM is true.
+ */
+export const OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE = optionalNumberEnv(
+  "OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE",
+);
+
+if (IS_OPTIMISM) {
+  assert(
+    OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE !== nil,
+    "OPTIMISM_L1_BASE_FEE_PERCENT_INCREASE is required when IS_OPTIMISM is true",
+  );
+  assert(
+    OPTIMISM_GAS_PRICE_ORACLE_ADDRESS !== nil,
+    "OPTIMISM_GAS_PRICE_ORACLE_ADDRESS is required when IS_OPTIMISM is true",
+  );
+}

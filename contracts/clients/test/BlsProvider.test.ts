@@ -1,9 +1,10 @@
 import { expect } from "chai";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 
-import { BlsProvider, BlsSigner } from "../src";
+import { BlsProvider, BlsSigner, bundleToDto } from "../src";
 import { UncheckedBlsSigner } from "../src/BlsSigner";
+import { initBlsWalletSigner } from "../src/signer";
 
 let aggregatorUrl: string;
 let verificationGateway: string;
@@ -20,8 +21,8 @@ let regularProvider: ethers.providers.JsonRpcProvider;
 describe("BlsProvider", () => {
   beforeEach(async () => {
     aggregatorUrl = "http://localhost:3000";
-    verificationGateway = "mockVerificationGatewayAddress";
-    aggregatorUtilities = "mockAggregatorUtilitiesAddress";
+    verificationGateway = "0xC8CD2BE653759aed7B0996315821AAe71e1FEAdF";
+    aggregatorUtilities = "0xC8CD2BE653759aed7B0996315821AAe71e1FEAdF";
     rpcUrl = "http://localhost:8545";
     network = {
       name: "localhost",
@@ -215,5 +216,71 @@ describe("BlsProvider", () => {
 
     // Assert
     expect(ready).to.deep.equal(expectedReady);
+  });
+
+  it("should throw an error when sending multiple signed operations to sendTransaction", async () => {
+    // Arrange
+    const mockWalletAddress = "0x1337AF0f4b693fd1c36d7059a0798Ff05a60DFFE";
+    const { sign, aggregate } = await initBlsWalletSigner({
+      chainId: 123,
+      verificationGatewayAddress: verificationGateway,
+      privateKey,
+    });
+
+    const expectedAmount = parseEther("1");
+    const verySafeFee = parseEther("0.1");
+    const firstRecipient = ethers.Wallet.createRandom().address;
+    const secondRecipient = ethers.Wallet.createRandom().address;
+
+    const firstActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
+        {
+          ethValue: expectedAmount,
+          contractAddress: firstRecipient,
+          encodedFunction: "0x",
+        },
+      ],
+      verySafeFee,
+    );
+    const secondActionWithSafeFee = blsProvider._addFeePaymentActionWithSafeFee(
+      [
+        {
+          ethValue: expectedAmount,
+          contractAddress: secondRecipient,
+          encodedFunction: "0x",
+        },
+      ],
+      verySafeFee,
+    );
+
+    const nonce = BigNumber.from(0);
+
+    const firstOperation = {
+      nonce,
+      gas: BigNumber.from(30_000_000),
+      actions: [...firstActionWithSafeFee],
+    };
+    const secondOperation = {
+      nonce,
+      gas: BigNumber.from(30_000_000),
+      actions: [...secondActionWithSafeFee],
+    };
+
+    const firstBundle = sign(firstOperation, mockWalletAddress);
+    const secondBundle = sign(secondOperation, mockWalletAddress);
+
+    const aggregatedBundle = aggregate([firstBundle, secondBundle]);
+
+    // Act
+    const result = async () =>
+      await blsProvider.sendTransaction(
+        JSON.stringify(bundleToDto(aggregatedBundle)),
+      );
+
+    // Assert
+    await expect(result()).to.rejectedWith(
+      Error,
+      "Can only operate on single operations. Call provider.sendTransactionBatch instead",
+    );
   });
 });

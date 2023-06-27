@@ -78,6 +78,10 @@ describe("Signer contract interaction tests", function () {
       await mockERC20.transfer(await blsSigners[0].getAddress(), tokenSupply);
     });
 
+    afterEach(() => {
+      sinon.restore();
+    });
+
     it("balanceOf() call", async () => {
       const initialBalance = await mockERC20.balanceOf(
         await blsSigners[0].getAddress(),
@@ -85,7 +89,7 @@ describe("Signer contract interaction tests", function () {
       expect(initialBalance).to.equal(tokenSupply);
     });
 
-    // TODO: Add Contract deployment support #182
+    // TODO: (merge-ok) Add Contract deployment support #182
     it("deploying contract using BlsSigner fails", async () => {
       // Arrange
       const NewMockERC20 = await ethers.getContractFactory("MockERC20");
@@ -265,7 +269,6 @@ describe("Signer contract interaction tests", function () {
 
       // Assert
       expect(fee).to.equal(expectedFee);
-      sinon.restore();
     });
 
     it("should not fail when estimating gas for different scenarios", async () => {
@@ -316,7 +319,7 @@ describe("Signer contract interaction tests", function () {
       expect(newContractFactory.signer).to.equal(blsSigners[1]);
     });
 
-    // TODO: Add Contract deployment support #182
+    // TODO: (merge-ok) Add Contract deployment support #182
     it("deploying via new contract factory fails", async () => {
       // Arrange
       // Taken from artifacts directory
@@ -353,23 +356,21 @@ describe("Signer contract interaction tests", function () {
       await mockERC721.deployed();
     });
 
-    // TODO: Investigate why safeMint() fails with a BLS wallet address. Note - it passes in isolation
-    it.skip("safeMint() call fails with BLS wallet address", async () => {
-      const recipient = await blsSigners[1].getAddress();
+    it("safeMint() call fails with BLS wallet address", async () => {
+      // Arrange
+      const recipient = ethers.Wallet.createRandom().address;
       const tokenId = 1;
 
+      // Act
       const mint = await mockERC721
         .connect(blsSigners[0])
         .safeMint(recipient, tokenId);
       await mint.wait();
 
-      const ownerOf = async () =>
-        await mockERC721.connect(blsSigners[0]).ownerOf(tokenId);
-
-      await expect(ownerOf()).to.be.rejectedWith(
-        Error,
-        "ERC721: invalid token ID",
-      );
+      // Assert
+      await expect(
+        mockERC721.connect(blsSigners[0]).ownerOf(tokenId),
+      ).to.eventually.equal(recipient);
     });
 
     it("safeMint() call passes with EOA address", async () => {

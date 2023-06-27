@@ -24,7 +24,9 @@ const OnboardingActionPanel: FunctionComponent = () => {
     <div
       className={[
         'h-screen',
-        'p-32',
+        'p-4',
+        'md:p-8',
+        'xl:p-28',
         'flex',
         'flex-col',
         'flex-grow',
@@ -33,7 +35,7 @@ const OnboardingActionPanel: FunctionComponent = () => {
       ].join(' ')}
     >
       <WorkflowNumbers max={3} />
-      <div className="w-96">
+      <div className="w-[24rem] lg:w-[28rem]">
         {
           [
             <PasswordCreationPanel

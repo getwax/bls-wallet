@@ -103,7 +103,7 @@ const ReviewSecretPhrasePanel: FunctionComponent<{
   };
 
   return (
-    <div className="w-[28rem]">
+    <div className="w-[24rem] lg:w-[28rem]">
       <div className="mb-10">
         <div className="font-bold">
           Ok, last step before you get started with Quill!
