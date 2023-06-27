@@ -79,3 +79,5 @@ export { bundleFromDto, bundleToDto, initBlsWalletSigner };
 
 export * as sqlite from "https://deno.land/x/sqlite@v3.7.0/mod.ts";
 export { Semaphore } from "https://deno.land/x/semaphore@v1.1.2/mod.ts";
+
+export { pick } from "npm:@s-libs/micro-dash@15.2.0";

@@ -60,7 +60,7 @@ const bundles: Bundle[] = [];
 for (const [i, wallet] of wallets.entries()) {
   const nonce = await wallet.Nonce();
 
-  console.log("Funding wallet", i);
+  console.log("Funding wallet", i, "(1 wei to make estimateFee work)");
 
   await (await adminWallet.sendTransaction({
     to: wallet.address,
@@ -92,7 +92,7 @@ for (const [i, wallet] of wallets.entries()) {
 
   // Ensure wallet can pay the fee
   if (balance.lt(fee)) {
-    console.log("Funding wallet");
+    console.log("Funding wallet", i, "(based on estimateFee)");
 
     await (await adminWallet.sendTransaction({
       to: wallet.address,

@@ -544,9 +544,10 @@ export default class AggregationStrategy {
     bundleOverheadGas ??=
       (await this.measureBundleOverhead()).bundleOverheadGas;
 
-    const gasEstimate = await this.ethereumService.estimateCompressedGas(
-      bundle,
-    );
+    const gasEstimate = await this.ethereumService
+      .estimateEffectiveCompressedGas(
+        bundle,
+      );
 
     const marginalGasEstimate = gasEstimate.sub(bundleOverheadGas);
 
@@ -630,12 +631,18 @@ export default class AggregationStrategy {
           expectedFee: fee,
           requiredFee: feeInfo.requiredFee,
           expectedMaxCost: feeInfo.expectedMaxCost,
-          errorReason: { message: "Insufficient fee" },
+          errorReason: {
+            message: [
+              "Insufficient fee",
+              `(provided: ${ethers.utils.formatEther(fee)},`,
+              `required: ${ethers.utils.formatEther(feeInfo.requiredFee)})`,
+            ].join(" "),
+          },
         };
       }
 
       const gasEstimate = feeInfo?.gasEstimate ??
-        await this.ethereumService.estimateCompressedGas(bundle);
+        await this.ethereumService.estimateEffectiveCompressedGas(bundle);
 
       return {
         success,
@@ -673,8 +680,8 @@ export default class AggregationStrategy {
     });
 
     const [oneOpGasEstimate, twoOpGasEstimate] = await Promise.all([
-      es.estimateCompressedGas(bundle1),
-      es.estimateCompressedGas(
+      es.estimateEffectiveCompressedGas(bundle1),
+      es.estimateEffectiveCompressedGas(
         this.blsWalletSigner.aggregate([bundle1, bundle2]),
       ),
     ]);
