@@ -1,16 +1,15 @@
 import { BigNumber, ethers } from "../../deps.ts";
 import assert from "../helpers/assert.ts";
+import { OPTIMISM_GAS_PRICE_ORACLE_ADDRESS } from "../env.ts";
 
 export default class OptimismGasPriceOracle {
-  static address = "0x420000000000000000000000000000000000000F";
-
   constructor(
     public provider: ethers.providers.Provider,
   ) {}
 
   private async callFn(method: string, blockTag?: ethers.providers.BlockTag) {
     const outputBytes = await this.provider.call({
-      to: OptimismGasPriceOracle.address,
+      to: OPTIMISM_GAS_PRICE_ORACLE_ADDRESS,
       data: ethers.utils.id(method),
     }, blockTag);
 
