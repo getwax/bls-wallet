@@ -18,6 +18,8 @@ import HealthService from "./HealthService.ts";
 import HealthRouter from "./HealthRouter.ts";
 
 export default async function app(emit: (evt: AppEvent) => void) {
+  emit({ type: "starting" });
+
   const clock = Clock.create();
 
   const bundleTableMutex = new Mutex();

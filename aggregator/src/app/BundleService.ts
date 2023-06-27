@@ -23,6 +23,7 @@ import BundleTable, { BundleRow } from "./BundleTable.ts";
 import plus from "./helpers/plus.ts";
 import AggregationStrategy from "./AggregationStrategy.ts";
 import nil from "../helpers/nil.ts";
+import getOptimismL1Fee from "../helpers/getOptimismL1Fee.ts";
 import ExplicitAny from "../helpers/ExplicitAny.ts";
 
 export type AddBundleResponse = { hash: string } | {
@@ -36,6 +37,7 @@ export default class BundleService {
     maxAggregationDelayMillis: env.MAX_AGGREGATION_DELAY_MILLIS,
     maxUnconfirmedAggregations: env.MAX_UNCONFIRMED_AGGREGATIONS,
     maxEligibilityDelay: env.MAX_ELIGIBILITY_DELAY,
+    isOptimism: env.IS_OPTIMISM,
   };
 
   unconfirmedBundles = new Set<Bundle>();
@@ -165,7 +167,8 @@ export default class BundleService {
     if (!signedCorrectly) {
       failures.push({
         type: "invalid-signature",
-        description: `invalid bundle signature for signature ${bundle.signature}`,
+        description:
+          `invalid bundle signature for signature ${bundle.signature}`,
       });
     }
 
@@ -206,7 +209,7 @@ export default class BundleService {
 
   lookupAggregateBundle(subBundleHash: string) {
     const subBundle = this.bundleTable.findBundle(subBundleHash);
-    return this.bundleTable.findAggregateBundle(subBundle?.aggregateHash!)
+    return this.bundleTable.findAggregateBundle(subBundle?.aggregateHash!);
   }
 
   receiptFromBundle(bundle: BundleRow) {
@@ -246,17 +249,17 @@ export default class BundleService {
         gas: BigNumber.from(0),
       };
     });
-  
+
     const verifyMethodName = "verify";
     const bundleType = VerificationGatewayFactory.abi.find(
       (entry) => "name" in entry && entry.name === verifyMethodName,
     )?.inputs[0];
-  
+
     const validatedBundle = {
       ...bundle,
       operations: operationsWithZeroGas,
     };
-  
+
     const encodedBundleWithZeroSignature = ethers.utils.defaultAbiCoder.encode(
       [bundleType as ExplicitAny],
       [
@@ -266,7 +269,7 @@ export default class BundleService {
         },
       ],
     );
-  
+
     const bundleHash = ethers.utils.keccak256(encodedBundleWithZeroSignature);
     const chainId = (await this.ethereumService.provider.getNetwork()).chainId;
 
@@ -417,7 +420,16 @@ export default class BundleService {
         const profit = balanceAfter.sub(balanceBefore);
 
         /** What we paid to process the bundle */
-        const cost = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+        let cost = receipt.gasUsed.mul(receipt.effectiveGasPrice);
+
+        if (this.config.isOptimism) {
+          cost = cost.add(
+            await getOptimismL1Fee(
+              this.ethereumService.provider,
+              receipt.transactionHash,
+            ),
+          );
+        }
 
         /** Fees collected from users */
         const actualFee = profit.add(cost);

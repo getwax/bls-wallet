@@ -37,6 +37,7 @@ export const bundleServiceDefaultTestConfig:
     maxAggregationDelayMillis: 5000,
     maxUnconfirmedAggregations: 3,
     maxEligibilityDelay: 300,
+    isOptimism: false,
   };
 
 export const aggregationStrategyDefaultTestConfig: AggregationStrategyConfig = {
