@@ -157,20 +157,17 @@ contract VerificationGateway
     @dev overrides previous wallet address registered with the given public key
     @param messageSenderSignature signature of message containing only the calling address
     @param publicKey that signed the caller's address
-    @param signatureExpiryTimestamp that the signature is valid until
      */
     function setBLSKeyForWallet(
         uint256[2] memory messageSenderSignature,
-        uint256[BLS_KEY_LEN] memory publicKey,
-        uint256 signatureExpiryTimestamp
+        uint256[BLS_KEY_LEN] memory publicKey
     ) public {
         require(blsLib.isZeroBLSKey(publicKey) == false, "VG: key is zero");
         IWallet wallet = IWallet(msg.sender);
         bytes32 existingHash = hashFromWallet[wallet];
-        if (existingHash == bytes32(0)) { // wallet does not yet have a bls key registered with this gateway
-            // Can't register new wallet contracts, only what this gateway deployed.
-        }
-        else { // wallet already has a key registered, set after delay
+
+        // Can't register new wallet contracts, only what this gateway deployed.
+        if (existingHash != bytes32(0)) { // wallet already has a key registered, set after delay
             pendingMessageSenderSignatureFromHash[existingHash] = messageSenderSignature;
             pendingBLSPublicKeyFromHash[existingHash] = publicKey;
             pendingBLSPublicKeyTimeFromHash[existingHash] = block.timestamp + 604800; // 1 week from now

@@ -115,7 +115,6 @@ describe("Upgrade", async function () {
       encodedFunction: vg1.interface.encodeFunctionData("setBLSKeyForWallet", [
         addressSignature,
         wallet2.PublicKey(),
-        signatureExpiryTimestamp,
       ]),
     };
 
