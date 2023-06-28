@@ -1791,16 +1791,6 @@
   version "5.7.0"
   resolved "https://registry.yarnpkg.com/@ethersproject/transactions/-/transactions-5.7.0.tgz#91318fc24063e057885a6af13fdb703e1f993d3b"
   integrity sha512-kmcNicCp1lp8qanMTC3RIikGgoJ80ztTyvtsFvCYpSCfkjhD0jZ2LOrnbcuxuToLIUYYf+4XwD1rP+B/erDIhQ==
-  dependencies:
-    "@ethersproject/address" "^5.7.0"
-    "@ethersproject/bignumber" "^5.7.0"
-    "@ethersproject/bytes" "^5.7.0"
-    "@ethersproject/constants" "^5.7.0"
-    "@ethersproject/keccak256" "^5.7.0"
-    "@ethersproject/logger" "^5.7.0"
-    "@ethersproject/properties" "^5.7.0"
-    "@ethersproject/rlp" "^5.7.0"
-    "@ethersproject/signing-key" "^5.7.0"
 
 "@ethersproject/transactions@^5.5.0", "@ethersproject/transactions@^5.6.2":
   version "5.6.2"
@@ -2898,10 +2888,10 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.2.1.tgz#5057e4206eadb4a97f7c0b6e197a505042fc3814"
   integrity sha512-QXUSXI3QVc/gJME0dBpXrag1kbzOqCjCX8/b54ntNyW6sjtoqxqRk3LTmXzaJoh71zMsDCjM+47jS7XiwN/+fQ==
 
-bls-wallet-clients@0.9.0-2a20bfe:
-  version "0.9.0-2a20bfe"
-  resolved "https://registry.yarnpkg.com/bls-wallet-clients/-/bls-wallet-clients-0.9.0-2a20bfe.tgz#2e39757a18df3ba78d816ae15f6b88000443a2a6"
-  integrity sha512-w4efcArPBEowrAkIdVYc2mOLlkN8E5O9eIqEhoo6IrRVrN21p/JVNdoot4N3o5MAKFbeaYfid/u9lL6p2DNdiw==
+bls-wallet-clients@0.9.0-3251dec:
+  version "0.9.0-3251dec"
+  resolved "https://registry.npmjs.org/bls-wallet-clients/-/bls-wallet-clients-0.9.0-3251dec.tgz#46f6795110abd90a242fec5a59af1ae2a9f45cd9"
+  integrity sha512-GBjJToEK3nEkldnWB8971BlIKCF0AT78GsrnkXfC1WtAYsvtqyZxmfGABMmN4si8GgykyyjYcxTypORz61AGZQ==
   dependencies:
     "@thehubbleproject/bls" "^0.5.1"
     ethers "^5.7.2"

@@ -95,7 +95,7 @@ describe("Recovery", async function () {
       wallet1,
       vg,
       "setBLSKeyForWallet",
-      [addressSignature, wallet2.PublicKey(), signatureExpiryTimestamp],
+      [addressSignature, wallet2.PublicKey()],
       1,
       30_000_000,
     );
@@ -372,7 +372,7 @@ describe("Recovery", async function () {
       wallet1,
       vg,
       "setBLSKeyForWallet",
-      [attackSignature, walletAttacker.PublicKey(), signatureExpiryTimestamp],
+      [attackSignature, walletAttacker.PublicKey()],
       recoveredWalletNonce++,
       30_000_000,
     );
@@ -660,7 +660,7 @@ describe("Recovery", async function () {
       wallet1,
       vg,
       "setBLSKeyForWallet",
-      [addressSignature, wallet2.PublicKey(), invalidSignatureExpiryTimestamp],
+      [addressSignature, wallet2.PublicKey()],
       1,
       30_000_000,
     );
@@ -724,7 +724,7 @@ describe("Recovery", async function () {
       wallet1,
       vg,
       "setBLSKeyForWallet",
-      [addressSignature, wallet2.PublicKey(), signatureExpiryTimestamp],
+      [addressSignature, wallet2.PublicKey()],
       1,
       30_000_000,
     );
